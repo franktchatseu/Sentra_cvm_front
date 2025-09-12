@@ -41,7 +41,8 @@ class ProductService {
       throw new Error('Failed to fetch product');
     }
 
-    return response.json();
+    const result = await response.json();
+    return result.data; // Extract data from API response structure
   }
 
   // Create a new product

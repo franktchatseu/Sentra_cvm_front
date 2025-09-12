@@ -83,9 +83,15 @@ class OfferService {
 
   // Create new offer
   async createOffer(offer: CreateOfferRequest): Promise<Offer> {
+    // Set default category_id to 1 if not provided
+    const offerWithDefaults = {
+      ...offer,
+      category_id: offer.category_id || 1
+    };
+
     return this.request<Offer>('/create', {
       method: 'POST',
-      body: JSON.stringify(offer),
+      body: JSON.stringify(offerWithDefaults),
     });
   }
 

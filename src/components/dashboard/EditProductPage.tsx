@@ -40,14 +40,14 @@ export default function EditProductPage() {
       const productData = await productService.getProductById(id!, 'id');
       setProduct(productData);
       
-      // Populate form with existing data
+      // Populate form with existing data based on API response structure
       setFormData({
-        product_id: productData.sku || '',
+        product_id: productData.product_id,
         name: productData.name,
-        da_id: '', // Adjust based on your Product type
+        da_id: productData.da_id,
         description: productData.description || '',
-        category_id: undefined, // Map from productData.category if needed
-        is_active: productData.status === 'active'
+        category_id: productData.category_id ? parseInt(productData.category_id) : undefined,
+        is_active: productData.is_active
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load product');

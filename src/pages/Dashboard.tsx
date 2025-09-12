@@ -9,6 +9,7 @@ import ProductsPage from '../components/dashboard/ProductsPage';
 import CreateProductPage from '../components/dashboard/CreateProductPage';
 import EditProductPage from '../components/dashboard/EditProductPage';
 import ProductCategoriesPage from '../components/dashboard/ProductCategoriesPage';
+import UserManagementPage from '../components/dashboard/UserManagementPage';
 
 export default function Dashboard() {
   return (
@@ -21,7 +22,8 @@ export default function Dashboard() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/create" element={<CreateProductPage />} />
         <Route path="/products/:id/edit" element={<EditProductPage />} />
-        <Route path="/products/categories" element={<ProductCategoriesPage />} />
+        <Route path="/product-categories" element={<ProductCategoriesPage />} />
+        <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/segments" element={<SegmentsPage />} />
       </Routes>
     </DashboardLayout>

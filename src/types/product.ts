@@ -1,14 +1,23 @@
 export interface Product {
   id: string;
+  product_id: string;
+  da_id: string;
   name: string;
   description?: string;
-  category: string;
-  price: number;
-  currency: string;
-  sku?: string;
-  status: 'active' | 'inactive' | 'discontinued';
+  is_active: boolean;
+  category_id: string;
   created_at: string;
+  created_by: string;
   updated_at: string;
+  updated_by: string;
+  // Legacy fields for backward compatibility
+  category?: string;
+  categoryId?: number;
+  daId?: string;
+  price?: number;
+  currency?: string;
+  sku?: string;
+  status?: 'active' | 'inactive' | 'discontinued';
   image_url?: string;
 }
 

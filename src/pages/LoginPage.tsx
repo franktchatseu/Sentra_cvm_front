@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [generalError, setGeneralError] = useState('');
   const { login } = useAuth();
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function LoginPage() {
     let isValid = true;
     setEmailError('');
     setPasswordError('');
+    setGeneralError('');
 
     if (!email) {
       setEmailError('Email is required');
@@ -54,9 +56,22 @@ export default function LoginPage() {
     
     try {
       await login(email, password);
-    } catch (error) {
+      // Login successful - user will be redirected by auth context
+    } catch (error: any) {
       console.error('Login failed:', error);
-      setPasswordError('Invalid email or password');
+      
+      // Handle different types of errors
+      if (error.message?.includes('Invalid credentials')) {
+        setGeneralError('Invalid email or password. Please check your credentials and try again.');
+      } else if (error.message?.includes('Account not active')) {
+        setGeneralError('Your account is not active. Please contact an administrator.');
+      } else if (error.message?.includes('Account pending')) {
+        setGeneralError('Your account request is still pending approval. You will receive an email once approved.');
+      } else if (error.message?.includes('Password reset required')) {
+        setGeneralError('A password reset is required. Please check your email for reset instructions.');
+      } else {
+        setGeneralError('Login failed. Please try again or contact support if the problem persists.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -432,6 +447,13 @@ export default function LoginPage() {
           hover="lift" 
           className="p-10 backdrop-blur-md border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500"
         >
+          {/* General Error Message */}
+          {generalError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{generalError}</p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Email Field */}
             <div className="space-y-2">

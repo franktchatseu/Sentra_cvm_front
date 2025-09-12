@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Edit, 
   Trash2, 
   Eye, 
@@ -33,6 +32,10 @@ export default function ProductsPage() {
   });
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     loadProducts();
@@ -77,14 +80,31 @@ export default function ProductsPage() {
 
   const handleToggleStatus = async (product: Product) => {
     try {
-      if (product.status === 'active') {
+      if (product.is_active) {
         await productService.deactivateProduct(Number(product.id));
+        setNotification({
+          type: 'success',
+          message: `Product "${product.name}" has been deactivated successfully.`
+        });
       } else {
         await productService.activateProduct(Number(product.id));
+        setNotification({
+          type: 'success',
+          message: `Product "${product.name}" has been activated successfully.`
+        });
       }
       loadProducts();
+      
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => setNotification(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update product status');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update product status';
+      setError(errorMessage);
+      setNotification({
+        type: 'error',
+        message: errorMessage
+      });
+      setTimeout(() => setNotification(null), 5000);
     }
   };
 
@@ -101,14 +121,6 @@ export default function ProductsPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      discontinued: 'bg-red-100 text-red-800'
-    };
-    return statusConfig[status as keyof typeof statusConfig] || 'bg-gray-100 text-gray-800';
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50">
@@ -117,7 +129,7 @@ export default function ProductsPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                 Products Management
               </h1>
               <p className="text-gray-600 mt-2">Manage your product catalog</p>
@@ -199,6 +211,40 @@ export default function ProductsPage() {
           </div>
         </div>
 
+        {/* Notification */}
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 max-w-md rounded-xl shadow-lg border p-4 transition-all duration-300 ${
+            notification.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center">
+              <div className={`flex-shrink-0 w-5 h-5 mr-3 ${
+                notification.type === 'success' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {notification.type === 'success' ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <p className="text-sm font-medium">{notification.message}</p>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-auto flex-shrink-0 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
@@ -233,10 +279,10 @@ export default function ProductsPage() {
                   <thead className="bg-gray-50/50">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
+                        Product ID
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product ID
+                        Product Name
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         DA ID
@@ -256,35 +302,41 @@ export default function ProductsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {products.map((product) => (
-                      <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {product.description || 'No description'}
+                    {products.map((product) => {
+                      const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'N/A';
+                      const status = product.is_active ? 'Active' : 'Inactive';
+                      const statusBadge = product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                      
+                      return (
+                        <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4 text-sm text-gray-900 font-mono">
+                            {product.product_id || product.id || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                              <div className="text-sm text-gray-500 truncate max-w-xs">
+                                {product.description || 'No description'}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 font-mono">
-                          {product.sku || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 font-mono">
-                          {/* Assuming da_id is part of product, adjust if needed */}
-                          N/A
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {product.category}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(product.status)}`}>
-                            {product.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {new Date(product.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-right">
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-mono">
+                            {product.da_id || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {categoryName}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge}`}>
+                              {status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {new Date(product.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => navigate(`/dashboard/products/${product.id}`)}
@@ -303,13 +355,13 @@ export default function ProductsPage() {
                             <button
                               onClick={() => handleToggleStatus(product)}
                               className={`p-2 transition-colors ${
-                                product.status === 'active' 
+                                product.is_active 
                                   ? 'text-gray-400 hover:text-orange-600' 
                                   : 'text-gray-400 hover:text-green-600'
                               }`}
-                              title={product.status === 'active' ? 'Deactivate' : 'Activate'}
+                              title={product.is_active ? 'Deactivate' : 'Activate'}
                             >
-                              {product.status === 'active' ? (
+                              {product.is_active ? (
                                 <PowerOff className="w-4 h-4" />
                               ) : (
                                 <Power className="w-4 h-4" />
@@ -324,8 +376,9 @@ export default function ProductsPage() {
                             </button>
                           </div>
                         </td>
-                      </tr>
-                    ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Mail, Building, Phone, MessageSquare, ArrowRight, CheckCircle, Zap, Target, Award, Briefcase, Users } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function RequestAccountPage() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,8 @@ export default function RequestAccountPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [error, setError] = useState('');
+  const { createUser } = useAuth();
 
   useEffect(() => {
     setIsVisible(true);
@@ -31,12 +34,33 @@ export default function RequestAccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsLoading(false);
-    setIsSubmitted(true);
+    try {
+      // Map role to API expected values - default to 'user' for all non-admin roles
+      const apiRole = formData.role === 'admin' ? 'admin' : 'user';
+      
+      await createUser({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        role: apiRole
+      });
+      
+      setIsSubmitted(true);
+    } catch (error: any) {
+      console.error('Account request failed:', error);
+      
+      if (error.message?.includes('Email already exists')) {
+        setError('An account with this email already exists. Please try logging in or use a different email.');
+      } else if (error.message?.includes('Invalid email')) {
+        setError('Please provide a valid business email address.');
+      } else {
+        setError('Failed to submit account request. Please try again or contact support.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isSubmitted) {
@@ -229,6 +253,13 @@ export default function RequestAccountPage() {
 
           {/* Form */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-8">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -348,6 +379,7 @@ export default function RequestAccountPage() {
                 required
               >
                 <option value="">Select your role</option>
+                <option value="admin">Administrator</option>
                 <option value="marketing-manager">Marketing Manager</option>
                 <option value="campaign-manager">Campaign Manager</option>
                 <option value="data-analyst">Data Analyst</option>

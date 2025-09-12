@@ -6,7 +6,9 @@ import {
   Users, 
   MessageSquare, 
   Settings,
-  Package
+  Package,
+  FolderOpen,
+  UserCheck
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -17,6 +19,8 @@ export default function Sidebar() {
     { name: 'Campaigns', href: '/dashboard/campaigns', icon: Target },
     { name: 'Offers', href: '/dashboard/offers', icon: MessageSquare },
     { name: 'Products', href: '/dashboard/products', icon: Package },
+    { name: 'Product Categories', href: '/dashboard/product-categories', icon: FolderOpen },
+    { name: 'User Management', href: '/dashboard/user-management', icon: UserCheck },
     { name: 'Segments', href: '/dashboard/segments', icon: Users },
   ];
   
