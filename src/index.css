@@ -269,6 +269,15 @@
     animation: fadeInDown 0.8s ease-out forwards;
   }
   
+  /* Card Hover Animation */
+  .card-hover {
+    transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .card-hover:hover {
+    animation: cardHover 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  
   /* Slide Animations */
   .slide-in-left {
     animation: slideInLeft 0.6s ease-out forwards;
@@ -538,6 +547,16 @@
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Card Hover Animation */
+@keyframes cardHover {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-16px) scale(1.1) rotate(1deg);
   }
 }
 
