@@ -3,7 +3,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import DashboardHome from '../components/dashboard/DashboardHome';
 import CampaignsPage from '../components/dashboard/CampaignsPage';
 import OffersPage from '../components/dashboard/OffersPage';
-import SegmentsPage from '../components/dashboard/SegmentsPage';
+import SegmentManagementPage from '../components/dashboard/SegmentManagementPage';
 import CreateOfferPage from '../components/dashboard/CreateOfferPage';
 import ProductsPage from '../components/dashboard/ProductsPage';
 import CreateProductPage from '../components/dashboard/CreateProductPage';
@@ -24,7 +24,7 @@ export default function Dashboard() {
         <Route path="/products/:id/edit" element={<EditProductPage />} />
         <Route path="/product-categories" element={<ProductCategoriesPage />} />
         <Route path="/user-management" element={<UserManagementPage />} />
-        <Route path="/segments" element={<SegmentsPage />} />
+        <Route path="/segments" element={<SegmentManagementPage />} />
       </Routes>
     </DashboardLayout>
   );
