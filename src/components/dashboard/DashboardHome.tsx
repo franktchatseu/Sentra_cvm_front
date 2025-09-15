@@ -139,13 +139,13 @@ export default function DashboardHome() {
           Here's what's happening with your campaigns today. Your performance is looking great!
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div 
               key={stat.name} 
-              className="group cursor-pointer relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 p-6 hover:bg-white/95 hover:z-20 hover:scale-105 hover:-translate-y-2"
+              className="group cursor-pointer relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 p-4 md:p-6 hover:bg-white/95 hover:z-20 hover:scale-105 hover:-translate-y-2"
               style={{
                 animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                 opacity: 0,
@@ -156,8 +156,8 @@ export default function DashboardHome() {
               
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} group-hover:scale-110 transition-all duration-500 ease-out transform-gpu`}>
-                    <Icon className="h-6 w-6 text-white group-hover:rotate-12 transition-transform duration-500 ease-out" />
+                  <div className={`p-2 md:p-3 rounded-xl bg-gradient-to-br ${stat.gradient} group-hover:scale-110 transition-all duration-500 ease-out transform-gpu`}>
+                    <Icon className="h-5 w-5 md:h-6 md:w-6 text-white group-hover:rotate-12 transition-transform duration-500 ease-out" />
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-semibold group-hover:scale-105 transition-all duration-500 ease-out transform-gpu ${
                     stat.changeType === 'positive' 
@@ -169,8 +169,8 @@ export default function DashboardHome() {
                 </div>
                 
                 <div>
-                  <p className="text-sm font-medium text-slate-600 mb-1 group-hover:text-slate-700 transition-colors duration-500 ease-out">{stat.name}</p>
-                  <p className="text-3xl font-bold text-slate-900 group-hover:text-slate-800 group-hover:scale-105 transition-all duration-500 ease-out transform-gpu">{stat.value}</p>
+                  <p className="text-xs md:text-sm font-medium text-slate-600 mb-1 group-hover:text-slate-700 transition-colors duration-500 ease-out">{stat.name}</p>
+                  <p className="text-xl md:text-3xl font-bold text-slate-900 group-hover:text-slate-800 group-hover:scale-105 transition-all duration-500 ease-out transform-gpu">{stat.value}</p>
                 </div>
                 
                 <div className="mt-3 flex items-center text-xs text-slate-500 group-hover:text-slate-600 transition-colors duration-500 ease-out">
@@ -187,7 +187,7 @@ export default function DashboardHome() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
         {/* Recent Campaigns */}
         <div className="lg:col-span-2">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden transition-all duration-500">
@@ -280,7 +280,7 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        <div className="flex flex-col space-y-6 h-full">
+        <div className="flex flex-col md:flex-row xl:flex-col space-y-6 md:space-y-0 md:space-x-6 xl:space-x-0 xl:space-y-6 h-full">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden transition-all duration-500 flex-1">
             <div className="p-4 sm:p-6 bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-pink-500/15 border-b border-white/30">
               <div className="flex items-center space-x-2">
