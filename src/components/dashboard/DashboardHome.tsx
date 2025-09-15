@@ -11,12 +11,45 @@ import {
   Clock
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { dashboardService, DashboardStats } from '../../services/dashboardService';
+import { useState, useEffect } from 'react';
 
 export default function DashboardHome() {
   const { user } = useAuth();
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalOffers: 0,
+    totalSegments: 0,
+    activeCampaigns: 0,
+    conversionRate: 0
+  });
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        setLoading(true);
+        const stats = await dashboardService.getDashboardStats();
+        console.log('Dashboard stats fetched:', stats);
+        setDashboardStats(stats);
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+        // Keep the default values (0) if API fails
+        setDashboardStats({
+          totalOffers: 0,
+          totalSegments: 0,
+          activeCampaigns: 0,
+          conversionRate: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
   
   const getFirstName = () => {
-    if (user?.email) {
+    if (user && 'email' in user && user.email && typeof user.email === 'string') {
       const emailName = user.email.split('@')[0];
       const nameWithoutNumbers = emailName.replace(/\d+/g, '');
       return nameWithoutNumbers.charAt(0).toUpperCase() + nameWithoutNumbers.slice(1).toLowerCase();
@@ -26,7 +59,7 @@ export default function DashboardHome() {
   const stats = [
     {
       name: 'Active Campaigns',
-      value: '24',
+      value: loading ? '...' : (dashboardStats?.activeCampaigns ?? 0).toString(),
       change: '+12%',
       changeType: 'positive',
       icon: Target,
@@ -35,7 +68,7 @@ export default function DashboardHome() {
     },
     {
       name: 'Total Segments',
-      value: '156',
+      value: loading ? '...' : (dashboardStats?.totalSegments ?? 0).toString(),
       change: '+8%',
       changeType: 'positive',
       icon: Users,
@@ -43,8 +76,8 @@ export default function DashboardHome() {
       gradient: 'from-emerald-500 to-teal-600'
     },
     {
-      name: 'Active Offers',
-      value: '89',
+      name: 'Total Offers',
+      value: loading ? '...' : (dashboardStats?.totalOffers ?? 0).toString(),
       change: '-3%',
       changeType: 'negative',
       icon: MessageSquare,
@@ -53,7 +86,7 @@ export default function DashboardHome() {
     },
     {
       name: 'Conversion Rate',
-      value: '18.4%',
+      value: loading ? '...' : `${dashboardStats?.conversionRate ?? 0}%`,
       change: '+5.2%',
       changeType: 'positive',
       icon: TrendingUp,
@@ -112,10 +145,11 @@ export default function DashboardHome() {
           return (
             <div 
               key={stat.name} 
-              className="group cursor-pointer relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 p-6 hover:bg-white/95 hover:z-20 transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-2"
+              className="group cursor-pointer relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 p-6 hover:bg-white/95 hover:z-20 hover:scale-105 hover:-translate-y-2"
               style={{
                 animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
-                opacity: 0
+                opacity: 0,
+                transition: 'all 0.5s ease-out'
               }}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-15 rounded-2xl transition-all duration-700 ease-out`}></div>

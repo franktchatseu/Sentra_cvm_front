@@ -105,11 +105,14 @@ export interface OfferFilters {
 }
 
 export interface OfferResponse {
-  offers: Offer[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  success: boolean;
+  data: Offer[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
 }
 
 export interface CreateOfferRequest {
