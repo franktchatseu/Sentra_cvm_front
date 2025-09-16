@@ -94,8 +94,8 @@ export default function AuthenticatedLandingPage() {
         {
           id: 'config',
           code: 'Config',
-          name: 'Sentra Config (Configuration Management)',
-          description: 'System-wide configuration management for all platform modules and settings.',
+          name: 'Sentra Configuration Management',
+          description: 'System-wide configuration management for all platform modules ',
           icon: 'settings',
           path: '/dashboard/configuration',
           category: 'execution'
