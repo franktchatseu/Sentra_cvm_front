@@ -39,7 +39,7 @@ export default function AnimatedCard({
   const [isHovered, setIsHovered] = useState(false);
 
   const baseClasses = `
-    relative transition-all duration-300 ease-smooth cursor-pointer group
+    relative transition-all duration-500 ease-smooth cursor-pointer group
     ${onClick ? 'cursor-pointer' : 'cursor-default'}
     ${className}
   `;
@@ -47,28 +47,28 @@ export default function AnimatedCard({
   const variantClasses = {
     default: `
       bg-white ${border ? 'border border-secondary-200' : ''} 
-      ${animateOnHover && hover === 'lift' ? 'hover:shadow-lg hover:-translate-y-1' : ''}
+      ${animateOnHover && hover === 'lift' ? 'hover:shadow-xl hover:-translate-y-2' : ''}
       ${animateOnHover && hover === 'glow' ? 'hover:shadow-glow' : ''}
-      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.02]' : ''}
+      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.03]' : ''}
     `,
     elevated: `
       bg-white shadow-lg ${border ? 'border border-secondary-100' : ''}
-      ${animateOnHover && hover === 'lift' ? 'hover:shadow-xl hover:-translate-y-2' : ''}
+      ${animateOnHover && hover === 'lift' ? 'hover:shadow-2xl hover:-translate-y-3' : ''}
       ${animateOnHover && hover === 'glow' ? 'hover:shadow-glow-lg' : ''}
-      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.03]' : ''}
+      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.04]' : ''}
     `,
     glass: `
       backdrop-blur-xl bg-white/70 border border-white/20 shadow-lg
-      ${animateOnHover && hover === 'lift' ? 'hover:bg-white/80 hover:-translate-y-1' : ''}
+      ${animateOnHover && hover === 'lift' ? 'hover:bg-white/80 hover:-translate-y-2' : ''}
       ${animateOnHover && hover === 'glow' ? 'hover:shadow-glow' : ''}
-      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.02]' : ''}
+      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.03]' : ''}
     `,
     gradient: `
       bg-gradient-to-br from-white via-primary-50/50 to-accent-50/50 
       border border-primary-100 shadow-md
-      ${animateOnHover && hover === 'lift' ? 'hover:shadow-xl hover:-translate-y-1' : ''}
+      ${animateOnHover && hover === 'lift' ? 'hover:shadow-xl hover:-translate-y-2' : ''}
       ${animateOnHover && hover === 'glow' ? 'hover:shadow-glow' : ''}
-      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.02]' : ''}
+      ${animateOnHover && hover === 'scale' ? 'hover:scale-[1.03]' : ''}
     `,
   };
 
@@ -131,8 +131,8 @@ export default function AnimatedCard({
               <div className={`
                 flex items-center justify-center w-12 h-12 rounded-xl
                 bg-gradient-to-br from-primary-100 to-accent-100
-                transition-all duration-300
-                ${isHovered ? 'scale-110 rotate-3' : ''}
+                transition-all duration-500 ease-smooth
+                ${isHovered ? 'scale-125 rotate-6 animate-bounce-subtle' : ''}
               `}>
                 <Icon className="w-6 h-6 text-primary-600" />
               </div>

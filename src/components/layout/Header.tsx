@@ -11,7 +11,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 bg-white mt-3 mb-5">
-      <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="flex h-20 items-center justify-between ">
         <div className="flex items-center gap-x-4 flex-1">
           <button
             onClick={onMenuClick}

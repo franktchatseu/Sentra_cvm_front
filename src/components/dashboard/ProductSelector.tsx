@@ -178,15 +178,15 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
             {selectedProducts.map((product) => (
               <div key={product.id} className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-[#3b8169] rounded-lg flex items-center justify-center text-white text-xl">
+                  <div className="w-12 h-12 bg-[#1a3d2e] rounded-lg flex items-center justify-center text-white text-xl">
                     {getCategoryIcon(product.category)}
                   </div>
                   <div>
                     <h5 className="font-medium text-gray-900">{product.name}</h5>
                     <p className="text-sm text-gray-600">{product.description}</p>
                     <div className="flex items-center space-x-2 mt-1">
-                      <span className="text-sm font-semibold text-blue-600">${product.price}</span>
-                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                      <span className="text-sm font-semibold text-[#1a3d2e]">${product.price}</span>
+                      <span className="text-xs px-2 py-1 bg-[#1a3d2e]/10 text-[#1a3d2e] rounded-full">
                         {product.category}
                       </span>
                     </div>
@@ -208,7 +208,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
       {/* Add Product Button */}
       <button
         onClick={() => setIsModalOpen(true)}
-        className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200 flex items-center justify-center space-x-2 text-gray-600 hover:text-indigo-600"
+        className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#1a3d2e] hover:bg-[#1a3d2e]/5 transition-all duration-200 flex items-center justify-center space-x-2 text-gray-600 hover:text-[#1a3d2e]"
       >
         <Plus className="w-5 h-5" />
         <span className="font-medium">
@@ -243,13 +243,13 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
                     placeholder="Search products..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-[#1a3d2e]"
                   />
                 </div>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:border-[#1a3d2e]"
                 >
                   {categories.map((category) => (
                     <option key={category.value} value={category.value}>
@@ -281,8 +281,8 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
                         onClick={() => handleProductToggle(product)}
                         className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                           isSelected
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                            ? 'border-[#1a3d2e] bg-[#1a3d2e]/5'
+                            : 'border-gray-200 hover:border-indigo-300 hover:bg-[#1a3d2e]/5'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -294,7 +294,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
                               <h5 className="font-medium text-gray-900">{product.name}</h5>
                               <p className="text-sm text-gray-600">{product.description}</p>
                               <div className="flex items-center space-x-2 mt-1">
-                                <span className="text-sm font-semibold text-indigo-600">${product.price}</span>
+                                <span className="text-sm font-semibold text-[#1a3d2e]">${product.price}</span>
                                 <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
                                   {product.category}
                                 </span>

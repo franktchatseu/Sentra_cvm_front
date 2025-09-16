@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         onClose={() => setSidebarOpen(false)} 
       />
       
-      <div className="lg:ml-80 lg:px-10 lg:pb-10">
+      <div className="lg:ml-80 lg:px-8 lg:pb-10">
         <Header onMenuClick={() => setSidebarOpen(true)}  />
         <main className="">
             {children}

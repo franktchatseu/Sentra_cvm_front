@@ -134,7 +134,7 @@ export default function DashboardHome() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="space-y-6">
       <div className="text-left">
           <h1 className="lg:text-3xl text-2xl lg:mt-2 font-bold bg-gradient-to-r from-slate-800 via-green-800 to-green-900 bg-clip-text text-transparent mb-3">
           Welcome back, {getFirstName()} 👋
@@ -201,7 +201,7 @@ export default function DashboardHome() {
                   <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Recent Campaigns</h2>
                   <p className="text-slate-600 text-xs sm:text-sm mt-1 font-medium">Monitor your active and scheduled campaigns</p>
                 </div>
-                <button className="px-3 py-2 sm:px-4 sm:py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto">
+                <button className="px-3 py-2 sm:px-4 sm:py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto">
                   View All
                 </button>
               </div>

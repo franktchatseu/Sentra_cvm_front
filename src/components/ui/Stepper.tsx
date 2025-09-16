@@ -26,9 +26,9 @@ export default function Stepper({ steps, currentStep, completedSteps, className 
                   className={`
                     relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300
                     ${isCompleted 
-                      ? 'bg-[#3b8169] border-[#3b8169] text-white shadow-lg' 
+                      ? 'bg-[#1a3d2e] border-[#3b8169] text-white shadow-lg' 
                       : isCurrent 
-                        ? 'bg-white border-blue-600 text-blue-600 shadow-md ring-4 ring-blue-100' 
+                        ? 'bg-white border-[#1a3d2e] text-[#1a3d2e] shadow-md ring-4 ring-[#1a3d2e]/20' 
                         : 'bg-gray-100 border-gray-300 text-gray-500'
                     }
                   `}

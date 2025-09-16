@@ -130,7 +130,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                   value={formData.first_name}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
                   placeholder="Prénom"
                 />
               </div>
@@ -148,7 +148,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                   value={formData.last_name}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
                   placeholder="Nom"
                 />
               </div>
@@ -169,7 +169,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                 value={formData.private_email_address}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
                 placeholder="email@example.com"
               />
             </div>
@@ -184,7 +184,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
               required
             >
               <option value="user">Utilisateur</option>
@@ -198,7 +198,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
               name="is_activated"
               checked={formData.is_activated}
               onChange={handleChange}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
             />
             <label className="ml-2 text-sm font-medium text-gray-700">
               Compte activé
@@ -217,7 +217,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
             <AnimatedButton
               type="submit"
               loading={isLoading}
-              className="flex-1 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 font-medium"
+              className="flex-1 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 font-medium"
             >
               <Save className="w-4 h-4 mr-2" />
               {user ? 'Modifier' : 'Créer'}

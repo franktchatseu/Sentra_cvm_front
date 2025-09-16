@@ -106,7 +106,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 font-medium"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 font-medium"
               placeholder="e.g., Data Plans, Voice Packages, SMS Bundles..."
               required
             />
@@ -121,7 +121,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 resize-none"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 resize-none"
               placeholder="Provide a detailed description of this category and what products it contains..."
             />
           </div>
@@ -137,7 +137,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
             <button
               type="submit"
               disabled={isLoading}
-              className="px-8 py-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-xl  transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+              className="px-8 py-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-xl  transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
@@ -240,7 +240,7 @@ export default function ProductCategoriesPage() {
           </div>
           <button
             onClick={handleCreateCategory}
-            className="group flex items-center space-x-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="group flex items-center space-x-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-semibold">New Category</span>
@@ -259,12 +259,12 @@ export default function ProductCategoriesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
             />
           </div>
           <button
             onClick={handleSearch}
-            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+            className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg font-medium"
           >
             Search
           </button>
@@ -302,7 +302,7 @@ export default function ProductCategoriesPage() {
               </p>
               <button
                 onClick={handleCreateCategory}
-                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-8 py-4 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg"
+                className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-8 py-4 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg"
               >
                 Create Your First Category
               </button>

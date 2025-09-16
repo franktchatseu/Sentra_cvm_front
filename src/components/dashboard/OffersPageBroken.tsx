@@ -115,7 +115,7 @@ export default function OffersPage() {
 
   const getStatusBadge = (status: LifecycleStatus) => {
     const statusConfig = {
-      active: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
+      active: { color: 'bg-[#1a3d2e]/10 text-[#1a3d2e]', icon: CheckCircle },
       draft: { color: 'bg-gray-100 text-gray-800', icon: Edit },
       expired: { color: 'bg-red-100 text-red-800', icon: XCircle },
       paused: { color: 'bg-yellow-100 text-yellow-800', icon: Pause },
@@ -148,7 +148,7 @@ export default function OffersPage() {
             </div>
             <button
               onClick={() => navigate('/dashboard/offers/create')}
-              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+              className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
               Create Offer
@@ -169,7 +169,7 @@ export default function OffersPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function OffersPage() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value as LifecycleStatus | 'all')}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -195,7 +195,7 @@ export default function OffersPage() {
               <select
                 value={selectedApproval}
                 onChange={(e) => setSelectedApproval(e.target.value as ApprovalStatus | 'all')}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
               >
                 <option value="all">All Approval</option>
                 <option value="pending">Pending</option>
@@ -207,7 +207,7 @@ export default function OffersPage() {
             {/* Search Button */}
             <button
               onClick={handleSearch}
-              className="px-6 py-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200 flex items-center gap-2"
+              className="px-6 py-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200 flex items-center gap-2"
             >
               <Filter className="w-5 h-5" />
               Filter
@@ -290,7 +290,7 @@ export default function OffersPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                            offer.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
+                            offer.approval_status === 'approved' ? 'bg-[#1a3d2e]/10 text-[#1a3d2e]' :
                             offer.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
                             'bg-yellow-100 text-yellow-800'
                           }`}>
@@ -394,7 +394,7 @@ export default function OffersPage() {
                 <p className="text-gray-500 mb-6">Get started by creating your first offer</p>
                 <button
                   onClick={() => navigate('/dashboard/offers/create')}
-                  className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
+                  className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
                 >
                   <Plus className="w-5 h-5" />
                   Create Your First Offer
@@ -449,7 +449,7 @@ export default function OffersPage() {
                   <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200" title="View Details">
                     <Eye className="w-4 h-4" />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-purple-600 transition-colors duration-200" title="Edit">
+                  <button className="p-2 text-gray-400 hover:text-[#1a3d2e] transition-colors duration-200" title="Edit">
                     <Edit className="w-4 h-4" />
                   </button>
                   <button className="p-2 text-gray-400 hover:text-emerald-600 transition-colors duration-200" title="Duplicate">
@@ -473,7 +473,7 @@ export default function OffersPage() {
           <p className="text-gray-600 mb-6">Create your first offer to start engaging with customers</p>
           <button 
             onClick={() => navigate('/dashboard/offers/create')}
-            className="inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create Your First Offer

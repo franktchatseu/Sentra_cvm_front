@@ -85,7 +85,7 @@ export default function CampaignsPage() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      active: 'bg-emerald-100 text-emerald-800',
+      active: 'bg-[#1a3d2e]/10 text-[#1a3d2e]',
       scheduled: 'bg-yellow-100 text-yellow-800',
       paused: 'bg-gray-100 text-gray-800',
       completed: 'bg-blue-100 text-blue-800'
@@ -105,7 +105,7 @@ export default function CampaignsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Campaigns</h1>
           <p className="text-gray-600 mt-2">Manage and monitor your customer engagement campaigns</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
+        <button className="inline-flex items-center px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
           <Plus className="h-5 w-5 mr-2" />
           Create Campaign
         </button>
@@ -138,7 +138,7 @@ export default function CampaignsPage() {
               <input
                 type="text"
                 placeholder="Search campaigns..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               />
             </div>
             <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
@@ -205,7 +205,7 @@ export default function CampaignsPage() {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Revenue:</span>
-                          <span className="font-medium text-emerald-600">
+                          <span className="font-medium text-[#1a3d2e]">
                             ${campaign.performance.revenue.toLocaleString()}
                           </span>
                         </div>
@@ -229,7 +229,7 @@ export default function CampaignsPage() {
                         <Eye className="w-4 h-4" />
                       </button>
                       {campaign.status === 'paused' ? (
-                        <button className="p-2 text-gray-400 hover:text-emerald-600 transition-colors duration-200" title="Resume">
+                        <button className="p-2 text-gray-400 hover:text-[#1a3d2e] transition-colors duration-200" title="Resume">
                           <Play className="w-4 h-4" />
                         </button>
                       ) : campaign.status === 'active' ? (
@@ -237,7 +237,7 @@ export default function CampaignsPage() {
                           <Pause className="w-4 h-4" />
                         </button>
                       ) : null}
-                      <button className="p-2 text-gray-400 hover:text-purple-600 transition-colors duration-200" title="Edit">
+                      <button className="p-2 text-gray-400 hover:text-[#1a3d2e] transition-colors duration-200" title="Edit">
                         <Edit className="w-4 h-4" />
                       </button>
                       <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">

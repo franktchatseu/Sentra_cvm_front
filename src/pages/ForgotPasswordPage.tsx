@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowRight, CheckCircle, ArrowLeft, Zap, Shield, Lock } from 'lucide-react';
+import { Mail, ArrowRight, CheckCircle, ArrowLeft, Shield, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AnimatedButton from '../components/ui/AnimatedButton';
 import AnimatedInput from '../components/ui/AnimatedInput';
@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
           <div className="space-y-4">
             <Link
               to="/login"
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
+              className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1a3d2e] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
             >
               Back to Login
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -108,12 +108,12 @@ export default function ForgotPasswordPage() {
       </div>
 
       {/* Left Side - Illustration Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 bg-gradient-to-br from-blue-600 to-blue-700">
+      <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#1a3d2e] to-[#2d5f4e]">
         {/* Decorative floating elements */}
         <div className="absolute top-20 left-20 w-4 h-4 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-        <div className="absolute top-32 right-32 w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-        <div className="absolute bottom-40 left-16 w-5 h-5 bg-amber-400 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-20 right-20 w-4 h-4 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+        <div className="absolute top-32 right-32 w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-40 left-16 w-5 h-5 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-20 right-20 w-4 h-4 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
         
         {/* Main illustration area */}
         <div className="relative">
@@ -122,8 +122,8 @@ export default function ForgotPasswordPage() {
             {/* Main security card */}
             <div className="bg-white rounded-2xl p-8 shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-500 mb-4 w-80">
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-8 h-8 text-blue-600" />
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-emerald-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Secure Reset</h3>
                 <p className="text-gray-600 text-sm mb-6">
@@ -172,7 +172,7 @@ export default function ForgotPasswordPage() {
             <br />
             <span className="text-yellow-300">Recovery</span>
           </h1>
-          <p className="text-blue-100 text-lg font-light max-w-sm">
+          <p className="text-emerald-100 text-lg font-light max-w-sm">
             Reset your password safely with our secure
             email verification process
           </p>
@@ -185,20 +185,17 @@ export default function ForgotPasswordPage() {
           {/* Enhanced Header - Mobile Only */}
           <div className="text-center mb-10 lg:hidden">
             <div className="flex items-center justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur-lg opacity-30 animate-pulse"></div>
-                <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-110 hover:rotate-3">
-                  <Zap className="w-10 h-10 text-white" />
-                </div>
+              <div className="w-24 h-24 flex items-center justify-center">
+                <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-full h-full object-contain" />
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
             <p className="text-slate-600 text-lg font-medium">Enter your email to receive reset instructions</p>
           </div>
           
           {/* Desktop Header */}
           <div className="text-center mb-10 hidden lg:block">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
             <p className="text-slate-600 text-base font-medium">Enter your email to receive reset instructions</p>
           </div>
 
@@ -263,7 +260,7 @@ export default function ForgotPasswordPage() {
             {/* Enhanced Security Badge */}
             <div className="flex items-center justify-center mt-8 text-sm text-slate-500 group">
               <div className="flex items-center bg-slate-50/80 px-4 py-2 rounded-full border border-slate-200/50 transition-all duration-300 group-hover:bg-slate-100/80 group-hover:border-slate-300/50">
-                <Shield className="w-4 h-4 mr-2 text-slate-600 group-hover:text-blue-600 transition-colors duration-300" />
+                <Shield className="w-4 h-4 mr-2 text-slate-600 group-hover:text-emerald-600 transition-colors duration-300" />
                 <span className="font-medium">Secure password recovery process</span>
               </div>
             </div>

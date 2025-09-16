@@ -246,7 +246,7 @@ export default function UserManagementPage() {
               setSelectedUser(null);
               setIsModalOpen(true);
             }}
-            className="group flex items-center justify-center space-x-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 md:px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
+            className="group flex items-center justify-center space-x-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-4 md:px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
           >
             <Plus className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             <span className="font-semibold">Add User</span>
@@ -297,7 +297,7 @@ export default function UserManagementPage() {
                 placeholder={`Search ${activeTab}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
               />
             </div>
             
@@ -306,7 +306,7 @@ export default function UserManagementPage() {
                 <select
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value as any)}
-                  className="px-3 md:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white text-sm md:text-base"
+                  className="px-3 md:px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 bg-gray-50 focus:bg-white text-sm md:text-base"
                 >
                   <option value="all">All Roles</option>
                   <option value="admin">Admin</option>
@@ -316,7 +316,7 @@ export default function UserManagementPage() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="px-3 md:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white text-sm md:text-base"
+                  className="px-3 md:px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 bg-gray-50 focus:bg-white text-sm md:text-base"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>

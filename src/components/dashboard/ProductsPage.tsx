@@ -135,14 +135,14 @@ export default function ProductsPage() {
         <div className="flex gap-3">
           <button
             onClick={() => navigate('/dashboard/products/categories')}
-            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+            className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
           >
             <Settings className="w-5 h-5" />
             Categories
           </button>
           <button
             onClick={() => navigate('/dashboard/products/create')}
-            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+            className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Create Product
@@ -161,7 +161,7 @@ export default function ProductsPage() {
                 placeholder="Search products..."
                 value={filters.search || ''}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
               />
             </div>
 
@@ -169,7 +169,7 @@ export default function ProductsPage() {
             <select
               value={filters.categoryId || ''}
               onChange={(e) => handleFilterChange('categoryId', e.target.value ? Number(e.target.value) : undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
             >
               <option value="">All Categories</option>
               {categories.map((category) => (
@@ -183,7 +183,7 @@ export default function ProductsPage() {
             <select
               value={filters.isActive === undefined ? '' : filters.isActive.toString()}
               onChange={(e) => handleFilterChange('isActive', e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
             >
               <option value="">All Status</option>
               <option value="true">Active</option>
@@ -197,7 +197,7 @@ export default function ProductsPage() {
                 const [sortBy, sortDirection] = e.target.value.split('-');
                 setFilters({ ...filters, sortBy, sortDirection: sortDirection as 'ASC' | 'DESC' });
               }}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
             >
               <option value="created_at-DESC">Newest First</option>
               <option value="created_at-ASC">Oldest First</option>
@@ -263,7 +263,7 @@ export default function ProductsPage() {
             <p className="text-gray-500 mb-6">Get started by creating your first product.</p>
             <button
               onClick={() => navigate('/dashboard/products/create')}
-              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
+              className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
             >
               <Plus className="w-5 h-5" />
               Create Product

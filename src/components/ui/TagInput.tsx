@@ -66,7 +66,7 @@ export default function TagInput({
       <div
         className={`
           min-h-[42px] w-full px-3 py-2 border rounded-lg bg-white
-          transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent
+          transition-all duration-200 focus-within:border-blue-500
           ${error ? 'border-red-300' : 'border-gray-300'}
           ${disabled ? 'bg-gray-50 cursor-not-allowed' : 'cursor-text'}
         `}

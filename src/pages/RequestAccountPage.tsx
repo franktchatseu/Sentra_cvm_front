@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Mail, Building, Phone, MessageSquare, ArrowRight, CheckCircle, Zap, Target, Award, Briefcase, Users } from 'lucide-react';
+import { User, Mail, Building, Phone, MessageSquare, ArrowRight, CheckCircle, Target, Award, Briefcase, Users } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -48,12 +48,13 @@ export default function RequestAccountPage() {
       });
       
       setIsSubmitted(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Account request failed:', error);
       
-      if (error.message?.includes('Email already exists')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('Email already exists')) {
         setError('An account with this email already exists. Please try logging in or use a different email.');
-      } else if (error.message?.includes('Invalid email')) {
+      } else if (errorMessage.includes('Invalid email')) {
         setError('Please provide a valid business email address.');
       } else {
         setError('Failed to submit account request. Please try again or contact support.');
@@ -77,7 +78,7 @@ export default function RequestAccountPage() {
           </p>
           <Link
             to="/landing"
-            className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1a3d2e] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
           >
             Back to Home
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -88,30 +89,35 @@ export default function RequestAccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100 flex relative overflow-hidden">
       {/* Enhanced Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-500/15 to-indigo-600/15 rounded-full blur-3xl" style={{animation: 'animate-float 8s ease-in-out infinite'}} />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-indigo-500/15 to-purple-600/15 rounded-full blur-3xl" style={{animation: 'animate-float-delayed 10s ease-in-out infinite'}} />
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 rounded-full blur-2xl" style={{animation: 'animate-pulse-slow 6s ease-in-out infinite'}} />
-        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-gradient-to-br from-violet-400/8 to-indigo-500/8 rounded-full blur-2xl" style={{animation: 'animate-float 12s ease-in-out infinite reverse'}} />
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-green-500/15 to-emerald-600/15 rounded-full blur-3xl" style={{animation: 'animate-float 8s ease-in-out infinite'}} />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-emerald-500/15 to-teal-600/15 rounded-full blur-3xl" style={{animation: 'animate-float-delayed 10s ease-in-out infinite'}} />
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-emerald-400/10 to-green-500/10 rounded-full blur-2xl" style={{animation: 'animate-pulse-slow 6s ease-in-out infinite'}} />
+        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-gradient-to-br from-teal-400/8 to-emerald-500/8 rounded-full blur-2xl" style={{animation: 'animate-float 12s ease-in-out infinite reverse'}} />
       </div>
 
       {/* Left Side - Illustration Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 bg-gradient-to-br from-indigo-600 to-purple-700">
+      <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#1a3d2e] to-[#2d5f4e]">
         {/* Decorative floating elements */}
         <div className="absolute top-20 left-20 w-4 h-4 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-        <div className="absolute top-32 right-32 w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-        <div className="absolute bottom-40 left-16 w-5 h-5 bg-amber-400 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-20 right-20 w-4 h-4 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
-        <div className="absolute top-1/2 left-10 w-3 h-3 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
+        <div className="absolute top-32 right-32 w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-40 left-16 w-5 h-5 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-20 right-20 w-4 h-4 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+        <div className="absolute top-1/2 left-10 w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
         
         {/* Main illustration area */}
-        <div className="relative">
+        <div className="relative w-full h-full flex flex-col items-center justify-center">
           {/* Success metrics cards */}
-          <div className="relative">
+          <div className="relative flex items-center justify-center space-x-8">
             {/* Main card */}
-            <div className="bg-white rounded-2xl p-6 shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-500 mb-4 w-80">
+            <div 
+              className="bg-white rounded-2xl p-6 shadow-2xl transform rotate-3 hover:rotate-0 transition-all duration-500 w-64"
+              style={{
+                animation: 'card-wave-1 8s ease-in-out infinite'
+              }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -148,7 +154,13 @@ export default function RequestAccountPage() {
             </div>
             
             {/* Secondary card */}
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 shadow-2xl transform -rotate-3 hover:rotate-0 transition-all duration-500 absolute -top-4 -right-8 w-48">
+            <div 
+              className="bg-gradient-to-r from-amber-600 to-amber-700 rounded-2xl p-6 shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 w-48"
+              style={{
+                animation: 'card-wave-2 8s ease-in-out infinite',
+                animationDelay: '1.5s'
+              }}
+            >
               <div className="text-white">
                 <Briefcase className="w-8 h-8 mb-2" />
                 <div className="text-xl font-bold">2,847</div>
@@ -173,10 +185,16 @@ export default function RequestAccountPage() {
             </div>
             
             {/* Third card */}
-            <div className="bg-white rounded-2xl p-4 shadow-xl transform rotate-1 hover:rotate-0 transition-all duration-500 absolute -bottom-6 -left-6 w-56">
+            <div 
+              className="bg-white rounded-2xl p-4 shadow-xl transform rotate-1 hover:rotate-0 transition-all duration-500 w-56"
+              style={{
+                animation: 'card-wave-3 8s ease-in-out infinite',
+                animationDelay: '3s'
+              }}
+            >
               <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Users className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <Users className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
                   <div className="font-semibold text-gray-800">Team Growth</div>
@@ -191,13 +209,13 @@ export default function RequestAccountPage() {
                   <span className="font-semibold text-gray-800">+127</span>
                 </div>
                 <div className="flex space-x-1">
-                  <div className="w-2 h-6 bg-purple-200 rounded-sm"></div>
-                  <div className="w-2 h-10 bg-purple-400 rounded-sm"></div>
-                  <div className="w-2 h-4 bg-purple-300 rounded-sm"></div>
-                  <div className="w-2 h-12 bg-purple-500 rounded-sm"></div>
-                  <div className="w-2 h-8 bg-purple-400 rounded-sm"></div>
-                  <div className="w-2 h-14 bg-purple-600 rounded-sm"></div>
-                  <div className="w-2 h-10 bg-purple-500 rounded-sm"></div>
+                  <div className="w-2 h-6 bg-emerald-200 rounded-sm"></div>
+                  <div className="w-2 h-10 bg-emerald-400 rounded-sm"></div>
+                  <div className="w-2 h-4 bg-emerald-300 rounded-sm"></div>
+                  <div className="w-2 h-12 bg-emerald-500 rounded-sm"></div>
+                  <div className="w-2 h-8 bg-emerald-400 rounded-sm"></div>
+                  <div className="w-2 h-14 bg-emerald-600 rounded-sm"></div>
+                  <div className="w-2 h-10 bg-emerald-500 rounded-sm"></div>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Jan</span>
@@ -209,13 +227,13 @@ export default function RequestAccountPage() {
         </div>
         
         {/* Title and description */}
-        <div className="text-center text-white mt-16">
+        <div className="text-center text-white mt-5">
           <h1 className="text-4xl font-bold mb-4">
             Join Thousands of
             <br />
             <span className="text-amber-300">CVM Professionals</span>
           </h1>
-          <p className="text-indigo-100 text-lg font-light max-w-sm">
+          <p className="text-emerald-100 text-lg font-light max-w-sm">
             Get approved in under 24 hours and start
             transforming your customer experience
           </p>
@@ -230,12 +248,12 @@ export default function RequestAccountPage() {
       </div>
 
       {/* Right Side - Form Section */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-12 relative z-10">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-12 relative z-10 bg-white lg:bg-neutral-100">
         <div className={`w-full max-w-lg transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           {/* Header - Mobile Only */}
           <div className="text-center mb-8 lg:hidden">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-4">
-              <Zap className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
+              <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Request Account Access</h1>
             <p className="text-gray-600">
@@ -277,7 +295,7 @@ export default function RequestAccountPage() {
                     type="text"
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
                     placeholder="John"
                     required
                   />
@@ -293,7 +311,7 @@ export default function RequestAccountPage() {
                   type="text"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="Doe"
                   required
                 />
@@ -315,7 +333,7 @@ export default function RequestAccountPage() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="john.doe@company.com"
                   required
                 />
@@ -338,7 +356,7 @@ export default function RequestAccountPage() {
                     type="text"
                     value={formData.company}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
                     placeholder="Acme Corp"
                     required
                   />
@@ -358,7 +376,7 @@ export default function RequestAccountPage() {
                     type="tel"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -375,7 +393,7 @@ export default function RequestAccountPage() {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
                 required
               >
                 <option value="">Select your role</option>
@@ -404,7 +422,7 @@ export default function RequestAccountPage() {
                   rows={4}
                   value={formData.message}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
                   placeholder="Tell us about your use case or any specific requirements..."
                 />
               </div>
@@ -414,7 +432,7 @@ export default function RequestAccountPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+              className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1a3d2e] hover:bg-[#2d5f4e] focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
             >
               {isLoading ? (
                 <LoadingSpinner size="sm" color="white" />
@@ -433,7 +451,7 @@ export default function RequestAccountPage() {
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
+                className="font-medium text-[#1a3d2e] hover:text-[#2d5f4e] transition-colors duration-200"
               >
                 Sign in here
               </Link>

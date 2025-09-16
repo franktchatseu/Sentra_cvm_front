@@ -44,7 +44,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
     <div className="space-y-6">
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Gift className="w-8 h-8 text-indigo-600" />
+          <Gift className="w-8 h-8 text-[#1a3d2e]" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
         <p className="text-gray-600">Let's start with the essential details of your offer</p>
@@ -60,7 +60,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Summer Data Bundle"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             required
           />
         </div>
@@ -74,7 +74,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this offer provides to customers..."
             rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
           />
         </div>
 
@@ -85,7 +85,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
           <select
             value={formData.category_id || ''}
             onChange={(e) => setFormData({ ...formData, category_id: e.target.value ? Number(e.target.value) : undefined })}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
           >
             <option value="">Select category</option>
             <option value="1">Data</option>
@@ -100,7 +100,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
         <button
           onClick={handleNext}
           disabled={!formData.name.trim()}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -151,7 +151,7 @@ function EligibilityStep({ currentStep, totalSteps, onNext, onPrev, formData, se
     <div className="space-y-6">
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Target className="w-8 h-8 text-purple-600" />
+          <Target className="w-8 h-8 text-[#1a3d2e]" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Eligibility Rules</h2>
         <p className="text-gray-600">Define who can access this offer and when</p>
@@ -174,7 +174,7 @@ function EligibilityStep({ currentStep, totalSteps, onNext, onPrev, formData, se
                 ...prev,
                 min_spend: parseFloat(e.target.value) || 0
               }))}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
               placeholder="0.00"
             />
           </div>
@@ -242,7 +242,7 @@ function EligibilityStep({ currentStep, totalSteps, onNext, onPrev, formData, se
         </button>
         <button
           onClick={handleNext}
-          className="px-6 py-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all shadow-lg flex items-center gap-2"
+          className="px-6 py-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-lg transition-all shadow-lg flex items-center gap-2"
         >
           Next
           <ChevronRight className="w-4 h-4" />
@@ -294,7 +294,7 @@ function ProductStep({ currentStep, totalSteps, onNext, onPrev, formData, setFor
         </button>
         <button
           onClick={handleNext}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -425,7 +425,7 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <>
@@ -474,7 +474,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_spend || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_spend: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             />
           </div>
 
@@ -485,7 +485,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
             <select
               value={eligibilityRules.customer_tier || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, customer_tier: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             >
               <option value="">Any tier</option>
               <option value="bronze">Bronze</option>
@@ -506,7 +506,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_account_age_days || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_account_age_days: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             />
           </div>
 
@@ -519,7 +519,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_purchase_count || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_purchase_count: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             />
           </div>
         </div>
@@ -533,7 +533,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               type="date"
               value={eligibilityRules.valid_from || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_from: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             />
           </div>
 
@@ -545,7 +545,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               type="date"
               value={eligibilityRules.valid_to || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_to: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             />
           </div>
         </div>
@@ -559,7 +559,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
             value={eligibilityRules.max_usage_per_customer || ''}
             onChange={(e) => setEligibilityRules({ ...eligibilityRules, max_usage_per_customer: e.target.value ? Number(e.target.value) : undefined })}
             placeholder="Unlimited"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
           />
         </div>
 
@@ -569,7 +569,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
             id="combinable"
             checked={eligibilityRules.combinable_with_other_offers || false}
             onChange={(e) => setEligibilityRules({ ...eligibilityRules, combinable_with_other_offers: e.target.checked })}
-            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
           />
           <label htmlFor="combinable" className="ml-2 text-sm text-gray-700">
             Can be combined with other offers
@@ -587,7 +587,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
         </button>
         <button
           onClick={handleNext}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -622,7 +622,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
             <select
               value={formData.lifecycle_status}
               onChange={(e) => setFormData({ ...formData, lifecycle_status: e.target.value as LifecycleStatus })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             >
               <option value="draft">Draft</option>
               <option value="active">Active</option>
@@ -637,7 +637,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
             <select
               value={formData.approval_status}
               onChange={(e) => setFormData({ ...formData, approval_status: e.target.value as ApprovalStatus })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
             >
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
@@ -652,7 +652,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
               id="reusable"
               checked={formData.reusable}
               onChange={(e) => setFormData({ ...formData, reusable: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
             />
             <label htmlFor="reusable" className="ml-2 text-sm text-gray-700">
               Reusable across multiple campaigns
@@ -665,7 +665,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
               id="multiLanguage"
               checked={formData.multi_language}
               onChange={(e) => setFormData({ ...formData, multi_language: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
             />
             <label htmlFor="multiLanguage" className="ml-2 text-sm text-gray-700">
               Multi-language support
@@ -714,7 +714,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <>

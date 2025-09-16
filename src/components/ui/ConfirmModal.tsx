@@ -41,7 +41,7 @@ const typeConfig = {
     iconColor: 'text-blue-500',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
-    confirmButtonColor: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+    confirmButtonColor: 'bg-blue-600 hover:bg-blue-700 focus:outline-none',
   },
 };
 
@@ -142,13 +142,13 @@ export default function ConfirmModal({
           <div className="px-6 pb-6 flex space-x-3 justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors"
             >
               {cancelText}
             </button>
             <button
               onClick={handleConfirm}
-              className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${config.confirmButtonColor}`}
+              className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none transition-colors ${config.confirmButtonColor}`}
             >
               {confirmText}
             </button>

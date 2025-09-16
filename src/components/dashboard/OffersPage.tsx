@@ -160,7 +160,7 @@ export default function OffersPage() {
         </div>
         <button 
           onClick={() => navigate('/dashboard/offers/create')}
-          className="inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
+          className="inline-flex items-center px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
         >
           <Plus className="h-5 w-5 mr-2" />
           Create Offer
@@ -243,13 +243,13 @@ export default function OffersPage() {
                 placeholder="Search offers..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 w-64"
               />
             </div>
             <select
               value={selectedStatus}
               onChange={(e) => handleStatusFilter(e.target.value as LifecycleStatus | 'all')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500"
             >
               <option value="all">All Status</option>
               <option value="draft">Draft</option>
@@ -261,7 +261,7 @@ export default function OffersPage() {
             <select
               value={selectedApproval}
               onChange={(e) => handleApprovalFilter(e.target.value as ApprovalStatus | 'all')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500"
             >
               <option value="all">All Approval</option>
               <option value="pending">Pending</option>
@@ -292,7 +292,7 @@ export default function OffersPage() {
               <p className="text-gray-600">No offers found</p>
               <button 
                 onClick={() => navigate('/dashboard/offers/create')}
-                className="mt-4 inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
+                className="mt-4 inline-flex items-center px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Create Your First Offer

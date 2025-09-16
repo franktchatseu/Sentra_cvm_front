@@ -13,14 +13,15 @@ import {
   Eye,
   ChevronRight,
   Grid3X3,
-  List
+  List,
+  Cog
 } from 'lucide-react';
 
 interface ConfigurationItem {
   id: string;
   name: string;
   description: string;
-  type: 'campaign' | 'offer' | 'product' | 'segment' | 'user';
+  type: 'campaign' | 'offer' | 'product' | 'segment' | 'user' | 'config';
   category: string;
   subConfigs?: string[];
   lastModified: string;
@@ -117,7 +118,20 @@ export default function ConfigurationPage() {
         icon: Settings,
         color: 'purple',
         gradient: 'from-purple-500 to-indigo-600'
-      }
+      },
+      // {
+      //   id: 'config-1',
+      //   name: 'System Configuration',
+      //   description: 'Global system settings and configuration parameters',
+      //   type: 'config',
+      //   category: 'System',
+      //   subConfigs: ['API Settings', 'Email Templates', 'Notification Rules', 'System Preferences'],
+      //   lastModified: '2025-01-14',
+      //   status: 'active',
+      //   icon: Cog,
+      //   color: 'slate',
+      //   gradient: 'from-slate-500 to-gray-600'
+      // }
     ];
 
     // Simulate API call
@@ -133,7 +147,8 @@ export default function ConfigurationPage() {
     { id: 'offer', name: 'Offer', count: configurations.filter(c => c.type === 'offer').length },
     { id: 'product', name: 'Product', count: configurations.filter(c => c.type === 'product').length },
     { id: 'segment', name: 'Segment', count: configurations.filter(c => c.type === 'segment').length },
-    { id: 'user', name: 'User', count: configurations.filter(c => c.type === 'user').length }
+    { id: 'user', name: 'User', count: configurations.filter(c => c.type === 'user').length },
+    { id: 'config', name: 'Configuration', count: configurations.filter(c => c.type === 'config').length }
   ];
 
   const filteredConfigurations = configurations.filter(config => {
@@ -157,8 +172,7 @@ export default function ConfigurationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="space-y-6">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
@@ -173,13 +187,11 @@ export default function ConfigurationPage() {
             </div>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 px-4 sm:px-6 lg:px-8 py-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="space-y-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
@@ -198,7 +210,7 @@ export default function ConfigurationPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-6 mb-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 py-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
@@ -208,7 +220,7 @@ export default function ConfigurationPage() {
                 placeholder="Search configurations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
               />
             </div>
 
@@ -240,17 +252,19 @@ export default function ConfigurationPage() {
           {/* Category Filters */}
           <div className="flex flex-wrap gap-2 mt-6">
             {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  selectedCategory === category.id
-                    ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-                }`}
-              >
-                {category.name} ({category.count})
-              </button>
+              category.id !== 'config' && (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    selectedCategory === category.id
+                      ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                  }`}
+                >
+                  {category.name} ({category.count})
+                </button>
+              )
             ))}
           </div>
         </div>
@@ -260,7 +274,7 @@ export default function ConfigurationPage() {
           <p className="text-slate-600">
             Showing {filteredConfigurations.length} of {configurations.length} configurations
           </p>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200 hover:scale-105">
+          <button className="flex items-center space-x-2 px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200 hover:scale-105">
             <Plus className="h-4 w-4" />
             <span>Add Configuration</span>
           </button>
@@ -419,12 +433,11 @@ export default function ConfigurationPage() {
             <p className="text-slate-600 mb-6">
               {searchTerm ? 'Try adjusting your search terms' : 'No configurations match the selected category'}
             </p>
-            <button className="px-6 py-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200">
+            <button className="px-6 py-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200">
               Clear Filters
             </button>
           </div>
         )}
-      </div>
     </div>
   );
 }

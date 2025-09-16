@@ -83,17 +83,17 @@ export default function AnimatedInput({
   const variantClasses = {
     default: `
       bg-secondary-50 border-secondary-300 text-secondary-900 placeholder-secondary-500
-      focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
+      focus:bg-white focus:border-primary-500
       hover:border-secondary-400 hover:bg-white
-      ${error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/20' : ''}
-      ${success ? 'border-success-500 focus:border-success-500 focus:ring-success-500/20' : ''}
+      ${error ? 'border-error-500 focus:border-error-500' : ''}
+      ${success ? 'border-success-500 focus:border-success-500' : ''}
     `,
     floating: `
       bg-transparent border-secondary-300 text-secondary-900 placeholder-transparent
-      focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
+      focus:border-primary-500
       hover:border-secondary-400
-      ${error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/20' : ''}
-      ${success ? 'border-success-500 focus:border-success-500 focus:ring-success-500/20' : ''}
+      ${error ? 'border-error-500 focus:border-error-500' : ''}
+      ${success ? 'border-success-500 focus:border-success-500' : ''}
     `,
     minimal: `
       bg-transparent border-0 border-b-2 border-secondary-300 rounded-none text-secondary-900

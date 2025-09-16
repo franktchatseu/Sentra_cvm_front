@@ -274,7 +274,7 @@ export default function CreateOfferPage() {
                       type="checkbox"
                       checked={formData.reusable}
                       onChange={(e) => setFormData({ ...formData, reusable: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:outline-none border-gray-300 rounded"
                     />
                     <span className="text-sm font-medium text-gray-700">Reusable Offer</span>
                   </label>
@@ -287,7 +287,7 @@ export default function CreateOfferPage() {
                       type="checkbox"
                       checked={formData.multi_language}
                       onChange={(e) => setFormData({ ...formData, multi_language: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:outline-none border-gray-300 rounded"
                     />
                     <span className="text-sm font-medium text-gray-700">Multi-language Support</span>
                   </label>

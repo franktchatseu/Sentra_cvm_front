@@ -35,20 +35,16 @@ export default function AnimatedButton({
   const baseClasses = `
     relative inline-flex items-center justify-center font-semibold rounded-xl
     transition-all duration-300 ease-smooth focus-visible:outline-none 
-    focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none 
-    disabled:opacity-50 overflow-hidden group transform-gpu
+    disabled:pointer-events-none disabled:opacity-50 overflow-hidden group transform-gpu
     ${fullWidth ? 'w-full' : ''}
-    ${isPressed ? 'scale-95' : 'hover:scale-105'}
+    ${isPressed ? 'scale-95' : 'hover:animate-bounce-slow'}
     ${className}
   `;
 
   const variantClasses = {
     primary: `
-      bg-[#3b8169] text-white 
-      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-[#3b8169]
-      before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent 
-      before:via-white/20 before:to-transparent before:translate-x-[-100%] 
-      hover:before:translate-x-[100%] before:transition-transform before:duration-700
+      bg-[#1a3d2e] text-white 
+      shadow-lg hover:shadow-xl hover:shadow-[#1a3d2e]/25 focus-visible:ring-[#1a3d2e]
       ${glowEffect ? 'hover:shadow-glow' : ''}
     `,
     secondary: `
@@ -61,7 +57,7 @@ export default function AnimatedButton({
       hover:text-secondary-900 focus-visible:ring-secondary-500
     `,
     success: `
-      bg-[#3b8169] text-white 
+      bg-[#1a3d2e] text-white 
       shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-[#3b8169]
     `,
     warning: `
@@ -112,10 +108,6 @@ export default function AnimatedButton({
         )}
       </span>
       
-      {/* Ripple effect */}
-      <div className="absolute inset-0 overflow-hidden rounded-xl">
-        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-      </div>
     </button>
   );
 }

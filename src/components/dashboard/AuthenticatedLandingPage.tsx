@@ -8,7 +8,7 @@ import {
   Zap, 
   Filter, 
   MessageSquare, 
-  
+  Settings,
   LogOut
 } from 'lucide-react';
 import { CoreModule, CoreModuleCategory } from '../../types/coreModule';
@@ -90,6 +90,15 @@ export default function AuthenticatedLandingPage() {
           icon: 'message-square',
           path: '/dashboard/engagement',
           category: 'execution'
+        },
+        {
+          id: 'config',
+          code: 'Config',
+          name: 'Sentra Config (Configuration Management)',
+          description: 'System-wide configuration management for all platform modules and settings.',
+          icon: 'settings',
+          path: '/dashboard/configuration',
+          category: 'execution'
         }
       ]
     }
@@ -102,7 +111,8 @@ export default function AuthenticatedLandingPage() {
       users: Users,
       zap: Zap,
       filter: Filter,
-      'message-square': MessageSquare
+      'message-square': MessageSquare,
+      settings: Settings
     };
     return iconMap[iconName] || Target;
   };
@@ -291,6 +301,8 @@ export default function AuthenticatedLandingPage() {
                 <div className={`grid gap-4 sm:gap-6 lg:gap-8 ${
                   category.modules.length === 4 
                     ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' 
+                    : category.modules.length === 3
+                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                     : 'grid-cols-1 sm:grid-cols-2'
                 }`}>
                   {category.modules.map((module, moduleIndex) => {
