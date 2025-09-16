@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Plus, Trash2, Copy } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { 
   SegmentCondition, 
   SegmentConditionGroup, 
   SEGMENT_FIELDS, 
   OPERATOR_LABELS 
 } from '../../types/segment';
+import ListUpload from './ListUpload';
 
 interface SegmentConditionsBuilderProps {
   conditions: SegmentConditionGroup[];
@@ -22,6 +22,7 @@ export default function SegmentConditionsBuilder({
     const newGroup: SegmentConditionGroup = {
       id: generateId(),
       operator: 'AND',
+      conditionType: 'rule',
       conditions: [{
         id: generateId(),
         field: SEGMENT_FIELDS[0].key,
@@ -149,17 +150,37 @@ export default function SegmentConditionsBuilder({
                   AND
                 </span>
               )}
-              <select
-                value={group.operator}
-                onChange={(e) => updateConditionGroup(group.id, { operator: e.target.value as 'AND' | 'OR' })}
-                className="px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="AND">AND</option>
-                <option value="OR">OR</option>
-              </select>
-              <span className="text-sm text-gray-600">
-                {group.conditions.length} condition{group.conditions.length !== 1 ? 's' : ''}
-              </span>
+              
+              {/* Condition Type Selection */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700">Type:</label>
+                <select
+                  value={group.conditionType}
+                  onChange={(e) => updateConditionGroup(group.id, { conditionType: e.target.value as 'rule' | 'list' | 'segments' | '360' })}
+                  className="px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="rule">Rule</option>
+                  <option value="list">List</option>
+                  <option value="segments">Segments</option>
+                  <option value="360">360 Profile</option>
+                </select>
+              </div>
+
+              {group.conditionType === 'rule' && (
+                <>
+                  <select
+                    value={group.operator}
+                    onChange={(e) => updateConditionGroup(group.id, { operator: e.target.value as 'AND' | 'OR' })}
+                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                  </select>
+                  <span className="text-sm text-gray-600">
+                    {group.conditions.length} condition{group.conditions.length !== 1 ? 's' : ''}
+                  </span>
+                </>
+              )}
             </div>
             <button
               onClick={() => removeConditionGroup(group.id)}
@@ -170,75 +191,120 @@ export default function SegmentConditionsBuilder({
             </button>
           </div>
 
-          {/* Conditions */}
-          <div className="space-y-3">
-            {group.conditions.map((condition, conditionIndex) => (
-              <div key={condition.id} className="flex items-center space-x-3 bg-white p-3 rounded border">
-                {conditionIndex > 0 && (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                    {group.operator}
-                  </span>
-                )}
-                
-                {/* Field Selection */}
-                <select
-                  value={condition.field}
-                  onChange={(e) => {
-                    const fieldType = getFieldType(e.target.value);
-                    const availableOperators = getAvailableOperators(e.target.value);
-                    updateCondition(group.id, condition.id, {
-                      field: e.target.value,
-                      operator: availableOperators[0] as any,
-                      type: fieldType,
-                      value: fieldType === 'number' ? 0 : ''
-                    });
-                  }}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
-                >
-                  {SEGMENT_FIELDS.map(field => (
-                    <option key={field.key} value={field.key}>
-                      {field.label}
-                    </option>
-                  ))}
-                </select>
+          {/* Condition Content */}
+          {group.conditionType === 'rule' && (
+            <div className="space-y-3">
+              {group.conditions.map((condition, conditionIndex) => (
+                <div key={condition.id} className="flex items-center space-x-3 bg-white p-3 rounded border">
+                  {conditionIndex > 0 && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                      {group.operator}
+                    </span>
+                  )}
+                  
+                  {/* Field Selection */}
+                  <select
+                    value={condition.field}
+                    onChange={(e) => {
+                      const fieldType = getFieldType(e.target.value);
+                      const availableOperators = getAvailableOperators(e.target.value);
+                      updateCondition(group.id, condition.id, {
+                        field: e.target.value,
+                        operator: availableOperators[0] as any,
+                        type: fieldType,
+                        value: fieldType === 'number' ? 0 : ''
+                      });
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+                  >
+                    {SEGMENT_FIELDS.map(field => (
+                      <option key={field.key} value={field.key}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </select>
 
-                {/* Operator Selection */}
-                <select
-                  value={condition.operator}
-                  onChange={(e) => updateCondition(group.id, condition.id, { operator: e.target.value as any })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {getAvailableOperators(condition.field).map(op => (
-                    <option key={op} value={op}>
-                      {OPERATOR_LABELS[op]}
-                    </option>
-                  ))}
-                </select>
+                  {/* Operator Selection */}
+                  <select
+                    value={condition.operator}
+                    onChange={(e) => updateCondition(group.id, condition.id, { operator: e.target.value as any })}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {getAvailableOperators(condition.field).map(op => (
+                      <option key={op} value={op}>
+                        {OPERATOR_LABELS[op]}
+                      </option>
+                    ))}
+                  </select>
 
-                {/* Value Input */}
-                {renderConditionValue(group.id, condition)}
+                  {/* Value Input */}
+                  {renderConditionValue(group.id, condition)}
 
-                {/* Remove Condition */}
-                <button
-                  onClick={() => removeCondition(group.id, condition.id)}
-                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
-                  title="Remove Condition"
-                  disabled={group.conditions.length === 1}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  {/* Remove Condition */}
+                  <button
+                    onClick={() => removeCondition(group.id, condition.id)}
+                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                    title="Remove Condition"
+                    disabled={group.conditions.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* List Upload Component */}
+          {group.conditionType === 'list' && (
+            <ListUpload
+              listData={group.listData}
+              onListDataChange={(listData) => updateConditionGroup(group.id, { listData })}
+            />
+          )}
+
+          {/* Segments Selection */}
+          {group.conditionType === 'segments' && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="font-medium text-green-900 mb-2">Select Segments</h4>
+              <p className="text-sm text-green-700 mb-3">Choose existing segments to include in this condition group.</p>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                <option value="">Select a segment...</option>
+                {/* This would be populated with actual segments from the backend */}
+              </select>
+            </div>
+          )}
+
+          {/* 360 Profile */}
+          {group.conditionType === '360' && (
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <h4 className="font-medium text-purple-900 mb-2">360 Customer Profile</h4>
+              <p className="text-sm text-purple-700 mb-3">Configure conditions based on comprehensive customer profile data.</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Profile Attribute</label>
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    <option value="">Select profile attribute...</option>
+                    <option value="engagement_score">Engagement Score</option>
+                    <option value="lifetime_value">Lifetime Value</option>
+                    <option value="churn_risk">Churn Risk</option>
+                    <option value="purchase_frequency">Purchase Frequency</option>
+                    <option value="preferred_channel">Preferred Channel</option>
+                  </select>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
-          {/* Add Condition Button */}
-          <button
-            onClick={() => addCondition(group.id)}
-            className="mt-3 inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded transition-colors"
-          >
-            <Plus className="w-3 h-3 mr-1" />
-            Add Condition
-          </button>
+          {/* Add Condition Button - Only show for rule type */}
+          {group.conditionType === 'rule' && (
+            <button
+              onClick={() => addCondition(group.id)}
+              className="mt-3 inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded transition-colors"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Condition
+            </button>
+          )}
         </div>
       ))}
 

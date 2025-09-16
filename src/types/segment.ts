@@ -9,7 +9,20 @@ export interface SegmentCondition {
 export interface SegmentConditionGroup {
   id: string;
   operator: 'AND' | 'OR';
+  conditionType: 'rule' | 'list' | 'segments' | '360';
   conditions: SegmentCondition[];
+  listData?: {
+    list_id?: number;
+    list_description?: string;
+    list_type?: 'seed' | 'and' | 'standard';
+    subscriber_id_col_name?: string;
+    subscriber_count?: number;
+    file_delimiter?: string;
+    file_text?: string;
+    file_path?: string;
+    list_label?: string;
+    list_headers?: string;
+  };
 }
 
 export interface Segment {
