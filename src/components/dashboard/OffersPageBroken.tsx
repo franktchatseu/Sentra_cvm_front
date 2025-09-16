@@ -148,7 +148,7 @@ export default function OffersPage() {
             </div>
             <button
               onClick={() => navigate('/dashboard/offers/create')}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
               Create Offer
@@ -207,7 +207,7 @@ export default function OffersPage() {
             {/* Search Button */}
             <button
               onClick={handleSearch}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2"
+              className="px-6 py-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200 flex items-center gap-2"
             >
               <Filter className="w-5 h-5" />
               Filter
@@ -394,7 +394,7 @@ export default function OffersPage() {
                 <p className="text-gray-500 mb-6">Get started by creating your first offer</p>
                 <button
                   onClick={() => navigate('/dashboard/offers/create')}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
+                  className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
                 >
                   <Plus className="w-5 h-5" />
                   Create Your First Offer
@@ -473,7 +473,7 @@ export default function OffersPage() {
           <p className="text-gray-600 mb-6">Create your first offer to start engaging with customers</p>
           <button 
             onClick={() => navigate('/dashboard/offers/create')}
-            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create Your First Offer

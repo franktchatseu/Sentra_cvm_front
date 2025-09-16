@@ -217,7 +217,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
             <AnimatedButton
               type="submit"
               loading={isLoading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium"
+              className="flex-1 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 font-medium"
             >
               <Save className="w-4 h-4 mr-2" />
               {user ? 'Modifier' : 'Créer'}

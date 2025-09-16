@@ -44,8 +44,8 @@ export default function AnimatedButton({
 
   const variantClasses = {
     primary: `
-      bg-gradient-to-r from-primary-600 via-primary-700 to-accent-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-primary-500/25 focus-visible:ring-primary-500
+      bg-[#3b8169] text-white 
+      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-[#3b8169]
       before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent 
       before:via-white/20 before:to-transparent before:translate-x-[-100%] 
       hover:before:translate-x-[100%] before:transition-transform before:duration-700
@@ -61,8 +61,8 @@ export default function AnimatedButton({
       hover:text-secondary-900 focus-visible:ring-secondary-500
     `,
     success: `
-      bg-gradient-to-r from-success-500 to-success-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-success-500/25 focus-visible:ring-success-500
+      bg-[#3b8169] text-white 
+      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-[#3b8169]
     `,
     warning: `
       bg-gradient-to-r from-warning-500 to-warning-600 text-white 

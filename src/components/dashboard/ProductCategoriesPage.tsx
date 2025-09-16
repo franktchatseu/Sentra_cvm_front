@@ -137,7 +137,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
             <button
               type="submit"
               disabled={isLoading}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white rounded-xl hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+              className="px-8 py-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-xl  transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
@@ -225,9 +225,9 @@ export default function ProductCategoriesPage() {
   );
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-3 mb-2">
@@ -240,7 +240,7 @@ export default function ProductCategoriesPage() {
           </div>
           <button
             onClick={handleCreateCategory}
-            className="group flex items-center space-x-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="group flex items-center space-x-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-semibold">New Category</span>
@@ -249,7 +249,7 @@ export default function ProductCategoriesPage() {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center space-x-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -264,7 +264,7 @@ export default function ProductCategoriesPage() {
           </div>
           <button
             onClick={handleSearch}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg font-medium"
           >
             Search
           </button>
@@ -272,7 +272,7 @@ export default function ProductCategoriesPage() {
       </div>
 
       {/* Categories List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mb-4"></div>
@@ -302,7 +302,7 @@ export default function ProductCategoriesPage() {
               </p>
               <button
                 onClick={handleCreateCategory}
-                className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg"
+                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-8 py-4 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg"
               >
                 Create Your First Category
               </button>

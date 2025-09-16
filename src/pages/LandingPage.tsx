@@ -124,7 +124,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
               <Link
                 to="/request-account"
-                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
+                className="inline-flex items-center px-8 py-4 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
               >
                 Get Started Today
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -247,7 +247,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/request-account"
-              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
+              className="inline-flex items-center px-8 py-4 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
             >
               Start Your Journey
               <ArrowRight className="ml-2 h-5 w-5" />

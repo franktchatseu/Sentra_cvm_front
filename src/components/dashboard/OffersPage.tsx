@@ -160,7 +160,7 @@ export default function OffersPage() {
         </div>
         <button 
           onClick={() => navigate('/dashboard/offers/create')}
-          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
+          className="inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
         >
           <Plus className="h-5 w-5 mr-2" />
           Create Offer
@@ -292,7 +292,7 @@ export default function OffersPage() {
               <p className="text-gray-600">No offers found</p>
               <button 
                 onClick={() => navigate('/dashboard/offers/create')}
-                className="mt-4 inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
+                className="mt-4 inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Create Your First Offer

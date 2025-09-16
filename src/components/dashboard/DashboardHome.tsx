@@ -8,14 +8,17 @@ import {
   Calendar,
   Activity,
   Eye,
-  Clock
+  Clock,
+  Cog
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { dashboardService, DashboardStats } from '../../services/dashboardService';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function DashboardHome() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalOffers: 0,
     totalSegments: 0,
@@ -126,6 +129,7 @@ export default function DashboardHome() {
     { name: 'Create Campaign', href: '/dashboard/campaigns/new', icon: Target },
     { name: 'New Offer', href: '/dashboard/offers/new', icon: MessageSquare },
     { name: 'Build Segment', href: '/dashboard/segments/new', icon: Users },
+    { name: 'Configuration', href: '/dashboard/configuration', icon: Cog },
     { name: 'View Analytics', href: '/dashboard/analytics', icon: Activity }
   ];
 
@@ -197,7 +201,7 @@ export default function DashboardHome() {
                   <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Recent Campaigns</h2>
                   <p className="text-slate-600 text-xs sm:text-sm mt-1 font-medium">Monitor your active and scheduled campaigns</p>
                 </div>
-                <button className="px-3 py-2 sm:px-4 sm:py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 w-full sm:w-auto">
+                <button className="px-3 py-2 sm:px-4 sm:py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto">
                   View All
                 </button>
               </div>
@@ -241,7 +245,7 @@ export default function DashboardHome() {
                         </div>
                         <div className="flex flex-row sm:flex-col items-center sm:items-end space-x-3 sm:space-x-0 sm:space-y-3">
                           <span className="text-xs sm:text-sm text-slate-500 font-semibold bg-slate-100 px-2 sm:px-3 py-1 rounded-full">{campaign.startDate}</span>
-                          <button className="p-2 sm:p-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 rounded-lg transition-all duration-300 group-hover:scale-110">
+                          <button className="p-2 sm:p-2.5 text-slate-400 hover:text-white hover:bg-[#3b8169] rounded-lg transition-all duration-300 group-hover:scale-110">
                             <Eye className="h-4 w-4" />
                           </button>
                         </div>
@@ -297,6 +301,7 @@ export default function DashboardHome() {
                   return (
                     <button
                       key={action.name}
+                      onClick={() => navigate(action.href)}
                       className="group w-full flex items-center space-x-4 p-4 text-left bg-white/50 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 rounded-xl border border-white/30 hover:border-indigo-200 transition-all duration-300 hover:scale-105"
                       style={{
                         animation: `fadeInUp 0.6s ease-out forwards ${(index + 7) * 0.1}s`,

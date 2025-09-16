@@ -178,7 +178,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
             {selectedProducts.map((product) => (
               <div key={product.id} className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white text-xl">
+                  <div className="w-12 h-12 bg-[#3b8169] rounded-lg flex items-center justify-center text-white text-xl">
                     {getCategoryIcon(product.category)}
                   </div>
                   <div>

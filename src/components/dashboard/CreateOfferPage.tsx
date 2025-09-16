@@ -100,7 +100,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
         <button
           onClick={handleNext}
           disabled={!formData.name.trim()}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -242,7 +242,7 @@ function EligibilityStep({ currentStep, totalSteps, onNext, onPrev, formData, se
         </button>
         <button
           onClick={handleNext}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg flex items-center gap-2"
+          className="px-6 py-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all shadow-lg flex items-center gap-2"
         >
           Next
           <ChevronRight className="w-4 h-4" />
@@ -294,7 +294,7 @@ function ProductStep({ currentStep, totalSteps, onNext, onPrev, formData, setFor
         </button>
         <button
           onClick={handleNext}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -425,7 +425,7 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <>
@@ -587,7 +587,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
         </button>
         <button
           onClick={handleNext}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -714,7 +714,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <>
@@ -790,41 +790,40 @@ export default function CreateOfferPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard/offers')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Offers
-          </button>
-          
-          <div className="text-center">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              Create New Offer
-            </h1>
-            <p className="text-gray-600">Follow the steps to create a comprehensive offer for your customers</p>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <button
+          onClick={() => navigate('/dashboard/offers')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Offers
+        </button>
+        
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+            Create New Offer
+          </h1>
+          <p className="text-gray-600">Follow the steps to create a comprehensive offer for your customers</p>
         </div>
+      </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
+      {/* Progress Bar */}
+      <div>
           <div className="flex items-center justify-between mb-4">
             {[1, 2, 3, 4].map((step) => (
               <div key={step} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${
                   step <= currentStep 
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' 
+                    ? 'bg-[#3b8169] text-white' 
                     : 'bg-gray-200 text-gray-500'
                 }`}>
                   {step < currentStep ? <Target className="w-5 h-5" /> : step}
                 </div>
                 {step < 4 && (
                   <div className={`w-16 h-1 mx-2 transition-all duration-200 ${
-                    step < currentStep ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gray-200'
+                    step < currentStep ? 'bg-[#3b8169]' : 'bg-gray-200'
                   }`} />
                 )}
               </div>
@@ -845,14 +844,14 @@ export default function CreateOfferPage() {
           </div>
         )}
 
-        {/* Step Content */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-8">
+      {/* Step Content */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           {currentStep === 1 && <BasicInfoStep {...stepProps} />}
           {currentStep === 2 && <EligibilityStep {...stepProps} />}
           {currentStep === 3 && <ProductStep {...stepProps} />}
           {currentStep === 4 && <ReviewStep {...stepProps} />}
-        </div>
-      </div>
     </div>
+
+        </div>
   );
 }

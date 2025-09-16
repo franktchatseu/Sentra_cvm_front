@@ -112,7 +112,7 @@ export default function ResetPasswordPage() {
           </p>
           <Link
             to="/login"
-            className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
           >
             Go to Login
             <ArrowRight className="ml-2 h-5 w-5" />

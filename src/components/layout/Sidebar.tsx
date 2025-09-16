@@ -13,7 +13,10 @@ import {
   ChevronDown,
   ChevronRight,
   Menu,
-  X
+  X,
+  Cog,
+  Tag,
+  Layers
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
@@ -24,7 +27,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['campaigns']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['campaign management', 'offer configuration', 'product configuration']);
   
   const navigation = [
     { 
@@ -40,21 +43,41 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       type: 'parent',
       children: [
         { name: 'All Campaigns', href: '/dashboard/campaigns', icon: Target },
-        { name: 'Offers', href: '/dashboard/offers', icon: MessageSquare },
-        { name: 'Products', href: '/dashboard/products', icon: Package },
-        { name: 'Product Categories', href: '/dashboard/product-categories', icon: FolderOpen },
+        { name: 'Segments', href: '/dashboard/segments', icon: Users },
       ]
     },
     { 
-      name: 'Segments', 
-      href: '/dashboard/segments', 
-      icon: Users,
-      type: 'single'
+      name: 'Offer Configuration', 
+      href: '/dashboard/offers', 
+      icon: MessageSquare,
+      type: 'parent',
+      children: [
+        { name: 'All Offers', href: '/dashboard/offers', icon: MessageSquare },
+        { name: 'Offer Types', href: '/dashboard/offer-types', icon: Tag },
+        { name: 'Offer Categories', href: '/dashboard/offer-categories', icon: FolderOpen },
+      ]
+    },
+    { 
+      name: 'Product Configuration', 
+      href: '/dashboard/products', 
+      icon: Package,
+      type: 'parent',
+      children: [
+        { name: 'All Products', href: '/dashboard/products', icon: Package },
+        { name: 'Product Types', href: '/dashboard/product-types', icon: Layers },
+        { name: 'Product Categories', href: '/dashboard/product-categories', icon: FolderOpen },
+      ]
     },
     { 
       name: 'User Management', 
       href: '/dashboard/user-management', 
       icon: UserCheck,
+      type: 'single'
+    },
+    { 
+      name: 'Configuration', 
+      href: '/dashboard/configuration', 
+      icon: Cog,
       type: 'single'
     },
   ];

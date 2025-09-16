@@ -123,38 +123,35 @@ export default function ProductsPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Products Management
-              </h1>
-              <p className="text-gray-600 mt-2">Manage your product catalog</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/dashboard/products/categories')}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-              >
-                <Settings className="w-5 h-5" />
-                Categories
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/products/create')}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                Create Product
-              </button>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            Products Management
+          </h1>
+          <p className="text-gray-600 mt-2">Manage your product catalog</p>
         </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/dashboard/products/categories')}
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          >
+            <Settings className="w-5 h-5" />
+            Categories
+          </button>
+          <button
+            onClick={() => navigate('/dashboard/products/create')}
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Create Product
+          </button>
+        </div>
+      </div>
 
-        {/* Filters */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6 mb-6">
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
@@ -252,63 +249,63 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* Products Table */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <span className="ml-3 text-gray-600">Loading products...</span>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-500 mb-6">Get started by creating your first product.</p>
-              <button
-                onClick={() => navigate('/dashboard/products/create')}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
-              >
-                <Plus className="w-5 h-5" />
-                Create Product
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50/50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        DA ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+      {/* Products Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <span className="ml-3 text-gray-600">Loading products...</span>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-500 mb-6">Get started by creating your first product.</p>
+            <button
+              onClick={() => navigate('/dashboard/products/create')}
+              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
+            >
+              <Plus className="w-5 h-5" />
+              Create Product
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product Name
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      DA ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {products.map((product) => {
-                      const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'N/A';
-                      const status = product.is_active ? 'Active' : 'Inactive';
-                      const statusBadge = product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-                      
-                      return (
-                        <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {products.map((product) => {
+                    const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'N/A';
+                    const status = product.is_active ? 'Active' : 'Inactive';
+                    const statusBadge = product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                    
+                    return (
+                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-900 font-mono">
                             {product.product_id || product.id || 'N/A'}
                           </td>
@@ -384,7 +381,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Pagination */}
-              <div className="bg-gray-50/50 px-6 py-4 flex items-center justify-between">
+              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
                   Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
                   {Math.min((filters.page || 1) * (filters.pageSize || 10), total)} of {total} results
@@ -413,6 +410,6 @@ export default function ProductsPage() {
           )}
         </div>
       </div>
-    </div>
-  );
+  )
+   
 }

@@ -233,9 +233,9 @@ export default function UserManagementPage() {
   });
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">User Management</h1>
@@ -246,7 +246,7 @@ export default function UserManagementPage() {
               setSelectedUser(null);
               setIsModalOpen(true);
             }}
-            className="group flex items-center justify-center space-x-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white px-4 md:px-6 py-3 rounded-xl hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
+            className="group flex items-center justify-center space-x-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 md:px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
           >
             <Plus className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             <span className="font-semibold">Add User</span>
@@ -255,7 +255,7 @@ export default function UserManagementPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab('users')}
