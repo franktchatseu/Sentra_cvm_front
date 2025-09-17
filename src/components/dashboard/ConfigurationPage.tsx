@@ -7,14 +7,12 @@ import {
   Package, 
   Users, 
   Tag,
-  Filter,
   Plus,
   Edit,
   Eye,
   ChevronRight,
   Grid3X3,
   List,
-  Cog
 } from 'lucide-react';
 
 interface ConfigurationItem {

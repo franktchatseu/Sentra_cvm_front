@@ -151,6 +151,7 @@ export default function RequestAccountPage() {
       <header className="page-header">
         <div className="container">
           <div className="brand-logo">
+            <h1 className="brand-name">Sentra</h1>
           </div>
           <button className="btn-back-home" onClick={goHome}>
             <ArrowLeft size={16} />

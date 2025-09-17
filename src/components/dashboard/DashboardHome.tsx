@@ -6,7 +6,6 @@ import {
   ArrowUpRight, 
   ArrowDownRight,
   Calendar,
-  Activity,
   Eye,
   Clock,
   Cog
