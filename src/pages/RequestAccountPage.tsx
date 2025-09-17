@@ -6,6 +6,7 @@ import {
   List 
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function RequestAccountPage() {
   const [formData, setFormData] = useState({
@@ -22,9 +23,10 @@ export default function RequestAccountPage() {
   const [requestSubmitted, setRequestSubmitted] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const { createUser } = useAuth();
+  const navigate = useNavigate();
 
   const goHome = () => {
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const clearError = (field: string) => {
@@ -149,10 +151,6 @@ export default function RequestAccountPage() {
       <header className="page-header">
         <div className="container">
           <div className="brand-logo">
-            <div className="logo-mark">
-              <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-10 h-10 object-contain" />
-            </div>
-            <span className="brand-name">Sentra</span>
           </div>
           <button className="btn-back-home" onClick={goHome}>
             <ArrowLeft size={16} />

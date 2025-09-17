@@ -1,38 +1,50 @@
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { 
+  PlayCircle, 
+  CheckCircle2, 
+  AlertCircle, 
   Mail, 
   Lock, 
   Eye, 
   EyeOff, 
-  AlertCircle, 
-  CheckCircle2, 
-  PlayCircle
+  X, 
+  CheckCircle 
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 
-export default function LoginPage() {
+const LoginPage: React.FC = () => {
+  const { login, requestPasswordReset } = useAuth();
+  const navigate = useNavigate();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [validationErrors, setValidationErrors] = useState({
-    email: '',
-    password: ''
-  });
-  
-  const { login } = useAuth();
+  const [validationErrors, setValidationErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+
+  // Forgot password modal state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [resetErrorMessage, setResetErrorMessage] = useState('');
 
   const validateEmail = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
       setValidationErrors(prev => ({ ...prev, email: 'Email is required' }));
       return false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setValidationErrors(prev => ({ ...prev, email: 'Please enter a valid email' }));
+    } else if (!emailRegex.test(email)) {
+      setValidationErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
       return false;
     } else {
-      setValidationErrors(prev => ({ ...prev, email: '' }));
+      setValidationErrors(prev => ({ ...prev, email: undefined }));
       return true;
     }
   };
@@ -45,7 +57,7 @@ export default function LoginPage() {
       setValidationErrors(prev => ({ ...prev, password: 'Password must be at least 6 characters' }));
       return false;
     } else {
-      setValidationErrors(prev => ({ ...prev, password: '' }));
+      setValidationErrors(prev => ({ ...prev, password: undefined }));
       return true;
     }
   };
@@ -61,42 +73,43 @@ export default function LoginPage() {
 
     setIsLoading(true);
     setErrorMessage('');
-    
+
     try {
       await login(email, password);
-      // Login successful - user will be redirected by auth context
-    } catch (error: unknown) {
-      console.error('Login failed:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('Invalid credentials')) {
-        setErrorMessage('Invalid email or password. Please check your credentials and try again.');
-      } else if (errorMessage.includes('Account not active')) {
-        setErrorMessage('Your account is not active. Please contact an administrator.');
-      } else if (errorMessage.includes('Account pending')) {
-        setErrorMessage('Your account request is still pending approval. You will receive an email once approved.');
-      } else if (errorMessage.includes('Password reset required')) {
-        setErrorMessage('A password reset is required. Please check your email for reset instructions.');
-      } else {
-        setErrorMessage('Login failed. Please try again or contact support if the problem persists.');
-      }
+      navigate('/landingpage');
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrorMessage('Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const sendResetLink = async () => {
+    if (!resetEmail) return;
 
-  const scrollToFeatures = () => {
-    // Scroll to features section if it exists
-    const featuresElement = document.getElementById('features');
-    if (featuresElement) {
-      featuresElement.scrollIntoView({ behavior: 'smooth' });
+    setIsResetLoading(true);
+    setResetErrorMessage('');
+
+    try {
+      await requestPasswordReset(resetEmail);
+      setResetEmailSent(true);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setResetErrorMessage(errorMessage);
+    } finally {
+      setIsResetLoading(false);
     }
   };
 
   const goToAccountRequest = () => {
-    // Navigate to account request page
-    window.location.href = '/request-account';
+    navigate('/request-account');
+  };
+
+  const scrollToFeatures = () => {
+    // Scroll to features section if it exists, otherwise do nothing
+    console.log('Take a tour clicked');
   };
 
   return (
@@ -109,24 +122,20 @@ export default function LoginPage() {
         {/* Mobile Header (visible only on small screens) */}
         <div className="mobile-header">
           <div className="brand">
-            <div className="brand-mark" aria-hidden="true">
-              <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-16 h-16 object-contain" />
-                </div>
-              </div>
+            <h1 className="brand-name">Sentra</h1>
+          </div>
           <button className="tour-btn mobile-tour-btn" onClick={scrollToFeatures}>
             <PlayCircle size={16} />
             Take a tour
           </button>
-                </div>
-                
+        </div>
+
         {/* Left hero area */}
         <section className="hero">
           <div className="brand desktop-brand">
-            <div className="brand-mark" aria-hidden="true">
-              <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-20 h-20 object-contain" />
-                  </div>
-                </div>
-                
+            <h1 className="brand-name">Sentra</h1>
+          </div>
+
           <h2 className="headline">Engage, Predict, Grow</h2>
           <p className="subhead">
             The intelligent customer engagement platform. Create impactful campaigns, understand your audience, and act in real time.
@@ -152,7 +161,7 @@ export default function LoginPage() {
               <PlayCircle size={16} />
               Take a tour
             </button>
-                  </div>
+          </div>
         </section>
 
         {/* Right login area */}
@@ -162,14 +171,14 @@ export default function LoginPage() {
               <div className="logo-container">
                 <h2 className="login-title">Sign in to Sentra</h2>
               </div>
-          </div>
-          
+            </div>
+
             <form onSubmit={handleLogin} className="login-form">
-              <div className="form-message error" style={{display: errorMessage ? 'flex' : 'none'}}>
+              <div className="form-message error" style={{ display: errorMessage ? 'flex' : 'none' }}>
                 <AlertCircle size={18} />
                 {errorMessage}
-          </div>
-          
+              </div>
+              
               <div className="form-group">
                 <label htmlFor="email">Email <span className="required">*</span></label>
                 <div className="input-with-icon">
@@ -183,9 +192,9 @@ export default function LoginPage() {
                     className={validationErrors.email ? 'error-input' : ''}
                     onBlur={validateEmail}
                   />
-                  <Mail className="input-icon" size={18} />
+                  {/* <Mail className="input-icon" size={18} style={{ paddingRight: '5px' }} /> */}
                 </div>
-                <p className="error-message" style={{display: validationErrors.email ? 'block' : 'none'}}>
+                <p className="error-message" style={{ display: validationErrors.email ? 'block' : 'none' }}>
                   {validationErrors.email}
                 </p>
               </div>
@@ -203,7 +212,7 @@ export default function LoginPage() {
                     className={validationErrors.password ? 'error-input' : ''}
                     onBlur={validatePassword}
                   />
-                  <Lock className="input-icon" size={18} />
+                  {/* <Lock className="input-icon" size={18} style={{ paddingRight: '5px' }} /> */}
                   <button 
                     type="button" 
                     className="toggle-password"
@@ -213,50 +222,92 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                <p className="error-message" style={{display: validationErrors.password ? 'block' : 'none'}}>
+                <p className="error-message" style={{ display: validationErrors.password ? 'block' : 'none' }}>
                   {validationErrors.password}
                 </p>
-          </div>
-          
+              </div>
+              
               <div className="form-options">
                 <label className="remember-me">
-                  <input
-                    type="checkbox"
+                  <input 
+                    type="checkbox" 
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                   />
                   <span>Remember me</span>
                 </label>
-                <a 
-                  href="/forgot-password" 
-                  className="forgot-password"
-                >
+                <a href="#" className="forgot-password" onClick={(e) => { e.preventDefault(); setShowForgotPassword(true); }}>
                   Forgot password?
                 </a>
-            </div>
-
-              <button 
-              type="submit"
-                className="login-button" 
-                disabled={isLoading || !isFormValid}
-              >
+              </div>
+              
+              <button type="submit" className="login-button" disabled={isLoading || !isFormValid}>
                 {!isLoading ? 'Sign in' : <span className="loading-spinner"></span>}
               </button>
               
               <div className="request-account">
-                Don't have an account?{' '}
-                <a href="#" onClick={(e) => {
-                  e.preventDefault();
-                  goToAccountRequest();
-                }}>
-                  Make a request
-                </a>
-            </div>
+                Don't have an account? 
+                <a href="#" onClick={(e) => { e.preventDefault(); goToAccountRequest(); }}>Make a request</a>
+              </div>
             </form>
           </div>
         </section>
       </div>
 
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForgotPassword(false); }}>
+          <div className="modal-container">
+            <div className="modal-header">
+              <h2>Password Reset</h2>
+              <button className="btn-close" onClick={() => setShowForgotPassword(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <p>
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+              
+              <div className="form-message success" style={{ display: resetEmailSent ? 'flex' : 'none' }}>
+                <CheckCircle size={18} />
+                A reset email has been sent. Please check your inbox.
+              </div>
+              
+              <div className="form-message error" style={{ display: resetErrorMessage ? 'flex' : 'none' }}>
+                <AlertCircle size={18} />
+                {resetErrorMessage}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="resetEmail">Email <span className="required">*</span></label>
+                <input 
+                  id="resetEmail" 
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  type="email" 
+                  required
+                  placeholder="your-email@example.com"
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={() => setShowForgotPassword(false)}>Cancel</button>
+              <button 
+                className="btn-send" 
+                onClick={sendResetLink} 
+                disabled={isResetLoading || !resetEmail}
+              >
+                {!isResetLoading ? 'Send Link' : <span className="loading-spinner small"></span>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default LoginPage;

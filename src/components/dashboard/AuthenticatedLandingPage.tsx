@@ -248,9 +248,9 @@ export default function AuthenticatedLandingPage() {
           isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
         }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex justify-between items-center h-20 lg:h-24">
               <div className="flex items-center">
-                <div className="w-32 h-32 flex items-center justify-center">
+                <div className="w-32 h-32 lg:w-40 lg:h-40 flex items-center justify-center">
                   <img 
                     src={logo} 
                     alt="Sentra Logo" 
