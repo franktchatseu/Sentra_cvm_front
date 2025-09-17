@@ -14,12 +14,69 @@ import {
   Check,
   Gift,
   Users,
-  Settings
+  Settings,
+  MessageSquare,
+  BarChart3
 } from 'lucide-react';
 import { CreateOfferRequest, LifecycleStatus, ApprovalStatus } from '../../types/offer';
 import { Product } from '../../types/product';
 import { offerService } from '../../services/offerService';
 import ProductSelector from './ProductSelector';
+import OfferCreativeStep from '../offer/OfferCreativeStep';
+import OfferTrackingStep from '../offer/OfferTrackingStep';
+import OfferRewardStep from '../offer/OfferRewardStep';
+
+interface OfferCreative {
+  id: string;
+  channel: 'sms' | 'email' | 'push' | 'web' | 'whatsapp';
+  locale: string;
+  title: string;
+  text_body: string;
+  html_body: string;
+  variables: Record<string, any>;
+}
+
+interface TrackingRule {
+  id: string;
+  name: string;
+  priority: number;
+  parameter: string;
+  condition: 'equals' | 'greater_than' | 'less_than' | 'contains' | 'is_any_of';
+  value: string;
+  enabled: boolean;
+}
+
+interface TrackingSource {
+  id: string;
+  name: string;
+  type: 'recharge' | 'usage_metric' | 'custom';
+  enabled: boolean;
+  rules: TrackingRule[];
+}
+
+interface RewardRule {
+  id: string;
+  name: string;
+  bundle_subscription_track: string;
+  priority: number;
+  condition: string;
+  value: string;
+  reward_type: 'bundle' | 'points' | 'discount' | 'cashback';
+  reward_value: string;
+  fulfillment_response: string;
+  success_text: string;
+  default_failure: string;
+  error_group: string;
+  failure_text: string;
+  enabled: boolean;
+}
+
+interface OfferReward {
+  id: string;
+  name: string;
+  type: 'default' | 'sms_night' | 'custom';
+  rules: RewardRule[];
+}
 
 interface StepProps {
   currentStep: number;
@@ -29,13 +86,19 @@ interface StepProps {
   onSubmit: () => void;
   formData: CreateOfferRequest;
   setFormData: (data: CreateOfferRequest) => void;
+  creatives: OfferCreative[];
+  setCreatives: (creatives: OfferCreative[]) => void;
+  trackingSources: TrackingSource[];
+  setTrackingSources: (sources: TrackingSource[]) => void;
+  rewards: OfferReward[];
+  setRewards: (rewards: OfferReward[]) => void;
   isLoading?: boolean;
 }
 
 // Step 1: Basic Information
 function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData }: StepProps) {
   const handleNext = () => {
-    if (formData.name.trim()) {
+    if (formData.name.trim() && formData.offer_type) {
       onNext();
     }
   };
@@ -80,6 +143,26 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Offer Type *
+          </label>
+          <select
+            value={formData.offer_type || ''}
+            onChange={(e) => setFormData({ ...formData, offer_type: e.target.value })}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            required
+          >
+            <option value="">Select offer type</option>
+            <option value="STV">STV</option>
+            <option value="Short Text (SMS/USSD)">Short Text (SMS/USSD)</option>
+            <option value="Email">Email</option>
+            <option value="Voice Push">Voice Push</option>
+            <option value="WAP Push">WAP Push</option>
+            <option value="Rich Media">Rich Media</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Category
           </label>
           <select
@@ -99,7 +182,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
       <div className="flex justify-end">
         <button
           onClick={handleNext}
-          disabled={!formData.name.trim()}
+          disabled={!formData.name.trim() || !formData.offer_type}
           className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           Next Step
@@ -110,8 +193,96 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
   );
 }
 
-// Step 2: Eligibility Rules
-function EligibilityStep({ currentStep, totalSteps, onNext, onPrev, formData, setFormData }: StepProps) {
+// Step 2: Offer Products
+function ProductStepWrapper({ currentStep, totalSteps, onNext, onPrev, formData, setFormData }: StepProps) {
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+
+  const handleNext = () => {
+    // Store only the first selected product ID (backend expects single product_id)
+    const firstProductId = selectedProducts.length > 0 ? selectedProducts[0].id : undefined;
+    setFormData({ 
+      ...formData, 
+      product_id: firstProductId ? Number(firstProductId) : undefined
+    });
+    onNext();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Package className="w-8 h-8 text-emerald-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Products</h2>
+        <p className="text-gray-600">Select the products that will be included in this offer</p>
+      </div>
+
+      <div className="space-y-6">
+        <ProductSelector
+          selectedProducts={selectedProducts}
+          onProductsChange={setSelectedProducts}
+          multiSelect={true}
+        />
+      </div>
+
+      <div className="flex justify-between">
+        <button
+          onClick={onPrev}
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Previous
+        </button>
+        <button
+          onClick={handleNext}
+          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+        >
+          Next Step
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Step 3: Offer Creative
+function OfferCreativeStepWrapper({ currentStep, totalSteps, onNext, onPrev, creatives, setCreatives }: StepProps) {
+  return (
+    <OfferCreativeStep
+      creatives={creatives}
+      onCreativesChange={setCreatives}
+      onNext={onNext}
+      onPrev={onPrev}
+    />
+  );
+}
+
+// Step 4: Offer Tracking
+function OfferTrackingStepWrapper({ currentStep, totalSteps, onNext, onPrev, trackingSources, setTrackingSources }: StepProps) {
+  return (
+    <OfferTrackingStep
+      trackingSources={trackingSources}
+      onTrackingSourcesChange={setTrackingSources}
+      onNext={onNext}
+      onPrev={onPrev}
+    />
+  );
+}
+
+// Step 5: Offer Reward
+function OfferRewardStepWrapper({ currentStep, totalSteps, onNext, onPrev, rewards, setRewards }: StepProps) {
+  return (
+    <OfferRewardStep
+      rewards={rewards}
+      onRewardsChange={setRewards}
+      onNext={onNext}
+      onPrev={onPrev}
+    />
+  );
+}
+
+// Legacy Step 2: Eligibility Rules (kept for reference)
+function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formData, setFormData }: StepProps) {
   const [eligibilityRules, setEligibilityRules] = useState({
     min_spend: formData.eligibility_rules?.min_spend || 0,
     customer_segment: formData.eligibility_rules?.customer_segment || [],
@@ -252,60 +423,9 @@ function EligibilityStep({ currentStep, totalSteps, onNext, onPrev, formData, se
   );
 }
 
-// Step 3: Offer Products
-function ProductStep({ currentStep, totalSteps, onNext, onPrev, formData, setFormData }: StepProps) {
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
 
-  const handleNext = () => {
-    // Store only the first selected product ID (backend expects single product_id)
-    const firstProductId = selectedProducts.length > 0 ? selectedProducts[0].id : undefined;
-    setFormData({ 
-      ...formData, 
-      product_id: firstProductId ? Number(firstProductId) : undefined
-    });
-    onNext();
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Package className="w-8 h-8 text-emerald-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Products</h2>
-        <p className="text-gray-600">Select the products that will be included in this offer</p>
-      </div>
-
-      <div className="space-y-6">
-        <ProductSelector
-          selectedProducts={selectedProducts}
-          onProductsChange={setSelectedProducts}
-          multiSelect={true}
-        />
-      </div>
-
-      <div className="flex justify-between">
-        <button
-          onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Previous
-        </button>
-        <button
-          onClick={handleNext}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// Step 4: Review
-function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formData, setFormData, isLoading }: StepProps) {
+// Step 6: Review
+function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formData, setFormData, creatives, trackingSources, rewards, isLoading }: StepProps) {
   const handleSubmit = () => {
     onSubmit();
   };
@@ -334,6 +454,10 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
                 <span className="font-medium">{formData.name}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-gray-600">Offer Type:</span>
+                <span className="font-medium">{formData.offer_type || 'Not selected'}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-600">Category:</span>
                 <span className="font-medium">
                   {formData.category_id ? `Category ${formData.category_id}` : 'Not selected'}
@@ -346,29 +470,81 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
             </div>
           </div>
 
-          {/* Eligibility Rules */}
+          {/* Offer Creative Summary */}
           <div className="space-y-4 mb-6">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Eligibility Rules</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Offer Creatives</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Minimum Spend:</span>
-                  <span className="font-medium">${formData.eligibility_rules?.min_spend || 0}</span>
+                  <span className="text-gray-600">Total Creatives:</span>
+                  <span className="font-medium">{creatives.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Customer Segments:</span>
+                  <span className="text-gray-600">Channels:</span>
                   <span className="font-medium">
-                    {formData.eligibility_rules?.customer_segment && formData.eligibility_rules.customer_segment.length > 0 
-                      ? formData.eligibility_rules.customer_segment.join(', ') 
-                      : 'None selected'}
+                    {creatives.length > 0 
+                      ? [...new Set(creatives.map(c => c.channel))].join(', ') 
+                      : 'None configured'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Valid Days:</span>
+                  <span className="text-gray-600">Locales:</span>
                   <span className="font-medium">
-                    {formData.eligibility_rules?.valid_days && formData.eligibility_rules.valid_days.length > 0 
-                      ? formData.eligibility_rules.valid_days.join(', ') 
-                      : 'All days'}
+                    {creatives.length > 0 
+                      ? [...new Set(creatives.map(c => c.locale))].join(', ') 
+                      : 'None configured'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tracking Summary */}
+          <div className="space-y-4 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Tracking Configuration</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tracking Sources:</span>
+                  <span className="font-medium">{trackingSources.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Active Sources:</span>
+                  <span className="font-medium">
+                    {trackingSources.filter(s => s.enabled).length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Rules:</span>
+                  <span className="font-medium">
+                    {trackingSources.reduce((total, source) => total + source.rules.length, 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rewards Summary */}
+          <div className="space-y-4 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Offer Rewards</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Rewards:</span>
+                  <span className="font-medium">{rewards.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Reward Types:</span>
+                  <span className="font-medium">
+                    {rewards.length > 0 
+                      ? [...new Set(rewards.map(r => r.type))].join(', ') 
+                      : 'None configured'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Rules:</span>
+                  <span className="font-medium">
+                    {rewards.reduce((total, reward) => total + reward.rules.length, 0)}
                   </span>
                 </div>
               </div>
@@ -738,11 +914,12 @@ export default function CreateOfferPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const totalSteps = 4;
+  const totalSteps = 6;
 
   const [formData, setFormData] = useState<CreateOfferRequest>({
     name: '',
     description: '',
+    offer_type: '',
     category_id: undefined,
     product_id: undefined,
     eligibility_rules: {},
@@ -751,6 +928,10 @@ export default function CreateOfferPage() {
     reusable: false,
     multi_language: false,
   });
+
+  const [creatives, setCreatives] = useState<OfferCreative[]>([]);
+  const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
+  const [rewards, setRewards] = useState<OfferReward[]>([]);
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -786,6 +967,12 @@ export default function CreateOfferPage() {
     onSubmit: handleSubmit,
     formData,
     setFormData,
+    creatives,
+    setCreatives,
+    trackingSources,
+    setTrackingSources,
+    rewards,
+    setRewards,
     isLoading,
   };
 
@@ -813,17 +1000,17 @@ export default function CreateOfferPage() {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            {[1, 2, 3, 4].map((step) => (
+            {[1, 2, 3, 4, 5, 6].map((step) => (
               <div key={step} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${
                   step <= currentStep 
                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' 
                     : 'bg-gray-200 text-gray-500'
                 }`}>
-                  {step < currentStep ? <Target className="w-5 h-5" /> : step}
+                  {step < currentStep ? <Check className="w-5 h-5" /> : step}
                 </div>
-                {step < 4 && (
-                  <div className={`w-16 h-1 mx-2 transition-all duration-200 ${
+                {step < 6 && (
+                  <div className={`w-12 h-1 mx-2 transition-all duration-200 ${
                     step < currentStep ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gray-200'
                   }`} />
                 )}
@@ -832,8 +1019,10 @@ export default function CreateOfferPage() {
           </div>
           <div className="flex justify-between text-sm text-gray-600">
             <span>Basic Info</span>
-            <span>Eligibility</span>
             <span>Products</span>
+            <span>Creative</span>
+            <span>Tracking</span>
+            <span>Rewards</span>
             <span>Review</span>
           </div>
         </div>
@@ -848,9 +1037,11 @@ export default function CreateOfferPage() {
         {/* Step Content */}
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-8">
           {currentStep === 1 && <BasicInfoStep {...stepProps} />}
-          {currentStep === 2 && <EligibilityStep {...stepProps} />}
-          {currentStep === 3 && <ProductStep {...stepProps} />}
-          {currentStep === 4 && <ReviewStep {...stepProps} />}
+          {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
+          {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
+          {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
+          {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
+          {currentStep === 6 && <ReviewStep {...stepProps} />}
         </div>
       </div>
     </div>
