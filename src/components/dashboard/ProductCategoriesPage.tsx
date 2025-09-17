@@ -240,7 +240,7 @@ export default function ProductCategoriesPage() {
           </div>
           <button
             onClick={handleCreateCategory}
-            className="group flex items-center space-x-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base"
+            className="group flex items-center space-x-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base whitespace-nowrap"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-semibold">New Category</span>
@@ -249,8 +249,8 @@ export default function ProductCategoriesPage() {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -259,12 +259,12 @@ export default function ProductCategoriesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200 bg-gray-50 focus:bg-white text-base"
             />
           </div>
           <button
             onClick={handleSearch}
-            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg  transition-all duration-200 shadow-md hover:shadow-lg font-medium text-base"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg  transition-all duration-200 shadow-md hover:shadow-lg font-medium text-base whitespace-nowrap"
           >
             Search
           </button>
@@ -296,13 +296,13 @@ export default function ProductCategoriesPage() {
               <div className="bg-gradient-to-r from-blue-500 to-indigo-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Package className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">No categories found</h3>
-              <p className="text-gray-600 mb-8 text-sm max-w-md mx-auto">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">No categories found</h3>
+              <p className="text-gray-600 mb-8 text-base max-w-md mx-auto">
                 {searchTerm ? 'No categories match your search criteria. Try adjusting your search terms.' : 'Get started by creating your first product category to organize your products effectively.'}
               </p>
               <button
                 onClick={handleCreateCategory}
-                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-lg  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-base"
+                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-lg  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-base whitespace-nowrap"
               >
                 Create Your First Category
               </button>
@@ -313,16 +313,16 @@ export default function ProductCategoriesPage() {
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Category
                   </th>
-                  <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Description
                   </th>
-                  <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Products
                   </th>
-                  <th className="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -330,7 +330,7 @@ export default function ProductCategoriesPage() {
               <tbody className="bg-white">
                 {filteredCategories.map((category) => (
                   <tr key={category.id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 group">
-                    <td className="px-8 py-6">
+                    <td className="px-4 sm:px-8 py-6">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
                           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200">
@@ -338,22 +338,22 @@ export default function ProductCategoriesPage() {
                           </div>
                         </div>
                         <div className="ml-5">
-                          <div className="text-base font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{category.name}</div>
-                          <div className="text-sm text-gray-500 font-medium">ID: {category.id}</div>
+                          <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{category.name}</div>
+                          <div className="text-xs text-gray-500 font-medium">ID: {category.id}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 sm:px-8 py-6">
                       <div className="text-sm text-gray-700 max-w-xs">
                         {category.description || <span className="italic text-gray-400">No description</span>}
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
+                    <td className="px-4 sm:px-8 py-6">
+                      <span className="inline-flex items-center px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
                         {category.productCount || 0} product{(category.productCount || 0) !== 1 ? 's' : ''}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-4 sm:px-8 py-6 text-right">
                       <div className="flex items-center justify-end space-x-3">
                         <button
                           onClick={() => handleEditCategory(category)}

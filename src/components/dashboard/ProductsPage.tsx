@@ -71,7 +71,7 @@ export default function ProductsPage() {
     setFilters({ ...filters, search: searchTerm, page: 1 });
   };
 
-  const handleFilterChange = (key: keyof ProductFilters, value: any) => {
+  const handleFilterChange = (key: keyof ProductFilters, value: string | number | boolean | undefined) => {
     setFilters({ ...filters, [key]: value, page: 1 });
   };
 
@@ -205,7 +205,7 @@ export default function ProductsPage() {
               ]}
               value={`${filters.sortBy}-${filters.sortDirection}`}
               onChange={(value) => {
-                const [sortBy, sortDirection] = value.split('-');
+                const [sortBy, sortDirection] = value.toString().split('-');
                 setFilters({ ...filters, sortBy, sortDirection: sortDirection as 'ASC' | 'DESC' });
               }}
               placeholder="Sort by"
@@ -387,26 +387,26 @@ export default function ProductsPage() {
               </div>
 
               {/* Pagination */}
-              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+              <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                <div className="text-base text-gray-700 text-center sm:text-left">
                   Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
                   {Math.min((filters.page || 1) * (filters.pageSize || 10), total)} of {total} results
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <button
                     onClick={() => handlePageChange((filters.page || 1) - 1)}
                     disabled={filters.page === 1}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="px-4 py-2 text-sm text-gray-700">
+                  <span className="px-4 py-2 text-base text-gray-700 whitespace-nowrap">
                     Page {filters.page} of {totalPages}
                   </span>
                   <button
                     onClick={() => handlePageChange((filters.page || 1) + 1)}
                     disabled={filters.page === totalPages}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>

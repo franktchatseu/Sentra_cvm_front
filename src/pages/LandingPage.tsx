@@ -67,7 +67,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       {/* Desktop Navigation */}
       <nav className="glass sticky top-0 z-50 border-b border-white/20 max-md:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className={`flex items-center space-x-3 transition-all duration-800 ${isVisible ? 'slide-in-left' : 'opacity-0'}`}>
               <div className="w-40 h-40 flex items-center justify-center">
@@ -97,7 +97,7 @@ export default function LandingPage() {
 
       {/* Mobile Navigation */}
       <nav className="glass sticky top-0 z-50 border-b border-white/20 md:hidden">
-        <div className=" mx-auto px-4 py-2">
+        <div className=" mx-auto px-5 py-2">
           <div className="flex items-center justify-between">
             {/* Logo on the left */}
             <div className={`flex items-center transition-all duration-800 ${isVisible ? 'slide-in-left' : 'opacity-0'}`}>
@@ -177,7 +177,7 @@ export default function LandingPage() {
 
       {/* Features Overview */}
       <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-4 font-active-grotesk">
               Everything you need to maximize <span className="text-[#1a3d2e]">customer value</span>
@@ -202,7 +202,7 @@ export default function LandingPage() {
 
       {/* Modules Section */}
       <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-4 font-active-grotesk">
               Powerful <span className="text-[#1a3d2e]">Modules</span> for Every Need
@@ -241,7 +241,7 @@ export default function LandingPage() {
 
       {/* Stats Section */}
       <section className="py-20 bg-[#1a3d2e]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl sm:text-6xl font-bold text-white mb-4 font-active-grotesk">
               Trusted by <span className="text-emerald-300">Leading Organizations</span>
@@ -268,7 +268,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-8 text-center">
           <div className="flex justify-center mb-8">
             {[...Array(5)].map((_, i) => (
               <Star key={i} className="w-8 h-8 text-yellow-400 fill-current" />
@@ -302,7 +302,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <div className="w-40 h-40 flex items-center justify-center">

@@ -39,7 +39,7 @@ export default function OffersPage() {
   // Load offers on component mount and filter changes
   useEffect(() => {
     loadOffers();
-  }, [filters, selectedStatus, selectedApproval]);
+  }, [filters, selectedStatus, selectedApproval, searchTerm]);
 
   const loadOffers = async () => {
     try {
@@ -49,13 +49,13 @@ export default function OffersPage() {
       const filterParams: OfferFilters = {
         ...filters,
         search: searchTerm || undefined,
-        lifecycle_status: selectedStatus !== 'all' ? selectedStatus : undefined,
-        approval_status: selectedApproval !== 'all' ? selectedApproval : undefined
+        lifecycleStatus: selectedStatus !== 'all' ? selectedStatus : undefined,
+        approvalStatus: selectedApproval !== 'all' ? selectedApproval : undefined
       };
 
       const response = await offerService.getOffers(filterParams);
       setOffers(response.data);
-      setTotalOffers(response.total);
+      setTotalOffers(response.meta.total);
     } catch (err) {
       setError('Failed to load offers');
       console.error('Error loading offers:', err);
@@ -79,21 +79,21 @@ export default function OffersPage() {
     setFilters(prev => ({ ...prev, page: 1 }));
   };
 
-  const handleViewOffer = (id: string) => {
+  const handleViewOffer = (id: number) => {
     navigate(`/dashboard/offers/${id}`);
   };
 
-  const handleEditOffer = (id: string) => {
+  const handleEditOffer = (id: number) => {
     navigate(`/dashboard/offers/${id}/edit`);
   };
 
-  const handleCopyOfferId = (id: string) => {
-    navigator.clipboard.writeText(id);
+  const handleCopyOfferId = (id: number) => {
+    navigator.clipboard.writeText(id.toString());
   };
 
   // Helper functions for display
-  const getCategoryIcon = (category: any) => {
-    const categoryName = category?.name || category;
+  const getCategoryIcon = (category: { name?: string } | string) => {
+    const categoryName = typeof category === 'string' ? category : category?.name || '';
     switch (categoryName) {
       case 'Data Offers': return <MessageSquare className="h-5 w-5 text-white" />;
       case 'Voice Offers': return <Phone className="h-5 w-5 text-white" />;
@@ -154,7 +154,7 @@ export default function OffersPage() {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
             Offers Management
           </h1>
-          <p className="text-gray-600 mt-2 text-sm">Create and manage customer offers with dynamic pricing and eligibility</p>
+          <p className="text-gray-600 mt-2 text-base">Create and manage customer offers with dynamic pricing and eligibility</p>
         </div>
         <button 
           onClick={() => navigate('/dashboard/offers/create')}
@@ -321,7 +321,7 @@ export default function OffersPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                            {getCategoryIcon(offer.category)}
+                            {getCategoryIcon(offer.category || '')}
                           </div>
                         </div>
                         <div className="ml-4">
@@ -349,26 +349,26 @@ export default function OffersPage() {
                       {getApprovalBadge(offer.approval_status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(offer.created_at).toLocaleDateString()}
+                      {offer.created_at ? new Date(offer.created_at).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
-                          onClick={() => handleViewOffer(offer.id)}
+                          onClick={() => offer.id && handleViewOffer(offer.id)}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded"
                           title="View Details"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleEditOffer(offer.id)}
+                          onClick={() => offer.id && handleEditOffer(offer.id)}
                           className="text-gray-600 hover:text-gray-900 p-1 rounded"
                           title="Edit"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleCopyOfferId(offer.id)}
+                          onClick={() => offer.id && handleCopyOfferId(offer.id)}
                           className="text-gray-600 hover:text-gray-900 p-1 rounded"
                           title="Copy ID"
                         >
@@ -394,27 +394,27 @@ export default function OffersPage() {
 
       {/* Pagination */}
       {!loading && !error && filteredOffers.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="text-base text-gray-700 text-center sm:text-left">
               Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
               {Math.min((filters.page || 1) * (filters.pageSize || 10), totalOffers)} of {totalOffers} offers
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center space-x-2">
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
                 disabled={(filters.page || 1) <= 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-base border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 Previous
               </button>
-              <span className="text-sm text-gray-700">
+              <span className="text-base text-gray-700 px-2">
                 Page {filters.page || 1} of {Math.ceil(totalOffers / (filters.pageSize || 10))}
               </span>
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                 disabled={(filters.page || 1) >= Math.ceil(totalOffers / (filters.pageSize || 10))}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-base border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 Next
               </button>

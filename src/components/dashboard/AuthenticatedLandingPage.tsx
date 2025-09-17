@@ -31,14 +31,14 @@ export default function AuthenticatedLandingPage() {
   }, []);
 
   const coreModules = [
-    {
-      id: 'cm',
-      code: 'CM',
+        {
+          id: 'cm',
+          code: 'CM',
       name: 'Sentra CM',
       subtitle: 'Campaign Management',
-      description: 'The central module where campaigns are created, scheduled, executed, and tracked.',
-      icon: 'target',
-      path: '/dashboard/campaigns',
+          description: 'The central module where campaigns are created, scheduled, executed, and tracked.',
+          icon: 'target',
+          path: '/dashboard/campaigns',
       color: 'from-teal-500 to-emerald-600'
     },
     {
@@ -48,17 +48,17 @@ export default function AuthenticatedLandingPage() {
       subtitle: '',
       description: 'Gain insights with powerful analytics and customizable reporting tools.',
       icon: 'bar-chart',
-      path: '/dashboard/analytics',
+          path: '/dashboard/analytics',
       color: 'from-purple-500 to-blue-600'
-    },
-    {
-      id: '360',
-      code: '360',
+        },
+        {
+          id: '360',
+          code: '360',
       name: 'Sentra 360',
       subtitle: 'Unified Customer View',
-      description: 'Complete profile with demographics, usage, engagement, and behavioral insights.',
-      icon: 'users',
-      path: '/dashboard/customers',
+          description: 'Complete profile with demographics, usage, engagement, and behavioral insights.',
+          icon: 'users',
+          path: '/dashboard/customers',
       color: 'from-purple-500 to-blue-600'
     },
     {
@@ -68,7 +68,7 @@ export default function AuthenticatedLandingPage() {
       subtitle: 'Experience Management',
       description: 'Design, deliver, and optimize customer journeys with integrated experience management.',
       icon: 'heart',
-      path: '/dashboard/experiences',
+          path: '/dashboard/experiences',
       color: 'from-orange-500 to-red-600'
     },
     {
@@ -78,7 +78,7 @@ export default function AuthenticatedLandingPage() {
       subtitle: 'Customer Segmentation',
       description: 'Advanced targeting with AI-driven segmentation and propensity modeling.',
       icon: 'target',
-      path: '/dashboard/segments',
+          path: '/dashboard/segments',
       color: 'from-red-500 to-pink-600'
     },
     {
@@ -88,17 +88,17 @@ export default function AuthenticatedLandingPage() {
       subtitle: 'Engagement Hub',
       description: 'Omnichannel campaign execution with real-time tracking and adaptive optimization.',
       icon: 'send',
-      path: '/dashboard/engagement',
+          path: '/dashboard/engagement',
       color: 'from-blue-500 to-cyan-600'
-    },
-    {
-      id: 'config',
-      code: 'Config',
+        },
+        {
+          id: 'config',
+          code: 'Config',
       name: 'Sentra Configuration',
       subtitle: 'Management',
       description: 'System-wide configuration management for all platform modules and settings.',
-      icon: 'settings',
-      path: '/dashboard/configuration',
+          icon: 'settings',
+          path: '/dashboard/configuration',
       color: 'from-gray-500 to-slate-600'
     }
   ];
@@ -245,39 +245,39 @@ export default function AuthenticatedLandingPage() {
       <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: '#0a192f' }}>
         {/* Header */}
         <header className={`relative z-10 bg-[#0a192f]/90 backdrop-blur-sm border-b border-white/10 transition-all duration-1000 ease-out ${
-          isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
-        }`}>
+        isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
+      }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20 lg:h-24">
               <div className="flex items-center">
                 <div className="w-32 h-32 lg:w-40 lg:h-40 flex items-center justify-center">
-                  <img 
-                    src={logo} 
-                    alt="Sentra Logo" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <img 
+                  src={logo} 
+                  alt="Sentra Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
+            </div>
 
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-white/80 truncate max-w-32 email-truncate">
                   {(user as User & { email?: string })?.email || 'User'}
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center space-x-2 text-sm text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
-                >
-                  <LogOut className="w-4 h-4 flex-shrink-0" />
-                  <span>Logout</span>
-                </button>
               </div>
+              <button
+                onClick={handleLogout}
+                  className="flex items-center space-x-2 text-sm text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
+              >
+                  <LogOut className="w-4 h-4 flex-shrink-0" />
+                <span>Logout</span>
+              </button>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* Main Content */}
         <main className="relative z-10 py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-8">
             {/* Title Section */}
             <div className="text-center mb-12">
               <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
@@ -286,16 +286,16 @@ export default function AuthenticatedLandingPage() {
               <p className="text-xl text-white/80 max-w-2xl mx-auto">
                 Discover the powerful modules that make up the Sentra ecosystem.
               </p>
-            </div>
+                </div>
 
             {/* Modules Grid */}
             <div className="modules-grid">
               {coreModules.map((module, index) => {
-                const IconComponent = getModuleIcon(module.icon);
-                return (
-                  <div
-                    key={module.id}
-                    onClick={() => handleModuleClick(module)}
+                    const IconComponent = getModuleIcon(module.icon);
+                    return (
+                      <div
+                        key={module.id}
+                        onClick={() => handleModuleClick(module)}
                     className={`module-card group cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-2 ${
                       isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                     }`}
@@ -309,35 +309,35 @@ export default function AuthenticatedLandingPage() {
                             <IconComponent className="w-8 h-8 text-white" />
                           </div>
                         </div>
-                      </div>
-                      
+                          </div>
+                          
                       {/* Content */}
                       <div className="text-center flex flex-col flex-grow">
                         <h3 className="text-xl font-bold text-white mb-2">
-                          {module.name}
-                        </h3>
+                              {module.name}
+                            </h3>
                         {module.subtitle && (
                           <p className="text-emerald-400 font-semibold mb-3">
                             {module.subtitle}
                           </p>
                         )}
                         <p className="text-white/70 text-sm leading-relaxed mb-6 flex-grow">
-                          {module.description}
-                        </p>
+                              {module.description}
+                            </p>
                         
                         {/* Explore Button */}
                         <button className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 group-hover:bg-white/20 mt-auto">
                           <span>Explore Module</span>
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                         </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </main>
+                    );
+                  })}
+                </div>
+        </div>
+      </main>
       </div>
     </>
   );

@@ -122,7 +122,7 @@ export default function ProductTypesPage() {
   }
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
@@ -131,7 +131,7 @@ export default function ProductTypesPage() {
         </div>
         <button 
           onClick={handleCreateProductType}
-          className="inline-flex items-center px-3 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
+          className="inline-flex items-center px-4 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
         >
           <Plus className="h-5 w-5 mr-2" />
           Create Product Type
@@ -139,9 +139,9 @@ export default function ProductTypesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -149,7 +149,7 @@ export default function ProductTypesPage() {
                 placeholder="Search product types..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none w-full sm:w-64"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none w-full sm:w-64 text-base"
               />
             </div>
             <HeadlessSelect
@@ -192,31 +192,31 @@ export default function ProductTypesPage() {
 
       {/* Product Types Display */}
       {filteredProductTypes.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
           <Layers className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No product types found</h3>
-          <p className="text-gray-600 mb-6">Get started by creating your first product type.</p>
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No product types found</h3>
+          <p className="text-base text-gray-600 mb-6">Get started by creating your first product type.</p>
           <button 
             onClick={handleCreateProductType}
-            className="inline-flex items-center px-4 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-4 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create Your First Product Type
           </button>
         </div>
       ) : viewMode === 'grid' ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="mb-4">
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-sm font-semibold text-gray-900">
               {filteredProductTypes.length} Product Type{filteredProductTypes.length !== 1 ? 's' : ''}
             </h2>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredProductTypes.map((productType, index) => (
               <div
                 key={productType.id}
-                className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-[#3b8169]/20 transition-all duration-300 cursor-pointer"
+                className="group relative bg-white border border-gray-200 rounded-xl p-4 sm:p-6 hover:shadow-lg hover:border-[#3b8169]/20 transition-all duration-300 cursor-pointer"
                 style={{
                   animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                   opacity: 0,
@@ -245,7 +245,7 @@ export default function ProductTypesPage() {
 
                   {/* Content */}
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors duration-300">
+                    <h3 className="text-sm font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors duration-300">
                       {productType.name}
                     </h3>
                     <p className="text-gray-600 text-sm mb-3 line-clamp-2">
@@ -282,8 +282,8 @@ export default function ProductTypesPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h2 className="text-base font-semibold text-gray-900">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-sm font-semibold text-gray-900">
               {filteredProductTypes.length} Product Type{filteredProductTypes.length !== 1 ? 's' : ''}
             </h2>
           </div>
@@ -292,7 +292,7 @@ export default function ProductTypesPage() {
             {filteredProductTypes.map((productType, index) => (
               <div 
                 key={productType.id} 
-                className="group p-6 hover:bg-gray-50 transition-all duration-300 cursor-pointer"
+                className="group p-4 sm:p-6 hover:bg-gray-50 transition-all duration-300 cursor-pointer"
                 style={{
                   animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                   opacity: 0,
@@ -306,7 +306,7 @@ export default function ProductTypesPage() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-base font-bold text-gray-900 group-hover:text-gray-800 transition-colors duration-300">
+                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-gray-800 transition-colors duration-300">
                         {productType.name}
                       </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${

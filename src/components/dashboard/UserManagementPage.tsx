@@ -236,18 +236,18 @@ export default function UserManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">User Management</h1>
-            <p className="text-gray-600 text-sm">Manage users and account requests</p>
+            <p className="text-gray-600 text-base">Manage users and account requests</p>
           </div>
           <button 
             onClick={() => {
               setSelectedUser(null);
               setIsModalOpen(true);
             }}
-            className="group flex items-center justify-center space-x-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 md:px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto text-base"
+            className="group flex items-center justify-center space-x-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 md:px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto text-base whitespace-nowrap"
           >
             <Plus className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             <span className="font-semibold">Add User</span>
@@ -311,7 +311,7 @@ export default function UserManagementPage() {
                     { value: 'user', label: 'User' }
                   ]}
                   value={filterRole}
-                  onChange={(value) => setFilterRole(value as any)}
+                  onChange={(value) => setFilterRole(value as 'all' | 'admin' | 'user')}
                   placeholder="Select role"
                   className="min-w-[140px]"
                 />
@@ -323,7 +323,7 @@ export default function UserManagementPage() {
                     { value: 'inactive', label: 'Inactive' }
                   ]}
                   value={filterStatus}
-                  onChange={(value) => setFilterStatus(value as any)}
+                  onChange={(value) => setFilterStatus(value as 'all' | 'active' | 'inactive')}
                   placeholder="Select status"
                   className="min-w-[140px]"
                 />

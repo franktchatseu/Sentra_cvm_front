@@ -7,7 +7,6 @@ import {
   DollarSign, 
   Package, 
   Eye, 
-  X,
   ChevronLeft,
   ChevronRight,
   ArrowLeft,

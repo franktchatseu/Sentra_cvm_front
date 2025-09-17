@@ -122,7 +122,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && (
         <div className="fixed inset-0 z-[9999] lg:hidden">
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={onClose} />
-          <div className="fixed inset-y-0 left-0 flex w-80 flex-col bg-gradient-to-b from-gray-50 to-white shadow-xl">
+          <div className="fixed inset-y-0 left-0 flex w-72 sm:w-80 flex-col bg-gradient-to-b from-gray-50 to-white shadow-xl">
             <div className="flex h-16 shrink-0 items-center justify-between px-6">
             <div className="flex items-center space-x-3">
                 <div className="w-20 h-20 flex items-center justify-center">

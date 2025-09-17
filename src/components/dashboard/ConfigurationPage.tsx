@@ -208,8 +208,8 @@ export default function ConfigurationPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 py-6 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-4 sm:p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -218,7 +218,7 @@ export default function ConfigurationPage() {
                 placeholder="Search configurations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200 text-base"
               />
             </div>
 
@@ -248,13 +248,13 @@ export default function ConfigurationPage() {
           </div>
 
           {/* Category Filters */}
-          <div className="flex flex-wrap gap-2 mt-6">
+          <div className="flex flex-wrap gap-2 mt-4 sm:mt-6">
             {categories.map((category) => (
               category.id !== 'config' && (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
                     selectedCategory === category.id
                       ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
@@ -268,11 +268,11 @@ export default function ConfigurationPage() {
         </div>
 
         {/* Results Count */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-slate-600">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 mb-6">
+          <p className="text-slate-600 text-base">
             Showing {filteredConfigurations.length} of {configurations.length} configurations
           </p>
-          <button className="flex items-center space-x-2 px-3 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 hover:scale-105 text-base">
+          <button className="flex items-center space-x-2 px-3 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 hover:scale-105 text-base whitespace-nowrap">
             <Plus className="h-4 w-4" />
             <span>Add Configuration</span>
           </button>
@@ -280,19 +280,19 @@ export default function ConfigurationPage() {
 
         {/* Configurations Grid/List */}
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredConfigurations.map((config, index) => {
-              const Icon = config.icon;
-              return (
-                <div
-                  key={config.id}
-                  className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-6 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 cursor-pointer"
-                  style={{
-                    animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
-                    opacity: 0,
-                    transform: 'translateY(20px)'
-                  }}
-                >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {filteredConfigurations.map((config, index) => {
+                const Icon = config.icon;
+                return (
+                  <div
+                    key={config.id}
+                    className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-6 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 cursor-pointer"
+                    style={{
+                      animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
+                      opacity: 0,
+                      transform: 'translateY(20px)'
+                    }}
+                  >
                   {/* Gradient overlay */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-500`}></div>
                   
@@ -302,20 +302,20 @@ export default function ConfigurationPage() {
                       <div className={`p-3 rounded-xl bg-gradient-to-br ${config.gradient} shadow-lg group-hover:scale-110 transition-all duration-500`}>
                         <Icon className="h-6 w-6 text-white" />
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(config.status)}`}>
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(config.status)}`}>
                         {config.status}
                       </span>
                     </div>
 
                     {/* Content */}
                     <div className="mb-4">
-                      <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-slate-800 transition-colors duration-300">
+                      <h3 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 mb-2 group-hover:text-slate-800 transition-colors duration-300">
                         {config.name}
                       </h3>
-                      <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                      <p className="text-slate-600 text-sm sm:text-base mb-3 line-clamp-2">
                         {config.description}
                       </p>
-                      <div className="flex items-center text-xs text-slate-500">
+                      <div className="flex items-center text-xs sm:text-sm text-slate-500">
                         <span className="bg-slate-100 px-2 py-1 rounded-full">
                           {config.category}
                         </span>
@@ -325,15 +325,15 @@ export default function ConfigurationPage() {
                     {/* Sub-configs */}
                     {config.subConfigs && config.subConfigs.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-xs font-semibold text-slate-500 mb-2">Sub-configurations:</p>
+                        <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-2">Sub-configurations:</p>
                         <div className="flex flex-wrap gap-1">
                           {config.subConfigs.slice(0, 3).map((subConfig, idx) => (
-                            <span key={idx} className="text-xs bg-slate-50 text-slate-600 px-2 py-1 rounded-full">
+                            <span key={idx} className="text-xs sm:text-sm bg-slate-50 text-slate-600 px-2 py-1 rounded-full">
                               {subConfig}
                             </span>
                           ))}
                           {config.subConfigs.length > 3 && (
-                            <span className="text-xs text-slate-400 px-2 py-1">
+                            <span className="text-xs sm:text-sm text-slate-400 px-2 py-1">
                               +{config.subConfigs.length - 3} more
                             </span>
                           )}
@@ -343,7 +343,7 @@ export default function ConfigurationPage() {
 
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs sm:text-sm text-slate-500">
                         Modified: {config.lastModified}
                       </span>
                       <div className="flex items-center space-x-2">
@@ -369,7 +369,7 @@ export default function ConfigurationPage() {
                 return (
                   <div
                     key={config.id}
-                    className="group p-6 hover:bg-slate-50/50 transition-all duration-300 cursor-pointer"
+                    className="group p-4 sm:p-6 hover:bg-slate-50/50 transition-all duration-300 cursor-pointer"
                     style={{
                       animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                       opacity: 0,
@@ -383,17 +383,17 @@ export default function ConfigurationPage() {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-base font-bold text-slate-900 group-hover:text-slate-800 transition-colors duration-300">
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-slate-800 transition-colors duration-300">
                             {config.name}
                           </h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(config.status)}`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(config.status)}`}>
                             {config.status}
                           </span>
                         </div>
-                        <p className="text-slate-600 text-sm mb-2">
+                        <p className="text-slate-600 text-sm sm:text-base mb-2">
                           {config.description}
                         </p>
-                        <div className="flex items-center space-x-4 text-xs text-slate-500">
+                        <div className="flex items-center space-x-4 text-xs sm:text-sm text-slate-500">
                           <span className="bg-slate-100 px-2 py-1 rounded-full">
                             {config.category}
                           </span>
@@ -427,11 +427,11 @@ export default function ConfigurationPage() {
             <div className="p-4 bg-slate-100 rounded-full w-16 h-16 mx-auto mb-4">
               <Search className="h-8 w-8 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900 mb-2">No configurations found</h3>
-            <p className="text-slate-600 mb-6">
+            <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">No configurations found</h3>
+            <p className="text-base text-slate-600 mb-6">
               {searchTerm ? 'Try adjusting your search terms' : 'No configurations match the selected category'}
             </p>
-            <button className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 text-base">
+            <button className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 text-base whitespace-nowrap">
               Clear Filters
             </button>
           </div>

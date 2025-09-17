@@ -283,7 +283,7 @@ export default function OfferCategoriesPage() {
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Offer Categories</h1>
             </div>
-            <p className="text-gray-500 text-sm">Organize and manage your offer categories with ease</p>
+            <p className="text-gray-500 text-base">Organize and manage your offer categories with ease</p>
           </div>
           <button
             onClick={handleCreateCategory}
@@ -373,16 +373,16 @@ export default function OfferCategoriesPage() {
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     Category
                   </th>
-                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     Description
                   </th>
-                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     Offers
                   </th>
-                  <th className="px-4 sm:px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -401,7 +401,7 @@ export default function OfferCategoriesPage() {
                           </div>
                         </div>
                         <div className="ml-5">
-                          <div className="text-base font-semibold text-gray-900 group-hover:text-green-900 transition-colors">{category.name}</div>
+                          <div className="text-sm font-semibold text-gray-900 group-hover:text-green-900 transition-colors">{category.name}</div>
                           <div className="text-sm text-gray-500 font-medium">ID: {category.id}</div>
                         </div>
                       </div>
@@ -412,7 +412,7 @@ export default function OfferCategoriesPage() {
                       </div>
                     </td>
                     <td className="px-4 sm:px-8 py-6">
-                      <span className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                      <span className="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
                         {category.offerCount} offer{category.offerCount !== 1 ? 's' : ''}
                       </span>
                     </td>
