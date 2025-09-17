@@ -18,6 +18,7 @@ import { User } from '../../types/auth';
 import { useToast } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import UserModal from '../modals/UserModal';
+import HeadlessSelect from '../ui/HeadlessSelect';
 
 interface UserActionsDropdownProps {
   user: User;
@@ -238,15 +239,15 @@ export default function UserManagementPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">User Management</h1>
-            <p className="text-gray-600 text-sm md:text-lg">Manage users and account requests</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">User Management</h1>
+            <p className="text-gray-600 text-sm">Manage users and account requests</p>
           </div>
           <button 
             onClick={() => {
               setSelectedUser(null);
               setIsModalOpen(true);
             }}
-            className="group flex items-center justify-center space-x-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-4 md:px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
+            className="group flex items-center justify-center space-x-3 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 md:px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto text-base"
           >
             <Plus className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             <span className="font-semibold">Add User</span>
@@ -297,31 +298,35 @@ export default function UserManagementPage() {
                 placeholder={`Search ${activeTab}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
               />
             </div>
             
             {activeTab === 'users' && (
               <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                <select
+                <HeadlessSelect
+                  options={[
+                    { value: 'all', label: 'All Roles' },
+                    { value: 'admin', label: 'Admin' },
+                    { value: 'user', label: 'User' }
+                  ]}
                   value={filterRole}
-                  onChange={(e) => setFilterRole(e.target.value as any)}
-                  className="px-3 md:px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 bg-gray-50 focus:bg-white text-sm md:text-base"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="user">User</option>
-                </select>
+                  onChange={(value) => setFilterRole(value as any)}
+                  placeholder="Select role"
+                  className="min-w-[140px]"
+                />
                 
-                <select
+                <HeadlessSelect
+                  options={[
+                    { value: 'all', label: 'All Status' },
+                    { value: 'active', label: 'Active' },
+                    { value: 'inactive', label: 'Inactive' }
+                  ]}
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="px-3 md:px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 bg-gray-50 focus:bg-white text-sm md:text-base"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  onChange={(value) => setFilterStatus(value as any)}
+                  placeholder="Select status"
+                  className="min-w-[140px]"
+                />
               </div>
             )}
           </div>
@@ -352,8 +357,8 @@ export default function UserManagementPage() {
                 <div className="bg-gradient-to-r from-blue-500 to-indigo-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Users className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">No users found</h3>
-                <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">No users found</h3>
+                <p className="text-gray-600 mb-8 text-sm max-w-md mx-auto">
                   {searchTerm ? 'No users match your search criteria.' : 'No users have been created yet.'}
                 </p>
               </div>
@@ -379,13 +384,13 @@ export default function UserManagementPage() {
                           <div className="flex items-center">
                             <div className="flex-shrink-0">
                               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200">
-                                <span className="text-white font-semibold text-lg">
+                                <span className="text-white font-semibold text-base">
                                   {user.first_name.charAt(0)}{user.last_name.charAt(0)}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-5">
-                              <div className="text-lg font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">
+                              <div className="text-base font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">
                                 {user.first_name} {user.last_name}
                               </div>
                               <div className="text-sm text-gray-500">{user.private_email_address}</div>
@@ -502,8 +507,8 @@ export default function UserManagementPage() {
                 <div className="bg-gradient-to-r from-blue-500 to-indigo-500 w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Clock className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">No pending requests</h3>
-                <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">No pending requests</h3>
+                <p className="text-gray-600 mb-8 text-sm max-w-md mx-auto">
                   All account requests have been processed.
                 </p>
               </div>
@@ -529,13 +534,13 @@ export default function UserManagementPage() {
                         <div className="flex items-center">
                           <div className="flex-shrink-0">
                             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200">
-                              <span className="text-white font-semibold text-lg">
+                              <span className="text-white font-semibold text-base">
                                 {request.first_name.charAt(0)}{request.last_name.charAt(0)}
                               </span>
                             </div>
                           </div>
                           <div className="ml-5">
-                            <div className="text-lg font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">
+                            <div className="text-base font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">
                               {request.first_name} {request.last_name}
                             </div>
                             <div className="text-sm text-gray-500">{request.private_email_address}</div>

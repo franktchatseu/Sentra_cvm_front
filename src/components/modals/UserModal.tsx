@@ -3,6 +3,7 @@ import { X, User as UserIcon, Mail, Shield, Save, UserPlus } from 'lucide-react'
 import { User } from '../../types/auth';
 import { authService } from '../../services/authService';
 import { useToast } from '../../contexts/ToastContext';
+import HeadlessSelect from '../ui/HeadlessSelect';
 import AnimatedButton from '../ui/AnimatedButton';
 
 interface UserModalProps {
@@ -130,7 +131,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                   value={formData.first_name}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200"
                   placeholder="Prénom"
                 />
               </div>
@@ -148,7 +149,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                   value={formData.last_name}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200"
                   placeholder="Nom"
                 />
               </div>
@@ -169,7 +170,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                 value={formData.private_email_address}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200"
                 placeholder="email@example.com"
               />
             </div>
@@ -180,16 +181,15 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
               <Shield className="w-4 h-4 inline mr-2" />
               Rôle
             </label>
-            <select
-              name="role"
+            <HeadlessSelect
+              options={[
+                { value: 'user', label: 'Utilisateur' },
+                { value: 'admin', label: 'Administrateur' }
+              ]}
               value={formData.role}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200"
-              required
-            >
-              <option value="user">Utilisateur</option>
-              <option value="admin">Administrateur</option>
-            </select>
+              onChange={(value) => setFormData({ ...formData, role: value as string })}
+              placeholder="Select role"
+            />
           </div>
 
           <div className="flex items-center">
@@ -217,7 +217,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
             <AnimatedButton
               type="submit"
               loading={isLoading}
-              className="flex-1 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 font-medium"
+              className="flex-1 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 font-medium"
             >
               <Save className="w-4 h-4 mr-2" />
               {user ? 'Modifier' : 'Créer'}

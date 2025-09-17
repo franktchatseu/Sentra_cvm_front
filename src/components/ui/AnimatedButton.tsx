@@ -43,30 +43,30 @@ export default function AnimatedButton({
 
   const variantClasses = {
     primary: `
-      bg-[#1a3d2e] text-white 
-      shadow-lg hover:shadow-xl hover:shadow-[#1a3d2e]/25 focus-visible:ring-[#1a3d2e]
+      bg-[#3b8169] text-white 
+      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-0
       ${glowEffect ? 'hover:shadow-glow' : ''}
     `,
     secondary: `
       bg-white border-2 border-secondary-300 text-secondary-700 shadow-sm 
       hover:bg-secondary-50 hover:border-secondary-400 hover:shadow-md 
-      focus-visible:ring-secondary-500
+      focus-visible:ring-0
     `,
     ghost: `
       bg-transparent text-secondary-600 hover:bg-secondary-100 
-      hover:text-secondary-900 focus-visible:ring-secondary-500
+      hover:text-secondary-900 focus-visible:ring-0
     `,
     success: `
-      bg-[#1a3d2e] text-white 
-      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-[#3b8169]
+      bg-[#3b8169] text-white 
+      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-0
     `,
     warning: `
       bg-gradient-to-r from-warning-500 to-warning-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-warning-500/25 focus-visible:ring-warning-500
+      shadow-lg hover:shadow-xl hover:shadow-warning-500/25 focus-visible:ring-0
     `,
     error: `
       bg-gradient-to-r from-error-500 to-error-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-error-500/25 focus-visible:ring-error-500
+      shadow-lg hover:shadow-xl hover:shadow-error-500/25 focus-visible:ring-0
     `,
   };
 

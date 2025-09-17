@@ -130,7 +130,7 @@ export default function DashboardHome() {
     { name: 'New Offer', href: '/dashboard/offers/new', icon: MessageSquare },
     { name: 'Build Segment', href: '/dashboard/segments/new', icon: Users },
     { name: 'Configuration', href: '/dashboard/configuration', icon: Cog },
-    { name: 'View Analytics', href: '/dashboard/analytics', icon: Activity }
+    // { name: 'View Analytics', href: '/dashboard/analytics', icon: Activity }
   ];
 
   return (
@@ -139,7 +139,7 @@ export default function DashboardHome() {
           <h1 className="lg:text-3xl text-2xl lg:mt-2 font-bold bg-gradient-to-r from-slate-800 via-green-800 to-green-900 bg-clip-text text-transparent mb-3">
           Welcome back, {getFirstName()} 👋
         </h1>
-        <p className="text-slate-600 lg:text-base text-sm font-medium max-w-2xl">
+        <p className="text-slate-600 lg:text-base text-sm font-medium ">
           Here's what's happening with your campaigns today. Your performance is looking great!
         </p>
       </div>
@@ -201,7 +201,7 @@ export default function DashboardHome() {
                   <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Recent Campaigns</h2>
                   <p className="text-slate-600 text-xs sm:text-sm mt-1 font-medium">Monitor your active and scheduled campaigns</p>
                 </div>
-                <button className="px-3 py-2 sm:px-4 sm:py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto">
+                <button className="px-3 py-2 sm:px-4 sm:py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto">
                   View All
                 </button>
               </div>
@@ -286,9 +286,9 @@ export default function DashboardHome() {
 
         <div className="flex flex-col md:flex-row xl:flex-col space-y-6 md:space-y-0 md:space-x-6 xl:space-x-0 xl:space-y-6 h-full">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden transition-all duration-500 flex-1">
-            <div className="p-4 sm:p-6 bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-pink-500/15 border-b border-white/30">
+            <div className="p-4 sm:p-6 bg-gradient-to-r from-green-500/15 via-emerald-500/10 to-teal-500/15 border-b border-white/30">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
+                <div className="p-2 bg-gradient-to-br from-green-600 to-emerald-700 rounded-lg">
                   <Target className="h-5 w-5 text-white" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Quick Actions</h2>
@@ -302,15 +302,15 @@ export default function DashboardHome() {
                     <button
                       key={action.name}
                       onClick={() => navigate(action.href)}
-                      className="group w-full flex items-center space-x-4 p-4 text-left bg-white/50 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 rounded-xl border border-white/30 hover:border-indigo-200 transition-all duration-300 hover:scale-105"
+                      className="group w-full flex items-center space-x-3 p-3 text-left bg-white/50 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl border border-white/30 hover:border-green-200 transition-all duration-300 hover:scale-105"
                       style={{
                         animation: `fadeInUp 0.6s ease-out forwards ${(index + 7) * 0.1}s`,
                         opacity: 0,
                         transform: 'translateY(20px)'
                       }}
                     >
-                      <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-indigo-100 group-hover:to-purple-100 rounded-lg transition-all duration-300">
-                        <Icon className="h-4 w-4 text-slate-600 group-hover:text-indigo-600" />
+                      <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-green-100 group-hover:to-emerald-100 rounded-lg transition-all duration-300">
+                        <Icon className="h-4 w-4 text-slate-600 group-hover:text-green-800" />
                       </div>
                       <span className="font-semibold text-xs sm:text-sm text-slate-700 group-hover:text-slate-900">{action.name}</span>
                     </button>

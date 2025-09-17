@@ -9,6 +9,9 @@ import ProductsPage from '../components/dashboard/ProductsPage';
 import CreateProductPage from '../components/dashboard/CreateProductPage';
 import EditProductPage from '../components/dashboard/EditProductPage';
 import ProductCategoriesPage from '../components/dashboard/ProductCategoriesPage';
+import ProductTypesPage from '../components/dashboard/ProductTypesPage';
+import OfferTypesPage from '../components/dashboard/OfferTypesPage';
+import OfferCategoriesPage from '../components/dashboard/OfferCategoriesPage';
 import UserManagementPage from '../components/dashboard/UserManagementPage';
 import ConfigurationPage from '../components/dashboard/ConfigurationPage';
 
@@ -24,9 +27,9 @@ export default function Dashboard() {
         <Route path="/products/create" element={<CreateProductPage />} />
         <Route path="/products/:id/edit" element={<EditProductPage />} />
         <Route path="/product-categories" element={<ProductCategoriesPage />} />
-        <Route path="/product-types" element={<ProductCategoriesPage />} />
-        <Route path="/offer-types" element={<ProductCategoriesPage />} />
-        <Route path="/offer-categories" element={<ProductCategoriesPage />} />
+        <Route path="/product-types" element={<ProductTypesPage />} />
+        <Route path="/offer-types" element={<OfferTypesPage />} />
+        <Route path="/offer-categories" element={<OfferCategoriesPage />} />
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/segments" element={<SegmentsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />

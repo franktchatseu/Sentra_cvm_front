@@ -267,7 +267,7 @@
   }
   
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-600 to-accent-600 text-white shadow-lg hover:shadow-xl focus-visible:ring-primary-500;
+    @apply bg-gradient-to-r from-primary-600 to-accent-600 text-white shadow-lg hover:shadow-xl focus-visible:ring-0;
     background-size: 200% 200%;
     animation: gradient-shift 3s ease infinite;
   }
@@ -278,7 +278,7 @@
   }
   
   .btn-secondary {
-    @apply bg-white border border-secondary-300 text-secondary-700 shadow-sm hover:bg-secondary-50 hover:border-secondary-400 focus-visible:ring-secondary-500;
+    @apply bg-white border border-secondary-300 text-secondary-700 shadow-sm hover:bg-secondary-50 hover:border-secondary-400 focus-visible:ring-0;
   }
   
   .btn-ghost {
@@ -318,7 +318,7 @@
   
   /* Enhanced Input Styles */
   .input {
-    @apply block w-full rounded-lg border border-secondary-300 bg-secondary-50 px-4 py-3 text-secondary-900 placeholder-secondary-500 transition-all duration-200 ease-out focus:border-primary-500 focus:bg-white;
+    @apply block w-full rounded-lg border border-secondary-300 bg-secondary-50 px-4 py-3 text-secondary-900 placeholder-secondary-500 transition-all duration-200 ease-out  focus:bg-white;
   }
   
   .input:focus {

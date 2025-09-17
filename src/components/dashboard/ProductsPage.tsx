@@ -17,6 +17,7 @@ import { Product, ProductFilters } from '../../types/product';
 import { ProductCategory } from '../../types/productCategory';
 import { productService } from '../../services/productService';
 import { productCategoryService } from '../../services/productCategoryService';
+import HeadlessSelect from '../ui/HeadlessSelect';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -125,24 +126,24 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
             Products Management
           </h1>
-          <p className="text-gray-600 mt-2">Manage your product catalog</p>
+          <p className="text-gray-600 mt-2 text-sm">Manage your product catalog</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate('/dashboard/products/categories')}
-            className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-3 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base"
           >
             <Settings className="w-5 h-5" />
             Categories
           </button>
           <button
             onClick={() => navigate('/dashboard/products/create')}
-            className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base"
           >
             <Plus className="w-5 h-5" />
             Create Product
@@ -161,50 +162,55 @@ export default function ProductsPage() {
                 placeholder="Search products..."
                 value={filters.search || ''}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
               />
             </div>
 
             {/* Category Filter */}
-            <select
-              value={filters.categoryId || ''}
-              onChange={(e) => handleFilterChange('categoryId', e.target.value ? Number(e.target.value) : undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+            <HeadlessSelect
+              options={[
+                { value: '', label: 'All Categories' },
+                ...categories.map((category) => ({
+                  value: category.id.toString(),
+                  label: category.name
+                }))
+              ]}
+              value={filters.categoryId?.toString() || ''}
+              onChange={(value) => handleFilterChange('categoryId', value ? Number(value) : undefined)}
+              placeholder="All Categories"
+              className="min-w-[160px]"
+            />
 
             {/* Status Filter */}
-            <select
+            <HeadlessSelect
+              options={[
+                { value: '', label: 'All Status' },
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' }
+              ]}
               value={filters.isActive === undefined ? '' : filters.isActive.toString()}
-              onChange={(e) => handleFilterChange('isActive', e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
-            >
-              <option value="">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
+              onChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
+              placeholder="All Status"
+              className="min-w-[120px]"
+            />
 
             {/* Sort */}
-            <select
+            <HeadlessSelect
+              options={[
+                { value: 'created_at-DESC', label: 'Newest First' },
+                { value: 'created_at-ASC', label: 'Oldest First' },
+                { value: 'name-ASC', label: 'Name A-Z' },
+                { value: 'name-DESC', label: 'Name Z-A' },
+                { value: 'product_id-ASC', label: 'Product ID A-Z' }
+              ]}
               value={`${filters.sortBy}-${filters.sortDirection}`}
-              onChange={(e) => {
-                const [sortBy, sortDirection] = e.target.value.split('-');
+              onChange={(value) => {
+                const [sortBy, sortDirection] = value.split('-');
                 setFilters({ ...filters, sortBy, sortDirection: sortDirection as 'ASC' | 'DESC' });
               }}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
-            >
-              <option value="created_at-DESC">Newest First</option>
-              <option value="created_at-ASC">Oldest First</option>
-              <option value="name-ASC">Name A-Z</option>
-              <option value="name-DESC">Name Z-A</option>
-              <option value="product_id-ASC">Product ID A-Z</option>
-            </select>
+              placeholder="Sort by"
+              className="min-w-[140px]"
+            />
           </div>
         </div>
 
@@ -263,7 +269,7 @@ export default function ProductsPage() {
             <p className="text-gray-500 mb-6">Get started by creating your first product.</p>
             <button
               onClick={() => navigate('/dashboard/products/create')}
-              className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
+              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base"
             >
               <Plus className="w-5 h-5" />
               Create Product

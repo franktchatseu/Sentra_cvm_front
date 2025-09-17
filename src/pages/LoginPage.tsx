@@ -430,14 +430,14 @@ export default function LoginPage() {
                 <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-full h-full object-contain" />
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-green-900 to-emerald-900 bg-clip-text text-transparent mb-3 tracking-tight">Welcome Back</h1>
-            <p className="text-slate-600 text-lg font-medium">Sign in to your Sentra CVM account</p>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-green-900 to-emerald-900 bg-clip-text text-transparent mb-3 tracking-tight">Welcome Back</h1>
+            <p className="text-slate-600 text-sm font-medium">Sign in to your Sentra CVM account</p>
           </div>
           
           {/* Desktop Header */}
           <div className="text-center mb-10 hidden lg:block">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-green-900 to-emerald-900 bg-clip-text text-transparent mb-3 tracking-tight">Welcome Back</h1>
-            <p className="text-slate-600 text-base font-medium">Sign in to your account</p>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-green-900 to-emerald-900 bg-clip-text text-transparent mb-3 tracking-tight">Welcome Back</h1>
+            <p className="text-slate-600 text-sm font-medium">Sign in to your account</p>
           </div>
 
         {/* Enhanced Login Form */}

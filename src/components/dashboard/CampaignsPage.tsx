@@ -85,7 +85,7 @@ export default function CampaignsPage() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      active: 'bg-[#1a3d2e]/10 text-[#1a3d2e]',
+      active: 'bg-[#3b8169]/10 text-[#3b8169]',
       scheduled: 'bg-yellow-100 text-yellow-800',
       paused: 'bg-gray-100 text-gray-800',
       completed: 'bg-blue-100 text-blue-800'
@@ -100,12 +100,12 @@ export default function CampaignsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Campaigns</h1>
-          <p className="text-gray-600 mt-2">Manage and monitor your customer engagement campaigns</p>
+          <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+          <p className="text-gray-600 mt-2 text-sm">Manage and monitor your customer engagement campaigns</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
+        <button className="inline-flex items-center px-3 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-base">
           <Plus className="h-5 w-5 mr-2" />
           Create Campaign
         </button>
@@ -132,13 +132,13 @@ export default function CampaignsPage() {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search campaigns..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none w-full sm:w-64"
               />
             </div>
             <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
@@ -152,7 +152,7 @@ export default function CampaignsPage() {
       {/* Campaigns List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-base font-semibold text-gray-900">
             {filteredCampaigns.length} Campaign{filteredCampaigns.length !== 1 ? 's' : ''}
           </h2>
         </div>

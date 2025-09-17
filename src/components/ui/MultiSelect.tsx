@@ -138,7 +138,7 @@ export default function MultiSelect({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search options..."
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none "
               />
             </div>
             

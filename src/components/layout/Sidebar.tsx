@@ -34,7 +34,7 @@ interface NavigationItem {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['campaign management']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['campaign management', 'product configuration']);
   
   const navigation: NavigationItem[] = [
     { 
@@ -198,9 +198,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                       )}
                                     </button>
                                     
-                                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                      isChildExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                                    }`}>
+                                    {isChildExpanded && (
                                       <div className="mt-2 ml-6 space-y-2">
                                         {child.children?.map((grandchild) => {
                                           const GrandchildIcon = grandchild.icon;
@@ -222,7 +220,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                           );
                                         })}
                                       </div>
-                                    </div>
+                                    )}
                                   </div>
                                 );
                               }
@@ -274,7 +272,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col">
-        <div className="flex grow flex-col gap-y-4 overflow-y-auto bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 px-6 py-6">
+        <div className="flex grow flex-col gap-y-4 overflow-y-auto bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 px-6 py-6" style={{maxHeight: '100vh'}}>
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center">
             <div className="w-32 h-32 flex items-center justify-center">
@@ -321,7 +319,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             {item.children?.map((child) => {
                               const ChildIcon = child.icon;
                               const isChildActive = location.pathname === child.href;
-                              
                               // Check if child has its own children (nested dropdown)
                               if (child.type === 'parent' && child.children) {
                                 const isChildExpanded = expandedItems.includes(child.name.toLowerCase());
@@ -346,9 +343,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                       )}
                                     </button>
                                     
-                                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                      isChildExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                                    }`}>
+                                    {isChildExpanded && (
                                       <ul className="mt-2 ml-6 space-y-2">
                                         {child.children?.map((grandchild) => {
                                           const GrandchildIcon = grandchild.icon;
@@ -371,7 +366,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                           );
                                         })}
                                       </ul>
-                                    </div>
+                                    )}
                                   </li>
                                 );
                               }

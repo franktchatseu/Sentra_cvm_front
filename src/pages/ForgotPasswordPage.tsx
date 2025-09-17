@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl shadow-lg mb-6">
             <CheckCircle className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Check Your Email</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h1>
           <p className="text-gray-600 mb-8 leading-relaxed">
             We've sent password reset instructions to <strong>{email}</strong>. 
             Please check your email and follow the link to reset your password.
@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
           <div className="space-y-4">
             <Link
               to="/login"
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1a3d2e] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
             >
               Back to Login
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -167,12 +167,12 @@ export default function ForgotPasswordPage() {
         
         {/* Title and description */}
         <div className="text-center text-white mt-16">
-          <h1 className="text-4xl font-bold mb-4">
+          <h1 className="text-2xl font-bold mb-4">
             Secure Password
             <br />
             <span className="text-yellow-300">Recovery</span>
           </h1>
-          <p className="text-emerald-100 text-lg font-light max-w-sm">
+          <p className="text-emerald-100 text-sm font-light max-w-sm">
             Reset your password safely with our secure
             email verification process
           </p>
@@ -189,13 +189,13 @@ export default function ForgotPasswordPage() {
                 <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-full h-full object-contain" />
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
-            <p className="text-slate-600 text-lg font-medium">Enter your email to receive reset instructions</p>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
+            <p className="text-slate-600 text-sm font-medium">Enter your email to receive reset instructions</p>
           </div>
           
           {/* Desktop Header */}
           <div className="text-center mb-10 hidden lg:block">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">Reset Password</h1>
             <p className="text-slate-600 text-base font-medium">Enter your email to receive reset instructions</p>
           </div>
 

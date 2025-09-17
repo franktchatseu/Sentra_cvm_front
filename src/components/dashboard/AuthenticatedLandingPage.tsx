@@ -280,7 +280,7 @@ export default function AuthenticatedLandingPage() {
       </header>
 
       <main className="relative z-10 py-8 sm:py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           {coreModules.map((category, categoryIndex) => (
             <div 
               key={category.id} 

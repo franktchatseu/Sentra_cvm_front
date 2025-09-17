@@ -106,7 +106,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 font-medium"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl  transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 font-medium"
               placeholder="e.g., Data Plans, Voice Packages, SMS Bundles..."
               required
             />
@@ -121,7 +121,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 resize-none"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl  transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 resize-none"
               placeholder="Provide a detailed description of this category and what products it contains..."
             />
           </div>
@@ -137,7 +137,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
             <button
               type="submit"
               disabled={isLoading}
-              className="px-8 py-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-xl  transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+              className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg  transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-base"
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
@@ -234,13 +234,13 @@ export default function ProductCategoriesPage() {
               <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl">
                 <FolderOpen className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Product Categories</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Product Categories</h1>
             </div>
-            <p className="text-gray-500 text-lg">Organize and manage your product categories with ease</p>
+            <p className="text-gray-500 text-sm">Organize and manage your product categories with ease</p>
           </div>
           <button
             onClick={handleCreateCategory}
-            className="group flex items-center space-x-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="group flex items-center space-x-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-semibold">New Category</span>
@@ -259,12 +259,12 @@ export default function ProductCategoriesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
             />
           </div>
           <button
             onClick={handleSearch}
-            className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg  transition-all duration-200 shadow-md hover:shadow-lg font-medium text-base"
           >
             Search
           </button>
@@ -296,13 +296,13 @@ export default function ProductCategoriesPage() {
               <div className="bg-gradient-to-r from-blue-500 to-indigo-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Package className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">No categories found</h3>
-              <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">No categories found</h3>
+              <p className="text-gray-600 mb-8 text-sm max-w-md mx-auto">
                 {searchTerm ? 'No categories match your search criteria. Try adjusting your search terms.' : 'Get started by creating your first product category to organize your products effectively.'}
               </p>
               <button
                 onClick={handleCreateCategory}
-                className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-8 py-4 rounded-xl  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg"
+                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-lg  transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-base"
               >
                 Create Your First Category
               </button>
@@ -338,7 +338,7 @@ export default function ProductCategoriesPage() {
                           </div>
                         </div>
                         <div className="ml-5">
-                          <div className="text-lg font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{category.name}</div>
+                          <div className="text-base font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{category.name}</div>
                           <div className="text-sm text-gray-500 font-medium">ID: {category.id}</div>
                         </div>
                       </div>

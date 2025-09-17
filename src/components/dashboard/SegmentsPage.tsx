@@ -129,12 +129,12 @@ export default function SegmentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Segments</h1>
-          <p className="text-gray-600 mt-2">Build and manage customer segments for precise targeting</p>
+          <h1 className="text-2xl font-bold text-gray-900">Segments</h1>
+          <p className="text-gray-600 mt-2 text-sm">Build and manage customer segments for precise targeting</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
+        <button className="inline-flex items-center px-3 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
           <Plus className="h-5 w-5 mr-2" />
           Create Segment
         </button>
@@ -149,7 +149,7 @@ export default function SegmentsPage() {
               <button
                 key={type.value}
                 onClick={() => setSelectedType(type.value)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                className={`px-3 py-2 text-base rounded-md text-sm font-medium transition-colors duration-200 ${
                   selectedType === type.value
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -167,10 +167,10 @@ export default function SegmentsPage() {
               <input
                 type="text"
                 placeholder="Search segments..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none "
               />
             </div>
-            <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <button className="flex items-center px-3 py-2 text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
               <Filter className="h-5 w-5 mr-2" />
               Filter
             </button>
@@ -271,7 +271,7 @@ export default function SegmentsPage() {
           <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No segments found</h3>
           <p className="text-gray-600 mb-6">Create your first segment to start targeting specific customer groups</p>
-          <button className="inline-flex items-center px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
+          <button className="inline-flex items-center px-3 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
             <Plus className="h-5 w-5 mr-2" />
             Create Your First Segment
           </button>

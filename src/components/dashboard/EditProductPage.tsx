@@ -101,7 +101,7 @@ export default function EditProductPage() {
           <p className="text-gray-500 mb-6">The product you're looking for doesn't exist.</p>
           <button
             onClick={() => navigate('/dashboard/products')}
-            className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200"
           >
             Back to Products
           </button>
@@ -151,7 +151,7 @@ export default function EditProductPage() {
                   type="text"
                   value={formData.product_id}
                   onChange={(e) => handleInputChange('product_id', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                   placeholder="e.g., VOICE_BUNDLE_001"
                 />
                 <p className="text-sm text-gray-500 mt-1">Unique identifier for the product</p>
@@ -167,7 +167,7 @@ export default function EditProductPage() {
                   required
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                   placeholder="e.g., Premium Voice Bundle"
                 />
               </div>
@@ -181,7 +181,7 @@ export default function EditProductPage() {
                   type="text"
                   value={formData.da_id}
                   onChange={(e) => handleInputChange('da_id', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                   placeholder="e.g., DA_001"
                 />
                 <p className="text-sm text-gray-500 mt-1">Data Analytics identifier</p>
@@ -210,7 +210,7 @@ export default function EditProductPage() {
                 rows={4}
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                 placeholder="Describe the product features and benefits..."
               />
             </div>
@@ -256,7 +256,7 @@ export default function EditProductPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isLoading ? (
                   <>

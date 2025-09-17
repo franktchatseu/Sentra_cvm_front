@@ -199,7 +199,7 @@ export default function ConfigurationPage() {
               <Settings className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
                 Configuration Management
               </h1>
               <p className="text-slate-600 mt-1">
@@ -220,7 +220,7 @@ export default function ConfigurationPage() {
                 placeholder="Search configurations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 transition-all duration-200"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200"
               />
             </div>
 
@@ -274,7 +274,7 @@ export default function ConfigurationPage() {
           <p className="text-slate-600">
             Showing {filteredConfigurations.length} of {configurations.length} configurations
           </p>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200 hover:scale-105">
+          <button className="flex items-center space-x-2 px-3 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 hover:scale-105 text-base">
             <Plus className="h-4 w-4" />
             <span>Add Configuration</span>
           </button>
@@ -385,7 +385,7 @@ export default function ConfigurationPage() {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-bold text-slate-900 group-hover:text-slate-800 transition-colors duration-300">
+                          <h3 className="text-base font-bold text-slate-900 group-hover:text-slate-800 transition-colors duration-300">
                             {config.name}
                           </h3>
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(config.status)}`}>
@@ -429,11 +429,11 @@ export default function ConfigurationPage() {
             <div className="p-4 bg-slate-100 rounded-full w-16 h-16 mx-auto mb-4">
               <Search className="h-8 w-8 text-slate-400" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No configurations found</h3>
+            <h3 className="text-base font-semibold text-slate-900 mb-2">No configurations found</h3>
             <p className="text-slate-600 mb-6">
               {searchTerm ? 'Try adjusting your search terms' : 'No configurations match the selected category'}
             </p>
-            <button className="px-6 py-3 bg-[#1a3d2e] hover:bg-[#2d5f4e] text-white rounded-xl transition-all duration-200">
+            <button className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 text-base">
               Clear Filters
             </button>
           </div>

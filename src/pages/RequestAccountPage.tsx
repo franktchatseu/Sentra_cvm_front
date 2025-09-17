@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Mail, Building, Phone, MessageSquare, ArrowRight, CheckCircle, Target, Award, Briefcase, Users } from 'lucide-react';
+import HeadlessSelect from '../components/ui/HeadlessSelect';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -71,14 +72,14 @@ export default function RequestAccountPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl shadow-lg mb-6">
             <CheckCircle className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Request Submitted!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Request Submitted!</h1>
           <p className="text-gray-600 mb-8 leading-relaxed">
             Thank you for your interest in Sentra. We've received your account request and will review it within 24-48 hours. 
             You'll receive an email confirmation once your account is approved.
           </p>
           <Link
             to="/landing"
-            className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1a3d2e] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
           >
             Back to Home
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -228,12 +229,12 @@ export default function RequestAccountPage() {
         
         {/* Title and description */}
         <div className="text-center text-white mt-5">
-          <h1 className="text-4xl font-bold mb-4">
+          <h1 className="text-2xl font-bold mb-4">
             Join Thousands of
             <br />
             <span className="text-amber-300">CVM Professionals</span>
           </h1>
-          <p className="text-emerald-100 text-lg font-light max-w-sm">
+          <p className="text-emerald-100 text-sm font-light max-w-sm">
             Get approved in under 24 hours and start
             transforming your customer experience
           </p>
@@ -255,7 +256,7 @@ export default function RequestAccountPage() {
             <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
               <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-full h-full object-contain" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Request Account Access</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Request Account Access</h1>
             <p className="text-gray-600">
               Join thousands of professionals using Sentra
             </p>
@@ -295,7 +296,7 @@ export default function RequestAccountPage() {
                     type="text"
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200 bg-gray-50 focus:bg-white"
                     placeholder="John"
                     required
                   />
@@ -311,7 +312,7 @@ export default function RequestAccountPage() {
                   type="text"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="Doe"
                   required
                 />
@@ -333,7 +334,7 @@ export default function RequestAccountPage() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="john.doe@company.com"
                   required
                 />
@@ -356,7 +357,7 @@ export default function RequestAccountPage() {
                     type="text"
                     value={formData.company}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200 bg-gray-50 focus:bg-white"
                     placeholder="Acme Corp"
                     required
                   />
@@ -376,7 +377,7 @@ export default function RequestAccountPage() {
                     type="tel"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200 bg-gray-50 focus:bg-white"
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -388,23 +389,21 @@ export default function RequestAccountPage() {
               <label htmlFor="role" className="block text-sm font-semibold text-gray-700 mb-2">
                 Your Role *
               </label>
-              <select
-                id="role"
-                name="role"
+              <HeadlessSelect
+                options={[
+                  { value: '', label: 'Select your role' },
+                  { value: 'admin', label: 'Administrator' },
+                  { value: 'marketing-manager', label: 'Marketing Manager' },
+                  { value: 'campaign-manager', label: 'Campaign Manager' },
+                  { value: 'data-analyst', label: 'Data Analyst' },
+                  { value: 'operations-manager', label: 'Operations Manager' },
+                  { value: 'business-analyst', label: 'Business Analyst' },
+                  { value: 'other', label: 'Other' }
+                ]}
                 value={formData.role}
-                onChange={handleChange}
-                className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
-                required
-              >
-                <option value="">Select your role</option>
-                <option value="admin">Administrator</option>
-                <option value="marketing-manager">Marketing Manager</option>
-                <option value="campaign-manager">Campaign Manager</option>
-                <option value="data-analyst">Data Analyst</option>
-                <option value="operations-manager">Operations Manager</option>
-                <option value="business-analyst">Business Analyst</option>
-                <option value="other">Other</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, role: value as string })}
+                placeholder="Select your role"
+              />
             </div>
 
             {/* Message */}
@@ -422,7 +421,7 @@ export default function RequestAccountPage() {
                   rows={4}
                   value={formData.message}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200 bg-gray-50 focus:bg-white resize-none"
                   placeholder="Tell us about your use case or any specific requirements..."
                 />
               </div>
@@ -432,7 +431,7 @@ export default function RequestAccountPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1a3d2e] hover:bg-[#2d5f4e] focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+              className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] focus:outline-none  disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
             >
               {isLoading ? (
                 <LoadingSpinner size="sm" color="white" />
