@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
-  Filter, 
   Search, 
   MessageSquare, 
   Gift, 
@@ -12,10 +11,6 @@ import {
   Eye, 
   Edit, 
   Copy,
-  Play,
-  Pause,
-  Archive,
-  Trash2,
   CheckCircle,
   XCircle,
   AlertCircle,

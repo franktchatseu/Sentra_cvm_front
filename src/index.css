@@ -1662,9 +1662,9 @@
   }
   
   .page-header .container {
-    flex-direction: column;
+    flex-direction: row;
     gap: 1rem;
-    text-align: center;
+    text-align: left;
   }
   
   .btn-back-home {

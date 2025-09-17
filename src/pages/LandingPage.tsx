@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Zap, 
   ArrowRight, 
   Target, 
   Users, 
@@ -12,12 +11,9 @@ import {
   CheckCircle,
   Play,
   Star,
-  TrendingUp,
-  Globe,
-  Layers
+  
 } from 'lucide-react';
 import AnimatedButton from '../components/ui/AnimatedButton';
-import AnimatedCard from '../components/ui/AnimatedCard';
 
 export default function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);

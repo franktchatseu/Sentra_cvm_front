@@ -446,7 +446,6 @@ export default function OffersPage() {
                 </div>
               )}
 
-/* ... */
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                 <div className="flex items-center space-x-2">
                   <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200" title="View Details">

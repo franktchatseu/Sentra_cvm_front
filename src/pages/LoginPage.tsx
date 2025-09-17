@@ -5,8 +5,6 @@ import {
   PlayCircle, 
   CheckCircle2, 
   AlertCircle, 
-  Mail, 
-  Lock, 
   Eye, 
   EyeOff, 
   X, 
