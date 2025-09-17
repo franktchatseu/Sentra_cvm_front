@@ -3,6 +3,7 @@ export interface User {
   first_name: string;
   last_name: string;
   private_email_address: string;
+  email: string;
   role: 'admin' | 'user';
   photo_url?: string;
   is_activated: boolean;

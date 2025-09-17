@@ -30,7 +30,7 @@ function AppRoutes() {
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/landingpage" element={isAuthenticated ? <AuthenticatedLandingPage /> : <Navigate to="/login" />} />
       <Route path="/dashboard/*" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
-      <Route path="/" element={<Navigate to="/landing" />} />
+      <Route path="/" element={<Navigate to="/login" />} />
     </Routes>
   );
 }

@@ -272,10 +272,10 @@ export default function OfferCategoriesPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
             <div className="flex items-center space-x-3 mb-2">
               <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl">
@@ -287,7 +287,7 @@ export default function OfferCategoriesPage() {
           </div>
           <button
             onClick={handleCreateCategory}
-            className="group flex items-center space-x-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base"
+            className="group flex items-center space-x-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base w-full sm:w-auto justify-center sm:justify-start"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-semibold">New Category</span>
@@ -297,7 +297,7 @@ export default function OfferCategoriesPage() {
 
       {/* Search */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -311,7 +311,7 @@ export default function OfferCategoriesPage() {
           </div>
           <button
             onClick={handleSearch}
-            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-base"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-base w-full sm:w-auto"
           >
             Search
           </button>
@@ -369,20 +369,20 @@ export default function OfferCategoriesPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Category
                   </th>
-                  <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Description
                   </th>
-                  <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Offers
                   </th>
-                  <th className="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <th className="px-4 sm:px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -390,7 +390,7 @@ export default function OfferCategoriesPage() {
               <tbody className="bg-white">
                 {filteredOfferCategories.map((category) => (
                   <tr key={category.id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-all duration-200 group">
-                    <td className="px-8 py-6">
+                    <td className="px-4 sm:px-8 py-6">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
                           <div 
@@ -406,17 +406,17 @@ export default function OfferCategoriesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 sm:px-8 py-6">
                       <div className="text-sm text-gray-700 max-w-xs">
                         {category.description || <span className="italic text-gray-400">No description</span>}
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 sm:px-8 py-6">
                       <span className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
                         {category.offerCount} offer{category.offerCount !== 1 ? 's' : ''}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-4 sm:px-8 py-6 text-right">
                       <div className="flex items-center justify-end space-x-3">
                         <button
                           onClick={() => handleEditCategory(category)}
