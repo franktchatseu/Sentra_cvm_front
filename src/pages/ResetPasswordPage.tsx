@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Lock, ArrowRight, CheckCircle, Eye, EyeOff, Zap, Shield } from 'lucide-react';
+import { Lock, ArrowRight, CheckCircle, Eye, EyeOff, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AnimatedButton from '../components/ui/AnimatedButton';
 import AnimatedInput from '../components/ui/AnimatedInput';
@@ -81,12 +81,13 @@ export default function ResetPasswordPage() {
         navigate('/login');
       }, 3000);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password reset failed:', error);
       
-      if (error.message?.includes('Invalid token')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('Invalid token')) {
         setError('This password reset link has expired or is invalid. Please request a new password reset.');
-      } else if (error.message?.includes('Token expired')) {
+      } else if (errorMessage.includes('Token expired')) {
         setError('This password reset link has expired. Please request a new password reset.');
       } else {
         setError('Failed to reset password. Please try again or contact support.');
@@ -103,7 +104,7 @@ export default function ResetPasswordPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl shadow-lg mb-6">
             <CheckCircle className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Password Reset Successful!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Password Reset Successful!</h1>
           <p className="text-gray-600 mb-8 leading-relaxed">
             Your password has been successfully reset. You can now log in with your new password.
           </p>
@@ -112,7 +113,7 @@ export default function ResetPasswordPage() {
           </p>
           <Link
             to="/login"
-            className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#3b8169] hover:bg-[#2d5f4e] transition-all duration-200 transform hover:scale-105"
           >
             Go to Login
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -133,12 +134,12 @@ export default function ResetPasswordPage() {
       </div>
 
       {/* Left Side - Illustration Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 bg-gradient-to-br from-indigo-600 to-purple-700">
+      <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#1a3d2e] to-[#2d5f4e]">
         {/* Decorative floating elements */}
         <div className="absolute top-20 left-20 w-4 h-4 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-        <div className="absolute top-32 right-32 w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-        <div className="absolute bottom-40 left-16 w-5 h-5 bg-amber-400 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-20 right-20 w-4 h-4 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+        <div className="absolute top-32 right-32 w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-40 left-16 w-5 h-5 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-20 right-20 w-4 h-4 bg-emerald-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
         
         {/* Main illustration area */}
         <div className="relative">
@@ -147,8 +148,8 @@ export default function ResetPasswordPage() {
             {/* Main security card */}
             <div className="bg-white rounded-2xl p-8 shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-500 mb-4 w-80">
               <div className="text-center">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Lock className="w-8 h-8 text-indigo-600" />
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock className="w-8 h-8 text-emerald-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">New Password</h3>
                 <p className="text-gray-600 text-sm mb-6">
@@ -158,19 +159,19 @@ export default function ResetPasswordPage() {
                 {/* Password requirements */}
                 <div className="space-y-3 text-left">
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                     <span className="text-sm text-gray-700">At least 8 characters</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                     <span className="text-sm text-gray-700">One uppercase letter</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                     <span className="text-sm text-gray-700">One lowercase letter</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                     <span className="text-sm text-gray-700">One number</span>
                   </div>
                 </div>
@@ -178,7 +179,7 @@ export default function ResetPasswordPage() {
             </div>
             
             {/* Secondary card */}
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 shadow-2xl transform -rotate-3 hover:rotate-0 transition-all duration-500 absolute -top-4 -right-8 w-48">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-2xl transform -rotate-3 hover:rotate-0 transition-all duration-500 absolute -top-4 -right-8 w-48">
               <div className="text-white text-center">
                 <Shield className="w-8 h-8 mb-2 mx-auto" />
                 <div className="text-lg font-bold">Secure</div>
@@ -190,12 +191,12 @@ export default function ResetPasswordPage() {
         
         {/* Title and description */}
         <div className="text-center text-white mt-16">
-          <h1 className="text-4xl font-bold mb-4">
+          <h1 className="text-2xl font-bold mb-4">
             Create Your
             <br />
             <span className="text-amber-300">New Password</span>
           </h1>
-          <p className="text-indigo-100 text-lg font-light max-w-sm">
+          <p className="text-emerald-100 text-sm font-light max-w-sm">
             Choose a strong password to keep
             your account secure
           </p>
@@ -208,20 +209,17 @@ export default function ResetPasswordPage() {
           {/* Enhanced Header - Mobile Only */}
           <div className="text-center mb-10 lg:hidden">
             <div className="flex items-center justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur-lg opacity-30 animate-pulse"></div>
-                <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-110 hover:rotate-3">
-                  <Zap className="w-10 h-10 text-white" />
-                </div>
+              <div className="w-24 h-24 flex items-center justify-center">
+                <img src="/src/assets/logo.png" alt="Sentra Logo" className="w-full h-full object-contain" />
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3 tracking-tight">New Password</h1>
-            <p className="text-slate-600 text-lg font-medium">Create a secure password for your account</p>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">New Password</h1>
+            <p className="text-slate-600 text-sm font-medium">Create a secure password for your account</p>
           </div>
           
           {/* Desktop Header */}
           <div className="text-center mb-10 hidden lg:block">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3 tracking-tight">New Password</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-green-900 bg-clip-text text-transparent mb-3 tracking-tight">New Password</h1>
             <p className="text-slate-600 text-base font-medium">Create a secure password for your account</p>
           </div>
 
@@ -315,7 +313,7 @@ export default function ResetPasswordPage() {
             {/* Enhanced Security Badge */}
             <div className="flex items-center justify-center mt-8 text-sm text-slate-500 group">
               <div className="flex items-center bg-slate-50/80 px-4 py-2 rounded-full border border-slate-200/50 transition-all duration-300 group-hover:bg-slate-100/80 group-hover:border-slate-300/50">
-                <Shield className="w-4 h-4 mr-2 text-slate-600 group-hover:text-blue-600 transition-colors duration-300" />
+                <Shield className="w-4 h-4 mr-2 text-slate-600 group-hover:text-emerald-600 transition-colors duration-300" />
                 <span className="font-medium">Your new password will be encrypted</span>
               </div>
             </div>

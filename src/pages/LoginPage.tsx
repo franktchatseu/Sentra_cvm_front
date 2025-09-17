@@ -1,564 +1,311 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Zap, Shield, TrendingUp, Users, BarChart3 } from 'lucide-react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import AnimatedButton from '../components/ui/AnimatedButton';
-import AnimatedInput from '../components/ui/AnimatedInput';
-import AnimatedCard from '../components/ui/AnimatedCard';
+import { useNavigate } from 'react-router-dom';
+import { 
+  PlayCircle, 
+  CheckCircle2, 
+  AlertCircle, 
+  Eye, 
+  EyeOff, 
+  X, 
+  CheckCircle 
+} from 'lucide-react';
 
-export default function LoginPage() {
+const LoginPage: React.FC = () => {
+  const { login, requestPasswordReset } = useAuth();
+  const navigate = useNavigate();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [generalError, setGeneralError] = useState('');
-  const { login } = useAuth();
+  const [errorMessage, setErrorMessage] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
+  // Forgot password modal state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [resetErrorMessage, setResetErrorMessage] = useState('');
 
-  const validateForm = () => {
-    let isValid = true;
-    setEmailError('');
-    setPasswordError('');
-    setGeneralError('');
-
+  const validateEmail = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
-      setEmailError('Email is required');
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError('Please enter a valid email');
-      isValid = false;
+      setValidationErrors(prev => ({ ...prev, email: 'Email is required' }));
+      return false;
+    } else if (!emailRegex.test(email)) {
+      setValidationErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+      return false;
+    } else {
+      setValidationErrors(prev => ({ ...prev, email: undefined }));
+      return true;
     }
-
-    if (!password) {
-      setPasswordError('Password is required');
-      isValid = false;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
-      isValid = false;
-    }
-
-    return isValid;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validatePassword = () => {
+    if (!password) {
+      setValidationErrors(prev => ({ ...prev, password: 'Password is required' }));
+      return false;
+    } else if (password.length < 6) {
+      setValidationErrors(prev => ({ ...prev, password: 'Password must be at least 6 characters' }));
+      return false;
+    } else {
+      setValidationErrors(prev => ({ ...prev, password: undefined }));
+      return true;
+    }
+  };
+
+  const isFormValid = email && password && !validationErrors.email && !validationErrors.password;
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateEmail() || !validatePassword()) {
       return;
     }
 
     setIsLoading(true);
-    
+    setErrorMessage('');
+
     try {
       await login(email, password);
-      // Login successful - user will be redirected by auth context
-    } catch (error: any) {
-      console.error('Login failed:', error);
-      
-      // Handle different types of errors
-      if (error.message?.includes('Invalid credentials')) {
-        setGeneralError('Invalid email or password. Please check your credentials and try again.');
-      } else if (error.message?.includes('Account not active')) {
-        setGeneralError('Your account is not active. Please contact an administrator.');
-      } else if (error.message?.includes('Account pending')) {
-        setGeneralError('Your account request is still pending approval. You will receive an email once approved.');
-      } else if (error.message?.includes('Password reset required')) {
-        setGeneralError('A password reset is required. Please check your email for reset instructions.');
-      } else {
-        setGeneralError('Login failed. Please try again or contact support if the problem persists.');
-      }
+      navigate('/landingpage');
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrorMessage('Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const sendResetLink = async () => {
+    if (!resetEmail) return;
+
+    setIsResetLoading(true);
+    setResetErrorMessage('');
+
+    try {
+      await requestPasswordReset(resetEmail);
+      setResetEmailSent(true);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setResetErrorMessage(errorMessage);
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  const goToAccountRequest = () => {
+    navigate('/request-account');
+  };
+
+  const scrollToFeatures = () => {
+    // Scroll to features section if it exists, otherwise do nothing
+    console.log('Take a tour clicked');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex relative overflow-hidden">
-      {/* Enhanced Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-500/15 to-indigo-600/15 rounded-full blur-3xl" style={{animation: 'animate-float 8s ease-in-out infinite'}} />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-indigo-500/15 to-purple-600/15 rounded-full blur-3xl" style={{animation: 'animate-float-delayed 10s ease-in-out infinite'}} />
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 rounded-full blur-2xl" style={{animation: 'animate-pulse-slow 6s ease-in-out infinite'}} />
-        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-gradient-to-br from-violet-400/8 to-indigo-500/8 rounded-full blur-2xl" style={{animation: 'animate-float 12s ease-in-out infinite reverse'}} />
-      </div>
+    <div className="sentra-landing">
+      {/* Decorative background */}
+      <div className="bg-gradients"></div>
+      <div className="bg-hex"></div>
 
-      {/* Left Side - Illustration Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-center items-center p-12 bg-gradient-to-br from-blue-600 to-blue-700">
-        {/* Decorative floating elements */}
-        <div className="absolute top-20 left-20 w-4 h-4 bg-orange-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-        <div className="absolute top-32 right-32 w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-        <div className="absolute bottom-40 left-16 w-5 h-5 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-20 right-20 w-4 h-4 bg-pink-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
-        <div className="absolute top-1/2 left-10 w-3 h-3 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
-        
-        {/* Main illustration area */}
-        <div className="relative">
-          {/* Dashboard mockup cards */}
-          <div className="relative">
-            {/* Main card */}
-            <div 
-              className="bg-white rounded-2xl p-6 shadow-2xl transform rotate-3 hover:rotate-0 transition-all duration-500 mb-4 w-80"
-              style={{
-                animation: 'card-float 6s ease-in-out infinite'
-              }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center animate-pulse">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  </div>
-                  <span className="font-semibold text-gray-800">Revenue Growth</span>
-                </div>
-                <div className="text-right">
-                  <div 
-                    className="text-2xl font-bold text-gray-800"
-                    style={{
-                      animation: 'number-count 2s ease-out forwards'
-                    }}
-                  >
-                    +24.5%
-                  </div>
-                  <div className="text-xs text-gray-500">vs last month</div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 text-sm">Revenue Growth</span>
-                  <span 
-                    className="text-gray-800 font-semibold"
-                    style={{
-                      animation: 'number-count 2.5s ease-out forwards'
-                    }}
-                  >
-                    $1.2M
-                  </span>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex justify-between items-center text-xs mb-2">
-                    <span className="text-gray-600">Engagement</span>
-                    <span 
-                      className="text-gray-800 font-semibold"
-                      style={{
-                        animation: 'number-count 3s ease-out forwards'
-                      }}
-                    >
-                      87%
-                    </span>
-                  </div>
-                  <div className="flex space-x-1 h-8">
-                    <div 
-                      className="bg-blue-200 rounded w-2 h-4 self-end"
-                      style={{
-                        animation: 'chart-grow 1.5s ease-out forwards',
-                        animationDelay: '0.1s'
-                      }}
-                    ></div>
-                    <div 
-                      className="bg-blue-300 rounded w-2 h-6 self-end"
-                      style={{
-                        animation: 'chart-grow 1.5s ease-out forwards',
-                        animationDelay: '0.2s'
-                      }}
-                    ></div>
-                    <div 
-                      className="bg-blue-400 rounded w-2 h-8 self-end"
-                      style={{
-                        animation: 'chart-grow 1.5s ease-out forwards',
-                        animationDelay: '0.3s'
-                      }}
-                    ></div>
-                    <div 
-                      className="bg-blue-500 rounded w-2 h-5 self-end"
-                      style={{
-                        animation: 'chart-grow 1.5s ease-out forwards',
-                        animationDelay: '0.4s'
-                      }}
-                    ></div>
-                    <div 
-                      className="bg-blue-400 rounded w-2 h-7 self-end"
-                      style={{
-                        animation: 'chart-grow 1.5s ease-out forwards',
-                        animationDelay: '0.5s'
-                      }}
-                    ></div>
-                    <div 
-                      className="bg-blue-300 rounded w-2 h-3 self-end"
-                      style={{
-                        animation: 'chart-grow 1.5s ease-out forwards',
-                        animationDelay: '0.6s'
-                      }}
-                    ></div>
-                    <div 
-                      className="bg-blue-600 rounded w-2 h-6 self-end"
-                      style={{
-                        animation: 'chart-grow 1.5s ease-out forwards',
-                        animationDelay: '0.7s'
-                      }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="flex -space-x-2">
-                  <div 
-                    className="w-6 h-6 bg-gradient-to-r from-pink-400 to-red-400 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.8s ease-out forwards',
-                      animationDelay: '1s'
-                    }}
-                  >
-                    <span className="text-white text-xs font-bold">A</span>
-                  </div>
-                  <div 
-                    className="w-6 h-6 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.8s ease-out forwards',
-                      animationDelay: '1.2s'
-                    }}
-                  >
-                    <span className="text-white text-xs font-bold">M</span>
-                  </div>
-                  <div 
-                    className="w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.8s ease-out forwards',
-                      animationDelay: '1.4s'
-                    }}
-                  >
-                    <span className="text-white text-xs font-bold">S</span>
-                  </div>
-                  <div 
-                    className="w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.8s ease-out forwards',
-                      animationDelay: '1.6s'
-                    }}
-                  >
-                    <span className="text-white text-xs font-bold">+</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Secondary card */}
-            <div 
-              className="bg-gradient-to-r from-orange-400 to-pink-500 rounded-2xl p-6 shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 absolute -top-4 -right-8 w-48"
-              style={{
-                animation: 'card-float-reverse 7s ease-in-out infinite'
-              }}
-            >
-              <div className="text-white">
-                <Users className="w-8 h-8 mb-2 animate-pulse" />
-                <div 
-                  className="text-xl font-bold"
-                  style={{
-                    animation: 'number-count 2.2s ease-out forwards'
-                  }}
-                >
-                  1,247
-                </div>
-                <div className="text-sm opacity-90 mb-3">Active Users</div>
-                
-                {/* Mini user avatars */}
-                <div className="flex -space-x-2">
-                  <div 
-                    className="w-8 h-8 bg-white/20 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.6s ease-out forwards',
-                      animationDelay: '1.8s'
-                    }}
-                  >
-                    <span className="text-xs font-semibold">JD</span>
-                  </div>
-                  <div 
-                    className="w-8 h-8 bg-white/20 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.6s ease-out forwards',
-                      animationDelay: '2s'
-                    }}
-                  >
-                    <span className="text-xs font-semibold">AM</span>
-                  </div>
-                  <div 
-                    className="w-8 h-8 bg-white/20 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.6s ease-out forwards',
-                      animationDelay: '2.2s'
-                    }}
-                  >
-                    <span className="text-xs font-semibold">KL</span>
-                  </div>
-                  <div 
-                    className="w-8 h-8 bg-white/20 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{
-                      animation: 'avatar-pop 0.6s ease-out forwards',
-                      animationDelay: '2.4s'
-                    }}
-                  >
-                    <span className="text-xs font-semibold">+9</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Third card */}
-            <div 
-              className="bg-white rounded-2xl p-4 shadow-xl transform rotate-1 hover:rotate-0 transition-all duration-500 absolute -bottom-6 -left-6 w-56"
-              style={{
-                animation: 'card-float-subtle 8s ease-in-out infinite'
-              }}
-            >
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center animate-pulse">
-                  <BarChart3 className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-800">Analytics</div>
-                  <div className="text-sm text-gray-600">Real-time data</div>
-                </div>
-              </div>
-              
-              {/* Mini chart visualization */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Engagement</span>
-                  <span 
-                    className="font-semibold text-gray-800"
-                    style={{
-                      animation: 'number-count 2.8s ease-out forwards'
-                    }}
-                  >
-                    87%
-                  </span>
-                </div>
-                <div className="flex space-x-1">
-                  <div 
-                    className="w-2 h-8 bg-blue-200 rounded-sm"
-                    style={{
-                      animation: 'chart-grow 1.8s ease-out forwards',
-                      animationDelay: '0.8s'
-                    }}
-                  ></div>
-                  <div 
-                    className="w-2 h-12 bg-blue-400 rounded-sm"
-                    style={{
-                      animation: 'chart-grow 1.8s ease-out forwards',
-                      animationDelay: '1s'
-                    }}
-                  ></div>
-                  <div 
-                    className="w-2 h-6 bg-blue-300 rounded-sm"
-                    style={{
-                      animation: 'chart-grow 1.8s ease-out forwards',
-                      animationDelay: '1.2s'
-                    }}
-                  ></div>
-                  <div 
-                    className="w-2 h-14 bg-blue-500 rounded-sm"
-                    style={{
-                      animation: 'chart-grow 1.8s ease-out forwards',
-                      animationDelay: '1.4s'
-                    }}
-                  ></div>
-                  <div 
-                    className="w-2 h-10 bg-blue-400 rounded-sm"
-                    style={{
-                      animation: 'chart-grow 1.8s ease-out forwards',
-                      animationDelay: '1.6s'
-                    }}
-                  ></div>
-                  <div 
-                    className="w-2 h-16 bg-blue-600 rounded-sm"
-                    style={{
-                      animation: 'chart-grow 1.8s ease-out forwards',
-                      animationDelay: '1.8s'
-                    }}
-                  ></div>
-                  <div 
-                    className="w-2 h-8 bg-blue-300 rounded-sm"
-                    style={{
-                      animation: 'chart-grow 1.8s ease-out forwards',
-                      animationDelay: '2s'
-                    }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Mon</span>
-                  <span>Sun</span>
-                </div>
-              </div>
-            </div>
+      <div className="content-wrap">
+        {/* Mobile Header (visible only on small screens) */}
+        <div className="mobile-header">
+          <div className="brand">
+            <h1 className="brand-name">Sentra</h1>
           </div>
+          <button className="tour-btn mobile-tour-btn" onClick={scrollToFeatures}>
+            <PlayCircle size={16} />
+            Take a tour
+          </button>
         </div>
-        
-        {/* Title and description */}
-        <div className="text-center text-white mt-16">
-          <h1 className="text-4xl font-bold mb-4">
-            Transform Your
-            <br />
-            <span className="text-yellow-300">Customer Experience</span>
-          </h1>
-          <p className="text-blue-100 text-lg font-light max-w-sm">
-            Advanced CVM platform that delivers
-            real insights and drives growth
+
+        {/* Left hero area */}
+        <section className="hero">
+          <div className="brand desktop-brand">
+            <h1 className="brand-name">Sentra</h1>
+          </div>
+
+          <h2 className="headline">Engage, Predict, Grow</h2>
+          <p className="subhead">
+            The intelligent customer engagement platform. Create impactful campaigns, understand your audience, and act in real time.
           </p>
-          
-          {/* Pagination dots */}
-          <div className="flex justify-center space-x-2 mt-8">
-            <div className="w-2 h-2 bg-white rounded-full"></div>
-            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
-            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
-          </div>
-        </div>
-      </div>
 
-      {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-12 relative z-10">
-        <div className={`w-full max-w-md transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          {/* Enhanced Header - Mobile Only */}
-          <div className="text-center mb-10 lg:hidden">
-            <div className="flex items-center justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur-lg opacity-30 animate-pulse"></div>
-                <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-110 hover:rotate-3">
-                  <Zap className="w-10 h-10 text-white" />
-                </div>
+          <ul className="benefits">
+            <li>
+              <CheckCircle2 size={18} />
+              Predictive insights, beautifully visualized
+            </li>
+            <li>
+              <CheckCircle2 size={18} />
+              Unified customer data platform
+            </li>
+            <li>
+              <CheckCircle2 size={18} />
+              Advanced campaign automation
+            </li>
+          </ul>
+
+          <div className="cta-section">
+            <button className="tour-btn" onClick={scrollToFeatures}>
+              <PlayCircle size={16} />
+              Take a tour
+            </button>
+          </div>
+        </section>
+
+        {/* Right login area */}
+        <section className="login-section">
+          <div className="login-card">
+            <div className="login-header">
+              <div className="logo-container">
+                <h2 className="login-title">Sign in to Sentra</h2>
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3 tracking-tight">Welcome Back</h1>
-            <p className="text-slate-600 text-lg font-medium">Sign in to your Sentra CVM account</p>
-          </div>
-          
-          {/* Desktop Header */}
-          <div className="text-center mb-10 hidden lg:block">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3 tracking-tight">Welcome Back</h1>
-            <p className="text-slate-600 text-base font-medium">Sign in to your account</p>
-          </div>
 
-        {/* Enhanced Login Form */}
-        <AnimatedCard 
-          variant="glass" 
-          hover="lift" 
-          className="p-10 backdrop-blur-md border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500"
-        >
-          {/* General Error Message */}
-          {generalError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{generalError}</p>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <AnimatedInput
-                type="email"
-                value={email}
-                onChange={(value) => setEmail(value)}
-                placeholder="Enter your email"
-                label="Email Address"
-                icon={Mail}
-                error={emailError}
-                required
-              />
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <AnimatedInput
-                type="password"
-                value={password}
-                onChange={(value) => setPassword(value)}
-                placeholder="Enter your password"
-                label="Password"
-                icon={Lock}
-                error={passwordError}
-                required
-              />
-            </div>
-
-
-            {/* Enhanced Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center group">
-                <div className="relative">
-                  <input
-                    id="remember-me"
-                    type="checkbox"
-                    className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 border-2 border-slate-300 rounded-md transition-all duration-300 group-hover:scale-110 group-hover:border-blue-400"
+            <form onSubmit={handleLogin} className="login-form">
+              <div className="form-message error" style={{ display: errorMessage ? 'flex' : 'none' }}>
+                <AlertCircle size={18} />
+                {errorMessage}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="email">Email <span className="required">*</span></label>
+                <div className="input-with-icon">
+                  <input 
+                    id="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email" 
+                    required
+                    placeholder="votre-email@example.com"
+                    className={validationErrors.email ? 'error-input' : ''}
+                    onBlur={validateEmail}
                   />
+                  {/* <Mail className="input-icon" size={18} style={{ paddingRight: '5px' }} /> */}
                 </div>
-                <label htmlFor="remember-me" className="ml-3 block text-sm font-medium text-slate-700 cursor-pointer group-hover:text-slate-900 transition-all duration-200">
-                  Remember me
-                </label>
+                <p className="error-message" style={{ display: validationErrors.email ? 'block' : 'none' }}>
+                  {validationErrors.email}
+                </p>
               </div>
-              <Link
-                to="/forgot-password"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-all duration-300 hover:underline decoration-2 underline-offset-2 hover:scale-105"
-              >
-                Forgot password?
-              </Link>
-            </div>
-
-            {/* Submit Button */}
-            <AnimatedButton
-              type="submit"
-              variant="primary"
-              size="lg"
-              disabled={isLoading}
-              loading={isLoading}
-              className="w-full"
-              glowEffect
-            >
-              {!isLoading && (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </AnimatedButton>
-          </form>
-
-          {/* Enhanced Sign Up Link */}
-          <div className="text-center mt-10">
-            <p className="text-slate-600 text-base">
-              Don't have an account?{' '}
-              <Link
-                to="/request-account"
-                className="text-blue-600 hover:text-blue-700 font-semibold transition-all duration-300 hover:underline decoration-2 underline-offset-2 hover:scale-105 inline-block"
-              >
-                Request Access
-              </Link>
-            </p>
+              
+              <div className="form-group">
+                <label htmlFor="password">Password <span className="required">*</span></label>
+                <div className="input-with-icon">
+                  <input 
+                    id="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    type={showPassword ? 'text' : 'password'} 
+                    required
+                    placeholder="Your password"
+                    className={validationErrors.password ? 'error-input' : ''}
+                    onBlur={validatePassword}
+                  />
+                  {/* <Lock className="input-icon" size={18} style={{ paddingRight: '5px' }} /> */}
+                  <button 
+                    type="button" 
+                    className="toggle-password"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <p className="error-message" style={{ display: validationErrors.password ? 'block' : 'none' }}>
+                  {validationErrors.password}
+                </p>
+              </div>
+              
+              <div className="form-options">
+                <label className="remember-me">
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span>Remember me</span>
+                </label>
+                <a href="#" className="forgot-password" onClick={(e) => { e.preventDefault(); setShowForgotPassword(true); }}>
+                  Forgot password?
+                </a>
+              </div>
+              
+              <button type="submit" className="login-button" disabled={isLoading || !isFormValid}>
+                {!isLoading ? 'Sign in' : <span className="loading-spinner"></span>}
+              </button>
+              
+              <div className="request-account">
+                Don't have an account? 
+                <a href="#" onClick={(e) => { e.preventDefault(); goToAccountRequest(); }}>Make a request</a>
+              </div>
+            </form>
           </div>
+        </section>
+      </div>
 
-          {/* Enhanced Security Badge */}
-          <div className="flex items-center justify-center mt-8 text-sm text-slate-500 group">
-            <div className="flex items-center bg-slate-50/80 px-4 py-2 rounded-full border border-slate-200/50 transition-all duration-300 group-hover:bg-slate-100/80 group-hover:border-slate-300/50">
-              <Shield className="w-4 h-4 mr-2 text-slate-600 group-hover:text-blue-600 transition-colors duration-300" />
-              <span className="font-medium">Your data is protected with enterprise-grade security</span>
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForgotPassword(false); }}>
+          <div className="modal-container">
+            <div className="modal-header">
+              <h2>Password Reset</h2>
+              <button className="btn-close" onClick={() => setShowForgotPassword(false)}>
+                <X size={20} />
+              </button>
             </div>
-          </div>
-        </AnimatedCard>
-
-        {/* Enhanced Back to Landing */}
-        <div className="text-center mt-8">
-          <Link
-            to="/landing"
-            className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 transition-all duration-300 hover:scale-105 group"
-          >
-            <span className="mr-2 transition-transform duration-300 group-hover:-translate-x-1">←</span>
-            <span className="font-medium">Back to Sentra Home</span>
-          </Link>
+            
+            <div className="modal-body">
+              <p>
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+              
+              <div className="form-message success" style={{ display: resetEmailSent ? 'flex' : 'none' }}>
+                <CheckCircle size={18} />
+                A reset email has been sent. Please check your inbox.
+              </div>
+              
+              <div className="form-message error" style={{ display: resetErrorMessage ? 'flex' : 'none' }}>
+                <AlertCircle size={18} />
+                {resetErrorMessage}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="resetEmail">Email <span className="required">*</span></label>
+                <input 
+                  id="resetEmail" 
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  type="email" 
+                  required
+                  placeholder="your-email@example.com"
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={() => setShowForgotPassword(false)}>Cancel</button>
+              <button 
+                className="btn-send" 
+                onClick={sendResetLink} 
+                disabled={isResetLoading || !resetEmail}
+              >
+                {!isResetLoading ? 'Send Link' : <span className="loading-spinner small"></span>}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
-}
+};
+
+export default LoginPage;

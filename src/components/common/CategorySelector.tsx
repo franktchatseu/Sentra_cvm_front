@@ -130,9 +130,9 @@ export default function CategorySelector({
             type="button"
             onClick={() => !disabled && setIsOpen(!isOpen)}
             disabled={disabled}
-            className={`w-full px-4 py-3 text-left border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+            className={`w-full px-4 py-3 text-left border border-gray-300 rounded-lg  transition-colors ${
               disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-400'
-            } ${isOpen ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
+            } ${isOpen ? 'border-blue-500' : ''}`}
           >
             <div className="flex items-center justify-between">
               <span className={selectedCategory ? 'text-gray-900' : 'text-gray-500'}>
@@ -155,7 +155,7 @@ export default function CategorySelector({
                 placeholder="Search categories..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
               />
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function CategorySelector({
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl  transition-all bg-gray-50 focus:bg-white"
                   placeholder="e.g., Data, Voice, SMS..."
                   required
                 />
@@ -290,7 +290,7 @@ export default function CategorySelector({
                   value={newCategoryDescription}
                   onChange={(e) => setNewCategoryDescription(e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl  transition-all bg-gray-50 focus:bg-white resize-none"
                   placeholder="Category description..."
                 />
               </div>

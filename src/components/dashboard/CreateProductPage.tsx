@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Package, 
   Save,
   AlertCircle
 } from 'lucide-react';
@@ -64,33 +63,29 @@ export default function CreateProductPage() {
     }
   };
 
-  const handleInputChange = (field: keyof CreateProductRequest, value: any) => {
+  const handleInputChange = (field: keyof CreateProductRequest, value: string | number | boolean | undefined) => {
     setFormData({ ...formData, [field]: value });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard/products')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Products
-          </button>
-          
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-emerald-600" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              Create New Product
-            </h1>
-            <p className="text-gray-600">Add a new product to your catalog</p>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <button
+          onClick={() => navigate('/dashboard/products')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Products
+        </button>
+        
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+            Create New Product
+          </h1>
+          <p className="text-gray-600">Add a new product to your catalog</p>
         </div>
+      </div>
 
         {/* Error Message */}
         {error && (
@@ -100,69 +95,68 @@ export default function CreateProductPage() {
           </div>
         )}
 
-        {/* Form */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Product ID */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.product_id}
-                  onChange={(e) => handleInputChange('product_id', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., VOICE_BUNDLE_001"
-                />
-                <p className="text-sm text-gray-500 mt-1">Unique identifier for the product</p>
-              </div>
+      {/* Form */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Product ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.product_id}
+                onChange={(e) => handleInputChange('product_id', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
+                placeholder="e.g., VOICE_BUNDLE_001"
+              />
+              <p className="text-sm text-gray-500 mt-1">Unique identifier for the product</p>
+            </div>
 
-              {/* Product Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., Premium Voice Bundle"
-                />
-              </div>
+            {/* Product Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
+                placeholder="e.g., Premium Voice Bundle"
+              />
+            </div>
 
-              {/* DA ID */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  DA ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.da_id}
-                  onChange={(e) => handleInputChange('da_id', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., DA_001"
-                />
-                <p className="text-sm text-gray-500 mt-1">Data Analytics identifier</p>
-              </div>
+            {/* DA ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                DA ID
+              </label>
+              <input
+                type="text"
+                value={formData.da_id}
+                onChange={(e) => handleInputChange('da_id', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
+                placeholder="e.g., DA_001"
+              />
+              <p className="text-sm text-gray-500 mt-1">Data Analytics identifier</p>
+            </div>
 
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <CategorySelector
-                  value={formData.category_id}
-                  onChange={(categoryId) => handleInputChange('category_id', categoryId)}
-                  placeholder="Select Category"
-                  allowCreate={true}
-                  onCreateCategory={() => setShowNewCategoryModal(true)}
-                />
-              </div>
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
+              <CategorySelector
+                value={formData.category_id}
+                onChange={(categoryId) => handleInputChange('category_id', categoryId)}
+                placeholder="Select Category"
+                allowCreate={true}
+                onCreateCategory={() => setShowNewCategoryModal(true)}
+              />
             </div>
 
             {/* Description */}
@@ -174,7 +168,7 @@ export default function CreateProductPage() {
                 rows={4}
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                 placeholder="Describe the product features and benefits..."
               />
             </div>
@@ -191,7 +185,7 @@ export default function CreateProductPage() {
                     name="is_active"
                     checked={formData.is_active === true}
                     onChange={() => handleInputChange('is_active', true)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
                   />
                   <span className="ml-2 text-sm text-gray-700">Active</span>
                 </label>
@@ -201,114 +195,114 @@ export default function CreateProductPage() {
                     name="is_active"
                     checked={formData.is_active === false}
                     onChange={() => handleInputChange('is_active', false)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
                   />
                   <span className="ml-2 text-sm text-gray-700">Inactive</span>
                 </label>
               </div>
             </div>
+          </div>
 
-            {/* Actions */}
-            <div className="flex justify-between pt-6">
+          {/* Actions */}
+          <div className="flex justify-between pt-6">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/products')}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Create Product
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* New Category Modal */}
+      {showNewCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">New Category</h2>
               <button
-                type="button"
-                onClick={() => navigate('/dashboard/products')}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                onClick={() => {
+                  setShowNewCategoryModal(false);
+                  setNewCategoryName('');
+                  setNewCategoryDescription('');
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Create Product
-                  </>
-                )}
+                ×
               </button>
             </div>
-          </form>
-        </div>
 
-        {/* New Category Modal */}
-        {showNewCategoryModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">New Category</h2>
+            <div className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category Name *
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg "
+                  placeholder="e.g., Data, Voice, SMS..."
+                  required
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={newCategoryDescription}
+                  onChange={(e) => setNewCategoryDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg "
+                  placeholder="Category description..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
                 <button
+                  type="button"
                   onClick={() => {
                     setShowNewCategoryModal(false);
                     setNewCategoryName('');
                     setNewCategoryDescription('');
                   }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  ×
+                  Cancel
                 </button>
-              </div>
-
-              <div className="p-6">
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Data, Voice, SMS..."
-                    required
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={newCategoryDescription}
-                    onChange={(e) => setNewCategoryDescription(e.target.value)}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Category description..."
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowNewCategoryModal(false);
-                      setNewCategoryName('');
-                      setNewCategoryDescription('');
-                    }}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateNewCategory}
-                    disabled={!newCategoryName.trim() || isCreatingCategory}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50"
-                  >
-                    {isCreatingCategory ? 'Creating...' : 'Create Category'}
-                  </button>
-                </div>
+                <button
+                  onClick={handleCreateNewCategory}
+                  disabled={!newCategoryName.trim() || isCreatingCategory}
+                  className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all disabled:opacity-50"
+                >
+                  {isCreatingCategory ? 'Creating...' : 'Create Category'}
+                </button>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

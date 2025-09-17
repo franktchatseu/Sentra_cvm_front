@@ -83,9 +83,9 @@ export default function EditProductPage() {
 
   if (isLoadingProduct) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3b8169]"></div>
           <span className="text-gray-600">Loading product...</span>
         </div>
       </div>
@@ -94,14 +94,14 @@ export default function EditProductPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Product not found</h3>
           <p className="text-gray-500 mb-6">The product you're looking for doesn't exist.</p>
           <button
             onClick={() => navigate('/dashboard/products')}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200"
           >
             Back to Products
           </button>
@@ -111,28 +111,24 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard/products')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Products
-          </button>
-          
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              Edit Product
-            </h1>
-            <p className="text-gray-600">Update product information</p>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <button
+          onClick={() => navigate('/dashboard/products')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Products
+        </button>
+        
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+            Edit Product
+          </h1>
+          <p className="text-gray-600">Update product information</p>
         </div>
+      </div>
 
         {/* Error Message */}
         {error && (
@@ -142,8 +138,8 @@ export default function EditProductPage() {
           </div>
         )}
 
-        {/* Form */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-8">
+      {/* Form */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Product ID */}
@@ -155,7 +151,7 @@ export default function EditProductPage() {
                   type="text"
                   value={formData.product_id}
                   onChange={(e) => handleInputChange('product_id', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                   placeholder="e.g., VOICE_BUNDLE_001"
                 />
                 <p className="text-sm text-gray-500 mt-1">Unique identifier for the product</p>
@@ -171,7 +167,7 @@ export default function EditProductPage() {
                   required
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                   placeholder="e.g., Premium Voice Bundle"
                 />
               </div>
@@ -185,7 +181,7 @@ export default function EditProductPage() {
                   type="text"
                   value={formData.da_id}
                   onChange={(e) => handleInputChange('da_id', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                   placeholder="e.g., DA_001"
                 />
                 <p className="text-sm text-gray-500 mt-1">Data Analytics identifier</p>
@@ -214,7 +210,7 @@ export default function EditProductPage() {
                 rows={4}
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
                 placeholder="Describe the product features and benefits..."
               />
             </div>
@@ -231,7 +227,7 @@ export default function EditProductPage() {
                     name="is_active"
                     checked={formData.is_active === true}
                     onChange={() => handleInputChange('is_active', true)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
                   />
                   <span className="ml-2 text-sm text-gray-700">Active</span>
                 </label>
@@ -241,7 +237,7 @@ export default function EditProductPage() {
                     name="is_active"
                     checked={formData.is_active === false}
                     onChange={() => handleInputChange('is_active', false)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
                   />
                   <span className="ml-2 text-sm text-gray-700">Inactive</span>
                 </label>
@@ -260,7 +256,7 @@ export default function EditProductPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isLoading ? (
                   <>
@@ -276,9 +272,7 @@ export default function EditProductPage() {
               </button>
             </div>
           </form>
-        </div>
-
-      </div>
+    </div>
     </div>
   );
 }

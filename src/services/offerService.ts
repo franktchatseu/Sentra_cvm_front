@@ -4,7 +4,6 @@ import {
   OfferResponse, 
   CreateOfferRequest, 
   UpdateOfferRequest,
-  Category,
   Product,
   PersonalizationRule,
   ABTest,
@@ -224,6 +223,12 @@ class OfferService {
 
   async getLifecycleHistory(id: number): Promise<any[]> {
     return this.request<any[]>(`/${id}/lifecycle-history?skipCache=true`);
+  }
+
+  // Get total count of offers for dashboard stats
+  async getTotalOffers(): Promise<number> {
+    const response = await this.getOffers({ pageSize: 1 });
+    return response.meta.total;
   }
 }
 

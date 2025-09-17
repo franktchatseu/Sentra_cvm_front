@@ -17,6 +17,7 @@ import { Product, ProductFilters } from '../../types/product';
 import { ProductCategory } from '../../types/productCategory';
 import { productService } from '../../services/productService';
 import { productCategoryService } from '../../services/productCategoryService';
+import HeadlessSelect from '../ui/HeadlessSelect';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ export default function ProductsPage() {
     setFilters({ ...filters, search: searchTerm, page: 1 });
   };
 
-  const handleFilterChange = (key: keyof ProductFilters, value: any) => {
+  const handleFilterChange = (key: keyof ProductFilters, value: string | number | boolean | undefined) => {
     setFilters({ ...filters, [key]: value, page: 1 });
   };
 
@@ -123,38 +124,35 @@ export default function ProductsPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Products Management
-              </h1>
-              <p className="text-gray-600 mt-2">Manage your product catalog</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/dashboard/products/categories')}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-              >
-                <Settings className="w-5 h-5" />
-                Categories
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/products/create')}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                Create Product
-              </button>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            Products Management
+          </h1>
+          <p className="text-gray-600 mt-2 text-sm">Manage your product catalog</p>
         </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => navigate('/dashboard/products/categories')}
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-3 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base"
+          >
+            <Settings className="w-5 h-5" />
+            Categories
+          </button>
+          <button
+            onClick={() => navigate('/dashboard/products/create')}
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base"
+          >
+            <Plus className="w-5 h-5" />
+            Create Product
+          </button>
+        </div>
+      </div>
 
-        {/* Filters */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6 mb-6">
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
@@ -164,50 +162,55 @@ export default function ProductsPage() {
                 placeholder="Search products..."
                 value={filters.search || ''}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
               />
             </div>
 
             {/* Category Filter */}
-            <select
-              value={filters.categoryId || ''}
-              onChange={(e) => handleFilterChange('categoryId', e.target.value ? Number(e.target.value) : undefined)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+            <HeadlessSelect
+              options={[
+                { value: '', label: 'All Categories' },
+                ...categories.map((category) => ({
+                  value: category.id.toString(),
+                  label: category.name
+                }))
+              ]}
+              value={filters.categoryId?.toString() || ''}
+              onChange={(value) => handleFilterChange('categoryId', value ? Number(value) : undefined)}
+              placeholder="All Categories"
+              className="min-w-[160px]"
+            />
 
             {/* Status Filter */}
-            <select
+            <HeadlessSelect
+              options={[
+                { value: '', label: 'All Status' },
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' }
+              ]}
               value={filters.isActive === undefined ? '' : filters.isActive.toString()}
-              onChange={(e) => handleFilterChange('isActive', e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
+              onChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
+              placeholder="All Status"
+              className="min-w-[120px]"
+            />
 
             {/* Sort */}
-            <select
+            <HeadlessSelect
+              options={[
+                { value: 'created_at-DESC', label: 'Newest First' },
+                { value: 'created_at-ASC', label: 'Oldest First' },
+                { value: 'name-ASC', label: 'Name A-Z' },
+                { value: 'name-DESC', label: 'Name Z-A' },
+                { value: 'product_id-ASC', label: 'Product ID A-Z' }
+              ]}
               value={`${filters.sortBy}-${filters.sortDirection}`}
-              onChange={(e) => {
-                const [sortBy, sortDirection] = e.target.value.split('-');
+              onChange={(value) => {
+                const [sortBy, sortDirection] = value.toString().split('-');
                 setFilters({ ...filters, sortBy, sortDirection: sortDirection as 'ASC' | 'DESC' });
               }}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="created_at-DESC">Newest First</option>
-              <option value="created_at-ASC">Oldest First</option>
-              <option value="name-ASC">Name A-Z</option>
-              <option value="name-DESC">Name Z-A</option>
-              <option value="product_id-ASC">Product ID A-Z</option>
-            </select>
+              placeholder="Sort by"
+              className="min-w-[140px]"
+            />
           </div>
         </div>
 
@@ -252,63 +255,63 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* Products Table */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <span className="ml-3 text-gray-600">Loading products...</span>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-500 mb-6">Get started by creating your first product.</p>
-              <button
-                onClick={() => navigate('/dashboard/products/create')}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto"
-              >
-                <Plus className="w-5 h-5" />
-                Create Product
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50/50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        DA ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+      {/* Products Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <span className="ml-3 text-gray-600">Loading products...</span>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-500 mb-6">Get started by creating your first product.</p>
+            <button
+              onClick={() => navigate('/dashboard/products/create')}
+              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base"
+            >
+              <Plus className="w-5 h-5" />
+              Create Product
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product Name
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      DA ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {products.map((product) => {
-                      const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'N/A';
-                      const status = product.is_active ? 'Active' : 'Inactive';
-                      const statusBadge = product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-                      
-                      return (
-                        <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {products.map((product) => {
+                    const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'N/A';
+                    const status = product.is_active ? 'Active' : 'Inactive';
+                    const statusBadge = product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                    
+                    return (
+                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-900 font-mono">
                             {product.product_id || product.id || 'N/A'}
                           </td>
@@ -384,26 +387,26 @@ export default function ProductsPage() {
               </div>
 
               {/* Pagination */}
-              <div className="bg-gray-50/50 px-6 py-4 flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+              <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                <div className="text-base text-gray-700 text-center sm:text-left">
                   Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
                   {Math.min((filters.page || 1) * (filters.pageSize || 10), total)} of {total} results
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <button
                     onClick={() => handlePageChange((filters.page || 1) - 1)}
                     disabled={filters.page === 1}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="px-4 py-2 text-sm text-gray-700">
+                  <span className="px-4 py-2 text-base text-gray-700 whitespace-nowrap">
                     Page {filters.page} of {totalPages}
                   </span>
                   <button
                     onClick={() => handlePageChange((filters.page || 1) + 1)}
                     disabled={filters.page === totalPages}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -413,6 +416,6 @@ export default function ProductsPage() {
           )}
         </div>
       </div>
-    </div>
-  );
+  )
+   
 }

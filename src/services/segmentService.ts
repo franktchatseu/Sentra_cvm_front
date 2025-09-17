@@ -18,7 +18,6 @@ class SegmentService {
     
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json',
         ...getAuthHeaders(),
         ...options.headers,
       },

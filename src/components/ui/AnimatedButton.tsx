@@ -35,42 +35,38 @@ export default function AnimatedButton({
   const baseClasses = `
     relative inline-flex items-center justify-center font-semibold rounded-xl
     transition-all duration-300 ease-smooth focus-visible:outline-none 
-    focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none 
-    disabled:opacity-50 overflow-hidden group transform-gpu
+    disabled:pointer-events-none disabled:opacity-50 overflow-hidden group transform-gpu
     ${fullWidth ? 'w-full' : ''}
-    ${isPressed ? 'scale-95' : 'hover:scale-105'}
+    ${isPressed ? 'scale-95' : 'hover:animate-bounce-slow'}
     ${className}
   `;
 
   const variantClasses = {
     primary: `
-      bg-gradient-to-r from-primary-600 via-primary-700 to-accent-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-primary-500/25 focus-visible:ring-primary-500
-      before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent 
-      before:via-white/20 before:to-transparent before:translate-x-[-100%] 
-      hover:before:translate-x-[100%] before:transition-transform before:duration-700
+      bg-[#3b8169] text-white 
+      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-0
       ${glowEffect ? 'hover:shadow-glow' : ''}
     `,
     secondary: `
       bg-white border-2 border-secondary-300 text-secondary-700 shadow-sm 
       hover:bg-secondary-50 hover:border-secondary-400 hover:shadow-md 
-      focus-visible:ring-secondary-500
+      focus-visible:ring-0
     `,
     ghost: `
       bg-transparent text-secondary-600 hover:bg-secondary-100 
-      hover:text-secondary-900 focus-visible:ring-secondary-500
+      hover:text-secondary-900 focus-visible:ring-0
     `,
     success: `
-      bg-gradient-to-r from-success-500 to-success-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-success-500/25 focus-visible:ring-success-500
+      bg-[#3b8169] text-white 
+      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-0
     `,
     warning: `
       bg-gradient-to-r from-warning-500 to-warning-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-warning-500/25 focus-visible:ring-warning-500
+      shadow-lg hover:shadow-xl hover:shadow-warning-500/25 focus-visible:ring-0
     `,
     error: `
       bg-gradient-to-r from-error-500 to-error-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-error-500/25 focus-visible:ring-error-500
+      shadow-lg hover:shadow-xl hover:shadow-error-500/25 focus-visible:ring-0
     `,
   };
 
@@ -112,10 +108,6 @@ export default function AnimatedButton({
         )}
       </span>
       
-      {/* Ripple effect */}
-      <div className="absolute inset-0 overflow-hidden rounded-xl">
-        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-      </div>
     </button>
   );
 }

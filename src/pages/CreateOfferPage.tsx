@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -6,22 +6,19 @@ import {
   Save, 
   Eye, 
   Package, 
-  Settings, 
-  Globe, 
   CheckCircle,
   AlertCircle,
   Info,
   Target,
-  Palette,
-  Users
+  Palette
 } from 'lucide-react';
 import AnimatedButton from '../components/ui/AnimatedButton';
 import AnimatedCard from '../components/ui/AnimatedCard';
 import AnimatedInput from '../components/ui/AnimatedInput';
 import Stepper from '../components/ui/Stepper';
 import FormSection from '../components/ui/FormSection';
-import Select from '../components/ui/Select';
-import MultiSelect from '../components/ui/MultiSelect';
+import HeadlessSelect from '../components/ui/HeadlessSelect';
+import HeadlessMultiSelect from '../components/ui/HeadlessMultiSelect';
 import TagInput from '../components/ui/TagInput';
 
 // Types based on the database schema
@@ -214,7 +211,7 @@ export default function CreateOfferPage() {
     });
   };
 
-  const updateCreative = (index: number, field: string, value: any) => {
+  const updateCreative = (index: number, field: string, value: string | number) => {
     const updatedCreatives = [...formData.creatives];
     updatedCreatives[index] = { ...updatedCreatives[index], [field]: value };
     setFormData({ ...formData, creatives: updatedCreatives });
@@ -247,15 +244,20 @@ export default function CreateOfferPage() {
                   required
                 />
                 
-                <Select
-                  label="Category *"
-                  options={CATEGORIES}
-                  value={formData.category_id}
-                  onChange={(value) => setFormData({ ...formData, category_id: value as number })}
-                  placeholder="Select category"
-                  error={errors.category_id}
-                  searchable
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Category *
+                  </label>
+                  <HeadlessSelect
+                    options={CATEGORIES}
+                    value={formData.category_id?.toString() || ''}
+                    onChange={(value) => setFormData({ ...formData, category_id: value ? Number(value) : null })}
+                    placeholder="Select category"
+                  />
+                  {errors.category_id && (
+                    <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>
+                  )}
+                </div>
               </div>
 
               <AnimatedInput
@@ -274,7 +276,7 @@ export default function CreateOfferPage() {
                       type="checkbox"
                       checked={formData.reusable}
                       onChange={(e) => setFormData({ ...formData, reusable: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:outline-none border-gray-300 rounded"
                     />
                     <span className="text-sm font-medium text-gray-700">Reusable Offer</span>
                   </label>
@@ -287,7 +289,7 @@ export default function CreateOfferPage() {
                       type="checkbox"
                       checked={formData.multi_language}
                       onChange={(e) => setFormData({ ...formData, multi_language: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:outline-none border-gray-300 rounded"
                     />
                     <span className="text-sm font-medium text-gray-700">Multi-language Support</span>
                   </label>
@@ -306,24 +308,35 @@ export default function CreateOfferPage() {
               description="Link your offer to specific products from the billing system"
               icon={Package}
             >
-              <MultiSelect
-                label="Associated Products *"
-                options={PRODUCTS}
-                value={formData.product_ids}
-                onChange={(value) => setFormData({ ...formData, product_ids: value as number[] })}
-                placeholder="Select products to include in this offer"
-                error={errors.product_ids}
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Associated Products *
+                </label>
+                <HeadlessMultiSelect
+                  options={PRODUCTS}
+                  value={formData.product_ids}
+                  onChange={(value) => setFormData({ ...formData, product_ids: value as number[] })}
+                  placeholder="Select products to include in this offer"
+                />
+                {errors.product_ids && (
+                  <p className="mt-1 text-sm text-red-600">{errors.product_ids}</p>
+                )}
+              </div>
 
-              <Select
-                label="Primary Product *"
-                options={PRODUCTS.filter(p => formData.product_ids.includes(p.value as number))}
-                value={formData.primary_product_id}
-                onChange={(value) => setFormData({ ...formData, primary_product_id: value as number })}
-                placeholder="Select the main product for this offer"
-                error={errors.primary_product_id}
-                searchable
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Primary Product *
+                </label>
+                <HeadlessSelect
+                  options={PRODUCTS.filter(p => formData.product_ids.includes(p.value as number))}
+                  value={formData.primary_product_id?.toString() || ''}
+                  onChange={(value) => setFormData({ ...formData, primary_product_id: value ? Number(value) : null })}
+                  placeholder="Select the main product for this offer"
+                />
+                {errors.primary_product_id && (
+                  <p className="mt-1 text-sm text-red-600">{errors.primary_product_id}</p>
+                )}
+              </div>
 
               {formData.product_ids.length > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -351,19 +364,23 @@ export default function CreateOfferPage() {
               icon={Target}
             >
               <div className="space-y-6">
-                <MultiSelect
-                  label="Customer Segments"
-                  options={CUSTOMER_SEGMENTS}
-                  value={formData.eligibility_rules.customer_segments || []}
-                  onChange={(value) => setFormData({
-                    ...formData,
-                    eligibility_rules: {
-                      ...formData.eligibility_rules,
-                      customer_segments: value as string[]
-                    }
-                  })}
-                  placeholder="Select target customer segments"
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Customer Segments
+                  </label>
+                  <HeadlessMultiSelect
+                    options={CUSTOMER_SEGMENTS}
+                    value={formData.eligibility_rules.customer_segments || []}
+                    onChange={(value) => setFormData({
+                      ...formData,
+                      eligibility_rules: {
+                        ...formData.eligibility_rules,
+                        customer_segments: value as string[]
+                      }
+                    })}
+                    placeholder="Select target customer segments"
+                  />
+                </div>
 
                 <TagInput
                   label="Geographic Restrictions"
@@ -379,37 +396,47 @@ export default function CreateOfferPage() {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <AnimatedInput
-                    label="Valid From"
-                    type="date"
-                    value={formData.eligibility_rules.time_restrictions?.start_date || ''}
-                    onChange={(value) => setFormData({
-                      ...formData,
-                      eligibility_rules: {
-                        ...formData.eligibility_rules,
-                        time_restrictions: {
-                          ...formData.eligibility_rules.time_restrictions,
-                          start_date: value
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Valid From
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.eligibility_rules.time_restrictions?.start_date || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        eligibility_rules: {
+                          ...formData.eligibility_rules,
+                          time_restrictions: {
+                            ...formData.eligibility_rules.time_restrictions,
+                            start_date: e.target.value
+                          }
                         }
-                      }
-                    })}
-                  />
+                      })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200 focus:outline-none focus:border-gray-400"
+                    />
+                  </div>
 
-                  <AnimatedInput
-                    label="Valid Until"
-                    type="date"
-                    value={formData.eligibility_rules.time_restrictions?.end_date || ''}
-                    onChange={(value) => setFormData({
-                      ...formData,
-                      eligibility_rules: {
-                        ...formData.eligibility_rules,
-                        time_restrictions: {
-                          ...formData.eligibility_rules.time_restrictions,
-                          end_date: value
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Valid Until
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.eligibility_rules.time_restrictions?.end_date || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        eligibility_rules: {
+                          ...formData.eligibility_rules,
+                          time_restrictions: {
+                            ...formData.eligibility_rules.time_restrictions,
+                            end_date: e.target.value
+                          }
                         }
-                      }
-                    })}
-                  />
+                      })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200 focus:outline-none focus:border-gray-400"
+                    />
+                  </div>
                 </div>
               </div>
             </FormSection>
@@ -443,21 +470,29 @@ export default function CreateOfferPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <Select
-                        label="Channel"
-                        options={CHANNELS}
-                        value={creative.channel}
-                        onChange={(value) => updateCreative(index, 'channel', value)}
-                        placeholder="Select channel"
-                      />
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Channel
+                        </label>
+                        <HeadlessSelect
+                          options={CHANNELS}
+                          value={creative.channel}
+                          onChange={(value) => updateCreative(index, 'channel', value)}
+                          placeholder="Select channel"
+                        />
+                      </div>
 
-                      <Select
-                        label="Language"
-                        options={LOCALES}
-                        value={creative.locale}
-                        onChange={(value) => updateCreative(index, 'locale', value)}
-                        placeholder="Select language"
-                      />
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Language
+                        </label>
+                        <HeadlessSelect
+                          options={LOCALES}
+                          value={creative.locale}
+                          onChange={(value) => updateCreative(index, 'locale', value)}
+                          placeholder="Select language"
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-4">
@@ -563,7 +598,7 @@ export default function CreateOfferPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-8 sm:px-8 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <AnimatedButton
@@ -602,7 +637,7 @@ export default function CreateOfferPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-8 py-8">
         <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           {/* Progress Stepper */}
           <div className="mb-8">

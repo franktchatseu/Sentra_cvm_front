@@ -129,48 +129,49 @@ export default function SegmentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Segments</h1>
-          <p className="text-gray-600 mt-2">Build and manage customer segments for precise targeting</p>
+          <h1 className="text-2xl font-bold text-gray-900">Segments</h1>
+          <p className="text-gray-600 mt-2 text-base">Build and manage customer segments for precise targeting</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
+        <button className="inline-flex items-center px-4 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap">
           <Plus className="h-5 w-5 mr-2" />
           Create Segment
         </button>
       </div>
 
       {/* Type Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           {/* Type Tabs */}
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1">
             {segmentTypes.map((type) => (
               <button
                 key={type.value}
                 onClick={() => setSelectedType(type.value)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                className={`px-3 sm:px-4 py-2 rounded-md text-sm sm:text-base font-medium transition-colors duration-200 ${
                   selectedType === type.value
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                {type.label} ({type.count})
+                <span className="hidden sm:inline">{type.label} ({type.count})</span>
+                <span className="sm:hidden">{type.label}</span>
               </button>
             ))}
           </div>
 
           {/* Search and Filter */}
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search segments..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none w-full sm:w-64 text-base"
               />
             </div>
-            <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <button className="flex items-center px-3 py-2 text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
               <Filter className="h-5 w-5 mr-2" />
               Filter
             </button>
@@ -179,10 +180,10 @@ export default function SegmentsPage() {
       </div>
 
       {/* Segments List */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {filteredSegments.map((segment) => (
           <div key={segment.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -190,8 +191,8 @@ export default function SegmentsPage() {
                     {getTypeIcon(segment.type)}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-lg">{segment.name}</h3>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadge(segment.type)}`}>
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base lg:text-lg">{segment.name}</h3>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-medium ${getTypeBadge(segment.type)}`}>
                       {segment.type.charAt(0).toUpperCase() + segment.type.slice(1)}
                     </span>
                   </div>
@@ -202,40 +203,40 @@ export default function SegmentsPage() {
               </div>
 
               {/* Description */}
-              <p className="text-gray-600 text-sm mb-4">{segment.description}</p>
+              <p className="text-gray-600 text-sm sm:text-base mb-4">{segment.description}</p>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-xl font-bold text-gray-900">{segment.size.toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">Customers</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg">
+                  <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">{segment.size.toLocaleString()}</div>
+                  <div className="text-xs sm:text-sm text-gray-500">Customers</div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-xl font-bold text-gray-900">{segment.campaigns}</div>
-                  <div className="text-xs text-gray-500">Campaigns</div>
+                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg">
+                  <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">{segment.campaigns}</div>
+                  <div className="text-xs sm:text-sm text-gray-500">Campaigns</div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className={`text-xl font-bold ${segment.growth.startsWith('+') ? 'text-emerald-600' : segment.growth.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
+                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg">
+                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${segment.growth.startsWith('+') ? 'text-emerald-600' : segment.growth.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
                     {segment.growth}
                   </div>
-                  <div className="text-xs text-gray-500">Growth</div>
+                  <div className="text-xs sm:text-sm text-gray-500">Growth</div>
                 </div>
               </div>
 
               {/* Criteria */}
               {segment.criteria.length > 0 && (
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Criteria</div>
+                  <div className="text-sm sm:text-base font-medium text-gray-700 mb-2">Criteria</div>
                   <div className="space-y-1">
                     {segment.criteria.slice(0, 3).map((criterion, index) => (
-                      <div key={index} className="flex items-center space-x-2 text-sm text-gray-600">
+                      <div key={index} className="flex items-center space-x-2 text-sm sm:text-base text-gray-600">
                         <span className="font-medium">{criterion.field}</span>
                         <span className="text-blue-600 font-mono">{criterion.operator}</span>
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">{criterion.value}</span>
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs sm:text-sm">{criterion.value}</span>
                       </div>
                     ))}
                     {segment.criteria.length > 3 && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-500">
                         +{segment.criteria.length - 3} more criteria
                       </div>
                     )}
@@ -256,7 +257,7 @@ export default function SegmentsPage() {
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs sm:text-sm text-gray-500">
                   Updated: {segment.lastUpdated}
                 </div>
               </div>
@@ -271,7 +272,7 @@ export default function SegmentsPage() {
           <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No segments found</h3>
           <p className="text-gray-600 mb-6">Create your first segment to start targeting specific customer groups</p>
-          <button className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105">
+          <button className="inline-flex items-center px-4 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap">
             <Plus className="h-5 w-5 mr-2" />
             Create Your First Segment
           </button>

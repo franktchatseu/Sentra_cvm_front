@@ -83,21 +83,21 @@ export default function AnimatedInput({
   const variantClasses = {
     default: `
       bg-secondary-50 border-secondary-300 text-secondary-900 placeholder-secondary-500
-      focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
+      focus:bg-white 
       hover:border-secondary-400 hover:bg-white
-      ${error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/20' : ''}
-      ${success ? 'border-success-500 focus:border-success-500 focus:ring-success-500/20' : ''}
+      ${error ? 'border-error-500 focus:border-error-500' : ''}
+      ${success ? 'border-success-500 focus:border-success-500' : ''}
     `,
     floating: `
       bg-transparent border-secondary-300 text-secondary-900 placeholder-transparent
-      focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
+      
       hover:border-secondary-400
-      ${error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/20' : ''}
-      ${success ? 'border-success-500 focus:border-success-500 focus:ring-success-500/20' : ''}
+      ${error ? 'border-error-500 focus:border-error-500' : ''}
+      ${success ? 'border-success-500 focus:border-success-500' : ''}
     `,
     minimal: `
       bg-transparent border-0 border-b-2 border-secondary-300 rounded-none text-secondary-900
-      focus:border-primary-500 hover:border-secondary-400 px-0
+       hover:border-secondary-400 px-0
       ${error ? 'border-error-500 focus:border-error-500' : ''}
       ${success ? 'border-success-500 focus:border-success-500' : ''}
     `,
@@ -190,9 +190,9 @@ export default function AnimatedInput({
         {/* Focus Ring Animation */}
         <div className={`
           absolute inset-0 rounded-lg pointer-events-none transition-all duration-300
-          ${isFocused && !error && !success ? 'ring-2 ring-primary-500/20 ring-offset-1' : ''}
-          ${isFocused && error ? 'ring-2 ring-error-500/20 ring-offset-1' : ''}
-          ${isFocused && success ? 'ring-2 ring-success-500/20 ring-offset-1' : ''}
+          ${isFocused && !error && !success ? 'ring-0' : ''}
+          ${isFocused && error ? 'ring-0' : ''}
+          ${isFocused && success ? 'ring-0' : ''}
         `} />
       </div>
 

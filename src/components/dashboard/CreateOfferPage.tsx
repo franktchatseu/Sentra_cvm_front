@@ -7,7 +7,6 @@ import {
   DollarSign, 
   Package, 
   Eye, 
-  X,
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
@@ -77,6 +76,7 @@ interface OfferReward {
   type: 'default' | 'sms_night' | 'custom';
   rules: RewardRule[];
 }
+import HeadlessSelect from '../ui/HeadlessSelect';
 
 interface StepProps {
   currentStep: number;
@@ -107,7 +107,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
     <div className="space-y-6">
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Gift className="w-8 h-8 text-indigo-600" />
+          <Gift className="w-8 h-8 text-[#1a3d2e]" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
         <p className="text-gray-600">Let's start with the essential details of your offer</p>
@@ -123,7 +123,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Summer Data Bundle"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
             required
           />
         </div>
@@ -137,7 +137,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this offer provides to customers..."
             rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
           />
         </div>
 
@@ -165,17 +165,18 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Category
           </label>
-          <select
+          <HeadlessSelect
+            options={[
+              { value: '', label: 'Select category' },
+              { value: '1', label: 'Data' },
+              { value: '2', label: 'Voice' },
+              { value: '3', label: 'Combo' },
+              { value: '4', label: 'Loyalty' }
+            ]}
             value={formData.category_id || ''}
-            onChange={(e) => setFormData({ ...formData, category_id: e.target.value ? Number(e.target.value) : undefined })}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-          >
-            <option value="">Select category</option>
-            <option value="1">Data</option>
-            <option value="2">Voice</option>
-            <option value="3">Combo</option>
-            <option value="4">Loyalty</option>
-          </select>
+            onChange={(value) => setFormData({ ...formData, category_id: value ? Number(value) : undefined })}
+            placeholder="Select category"
+          />
         </div>
       </div>
 
@@ -322,7 +323,7 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
     <div className="space-y-6">
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Target className="w-8 h-8 text-purple-600" />
+          <Target className="w-8 h-8 text-[#1a3d2e]" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Eligibility Rules</h2>
         <p className="text-gray-600">Define who can access this offer and when</p>
@@ -345,7 +346,7 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
                 ...prev,
                 min_spend: parseFloat(e.target.value) || 0
               }))}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg "
               placeholder="0.00"
             />
           </div>
@@ -413,7 +414,7 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
         </button>
         <button
           onClick={handleNext}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg flex items-center gap-2"
+          className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all shadow-lg flex items-center gap-2 text-base"
         >
           Next
           <ChevronRight className="w-4 h-4" />
@@ -601,7 +602,7 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <>
@@ -650,7 +651,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_spend || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_spend: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
             />
           </div>
 
@@ -658,17 +659,18 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Customer Tier
             </label>
-            <select
+            <HeadlessSelect
+              options={[
+                { value: '', label: 'Any tier' },
+                { value: 'bronze', label: 'Bronze' },
+                { value: 'silver', label: 'Silver' },
+                { value: 'gold', label: 'Gold' },
+                { value: 'vip', label: 'VIP' }
+              ]}
               value={eligibilityRules.customer_tier || ''}
-              onChange={(e) => setEligibilityRules({ ...eligibilityRules, customer_tier: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-            >
-              <option value="">Any tier</option>
-              <option value="bronze">Bronze</option>
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
-              <option value="vip">VIP</option>
-            </select>
+              onChange={(value) => setEligibilityRules({ ...eligibilityRules, customer_tier: value || undefined })}
+              placeholder="Any tier"
+            />
           </div>
         </div>
 
@@ -682,7 +684,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_account_age_days || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_account_age_days: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
             />
           </div>
 
@@ -695,7 +697,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_purchase_count || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_purchase_count: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
             />
           </div>
         </div>
@@ -709,7 +711,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               type="date"
               value={eligibilityRules.valid_from || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_from: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
             />
           </div>
 
@@ -721,7 +723,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               type="date"
               value={eligibilityRules.valid_to || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_to: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
             />
           </div>
         </div>
@@ -735,7 +737,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
             value={eligibilityRules.max_usage_per_customer || ''}
             onChange={(e) => setEligibilityRules({ ...eligibilityRules, max_usage_per_customer: e.target.value ? Number(e.target.value) : undefined })}
             placeholder="Unlimited"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
           />
         </div>
 
@@ -745,7 +747,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
             id="combinable"
             checked={eligibilityRules.combinable_with_other_offers || false}
             onChange={(e) => setEligibilityRules({ ...eligibilityRules, combinable_with_other_offers: e.target.checked })}
-            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
           />
           <label htmlFor="combinable" className="ml-2 text-sm text-gray-700">
             Can be combined with other offers
@@ -763,7 +765,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
         </button>
         <button
           onClick={handleNext}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -795,29 +797,31 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Lifecycle Status
             </label>
-            <select
+            <HeadlessSelect
+              options={[
+                { value: 'draft', label: 'Draft' },
+                { value: 'active', label: 'Active' },
+                { value: 'paused', label: 'Paused' }
+              ]}
               value={formData.lifecycle_status}
-              onChange={(e) => setFormData({ ...formData, lifecycle_status: e.target.value as LifecycleStatus })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-            >
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-            </select>
+              onChange={(value) => setFormData({ ...formData, lifecycle_status: value as LifecycleStatus })}
+              placeholder="Select status"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Approval Status
             </label>
-            <select
+            <HeadlessSelect
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' }
+              ]}
               value={formData.approval_status}
-              onChange={(e) => setFormData({ ...formData, approval_status: e.target.value as ApprovalStatus })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-            >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-            </select>
+              onChange={(value) => setFormData({ ...formData, approval_status: value as ApprovalStatus })}
+              placeholder="Select status"
+            />
           </div>
         </div>
 
@@ -828,7 +832,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
               id="reusable"
               checked={formData.reusable}
               onChange={(e) => setFormData({ ...formData, reusable: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
             />
             <label htmlFor="reusable" className="ml-2 text-sm text-gray-700">
               Reusable across multiple campaigns
@@ -841,7 +845,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
               id="multiLanguage"
               checked={formData.multi_language}
               onChange={(e) => setFormData({ ...formData, multi_language: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
             />
             <label htmlFor="multiLanguage" className="ml-2 text-sm text-gray-700">
               Multi-language support
@@ -890,7 +894,7 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <>
@@ -977,34 +981,33 @@ export default function CreateOfferPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50/50 via-blue-50/30 to-indigo-50/50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard/offers')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Offers
-          </button>
-          
-          <div className="text-center">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              Create New Offer
-            </h1>
-            <p className="text-gray-600">Follow the steps to create a comprehensive offer for your customers</p>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <button
+          onClick={() => navigate('/dashboard/offers')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Offers
+        </button>
+        
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+            Create New Offer
+          </h1>
+          <p className="text-gray-600">Follow the steps to create a comprehensive offer for your customers</p>
         </div>
+      </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
+      {/* Progress Bar */}
+      <div>
           <div className="flex items-center justify-between mb-4">
             {[1, 2, 3, 4, 5, 6].map((step) => (
               <div key={step} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${
                   step <= currentStep 
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' 
+                    ? 'bg-[#3b8169] text-white' 
                     : 'bg-gray-200 text-gray-500'
                 }`}>
                   {step < currentStep ? <Check className="w-5 h-5" /> : step}
@@ -1034,8 +1037,8 @@ export default function CreateOfferPage() {
           </div>
         )}
 
-        {/* Step Content */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-8">
+      {/* Step Content */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           {currentStep === 1 && <BasicInfoStep {...stepProps} />}
           {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
           {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
@@ -1044,6 +1047,5 @@ export default function CreateOfferPage() {
           {currentStep === 6 && <ReviewStep {...stepProps} />}
         </div>
       </div>
-    </div>
   );
 }
