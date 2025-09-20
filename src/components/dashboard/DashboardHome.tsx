@@ -285,7 +285,7 @@ export default function DashboardHome() {
 
         <div className="flex flex-col md:flex-row xl:flex-col space-y-6 md:space-y-0 md:space-x-6 xl:space-x-0 xl:space-y-6 h-full">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden transition-all duration-500 flex-1">
-            <div className="p-4 sm:p-6 bg-gradient-to-r from-green-500/15 via-emerald-500/10 to-teal-500/15 border-b border-white/30">
+            <div className="p-4 sm:p-6 bg-gradient-to-r from-green-500/15 via-emerald-500/10 to-teal-500/15 border-b border-gray-200">
               <div className="flex items-center space-x-2">
                 <div className="p-2 bg-gradient-to-br from-green-600 to-emerald-700 rounded-lg">
                   <Target className="h-5 w-5 text-white" />
