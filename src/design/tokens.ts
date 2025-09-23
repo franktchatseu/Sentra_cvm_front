@@ -2,7 +2,7 @@
 // Central place to manage all colors, fonts, and design tokens
 
 export const colors = {
-  // Core Brand Palette (from your color palette)
+  // Core Brand Palette 
   brand: {
     cream: '#DAD7CD',        // Light neutral background
     sage: '#A3B18A',         // Sage green - secondary actions
@@ -11,7 +11,7 @@ export const colors = {
     darkest: '#344E41',      // Darkest green - text/emphasis
   },
 
-  // Sentra Brand Colors (using your logo color)
+  // Sentra Brand Colors 
   sentra: {
     light: '#588157',        // Medium green for light variants
     main: '#3A5A40',         // Your logo color - ALL BUTTONS
@@ -19,7 +19,7 @@ export const colors = {
     hover: '#2f4a35',        // Slightly darker for hover states
   },
 
-  // Entity-Specific Colors (bright and vibrant)
+  // Entity-Specific Colors (
   entities: {
     products: '#FF4757',      // Bright Red
     offers: '#00D2D3',        // Bright Cyan
@@ -30,7 +30,7 @@ export const colors = {
     configuration: '#747D8C',  // Medium Gray
   },
 
-  // Status Colors (harmonious with brand)
+  // Status Colors 
   status: {
     success: {
       light: '#e8f1e8',
@@ -49,22 +49,22 @@ export const colors = {
     },
     info: {
       light: '#eff1ef',
-      main: '#8BA288',        // Muted sage
+      main: '#8BA288',       
       dark: '#798b76',
     },
   },
 
   // UI Colors (grays and neutrals)
   ui: {
-    background: '#FFFFFF',    // Keep white as requested
-    surface: '#DAD7CD',       // Cream from palette for cards/surfaces
-    border: '#C5C2B7',        // Slightly darker cream for borders
-    divider: '#B8B5AA',       // Subtle dividers
+    background: '#FFFFFF',    
+    surface: '#DAD7CD',       
+    border: '#C5C2B7',        
+    divider: '#B8B5AA',       
     text: {
-      primary: '#344E41',     // Darkest green for main text
-      secondary: '#5A6B5D',   // Medium for secondary text
-      muted: '#8A9B8D',       // Light for muted text
-      inverse: '#FFFFFF',     // White text on dark backgrounds
+      primary: '#344E41',     
+      secondary: '#5A6B5D',   
+      muted: '#8A9B8D',      
+      inverse: '#FFFFFF',     
     },
     gray: {
       50: '#fafafa',
@@ -80,12 +80,11 @@ export const colors = {
     },
   },
 
-  // Interactive States
   interactive: {
-    hover: '#2f4a35',         // Darker green for hover
-    active: '#253a28',        // Even darker for active
-    focus: '#588157',         // Medium green for focus rings
-    disabled: '#C5C2B7',      // Light cream for disabled
+    hover: '#2f4a35',        
+    active: '#253a28',        
+    focus: '#588157',         
+    disabled: '#C5C2B7',     
   },
 };
 
@@ -96,7 +95,7 @@ export const fonts = {
     fallback: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   
-  // Heading Font (fixed naming - it's Space Grotesk, not Active Grotesk)
+  // Heading Font 
   heading: {
     name: 'Space Grotesk',
     fallback: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -112,7 +111,7 @@ export const fonts = {
     extrabold: 800,
   },
   
-  // Semantic Font Sizes (more practical for dashboard)
+  // Semantic Font Sizes 
   sizes: {
     // Small text
     caption: '0.75rem',      // 12px - captions, labels
@@ -223,22 +222,18 @@ export const shadows = {
   inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
 };
 
-// CSS Custom Properties for easy use in CSS
 export const cssVariables = {
-  // Brand colors
   '--color-brand-cream': colors.brand.cream,
   '--color-brand-sage': colors.brand.sage,
   '--color-brand-medium': colors.brand.medium,
   '--color-brand-dark': colors.brand.dark,
   '--color-brand-darkest': colors.brand.darkest,
   
-  // Sentra colors (main button colors)
   '--color-sentra-light': colors.sentra.light,
   '--color-sentra-main': colors.sentra.main,
   '--color-sentra-dark': colors.sentra.dark,
   '--color-sentra-hover': colors.sentra.hover,
   
-  // UI colors
   '--color-ui-background': colors.ui.background,
   '--color-ui-surface': colors.ui.surface,
   '--color-ui-border': colors.ui.border,

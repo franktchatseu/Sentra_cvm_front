@@ -1,5 +1,4 @@
-// Design System Utilities
-// Easy-to-use functions for accessing design tokens
+
 
 import { 
   colors, 
@@ -12,18 +11,14 @@ import {
   getTypography 
 } from './tokens';
 
-// Color utilities - organized by purpose
 export const color = {
-  // Brand colors (from your palette)
   brand: colors.brand,
   
   // Sentra colors (all buttons use these)
   sentra: colors.sentra,
   
-  // Entity-specific colors (consistent throughout app)
   entities: colors.entities,
   
-  // Status colors (harmonious with brand)
   status: colors.status,
   
   // UI colors (text, backgrounds, etc.)
@@ -156,7 +151,6 @@ export const helpers = {
     `text-[${colors.entities[entity]}]`,
 };
 
-// Export everything for easy importing
 export default {
   color,
   typography,
