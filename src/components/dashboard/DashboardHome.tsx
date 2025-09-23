@@ -1,9 +1,9 @@
-import { 
-  Target, 
-  Users, 
-  MessageSquare, 
-  TrendingUp, 
-  ArrowUpRight, 
+import {
+  Target,
+  Users,
+  MessageSquare,
+  TrendingUp,
+  ArrowUpRight,
   ArrowDownRight,
   Calendar,
   Eye,
@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { dashboardService, DashboardStats } from '../../services/dashboardService';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { color, tw } from '../../design/utils';
 
 export default function DashboardHome() {
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function DashboardHome() {
     conversionRate: 0
   });
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
@@ -49,7 +50,7 @@ export default function DashboardHome() {
 
     fetchDashboardStats();
   }, []);
-  
+
   const getFirstName = () => {
     if (user && 'email' in user && user.email && typeof user.email === 'string') {
       const emailName = user.email.split('@')[0];
@@ -58,44 +59,7 @@ export default function DashboardHome() {
     }
     return 'user';
   };
-  const stats = [
-    {
-      name: 'Active Campaigns',
-      value: loading ? '...' : (dashboardStats?.activeCampaigns ?? 0).toString(),
-      change: '+12%',
-      changeType: 'positive',
-      icon: Target,
-      color: 'indigo',
-      gradient: 'from-indigo-500 to-purple-600'
-    },
-    {
-      name: 'Total Segments',
-      value: loading ? '...' : (dashboardStats?.totalSegments ?? 0).toString(),
-      change: '+8%',
-      changeType: 'positive',
-      icon: Users,
-      color: 'emerald',
-      gradient: 'from-emerald-500 to-teal-600'
-    },
-    {
-      name: 'Total Offers',
-      value: loading ? '...' : (dashboardStats?.totalOffers ?? 0).toString(),
-      change: '-3%',
-      changeType: 'negative',
-      icon: MessageSquare,
-      color: 'rose',
-      gradient: 'from-rose-500 to-pink-600'
-    },
-    {
-      name: 'Conversion Rate',
-      value: loading ? '...' : `${dashboardStats?.conversionRate ?? 0}%`,
-      change: '+5.2%',
-      changeType: 'positive',
-      icon: TrendingUp,
-      color: 'amber',
-      gradient: 'from-amber-500 to-orange-600'
-    }
-  ];
+
 
   const recentCampaigns = [
     {
@@ -125,62 +89,128 @@ export default function DashboardHome() {
   ];
 
   const quickActions = [
-    { name: 'Create Campaign', href: '/dashboard/campaigns/new', icon: Target },
-    { name: 'New Offer', href: '/dashboard/offers/new', icon: MessageSquare },
-    { name: 'Build Segment', href: '/dashboard/segments/new', icon: Users },
-    { name: 'Configuration', href: '/dashboard/configuration', icon: Cog },
+    { name: 'Create Campaign', href: '/dashboard/campaigns/create', icon: Target, entity: 'campaigns' },
+    { name: 'New Offer', href: '/dashboard/offers/create', icon: MessageSquare, entity: 'offers' },
+    { name: 'Build Segment', href: '/dashboard/segments/create', icon: Users, entity: 'segments' },
+    { name: 'Configuration', href: '/dashboard/configuration', icon: Cog, entity: 'configuration' },
     // { name: 'View Analytics', href: '/dashboard/analytics', icon: Activity }
+  ];
+
+  const stats = [
+    {
+      name: 'Active Campaigns',
+      value: loading ? '...' : (dashboardStats?.activeCampaigns ?? 0).toString(),
+      change: '+12%',
+      changeType: 'positive',
+      icon: Target,
+      entity: 'campaigns',
+      color: color.entities.campaigns,  // Vibrant Sage Green
+      gradient: `from-[${color.entities.campaigns}] to-[${color.entities.campaigns}]/80`
+    },
+    {
+      name: 'Total Segments',
+      value: loading ? '...' : (dashboardStats?.totalSegments ?? 0).toString(),
+      change: '+8%',
+      changeType: 'positive',
+      icon: Users,
+      entity: 'segments',
+      color: color.entities.segments,  // Sky Blue
+      gradient: `from-[${color.entities.segments}] to-[${color.entities.segments}]/80`
+    },
+    {
+      name: 'Total Offers',
+      value: loading ? '...' : (dashboardStats?.totalOffers ?? 0).toString(),
+      change: '-3%',
+      changeType: 'negative',
+      icon: MessageSquare,
+      entity: 'offers',
+      color: color.entities.offers,  // Turquoise Teal
+      gradient: `from-[${color.entities.offers}] to-[${color.entities.offers}]/80`
+    },
+    {
+      name: 'Conversion Rate',
+      value: loading ? '...' : `${dashboardStats?.conversionRate ?? 0}%`,
+      change: '+5.2%',
+      changeType: 'positive',
+      icon: TrendingUp,
+      entity: 'analytics',
+      color: color.entities.analytics,  // Plum Purple
+      gradient: `from-[${color.entities.analytics}] to-[${color.entities.analytics}]/80`
+    }
   ];
 
   return (
     <div className="space-y-6">
       <div className="text-left">
-          <h1 className="lg:text-3xl text-2xl lg:mt-2 font-bold bg-gradient-to-r from-slate-800 via-green-800 to-green-900 bg-clip-text text-transparent mb-3">
-          Welcome back, {getFirstName()} 👋
-        </h1>
-        <p className="text-slate-600 lg:text-base text-sm font-medium ">
-          Here's what's happening with your campaigns today. Your performance is looking great!
-        </p>
+        <div
+          className="flex items-center space-x-4 mb-4"
+          style={{
+            animation: 'fadeInUp 0.6s ease-out forwards 0.1s',
+            opacity: 0,
+            transform: 'translateY(20px)'
+          }}
+        >
+          <div className="p-3 bg-gradient-to-br from-[#3A5A40] to-[#588157] rounded-2xl shadow-lg">
+            <span className="text-2xl">👋</span>
+          </div>
+          <div>
+            <h1 className={`lg:text-3xl text-2xl font-bold ${tw.textPrimary}`}>
+              Welcome back, {getFirstName()}!
+            </h1>
+            <p className={`${tw.textSecondary} lg:text-base text-sm font-medium`}>
+              Here's what's happening with your campaigns today. Your performance is looking great!
+            </p>
+          </div>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div 
-              key={stat.name} 
-              className="group cursor-pointer relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 p-4 md:p-6 hover:bg-white/95 hover:z-20 hover:scale-105 hover:-translate-y-2"
+            <div
+              key={stat.name}
+              className="group cursor-pointer relative bg-white rounded-2xl border border-gray-200/50 p-4 md:p-6 hover:bg-white hover:z-20 hover:scale-105 hover:-translate-y-2 shadow-sm hover:shadow-xl transition-all duration-300"
               style={{
                 animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                 opacity: 0,
                 transition: 'all 0.5s ease-out'
               }}
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-15 rounded-2xl transition-all duration-700 ease-out`}></div>
-              
+              <div
+                className="absolute inset-0 rounded-2xl transition-all duration-700 ease-out opacity-0 group-hover:opacity-20"
+                style={{
+                  background: `linear-gradient(135deg, ${stat.color}20, ${stat.color}10)`
+                }}
+              ></div>
+
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br ${stat.gradient} group-hover:scale-110 transition-all duration-500 ease-out transform-gpu`}>
-                    <Icon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white group-hover:rotate-12 transition-transform duration-500 ease-out" />
+                  <div
+                    className="p-3 rounded-2xl group-hover:scale-110 transition-all duration-500 ease-out transform-gpu shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${stat.color}, ${stat.color}E6)`
+                    }}
+                  >
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:rotate-12 transition-transform duration-500 ease-out" />
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-sm font-semibold group-hover:scale-105 transition-all duration-500 ease-out transform-gpu ${
-                    stat.changeType === 'positive' 
-                      ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200' 
-                      : 'bg-rose-100 text-rose-700 group-hover:bg-rose-200'
-                  }`}>
+                  <div className={`px-3 py-1.5 rounded-full text-sm font-bold group-hover:scale-105 transition-all duration-500 ease-out transform-gpu shadow-sm ${stat.changeType === 'positive'
+                    ? `bg-gradient-to-r from-[${color.status.success.light}] to-[${color.status.success.light}]/80 text-[${color.status.success.main}] border border-[${color.status.success.main}]/20`
+                    : `bg-gradient-to-r from-[${color.status.error.light}] to-[${color.status.error.light}]/80 text-[${color.status.error.main}] border border-[${color.status.error.main}]/20`
+                    }`}>
                     {stat.change}
                   </div>
                 </div>
-                
+
                 <div>
-                  <p className="text-sm sm:text-sm font-medium text-slate-600 mb-1 group-hover:text-slate-700 transition-colors duration-500 ease-out">{stat.name}</p>
-                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-slate-900 group-hover:text-slate-800 group-hover:scale-105 transition-all duration-500 ease-out transform-gpu">{stat.value}</p>
+                  <p className={`text-sm sm:text-sm font-medium ${tw.textSecondary} mb-1 group-hover:${tw.textPrimary} transition-colors duration-500 ease-out`}>{stat.name}</p>
+                  <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold ${tw.textPrimary} group-hover:scale-105 transition-all duration-500 ease-out transform-gpu`}>{stat.value}</p>
                 </div>
-                
-                <div className="mt-3 flex items-center text-sm text-slate-500 group-hover:text-slate-600 transition-colors duration-500 ease-out">
+
+                <div className={`mt-3 flex items-center text-sm ${tw.textMuted} group-hover:${tw.textSecondary} transition-colors duration-500 ease-out`}>
                   {stat.changeType === 'positive' ? (
-                    <ArrowUpRight className="h-3 w-3 text-emerald-500 mr-1 group-hover:scale-110 group-hover:text-emerald-600 transition-all duration-500 ease-out transform-gpu" />
+                    <ArrowUpRight className={`h-3 w-3 text-[${color.status.success.main}] mr-1 group-hover:scale-110 transition-all duration-500 ease-out transform-gpu`} />
                   ) : (
-                    <ArrowDownRight className="h-3 w-3 text-rose-500 mr-1 group-hover:scale-110 group-hover:text-rose-600 transition-all duration-500 ease-out transform-gpu" />
+                    <ArrowDownRight className={`h-3 w-3 text-[${color.status.error.main}] mr-1 group-hover:scale-110 transition-all duration-500 ease-out transform-gpu`} />
                   )}
                   <span className="group-hover:font-medium transition-all duration-500 ease-out">vs last month</span>
                 </div>
@@ -193,14 +223,35 @@ export default function DashboardHome() {
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
         {/* Recent Campaigns */}
         <div className="lg:col-span-2">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden transition-all duration-500">
-            <div className="p-4 sm:p-6 bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-pink-500/15 border-b border-white/30">
+          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 shadow-sm hover:shadow-lg">
+            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.campaigns}]/10 via-[${color.entities.offers}]/5 to-[${color.entities.segments}]/10 border-b border-gray-200/50`}>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Recent Campaigns</h2>
-                  <p className="text-slate-600 text-sm sm:text-sm mt-1 font-medium">Monitor your active and scheduled campaigns</p>
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="p-3 rounded-xl shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${color.entities.campaigns}, ${color.entities.campaigns}E6)`
+                    }}
+                  >
+                    <Target className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>Recent Campaigns</h2>
+                    <p className={`${tw.textSecondary} text-sm sm:text-sm mt-1 font-medium`}>Monitor your active and scheduled campaigns</p>
+                  </div>
                 </div>
-                <button className="px-3 py-2 sm:px-4 sm:py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white text-sm sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto">
+                <button
+                  className="px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md w-full sm:w-auto text-white"
+                  style={{
+                    backgroundColor: color.sentra.main
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                  }}
+                >
                   View All
                 </button>
               </div>
@@ -208,70 +259,138 @@ export default function DashboardHome() {
             <div className="p-4 sm:p-6">
               <div className="space-y-4 sm:space-y-5">
                 {recentCampaigns.map((campaign, index) => (
-                  <div 
-                    key={campaign.id} 
-                    className="group relative bg-gradient-to-r from-white/60 to-white/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/40 hover:border-indigo-200 hover:scale-[1.01] sm:hover:scale-[1.02] transition-all duration-500 cursor-pointer"
+                  <div
+                    key={campaign.id}
+                    className="group relative bg-white rounded-xl p-4 sm:p-6 border border-gray-200/50 hover:border-gray-300 hover:scale-[1.01] sm:hover:scale-[1.02] transition-all duration-500 cursor-pointer shadow-sm hover:shadow-md"
                     style={{
                       animation: `fadeInUp 0.6s ease-out forwards ${(index + 4) * 0.1}s`,
                       opacity: 0,
                       transform: 'translateY(20px)'
                     }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 rounded-xl transition-all duration-500"></div>
-                    
+                    <div className={`absolute inset-0 bg-gradient-to-r from-[${color.entities.campaigns}]/5 to-[${color.entities.offers}]/5 opacity-0 group-hover:opacity-100 rounded-xl transition-all duration-500`}></div>
+
                     <div className="relative z-10">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
                         <div className="flex-1">
                           <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3">
                             <div className="flex items-start space-x-3 flex-1 min-w-0">
-                              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg transition-all duration-300 flex-shrink-0">
-                                <Target className="h-4 w-4 text-white" />
+                              <div
+                                className="p-3 rounded-xl transition-all duration-300 flex-shrink-0 shadow-md group-hover:shadow-lg"
+                                style={{
+                                  background: `linear-gradient(135deg, ${color.entities.campaigns}, ${color.entities.campaigns}E6)`
+                                }}
+                              >
+                                <Target className="h-5 w-5 text-white" />
                               </div>
-                              <h3 className="font-bold text-slate-900 text-base sm:text-lg group-hover:text-slate-800 transition-colors duration-300 break-words">{campaign.name}</h3>
+                              <h3 className={`font-bold ${tw.textPrimary} text-base sm:text-lg group-hover:${tw.textPrimary} transition-colors duration-300 break-words`}>{campaign.name}</h3>
                             </div>
-                            <span className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all duration-300 w-fit flex-shrink-0 ${
-                              campaign.status === 'active' 
-                                ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border border-emerald-200 group-hover:from-emerald-200 group-hover:to-green-200'
-                                : 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200 group-hover:from-amber-200 group-hover:to-orange-200'
-                            }`}>
+                            <span className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all duration-300 w-fit flex-shrink-0 ${campaign.status === 'active'
+                              ? `bg-[${color.status.success.light}] text-[${color.status.success.main}] border border-[${color.status.success.main}]/20 group-hover:bg-[${color.status.success.main}]/10`
+                              : `bg-[${color.status.warning.light}] text-[${color.status.warning.main}] border border-[${color.status.warning.main}]/20 group-hover:bg-[${color.status.warning.main}]/10`
+                              }`}>
                               {campaign.status}
                             </span>
                           </div>
-                          <p className="text-sm sm:text-sm text-slate-600 mb-4 font-medium flex items-center">
-                            <Users className="h-4 w-4 mr-2 text-slate-500" />
+                          <p className={`text-sm sm:text-sm ${tw.textSecondary} mb-4 font-medium flex items-center`}>
+                            <Users className={`h-4 w-4 mr-2 text-[${color.entities.segments}]`} />
                             {campaign.segment}
                           </p>
                         </div>
                         <div className="flex flex-row sm:flex-col items-center sm:items-end space-x-3 sm:space-x-0 sm:space-y-3">
-                          <span className="text-sm sm:text-sm text-slate-500 font-semibold bg-slate-100 px-2 sm:px-3 py-1 rounded-full">{campaign.startDate}</span>
-                          <button className="p-2 sm:p-2.5 text-slate-400 hover:text-white hover:bg-[#3b8169] rounded-lg transition-all duration-300 group-hover:scale-110">
+                          <span className={`text-sm sm:text-sm ${tw.textMuted} font-semibold bg-[${color.ui.surface}] px-2 sm:px-3 py-1 rounded-full`}>{campaign.startDate}</span>
+                          <button
+                            className="p-2 sm:p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110"
+                            style={{
+                              color: color.ui.text.muted,
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.target as HTMLButtonElement).style.color = 'white';
+                              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLButtonElement).style.color = color.ui.text.muted;
+                              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                            }}
+                          >
                             <Eye className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
-                      
+
                       {campaign.status === 'active' && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-3 sm:p-4 text-center border border-blue-200 transition-all duration-300">
-                            <div className="text-xl sm:text-2xl font-bold text-blue-700 mb-1">{campaign.performance.sent.toLocaleString()}</div>
-                            <div className="text-blue-600 text-sm sm:text-sm font-semibold">Sent</div>
+                          <div
+                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md bg-white border border-gray-200/50"
+                          >
+                            <div className="flex items-center justify-center mb-2">
+                              <div
+                                className="p-2 rounded-lg"
+                                style={{
+                                  background: `linear-gradient(135deg, ${color.entities.segments}, ${color.entities.segments}CC)`
+                                }}
+                              >
+                                <MessageSquare className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
+                            <div className="text-xl sm:text-2xl font-bold mb-1 text-black">
+                              {campaign.performance.sent.toLocaleString()}
+                            </div>
+                            <div className="text-sm font-semibold text-black">
+                              Sent
+                            </div>
                           </div>
-                          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-3 sm:p-4 text-center border border-emerald-200 transition-all duration-300">
-                            <div className="text-xl sm:text-2xl font-bold text-emerald-700 mb-1">{campaign.performance.delivered.toLocaleString()}</div>
-                            <div className="text-emerald-600 text-sm sm:text-sm font-semibold">Delivered</div>
+
+                          <div
+                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md bg-white border border-gray-200/50"
+                          >
+                            <div className="flex items-center justify-center mb-2">
+                              <div
+                                className="p-2 rounded-lg"
+                                style={{
+                                  background: `linear-gradient(135deg, ${color.entities.campaigns}, ${color.entities.campaigns}CC)`
+                                }}
+                              >
+                                <TrendingUp className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
+                            <div className="text-xl sm:text-2xl font-bold mb-1 text-black">
+                              {campaign.performance.delivered.toLocaleString()}
+                            </div>
+                            <div className="text-sm font-semibold text-black">
+                              Delivered
+                            </div>
                           </div>
-                          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-3 sm:p-4 text-center border border-purple-200 transition-all duration-300">
-                            <div className="text-xl sm:text-2xl font-bold text-purple-700 mb-1">{campaign.performance.converted.toLocaleString()}</div>
-                            <div className="text-purple-600 text-sm sm:text-sm font-semibold">Converted</div>
+
+                          <div
+                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md bg-white border border-gray-200/50"
+                          >
+                            <div className="flex items-center justify-center mb-2">
+                              <div
+                                className="p-2 rounded-lg"
+                                style={{
+                                  background: `linear-gradient(135deg, ${color.entities.offers}, ${color.entities.offers}CC)`
+                                }}
+                              >
+                                <Target className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
+                            <div className="text-xl sm:text-2xl font-bold mb-1 text-black">
+                              {campaign.performance.converted.toLocaleString()}
+                            </div>
+                            <div className="text-sm font-semibold text-black">
+                              Converted
+                            </div>
                           </div>
                         </div>
                       )}
-                      
+
                       {campaign.status === 'scheduled' && (
-                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-3 sm:p-4 border border-amber-200">
+                        <div className={`bg-gradient-to-r from-[${color.status.warning.light}] to-[${color.status.warning.light}]/80 rounded-xl p-3 sm:p-4 border border-[${color.status.warning.main}]/20`}>
                           <div className="flex items-center space-x-2">
-                            <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
-                            <span className="text-amber-700 font-semibold text-sm sm:text-sm">Scheduled to start on {campaign.startDate}</span>
+                            <Clock className={`h-4 w-4 sm:h-5 sm:w-5 text-[${color.status.warning.main}]`} />
+                            <span className={`text-[${color.status.warning.main}] font-semibold text-sm sm:text-sm`}>Scheduled to start on {campaign.startDate}</span>
                           </div>
                         </div>
                       )}
@@ -284,34 +403,45 @@ export default function DashboardHome() {
         </div>
 
         <div className="flex flex-col md:flex-row xl:flex-col space-y-6 md:space-y-0 md:space-x-6 xl:space-x-0 xl:space-y-6 h-full">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden transition-all duration-500 flex-1">
-            <div className="p-4 sm:p-6 bg-gradient-to-r from-green-500/15 via-emerald-500/10 to-teal-500/15 border-b border-gray-200">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-gradient-to-br from-green-600 to-emerald-700 rounded-lg">
-                  <Target className="h-5 w-5 text-white" />
+          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-sm hover:shadow-lg">
+            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.products}]/10 via-[${color.entities.users}]/5 to-[${color.entities.analytics}]/10 border-b border-gray-200/50`}>
+              <div className="flex items-center space-x-3">
+                <div
+                  className="p-3 rounded-xl shadow-md"
+                  style={{
+                    background: `linear-gradient(135deg, ${color.entities.products}, ${color.entities.products}E6)`
+                  }}
+                >
+                  <TrendingUp className="h-5 w-5 text-white" />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Quick Actions</h2>
+                <h2 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>Quick Actions</h2>
               </div>
             </div>
             <div className="p-4 sm:p-6">
               <div className="space-y-3">
                 {quickActions.map((action, index) => {
                   const Icon = action.icon;
+                  const entityColor = color.entities[action.entity as keyof typeof color.entities];
                   return (
                     <button
                       key={action.name}
                       onClick={() => navigate(action.href)}
-                      className="group w-full flex items-center space-x-3 p-3 text-left bg-white/50 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl border border-white/30 hover:border-green-200 transition-all duration-300 hover:scale-105"
+                      className={`group w-full flex items-center space-x-3 p-3 text-left bg-white hover:bg-gradient-to-r hover:from-[${entityColor}]/10 hover:to-[${entityColor}]/5 rounded-xl border border-gray-200/50 hover:border-[${entityColor}]/30 transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md`}
                       style={{
                         animation: `fadeInUp 0.6s ease-out forwards ${(index + 7) * 0.1}s`,
                         opacity: 0,
                         transform: 'translateY(20px)'
                       }}
                     >
-                      <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-green-100 group-hover:to-emerald-100 rounded-lg transition-all duration-300">
-                        <Icon className="h-4 w-4 text-slate-600 group-hover:text-green-800" />
+                      <div
+                        className="p-2 rounded-lg transition-all duration-300 shadow-sm group-hover:shadow-md"
+                        style={{
+                          background: `linear-gradient(135deg, ${entityColor}, ${entityColor}E6)`
+                        }}
+                      >
+                        <Icon className="h-4 w-4 text-white" />
                       </div>
-                      <span className="font-semibold text-sm sm:text-sm text-slate-700 group-hover:text-slate-900">{action.name}</span>
+                      <span className={`font-semibold text-sm sm:text-sm ${tw.textSecondary} group-hover:${tw.textPrimary}`}>{action.name}</span>
                     </button>
                   );
                 })}
@@ -319,49 +449,64 @@ export default function DashboardHome() {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden transition-all duration-500 flex-1">
-            <div className="p-4 sm:p-6 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 border-b border-white/30">
+          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-sm hover:shadow-lg">
+            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.segments}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50`}>
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
+                <div
+                  className="p-3 rounded-xl shadow-md"
+                  style={{
+                    background: `linear-gradient(135deg, ${color.entities.users}, ${color.entities.users}E6)`
+                  }}
+                >
                   <Calendar className="h-5 w-5 text-white" />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Upcoming</h2>
+                <h2 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>Upcoming</h2>
               </div>
             </div>
             <div className="p-4 sm:p-6">
               <div className="space-y-4">
-                <div 
-                  className="group flex items-start space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 transition-all duration-300"
+                <div
+                  className={`group flex items-start space-x-4 p-4 bg-gradient-to-r from-[${color.status.info.light}] to-[${color.status.info.light}]/80 rounded-xl border border-[${color.status.info.main}]/20 transition-all duration-300`}
                   style={{
                     animation: 'fadeInUp 0.6s ease-out forwards 1.1s',
                     opacity: 0,
                     transform: 'translateY(20px)'
                   }}
                 >
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+                  <div
+                    className="p-2 rounded-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${color.status.info.main}, ${color.status.info.dark})`
+                    }}
+                  >
                     <Clock className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-sm sm:text-sm text-slate-900 mb-1">Campaign Launch</p>
-                    <p className="text-sm sm:text-sm text-slate-600 mb-2">Churn Prevention - Q1</p>
-                    <p className="text-sm font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-full inline-block">Tomorrow at 9:00 AM</p>
+                    <p className={`font-bold text-sm sm:text-sm ${tw.textPrimary} mb-1`}>Campaign Launch</p>
+                    <p className={`text-sm sm:text-sm ${tw.textSecondary} mb-2`}>Churn Prevention - Q1</p>
+                    <p className={`text-sm font-semibold text-[${color.status.info.main}] bg-[${color.status.info.light}] px-2 py-1 rounded-full inline-block`}>Tomorrow at 9:00 AM</p>
                   </div>
                 </div>
-                <div 
-                  className="group flex items-start space-x-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100 transition-all duration-300"
+                <div
+                  className={`group flex items-start space-x-4 p-4 bg-gradient-to-r from-[${color.status.warning.light}] to-[${color.status.warning.light}]/80 rounded-xl border border-[${color.status.warning.main}]/20 transition-all duration-300`}
                   style={{
                     animation: 'fadeInUp 0.6s ease-out forwards 1.2s',
                     opacity: 0,
                     transform: 'translateY(20px)'
                   }}
                 >
-                  <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
+                  <div
+                    className="p-2 rounded-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${color.status.warning.main}, ${color.status.warning.dark})`
+                    }}
+                  >
                     <Clock className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-sm sm:text-sm text-slate-900 mb-1">Review Meeting</p>
-                    <p className="text-sm sm:text-sm text-slate-600 mb-2">Q1 Campaign Performance</p>
-                    <p className="text-sm font-semibold text-amber-600 bg-amber-100 px-2 py-1 rounded-full inline-block">Friday at 2:00 PM</p>
+                    <p className={`font-bold text-sm sm:text-sm ${tw.textPrimary} mb-1`}>Review Meeting</p>
+                    <p className={`text-sm sm:text-sm ${tw.textSecondary} mb-2`}>Q1 Campaign Performance</p>
+                    <p className={`text-sm font-semibold text-[${color.status.warning.main}] bg-[${color.status.warning.light}] px-2 py-1 rounded-full inline-block`}>Friday at 2:00 PM</p>
                   </div>
                 </div>
               </div>

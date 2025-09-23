@@ -2,6 +2,7 @@ import { Bell, Search, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import logo from '../../assets/logo.png';
 import { User as UserType } from '../../types/auth';
+import { color } from '../../design/utils';
 interface HeaderProps {
   onMenuClick?: () => void;
 }
@@ -44,7 +45,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
           <div className="flex items-center gap-x-3">
             <div className="flex items-center gap-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#3b8169] to-green-600 rounded-full flex items-center justify-center">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: color.sentra.main
+                }}
+              >
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="hidden sm:block">

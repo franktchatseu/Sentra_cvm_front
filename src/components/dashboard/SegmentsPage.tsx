@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Filter, Search, Users, Database, Zap, MoreHorizontal, Eye, Edit, Copy, Play } from 'lucide-react';
+import { color, tw } from '../../design/utils';
 
 export default function SegmentsPage() {
   const [selectedType, setSelectedType] = useState('all');
-  
+
   const segments = [
     {
       id: 1,
@@ -106,24 +107,24 @@ export default function SegmentsPage() {
 
   const getTypeIcon = (type: string) => {
     const icons = {
-      dynamic: <Zap className="w-4 h-4 text-blue-600" />,
-      static: <Database className="w-4 h-4 text-purple-600" />,
-      trigger: <Play className="w-4 h-4 text-emerald-600" />
+      dynamic: <Zap className={`w-4 h-4 text-[${color.status.info.main}]`} />,
+      static: <Database className={`w-4 h-4 text-[${color.entities.segments}]`} />,
+      trigger: <Play className={`w-4 h-4 text-[${color.status.success.main}]`} />
     };
-    return icons[type as keyof typeof icons] || <Users className="w-4 h-4 text-gray-600" />;
+    return icons[type as keyof typeof icons] || <Users className={`w-4 h-4 text-[${color.ui.text.muted}]`} />;
   };
 
   const getTypeBadge = (type: string) => {
     const badges = {
-      dynamic: 'bg-blue-100 text-blue-800',
-      static: 'bg-purple-100 text-purple-800',
-      trigger: 'bg-emerald-100 text-emerald-800'
+      dynamic: `bg-[${color.status.info.light}] text-[${color.status.info.main}]`,
+      static: `bg-[${color.entities.segments}]/10 text-[${color.entities.segments}]`,
+      trigger: `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
     };
-    return badges[type as keyof typeof badges] || 'bg-gray-100 text-gray-800';
+    return badges[type as keyof typeof badges] || `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`;
   };
 
-  const filteredSegments = selectedType === 'all' 
-    ? segments 
+  const filteredSegments = selectedType === 'all'
+    ? segments
     : segments.filter(segment => segment.type === selectedType);
 
   return (
@@ -131,29 +132,28 @@ export default function SegmentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Segments</h1>
-          <p className="text-gray-600 mt-2 text-base">Build and manage customer segments for precise targeting</p>
+          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Segments</h1>
+          <p className={`${tw.textSecondary} mt-2 text-base`}>Build and manage customer segments for precise targeting</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap">
+        <button className={`inline-flex items-center px-4 py-2 text-base ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap`}>
           <Plus className="h-5 w-5 mr-2" />
           Create Segment
         </button>
       </div>
 
       {/* Type Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-4 sm:p-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           {/* Type Tabs */}
-          <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1">
+          <div className={`flex flex-wrap gap-1 bg-[${color.ui.surface}] rounded-lg p-1`}>
             {segmentTypes.map((type) => (
               <button
                 key={type.value}
                 onClick={() => setSelectedType(type.value)}
-                className={`px-3 sm:px-4 py-2 rounded-md text-sm sm:text-base font-medium transition-colors duration-200 ${
-                  selectedType === type.value
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-3 sm:px-4 py-2 rounded-md text-sm sm:text-base font-medium transition-colors duration-200 ${selectedType === type.value
+                  ? `bg-white text-[${color.sentra.main}] shadow-sm`
+                  : `${tw.textSecondary} hover:${tw.textPrimary}`
+                  }`}
               >
                 <span className="hidden sm:inline">{type.label} ({type.count})</span>
                 <span className="sm:hidden">{type.label}</span>
@@ -164,14 +164,14 @@ export default function SegmentsPage() {
           {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
               <input
                 type="text"
                 placeholder="Search segments..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none w-full sm:w-64 text-base"
+                className={`pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64 text-base`}
               />
             </div>
-            <button className="flex items-center px-3 py-2 text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <button className={`flex items-center px-3 py-2 text-base border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}>
               <Filter className="h-5 w-5 mr-2" />
               Filter
             </button>
@@ -182,61 +182,61 @@ export default function SegmentsPage() {
       {/* Segments List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {filteredSegments.map((segment) => (
-          <div key={segment.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+          <div key={segment.id} className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] hover:shadow-md transition-shadow duration-200`}>
             <div className="p-4 sm:p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl">
+                  <div className={`flex items-center justify-center w-12 h-12 bg-gradient-to-r from-[${color.entities.segments}]/10 to-[${color.entities.segments}]/20 rounded-xl`}>
                     {getTypeIcon(segment.type)}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base lg:text-lg">{segment.name}</h3>
+                    <h3 className={`font-semibold ${tw.textPrimary} text-sm sm:text-base lg:text-lg`}>{segment.name}</h3>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-medium ${getTypeBadge(segment.type)}`}>
                       {segment.type.charAt(0).toUpperCase() + segment.type.slice(1)}
                     </span>
                   </div>
                 </div>
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                <button className={`p-2 ${tw.textMuted} hover:${tw.textSecondary} transition-colors duration-200`}>
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Description */}
-              <p className="text-gray-600 text-sm sm:text-base mb-4">{segment.description}</p>
+              <p className={`${tw.textSecondary} text-sm sm:text-base mb-4`}>{segment.description}</p>
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
-                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg">
-                  <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">{segment.size.toLocaleString()}</div>
-                  <div className="text-xs sm:text-sm text-gray-500">Customers</div>
+                <div className={`text-center p-2 sm:p-3 bg-[${color.ui.surface}] rounded-lg`}>
+                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${tw.textPrimary}`}>{segment.size.toLocaleString()}</div>
+                  <div className={`text-xs sm:text-sm ${tw.textMuted}`}>Customers</div>
                 </div>
-                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg">
-                  <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">{segment.campaigns}</div>
-                  <div className="text-xs sm:text-sm text-gray-500">Campaigns</div>
+                <div className={`text-center p-2 sm:p-3 bg-[${color.ui.surface}] rounded-lg`}>
+                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${tw.textPrimary}`}>{segment.campaigns}</div>
+                  <div className={`text-xs sm:text-sm ${tw.textMuted}`}>Campaigns</div>
                 </div>
-                <div className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg">
-                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${segment.growth.startsWith('+') ? 'text-emerald-600' : segment.growth.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
+                <div className={`text-center p-2 sm:p-3 bg-[${color.ui.surface}] rounded-lg`}>
+                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${segment.growth.startsWith('+') ? `text-[${color.status.success.main}]` : segment.growth.startsWith('-') ? `text-[${color.status.error.main}]` : `${tw.textMuted}`}`}>
                     {segment.growth}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-500">Growth</div>
+                  <div className={`text-xs sm:text-sm ${tw.textMuted}`}>Growth</div>
                 </div>
               </div>
 
               {/* Criteria */}
               {segment.criteria.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <div className="text-sm sm:text-base font-medium text-gray-700 mb-2">Criteria</div>
+                <div className={`bg-[${color.ui.surface}] rounded-lg p-4 mb-4`}>
+                  <div className={`text-sm sm:text-base font-medium ${tw.textPrimary} mb-2`}>Criteria</div>
                   <div className="space-y-1">
                     {segment.criteria.slice(0, 3).map((criterion, index) => (
-                      <div key={index} className="flex items-center space-x-2 text-sm sm:text-base text-gray-600">
+                      <div key={index} className={`flex items-center space-x-2 text-sm sm:text-base ${tw.textSecondary}`}>
                         <span className="font-medium">{criterion.field}</span>
-                        <span className="text-blue-600 font-mono">{criterion.operator}</span>
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs sm:text-sm">{criterion.value}</span>
+                        <span className={`text-[${color.status.info.main}] font-mono`}>{criterion.operator}</span>
+                        <span className={`bg-[${color.status.info.light}] text-[${color.status.info.main}] px-2 py-1 rounded text-xs sm:text-sm`}>{criterion.value}</span>
                       </div>
                     ))}
                     {segment.criteria.length > 3 && (
-                      <div className="text-xs sm:text-sm text-gray-500">
+                      <div className={`text-xs sm:text-sm ${tw.textMuted}`}>
                         +{segment.criteria.length - 3} more criteria
                       </div>
                     )}
@@ -245,19 +245,19 @@ export default function SegmentsPage() {
               )}
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div className={`flex items-center justify-between pt-4 border-t border-[${color.ui.border}]`}>
                 <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200" title="View Details">
+                  <button className={`p-2 ${tw.textMuted} hover:text-[${color.status.info.main}] transition-colors duration-200`} title="View Details">
                     <Eye className="w-4 h-4" />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-purple-600 transition-colors duration-200" title="Edit">
+                  <button className={`p-2 ${tw.textMuted} hover:text-[${color.sentra.main}] transition-colors duration-200`} title="Edit">
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-emerald-600 transition-colors duration-200" title="Duplicate">
+                  <button className={`p-2 ${tw.textMuted} hover:text-[${color.status.success.main}] transition-colors duration-200`} title="Duplicate">
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="text-xs sm:text-sm text-gray-500">
+                <div className={`text-xs sm:text-sm ${tw.textMuted}`}>
                   Updated: {segment.lastUpdated}
                 </div>
               </div>
@@ -268,11 +268,11 @@ export default function SegmentsPage() {
 
       {/* Empty State */}
       {filteredSegments.length === 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No segments found</h3>
-          <p className="text-gray-600 mb-6">Create your first segment to start targeting specific customer groups</p>
-          <button className="inline-flex items-center px-4 py-2 text-base bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap">
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-12 text-center`}>
+          <Users className={`w-12 h-12 text-[${color.entities.segments}] mx-auto mb-4`} />
+          <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-2`}>No segments found</h3>
+          <p className={`${tw.textSecondary} mb-6`}>Create your first segment to start targeting specific customer groups</p>
+          <button className={`inline-flex items-center px-4 py-2 text-base ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap`}>
             <Plus className="h-5 w-5 mr-2" />
             Create Your First Segment
           </button>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LucideIcon } from 'lucide-react';
+import { tw, color } from '../../design/utils';
 
 interface AnimatedButtonProps {
   children: React.ReactNode;
@@ -42,31 +43,34 @@ export default function AnimatedButton({
   `;
 
   const variantClasses = {
+    // ALL BUTTONS use your logo green - consistent branding!
     primary: `
-      bg-[#3b8169] text-white 
-      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-0
+      ${tw.primaryButton}
+      shadow-lg hover:shadow-xl hover:shadow-[${color.sentra.main}]/25
       ${glowEffect ? 'hover:shadow-glow' : ''}
     `,
     secondary: `
-      bg-white border-2 border-secondary-300 text-secondary-700 shadow-sm 
-      hover:bg-secondary-50 hover:border-secondary-400 hover:shadow-md 
-      focus-visible:ring-0
+      ${tw.secondaryButton}
+      shadow-sm hover:shadow-md
     `,
     ghost: `
-      bg-transparent text-secondary-600 hover:bg-secondary-100 
-      hover:text-secondary-900 focus-visible:ring-0
+      ${tw.ghostButton}
     `,
+    // Status buttons use our harmonious status colors
     success: `
-      bg-[#3b8169] text-white 
-      shadow-lg hover:shadow-xl hover:shadow-[#3b8169]/25 focus-visible:ring-0
+      bg-[${color.status.success.main}] hover:bg-[${color.status.success.dark}] 
+      text-white font-medium transition-colors
+      shadow-lg hover:shadow-xl hover:shadow-[${color.status.success.main}]/25
     `,
     warning: `
-      bg-gradient-to-r from-warning-500 to-warning-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-warning-500/25 focus-visible:ring-0
+      bg-[${color.status.warning.main}] hover:bg-[${color.status.warning.dark}] 
+      text-white font-medium transition-colors
+      shadow-lg hover:shadow-xl hover:shadow-[${color.status.warning.main}]/25
     `,
     error: `
-      bg-gradient-to-r from-error-500 to-error-600 text-white 
-      shadow-lg hover:shadow-xl hover:shadow-error-500/25 focus-visible:ring-0
+      bg-[${color.status.error.main}] hover:bg-[${color.status.error.dark}] 
+      text-white font-medium transition-colors
+      shadow-lg hover:shadow-xl hover:shadow-[${color.status.error.main}]/25
     `,
   };
 
@@ -96,7 +100,7 @@ export default function AnimatedButton({
           <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-      
+
       {/* Button content */}
       <span className={`flex items-center gap-2 ${loading ? 'opacity-0' : 'opacity-100'}`}>
         {Icon && iconPosition === 'left' && (
@@ -107,7 +111,7 @@ export default function AnimatedButton({
           <Icon className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
         )}
       </span>
-      
+
     </button>
   );
 }

@@ -2,95 +2,103 @@
 // Central place to manage all colors, fonts, and design tokens
 
 export const colors = {
-  // Primary Brand Colors
-  primary: {
-    50: '#f0fdf4',
-    100: '#dcfce7',
-    200: '#bbf7d0',
-    300: '#86efac',
-    400: '#4ade80',
-    500: '#22c55e',
-    600: '#16a34a',
-    700: '#15803d',
-    800: '#166534',
-    900: '#14532d',
-    950: '#052e16',
+  // Core Brand Palette (from your color palette)
+  brand: {
+    cream: '#DAD7CD',        // Light neutral background
+    sage: '#A3B18A',         // Sage green - secondary actions
+    medium: '#588157',       // Medium green - primary actions
+    dark: '#3A5A40',         // Dark green - your logo color
+    darkest: '#344E41',      // Darkest green - text/emphasis
   },
-  
-  // Sentra Brand Colors (Dark Green)
+
+  // Sentra Brand Colors (using your logo color)
   sentra: {
-    light: '#2d5f4e',    // Hover color
-    main: '#1a3d2e',     // Primary button/text color
-    dark: '#0f2a1f',     // Darker variant
-    darker: '#052e16',   // Darkest variant
+    light: '#588157',        // Medium green for light variants
+    main: '#3A5A40',         // Your logo color - ALL BUTTONS
+    dark: '#344E41',         // Darkest green for emphasis
+    hover: '#2f4a35',        // Slightly darker for hover states
   },
-  
-  // Secondary Colors (Blue theme for login)
-  secondary: {
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    300: '#93c5fd',
-    400: '#60a5fa',
-    500: '#3b82f6',
-    600: '#2563eb',
-    700: '#1d4ed8',
-    800: '#1e40af',
-    900: '#1e3a8a',
-    950: '#172554',
+
+  // Entity-Specific Colors (bright and vibrant)
+  entities: {
+    products: '#FF4757',      // Bright Red
+    offers: '#00D2D3',        // Bright Cyan
+    campaigns: '#E91E63',      // Bright Magenta
+    segments: '#3742FA',      // Bright Blue
+    users: '#FFA502',         // Bright Orange
+    analytics: '#A55EEA',      // Bright Purple
+    configuration: '#747D8C',  // Medium Gray
   },
-  
-  // Neutral Colors
-  neutral: {
-    50: '#fafafa',
-    100: '#f5f5f5',
-    200: '#e5e5e5',
-    300: '#d4d4d4',
-    400: '#a3a3a3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-    950: '#0a0a0a',
+
+  // Status Colors (harmonious with brand)
+  status: {
+    success: {
+      light: '#e8f1e8',
+      main: '#588157',        // Our green
+      dark: '#4a6d4a',
+    },
+    warning: {
+      light: '#f5f1e8',
+      main: '#C4A676',        // Warm golden-beige
+      dark: '#a68d5f',
+    },
+    error: {
+      light: '#f0ebe8',
+      main: '#A67B5B',        // Muted terracotta
+      dark: '#8f6a4e',
+    },
+    info: {
+      light: '#eff1ef',
+      main: '#8BA288',        // Muted sage
+      dark: '#798b76',
+    },
   },
-  
-  // Status Colors
-  success: {
-    50: '#f0fdf4',
-    500: '#22c55e',
-    600: '#16a34a',
+
+  // UI Colors (grays and neutrals)
+  ui: {
+    background: '#FFFFFF',    // Keep white as requested
+    surface: '#DAD7CD',       // Cream from palette for cards/surfaces
+    border: '#C5C2B7',        // Slightly darker cream for borders
+    divider: '#B8B5AA',       // Subtle dividers
+    text: {
+      primary: '#344E41',     // Darkest green for main text
+      secondary: '#5A6B5D',   // Medium for secondary text
+      muted: '#8A9B8D',       // Light for muted text
+      inverse: '#FFFFFF',     // White text on dark backgrounds
+    },
+    gray: {
+      50: '#fafafa',
+      100: '#f5f5f5', 
+      200: '#e5e5e5',
+      300: '#d4d4d4',
+      400: '#a3a3a3',
+      500: '#737373',
+      600: '#525252',
+      700: '#404040',
+      800: '#262626',
+      900: '#171717',
+    },
   },
-  
-  error: {
-    50: '#fef2f2',
-    500: '#ef4444',
-    600: '#dc2626',
-  },
-  
-  warning: {
-    50: '#fffbeb',
-    500: '#f59e0b',
-    600: '#d97706',
-  },
-  
-  info: {
-    50: '#eff6ff',
-    500: '#3b82f6',
-    600: '#2563eb',
+
+  // Interactive States
+  interactive: {
+    hover: '#2f4a35',         // Darker green for hover
+    active: '#253a28',        // Even darker for active
+    focus: '#588157',         // Medium green for focus rings
+    disabled: '#C5C2B7',      // Light cream for disabled
   },
 };
 
 export const fonts = {
-  // Primary Font Family
+  // Primary Font Family (for body text, forms, UI)
   primary: {
     name: 'Inter',
     fallback: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   
-  // Active Grotesk Font
-  activeGrotesk: {
-    name: 'Active Grotesk',
+  // Heading Font (fixed naming - it's Space Grotesk, not Active Grotesk)
+  heading: {
+    name: 'Space Grotesk',
     fallback: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   
@@ -104,21 +112,80 @@ export const fonts = {
     extrabold: 800,
   },
   
-  // Font Sizes
+  // Semantic Font Sizes (more practical for dashboard)
   sizes: {
-    xs: '0.75rem',    // 12px
-    sm: '0.875rem',   // 14px
-    base: '1rem',     // 16px
-    lg: '1.125rem',   // 18px
-    xl: '1.25rem',    // 20px
-    '2xl': '1.5rem',  // 24px
-    '3xl': '1.875rem', // 30px
-    '4xl': '2.25rem', // 36px
-    '5xl': '3rem',    // 48px
-    '6xl': '3.75rem', // 60px
-    '7xl': '4.5rem',  // 72px
-    '8xl': '6rem',    // 96px
-    '9xl': '8rem',    // 128px
+    // Small text
+    caption: '0.75rem',      // 12px - captions, labels
+    small: '0.875rem',       // 14px - small text
+    
+    // Body text
+    body: '1rem',            // 16px - main body text
+    bodyLg: '1.125rem',      // 18px - large body text
+    
+    // Headings
+    h6: '1rem',              // 16px - smallest heading
+    h5: '1.125rem',          // 18px
+    h4: '1.25rem',           // 20px
+    h3: '1.5rem',            // 24px
+    h2: '1.875rem',          // 30px
+    h1: '2.25rem',           // 36px
+    
+    // Display (large headings)
+    displaySm: '3rem',       // 48px
+    displayMd: '3.75rem',    // 60px
+    displayLg: '4.5rem',     // 72px
+  },
+
+  // Typography Scale (semantic usage)
+  typography: {
+    // Page titles
+    pageTitle: {
+      size: '1.875rem',      // 30px
+      weight: 700,           // Bold
+      family: 'heading',     // Space Grotesk
+    },
+    
+    // Section headings
+    sectionTitle: {
+      size: '1.5rem',        // 24px
+      weight: 600,           // Semibold
+      family: 'heading',
+    },
+    
+    // Card titles
+    cardTitle: {
+      size: '1.25rem',       // 20px
+      weight: 600,           // Semibold
+      family: 'heading',
+    },
+    
+    // Body text
+    body: {
+      size: '1rem',          // 16px
+      weight: 400,           // Normal
+      family: 'primary',     // Inter
+    },
+    
+    // Small text
+    caption: {
+      size: '0.875rem',      // 14px
+      weight: 400,           // Normal
+      family: 'primary',
+    },
+    
+    // Buttons
+    button: {
+      size: '1rem',          // 16px
+      weight: 500,           // Medium
+      family: 'primary',
+    },
+    
+    // Form labels
+    label: {
+      size: '0.875rem',      // 14px
+      weight: 500,           // Medium
+      family: 'primary',
+    },
   },
 };
 
@@ -158,17 +225,36 @@ export const shadows = {
 
 // CSS Custom Properties for easy use in CSS
 export const cssVariables = {
+  // Brand colors
+  '--color-brand-cream': colors.brand.cream,
+  '--color-brand-sage': colors.brand.sage,
+  '--color-brand-medium': colors.brand.medium,
+  '--color-brand-dark': colors.brand.dark,
+  '--color-brand-darkest': colors.brand.darkest,
+  
+  // Sentra colors (main button colors)
   '--color-sentra-light': colors.sentra.light,
   '--color-sentra-main': colors.sentra.main,
   '--color-sentra-dark': colors.sentra.dark,
-  '--color-sentra-darker': colors.sentra.darker,
+  '--color-sentra-hover': colors.sentra.hover,
+  
+  // UI colors
+  '--color-ui-background': colors.ui.background,
+  '--color-ui-surface': colors.ui.surface,
+  '--color-ui-border': colors.ui.border,
+  '--color-text-primary': colors.ui.text.primary,
+  '--color-text-secondary': colors.ui.text.secondary,
+  '--color-text-muted': colors.ui.text.muted,
+  
+  // Fonts
   '--font-primary': `"${fonts.primary.name}", ${fonts.primary.fallback}`,
-  '--font-active-grotesk': `"${fonts.activeGrotesk.name}", ${fonts.activeGrotesk.fallback}`,
+  '--font-heading': `"${fonts.heading.name}", ${fonts.heading.fallback}`,
 };
 
 // Utility functions
-export const getColor = (colorPath: string) => {
+export const getColor = (colorPath: string): string => {
   const keys = colorPath.split('.');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let value: any = colors;
   
   for (const key of keys) {
@@ -179,9 +265,24 @@ export const getColor = (colorPath: string) => {
     }
   }
   
-  return value;
+  return value as string;
 };
 
 export const getFont = (fontName: keyof typeof fonts) => {
   return fonts[fontName];
+};
+
+// Entity color helper
+export const getEntityColor = (entity: 'products' | 'offers' | 'campaigns' | 'segments' | 'users' | 'analytics' | 'configuration') => {
+  return colors.entities[entity];
+};
+
+// Status color helper
+export const getStatusColor = (status: 'success' | 'warning' | 'error' | 'info', variant: 'light' | 'main' | 'dark' = 'main') => {
+  return colors.status[status][variant];
+};
+
+// Typography helper
+export const getTypography = (type: keyof typeof fonts.typography) => {
+  return fonts.typography[type];
 };
