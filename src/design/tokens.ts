@@ -25,8 +25,8 @@ export const colors = {
     offers: '#00D2D3',        // Bright Cyan
     campaigns: '#E91E63',      // Bright Magenta
     segments: '#3742FA',      // Bright Blue
-    users: '#FFA502',         // Bright Orange
-    analytics: '#A55EEA',      // Bright Purple
+    users: '#8B5CF6',         // Purple
+    analytics: '#EC4899',      // Pink Rose
     configuration: '#747D8C',  // Medium Gray
   },
 

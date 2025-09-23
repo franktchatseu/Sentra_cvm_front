@@ -19,6 +19,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import UserModal from '../modals/UserModal';
 import HeadlessSelect from '../ui/HeadlessSelect';
+import LoadingSpinner from '../ui/LoadingSpinner';
 import { color, tw } from '../../design/utils';
 
 interface UserActionsDropdownProps {
@@ -237,7 +238,7 @@ export default function UserManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-4 sm:p-6`}>
+      <div className={`bg-white`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary} mb-2`}>User Management</h1>
@@ -248,7 +249,14 @@ export default function UserManagementPage() {
               setSelectedUser(null);
               setIsModalOpen(true);
             }}
-            className={`group flex items-center justify-center space-x-3 ${tw.primaryButton} px-4 md:px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto text-base whitespace-nowrap`}
+            className="group flex items-center justify-center space-x-3 px-4 md:px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto text-base whitespace-nowrap text-white font-semibold"
+            style={{ backgroundColor: color.sentra.main }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }}
           >
             <Plus className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             <span className="font-semibold">Add User</span>
@@ -258,31 +266,39 @@ export default function UserManagementPage() {
 
       {/* Tabs */}
       <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] overflow-hidden`}>
-        <div className={`flex border-b border-[${color.ui.border}]`}>
+        <div className={`flex border-b border-[${color.ui.border}] max-w-4xl mx-auto relative`}>
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex-1 px-3 md:px-6 py-4 text-xs md:text-sm font-semibold transition-colors ${activeTab === 'users'
-              ? `text-[${color.sentra.main}] border-b-2 border-[${color.sentra.main}] bg-[${color.sentra.main}]/5`
-              : `${tw.textMuted} hover:${tw.textPrimary}`
+            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 ${activeTab === 'users'
+              ? `text-blue-600 border-b-2 border-blue-600 bg-blue-50`
+              : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/50`
               }`}
           >
-            <div className="flex items-center justify-center space-x-1 md:space-x-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users ({users.length})</span>
-              <span className="sm:hidden">Users</span>
+            <div className="flex items-center justify-center space-x-2">
+              <Users className="w-4 h-4" style={{ color: activeTab === 'users' ? color.entities.users : undefined }} />
+              <span>Users</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === 'users'
+                ? `bg-blue-100 text-blue-600`
+                : `bg-[${color.ui.surface}] ${tw.textMuted}`}`}>
+                {users.length}
+              </span>
             </div>
           </button>
           <button
             onClick={() => setActiveTab('requests')}
-            className={`flex-1 px-3 md:px-6 py-4 text-xs md:text-sm font-semibold transition-colors ${activeTab === 'requests'
-              ? `text-[${color.sentra.main}] border-b-2 border-[${color.sentra.main}] bg-[${color.sentra.main}]/5`
-              : `${tw.textMuted} hover:${tw.textPrimary}`
+            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 ${activeTab === 'requests'
+              ? `text-pink-600 border-b-2 border-pink-600 bg-pink-50`
+              : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/50`
               }`}
           >
-            <div className="flex items-center justify-center space-x-1 md:space-x-2">
-              <Clock className="w-4 h-4" />
-              <span className="hidden sm:inline">Pending Requests ({accountRequests.filter(r => r.force_password_reset).length})</span>
-              <span className="sm:hidden">Requests</span>
+            <div className="flex items-center justify-center space-x-2">
+              <Clock className="w-4 h-4" style={{ color: activeTab === 'requests' ? color.entities.analytics : undefined }} />
+              <span>Pending Requests</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === 'requests'
+                ? `bg-pink-100 text-pink-600`
+                : `bg-[${color.ui.surface}] ${tw.textMuted}`}`}>
+                {accountRequests.filter(r => r.force_password_reset).length}
+              </span>
             </div>
           </button>
         </div>
@@ -297,7 +313,7 @@ export default function UserManagementPage() {
                 placeholder={`Search ${activeTab}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 transition-all duration-200 bg-[${color.ui.surface}] focus:bg-white`}
+                className={`w-full pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 bg-[${color.ui.surface}] focus:bg-white`}
               />
             </div>
 
@@ -334,8 +350,8 @@ export default function UserManagementPage() {
         {/* Content */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className={`animate-spin rounded-full h-12 w-12 border-4 border-[${color.sentra.main}]/20 border-t-[${color.sentra.main}] mb-4`}></div>
-            <p className={`${tw.textSecondary} font-medium`}>Loading {activeTab}...</p>
+            <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
+            <p className={`${tw.textSecondary} font-medium text-sm`}>Loading {activeTab}...</p>
           </div>
         ) : errorState ? (
           <div className="p-8 text-center">
@@ -382,7 +398,12 @@ export default function UserManagementPage() {
                         <td className="px-8 py-6">
                           <div className="flex items-center">
                             <div className="flex-shrink-0">
-                              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br from-[${color.entities.users}] via-[${color.entities.users}] to-[${color.sentra.dark}] flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200`}>
+                              <div
+                                className="h-12 w-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200"
+                                style={{
+                                  backgroundColor: color.entities.users
+                                }}
+                              >
                                 <span className="text-white font-semibold text-base">
                                   {user.first_name.charAt(0)}{user.last_name.charAt(0)}
                                 </span>
@@ -406,7 +427,7 @@ export default function UserManagementPage() {
                           </span>
                         </td>
                         <td className="px-8 py-6">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.is_activated ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.error.light}] text-[${color.status.error.main}]`
+                          <span className={`px-3 py-1 rounded-full text-base font-medium ${user.is_activated ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.error.light}] text-[${color.status.error.main}]`
                             }`}>
                             {user.is_activated ? 'Active' : 'Inactive'}
                           </span>
@@ -441,19 +462,19 @@ export default function UserManagementPage() {
               {/* Mobile Cards */}
               <div className="lg:hidden space-y-4 p-4">
                 {filteredUsers.map((user) => (
-                  <div key={user.user_id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={user.user_id} className={`bg-white border border-[${color.ui.border}] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+                        <div className="h-10 w-10 rounded-lg flex items-center justify-center shadow-md" style={{ backgroundColor: color.entities.users }}>
                           <span className="text-white font-semibold text-sm">
                             {user.first_name.charAt(0)}{user.last_name.charAt(0)}
                           </span>
                         </div>
                         <div className="ml-3">
-                          <div className="text-base font-semibold text-gray-900">
+                          <div className={`text-base font-semibold ${tw.textPrimary}`}>
                             {user.first_name} {user.last_name}
                           </div>
-                          <div className="text-sm text-gray-500">{user.private_email_address}</div>
+                          <div className={`text-sm ${tw.textMuted}`}>{user.private_email_address}</div>
                         </div>
                       </div>
                       <UserActionsDropdown
@@ -470,19 +491,19 @@ export default function UserManagementPage() {
 
                     <div className="flex flex-wrap gap-2 mb-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'admin'
-                        ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                        : 'bg-blue-100 text-blue-800 border border-blue-200'
+                        ? `bg-[${color.entities.configuration}]/10 text-[${color.entities.configuration}] border border-[${color.entities.configuration}]/20`
+                        : `bg-[${color.entities.users}]/10 text-[${color.entities.users}] border border-[${color.entities.users}]/20`
                         }`}>
                         <Shield className="w-3 h-3 mr-1" />
                         {user.role}
                       </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_activated ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      <span className={`px-2 py-1 rounded-full text-base font-medium ${user.is_activated ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.error.light}] text-[${color.status.error.main}]`
                         }`}>
                         {user.is_activated ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
-                    <div className="text-xs text-gray-500">
+                    <div className={`text-xs ${tw.textMuted}`}>
                       Created: {new Date(user.created_on).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
@@ -498,12 +519,12 @@ export default function UserManagementPage() {
           // Account Requests Tab
           filteredRequests.length === 0 ? (
             <div className="p-8 md:p-16 text-center">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 md:p-12">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className={`bg-gradient-to-br from-[${color.entities.analytics}]/10 to-[${color.entities.analytics}]/20 rounded-2xl p-6 md:p-12`}>
+                <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mx-auto mb-6`} style={{ backgroundColor: color.entities.analytics }}>
                   <Clock className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">No pending requests</h3>
-                <p className="text-gray-600 mb-8 text-sm max-w-md mx-auto">
+                <h3 className={`text-xl font-bold ${tw.textPrimary} mb-3`}>No pending requests</h3>
+                <p className={`${tw.textSecondary} mb-8 text-sm max-w-md mx-auto`}>
                   All account requests have been processed.
                 </p>
               </div>
@@ -513,52 +534,52 @@ export default function UserManagementPage() {
               {/* Desktop Table */}
               <div className="hidden lg:block overflow-hidden">
                 <table className="min-w-full">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                  <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
                     <tr>
-                      <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Applicant</th>
-                      <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Requested Role</th>
-                      <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Status</th>
-                      <th className="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide">Requested</th>
-                      <th className="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wide">Actions</th>
+                      <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Applicant</th>
+                      <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Requested Role</th>
+                      <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Status</th>
+                      <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Requested</th>
+                      <th className={`px-8 py-4 text-right text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white">
                     {filteredRequests.map((request) => (
-                      <tr key={request.user_id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 group">
+                      <tr key={request.user_id} className={`border-b border-[${color.ui.border}] hover:bg-gradient-to-r hover:from-[${color.entities.users}]/5 hover:to-[${color.sentra.main}]/5 transition-all duration-200 group`}>
                         <td className="px-8 py-6">
                           <div className="flex items-center">
                             <div className="flex-shrink-0">
-                              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200">
+                              <div className="h-12 w-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200" style={{ backgroundColor: color.entities.analytics }}>
                                 <span className="text-white font-semibold text-base">
                                   {request.first_name.charAt(0)}{request.last_name.charAt(0)}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-5">
-                              <div className="text-base font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">
+                              <div className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.sentra.main}] transition-colors`}>
                                 {request.first_name} {request.last_name}
                               </div>
-                              <div className="text-sm text-gray-500">{request.private_email_address}</div>
+                              <div className={`text-sm ${tw.textMuted}`}>{request.private_email_address}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-8 py-6">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${request.role === 'admin'
-                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                            : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            ? `bg-[${color.entities.configuration}]/10 text-[${color.entities.configuration}] border border-[${color.entities.configuration}]/20`
+                            : `bg-[${color.entities.users}]/10 text-[${color.entities.users}] border border-[${color.entities.users}]/20`
                             }`}>
                             <Shield className="w-3 h-3 mr-1" />
                             {request.role}
                           </span>
                         </td>
                         <td className="px-8 py-6">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-base font-semibold bg-[${color.status.warning.light}] text-[${color.status.warning.main}] border border-[${color.status.warning.main}]/20`}>
                             <Clock className="w-3 h-3 mr-1" />
                             Pending
                           </span>
                         </td>
                         <td className="px-8 py-6">
-                          <div className="text-sm text-gray-700">
+                          <div className={`text-sm ${tw.textPrimary} font-medium`}>
                             {request.created_on ? new Date(request.created_on).toLocaleDateString() : 'N/A'}
                           </div>
                         </td>
@@ -566,14 +587,14 @@ export default function UserManagementPage() {
                           <div className="flex items-center justify-end space-x-3">
                             <button
                               onClick={() => handleApproveRequest(request)}
-                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-100 rounded-lg transition-all duration-200 group/btn"
+                              className={`p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full border-2 border-green-200 hover:border-green-600 transition-all duration-200 group/btn`}
                               title="Approve Request"
                             >
                               <CheckCircle className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                             </button>
                             <button
                               onClick={() => handleRejectRequest(request)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-100 rounded-lg transition-all duration-200 group/btn"
+                              className={`p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full border-2 border-red-200 hover:border-red-600 transition-all duration-200 group/btn`}
                               title="Reject Request"
                             >
                               <XCircle className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
@@ -589,39 +610,39 @@ export default function UserManagementPage() {
               {/* Mobile Cards */}
               <div className="lg:hidden space-y-4 p-4">
                 {filteredRequests.map((request) => (
-                  <div key={request.user_id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={request.user_id} className={`bg-white border border-[${color.ui.border}] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 flex items-center justify-center shadow-md">
+                        <div className="h-10 w-10 rounded-lg flex items-center justify-center shadow-md" style={{ backgroundColor: color.entities.analytics }}>
                           <span className="text-white font-semibold text-sm">
                             {request.first_name.charAt(0)}{request.last_name.charAt(0)}
                           </span>
                         </div>
                         <div className="ml-3">
-                          <div className="text-base font-semibold text-gray-900">
+                          <div className={`text-base font-semibold ${tw.textPrimary}`}>
                             {request.first_name} {request.last_name}
                           </div>
-                          <div className="text-sm text-gray-500">{request.private_email_address}</div>
+                          <div className={`text-sm ${tw.textMuted}`}>{request.private_email_address}</div>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${request.role === 'admin'
-                        ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                        : 'bg-blue-100 text-blue-800 border border-blue-200'
+                        ? `bg-[${color.entities.configuration}]/10 text-[${color.entities.configuration}] border border-[${color.entities.configuration}]/20`
+                        : `bg-[${color.entities.users}]/10 text-[${color.entities.users}] border border-[${color.entities.users}]/20`
                         }`}>
                         <Shield className="w-3 h-3 mr-1" />
                         {request.role}
                       </span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-semibold bg-[${color.status.warning.light}] text-[${color.status.warning.main}] border border-[${color.status.warning.main}]/20`}>
                         <Clock className="w-3 h-3 mr-1" />
                         Pending
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <div className="text-xs text-gray-500">
+                      <div className={`text-xs ${tw.textMuted}`}>
                         Requested: {new Date(request.created_on).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'short',
@@ -631,14 +652,14 @@ export default function UserManagementPage() {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleApproveRequest(request)}
-                          className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
+                          className={`inline-flex items-center px-3 py-1 text-green-600 hover:text-green-700 hover:bg-green-50 text-xs font-medium rounded-full border-2 border-green-200 hover:border-green-600 transition-all duration-200`}
                         >
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Approve
                         </button>
                         <button
                           onClick={() => handleRejectRequest(request)}
-                          className="inline-flex items-center px-3 py-1 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors"
+                          className={`inline-flex items-center px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium rounded-full border-2 border-red-200 hover:border-red-600 transition-all duration-200`}
                         >
                           <XCircle className="w-3 h-3 mr-1" />
                           Reject

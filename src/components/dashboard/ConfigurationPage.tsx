@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Settings, 
-  Target, 
-  MessageSquare, 
-  Package, 
-  Users, 
-  Tag,
+import { useNavigate } from 'react-router-dom';
+import {
+  Search,
+  Settings,
+  Target,
+  MessageSquare,
+  Package,
+  Users,
   Plus,
   Edit,
   Eye,
@@ -14,6 +14,7 @@ import {
   Grid3X3,
   List,
 } from 'lucide-react';
+import { color, tw } from '../../design/utils';
 
 interface ConfigurationItem {
   id: string;
@@ -24,98 +25,91 @@ interface ConfigurationItem {
   subConfigs?: string[];
   lastModified: string;
   status: 'active' | 'inactive' | 'draft';
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   gradient: string;
+  navigationPath: string;
 }
 
 export default function ConfigurationPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [configurations, setConfigurations] = useState<ConfigurationItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Mock data - replace with actual API call
   useEffect(() => {
     const mockConfigurations: ConfigurationItem[] = [
       {
         id: 'campaign-1',
-        name: 'Campaign Templates',
-        description: 'Predefined campaign structures and workflows',
+        name: 'Campaign Management',
+        description: 'Manage and configure all campaign settings and templates',
         type: 'campaign',
-        category: 'Templates',
-        subConfigs: ['Email Campaigns', 'SMS Campaigns', 'Push Notifications'],
+        category: 'Management',
+        subConfigs: ['Campaign Templates', 'SMS Campaigns', 'Email Campaigns'],
         lastModified: '2025-01-20',
         status: 'active',
         icon: Target,
-        color: 'indigo',
-        gradient: 'from-indigo-500 to-purple-600'
+        color: 'campaigns',
+        gradient: `from-[${color.entities.campaigns}] to-[${color.entities.campaigns}]80`,
+        navigationPath: '/dashboard/campaigns'
       },
       {
         id: 'offer-1',
-        name: 'Offer Types',
+        name: 'Offer Configuration',
         description: 'Configure different types of offers and promotions',
         type: 'offer',
-        category: 'Types',
-        subConfigs: ['Discount Offers', 'Bundle Offers', 'Free Trial Offers'],
+        category: 'Configuration',
+        subConfigs: ['Offer Types', 'Offer Categories', 'Discount Rules'],
         lastModified: '2025-01-19',
         status: 'active',
         icon: MessageSquare,
-        color: 'emerald',
-        gradient: 'from-emerald-500 to-teal-600'
+        color: 'offers',
+        gradient: `from-[${color.entities.offers}] to-[${color.entities.offers}]80`,
+        navigationPath: '/dashboard/offers'
       },
       {
         id: 'product-1',
-        name: 'Product Categories',
-        description: 'Manage product categorization and classification',
+        name: 'Product Management',
+        description: 'Manage product catalog, categories, and types',
         type: 'product',
-        category: 'Categories',
-        subConfigs: ['Data Plans', 'Voice Plans', 'Device Categories'],
+        category: 'Management',
+        subConfigs: ['Product Categories', 'Product Types', 'Product Catalog'],
         lastModified: '2025-01-18',
         status: 'active',
         icon: Package,
-        color: 'rose',
-        gradient: 'from-rose-500 to-pink-600'
-      },
-      {
-        id: 'product-2',
-        name: 'Product Types',
-        description: 'Define different product types and specifications',
-        type: 'product',
-        category: 'Types',
-        subConfigs: ['Prepaid Plans', 'Postpaid Plans', 'Add-ons'],
-        lastModified: '2025-01-17',
-        status: 'active',
-        icon: Tag,
-        color: 'amber',
-        gradient: 'from-amber-500 to-orange-600'
+        color: 'products',
+        gradient: `from-[${color.entities.products}] to-[${color.entities.products}]80`,
+        navigationPath: '/dashboard/products'
       },
       {
         id: 'segment-1',
-        name: 'Segment Rules',
-        description: 'Configure customer segmentation criteria and rules',
+        name: 'Segment Management',
+        description: 'Configure customer segmentation and targeting rules',
         type: 'segment',
-        category: 'Rules',
-        subConfigs: ['Demographic Rules', 'Behavioral Rules', 'Geographic Rules'],
+        category: 'Management',
+        subConfigs: ['Segment Rules', 'Targeting Criteria', 'Customer Segments'],
         lastModified: '2025-01-16',
         status: 'active',
         icon: Users,
-        color: 'blue',
-        gradient: 'from-blue-500 to-cyan-600'
+        color: 'segments',
+        gradient: `from-[${color.entities.segments}] to-[${color.entities.segments}]80`,
+        navigationPath: '/dashboard/segments'
       },
       {
         id: 'user-1',
-        name: 'User Roles',
-        description: 'Manage user permissions and access levels',
+        name: 'User Management',
+        description: 'Manage user accounts, roles, and permissions',
         type: 'user',
-        category: 'Permissions',
-        subConfigs: ['Admin Roles', 'Manager Roles', 'Agent Roles'],
+        category: 'Management',
+        subConfigs: ['User Roles', 'Permissions', 'Account Settings'],
         lastModified: '2025-01-15',
         status: 'active',
         icon: Settings,
-        color: 'purple',
-        gradient: 'from-purple-500 to-indigo-600'
+        color: 'users',
+        gradient: `from-[${color.entities.users}] to-[${color.entities.users}]80`,
+        navigationPath: '/dashboard/user-management'
       },
       // {
       //   id: 'config-1',
@@ -132,11 +126,8 @@ export default function ConfigurationPage() {
       // }
     ];
 
-    // Simulate API call
-    setTimeout(() => {
-      setConfigurations(mockConfigurations);
-      setLoading(false);
-    }, 1000);
+    // Set configurations immediately since it's mock data
+    setConfigurations(mockConfigurations);
   }, []);
 
   const categories = [
@@ -151,291 +142,325 @@ export default function ConfigurationPage() {
 
   const filteredConfigurations = configurations.filter(config => {
     const matchesSearch = config.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         config.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         config.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      config.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      config.category.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesCategory = selectedCategory === 'all' || config.type === selectedCategory;
-    
+
     return matchesSearch && matchesCategory;
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'inactive': return 'bg-gray-100 text-gray-700 border-gray-200';
-      case 'draft': return 'bg-amber-100 text-amber-700 border-amber-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'active':
+        return {
+          backgroundColor: color.status.success.light,
+          color: color.status.success.main,
+          borderColor: `${color.status.success.main}20`
+        };
+      case 'inactive':
+        return {
+          backgroundColor: color.ui.surface,
+          color: tw.textSecondary,
+          borderColor: color.ui.border
+        };
+      case 'draft':
+        return {
+          backgroundColor: color.status.warning.light,
+          color: color.status.warning.main,
+          borderColor: `${color.status.warning.main}20`
+        };
+      default:
+        return {
+          backgroundColor: color.ui.surface,
+          color: tw.textSecondary,
+          borderColor: color.ui.border
+        };
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 border">
-                  <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-    );
-  }
+  const handleConfigurationClick = (config: ConfigurationItem) => {
+    navigate(config.navigationPath);
+  };
+
 
   return (
     <div className="space-y-6">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
-              <Settings className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-                Configuration Management
-              </h1>
-              <p className="text-slate-600 mt-1">
-                Manage and configure all system settings and parameters
-              </p>
-            </div>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center mb-4">
+          <div className="rounded-xl" style={{ backgroundColor: color.entities.configuration }}>
+          </div>
+          <div>
+            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+              Configuration Management
+            </h1>
+            <p className={`${tw.textSecondary} mt-1`}>
+              Manage and configure all system settings and parameters
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className={`bg-white rounded-2xl p-6 border border-[${color.ui.border}] mb-8`}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${tw.textMuted}`} />
+            <input
+              type="text"
+              placeholder="Search configurations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+            />
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid'
+                ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}]`
+                : `${tw.textMuted} hover:${tw.textSecondary}`
+                }`}
+            >
+              <Grid3X3 className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list'
+                ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}]`
+                : `${tw.textMuted} hover:${tw.textSecondary}`
+                }`}
+            >
+              <List className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-4 sm:p-6 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search configurations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200 text-base"
-              />
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-2">
+        {/* Category Filters */}
+        <div className="flex flex-wrap gap-2 mt-4 sm:mt-6">
+          {categories.map((category) => (
+            category.id !== 'config' && (
               <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-all duration-200 ${
-                  viewMode === 'grid' 
-                    ? 'bg-indigo-100 text-indigo-600' 
-                    : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <Grid3X3 className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all duration-200 ${
-                  viewMode === 'list' 
-                    ? 'bg-indigo-100 text-indigo-600' 
-                    : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <List className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Category Filters */}
-          <div className="flex flex-wrap gap-2 mt-4 sm:mt-6">
-            {categories.map((category) => (
-              category.id !== 'config' && (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
-                    selectedCategory === category.id
-                      ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${selectedCategory === category.id
+                  ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}] border border-[${color.sentra.main}]/20`
+                  : `bg-[${color.ui.surface}] ${tw.textSecondary} hover:bg-[${color.ui.surface}]/80 border border-[${color.ui.border}]`
                   }`}
-                >
-                  {category.name} ({category.count})
-                </button>
-              )
-            ))}
-          </div>
+              >
+                {category.name} ({category.count})
+              </button>
+            )
+          ))}
         </div>
+      </div>
 
-        {/* Results Count */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 mb-6">
-          <p className="text-slate-600 text-base">
-            Showing {filteredConfigurations.length} of {configurations.length} configurations
-          </p>
-          <button className="flex items-center space-x-2 px-3 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 hover:scale-105 text-base whitespace-nowrap">
-            <Plus className="h-4 w-4" />
-            <span>Add Configuration</span>
-          </button>
-        </div>
+      {/* Results Count */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 mb-6">
+        <p className={`${tw.textSecondary} text-sm`}>
+          Showing {filteredConfigurations.length} of {configurations.length} configurations
+        </p>
+        <button
+          className="flex items-center space-x-2 px-3 py-2 text-white rounded-lg transition-all duration-200 hover:scale-105 text-sm whitespace-nowrap"
+          style={{ backgroundColor: color.sentra.main }}
+          onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+          onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add Configuration</span>
+        </button>
+      </div>
 
-        {/* Configurations Grid/List */}
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {filteredConfigurations.map((config, index) => {
-                const Icon = config.icon;
-                return (
-                  <div
-                    key={config.id}
-                    className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 p-6 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 cursor-pointer"
-                    style={{
-                      animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
-                      opacity: 0,
-                      transform: 'translateY(20px)'
-                    }}
-                  >
-                  {/* Gradient overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-500`}></div>
-                  
-                  <div className="relative z-10">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${config.gradient} shadow-lg group-hover:scale-110 transition-all duration-500`}>
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(config.status)}`}>
-                        {config.status}
+      {/* Configurations Grid/List */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {filteredConfigurations.map((config, index) => {
+            const Icon = config.icon;
+            return (
+              <div
+                key={config.id}
+                onClick={() => handleConfigurationClick(config)}
+                className={`group bg-white rounded-2xl border border-[${color.ui.border}] p-6 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 cursor-pointer`}
+                style={{
+                  animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
+                  opacity: 0,
+                  transform: 'translateY(20px)'
+                }}
+              >
+                {/* Gradient overlay */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-500"
+                  style={{
+                    background: `linear-gradient(135deg, ${color.entities[config.color as keyof typeof color.entities]}, ${color.entities[config.color as keyof typeof color.entities]}80)`
+                  }}
+                ></div>
+
+                <div className="relative z-10">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div
+                      className="p-3 rounded-xl shadow-lg group-hover:scale-110 transition-all duration-500"
+                      style={{
+                        backgroundColor: color.entities[config.color as keyof typeof color.entities]
+                      }}
+                    >
+                      <Icon className="h-6 w-6 text-white" />
+                    </div>
+                    <span
+                      className="px-3 py-1 rounded-full text-sm font-semibold border"
+                      style={getStatusStyle(config.status)}
+                    >
+                      {config.status}
+                    </span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="mb-4">
+                    <h3 className={`text-base sm:text-lg lg:text-xl font-bold ${tw.textPrimary} mb-2 group-hover:${tw.textSecondary} transition-colors duration-300`}>
+                      {config.name}
+                    </h3>
+                    <p className={`${tw.textSecondary} text-sm sm:text-base mb-3 line-clamp-2`}>
+                      {config.description}
+                    </p>
+                    <div className={`flex items-center text-xs sm:text-sm ${tw.textMuted}`}>
+                      <span className={`bg-[${color.ui.surface}] px-2 py-1 rounded-full`}>
+                        {config.category}
                       </span>
                     </div>
+                  </div>
 
-                    {/* Content */}
+                  {/* Sub-configs */}
+                  {config.subConfigs && config.subConfigs.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 mb-2 group-hover:text-slate-800 transition-colors duration-300">
-                        {config.name}
-                      </h3>
-                      <p className="text-slate-600 text-sm sm:text-base mb-3 line-clamp-2">
-                        {config.description}
-                      </p>
-                      <div className="flex items-center text-xs sm:text-sm text-slate-500">
-                        <span className="bg-slate-100 px-2 py-1 rounded-full">
-                          {config.category}
+                      <p className={`text-xs sm:text-sm font-semibold ${tw.textMuted} mb-2`}>Sub-configurations:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {config.subConfigs.slice(0, 3).map((subConfig, idx) => (
+                          <span key={idx} className={`text-xs sm:text-sm bg-[${color.ui.surface}] ${tw.textSecondary} px-2 py-1 rounded-full`}>
+                            {subConfig}
+                          </span>
+                        ))}
+                        {config.subConfigs.length > 3 && (
+                          <span className={`text-xs sm:text-sm ${tw.textMuted} px-2 py-1`}>
+                            +{config.subConfigs.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className={`flex items-center justify-between pt-4 border-t border-[${color.ui.border}]`}>
+                    <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                      Modified: {config.lastModified}
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <button className={`p-2 ${tw.textMuted} hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200`}>
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button className={`p-2 ${tw.textMuted} hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-all duration-200`}>
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <ChevronRight className={`h-4 w-4 ${tw.textMuted} group-hover:${tw.textSecondary} transition-colors duration-200`} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className={`bg-white rounded-2xl border border-[${color.ui.border}] overflow-hidden`}>
+          <div className={`divide-y divide-[${color.ui.border}]`}>
+            {filteredConfigurations.map((config, index) => {
+              const Icon = config.icon;
+              return (
+                <div
+                  key={config.id}
+                  onClick={() => handleConfigurationClick(config)}
+                  className={`group p-4 sm:p-6 hover:bg-[${color.ui.surface}]/50 transition-all duration-300 cursor-pointer`}
+                  style={{
+                    animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
+                    opacity: 0,
+                    transform: 'translateY(20px)'
+                  }}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div
+                      className="p-3 rounded-xl shadow-lg"
+                      style={{
+                        backgroundColor: color.entities[config.color as keyof typeof color.entities]
+                      }}
+                    >
+                      <Icon className="h-6 w-6 text-white" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className={`text-sm sm:text-base font-bold ${tw.textPrimary} group-hover:${tw.textSecondary} transition-colors duration-300`}>
+                          {config.name}
+                        </h3>
+                        <span
+                          className="px-3 py-1 rounded-full text-sm font-semibold border"
+                          style={getStatusStyle(config.status)}
+                        >
+                          {config.status}
                         </span>
                       </div>
+                      <p className={`${tw.textSecondary} text-sm sm:text-base mb-2`}>
+                        {config.description}
+                      </p>
+                      <div className={`flex items-center space-x-4 text-xs sm:text-sm ${tw.textMuted}`}>
+                        <span className={`bg-[${color.ui.surface}] px-2 py-1 rounded-full`}>
+                          {config.category}
+                        </span>
+                        <span>Modified: {config.lastModified}</span>
+                        {config.subConfigs && (
+                          <span>{config.subConfigs.length} sub-configurations</span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Sub-configs */}
-                    {config.subConfigs && config.subConfigs.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-2">Sub-configurations:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {config.subConfigs.slice(0, 3).map((subConfig, idx) => (
-                            <span key={idx} className="text-xs sm:text-sm bg-slate-50 text-slate-600 px-2 py-1 rounded-full">
-                              {subConfig}
-                            </span>
-                          ))}
-                          {config.subConfigs.length > 3 && (
-                            <span className="text-xs sm:text-sm text-slate-400 px-2 py-1">
-                              +{config.subConfigs.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <span className="text-xs sm:text-sm text-slate-500">
-                        Modified: {config.lastModified}
-                      </span>
-                      <div className="flex items-center space-x-2">
-                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all duration-200">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors duration-200" />
-                      </div>
+                    <div className="flex items-center space-x-2">
+                      <button className={`p-2 ${tw.textMuted} hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200`}>
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button className={`p-2 ${tw.textMuted} hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-all duration-200`}>
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <ChevronRight className={`h-4 w-4 ${tw.textMuted} group-hover:${tw.textSecondary} transition-colors duration-200`} />
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        ) : (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 overflow-hidden">
-            <div className="divide-y divide-slate-100">
-              {filteredConfigurations.map((config, index) => {
-                const Icon = config.icon;
-                return (
-                  <div
-                    key={config.id}
-                    className="group p-4 sm:p-6 hover:bg-slate-50/50 transition-all duration-300 cursor-pointer"
-                    style={{
-                      animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
-                      opacity: 0,
-                      transform: 'translateY(20px)'
-                    }}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${config.gradient} shadow-lg`}>
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-slate-800 transition-colors duration-300">
-                            {config.name}
-                          </h3>
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(config.status)}`}>
-                            {config.status}
-                          </span>
-                        </div>
-                        <p className="text-slate-600 text-sm sm:text-base mb-2">
-                          {config.description}
-                        </p>
-                        <div className="flex items-center space-x-4 text-xs sm:text-sm text-slate-500">
-                          <span className="bg-slate-100 px-2 py-1 rounded-full">
-                            {config.category}
-                          </span>
-                          <span>Modified: {config.lastModified}</span>
-                          {config.subConfigs && (
-                            <span>{config.subConfigs.length} sub-configurations</span>
-                          )}
-                        </div>
-                      </div>
+        </div>
+      )}
 
-                      <div className="flex items-center space-x-2">
-                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all duration-200">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors duration-200" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {/* Empty State */}
+      {filteredConfigurations.length === 0 && (
+        <div className="text-center py-12">
+          <div className={`p-4 bg-[${color.ui.surface}] rounded-full w-16 h-16 mx-auto mb-4`}>
+            <Search className={`h-8 w-8 ${tw.textMuted}`} />
           </div>
-        )}
-
-        {/* Empty State */}
-        {filteredConfigurations.length === 0 && (
-          <div className="text-center py-12">
-            <div className="p-4 bg-slate-100 rounded-full w-16 h-16 mx-auto mb-4">
-              <Search className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">No configurations found</h3>
-            <p className="text-base text-slate-600 mb-6">
-              {searchTerm ? 'Try adjusting your search terms' : 'No configurations match the selected category'}
-            </p>
-            <button className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 text-base whitespace-nowrap">
-              Clear Filters
-            </button>
-          </div>
-        )}
+          <h3 className={`text-lg sm:text-xl font-semibold ${tw.textPrimary} mb-2`}>No configurations found</h3>
+          <p className={`text-base ${tw.textSecondary} mb-6`}>
+            {searchTerm ? 'Try adjusting your search terms' : 'No configurations match the selected category'}
+          </p>
+          <button
+            className="px-4 py-2 text-white rounded-lg transition-all duration-200 text-sm whitespace-nowrap"
+            style={{ backgroundColor: color.sentra.main }}
+            onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+            onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      )}
     </div>
   );
 }

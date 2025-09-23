@@ -107,18 +107,18 @@ export default function SegmentsPage() {
 
   const getTypeIcon = (type: string) => {
     const icons = {
-      dynamic: <Zap className={`w-4 h-4 text-[${color.status.info.main}]`} />,
+      dynamic: <Zap className={`w-4 h-4 text-[${color.entities.segments}]`} />,
       static: <Database className={`w-4 h-4 text-[${color.entities.segments}]`} />,
-      trigger: <Play className={`w-4 h-4 text-[${color.status.success.main}]`} />
+      trigger: <Play className={`w-4 h-4 text-[${color.entities.segments}]`} />
     };
     return icons[type as keyof typeof icons] || <Users className={`w-4 h-4 text-[${color.ui.text.muted}]`} />;
   };
 
   const getTypeBadge = (type: string) => {
     const badges = {
-      dynamic: `bg-[${color.status.info.light}] text-[${color.status.info.main}]`,
+      dynamic: `bg-[${color.entities.segments}]/10 text-[${color.entities.segments}]`,
       static: `bg-[${color.entities.segments}]/10 text-[${color.entities.segments}]`,
-      trigger: `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
+      trigger: `bg-[${color.entities.segments}]/10 text-[${color.entities.segments}]`
     };
     return badges[type as keyof typeof badges] || `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`;
   };
@@ -135,7 +135,7 @@ export default function SegmentsPage() {
           <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Segments</h1>
           <p className={`${tw.textSecondary} mt-2 text-base`}>Build and manage customer segments for precise targeting</p>
         </div>
-        <button className={`inline-flex items-center px-4 py-2 text-base ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap`}>
+        <button className={`inline-flex items-center px-4 py-2 text-sm ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap`}>
           <Plus className="h-5 w-5 mr-2" />
           Create Segment
         </button>
@@ -150,7 +150,7 @@ export default function SegmentsPage() {
               <button
                 key={type.value}
                 onClick={() => setSelectedType(type.value)}
-                className={`px-3 sm:px-4 py-2 rounded-md text-sm sm:text-base font-medium transition-colors duration-200 ${selectedType === type.value
+                className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${selectedType === type.value
                   ? `bg-white text-[${color.sentra.main}] shadow-sm`
                   : `${tw.textSecondary} hover:${tw.textPrimary}`
                   }`}
@@ -168,10 +168,10 @@ export default function SegmentsPage() {
               <input
                 type="text"
                 placeholder="Search segments..."
-                className={`pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64 text-base`}
+                className={`pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64 text-sm`}
               />
             </div>
-            <button className={`flex items-center px-3 py-2 text-base border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}>
+            <button className={`flex items-center px-3 py-2 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}>
               <Filter className="h-5 w-5 mr-2" />
               Filter
             </button>
@@ -191,8 +191,8 @@ export default function SegmentsPage() {
                     {getTypeIcon(segment.type)}
                   </div>
                   <div>
-                    <h3 className={`font-semibold ${tw.textPrimary} text-sm sm:text-base lg:text-lg`}>{segment.name}</h3>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-medium ${getTypeBadge(segment.type)}`}>
+                    <h3 className={`font-semibold ${tw.textPrimary} text-base`}>{segment.name}</h3>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getTypeBadge(segment.type)}`}>
                       {segment.type.charAt(0).toUpperCase() + segment.type.slice(1)}
                     </span>
                   </div>
@@ -203,40 +203,40 @@ export default function SegmentsPage() {
               </div>
 
               {/* Description */}
-              <p className={`${tw.textSecondary} text-sm sm:text-base mb-4`}>{segment.description}</p>
+              <p className={`${tw.textSecondary} text-sm mb-4`}>{segment.description}</p>
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
                 <div className={`text-center p-2 sm:p-3 bg-[${color.ui.surface}] rounded-lg`}>
-                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${tw.textPrimary}`}>{segment.size.toLocaleString()}</div>
-                  <div className={`text-xs sm:text-sm ${tw.textMuted}`}>Customers</div>
+                  <div className={`text-base font-bold ${tw.textPrimary}`}>{segment.size.toLocaleString()}</div>
+                  <div className={`text-sm ${tw.textMuted}`}>Customers</div>
                 </div>
                 <div className={`text-center p-2 sm:p-3 bg-[${color.ui.surface}] rounded-lg`}>
-                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${tw.textPrimary}`}>{segment.campaigns}</div>
-                  <div className={`text-xs sm:text-sm ${tw.textMuted}`}>Campaigns</div>
+                  <div className={`text-base font-bold ${tw.textPrimary}`}>{segment.campaigns}</div>
+                  <div className={`text-sm ${tw.textMuted}`}>Campaigns</div>
                 </div>
                 <div className={`text-center p-2 sm:p-3 bg-[${color.ui.surface}] rounded-lg`}>
-                  <div className={`text-base sm:text-lg lg:text-xl font-bold ${segment.growth.startsWith('+') ? `text-[${color.status.success.main}]` : segment.growth.startsWith('-') ? `text-[${color.status.error.main}]` : `${tw.textMuted}`}`}>
+                  <div className={`text-base font-bold ${segment.growth.startsWith('+') ? `text-[${color.status.success.main}]` : segment.growth.startsWith('-') ? `text-[${color.status.error.main}]` : `${tw.textMuted}`}`}>
                     {segment.growth}
                   </div>
-                  <div className={`text-xs sm:text-sm ${tw.textMuted}`}>Growth</div>
+                  <div className={`text-sm ${tw.textMuted}`}>Growth</div>
                 </div>
               </div>
 
               {/* Criteria */}
               {segment.criteria.length > 0 && (
                 <div className={`bg-[${color.ui.surface}] rounded-lg p-4 mb-4`}>
-                  <div className={`text-sm sm:text-base font-medium ${tw.textPrimary} mb-2`}>Criteria</div>
+                  <div className={`text-sm font-medium ${tw.textPrimary} mb-2`}>Criteria</div>
                   <div className="space-y-1">
                     {segment.criteria.slice(0, 3).map((criterion, index) => (
-                      <div key={index} className={`flex items-center space-x-2 text-sm sm:text-base ${tw.textSecondary}`}>
+                      <div key={index} className={`flex items-center space-x-2 text-sm ${tw.textSecondary}`}>
                         <span className="font-medium">{criterion.field}</span>
-                        <span className={`text-[${color.status.info.main}] font-mono`}>{criterion.operator}</span>
-                        <span className={`bg-[${color.status.info.light}] text-[${color.status.info.main}] px-2 py-1 rounded text-xs sm:text-sm`}>{criterion.value}</span>
+                        <span className={`text-[${color.entities.segments}] font-mono`}>{criterion.operator}</span>
+                        <span className={`bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] px-2 py-1 rounded text-sm`}>{criterion.value}</span>
                       </div>
                     ))}
                     {segment.criteria.length > 3 && (
-                      <div className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                      <div className={`text-sm ${tw.textMuted}`}>
                         +{segment.criteria.length - 3} more criteria
                       </div>
                     )}
@@ -257,7 +257,7 @@ export default function SegmentsPage() {
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <div className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                <div className={`text-sm ${tw.textMuted}`}>
                   Updated: {segment.lastUpdated}
                 </div>
               </div>
@@ -272,7 +272,7 @@ export default function SegmentsPage() {
           <Users className={`w-12 h-12 text-[${color.entities.segments}] mx-auto mb-4`} />
           <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-2`}>No segments found</h3>
           <p className={`${tw.textSecondary} mb-6`}>Create your first segment to start targeting specific customer groups</p>
-          <button className={`inline-flex items-center px-4 py-2 text-base ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap`}>
+          <button className={`inline-flex items-center px-4 py-2 text-sm ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 whitespace-nowrap`}>
             <Plus className="h-5 w-5 mr-2" />
             Create Your First Segment
           </button>

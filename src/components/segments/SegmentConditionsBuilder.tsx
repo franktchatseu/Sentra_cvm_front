@@ -1,20 +1,22 @@
 import { Plus, Trash2 } from 'lucide-react';
-import { 
-  SegmentCondition, 
-  SegmentConditionGroup, 
-  SEGMENT_FIELDS, 
-  OPERATOR_LABELS 
+import {
+  SegmentCondition,
+  SegmentConditionGroup,
+  SEGMENT_FIELDS,
+  OPERATOR_LABELS
 } from '../../types/segment';
 import ListUpload from './ListUpload';
+import { color } from '../../design/utils';
+import HeadlessSelect from '../ui/HeadlessSelect';
 
 interface SegmentConditionsBuilderProps {
   conditions: SegmentConditionGroup[];
   onChange: (conditions: SegmentConditionGroup[]) => void;
 }
 
-export default function SegmentConditionsBuilder({ 
-  conditions, 
-  onChange 
+export default function SegmentConditionsBuilder({
+  conditions,
+  onChange
 }: SegmentConditionsBuilderProps) {
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -39,7 +41,7 @@ export default function SegmentConditionsBuilder({
   };
 
   const updateConditionGroup = (groupId: string, updates: Partial<SegmentConditionGroup>) => {
-    onChange(conditions.map(group => 
+    onChange(conditions.map(group =>
       group.id === groupId ? { ...group, ...updates } : group
     ));
   };
@@ -53,30 +55,30 @@ export default function SegmentConditionsBuilder({
       type: 'string'
     };
 
-    onChange(conditions.map(group => 
-      group.id === groupId 
+    onChange(conditions.map(group =>
+      group.id === groupId
         ? { ...group, conditions: [...group.conditions, newCondition] }
         : group
     ));
   };
 
   const removeCondition = (groupId: string, conditionId: string) => {
-    onChange(conditions.map(group => 
-      group.id === groupId 
+    onChange(conditions.map(group =>
+      group.id === groupId
         ? { ...group, conditions: group.conditions.filter(c => c.id !== conditionId) }
         : group
     ));
   };
 
   const updateCondition = (groupId: string, conditionId: string, updates: Partial<SegmentCondition>) => {
-    onChange(conditions.map(group => 
-      group.id === groupId 
+    onChange(conditions.map(group =>
+      group.id === groupId
         ? {
-            ...group,
-            conditions: group.conditions.map(condition =>
-              condition.id === conditionId ? { ...condition, ...updates } : condition
-            )
-          }
+          ...group,
+          conditions: group.conditions.map(condition =>
+            condition.id === conditionId ? { ...condition, ...updates } : condition
+          )
+        }
         : group
     ));
   };
@@ -93,7 +95,7 @@ export default function SegmentConditionsBuilder({
 
   const renderConditionValue = (groupId: string, condition: SegmentCondition) => {
     const fieldType = getFieldType(condition.field);
-    
+
     if (condition.operator === 'in' || condition.operator === 'not_in') {
       return (
         <input
@@ -104,7 +106,7 @@ export default function SegmentConditionsBuilder({
             updateCondition(groupId, condition.id, { value: values, type: 'array' });
           }}
           placeholder="Enter values separated by commas"
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={`px-3 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
         />
       );
     }
@@ -118,7 +120,7 @@ export default function SegmentConditionsBuilder({
           updateCondition(groupId, condition.id, { value, type: fieldType });
         }}
         placeholder="Enter value"
-        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className={`px-3 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
       />
     );
   };
@@ -129,7 +131,10 @@ export default function SegmentConditionsBuilder({
         <p className="text-gray-500 mb-4">No conditions defined yet</p>
         <button
           onClick={addConditionGroup}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors text-sm"
+          style={{ backgroundColor: color.sentra.main }}
+          onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+          onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Condition Group
@@ -150,32 +155,40 @@ export default function SegmentConditionsBuilder({
                   AND
                 </span>
               )}
-              
+
               {/* Condition Type Selection */}
               <div className="flex items-center space-x-2">
                 <label className="text-sm font-medium text-gray-700">Type:</label>
-                <select
-                  value={group.conditionType}
-                  onChange={(e) => updateConditionGroup(group.id, { conditionType: e.target.value as 'rule' | 'list' | 'segments' | '360' })}
-                  className="px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="rule">Rule</option>
-                  <option value="list">List</option>
-                  <option value="segments">Segments</option>
-                  <option value="360">360 Profile</option>
-                </select>
+                <div className="w-32">
+                  <HeadlessSelect
+                    options={[
+                      { value: 'rule', label: 'Rule' },
+                      { value: 'list', label: 'List' },
+                      { value: 'segments', label: 'Segments' },
+                      { value: '360', label: '360 Profile' }
+                    ]}
+                    value={group.conditionType}
+                    onChange={(value) => updateConditionGroup(group.id, { conditionType: value as 'rule' | 'list' | 'segments' | '360' })}
+                    placeholder="Select type"
+                    className="text-sm"
+                  />
+                </div>
               </div>
 
               {group.conditionType === 'rule' && (
                 <>
-                  <select
-                    value={group.operator}
-                    onChange={(e) => updateConditionGroup(group.id, { operator: e.target.value as 'AND' | 'OR' })}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="AND">AND</option>
-                    <option value="OR">OR</option>
-                  </select>
+                  <div className="w-20">
+                    <HeadlessSelect
+                      options={[
+                        { value: 'AND', label: 'AND' },
+                        { value: 'OR', label: 'OR' }
+                      ]}
+                      value={group.operator}
+                      onChange={(value) => updateConditionGroup(group.id, { operator: value as 'AND' | 'OR' })}
+                      placeholder="AND"
+                      className="text-sm"
+                    />
+                  </div>
                   <span className="text-sm text-gray-600">
                     {group.conditions.length} condition{group.conditions.length !== 1 ? 's' : ''}
                   </span>
@@ -197,45 +210,47 @@ export default function SegmentConditionsBuilder({
               {group.conditions.map((condition, conditionIndex) => (
                 <div key={condition.id} className="flex items-center space-x-3 bg-white p-3 rounded border">
                   {conditionIndex > 0 && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                    <span className={`px-2 py-1 bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] text-xs font-medium rounded`}>
                       {group.operator}
                     </span>
                   )}
-                  
+
                   {/* Field Selection */}
-                  <select
-                    value={condition.field}
-                    onChange={(e) => {
-                      const fieldType = getFieldType(e.target.value);
-                      const availableOperators = getAvailableOperators(e.target.value);
-                      updateCondition(group.id, condition.id, {
-                        field: e.target.value,
-                        operator: availableOperators[0] as any,
-                        type: fieldType,
-                        value: fieldType === 'number' ? 0 : ''
-                      });
-                    }}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
-                  >
-                    {SEGMENT_FIELDS.map(field => (
-                      <option key={field.key} value={field.key}>
-                        {field.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="min-w-[200px]">
+                    <HeadlessSelect
+                      options={SEGMENT_FIELDS.map(field => ({
+                        value: field.key,
+                        label: field.label
+                      }))}
+                      value={condition.field}
+                      onChange={(value) => {
+                        const fieldType = getFieldType(value as string);
+                        const availableOperators = getAvailableOperators(value as string);
+                        updateCondition(group.id, condition.id, {
+                          field: value as string,
+                          operator: availableOperators[0] as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in',
+                          type: fieldType,
+                          value: fieldType === 'number' ? 0 : ''
+                        });
+                      }}
+                      placeholder="Select field"
+                      className="text-sm"
+                    />
+                  </div>
 
                   {/* Operator Selection */}
-                  <select
-                    value={condition.operator}
-                    onChange={(e) => updateCondition(group.id, condition.id, { operator: e.target.value as any })}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {getAvailableOperators(condition.field).map(op => (
-                      <option key={op} value={op}>
-                        {OPERATOR_LABELS[op]}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="min-w-[120px]">
+                    <HeadlessSelect
+                      options={getAvailableOperators(condition.field).map(op => ({
+                        value: op,
+                        label: OPERATOR_LABELS[op]
+                      }))}
+                      value={condition.operator}
+                      onChange={(value) => updateCondition(group.id, condition.id, { operator: value as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in' })}
+                      placeholder="Select operator"
+                      className="text-sm"
+                    />
+                  </div>
 
                   {/* Value Input */}
                   {renderConditionValue(group.id, condition)}
@@ -267,7 +282,7 @@ export default function SegmentConditionsBuilder({
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <h4 className="font-medium text-green-900 mb-2">Select Segments</h4>
               <p className="text-sm text-green-700 mb-3">Choose existing segments to include in this condition group.</p>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
                 <option value="">Select a segment...</option>
                 {/* This would be populated with actual segments from the backend */}
               </select>
@@ -282,7 +297,7 @@ export default function SegmentConditionsBuilder({
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Profile Attribute</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
                     <option value="">Select profile attribute...</option>
                     <option value="engagement_score">Engagement Score</option>
                     <option value="lifetime_value">Lifetime Value</option>
@@ -299,7 +314,7 @@ export default function SegmentConditionsBuilder({
           {group.conditionType === 'rule' && (
             <button
               onClick={() => addCondition(group.id)}
-              className="mt-3 inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded transition-colors"
+              className={`mt-3 inline-flex items-center px-3 py-1 text-sm text-[${color.entities.segments}] hover:text-[${color.entities.segments}]/80 hover:bg-[${color.entities.segments}]/10 rounded transition-colors`}
             >
               <Plus className="w-3 h-3 mr-1" />
               Add Condition
@@ -311,7 +326,10 @@ export default function SegmentConditionsBuilder({
       {/* Add Group Button */}
       <button
         onClick={addConditionGroup}
-        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors text-sm"
+        style={{ backgroundColor: color.sentra.main }}
+        onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
       >
         <Plus className="w-4 h-4 mr-2" />
         Add Condition Group

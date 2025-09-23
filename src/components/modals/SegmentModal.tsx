@@ -3,6 +3,7 @@ import { X, Tag, Save, Eye } from 'lucide-react';
 import { Segment, CreateSegmentRequest, SegmentConditionGroup } from '../../types/segment';
 import SegmentConditionsBuilder from '../segments/SegmentConditionsBuilder';
 import { segmentService } from '../../services/segmentService';
+import { color, tw } from '../../design/utils';
 
 interface SegmentModalProps {
   isOpen: boolean;
@@ -102,7 +103,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
     setIsLoading(true);
     try {
       let savedSegment: Segment;
-      
+
       if (segment) {
         // Update existing segment
         savedSegment = await segmentService.updateSegment(segment.segment_id, formData);
@@ -119,8 +120,8 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
       onSave(savedSegment);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save segment');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to save segment');
     } finally {
       setIsLoading(false);
     }
@@ -132,40 +133,40 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
-        
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className={`flex items-center justify-between p-6 border-b border-[${color.ui.border}] bg-gradient-to-r from-[${color.entities.segments}]/5 to-[${color.entities.segments}]/10 flex-shrink-0`}>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {segment ? 'Edit Segment' : 'Create New Segment'}
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className={`${tw.textSecondary} mt-1`}>
                 Define customer segments using rules and filters
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className={`p-2 hover:bg-[${color.ui.surface}] rounded-lg transition-colors`}
             >
-              <X className="w-6 h-6 text-gray-500" />
+              <X className={`w-6 h-6 ${tw.textMuted}`} />
             </button>
           </div>
 
-          {/* Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+          {/* Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto">
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Error Message */}
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{error}</p>
+                <div className={`p-4 bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 rounded-lg`}>
+                  <p className={`text-sm text-[${color.status.error.main}]`}>{error}</p>
                 </div>
               )}
 
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
                     Segment Name *
                   </label>
                   <input
@@ -173,13 +174,13 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Enter segment name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
                     Tags
                   </label>
                   <div className="space-y-2">
@@ -189,21 +190,21 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={handleAddTag}
                       placeholder="Type and press Enter to add tags"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
                     />
                     {formData.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {formData.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full"
+                            className={`inline-flex items-center px-3 py-1 bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] text-sm font-medium rounded-full`}
                           >
                             <Tag className="w-3 h-3 mr-1" />
                             {tag}
                             <button
                               type="button"
                               onClick={() => handleRemoveTag(tag)}
-                              className="ml-2 text-blue-600 hover:text-blue-800"
+                              className={`ml-2 text-[${color.entities.segments}] hover:text-[${color.entities.segments}]/80`}
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -216,7 +217,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
                   Description
                 </label>
                 <textarea
@@ -224,19 +225,19 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe this segment..."
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full px-4 py-3 border border-[${color.ui.border}] rounded-lg focus:ring-2 focus:ring-[${color.sentra.main}] focus:border-[${color.sentra.main}] text-sm`}
                 />
               </div>
 
               {/* Segment Conditions */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className={`block text-sm font-medium ${tw.textPrimary}`}>
                     Segment Conditions *
                   </label>
                   <div className="flex items-center space-x-3">
                     {previewCount !== null && (
-                      <span className="text-sm text-gray-600">
+                      <span className={`text-sm ${tw.textSecondary}`}>
                         {previewCount.toLocaleString()} customers
                       </span>
                     )}
@@ -244,15 +245,28 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                       type="button"
                       onClick={handlePreview}
                       disabled={isPreviewLoading || formData.conditions.length === 0}
-                      className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+                      className={`inline-flex items-center px-3 py-1 text-white text-sm rounded-lg transition-colors`}
+                      style={{
+                        backgroundColor: isPreviewLoading || formData.conditions.length === 0 ? color.ui.gray[400] : color.sentra.main
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isPreviewLoading && formData.conditions.length > 0) {
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isPreviewLoading && formData.conditions.length > 0) {
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                        }
+                      }}
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       {isPreviewLoading ? 'Loading...' : 'Preview'}
                     </button>
                   </div>
                 </div>
-                
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+
+                <div className={`border border-[${color.ui.border}] rounded-lg p-4 bg-[${color.ui.surface}]`}>
                   <SegmentConditionsBuilder
                     conditions={formData.conditions}
                     onChange={(conditions) => setFormData(prev => ({ ...prev, conditions }))}
@@ -262,19 +276,30 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
             </form>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-200 bg-gray-50">
+          {/* Footer - Sticky */}
+          <div className={`flex items-center justify-end space-x-4 p-6 border-t border-[${color.ui.border}] bg-[${color.ui.surface}] flex-shrink-0`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${color.ui.border}] rounded-lg hover:bg-[${color.ui.surface}] transition-colors text-sm`}
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+              className="inline-flex items-center px-6 py-2 text-white rounded-lg transition-colors text-sm"
+              style={{ backgroundColor: isLoading ? color.ui.gray[400] : color.sentra.main }}
+              onMouseEnter={(e) => {
+                if (!isLoading) {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoading) {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                }
+              }}
             >
               <Save className="w-4 h-4 mr-2" />
               {isLoading ? 'Saving...' : segment ? 'Update Segment' : 'Create Segment'}

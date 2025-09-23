@@ -111,12 +111,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     return isActive
-      ? `bg-[${color.ui.surface}] text-[${color.ui.text.primary}] border-l-2 border-[${getEntityColor(entity)}]`
-      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50`;
+      ? `bg-gradient-to-r from-[${getEntityColor(entity)}]/10 to-[${getEntityColor(entity)}]/5 text-[${getEntityColor(entity)}] border-l-4 border-[${getEntityColor(entity)}] shadow-sm font-semibold`
+      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 hover:shadow-sm transition-all duration-200`;
   };
 
-  const getIconClasses = () => {
-    // Use the same green color as the logo
+  const getIconClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
+    if (isActive) {
+      return `text-[${getEntityColor(entity)}]`;
+    }
+    // Use the same green color as the logo for inactive items
     return 'text-[#3A5A40]';
   };
 
@@ -192,7 +195,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                         >
                           <div className="flex items-center gap-x-3">
-                            <Icon className={`h-5 w-5 shrink-0 ${getIconClasses()}`} />
+                            <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                             {item.name}
                           </div>
                           {isExpanded ? (
@@ -222,7 +225,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                         }`}
                                     >
                                       <div className="flex items-center gap-x-3">
-                                        <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses()}`} />
+                                        <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
                                         {child.name}
                                       </div>
                                       {isChildExpanded ? (
@@ -247,7 +250,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 : getItemClasses(false, grandchild.entity)
                                                 }`}
                                             >
-                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses()}`} />
+                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
                                               {grandchild.name}
                                             </Link>
                                           );
@@ -266,7 +269,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   onClick={handleLinkClick}
                                   className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${getItemClasses(isChildActive, child.entity)}`}
                                 >
-                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses()}`} />
+                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
                                   {child.name}
                                 </Link>
                               );
@@ -284,7 +287,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       onClick={handleLinkClick}
                       className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses()}`} />
+                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
                       {item.name}
                     </Link>
                   );
@@ -321,7 +324,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                       >
                         <div className="flex items-center gap-x-3">
-                          <Icon className={`h-5 w-5 shrink-0 ${getIconClasses()}`} />
+                          <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
                           {item.name}
                         </div>
                         {isExpanded ? (
@@ -350,7 +353,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                       }`}
                                   >
                                     <div className="flex items-center gap-x-3">
-                                      <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses()}`} />
+                                      <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
                                       {child.name}
                                     </div>
                                     {isChildExpanded ? (
@@ -372,7 +375,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                               onClick={handleLinkClick}
                                               className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${getItemClasses(isGrandchildActive, grandchild.entity)}`}
                                             >
-                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses()}`} />
+                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
                                               {grandchild.name}
                                             </Link>
                                           </li>
@@ -395,7 +398,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     : getItemClasses(false, child.entity)
                                     }`}
                                 >
-                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses()}`} />
+                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
                                   {child.name}
                                 </Link>
                               </li>
@@ -413,7 +416,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       to={item.href}
                       className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses()}`} />
+                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
                       {item.name}
                     </Link>
                   </li>
@@ -434,7 +437,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       to={item.href}
                       className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses()}`} />
+                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
                       {item.name}
                     </Link>
                   </li>
