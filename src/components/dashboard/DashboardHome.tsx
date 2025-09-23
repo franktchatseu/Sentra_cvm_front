@@ -157,7 +157,7 @@ export default function DashboardHome() {
             <h1 className={`lg:text-3xl text-2xl font-bold ${tw.textPrimary}`}>
               Welcome back, {getFirstName()}!
             </h1>
-            <p className={`${tw.textSecondary} lg:text-base text-sm font-medium`}>
+            <p className={`${tw.textSecondary}  mt-2 text-sm font-medium`}>
               Here's what's happening with your campaigns today. Your performance is looking great!
             </p>
           </div>

@@ -225,7 +225,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe this segment..."
                   rows={3}
-                  className={`w-full px-4 py-3 border border-[${color.ui.border}] rounded-lg focus:ring-2 focus:ring-[${color.sentra.main}] focus:border-[${color.sentra.main}] text-sm`}
+                  className={`w-full px-4 py-3 border border-[${color.ui.border}] rounded-lg text-sm`}
                 />
               </div>
 

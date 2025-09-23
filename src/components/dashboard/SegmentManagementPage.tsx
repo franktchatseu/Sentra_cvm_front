@@ -226,7 +226,7 @@ export default function SegmentManagementPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Segment Management</h1>
-            <p className={`${tw.textSecondary} mt-2 text-base`}>Create and manage customer segments</p>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>Create and manage customer segments</p>
           </div>
           <button
             onClick={handleCreateSegment}
@@ -253,7 +253,7 @@ export default function SegmentManagementPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] w-full sm:w-64 text-sm`}
+              className={`pl-10 pr-4 py-4 border border-[${color.ui.border}] rounded-lg w-full sm:w-64 text-sm`}
             />
           </div>
           <HeadlessSelect
@@ -261,11 +261,11 @@ export default function SegmentManagementPage() {
             value={statusFilter}
             onChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
             placeholder="Select status..."
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto outline-none"
           />
           <button
             onClick={handleSearch}
-            className={`flex items-center px-3 py-2.5 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}
+            className={`flex outline-none items-center px-3 py-2.5 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}
           >
             <Filter className="h-5 w-5 mr-2" />
             Filter

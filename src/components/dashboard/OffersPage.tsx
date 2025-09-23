@@ -155,7 +155,7 @@ export default function OffersPage() {
           <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
             Offers Management
           </h1>
-          <p className={`${tw.textSecondary} mt-2 text-base`}>Create and manage customer offers with dynamic pricing and eligibility</p>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>Create and manage customer offers with dynamic pricing and eligibility</p>
         </div>
         <button
           onClick={() => navigate('/dashboard/offers/create')}
@@ -261,7 +261,7 @@ export default function OffersPage() {
                 placeholder="Search offers..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className={`pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64`}
+                className={`pl-10 pr-4 py-3.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64`}
               />
             </div>
             <HeadlessSelect

@@ -115,7 +115,7 @@ export default function CampaignsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
           <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Campaigns</h1>
-          <p className={`${tw.textSecondary} mt-2 text-base`}>Manage and monitor your customer engagement campaigns</p>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>Manage and monitor your customer engagement campaigns</p>
         </div>
         <button
           className="inline-flex items-center px-4 py-2 font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-sm whitespace-nowrap text-white"

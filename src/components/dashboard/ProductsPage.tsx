@@ -346,7 +346,7 @@ export default function ProductsPage() {
                 </thead>
                 <tbody className={`divide-y divide-[${color.ui.border}]`}>
                   {products.map((product) => {
-                    const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'N/A';
+                    const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'Uncategorized';
                     const status = product.is_active ? 'Active' : 'Inactive';
                     const statusBadge = product.is_active ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`;
 
@@ -370,19 +370,19 @@ export default function ProductsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className={`px-6 py-4 text-base ${tw.textPrimary}`}>
+                        <td className={`px-6 py-4 text-sm ${tw.textPrimary}`}>
                           {product.product_id || product.id || 'N/A'}
                         </td>
-                        <td className={`px-6 py-4 text-base ${tw.textPrimary}`}>
+                        <td className={`px-6 py-4 text-sm ${tw.textPrimary}`}>
                           {product.da_id || 'N/A'}
                         </td>
                         <td className="px-6 py-4 text-base">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.entities.products}]/10 text-[${color.entities.products}]`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-[${color.entities.products}]/10 text-[${color.entities.products}]`}>
                             {categoryName}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-base">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium ${statusBadge}`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${statusBadge}`}>
                             {status}
                           </span>
                         </td>
