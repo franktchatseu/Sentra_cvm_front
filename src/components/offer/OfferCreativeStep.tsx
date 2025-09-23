@@ -36,11 +36,11 @@ const LOCALES = [
   { value: 'pt', label: 'Portuguese' }
 ];
 
-export default function OfferCreativeStep({ 
-  creatives, 
-  onCreativesChange, 
-  onNext, 
-  onPrev 
+export default function OfferCreativeStep({
+  creatives,
+  onCreativesChange,
+  onNext,
+  onPrev
 }: OfferCreativeStepProps) {
   const [selectedCreative, setSelectedCreative] = useState<string | null>(
     creatives.length > 0 ? creatives[0].id : null
@@ -58,7 +58,7 @@ export default function OfferCreativeStep({
       html_body: '',
       variables: {}
     };
-    
+
     const updatedCreatives = [...creatives, newCreative];
     onCreativesChange(updatedCreatives);
     setSelectedCreative(newCreative.id);
@@ -67,14 +67,14 @@ export default function OfferCreativeStep({
   const removeCreative = (id: string) => {
     const updatedCreatives = creatives.filter(c => c.id !== id);
     onCreativesChange(updatedCreatives);
-    
+
     if (selectedCreative === id) {
       setSelectedCreative(updatedCreatives.length > 0 ? updatedCreatives[0].id : null);
     }
   };
 
   const updateCreative = (id: string, updates: Partial<OfferCreative>) => {
-    const updatedCreatives = creatives.map(c => 
+    const updatedCreatives = creatives.map(c =>
       c.id === id ? { ...c, ...updates } : c
     );
     onCreativesChange(updatedCreatives);
@@ -125,16 +125,15 @@ export default function OfferCreativeStep({
                 {creatives.map((creative) => {
                   const channelConfig = getChannelConfig(creative.channel);
                   const Icon = channelConfig?.icon || MessageSquare;
-                  
+
                   return (
                     <div
                       key={creative.id}
                       onClick={() => setSelectedCreative(creative.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        selectedCreative === creative.id
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedCreative === creative.id
                           ? 'border-blue-300 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -187,10 +186,10 @@ export default function OfferCreativeStep({
                     </label>
                     <select
                       value={selectedCreativeData.channel}
-                      onChange={(e) => updateCreative(selectedCreativeData.id, { 
-                        channel: e.target.value as any 
+                      onChange={(e) => updateCreative(selectedCreativeData.id, {
+                        channel: e.target.value as any
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     >
                       {CHANNELS.map(channel => (
                         <option key={channel.value} value={channel.value}>
@@ -206,10 +205,10 @@ export default function OfferCreativeStep({
                     </label>
                     <select
                       value={selectedCreativeData.locale}
-                      onChange={(e) => updateCreative(selectedCreativeData.id, { 
-                        locale: e.target.value 
+                      onChange={(e) => updateCreative(selectedCreativeData.id, {
+                        locale: e.target.value
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     >
                       {LOCALES.map(locale => (
                         <option key={locale.value} value={locale.value}>
@@ -229,11 +228,11 @@ export default function OfferCreativeStep({
                     type="text"
                     maxLength={160}
                     value={selectedCreativeData.title}
-                    onChange={(e) => updateCreative(selectedCreativeData.id, { 
-                      title: e.target.value 
+                    onChange={(e) => updateCreative(selectedCreativeData.id, {
+                      title: e.target.value
                     })}
                     placeholder="Enter creative title..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   />
                   <div className="text-xs text-gray-500 mt-1">
                     {selectedCreativeData.title.length}/160 characters
@@ -247,12 +246,12 @@ export default function OfferCreativeStep({
                   </label>
                   <textarea
                     value={selectedCreativeData.text_body}
-                    onChange={(e) => updateCreative(selectedCreativeData.id, { 
-                      text_body: e.target.value 
+                    onChange={(e) => updateCreative(selectedCreativeData.id, {
+                      text_body: e.target.value
                     })}
                     placeholder="Enter the text content..."
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   />
                 </div>
 
@@ -264,12 +263,12 @@ export default function OfferCreativeStep({
                     </label>
                     <textarea
                       value={selectedCreativeData.html_body}
-                      onChange={(e) => updateCreative(selectedCreativeData.id, { 
-                        html_body: e.target.value 
+                      onChange={(e) => updateCreative(selectedCreativeData.id, {
+                        html_body: e.target.value
                       })}
                       placeholder="Enter HTML content..."
                       rows={6}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none font-mono text-sm"
                     />
                   </div>
                 )}
@@ -291,7 +290,7 @@ export default function OfferCreativeStep({
                     }}
                     placeholder='{"variable_name": "value"}'
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none font-mono text-sm"
                   />
                   <div className="text-xs text-gray-500 mt-1">
                     Use variables like {`{{variable_name}}`} in your content

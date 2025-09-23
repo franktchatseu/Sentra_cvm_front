@@ -79,7 +79,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           children: [
             { name: 'All Products', href: '/dashboard/products', icon: Package, type: 'single', entity: 'products' },
             { name: 'Product Types', href: '/dashboard/product-types', icon: Layers, type: 'single', entity: 'products' },
-            { name: 'Product Categories', href: '/dashboard/product-categories', icon: FolderOpen, type: 'single', entity: 'products' },
+            { name: 'Product Categories', href: '/dashboard/products/categories', icon: FolderOpen, type: 'single', entity: 'products' },
           ]
         },
       ]

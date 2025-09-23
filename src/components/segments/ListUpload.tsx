@@ -30,14 +30,14 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
     const file = event.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      
+
       // Read file content
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
         const lines = content.split('\n');
         const headers = lines[0];
-        
+
         onListDataChange({
           ...listData,
           file_text: content,
@@ -72,7 +72,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
   return (
     <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
       <h4 className="font-medium text-blue-900">List Configuration</h4>
-      
+
       {/* List Type Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -81,7 +81,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
         <select
           value={listData?.list_type || 'standard'}
           onChange={(e) => handleInputChange('list_type', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
         >
           <option value="seed">Seed</option>
           <option value="and">And</option>
@@ -99,7 +99,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
           onChange={(e) => handleInputChange('list_description', e.target.value)}
           placeholder="Enter list description"
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
         />
       </div>
 
@@ -113,7 +113,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
           value={listData?.subscriber_id_col_name || ''}
           onChange={(e) => handleInputChange('subscriber_id_col_name', e.target.value)}
           placeholder="e.g., email, user_id, phone"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
         />
       </div>
 
@@ -125,7 +125,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
         <select
           value={listData?.file_delimiter || ','}
           onChange={(e) => handleInputChange('file_delimiter', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
         >
           <option value=",">Comma (,)</option>
           <option value=";">Semicolon (;)</option>
@@ -139,7 +139,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Upload List File
         </label>
-        
+
         {!uploadedFile ? (
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -173,7 +173,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
             </button>
           </div>
         )}
-        
+
         <input
           ref={fileInputRef}
           type="file"
@@ -193,7 +193,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
           value={listData?.list_label || ''}
           onChange={(e) => handleInputChange('list_label', e.target.value)}
           placeholder="Enter a label for this list"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
         />
       </div>
 

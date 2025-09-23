@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
   Edit,
-  Trash2,
   Eye,
-  Power,
-  PowerOff,
   ChevronLeft,
   ChevronRight,
   Package,
-  Settings
+  Settings,
+  XCircle,
+  Play,
+  Pause
 } from 'lucide-react';
 import { Product, ProductFilters } from '../../types/product';
 import { ProductCategory } from '../../types/productCategory';
@@ -19,6 +19,7 @@ import { productService } from '../../services/productService';
 import { productCategoryService } from '../../services/productCategoryService';
 import HeadlessSelect from '../ui/HeadlessSelect';
 import { color, tw } from '../../design/utils';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ export default function ProductsPage() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const { confirm } = useConfirm();
 
   const loadCategories = async () => {
     try {
@@ -48,25 +50,26 @@ export default function ProductsPage() {
     }
   };
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await productService.getProducts(filters);
-      setProducts(response.data);
-      setTotal(response.total);
-      setTotalPages(Math.ceil(response.total / (filters.pageSize || 10)));
+      setProducts(response.data || []);
+      const totalCount = response.total || 0;
+      setTotal(totalCount);
+      setTotalPages(Math.ceil(totalCount / (filters.pageSize || 10)) || 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load products');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     loadProducts();
     loadCategories();
-  }, [filters]);
+  }, [loadProducts]);
 
   const handleSearch = (searchTerm: string) => {
     setFilters({ ...filters, search: searchTerm, page: 1 });
@@ -111,15 +114,32 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-      return;
-    }
+    const product = products.find(p => p.id === productId);
+    const productName = product?.name || 'this product';
+
+    const confirmed = await confirm({
+      title: 'Delete Product',
+      message: `Are you sure you want to delete "${productName}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     try {
       await productService.deleteProduct(Number(productId));
+      setNotification({
+        type: 'success',
+        message: `Product "${productName}" has been deleted successfully.`
+      });
       loadProducts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete product');
+      console.error('Failed to delete product:', err);
+      setNotification({
+        type: 'error',
+        message: 'Failed to delete product. Please try again.'
+      });
     }
   };
 
@@ -137,16 +157,30 @@ export default function ProductsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate('/dashboard/products/categories')}
-            className={`${tw.primaryButton} px-3 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base`}
+            className="px-3 py-2 md:text-sm rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base text-white"
+            style={{ backgroundColor: color.sentra.main }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }}
           >
             <Settings className="w-5 h-5" />
             Categories
           </button>
           <button
             onClick={() => navigate('/dashboard/products/create')}
-            className={`${tw.primaryButton} px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base`}
+            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            style={{ backgroundColor: color.sentra.main }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
             Create Product
           </button>
         </div>
@@ -163,7 +197,7 @@ export default function ProductsPage() {
               placeholder="Search products..."
               value={filters.search || ''}
               onChange={(e) => handleSearch(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20`}
+              className={`w-full pl-10 pr-4 py-3 text-sm  border border-[${color.ui.border}] rounded-lg focus:outline-none`}
             />
           </div>
 
@@ -179,7 +213,7 @@ export default function ProductsPage() {
             value={filters.categoryId?.toString() || ''}
             onChange={(value) => handleFilterChange('categoryId', value ? Number(value) : undefined)}
             placeholder="All Categories"
-            className="min-w-[160px]"
+            className="min-w-[160px] text-sm"
           />
 
           {/* Status Filter */}
@@ -192,7 +226,7 @@ export default function ProductsPage() {
             value={filters.isActive === undefined ? '' : filters.isActive.toString()}
             onChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
             placeholder="All Status"
-            className="min-w-[120px]"
+            className="min-w-[120px] text-sm"
           />
 
           {/* Sort */}
@@ -210,7 +244,7 @@ export default function ProductsPage() {
               setFilters({ ...filters, sortBy, sortDirection: sortDirection as 'ASC' | 'DESC' });
             }}
             placeholder="Sort by"
-            className="min-w-[140px]"
+            className="min-w-[140px] text-sm"
           />
         </div>
       </div>
@@ -268,7 +302,14 @@ export default function ProductsPage() {
             <p className={`${tw.textMuted} mb-6`}>Get started by creating your first product.</p>
             <button
               onClick={() => navigate('/dashboard/products/create')}
-              className={`${tw.primaryButton} px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base`}
+              className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
+              style={{ backgroundColor: color.sentra.main }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              }}
             >
               <Plus className="w-5 h-5" />
               Create Product
@@ -281,10 +322,10 @@ export default function ProductsPage() {
                 <thead className={`bg-[${color.ui.surface}]`}>
                   <tr>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Product ID
+                      Product
                     </th>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Product Name
+                      Product ID
                     </th>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                       DA ID
@@ -311,27 +352,37 @@ export default function ProductsPage() {
 
                     return (
                       <tr key={product.id} className={`hover:bg-[${color.ui.surface}]/50 transition-colors`}>
-                        <td className={`px-6 py-4 text-sm ${tw.textPrimary} font-mono`}>
-                          {product.product_id || product.id || 'N/A'}
-                        </td>
                         <td className="px-6 py-4">
-                          <div>
-                            <div className={`text-sm font-medium ${tw.textPrimary}`}>{product.name}</div>
-                            <div className={`text-sm ${tw.textMuted} truncate max-w-xs`}>
-                              {product.description || 'No description'}
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className="h-10 w-10 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: color.entities.products }}
+                            >
+                              <Package className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <div className={`text-base font-semibold ${tw.textPrimary}`}>
+                                {product.name}
+                              </div>
+                              <div className={`text-sm ${tw.textMuted} truncate max-w-xs`}>
+                                {product.description || 'No description'}
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td className={`px-6 py-4 text-sm ${tw.textPrimary} font-mono`}>
+                        <td className={`px-6 py-4 text-base ${tw.textPrimary}`}>
+                          {product.product_id || product.id || 'N/A'}
+                        </td>
+                        <td className={`px-6 py-4 text-base ${tw.textPrimary}`}>
                           {product.da_id || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 text-sm">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.entities.products}]/10 text-[${color.entities.products}]`}>
+                        <td className="px-6 py-4 text-base">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.entities.products}]/10 text-[${color.entities.products}]`}>
                             {categoryName}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge}`}>
+                        <td className="px-6 py-4 text-base">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium ${statusBadge}`}>
                             {status}
                           </span>
                         </td>
@@ -342,38 +393,38 @@ export default function ProductsPage() {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => navigate(`/dashboard/products/${product.id}`)}
-                              className={`p-2 ${tw.textMuted} hover:text-[${color.status.info.main}] transition-colors`}
+                              className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => navigate(`/dashboard/products/${product.id}/edit`)}
-                              className={`p-2 ${tw.textMuted} hover:text-[${color.sentra.main}] transition-colors`}
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-200"
                               title="Edit Product"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleToggleStatus(product)}
-                              className={`p-2 transition-colors ${product.is_active
-                                ? `${tw.textMuted} hover:text-[${color.status.warning.main}]`
-                                : `${tw.textMuted} hover:text-[${color.status.success.main}]`
+                              className={`p-2 rounded-lg transition-all duration-200 ${product.is_active
+                                ? `text-orange-600 hover:text-orange-700 hover:bg-orange-50`
+                                : `text-green-600 hover:text-green-700 hover:bg-green-50`
                                 }`}
                               title={product.is_active ? 'Deactivate' : 'Activate'}
                             >
                               {product.is_active ? (
-                                <PowerOff className="w-4 h-4" />
+                                <Pause className="w-4 h-4" />
                               ) : (
-                                <Power className="w-4 h-4" />
+                                <Play className="w-4 h-4" />
                               )}
                             </button>
                             <button
                               onClick={() => handleDelete(product.id)}
-                              className={`p-2 ${tw.textMuted} hover:text-[${color.status.error.main}] transition-colors`}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
                               title="Delete Product"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <XCircle className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -399,11 +450,11 @@ export default function ProductsPage() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className={`px-4 py-2 text-base ${tw.textSecondary} whitespace-nowrap`}>
-                  Page {filters.page} of {totalPages}
+                  Page {filters.page || 1} of {totalPages || 1}
                 </span>
                 <button
                   onClick={() => handlePageChange((filters.page || 1) + 1)}
-                  disabled={filters.page === totalPages}
+                  disabled={(filters.page || 1) >= (totalPages || 1)}
                   className={`p-2 border border-[${color.ui.border}] rounded-lg hover:bg-[${color.ui.surface}] disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -414,6 +465,5 @@ export default function ProductsPage() {
         )}
       </div>
     </div>
-  )
-
+  );
 }

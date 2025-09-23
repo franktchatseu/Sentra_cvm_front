@@ -51,11 +51,11 @@ const REWARD_RULE_TYPES = [
   { value: 'cashback', label: 'Cashback' }
 ];
 
-export default function OfferRewardStep({ 
-  rewards, 
-  onRewardsChange, 
-  onNext, 
-  onPrev 
+export default function OfferRewardStep({
+  rewards,
+  onRewardsChange,
+  onNext,
+  onPrev
 }: OfferRewardStepProps) {
   const [selectedReward, setSelectedReward] = useState<string | null>(
     rewards.length > 0 ? rewards[0].id : null
@@ -72,7 +72,7 @@ export default function OfferRewardStep({
       type: 'default',
       rules: []
     };
-    
+
     const updatedRewards = [...rewards, newReward];
     onRewardsChange(updatedRewards);
     setSelectedReward(newReward.id);
@@ -81,20 +81,20 @@ export default function OfferRewardStep({
   const removeReward = (id: string) => {
     const updatedRewards = rewards.filter(r => r.id !== id);
     onRewardsChange(updatedRewards);
-    
+
     if (selectedReward === id) {
       setSelectedReward(updatedRewards.length > 0 ? updatedRewards[0].id : null);
     }
   };
 
   const updateReward = (id: string, updates: Partial<OfferReward>) => {
-    const updatedRewards = rewards.map(r => 
+    const updatedRewards = rewards.map(r =>
       r.id === id ? { ...r, ...updates } : r
     );
     onRewardsChange(updatedRewards);
   };
 
-  const addRule = (rewardId: string) => {
+  const addRule = () => {
     const newRule: RewardRule = {
       id: generateId(),
       name: 'New Rule',
@@ -111,7 +111,7 @@ export default function OfferRewardStep({
       failure_text: 'failed due to low balance',
       enabled: true
     };
-    
+
     setEditingRule(newRule);
     setShowRuleModal(true);
   };
@@ -122,7 +122,7 @@ export default function OfferRewardStep({
 
     const existingRuleIndex = reward.rules.findIndex(r => r.id === rule.id);
     let updatedRules;
-    
+
     if (existingRuleIndex >= 0) {
       updatedRules = [...reward.rules];
       updatedRules[existingRuleIndex] = rule;
@@ -188,11 +188,10 @@ export default function OfferRewardStep({
                   <div
                     key={reward.id}
                     onClick={() => setSelectedReward(reward.id)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedReward === reward.id
-                        ? 'border-yellow-300 bg-yellow-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedReward === reward.id
+                      ? 'border-yellow-300 bg-yellow-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -242,8 +241,8 @@ export default function OfferRewardStep({
                     <input
                       type="text"
                       value={selectedRewardData.name}
-                      onChange={(e) => updateReward(selectedRewardData.id, { 
-                        name: e.target.value 
+                      onChange={(e) => updateReward(selectedRewardData.id, {
+                        name: e.target.value
                       })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
@@ -255,8 +254,8 @@ export default function OfferRewardStep({
                     </label>
                     <select
                       value={selectedRewardData.type}
-                      onChange={(e) => updateReward(selectedRewardData.id, { 
-                        type: e.target.value as any 
+                      onChange={(e) => updateReward(selectedRewardData.id, {
+                        type: e.target.value as 'default' | 'sms_night' | 'custom'
                       })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     >
@@ -274,7 +273,7 @@ export default function OfferRewardStep({
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-medium text-gray-900">Reward Rules</h4>
                     <button
-                      onClick={() => addRule(selectedRewardData.id)}
+                      onClick={() => addRule()}
                       className="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <Plus className="w-4 h-4 mr-1" />
@@ -287,7 +286,7 @@ export default function OfferRewardStep({
                       <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-500 text-sm mb-4">No rules configured</p>
                       <button
-                        onClick={() => addRule(selectedRewardData.id)}
+                        onClick={() => addRule()}
                         className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -304,11 +303,10 @@ export default function OfferRewardStep({
                               <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
                                 Priority: {rule.priority}
                               </span>
-                              <span className={`px-2 py-1 text-xs rounded ${
-                                rule.enabled 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-red-100 text-red-700'
-                              }`}>
+                              <span className={`px-2 py-1 text-xs rounded ${rule.enabled
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                                }`}>
                                 {rule.enabled ? 'Enabled' : 'Disabled'}
                               </span>
                             </div>
@@ -390,7 +388,7 @@ export default function OfferRewardStep({
                     type="text"
                     value={editingRule.name}
                     onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   />
                 </div>
 
@@ -403,7 +401,7 @@ export default function OfferRewardStep({
                     min="1"
                     value={editingRule.priority}
                     onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   />
                 </div>
               </div>
@@ -415,7 +413,7 @@ export default function OfferRewardStep({
                 <select
                   value={editingRule.bundle_subscription_track}
                   onChange={(e) => setEditingRule({ ...editingRule, bundle_subscription_track: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                 >
                   {BUNDLE_TRACKS.map(track => (
                     <option key={track} value={track}>{track}</option>
@@ -430,8 +428,8 @@ export default function OfferRewardStep({
                   </label>
                   <select
                     value={editingRule.reward_type}
-                    onChange={(e) => setEditingRule({ ...editingRule, reward_type: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => setEditingRule({ ...editingRule, reward_type: e.target.value as 'bundle' | 'points' | 'discount' | 'cashback' })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   >
                     {REWARD_RULE_TYPES.map(type => (
                       <option key={type.value} value={type.value}>
@@ -450,7 +448,7 @@ export default function OfferRewardStep({
                     value={editingRule.reward_value}
                     onChange={(e) => setEditingRule({ ...editingRule, reward_value: e.target.value })}
                     placeholder="Enter reward value..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   />
                 </div>
               </div>
@@ -464,7 +462,7 @@ export default function OfferRewardStep({
                   onChange={(e) => setEditingRule({ ...editingRule, success_text: e.target.value })}
                   placeholder="Enter success message..."
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                 />
               </div>
 
@@ -478,7 +476,7 @@ export default function OfferRewardStep({
                     value={editingRule.error_group}
                     onChange={(e) => setEditingRule({ ...editingRule, error_group: e.target.value })}
                     placeholder="e.g., Low balance Failure [01]"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   />
                 </div>
 
@@ -491,7 +489,7 @@ export default function OfferRewardStep({
                     value={editingRule.failure_text}
                     onChange={(e) => setEditingRule({ ...editingRule, failure_text: e.target.value })}
                     placeholder="Enter failure message..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                   />
                 </div>
               </div>

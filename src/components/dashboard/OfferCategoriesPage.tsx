@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, FolderOpen, X, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, Edit, Trash2, X, MessageSquare, ArrowLeft } from 'lucide-react';
+import { color, tw } from '../../design/utils';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 
 interface OfferCategory {
   id: number;
@@ -52,7 +56,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const savedCategory: OfferCategory = {
         id: category?.id || Date.now(),
         name: formData.name.trim(),
@@ -80,7 +84,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
-            {category ? 'Edit Category' : 'Create New Category'}
+            {category ? 'Edit Offer Category' : 'Create New Offer Category'}
           </h2>
           <button
             onClick={onClose}
@@ -89,23 +93,23 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category Name *
+                Offer Category Name *
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter category name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                placeholder="Enter offer category name"
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description
@@ -113,8 +117,8 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter category description"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                placeholder="Enter offer category description"
                 rows={3}
               />
             </div>
@@ -137,9 +141,18 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.sentra.main }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              }}
             >
-              {isLoading ? 'Saving...' : (category ? 'Update' : 'Create')}
+              {isLoading ? 'Saving...' : (category ? 'Update Category' : 'Create Category')}
             </button>
           </div>
         </form>
@@ -149,6 +162,10 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
 }
 
 export default function OfferCategoriesPage() {
+  const navigate = useNavigate();
+  const { confirm } = useConfirm();
+  const { success, error: showError } = useToast();
+
   const [offerCategories, setOfferCategories] = useState<OfferCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -228,9 +245,6 @@ export default function OfferCategoriesPage() {
     }
   };
 
-  const handleSearch = () => {
-    loadCategories();
-  };
 
   const handleCreateCategory = () => {
     setEditingCategory(undefined);
@@ -243,21 +257,31 @@ export default function OfferCategoriesPage() {
   };
 
   const handleDeleteCategory = async (category: OfferCategory) => {
-    if (window.confirm(`Are you sure you want to delete "${category.name}"?`)) {
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setOfferCategories(prev => prev.filter(c => c.id !== category.id));
-      } catch (err) {
-        console.error('Error deleting category:', err);
-      }
+    const confirmed = await confirm({
+      title: 'Delete Category',
+      message: `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setOfferCategories(prev => prev.filter(c => c.id !== category.id));
+      success('Category Deleted', `"${category.name}" has been deleted successfully.`);
+    } catch (err) {
+      console.error('Error deleting category:', err);
+      showError('Error', err instanceof Error ? err.message : 'Failed to delete category');
     }
   };
 
   const handleCategorySaved = (savedCategory: OfferCategory) => {
     if (editingCategory) {
       // Update existing category
-      setOfferCategories(prev => 
+      setOfferCategories(prev =>
         prev.map(cat => cat.id === savedCategory.id ? savedCategory : cat)
       );
     } else {
@@ -272,173 +296,228 @@ export default function OfferCategoriesPage() {
   );
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate('/dashboard/offers')}
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div>
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl">
-                <FolderOpen className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Offer Categories</h1>
-            </div>
-            <p className="text-gray-500 text-base">Organize and manage your offer categories with ease</p>
+            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Offer Categories</h1>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>Organize and manage your offer categories with ease</p>
           </div>
+        </div>
+        <div className="flex items-center gap-3">
           <button
             onClick={handleCreateCategory}
-            className="group flex items-center space-x-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-base w-full sm:w-auto justify-center sm:justify-start"
+            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            style={{ backgroundColor: color.sentra.main }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }}
           >
-            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-            <span className="font-semibold">New Category</span>
+            <Plus className="w-4 h-4" />
+            Create Offer Category
           </button>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search categories by name or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
-            />
-          </div>
-          <button
-            onClick={handleSearch}
-            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-base w-full sm:w-auto"
-          >
-            Search
-          </button>
+      <div className={`bg-white my-5`}>
+        <div className="relative w-full">
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+          <input
+            type="text"
+            placeholder="Search categories by name or description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+          />
         </div>
       </div>
 
-      {/* Categories List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Categories Table */}
+      <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
         {loading ? (
-          <div className="p-6">
-            <div className="animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center space-x-4 p-4">
-                    <div className="h-12 w-12 bg-gray-200 rounded-xl"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                    </div>
-                    <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="flex items-center justify-center py-12">
+            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]`}></div>
+            <span className={`ml-3 ${tw.textSecondary}`}>Loading categories...</span>
           </div>
         ) : error ? (
           <div className="p-8 text-center">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-              <p className="text-red-700 font-medium mb-3">{error}</p>
+            <div className={`bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 text-[${color.status.error.main}] rounded-xl p-6`}>
+              <p className="font-medium mb-3">{error}</p>
               <button
                 onClick={loadCategories}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors font-medium"
+                style={{ backgroundColor: color.status.error.main }}
               >
                 Try Again
               </button>
             </div>
           </div>
         ) : filteredOfferCategories.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-12">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">No categories found</h3>
-              <p className="text-gray-600 mb-8 text-sm max-w-md mx-auto">
-                {searchTerm ? 'No categories match your search criteria. Try adjusting your search terms.' : 'Get started by creating your first offer category to organize your offers effectively.'}
-              </p>
+          <div className="text-center py-12">
+            <MessageSquare className={`w-16 h-16 text-[${color.entities.offers}] mx-auto mb-4`} />
+            <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
+              {searchTerm ? 'No Categories Found' : 'No Categories'}
+            </h3>
+            <p className={`${tw.textMuted} mb-6`}>
+              {searchTerm ? 'Try adjusting your search terms.' : 'Create your first category to get started.'}
+            </p>
+            {!searchTerm && (
               <button
                 onClick={handleCreateCategory}
-                className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-6 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-base"
+                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
+                style={{ backgroundColor: color.sentra.main }}
               >
-                Create Your First Category
+                <Plus className="w-4 h-4" />
+                Create Offer Category
               </button>
-            </div>
+            )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 sm:px-8 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Category
-                  </th>
-                  <th className="px-4 sm:px-8 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Description
-                  </th>
-                  <th className="px-4 sm:px-8 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Offers
-                  </th>
-                  <th className="px-4 sm:px-8 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white">
-                {filteredOfferCategories.map((category) => (
-                  <tr key={category.id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-all duration-200 group">
-                    <td className="px-4 sm:px-8 py-6">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div 
-                            className="h-12 w-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200"
-                            style={{ backgroundColor: category.color || '#10B981' }}
+          <>
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
+                  <tr>
+                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      Category
+                    </th>
+                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      Description
+                    </th>
+                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      Offers
+                    </th>
+                    <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredOfferCategories.map((category) => (
+                    <tr key={category.id} className="hover:bg-[${color.ui.surface}]/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className="h-10 w-10 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: color.entities.offers }}
                           >
-                            <MessageSquare className="h-6 w-6 text-white" />
+                            <MessageSquare className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className={`text-base font-semibold ${tw.textPrimary}`}>
+                              {category.name}
+                            </div>
+                            <div className={`text-sm ${tw.textMuted}`}>ID: {category.id}</div>
                           </div>
                         </div>
-                        <div className="ml-5">
-                          <div className="text-sm font-semibold text-gray-900 group-hover:text-green-900 transition-colors">{category.name}</div>
-                          <div className="text-sm text-gray-500 font-medium">ID: {category.id}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={`text-sm ${tw.textSecondary} max-w-xs truncate`}>
+                          {category.description || 'No description'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
+                          {category.offerCount} offer{category.offerCount !== 1 ? 's' : ''}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleEditCategory(category)}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{
+                              color: color.sentra.main,
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden">
+              {filteredOfferCategories.map((category) => (
+                <div key={category.id} className="p-4 border-b border-gray-200 last:border-b-0">
+                  <div className="flex items-start space-x-3">
+                    <div
+                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: category.color || color.entities.offers }}
+                    >
+                      <MessageSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
+                        {category.name}
+                      </div>
+                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                        {category.description || 'No description'}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
+                          {category.offerCount} offer{category.offerCount !== 1 ? 's' : ''}
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEditCategory(category)}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{
+                              color: color.sentra.main,
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 sm:px-8 py-6">
-                      <div className="text-sm text-gray-700 max-w-xs">
-                        {category.description || <span className="italic text-gray-400">No description</span>}
-                      </div>
-                    </td>
-                    <td className="px-4 sm:px-8 py-6">
-                      <span className="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
-                        {category.offerCount} offer{category.offerCount !== 1 ? 's' : ''}
-                      </span>
-                    </td>
-                    <td className="px-4 sm:px-8 py-6 text-right">
-                      <div className="flex items-center justify-end space-x-3">
-                        <button
-                          onClick={() => handleEditCategory(category)}
-                          className="p-2 text-green-600 hover:text-green-700 hover:bg-green-100 rounded-lg transition-all duration-200 group/btn"
-                          title="Edit Category"
-                        >
-                          <Edit className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(category)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-100 rounded-lg transition-all duration-200 group/btn"
-                          title="Delete Category"
-                        >
-                          <Trash2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

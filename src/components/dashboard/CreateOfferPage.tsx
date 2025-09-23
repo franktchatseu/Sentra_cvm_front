@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  Target, 
-  Calendar, 
-  DollarSign, 
-  Package, 
-  Eye, 
+import {
+  ArrowRight,
+  Target,
+  Calendar,
+  DollarSign,
+  Package,
+  Eye,
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
@@ -14,8 +14,7 @@ import {
   Gift,
   Users,
   Settings,
-  MessageSquare,
-  BarChart3
+
 } from 'lucide-react';
 import { CreateOfferRequest, LifecycleStatus, ApprovalStatus } from '../../types/offer';
 import { Product } from '../../types/product';
@@ -24,6 +23,8 @@ import ProductSelector from './ProductSelector';
 import OfferCreativeStep from '../offer/OfferCreativeStep';
 import OfferTrackingStep from '../offer/OfferTrackingStep';
 import OfferRewardStep from '../offer/OfferRewardStep';
+import HeadlessSelect from '../ui/HeadlessSelect';
+import { colors as color } from '../../design/tokens';
 
 interface OfferCreative {
   id: string;
@@ -32,7 +33,7 @@ interface OfferCreative {
   title: string;
   text_body: string;
   html_body: string;
-  variables: Record<string, any>;
+  variables: Record<string, string | number | boolean>;
 }
 
 interface TrackingRule {
@@ -76,7 +77,6 @@ interface OfferReward {
   type: 'default' | 'sms_night' | 'custom';
   rules: RewardRule[];
 }
-import HeadlessSelect from '../ui/HeadlessSelect';
 
 interface StepProps {
   currentStep: number;
@@ -96,7 +96,7 @@ interface StepProps {
 }
 
 // Step 1: Basic Information
-function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData }: StepProps) {
+function BasicInfoStep({ onNext, formData, setFormData }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onPrev' | 'onSubmit'>) {
   const handleNext = () => {
     if (formData.name.trim() && formData.offer_type) {
       onNext();
@@ -106,8 +106,11 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Gift className="w-8 h-8 text-[#1a3d2e]" />
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Gift className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
         <p className="text-gray-600">Let's start with the essential details of your offer</p>
@@ -123,7 +126,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Summer Data Bundle"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
             required
           />
         </div>
@@ -137,7 +140,7 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this offer provides to customers..."
             rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
           />
         </div>
 
@@ -145,20 +148,20 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Offer Type *
           </label>
-          <select
+          <HeadlessSelect
+            options={[
+              { value: '', label: 'Select offer type' },
+              { value: 'STV', label: 'STV' },
+              { value: 'Short Text (SMS/USSD)', label: 'Short Text (SMS/USSD)' },
+              { value: 'Email', label: 'Email' },
+              { value: 'Voice Push', label: 'Voice Push' },
+              { value: 'WAP Push', label: 'WAP Push' },
+              { value: 'Rich Media', label: 'Rich Media' }
+            ]}
             value={formData.offer_type || ''}
-            onChange={(e) => setFormData({ ...formData, offer_type: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-            required
-          >
-            <option value="">Select offer type</option>
-            <option value="STV">STV</option>
-            <option value="Short Text (SMS/USSD)">Short Text (SMS/USSD)</option>
-            <option value="Email">Email</option>
-            <option value="Voice Push">Voice Push</option>
-            <option value="WAP Push">WAP Push</option>
-            <option value="Rich Media">Rich Media</option>
-          </select>
+            onChange={(value) => setFormData({ ...formData, offer_type: value ? String(value) : undefined })}
+            placeholder="Select offer type"
+          />
         </div>
 
         <div>
@@ -184,7 +187,23 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
         <button
           onClick={handleNext}
           disabled={!formData.name.trim() || !formData.offer_type}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            backgroundColor: `${color.sentra.main} !important`,
+            background: 'none !important'
+          }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
+              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
+              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            }
+          }}
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -195,14 +214,14 @@ function BasicInfoStep({ currentStep, totalSteps, onNext, formData, setFormData 
 }
 
 // Step 2: Offer Products
-function ProductStepWrapper({ currentStep, totalSteps, onNext, onPrev, formData, setFormData }: StepProps) {
+function ProductStepWrapper({ onNext, onPrev, formData, setFormData }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit'>) {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
 
   const handleNext = () => {
     // Store only the first selected product ID (backend expects single product_id)
     const firstProductId = selectedProducts.length > 0 ? selectedProducts[0].id : undefined;
-    setFormData({ 
-      ...formData, 
+    setFormData({
+      ...formData,
       product_id: firstProductId ? Number(firstProductId) : undefined
     });
     onNext();
@@ -211,8 +230,11 @@ function ProductStepWrapper({ currentStep, totalSteps, onNext, onPrev, formData,
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Package className="w-8 h-8 text-emerald-600" />
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Package className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Products</h2>
         <p className="text-gray-600">Select the products that will be included in this offer</p>
@@ -236,7 +258,19 @@ function ProductStepWrapper({ currentStep, totalSteps, onNext, onPrev, formData,
         </button>
         <button
           onClick={handleNext}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          style={{
+            backgroundColor: `${color.sentra.main} !important`,
+            background: 'none !important'
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
+            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
+            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+          }}
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -247,7 +281,7 @@ function ProductStepWrapper({ currentStep, totalSteps, onNext, onPrev, formData,
 }
 
 // Step 3: Offer Creative
-function OfferCreativeStepWrapper({ currentStep, totalSteps, onNext, onPrev, creatives, setCreatives }: StepProps) {
+function OfferCreativeStepWrapper({ onNext, onPrev, creatives, setCreatives }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
   return (
     <OfferCreativeStep
       creatives={creatives}
@@ -259,7 +293,7 @@ function OfferCreativeStepWrapper({ currentStep, totalSteps, onNext, onPrev, cre
 }
 
 // Step 4: Offer Tracking
-function OfferTrackingStepWrapper({ currentStep, totalSteps, onNext, onPrev, trackingSources, setTrackingSources }: StepProps) {
+function OfferTrackingStepWrapper({ onNext, onPrev, trackingSources, setTrackingSources }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
   return (
     <OfferTrackingStep
       trackingSources={trackingSources}
@@ -271,7 +305,7 @@ function OfferTrackingStepWrapper({ currentStep, totalSteps, onNext, onPrev, tra
 }
 
 // Step 5: Offer Reward
-function OfferRewardStepWrapper({ currentStep, totalSteps, onNext, onPrev, rewards, setRewards }: StepProps) {
+function OfferRewardStepWrapper({ onNext, onPrev, rewards, setRewards }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
   return (
     <OfferRewardStep
       rewards={rewards}
@@ -283,7 +317,8 @@ function OfferRewardStepWrapper({ currentStep, totalSteps, onNext, onPrev, rewar
 }
 
 // Legacy Step 2: Eligibility Rules (kept for reference)
-function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formData, setFormData }: StepProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<StepProps, 'currentStep' | 'totalSteps'>) {
   const [eligibilityRules, setEligibilityRules] = useState({
     min_spend: formData.eligibility_rules?.min_spend || 0,
     customer_segment: formData.eligibility_rules?.customer_segment || [],
@@ -322,8 +357,11 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Target className="w-8 h-8 text-[#1a3d2e]" />
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Target className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Eligibility Rules</h2>
         <p className="text-gray-600">Define who can access this offer and when</p>
@@ -346,7 +384,7 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
                 ...prev,
                 min_spend: parseFloat(e.target.value) || 0
               }))}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg "
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
               placeholder="0.00"
             />
           </div>
@@ -364,11 +402,10 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
                 key={segment}
                 type="button"
                 onClick={() => toggleSegment(segment)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  eligibilityRules.customer_segment.includes(segment)
-                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
-                    : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${eligibilityRules.customer_segment.includes(segment)
+                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                  : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
+                  }`}
               >
                 {segment.charAt(0).toUpperCase() + segment.slice(1)}
               </button>
@@ -388,11 +425,10 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
                 key={day}
                 type="button"
                 onClick={() => toggleDay(day)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  eligibilityRules.valid_days.includes(day)
-                    ? 'bg-green-100 text-green-700 border-2 border-green-300'
-                    : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
-                }`}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${eligibilityRules.valid_days.includes(day)
+                  ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                  : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
+                  }`}
               >
                 <Calendar className="w-4 h-4 inline mr-1" />
                 {day.charAt(0).toUpperCase() + day.slice(1)}
@@ -414,7 +450,19 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
         </button>
         <button
           onClick={handleNext}
-          className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all shadow-lg flex items-center gap-2 text-base"
+          className="px-4 py-2 text-white rounded-lg transition-all shadow-lg flex items-center gap-2 text-base"
+          style={{
+            backgroundColor: `${color.sentra.main} !important`,
+            background: 'none !important'
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
+            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
+            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+          }}
         >
           Next
           <ChevronRight className="w-4 h-4" />
@@ -426,7 +474,7 @@ function EligibilityStepLegacy({ currentStep, totalSteps, onNext, onPrev, formDa
 
 
 // Step 6: Review
-function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formData, setFormData, creatives, trackingSources, rewards, isLoading }: StepProps) {
+function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, rewards, isLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext' | 'setFormData'>) {
   const handleSubmit = () => {
     onSubmit();
   };
@@ -434,8 +482,11 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Eye className="w-8 h-8 text-blue-600" />
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Eye className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Review & Create</h2>
         <p className="text-gray-600">Review your offer details before creating</p>
@@ -443,9 +494,12 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
 
       <div className="space-y-6">
         {/* Offer Summary */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6">
+        <div
+          className="rounded-2xl p-6"
+          style={{ backgroundColor: `${color.sentra.main}10` }}
+        >
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Offer Summary</h3>
-          
+
           {/* Basic Information */}
           <div className="space-y-4 mb-6">
             <h4 className="font-medium text-gray-700 border-b border-gray-200 pb-2">Basic Information</h4>
@@ -483,16 +537,16 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
                 <div className="flex justify-between">
                   <span className="text-gray-600">Channels:</span>
                   <span className="font-medium">
-                    {creatives.length > 0 
-                      ? [...new Set(creatives.map(c => c.channel))].join(', ') 
+                    {creatives.length > 0
+                      ? [...new Set(creatives.map(c => c.channel))].join(', ')
                       : 'None configured'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Locales:</span>
                   <span className="font-medium">
-                    {creatives.length > 0 
-                      ? [...new Set(creatives.map(c => c.locale))].join(', ') 
+                    {creatives.length > 0
+                      ? [...new Set(creatives.map(c => c.locale))].join(', ')
                       : 'None configured'}
                   </span>
                 </div>
@@ -537,8 +591,8 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
                 <div className="flex justify-between">
                   <span className="text-gray-600">Reward Types:</span>
                   <span className="font-medium">
-                    {rewards.length > 0 
-                      ? [...new Set(rewards.map(r => r.type))].join(', ') 
+                    {rewards.length > 0
+                      ? [...new Set(rewards.map(r => r.type))].join(', ')
                       : 'None configured'}
                   </span>
                 </div>
@@ -602,7 +656,23 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            backgroundColor: `${color.sentra.main} !important`,
+            background: 'none !important'
+          }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
+              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
+              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            }
+          }}
         >
           {isLoading ? (
             <>
@@ -622,7 +692,8 @@ function ReviewStep({ currentStep, totalSteps, onNext, onPrev, onSubmit, formDat
 }
 
 // Legacy Eligibility Step (kept for reference)
-function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData, setFormData }: StepProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<StepProps, 'currentStep' | 'totalSteps'>) {
   const [eligibilityRules, setEligibilityRules] = useState(formData.eligibility_rules || {});
 
   const handleNext = () => {
@@ -633,8 +704,11 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Users className="w-8 h-8 text-emerald-600" />
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Users className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Eligibility Rules</h2>
         <p className="text-gray-600">Define who can access this offer</p>
@@ -651,7 +725,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_spend || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_spend: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
             />
           </div>
 
@@ -668,7 +742,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
                 { value: 'vip', label: 'VIP' }
               ]}
               value={eligibilityRules.customer_tier || ''}
-              onChange={(value) => setEligibilityRules({ ...eligibilityRules, customer_tier: value || undefined })}
+              onChange={(value) => setEligibilityRules({ ...eligibilityRules, customer_tier: value ? String(value) : undefined })}
               placeholder="Any tier"
             />
           </div>
@@ -684,7 +758,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_account_age_days || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_account_age_days: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
             />
           </div>
 
@@ -697,7 +771,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               value={eligibilityRules.min_purchase_count || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_purchase_count: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
             />
           </div>
         </div>
@@ -711,7 +785,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               type="date"
               value={eligibilityRules.valid_from || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_from: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
             />
           </div>
 
@@ -723,7 +797,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
               type="date"
               value={eligibilityRules.valid_to || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_to: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
             />
           </div>
         </div>
@@ -737,7 +811,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
             value={eligibilityRules.max_usage_per_customer || ''}
             onChange={(e) => setEligibilityRules({ ...eligibilityRules, max_usage_per_customer: e.target.value ? Number(e.target.value) : undefined })}
             placeholder="Unlimited"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
           />
         </div>
 
@@ -765,7 +839,7 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
         </button>
         <button
           onClick={handleNext}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
         >
           Next Step
           <ArrowRight className="w-5 h-5" />
@@ -776,7 +850,8 @@ function EligibilityStepOld({ currentStep, totalSteps, onNext, onPrev, formData,
 }
 
 // Legacy Settings Step (kept for reference)
-function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, formData, setFormData, isLoading }: StepProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function SettingsStepOld({ onPrev, onSubmit, formData, setFormData, isLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext'>) {
   const handleSubmit = () => {
     onSubmit();
   };
@@ -784,8 +859,11 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Settings className="w-8 h-8 text-amber-600" />
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Settings className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Settings & Configuration</h2>
         <p className="text-gray-600">Configure the final settings for your offer</p>
@@ -854,7 +932,10 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
         </div>
 
         {/* Summary */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6">
+        <div
+          className="rounded-2xl p-6"
+          style={{ backgroundColor: `${color.sentra.main}10` }}
+        >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Offer Summary</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -894,7 +975,23 @@ function SettingsStepOld({ currentStep, totalSteps, onNext, onPrev, onSubmit, fo
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            backgroundColor: `${color.sentra.main} !important`,
+            background: 'none !important'
+          }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
+              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
+              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            }
+          }}
         >
           {isLoading ? (
             <>
@@ -953,7 +1050,7 @@ export default function CreateOfferPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       await offerService.createOffer(formData);
       navigate('/dashboard/offers');
     } catch (err) {
@@ -991,9 +1088,9 @@ export default function CreateOfferPage() {
           <ArrowLeft className="w-5 h-5" />
           Back to Offers
         </button>
-        
+
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Create New Offer
           </h1>
           <p className="text-gray-600">Follow the steps to create a comprehensive offer for your customers</p>
@@ -1002,50 +1099,50 @@ export default function CreateOfferPage() {
 
       {/* Progress Bar */}
       <div>
-          <div className="flex items-center justify-between mb-4">
-            {[1, 2, 3, 4, 5, 6].map((step) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${
-                  step <= currentStep 
-                    ? 'bg-[#3b8169] text-white' 
-                    : 'bg-gray-200 text-gray-500'
+        <div className="flex items-center justify-between mb-4">
+          {[1, 2, 3, 4, 5, 6].map((step) => (
+            <div key={step} className="flex items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${step <= currentStep
+                ? 'bg-[#3b8169] text-white'
+                : 'bg-gray-200 text-gray-500'
                 }`}>
-                  {step < currentStep ? <Check className="w-5 h-5" /> : step}
-                </div>
-                {step < 6 && (
-                  <div className={`w-12 h-1 mx-2 transition-all duration-200 ${
-                    step < currentStep ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gray-200'
-                  }`} />
-                )}
+                {step < currentStep ? <Check className="w-5 h-5" /> : step}
               </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Basic Info</span>
-            <span>Products</span>
-            <span>Creative</span>
-            <span>Tracking</span>
-            <span>Rewards</span>
-            <span>Review</span>
-          </div>
+              {step < 6 && (
+                <div
+                  className={`w-12 h-1 mx-2 transition-all duration-200 ${step < currentStep ? '' : 'bg-gray-200'}`}
+                  style={step < currentStep ? { backgroundColor: color.sentra.main } : {}}
+                />
+              )}
+            </div>
+          ))}
         </div>
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>Basic Info</span>
+          <span>Products</span>
+          <span>Creative</span>
+          <span>Tracking</span>
+          <span>Rewards</span>
+          <span>Review</span>
+        </div>
+      </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
 
       {/* Step Content */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          {currentStep === 1 && <BasicInfoStep {...stepProps} />}
-          {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
-          {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
-          {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
-          {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
-          {currentStep === 6 && <ReviewStep {...stepProps} />}
-        </div>
+        {currentStep === 1 && <BasicInfoStep {...stepProps} />}
+        {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
+        {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
+        {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
+        {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
+        {currentStep === 6 && <ReviewStep {...stepProps} />}
       </div>
+    </div>
   );
 }

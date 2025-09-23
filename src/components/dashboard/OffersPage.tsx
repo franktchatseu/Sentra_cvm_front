@@ -108,30 +108,30 @@ export default function OffersPage() {
   const getStatusBadge = (status: LifecycleStatus) => {
     switch (status) {
       case 'draft':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Draft</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Draft</span>;
       case 'active':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Active</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Active</span>;
       case 'paused':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Paused</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Paused</span>;
       case 'expired':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Expired</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Expired</span>;
       case 'archived':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Archived</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Archived</span>;
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
     }
   };
 
   const getApprovalBadge = (status: ApprovalStatus) => {
     switch (status) {
       case 'pending':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Pending</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Pending</span>;
       case 'approved':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Approved</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Approved</span>;
       case 'rejected':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Rejected</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Rejected</span>;
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
     }
   };
 
@@ -159,71 +159,90 @@ export default function OffersPage() {
         </div>
         <button
           onClick={() => navigate('/dashboard/offers/create')}
-          className={`inline-flex items-center px-3 py-2 text-base ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105`}
+          className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 text-white"
+          style={{ backgroundColor: color.sentra.main }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+          }}
         >
-          <Plus className="h-5 w-5 mr-2" />
+          <Plus className="h-4 w-4 mr-2" />
           Create Offer
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className={`w-8 h-8 bg-[${color.entities.offers}]/10 rounded-lg flex items-center justify-center`}>
-                <Gift className={`h-5 w-5 text-[${color.entities.offers}]`} />
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ backgroundColor: color.entities.offers }}
+              >
+                <Gift className="h-6 w-6 text-white" />
               </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Total Offers</p>
-              <p className={`text-2xl font-semibold ${tw.textPrimary}`}>{totalOffers}</p>
+              <p className={`text-2xl font-bold ${tw.textPrimary}`}>{totalOffers}</p>
             </div>
           </div>
         </div>
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className={`w-8 h-8 bg-[${color.status.success.light}] rounded-lg flex items-center justify-center`}>
-                <CheckCircle className={`h-5 w-5 text-[${color.status.success.main}]`} />
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ backgroundColor: color.status.success.main }}
+              >
+                <CheckCircle className="h-6 w-6 text-white" />
               </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Active</p>
-              <p className={`text-2xl font-semibold ${tw.textPrimary}`}>
+              <p className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {offers.filter(o => o.lifecycle_status === 'active').length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className={`w-8 h-8 bg-[${color.status.warning.light}] rounded-lg flex items-center justify-center`}>
-                <Clock className={`h-5 w-5 text-[${color.status.warning.main}]`} />
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ backgroundColor: color.status.warning.main }}
+              >
+                <Clock className="h-6 w-6 text-white" />
               </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Pending</p>
-              <p className={`text-2xl font-semibold ${tw.textPrimary}`}>
+              <p className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {offers.filter(o => o.approval_status === 'pending').length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className={`w-8 h-8 bg-[${color.status.error.light}] rounded-lg flex items-center justify-center`}>
-                <XCircle className={`h-5 w-5 text-[${color.status.error.main}]`} />
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ backgroundColor: color.status.error.main }}
+              >
+                <XCircle className="h-6 w-6 text-white" />
               </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Expired</p>
-              <p className={`text-2xl font-semibold ${tw.textPrimary}`}>
+              <p className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {offers.filter(o => o.lifecycle_status === 'expired').length}
               </p>
             </div>
@@ -318,21 +337,21 @@ export default function OffersPage() {
               <tbody className={`bg-white divide-y divide-[${color.ui.border}]`}>
                 {filteredOffers.map((offer) => (
                   <tr key={offer.id} className={`hover:bg-[${color.ui.surface}]/50 transition-colors duration-150`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className={`h-10 w-10 rounded-lg bg-gradient-to-br from-[${color.entities.offers}] to-[${color.sentra.dark}] flex items-center justify-center`}>
-                            {getCategoryIcon(offer.category || '')}
-                          </div>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center space-x-4">
+                        <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.offers}` }}>
+                          {getCategoryIcon(offer.category || '')}
                         </div>
-                        <div className="ml-4">
-                          <div className={`text-sm font-medium ${tw.textPrimary}`}>{offer.name}</div>
-                          <div className={`text-sm ${tw.textMuted} truncate max-w-xs`}>{offer.description}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className={`font-semibold text-base ${tw.textPrimary} truncate`}>{offer.name}</div>
+                          <div className={`text-sm ${tw.textSecondary} truncate flex items-center space-x-2 mt-1`}>
+                            <span className="truncate">{offer.description}</span>
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${offer.category?.name === 'Data Offers' ? `bg-[${color.status.info.light}] text-[${color.status.info.main}]` :
+                    <td className="px-6 py-5">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${offer.category?.name === 'Data Offers' ? `bg-[${color.status.info.light}] text-[${color.status.info.main}]` :
                         offer.category?.name === 'Voice Offers' ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` :
                           offer.category?.name === 'Combo Offers' ? `bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]` :
                             offer.category?.name === 'Loyalty Rewards' ? `bg-[${color.status.warning.light}] text-[${color.status.warning.main}]` :
@@ -342,16 +361,16 @@ export default function OffersPage() {
                         {offer.category?.name || 'Uncategorized'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-5">
                       {getStatusBadge(offer.lifecycle_status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-5">
                       {getApprovalBadge(offer.approval_status)}
                     </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${tw.textMuted}`}>
+                    <td className={`px-6 py-5 text-sm ${tw.textMuted}`}>
                       {offer.created_at ? new Date(offer.created_at).toLocaleDateString() : 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-5 text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => offer.id && handleViewOffer(offer.id)}

@@ -587,14 +587,14 @@ export default function UserManagementPage() {
                           <div className="flex items-center justify-end space-x-3">
                             <button
                               onClick={() => handleApproveRequest(request)}
-                              className={`p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full border-2 border-green-200 hover:border-green-600 transition-all duration-200 group/btn`}
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-200 group/btn"
                               title="Approve Request"
                             >
                               <CheckCircle className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                             </button>
                             <button
                               onClick={() => handleRejectRequest(request)}
-                              className={`p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full border-2 border-red-200 hover:border-red-600 transition-all duration-200 group/btn`}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 group/btn"
                               title="Reject Request"
                             >
                               <XCircle className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
@@ -652,14 +652,14 @@ export default function UserManagementPage() {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleApproveRequest(request)}
-                          className={`inline-flex items-center px-3 py-1 text-green-600 hover:text-green-700 hover:bg-green-50 text-xs font-medium rounded-full border-2 border-green-200 hover:border-green-600 transition-all duration-200`}
+                          className="inline-flex items-center px-3 py-1 text-green-600 hover:text-green-700 hover:bg-green-50 text-xs font-medium rounded-lg transition-all duration-200"
                         >
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Approve
                         </button>
                         <button
                           onClick={() => handleRejectRequest(request)}
-                          className={`inline-flex items-center px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium rounded-full border-2 border-red-200 hover:border-red-600 transition-all duration-200`}
+                          className="inline-flex items-center px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium rounded-lg transition-all duration-200"
                         >
                           <XCircle className="w-3 h-3 mr-1" />
                           Reject
