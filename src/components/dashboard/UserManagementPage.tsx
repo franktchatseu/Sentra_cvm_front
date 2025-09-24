@@ -259,13 +259,13 @@ export default function UserManagementPage() {
             }}
           >
             <Plus className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
-            <span className="font-semibold">Add User</span>
+            <span className="font-semibold text-sm">Add User</span>
           </button>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className={`bg-white border border-[${color.ui.border}] rounded-xl p-6`}>
+      <div className={` py-4`}>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="flex-1 relative">
             <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-[${color.ui.text.muted}] w-5 h-5`} />
@@ -309,47 +309,47 @@ export default function UserManagementPage() {
       </div>
 
       {/* Tabs */}
-      <div className={`bg-white rounded-xl shadow-sm overflow-hidden border border-[${color.ui.border}]/30`}>
-        <div className={`flex max-w-4xl mx-auto relative`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}]/30`}>
+        <div className={`flex relative`}>
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 relative ${activeTab === 'users'
-              ? `text-[${color.sentra.main}] bg-gradient-to-r from-[${color.sentra.main}]/5 to-[${color.sentra.main}]/10`
+            className={`flex-1 px-8 py-6 text-base font-semibold transition-colors duration-200 relative ${activeTab === 'users'
+              ? `border-b-2`
               : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/30`
               }`}
+            style={{
+              borderBottomColor: activeTab === 'users' ? '#3B82F6' : 'transparent'
+            }}
           >
-            <div className="flex items-center justify-center space-x-2">
-              <Users className="w-4 h-4" style={{ color: activeTab === 'users' ? color.sentra.main : undefined }} />
+            <div className="flex items-center justify-center space-x-3">
+              <Users className="w-5 h-5" style={{ color: activeTab === 'users' ? '#3B82F6' : undefined }} />
               <span>Users</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === 'users'
-                ? `bg-[${color.sentra.main}]/20 text-[${color.sentra.main}]`
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${activeTab === 'users'
+                ? `bg-blue-100 text-blue-600`
                 : `bg-[${color.ui.surface}] ${tw.textMuted}`}`}>
                 {users.length}
               </span>
             </div>
-            {activeTab === 'users' && (
-              <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[${color.sentra.main}] to-[${color.sentra.dark}] rounded-t-full`} />
-            )}
           </button>
           <button
             onClick={() => setActiveTab('requests')}
-            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 relative ${activeTab === 'requests'
-              ? `text-[${color.entities.analytics}] bg-gradient-to-r from-[${color.entities.analytics}]/5 to-[${color.entities.analytics}]/10`
+            className={`flex-1 px-8 py-6 text-base font-semibold transition-colors duration-200 relative ${activeTab === 'requests'
+              ? `border-b-2`
               : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/30`
               }`}
+            style={{
+              borderBottomColor: activeTab === 'requests' ? '#DB2777' : 'transparent'
+            }}
           >
-            <div className="flex items-center justify-center space-x-2">
-              <Clock className="w-4 h-4" style={{ color: activeTab === 'requests' ? color.entities.analytics : undefined }} />
+            <div className="flex items-center justify-center space-x-3">
+              <Clock className="w-5 h-5" style={{ color: activeTab === 'requests' ? '#DB2777' : undefined }} />
               <span>Pending Requests</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === 'requests'
-                ? `bg-[${color.entities.analytics}]/20 text-[${color.entities.analytics}]`
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${activeTab === 'requests'
+                ? `bg-pink-100 text-pink-600`
                 : `bg-[${color.ui.surface}] ${tw.textMuted}`}`}>
                 {accountRequests.filter(r => r.force_password_reset).length}
               </span>
             </div>
-            {activeTab === 'requests' && (
-              <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[${color.entities.analytics}] to-[${color.entities.analytics}]/80 rounded-t-full`} />
-            )}
           </button>
         </div>
 
