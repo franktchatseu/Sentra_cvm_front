@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, BarChart3, Settings, ArrowLeft, ArrowRight, Edit, X } from 'lucide-react';
+import { Plus, Trash2, BarChart3, Settings, Edit, X } from 'lucide-react';
 
 interface TrackingRule {
   id: string;
@@ -22,8 +22,6 @@ interface TrackingSource {
 interface OfferTrackingStepProps {
   trackingSources: TrackingSource[];
   onTrackingSourcesChange: (sources: TrackingSource[]) => void;
-  onNext: () => void;
-  onPrev: () => void;
 }
 
 const TRACKING_TYPES = [
@@ -47,9 +45,7 @@ const CONDITIONS = [
 
 export default function OfferTrackingStep({
   trackingSources,
-  onTrackingSourcesChange,
-  onNext,
-  onPrev
+  onTrackingSourcesChange
 }: OfferTrackingStepProps) {
   const [selectedSource, setSelectedSource] = useState<string | null>(
     trackingSources.length > 0 ? trackingSources[0].id : null
@@ -136,10 +132,10 @@ export default function OfferTrackingStep({
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <BarChart3 className="w-8 h-8 text-emerald-600" />
+        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <BarChart3 className="w-8 h-8 text-gray-600" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Tracking</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Offer Tracking</h2>
         <p className="text-gray-600">Configure tracking sources and rules for offer performance</p>
       </div>
 
@@ -151,7 +147,14 @@ export default function OfferTrackingStep({
               <h3 className="font-semibold text-gray-900">Tracking Sources</h3>
               <button
                 onClick={addTrackingSource}
-                className="inline-flex items-center px-3 py-1 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                className="inline-flex items-center px-3 py-1.5 text-xs text-white rounded-lg transition-colors font-medium"
+                style={{ backgroundColor: '#3b8169' }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                }}
               >
                 <Plus className="w-4 h-4 mr-1" />
                 Add
@@ -159,16 +162,15 @@ export default function OfferTrackingStep({
             </div>
 
             {trackingSources.length === 0 ? (
-              <div className="text-center py-8">
-                <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm mb-4">No tracking sources yet</p>
-                <button
-                  onClick={addTrackingSource}
-                  className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Source
-                </button>
+              <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Tracking Sources Added</h3>
+                <p className="text-gray-500 text-sm mb-4">Set up how you'll track customer engagement and measure offer performance</p>
+                <div className="text-xs text-gray-400">
+                  Click the "Add" button above to get started
+                </div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -177,15 +179,15 @@ export default function OfferTrackingStep({
                     key={source.id}
                     onClick={() => setSelectedSource(source.id)}
                     className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedSource === source.id
-                      ? 'border-emerald-300 bg-emerald-50'
+                      ? 'border-gray-300 bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${source.enabled ? 'bg-emerald-100' : 'bg-gray-100'
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${source.enabled ? 'bg-gray-100' : 'bg-gray-100'
                           }`}>
-                          <BarChart3 className={`w-4 h-4 ${source.enabled ? 'text-emerald-600' : 'text-gray-400'
+                          <BarChart3 className={`w-4 h-4 ${source.enabled ? 'text-gray-600' : 'text-gray-400'
                             }`} />
                         </div>
                         <div>
@@ -234,7 +236,7 @@ export default function OfferTrackingStep({
                       onChange={(e) => updateTrackingSource(selectedSourceData.id, {
                         name: e.target.value
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     />
                   </div>
 
@@ -247,7 +249,7 @@ export default function OfferTrackingStep({
                       onChange={(e) => updateTrackingSource(selectedSourceData.id, {
                         type: e.target.value as 'recharge' | 'usage_metric' | 'custom'
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     >
                       {TRACKING_TYPES.map(type => (
                         <option key={type.value} value={type.value}>
@@ -266,7 +268,7 @@ export default function OfferTrackingStep({
                     onChange={(e) => updateTrackingSource(selectedSourceData.id, {
                       enabled: e.target.checked
                     })}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
                   />
                   <label htmlFor={`enabled-${selectedSourceData.id}`} className="ml-2 text-sm text-gray-700">
                     Set as default tracking source
@@ -309,7 +311,7 @@ export default function OfferTrackingStep({
                                 Priority: {rule.priority}
                               </span>
                               <span className={`px-2 py-1 text-xs rounded ${rule.enabled
-                                ? 'bg-green-100 text-green-700'
+                                ? 'bg-gray-100 text-gray-700'
                                 : 'bg-red-100 text-red-700'
                                 }`}>
                                 {rule.enabled ? 'Enabled' : 'Disabled'}
@@ -344,19 +346,12 @@ export default function OfferTrackingStep({
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="text-center py-12">
-                <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Source Selected</h3>
-                <p className="text-gray-500 mb-4">Add a tracking source to start configuring</p>
-                <button
-                  onClick={addTrackingSource}
-                  className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Source
-                </button>
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-8 h-8 text-gray-400" />
               </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Source Selected</h3>
+              <p className="text-gray-500 text-sm">Select a tracking source from the list above to start configuring.</p>
             </div>
           )}
         </div>
@@ -458,7 +453,7 @@ export default function OfferTrackingStep({
                   id="rule-enabled"
                   checked={editingRule.enabled}
                   onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:outline-none"
                 />
                 <label htmlFor="rule-enabled" className="ml-2 text-sm text-gray-700">
                   Enable this rule
@@ -487,23 +482,6 @@ export default function OfferTrackingStep({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-between pt-6">
-        <button
-          onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Previous
-        </button>
-        <button
-          onClick={onNext}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
     </div>
   );
 }

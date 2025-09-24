@@ -622,7 +622,7 @@ export default function CreateOfferPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
       {/* Header */}
       <div className={`bg-white border-b border-[${color.ui.border}] shadow-sm`}>
         <div className="max-w-7xl mx-auto px-8 sm:px-8 lg:px-8">

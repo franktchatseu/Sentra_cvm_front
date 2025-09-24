@@ -39,7 +39,7 @@ function App() {
       <ToastProvider>
         <ConfirmProvider>
           <Router>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen" style={{ backgroundColor: '#e5e7eb' }}>
               <AppRoutes />
             </div>
           </Router>

@@ -112,7 +112,7 @@ function BasicInfoStep({ onNext, formData, setFormData }: Omit<StepProps, 'curre
         >
           <Gift className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Basic Information</h2>
         <p className="text-gray-600">Let's start with the essential details of your offer</p>
       </div>
 
@@ -126,7 +126,7 @@ function BasicInfoStep({ onNext, formData, setFormData }: Omit<StepProps, 'curre
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Summer Data Bundle"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:outline-none transition-all duration-200"
             required
           />
         </div>
@@ -140,7 +140,7 @@ function BasicInfoStep({ onNext, formData, setFormData }: Omit<StepProps, 'curre
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this offer provides to customers..."
             rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:outline-none transition-all duration-200"
           />
         </div>
 
@@ -176,39 +176,13 @@ function BasicInfoStep({ onNext, formData, setFormData }: Omit<StepProps, 'curre
               { value: '3', label: 'Combo' },
               { value: '4', label: 'Loyalty' }
             ]}
-            value={formData.category_id || ''}
+            value={formData.category_id ? String(formData.category_id) : ''}
             onChange={(value) => setFormData({ ...formData, category_id: value ? Number(value) : undefined })}
             placeholder="Select category"
           />
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <button
-          onClick={handleNext}
-          disabled={!formData.name.trim() || !formData.offer_type}
-          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
-          }}
-          onMouseEnter={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-            }
-          }}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
     </div>
   );
 }
@@ -236,7 +210,7 @@ function ProductStepWrapper({ onNext, onPrev, formData, setFormData }: Omit<Step
         >
           <Package className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Products</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Offer Products</h2>
         <p className="text-gray-600">Select the products that will be included in this offer</p>
       </div>
 
@@ -248,34 +222,6 @@ function ProductStepWrapper({ onNext, onPrev, formData, setFormData }: Omit<Step
         />
       </div>
 
-      <div className="flex justify-between">
-        <button
-          onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Previous
-        </button>
-        <button
-          onClick={handleNext}
-          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-          style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
-          }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-          }}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
     </div>
   );
 }
@@ -363,7 +309,7 @@ function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<S
         >
           <Target className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Eligibility Rules</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Eligibility Rules</h2>
         <p className="text-gray-600">Define who can access this offer and when</p>
       </div>
 
@@ -443,14 +389,14 @@ function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<S
       <div className="flex justify-between pt-6">
         <button
           onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm font-medium"
         >
           <ChevronLeft className="w-4 h-4" />
           Previous
         </button>
         <button
           onClick={handleNext}
-          className="px-4 py-2 text-white rounded-lg transition-all shadow-lg flex items-center gap-2 text-base"
+          className="px-4 py-2 text-white rounded-lg transition-all shadow-lg flex items-center gap-2 text-sm font-medium"
           style={{
             backgroundColor: `${color.sentra.main} !important`,
             background: 'none !important'
@@ -474,7 +420,7 @@ function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<S
 
 
 // Step 6: Review
-function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, rewards, isLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext' | 'setFormData'>) {
+function ReviewStep({ onSubmit, formData, creatives, trackingSources, rewards, isLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext' | 'setFormData' | 'onPrev'>) {
   const handleSubmit = () => {
     onSubmit();
   };
@@ -488,7 +434,7 @@ function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, re
         >
           <Eye className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Review & Create</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Review & Create</h2>
         <p className="text-gray-600">Review your offer details before creating</p>
       </div>
 
@@ -645,48 +591,6 @@ function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, re
         </div>
       </div>
 
-      <div className="flex justify-between">
-        <button
-          onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Previous
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading}
-          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
-          }}
-          onMouseEnter={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-            }
-          }}
-        >
-          {isLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Creating...
-            </>
-          ) : (
-            <>
-              <Check className="w-5 h-5" />
-              Create Offer
-            </>
-          )}
-        </button>
-      </div>
     </div>
   );
 }
@@ -963,49 +867,6 @@ function SettingsStepOld({ onPrev, onSubmit, formData, setFormData, isLoading }:
           </div>
         </div>
       </div>
-
-      <div className="flex justify-between">
-        <button
-          onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Previous
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading}
-          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
-          }}
-          onMouseEnter={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
-            }
-          }}
-        >
-          {isLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Creating...
-            </>
-          ) : (
-            <>
-              <Check className="w-5 h-5" />
-              Create Offer
-            </>
-          )}
-        </button>
-      </div>
     </div>
   );
 }
@@ -1078,7 +939,7 @@ export default function CreateOfferPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-gray-100 min-h-screen  overflow-y-auto">
       {/* Header */}
       <div>
         <button
@@ -1102,10 +963,13 @@ export default function CreateOfferPage() {
         <div className="flex items-center justify-between mb-4">
           {[1, 2, 3, 4, 5, 6].map((step) => (
             <div key={step} className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${step <= currentStep
-                ? 'bg-[#3b8169] text-white'
-                : 'bg-gray-200 text-gray-500'
-                }`}>
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${step <= currentStep
+                  ? 'text-white'
+                  : 'bg-gray-200 text-gray-500'
+                  }`}
+                style={step <= currentStep ? { backgroundColor: color.sentra.main } : {}}
+              >
                 {step < currentStep ? <Check className="w-5 h-5" /> : step}
               </div>
               {step < 6 && (
@@ -1135,13 +999,85 @@ export default function CreateOfferPage() {
       )}
 
       {/* Step Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        {currentStep === 1 && <BasicInfoStep {...stepProps} />}
-        {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
-        {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
-        {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
-        {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
-        {currentStep === 6 && <ReviewStep {...stepProps} />}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 min-h-[500px] relative overflow-visible flex flex-col">
+        <div className="flex-1">
+          {currentStep === 1 && <BasicInfoStep {...stepProps} />}
+          {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
+          {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
+          {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
+          {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
+          {currentStep === 6 && <ReviewStep {...stepProps} />}
+        </div>
+
+        {/* Fixed Navigation Buttons */}
+        <div className="flex justify-between pt-6 border-t border-gray-200 mt-6">
+          <button
+            onClick={handlePrev}
+            disabled={currentStep === 1}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Previous
+          </button>
+
+          {currentStep < totalSteps ? (
+            <button
+              onClick={handleNext}
+              className="px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-sm"
+              style={{
+                backgroundColor: color.sentra.main,
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              }}
+            >
+              Next Step
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm"
+              style={{
+                backgroundColor: color.sentra.main,
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.currentTarget.disabled) {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                }
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5" />
+                  Create Offer
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

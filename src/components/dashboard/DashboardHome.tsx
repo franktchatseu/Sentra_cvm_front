@@ -150,12 +150,12 @@ export default function DashboardHome() {
             transform: 'translateY(20px)'
           }}
         >
-          <div className="p-3 bg-gradient-to-br from-[#3A5A40] to-[#588157] rounded-2xl shadow-lg">
-            <span className="text-2xl">👋</span>
-          </div>
+
           <div>
-            <h1 className={`lg:text-3xl text-2xl font-bold ${tw.textPrimary}`}>
-              Welcome back, {getFirstName()}!
+            <h1 className={`lg:text-3xl text-2xl font-bold`} style={{ color: color.sentra.dark }}>
+              Welcome back, {getFirstName()}
+              <span className="text-2xl">👋</span>
+
             </h1>
             <p className={`${tw.textSecondary}  mt-2 text-sm font-medium`}>
               Here's what's happening with your campaigns today. Your performance is looking great!
@@ -169,7 +169,7 @@ export default function DashboardHome() {
           return (
             <div
               key={stat.name}
-              className="group cursor-pointer relative bg-white rounded-2xl border border-gray-200/50 p-4 md:p-6 hover:bg-white hover:z-20 hover:scale-105 hover:-translate-y-2 shadow-sm hover:shadow-xl transition-all duration-300"
+              className="group cursor-pointer relative bg-white rounded-2xl border border-gray-200/50 p-4 md:p-6 hover:z-20 hover:scale-105 hover:-translate-y-2 shadow-xs hover:shadow-sm transition-all duration-300"
               style={{
                 animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                 opacity: 0,
@@ -177,7 +177,7 @@ export default function DashboardHome() {
               }}
             >
               <div
-                className="absolute inset-0 rounded-2xl transition-all duration-700 ease-out opacity-0 group-hover:opacity-20"
+                className="absolute inset-0 rounded-2xl transition-all duration-700 ease-out opacity-0 group-hover:opacity-100"
                 style={{
                   background: `linear-gradient(135deg, ${stat.color}20, ${stat.color}10)`
                 }}
@@ -186,12 +186,13 @@ export default function DashboardHome() {
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className="p-3 rounded-2xl group-hover:scale-110 transition-all duration-500 ease-out transform-gpu shadow-lg"
+                    className="p-3 rounded-2xl group-hover:scale-110 transition-all duration-500 ease-out transform-gpu shadow-sm group-hover:shadow-md"
                     style={{
-                      background: `linear-gradient(135deg, ${stat.color}, ${stat.color}E6)`
+                      background: `linear-gradient(135deg, ${stat.color}, ${stat.color}E6)`,
+                      boxShadow: `0 4px 12px ${stat.color}20`
                     }}
                   >
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:rotate-12 transition-transform duration-500 ease-out" />
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white group-hover:rotate-12 group-hover:text-white transition-all duration-500 ease-out" />
                   </div>
                   <div className={`px-3 py-1.5 rounded-full text-sm font-bold group-hover:scale-105 transition-all duration-500 ease-out transform-gpu shadow-sm ${stat.changeType === 'positive'
                     ? `bg-gradient-to-r from-[${color.status.success.light}] to-[${color.status.success.light}]/80 text-[${color.status.success.main}] border border-[${color.status.success.main}]/20`
@@ -223,8 +224,8 @@ export default function DashboardHome() {
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
         {/* Recent Campaigns */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 shadow-sm hover:shadow-lg">
-            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.campaigns}]/10 via-[${color.entities.offers}]/5 to-[${color.entities.segments}]/10 border-b border-gray-200/50`}>
+          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 shadow-xs hover:shadow-sm group">
+            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.campaigns}]/15 via-[${color.entities.offers}]/10 to-[${color.entities.segments}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.campaigns}]/20 group-hover:via-[${color.entities.offers}]/15 group-hover:to-[${color.entities.segments}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #E91E6315)` }}>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-3">
                   <div
@@ -403,8 +404,8 @@ export default function DashboardHome() {
         </div>
 
         <div className="flex flex-col md:flex-row xl:flex-col space-y-6 md:space-y-0 md:space-x-6 xl:space-x-0 xl:space-y-6 h-full">
-          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-sm hover:shadow-lg">
-            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.products}]/10 via-[${color.entities.users}]/5 to-[${color.entities.analytics}]/10 border-b border-gray-200/50`}>
+          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-xs hover:shadow-sm group">
+            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.products}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.products}]/20 group-hover:via-[${color.entities.users}]/15 group-hover:to-[${color.entities.analytics}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #DC262615)` }}>
               <div className="flex items-center space-x-3">
                 <div
                   className="p-3 rounded-xl shadow-md"
@@ -449,8 +450,8 @@ export default function DashboardHome() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-sm hover:shadow-lg">
-            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.segments}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50`}>
+          <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-xs hover:shadow-sm group">
+            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.segments}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.segments}]/20 group-hover:via-[${color.entities.users}]/15 group-hover:to-[${color.entities.analytics}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #7C3AED15)` }}>
               <div className="flex items-center space-x-2">
                 <div
                   className="p-3 rounded-xl shadow-md"

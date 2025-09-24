@@ -19,14 +19,14 @@ export const colors = {
     hover: '#2f4a35',        // Slightly darker for hover states
   },
 
-  // Entity-Specific Colors (
+  // Entity-Specific Colors (Muted Professional Palette)
   entities: {
-    products: '#FF4757',      // Bright Red
-    offers: '#00D2D3',        // Bright Cyan
-    campaigns: '#E91E63',      // Bright Magenta
-    segments: '#3742FA',      // Bright Blue
-    users: '#8B5CF6',         // Purple
-    analytics: '#EC4899',      // Pink Rose
+    products: '#DC2626',      // Muted Red
+    offers: '#059669',        // Muted Green
+    campaigns: '#7C3AED',     // Purple
+    segments: '#0D9488',      // Teal
+    users: '#8B5CF6',         // Light Purple
+    analytics: '#DB2777',     // Muted Pink
     configuration: '#747D8C',  // Medium Gray
   },
 
