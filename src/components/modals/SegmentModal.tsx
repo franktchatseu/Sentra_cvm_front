@@ -16,7 +16,8 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
     name: '',
     description: '',
     tags: [] as string[],
-    conditions: [] as SegmentConditionGroup[]
+    conditions: [] as SegmentConditionGroup[],
+    type: "dynamic"
   });
   const [tagInput, setTagInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,13 +32,15 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
           name: segment.name,
           description: segment.description,
           tags: segment.tags,
-          conditions: segment.conditions
+          conditions: segment.conditions,
+          type: "dynamic"
         });
       } else {
         setFormData({
           name: '',
           description: '',
           tags: [],
+          type: "dynamic",
           conditions: []
         });
       }
@@ -112,7 +115,8 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
           name: formData.name,
           description: formData.description,
           tags: formData.tags,
-          conditions: formData.conditions
+          conditions: formData.conditions,
+          type: "dynamic"
         };
         savedSegment = await segmentService.createSegment(createRequest);
       }

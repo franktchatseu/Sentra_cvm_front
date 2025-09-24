@@ -94,7 +94,7 @@ export default function OfferRewardStep({
     onRewardsChange(updatedRewards);
   };
 
-  const addRule = (rewardId: string) => {
+  const addRule = () => {
     const newRule: RewardRule = {
       id: generateId(),
       name: 'New Rule',
@@ -155,34 +155,39 @@ export default function OfferRewardStep({
         <p className="text-gray-600">Configure reward rules and fulfillment responses</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Rewards List */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Rewards</h3>
-              <button
-                onClick={addReward}
-                className="inline-flex items-center px-3 py-1 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </button>
-            </div>
-
-            {rewards.length === 0 ? (
-              <div className="text-center py-8">
-                <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm mb-4">No rewards configured</p>
+      {rewards.length === 0 ? (
+        // Initial state - only show central Add Reward button
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="text-center py-16">
+            <Gift className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Reward Selected</h3>
+            <p className="text-gray-500 mb-6">Add a reward to start configuring</p>
+            <button
+              onClick={addReward}
+              className="inline-flex items-center px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Reward
+            </button>
+          </div>
+        </div>
+      ) : (
+        // After adding rewards - show the full interface
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Rewards List */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Rewards</h3>
                 <button
                   onClick={addReward}
-                  className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                  className="inline-flex items-center px-3 py-1 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Reward
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add
                 </button>
               </div>
-            ) : (
+
               <div className="space-y-2">
                 {rewards.map((reward) => (
                   <div
@@ -224,142 +229,135 @@ export default function OfferRewardStep({
                   </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Reward Configuration */}
-        <div className="lg:col-span-2">
-          {selectedRewardData ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="space-y-6">
-                {/* Reward Settings */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reward Name
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedRewardData.name}
-                      onChange={(e) => updateReward(selectedRewardData.id, { 
-                        name: e.target.value 
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
-                  </div>
+          {/* Reward Configuration */}
+          <div className="lg:col-span-2">
+            {selectedRewardData ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="space-y-6">
+                  {/* Reward Settings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reward Name
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedRewardData.name}
+                        onChange={(e) => updateReward(selectedRewardData.id, { 
+                          name: e.target.value 
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reward Type
-                    </label>
-                    <select
-                      value={selectedRewardData.type}
-                      onChange={(e) => updateReward(selectedRewardData.id, { 
-                        type: e.target.value as any 
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    >
-                      {REWARD_TYPES.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Rules Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-900">Reward Rules</h4>
-                    <button
-                      onClick={() => addRule(selectedRewardData.id)}
-                      className="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add Rule
-                    </button>
-                  </div>
-
-                  {selectedRewardData.rules.length === 0 ? (
-                    <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                      <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm mb-4">No rules configured</p>
-                      <button
-                        onClick={() => addRule(selectedRewardData.id)}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reward Type
+                      </label>
+                      <select
+                        value={selectedRewardData.type}
+                        onChange={(e) => updateReward(selectedRewardData.id, { 
+                          type: e.target.value as any 
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                        {REWARD_TYPES.map(type => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Rules Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-900">Reward Rules</h4>
+                      <button
+                        onClick={() => addRule()}
+                        className="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
                         Add Rule
                       </button>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {selectedRewardData.rules.map((rule) => (
-                        <div key={rule.id} className="p-4 border border-gray-200 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-3">
-                              <span className="font-medium text-sm text-gray-900">{rule.name}</span>
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                Priority: {rule.priority}
-                              </span>
-                              <span className={`px-2 py-1 text-xs rounded ${
-                                rule.enabled 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-red-100 text-red-700'
-                              }`}>
-                                {rule.enabled ? 'Enabled' : 'Disabled'}
-                              </span>
+
+                    {selectedRewardData.rules.length === 0 ? (
+                      <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm mb-4">No rules configured</p>
+                        <button
+                          onClick={() => addRule()}
+                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Rule
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedRewardData.rules.map((rule) => (
+                          <div key={rule.id} className="p-4 border border-gray-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-3">
+                                <span className="font-medium text-sm text-gray-900">{rule.name}</span>
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                  Priority: {rule.priority}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded ${
+                                  rule.enabled 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-red-100 text-red-700'
+                                }`}>
+                                  {rule.enabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingRule(rule);
+                                    setShowRuleModal(true);
+                                  }}
+                                  className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded transition-colors"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => removeRule(selectedRewardData.id, rule.id)}
+                                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => {
-                                  setEditingRule(rule);
-                                  setShowRuleModal(true);
-                                }}
-                                className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded transition-colors"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => removeRule(selectedRewardData.id, rule.id)}
-                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div>Track: {rule.bundle_subscription_track}</div>
+                              <div>Type: {rule.reward_type} - Value: {rule.reward_value}</div>
+                              <div>Success: {rule.success_text || 'Default success message'}</div>
                             </div>
                           </div>
-                          <div className="text-sm text-gray-600 space-y-1">
-                            <div>Track: {rule.bundle_subscription_track}</div>
-                            <div>Type: {rule.reward_type} - Value: {rule.reward_value}</div>
-                            <div>Success: {rule.success_text || 'Default success message'}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="text-center py-12">
-                <Gift className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Reward Selected</h3>
-                <p className="text-gray-500 mb-4">Add a reward to start configuring</p>
-                <button
-                  onClick={addReward}
-                  className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Reward
-                </button>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="text-center py-12">
+                  <Gift className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Reward Selected</h3>
+                  <p className="text-gray-500 mb-4">Select a reward from the list to configure</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Rule Modal */}
       {showRuleModal && editingRule && (

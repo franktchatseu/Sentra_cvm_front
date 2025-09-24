@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Filter, Search, Target, Users, Calendar, MoreHorizontal, Eye, Play, Pause, Edit } from 'lucide-react';
 
 export default function CampaignsPage() {
+  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState('all');
   
   const campaigns = [
@@ -105,7 +107,10 @@ export default function CampaignsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
           <p className="text-gray-600 mt-2 text-base">Manage and monitor your customer engagement campaigns</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-base whitespace-nowrap">
+        <button 
+          onClick={() => navigate('/dashboard/campaigns/create')}
+          className="inline-flex items-center px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-base whitespace-nowrap"
+        >
           <Plus className="h-5 w-5 mr-2" />
           Create Campaign
         </button>
