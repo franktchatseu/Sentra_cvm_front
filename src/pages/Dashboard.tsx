@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DashboardHome from '../components/dashboard/DashboardHome';
 import CampaignsPage from '../components/dashboard/CampaignsPage';
+import CreateCampaignPage from '../components/dashboard/CreateCampaignPage';
 import OffersPage from '../components/dashboard/OffersPage';
 import SegmentManagementPage from '../components/dashboard/SegmentManagementPage';
 import CreateOfferPage from '../components/dashboard/CreateOfferPage';
@@ -22,6 +23,7 @@ export default function Dashboard() {
       <Routes>
         <Route path="/" element={<DashboardHome />} />
         <Route path="/campaigns" element={<CampaignsPage />} />
+        <Route path="/campaigns/create" element={<CreateCampaignPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/offers/create" element={<CreateOfferPage />} />
         <Route path="/products" element={<ProductsPage />} />

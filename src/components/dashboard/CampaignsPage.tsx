@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Plus, Filter, Search, Target, Users, Calendar, MoreHorizontal, Eye, Play, Pause, Edit } from 'lucide-react';
 import { color, tw } from '../../design/utils';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 export default function CampaignsPage() {
+  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -117,6 +119,7 @@ export default function CampaignsPage() {
           <p className={`${tw.textSecondary} mt-2 text-sm`}>Manage and monitor your customer engagement campaigns</p>
         </div>
         <button
+          onClick={() => navigate('/dashboard/campaigns/create')}
           className="inline-flex items-center px-4 py-2 font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-sm whitespace-nowrap text-white"
           style={{ backgroundColor: color.sentra.main }}
           onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}

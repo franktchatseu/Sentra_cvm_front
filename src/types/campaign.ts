@@ -1,0 +1,154 @@
+export interface Campaign {
+  id: string;
+  name: string;
+  description?: string;
+  primary_objective: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
+  category: string;
+  status: 'draft' | 'pending_approval' | 'approved' | 'active' | 'paused' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  start_date?: string;
+  end_date?: string;
+  segments: CampaignSegment[];
+  offers: CampaignOffer[];
+  scheduling: CampaignScheduling;
+  control_group?: ControlGroup;
+  approval_workflow?: ApprovalWorkflow;
+}
+
+export interface CampaignSegment {
+  id: string;
+  name: string;
+  description?: string;
+  customer_count: number;
+  criteria: SegmentCriteria;
+  created_at: string;
+}
+
+export interface SegmentCriteria {
+  age_range?: { min: number; max: number };
+  customer_tier?: string[];
+  spending_range?: { min: number; max: number };
+  account_age_days?: { min: number; max: number };
+  purchase_behavior?: string[];
+  location?: string[];
+  channel_preference?: string[];
+  custom_attributes?: Record<string, any>;
+}
+
+export interface CampaignOffer {
+  id: string;
+  name: string;
+  description?: string;
+  offer_type: string;
+  reward_type: 'bundle' | 'points' | 'discount' | 'cashback' | 'free_service';
+  reward_value: string;
+  validity_period: number;
+  terms_conditions?: string;
+  personalization?: OfferPersonalization;
+  segments: string[]; // Segment IDs this offer is mapped to
+}
+
+export interface OfferPersonalization {
+  dynamic_variables: Record<string, string>;
+  segment_adapted_content: Record<string, string>;
+  localization: Record<string, string>;
+}
+
+export interface CampaignScheduling {
+  type: 'immediate' | 'scheduled' | 'recurring' | 'trigger_based';
+  start_date?: string;
+  end_date?: string;
+  time_zone: string;
+  delivery_times?: string[];
+  frequency?: {
+    type: 'daily' | 'weekly' | 'monthly';
+    interval: number;
+    days_of_week?: number[];
+    days_of_month?: number[];
+  };
+  frequency_capping?: {
+    max_per_day?: number;
+    max_per_week?: number;
+    max_per_month?: number;
+  };
+  throttling?: {
+    max_per_hour: number;
+    max_per_day: number;
+  };
+  blackout_windows?: BlackoutWindow[];
+  trigger_conditions?: TriggerCondition[];
+}
+
+export interface BlackoutWindow {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  reason?: string;
+}
+
+export interface TriggerCondition {
+  id: string;
+  name: string;
+  event_type: string;
+  conditions: Record<string, any>;
+  delay_minutes?: number;
+}
+
+export interface ControlGroup {
+  enabled: boolean;
+  percentage: number;
+  type: 'standard' | 'universal';
+  universal_frequency?: 'monthly' | 'quarterly';
+  exclusion_criteria?: Record<string, any>;
+}
+
+export interface ApprovalWorkflow {
+  required: boolean;
+  approvers: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  comments?: string;
+  approved_by?: string;
+  approved_at?: string;
+}
+
+export interface CreateCampaignRequest {
+  name: string;
+  description?: string;
+  primary_objective: Campaign['primary_objective'];
+  category: string;
+  segments: string[]; // Segment IDs
+  offers: CampaignOfferMapping[];
+  scheduling: CampaignScheduling;
+  control_group?: ControlGroup;
+}
+
+export interface CampaignOfferMapping {
+  offer_id: string;
+  segment_ids: string[];
+  priority: number;
+  personalization?: OfferPersonalization;
+}
+
+export interface CampaignTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  primary_objective: Campaign['primary_objective'];
+  default_segments: string[];
+  default_offers: string[];
+  default_scheduling: Partial<CampaignScheduling>;
+}
+
+export interface CampaignPreview {
+  estimated_reach: number;
+  segment_breakdown: { segment_name: string; count: number }[];
+  offer_mapping: { offer_name: string; segments: string[]; estimated_reach: number }[];
+  estimated_cost: number;
+  estimated_revenue: number;
+  roi_projection: number;
+  delivery_schedule: { date: string; estimated_sends: number }[];
+}
