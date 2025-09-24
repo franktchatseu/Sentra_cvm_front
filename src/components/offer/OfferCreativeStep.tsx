@@ -17,11 +17,11 @@ interface OfferCreativeStepProps {
 }
 
 const CHANNELS = [
-  { value: 'sms', label: 'SMS', icon: Smartphone, color: 'green' },
-  { value: 'email', label: 'Email', icon: Mail, color: 'blue' },
-  { value: 'push', label: 'Push Notification', icon: MessageSquare, color: 'purple' },
-  { value: 'web', label: 'Web', icon: Monitor, color: 'indigo' },
-  { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, color: 'green' }
+  { value: 'sms', label: 'SMS', icon: Smartphone, color: 'sentra' },
+  { value: 'email', label: 'Email', icon: Mail, color: 'sentra' },
+  { value: 'push', label: 'Push Notification', icon: MessageSquare, color: 'sentra' },
+  { value: 'web', label: 'Web', icon: Monitor, color: 'sentra' },
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, color: 'sentra' }
 ] as const;
 
 const LOCALES = [
@@ -89,9 +89,9 @@ export default function OfferCreativeStep({
         <p className="text-gray-600">Create channel-specific creative content for your offer</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Creative List */}
-        <div className="lg:col-span-1">
+        <div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Creatives</h3>
@@ -135,14 +135,14 @@ export default function OfferCreativeStep({
                       key={creative.id}
                       onClick={() => setSelectedCreative(creative.id)}
                       className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedCreative === creative.id
-                        ? 'border-blue-300 bg-blue-50'
+                        ? 'border-gray-300 bg-gray-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${channelConfig?.color || 'gray'}-100`}>
-                            <Icon className={`w-4 h-4 text-${channelConfig?.color || 'gray'}-600`} />
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                            <Icon className="w-4 h-4 text-gray-600" />
                           </div>
                           <div>
                             <div className="font-medium text-sm text-gray-900">
@@ -191,7 +191,7 @@ export default function OfferCreativeStep({
                     <select
                       value={selectedCreativeData.channel}
                       onChange={(e) => updateCreative(selectedCreativeData.id, {
-                        channel: e.target.value as any
+                        channel: e.target.value as 'sms' | 'email' | 'push' | 'web' | 'whatsapp'
                       })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     >
@@ -313,7 +313,6 @@ export default function OfferCreativeStep({
           )}
         </div>
       </div>
-
     </div>
   );
 }

@@ -8,6 +8,7 @@ import React from 'react';
  * 
  * @param variant - The background pattern variant:
  *   - 'default': Combines gradients, hexagons, and grid patterns
+ *   - 'subtle': Subtle, cute pattern for all pages
  *   - 'gradient': Only gradient patterns
  *   - 'hexagon': Only animated hexagon patterns
  *   - 'grid': Only grid patterns
@@ -25,7 +26,7 @@ import React from 'react';
  * <FixedBackground variant="hexagon" className="opacity-50" />
  */
 interface FixedBackgroundProps {
-  variant?: 'default' | 'gradient' | 'hexagon' | 'grid' | 'particles';
+  variant?: 'default' | 'subtle' | 'gradient' | 'hexagon' | 'grid' | 'particles';
   className?: string;
 }
 
@@ -55,6 +56,11 @@ export default function FixedBackground({
           <div className="fixed-bg-particles"></div>
         );
 
+      case 'subtle':
+        return (
+          <div className="fixed-bg-subtle"></div>
+        );
+
       case 'default':
       default:
         return (
@@ -79,7 +85,7 @@ export default function FixedBackground({
         width: '100vw',
         height: '100vh',
         overflow: 'hidden',
-        backgroundColor: 'var(--primary-color)'
+        backgroundColor: variant === 'subtle' ? '#f3f4f6' : 'var(--primary-color)'
       }}
     >
       {getBackgroundContent()}

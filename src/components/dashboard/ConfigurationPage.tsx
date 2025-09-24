@@ -195,7 +195,7 @@ export default function ConfigurationPage() {
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
               Configuration Management
             </h1>
-            <p className={`${tw.textSecondary} mt-1`}>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>
               Manage and configure all system settings and parameters
             </p>
           </div>

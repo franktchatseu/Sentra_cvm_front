@@ -37,7 +37,8 @@ export default function AuthenticatedLandingPage() {
       description: 'The central module where campaigns are created, scheduled, executed, and tracked.',
       icon: 'target',
       path: '/dashboard/campaigns',
-      color: 'from-teal-500 to-emerald-600'
+      color: 'from-teal-500 to-emerald-600',
+      iconColor: 'blue'
     },
     {
       id: 'analytics',
@@ -47,7 +48,8 @@ export default function AuthenticatedLandingPage() {
       description: 'Gain insights with powerful analytics and customizable reporting tools.',
       icon: 'bar-chart',
       path: '/dashboard/analytics',
-      color: 'from-purple-500 to-blue-600'
+      color: 'from-purple-500 to-blue-600',
+      iconColor: 'cyan'
     },
     {
       id: '360',
@@ -57,7 +59,8 @@ export default function AuthenticatedLandingPage() {
       description: 'Complete profile with demographics, usage, engagement, and behavioral insights.',
       icon: 'users',
       path: '/dashboard/customers',
-      color: 'from-purple-500 to-blue-600'
+      color: 'from-purple-500 to-blue-600',
+      iconColor: 'teal'
     },
     {
       id: 'xm',
@@ -67,7 +70,8 @@ export default function AuthenticatedLandingPage() {
       description: 'Design, deliver, and optimize customer journeys with integrated experience management.',
       icon: 'heart',
       path: '/dashboard/experiences',
-      color: 'from-orange-500 to-red-600'
+      color: 'from-orange-500 to-red-600',
+      iconColor: 'emerald'
     },
     {
       id: 'target',
@@ -77,7 +81,8 @@ export default function AuthenticatedLandingPage() {
       description: 'Advanced targeting with AI-driven segmentation and propensity modeling.',
       icon: 'target',
       path: '/dashboard/segments',
-      color: 'from-red-500 to-pink-600'
+      color: 'from-red-500 to-pink-600',
+      iconColor: 'green'
     },
     {
       id: 'connect',
@@ -87,7 +92,8 @@ export default function AuthenticatedLandingPage() {
       description: 'Omnichannel campaign execution with real-time tracking and adaptive optimization.',
       icon: 'send',
       path: '/dashboard/engagement',
-      color: 'from-blue-500 to-cyan-600'
+      color: 'from-blue-500 to-cyan-600',
+      iconColor: 'indigo'
     },
     {
       id: 'config',
@@ -97,7 +103,8 @@ export default function AuthenticatedLandingPage() {
       description: 'System-wide configuration management for all platform modules and settings.',
       icon: 'settings',
       path: '/dashboard/configuration',
-      color: 'from-gray-500 to-slate-600'
+      color: 'from-gray-500 to-slate-600',
+      iconColor: 'slate'
     }
   ];
 
@@ -145,37 +152,121 @@ export default function AuthenticatedLandingPage() {
             50% { transform: scale(1.02); }
           }
           
-          .hexagon-card {
-            width: 160px;
-            height: 160px;
+          .module-card-container {
+            background: linear-gradient(135deg, 
+              rgba(255, 255, 255, 0.1) 0%, 
+              rgba(255, 255, 255, 0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px;
             position: relative;
-            background: rgba(255, 255, 255, 0.1);
-            border: 3px solid #3A5A40;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            margin: 0 auto;
-            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-            padding: 20px;
+            overflow: hidden;
+            box-shadow: 
+              0 8px 32px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2),
+              inset 0 -1px 0 rgba(255, 255, 255, 0.1);
           }
           
-          .hexagon-card:hover {
-            border-color: #2f4a35;
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(58, 90, 64, 0.3);
+          .module-card-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+              transparent, 
+              rgba(255, 255, 255, 0.4), 
+              transparent);
           }
           
-          .hexagon-icon {
-            width: 45px;
-            height: 45px;
-            position: relative;
-            margin: 20px auto 15px auto;
-            background: linear-gradient(135deg, #f97316, #ea580c);
-            border-radius: 8px;
+          .module-card-container:hover {
+            background: linear-gradient(135deg, 
+              rgba(255, 255, 255, 0.2) 0%, 
+              rgba(255, 255, 255, 0.1) 100%);
+            transform: scale(1.05) translateY(-8px);
+            box-shadow: 
+              0 20px 40px rgba(58, 90, 64, 0.2),
+              0 8px 32px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3),
+              inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+          }
+          
+          .module-icon {
+            width: 56px;
+            height: 56px;
+            margin-bottom: 16px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+            box-shadow: 
+              0 8px 16px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+          }
+          
+          .module-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+              transparent, 
+              rgba(255, 255, 255, 0.5), 
+              transparent);
+          }
+          
+          .module-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 
+              0 12px 20px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+          }
+          
+          /* Icon color variants */
+          .module-icon.blue {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+          }
+          
+          .module-icon.green {
+            background: linear-gradient(135deg, #10B981, #047857);
+          }
+          
+          .module-icon.teal {
+            background: linear-gradient(135deg, #14B8A6, #0D9488);
+          }
+          
+          .module-icon.emerald {
+            background: linear-gradient(135deg, #059669, #047857);
+          }
+          
+          .module-icon.cyan {
+            background: linear-gradient(135deg, #06B6D4, #0891B2);
+          }
+          
+          .module-icon.indigo {
+            background: linear-gradient(135deg, #6366F1, #4F46E5);
+          }
+          
+          .module-icon.slate {
+            background: linear-gradient(135deg, #64748B, #475569);
           }
           
           .animate-card-float {
@@ -211,39 +302,34 @@ export default function AuthenticatedLandingPage() {
             }
           }
           
-          /* Custom 7-module layout */
+          /* Modules grid - 3 cards per line */
           .modules-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1rem;
             max-width: 80rem;
             margin: 0 auto;
           }
           
-          .module-card:nth-child(7) {
-            grid-column: 2;
-            justify-self: center;
-          }
-          
-          @media (max-width: 1024px) {
+          @media (min-width: 640px) {
             .modules-grid {
               grid-template-columns: repeat(2, 1fr);
-            }
-            .module-card:nth-child(7) {
-              grid-column: 1 / -1;
-              justify-self: center;
-              max-width: 50%;
+              gap: 1.5rem;
             }
           }
           
-          @media (max-width: 640px) {
+          @media (min-width: 1024px) {
             .modules-grid {
-              grid-template-columns: 1fr;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 1.5rem;
             }
-            .module-card:nth-child(7) {
-              grid-column: 1;
-              justify-self: stretch;
-              max-width: none;
+          }
+          
+          /* Keep 3 columns even on larger screens for better visual balance */
+          @media (min-width: 1280px) {
+            .modules-grid {
+              grid-template-columns: repeat(3, 1fr);
+              gap: 2rem;
             }
           }
           
@@ -279,29 +365,31 @@ export default function AuthenticatedLandingPage() {
                   <div
                     key={module.id}
                     onClick={() => handleModuleClick(module)}
-                    className={`module-card group cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-2 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+                    className={`group cursor-pointer transform transition-all duration-500 ease-out ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                       }`}
                     style={{ transitionDelay: `${index * 100}ms` }}
                   >
-                    <div className="flex flex-col items-center">
-                      {/* Hexagonal Shape with Heading Inside */}
-                      <div className="hexagon-card mb-12 flex flex-col items-center justify-center">
-                        <h3 className="text-base font-bold text-white mb-2 text-center leading-tight">
-                          {module.name}
-                        </h3>
-                        {module.subtitle && (
-                          <p className="text-green-300 font-semibold text-sm text-center leading-tight">
-                            {module.subtitle}
-                          </p>
-                        )}
+                    {/* Module Card Container */}
+                    <div className="module-card-container">
+                      {/* Icon */}
+                      <div className={`module-icon ${module.iconColor}`}>
+                        <IconComponent className="h-6 w-6 text-white" />
                       </div>
 
-                      {/* Description Below Hexagon */}
-                      <div className="text-center my-3">
-                        <p className="text-white/80 text-sm leading-relaxed max-w-xs">
-                          {module.description}
+                      {/* Title and Subtitle */}
+                      <h3 className="text-base font-bold text-white mb-1 text-center leading-tight">
+                        {module.name}
+                      </h3>
+                      {module.subtitle && (
+                        <p className="text-green-300 font-semibold text-sm text-center leading-tight mb-3">
+                          {module.subtitle}
                         </p>
-                      </div>
+                      )}
+
+                      {/* Description Inside Card */}
+                      <p className="text-white/80 text-sm leading-relaxed text-center">
+                        {module.description}
+                      </p>
                     </div>
                   </div>
                 );

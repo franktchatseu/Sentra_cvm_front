@@ -141,35 +141,33 @@ export default function SegmentsPage() {
         </button>
       </div>
 
-      {/* Type Filters */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-4 sm:p-6`}>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          {/* Type Tabs */}
-          <div className={`flex flex-wrap gap-1 bg-[${color.ui.surface}] rounded-lg p-1`}>
-            {segmentTypes.map((type) => (
-              <button
-                key={type.value}
-                onClick={() => setSelectedType(type.value)}
-                className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${selectedType === type.value
-                  ? `bg-white text-[${color.sentra.main}] shadow-sm`
-                  : `${tw.textSecondary} hover:${tw.textPrimary}`
-                  }`}
-              >
-                <span className="hidden sm:inline">{type.label} ({type.count})</span>
-                <span className="sm:hidden">{type.label}</span>
-              </button>
-            ))}
+      {/* Search and Filters */}
+      <div className={`bg-white border border-[${color.ui.border}] rounded-xl p-6`}>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="flex-1 relative">
+            <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-[${color.ui.text.muted}] w-5 h-5`} />
+            <input
+              type="text"
+              placeholder="Search segments..."
+              className={`w-full pl-10 pr-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.sentra.main}]/20`}
+            />
           </div>
 
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
-              <input
-                type="text"
-                placeholder="Search segments..."
-                className={`pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64 text-sm`}
-              />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-wrap gap-1 bg-gray-50 rounded-lg p-1">
+              {segmentTypes.map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => setSelectedType(type.value)}
+                  className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${selectedType === type.value
+                    ? `bg-white text-[${color.sentra.main}] shadow-sm`
+                    : `${tw.textSecondary} hover:${tw.textPrimary}`
+                    }`}
+                >
+                  <span className="hidden sm:inline">{type.label} ({type.count})</span>
+                  <span className="sm:hidden">{type.label}</span>
+                </button>
+              ))}
             </div>
             <button className={`flex items-center px-3 py-2 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}>
               <Filter className="h-5 w-5 mr-2" />

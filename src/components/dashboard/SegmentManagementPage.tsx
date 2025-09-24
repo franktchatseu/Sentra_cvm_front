@@ -222,7 +222,7 @@ export default function SegmentManagementPage() {
   return (
     <div className="space-y-6 ">
       {/* Header */}
-      <div className={`bg-white `}>
+      <div className={``}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Segment Management</h1>
@@ -241,40 +241,42 @@ export default function SegmentManagementPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col  rounded-xl shadow-sm border border-[${color.ui.border}] p-4 sm:p-6 lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-        {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-          <div className="relative">
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
+      {/* Search and Filters */}
+      <div className={`bg-white rounded-xl p-6`}>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="flex-1 relative">
+            <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-[${color.ui.text.muted}] w-5 h-5`} />
             <input
               type="text"
               placeholder="Search segments..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className={`pl-10 pr-4 py-4 border border-[${color.ui.border}] rounded-lg w-full sm:w-64 text-sm`}
+              className={`w-full pl-10 pr-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.sentra.main}]/20`}
             />
           </div>
-          <HeadlessSelect
-            options={statusOptions}
-            value={statusFilter}
-            onChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
-            placeholder="Select status..."
-            className="w-full sm:w-auto outline-none"
-          />
-          <button
-            onClick={handleSearch}
-            className={`flex outline-none items-center px-3 py-2.5 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}
-          >
-            <Filter className="h-5 w-5 mr-2" />
-            Filter
-          </button>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <HeadlessSelect
+              options={statusOptions}
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
+              placeholder="Select status..."
+              className="min-w-[140px]"
+            />
+            <button
+              onClick={handleSearch}
+              className={`flex items-center px-3 py-2 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}
+            >
+              <Filter className="h-5 w-5 mr-2" />
+              Filter
+            </button>
+          </div>
         </div>
 
         {/* Tags Filter */}
         {allTags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[${color.ui.border}]/30">
             <span className={`text-sm font-medium ${tw.textPrimary} py-2`}>Filter by tags:</span>
             {allTags.map(tag => (
               <button
@@ -312,7 +314,7 @@ export default function SegmentManagementPage() {
               <p className={`text-[${color.status.error.main}] font-medium mb-3 text-sm`}>{error}</p>
               <button
                 onClick={loadSegments}
-                className={`bg-[${color.status.error.main}] text-white px-4 py-2 rounded-lg hover:bg-[${color.status.error.dark}] transition-colors font-medium text-sm`}
+                className={`bg-[${color.status.error.main}] text-green-700 px-4 py-2 rounded-lg hover:bg-[${color.status.error.dark}] transition-colors font-medium text-sm`}
               >
                 Try Again
               </button>

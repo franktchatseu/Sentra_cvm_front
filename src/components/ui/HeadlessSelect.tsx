@@ -46,13 +46,14 @@ export default function HeadlessSelect({
           <Listbox.Button className={`
             relative w-full cursor-default rounded-lg bg-white py-3 pl-4 pr-10 text-left shadow-sm border transition-all duration-200
             ${error
-              ? 'border-red-300 focus:border-red-500'
-              : 'border-gray-300 focus:outline-none'
+              ? 'border-red-300'
+              : 'border-gray-300'
             }
             ${disabled
               ? 'bg-gray-50 text-gray-500 cursor-not-allowed'
-              : 'hover:border-gray-400 focus:outline-none'
+              : 'hover:border-gray-400'
             }
+            focus:outline-none focus:ring-0 focus:border-gray-300
           `}>
             <span className={`block ${selectedOption ? 'text-gray-900' : 'text-gray-500'}`}>
               {selectedOption ? selectedOption.label : placeholder}
@@ -79,7 +80,7 @@ export default function HeadlessSelect({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search options..."
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-200"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>

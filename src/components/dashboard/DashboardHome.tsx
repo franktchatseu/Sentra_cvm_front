@@ -225,7 +225,7 @@ export default function DashboardHome() {
         {/* Recent Campaigns */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 shadow-xs hover:shadow-sm group">
-            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.campaigns}]/15 via-[${color.entities.offers}]/10 to-[${color.entities.segments}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.campaigns}]/20 group-hover:via-[${color.entities.offers}]/15 group-hover:to-[${color.entities.segments}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #E91E6315)` }}>
+            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.campaigns}]/15 via-[${color.entities.offers}]/10 to-[${color.entities.segments}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.campaigns}]/20 group-hover:via-[${color.entities.offers}]/15 group-hover:to-[${color.entities.segments}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #8B5CF615)` }}>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-3">
                   <div
@@ -237,7 +237,7 @@ export default function DashboardHome() {
                     <Target className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h2 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>Recent Campaigns</h2>
+                    <h2 className={`text-xl  font-bold ${tw.textPrimary}`}>Recent Campaigns</h2>
                     <p className={`${tw.textSecondary} text-sm sm:text-sm mt-1 font-medium`}>Monitor your active and scheduled campaigns</p>
                   </div>
                 </div>
@@ -272,36 +272,34 @@ export default function DashboardHome() {
                     <div className={`absolute inset-0 bg-gradient-to-r from-[${color.entities.campaigns}]/5 to-[${color.entities.offers}]/5 opacity-0 group-hover:opacity-100 rounded-xl transition-all duration-500`}></div>
 
                     <div className="relative z-10">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3">
-                            <div className="flex items-start space-x-3 flex-1 min-w-0">
-                              <div
-                                className="p-3 rounded-xl transition-all duration-300 flex-shrink-0 shadow-md group-hover:shadow-lg"
-                                style={{
-                                  background: `linear-gradient(135deg, ${color.entities.campaigns}, ${color.entities.campaigns}E6)`
-                                }}
-                              >
-                                <Target className="h-5 w-5 text-white" />
-                              </div>
-                              <h3 className={`font-bold ${tw.textPrimary} text-base sm:text-lg group-hover:${tw.textPrimary} transition-colors duration-300 break-words`}>{campaign.name}</h3>
-                            </div>
-                            <span className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all duration-300 w-fit flex-shrink-0 ${campaign.status === 'active'
-                              ? `bg-[${color.status.success.light}] text-[${color.status.success.main}] border border-[${color.status.success.main}]/20 group-hover:bg-[${color.status.success.main}]/10`
-                              : `bg-[${color.status.warning.light}] text-[${color.status.warning.main}] border border-[${color.status.warning.main}]/20 group-hover:bg-[${color.status.warning.main}]/10`
-                              }`}>
-                              {campaign.status}
-                            </span>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div
+                            className="p-3 rounded-xl transition-all duration-300 flex-shrink-0 shadow-md group-hover:shadow-lg"
+                            style={{
+                              background: `linear-gradient(135deg, ${color.entities.campaigns}, ${color.entities.campaigns}E6)`
+                            }}
+                          >
+                            <Target className="h-5 w-5 text-white" />
                           </div>
-                          <p className={`text-sm sm:text-sm ${tw.textSecondary} mb-4 font-medium flex items-center`}>
-                            <Users className={`h-4 w-4 mr-2 text-[${color.entities.segments}]`} />
-                            {campaign.segment}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <h3 className={`font-bold ${tw.textPrimary} text-base sm:text-lg group-hover:${tw.textPrimary} transition-colors duration-300 break-words`}>{campaign.name}</h3>
+                            <p className={`text-sm ${tw.textSecondary} mt-1 font-medium flex items-center`}>
+                              <Users className={`h-4 w-4 mr-2 text-[${color.entities.segments}]`} />
+                              {campaign.segment}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex flex-row sm:flex-col items-center sm:items-end space-x-3 sm:space-x-0 sm:space-y-3">
-                          <span className={`text-sm sm:text-sm ${tw.textMuted} font-semibold bg-[${color.ui.surface}] px-2 sm:px-3 py-1 rounded-full`}>{campaign.startDate}</span>
+                        <div className="flex items-center space-x-3 flex-shrink-0">
+                          <span className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${campaign.status === 'active'
+                            ? `bg-[${color.status.success.light}] text-[${color.status.success.main}] border border-[${color.status.success.main}]/20 group-hover:bg-[${color.status.success.main}]/10`
+                            : `bg-[${color.status.warning.light}] text-[${color.status.warning.main}] border border-[${color.status.warning.main}]/20 group-hover:bg-[${color.status.warning.main}]/10`
+                            }`}>
+                            {campaign.status}
+                          </span>
+                          <span className={`text-sm ${tw.textMuted} font-semibold bg-[${color.ui.surface}] px-3 py-1 rounded-full`}>{campaign.startDate}</span>
                           <button
-                            className="p-2 sm:p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110"
+                            className="p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110"
                             style={{
                               color: color.ui.text.muted,
                               backgroundColor: 'transparent'
@@ -323,7 +321,8 @@ export default function DashboardHome() {
                       {campaign.status === 'active' && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           <div
-                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md bg-white border border-gray-200/50"
+                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md border border-gray-200/50"
+                            style={{ background: `linear-gradient(135deg, white, ${color.entities.segments}20)` }}
                           >
                             <div className="flex items-center justify-center mb-2">
                               <div
@@ -344,7 +343,8 @@ export default function DashboardHome() {
                           </div>
 
                           <div
-                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md bg-white border border-gray-200/50"
+                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md border border-gray-200/50"
+                            style={{ background: `linear-gradient(135deg, white, ${color.entities.campaigns}20)` }}
                           >
                             <div className="flex items-center justify-center mb-2">
                               <div
@@ -365,7 +365,8 @@ export default function DashboardHome() {
                           </div>
 
                           <div
-                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md bg-white border border-gray-200/50"
+                            className="rounded-xl p-3 sm:p-4 text-center transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm hover:shadow-md border border-gray-200/50"
+                            style={{ background: `linear-gradient(135deg, white, ${color.entities.offers}20)` }}
                           >
                             <div className="flex items-center justify-center mb-2">
                               <div
@@ -405,7 +406,7 @@ export default function DashboardHome() {
 
         <div className="flex flex-col md:flex-row xl:flex-col space-y-6 md:space-y-0 md:space-x-6 xl:space-x-0 xl:space-y-6 h-full">
           <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-xs hover:shadow-sm group">
-            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.products}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.products}]/20 group-hover:via-[${color.entities.users}]/15 group-hover:to-[${color.entities.analytics}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #DC262615)` }}>
+            <div className={`p-4  bg-gradient-to-r from-[${color.entities.products}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.products}]/20 group-hover:via-[${color.entities.users}]/15 group-hover:to-[${color.entities.analytics}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #DC262615)` }}>
               <div className="flex items-center space-x-3">
                 <div
                   className="p-3 rounded-xl shadow-md"
@@ -415,7 +416,7 @@ export default function DashboardHome() {
                 >
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
-                <h2 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>Quick Actions</h2>
+                <h2 className={`text-xl  font-bold ${tw.textPrimary}`}>Quick Actions</h2>
               </div>
             </div>
             <div className="p-4 sm:p-6">
@@ -451,17 +452,17 @@ export default function DashboardHome() {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden transition-all duration-500 flex-1 shadow-xs hover:shadow-sm group">
-            <div className={`p-4 sm:p-6 bg-gradient-to-r from-[${color.entities.segments}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.segments}]/20 group-hover:via-[${color.entities.users}]/15 group-hover:to-[${color.entities.analytics}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #7C3AED15)` }}>
+            <div className={`p-4  bg-gradient-to-r from-[${color.entities.segments}]/15 via-[${color.entities.users}]/10 to-[${color.entities.analytics}]/15 border-b border-gray-200/50 group-hover:from-[${color.entities.segments}]/20 group-hover:via-[${color.entities.users}]/15 group-hover:to-[${color.entities.analytics}]/20 transition-all duration-500`} style={{ background: `linear-gradient(135deg, white, #7C3AED15)` }}>
               <div className="flex items-center space-x-2">
                 <div
                   className="p-3 rounded-xl shadow-md"
                   style={{
-                    background: `linear-gradient(135deg, ${color.entities.users}, ${color.entities.users}E6)`
+                    background: `linear-gradient(135deg, ${color.entities.analytics}, ${color.entities.analytics}E6)`
                   }}
                 >
                   <Calendar className="h-5 w-5 text-white" />
                 </div>
-                <h2 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>Upcoming</h2>
+                <h2 className={`text-xl  font-bold ${tw.textPrimary}`}>Upcoming</h2>
               </div>
             </div>
             <div className="p-4 sm:p-6">

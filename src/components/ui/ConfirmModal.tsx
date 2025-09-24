@@ -34,14 +34,14 @@ const typeConfig = {
     iconColor: 'text-green-500',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
-    confirmButtonColor: 'bg-green-600 hover:bg-green-700 focus:ring-0',
+    confirmButtonColor: 'bg-[#3A5A40] hover:bg-[#2f4a35] focus:ring-0',
   },
   info: {
     icon: Info,
     iconColor: 'text-blue-500',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
-    confirmButtonColor: 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-0',
+    confirmButtonColor: 'bg-[#3A5A40] hover:bg-[#2f4a35] focus:outline-none focus:ring-0',
   },
 };
 
@@ -97,19 +97,17 @@ export default function ConfirmModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div 
-        className={`fixed inset-0 bg-black transition-opacity duration-300 ${
-          isOpen ? 'bg-opacity-50' : 'bg-opacity-0'
-        }`}
+      <div
+        className={`fixed inset-0 bg-black transition-opacity duration-300 ${isOpen ? 'bg-opacity-50' : 'bg-opacity-0'
+          }`}
         onClick={onClose}
       />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div 
-          className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ${
-            isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-          }`}
+        <div
+          className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            }`}
         >
           {/* Header */}
           <div className={`px-6 pt-6 pb-4 ${config.bgColor} ${config.borderColor} border-b`}>

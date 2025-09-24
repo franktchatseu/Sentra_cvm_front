@@ -7,11 +7,10 @@ export default function CampaignsPage() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate loading campaigns data
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1500); // 1.5 second loading simulation
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -128,7 +127,6 @@ export default function CampaignsPage() {
         </button>
       </div>
 
-      {/* Enhanced Filters */}
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           {/* Status Tabs */}
@@ -171,7 +169,7 @@ export default function CampaignsPage() {
               <input
                 type="text"
                 placeholder="Search campaigns..."
-                className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] w-72 text-sm`}
+                className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:ring-0 focus:border-gray-300 w-72 text-sm`}
               />
             </div>
             <button className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors text-base font-medium`}>
@@ -182,7 +180,6 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      {/* Enhanced Campaigns List */}
       <div className={`bg-white rounded-2xl border border-[${color.ui.border}] overflow-hidden`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -192,7 +189,7 @@ export default function CampaignsPage() {
         ) : filteredCampaigns.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className={`bg-[${color.ui.surface}]`}>
+              <thead className="bg-gray-50">
                 <tr>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Campaign</th>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>

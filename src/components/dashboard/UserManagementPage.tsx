@@ -238,11 +238,11 @@ export default function UserManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className={`bg-white`}>
+      <div >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary} mb-2`}>User Management</h1>
-            <p className={`${tw.textSecondary} text-base`}>Manage users and account requests</p>
+            <p className={`${tw.textSecondary} text-sm mt-2`}>Manage users and account requests</p>
           </div>
           <button
             onClick={() => {
@@ -264,87 +264,93 @@ export default function UserManagementPage() {
         </div>
       </div>
 
+      {/* Search and Filters */}
+      <div className={`bg-white border border-[${color.ui.border}] rounded-xl p-6`}>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="flex-1 relative">
+            <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-[${color.ui.text.muted}] w-5 h-5`} />
+            <input
+              type="text"
+              placeholder={`Search ${activeTab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full pl-10 pr-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.sentra.main}]/20`}
+            />
+          </div>
+
+          {activeTab === 'users' && (
+            <div className="flex flex-col sm:flex-row gap-4">
+              <HeadlessSelect
+                options={[
+                  { value: 'all', label: 'All Roles' },
+                  { value: 'admin', label: 'Admin' },
+                  { value: 'user', label: 'User' }
+                ]}
+                value={filterRole}
+                onChange={(value) => setFilterRole(value as 'all' | 'admin' | 'user')}
+                placeholder="Select role"
+                className="min-w-[140px]"
+              />
+
+              <HeadlessSelect
+                options={[
+                  { value: 'all', label: 'All Status' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' }
+                ]}
+                value={filterStatus}
+                onChange={(value) => setFilterStatus(value as 'all' | 'active' | 'inactive')}
+                placeholder="Select status"
+                className="min-w-[140px]"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Tabs */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] overflow-hidden`}>
-        <div className={`flex border-b border-[${color.ui.border}] max-w-4xl mx-auto relative`}>
+      <div className={`bg-white rounded-xl shadow-sm overflow-hidden border border-[${color.ui.border}]/30`}>
+        <div className={`flex max-w-4xl mx-auto relative`}>
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 ${activeTab === 'users'
-              ? `text-blue-600 border-b-2 border-blue-600 bg-blue-50`
-              : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/50`
+            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 relative ${activeTab === 'users'
+              ? `text-[${color.sentra.main}] bg-gradient-to-r from-[${color.sentra.main}]/5 to-[${color.sentra.main}]/10`
+              : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/30`
               }`}
           >
             <div className="flex items-center justify-center space-x-2">
-              <Users className="w-4 h-4" style={{ color: activeTab === 'users' ? color.entities.users : undefined }} />
+              <Users className="w-4 h-4" style={{ color: activeTab === 'users' ? color.sentra.main : undefined }} />
               <span>Users</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === 'users'
-                ? `bg-blue-100 text-blue-600`
+                ? `bg-[${color.sentra.main}]/20 text-[${color.sentra.main}]`
                 : `bg-[${color.ui.surface}] ${tw.textMuted}`}`}>
                 {users.length}
               </span>
             </div>
+            {activeTab === 'users' && (
+              <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[${color.sentra.main}] to-[${color.sentra.dark}] rounded-t-full`} />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('requests')}
-            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 ${activeTab === 'requests'
-              ? `text-pink-600 border-b-2 border-pink-600 bg-pink-50`
-              : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/50`
+            className={`flex-1 px-6 lg:px-8 py-4 text-base font-semibold transition-all duration-200 relative ${activeTab === 'requests'
+              ? `text-[${color.entities.analytics}] bg-gradient-to-r from-[${color.entities.analytics}]/5 to-[${color.entities.analytics}]/10`
+              : `${tw.textMuted} hover:${tw.textPrimary} hover:bg-[${color.ui.surface}]/30`
               }`}
           >
             <div className="flex items-center justify-center space-x-2">
               <Clock className="w-4 h-4" style={{ color: activeTab === 'requests' ? color.entities.analytics : undefined }} />
               <span>Pending Requests</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === 'requests'
-                ? `bg-pink-100 text-pink-600`
+                ? `bg-[${color.entities.analytics}]/20 text-[${color.entities.analytics}]`
                 : `bg-[${color.ui.surface}] ${tw.textMuted}`}`}>
                 {accountRequests.filter(r => r.force_password_reset).length}
               </span>
             </div>
-          </button>
-        </div>
-
-        {/* Search and Filters */}
-        <div className={`p-4 md:p-6 border-b border-[${color.ui.border}]`}>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
-            <div className="flex-1 relative">
-              <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-[${color.ui.text.muted}] w-5 h-5`} />
-              <input
-                type="text"
-                placeholder={`Search ${activeTab}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 bg-[${color.ui.surface}] focus:bg-white`}
-              />
-            </div>
-
-            {activeTab === 'users' && (
-              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                <HeadlessSelect
-                  options={[
-                    { value: 'all', label: 'All Roles' },
-                    { value: 'admin', label: 'Admin' },
-                    { value: 'user', label: 'User' }
-                  ]}
-                  value={filterRole}
-                  onChange={(value) => setFilterRole(value as 'all' | 'admin' | 'user')}
-                  placeholder="Select role"
-                  className="min-w-[140px]"
-                />
-
-                <HeadlessSelect
-                  options={[
-                    { value: 'all', label: 'All Status' },
-                    { value: 'active', label: 'Active' },
-                    { value: 'inactive', label: 'Inactive' }
-                  ]}
-                  value={filterStatus}
-                  onChange={(value) => setFilterStatus(value as 'all' | 'active' | 'inactive')}
-                  placeholder="Select status"
-                  className="min-w-[140px]"
-                />
-              </div>
+            {activeTab === 'requests' && (
+              <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[${color.entities.analytics}] to-[${color.entities.analytics}]/80 rounded-t-full`} />
             )}
-          </div>
+          </button>
         </div>
 
         {/* Content */}
@@ -383,7 +389,7 @@ export default function UserManagementPage() {
               {/* Desktop Table */}
               <div className="hidden lg:block overflow-hidden">
                 <table className="min-w-full">
-                  <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
+                  <thead className={`bg-gradient-to-r from-[${color.ui.surface}]/50 to-[${color.ui.surface}]/30`}>
                     <tr>
                       <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>User</th>
                       <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Role</th>
@@ -394,7 +400,7 @@ export default function UserManagementPage() {
                   </thead>
                   <tbody className="bg-white">
                     {filteredUsers.map((user) => (
-                      <tr key={user.user_id} className={`border-b border-[${color.ui.border}] hover:bg-gradient-to-r hover:from-[${color.entities.users}]/5 hover:to-[${color.sentra.main}]/5 transition-all duration-200 group`}>
+                      <tr key={user.user_id} className={`border-b border-[${color.ui.border}]/30 hover:bg-gradient-to-r hover:from-[${color.entities.users}]/5 hover:to-[${color.sentra.main}]/5 transition-all duration-200 group`}>
                         <td className="px-8 py-6">
                           <div className="flex items-center">
                             <div className="flex-shrink-0">
@@ -534,7 +540,7 @@ export default function UserManagementPage() {
               {/* Desktop Table */}
               <div className="hidden lg:block overflow-hidden">
                 <table className="min-w-full">
-                  <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
+                  <thead className={`bg-gradient-to-r from-[${color.ui.surface}]/50 to-[${color.ui.surface}]/30`}>
                     <tr>
                       <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Applicant</th>
                       <th className={`px-8 py-4 text-left text-sm font-semibold ${tw.textMuted} uppercase tracking-wide`}>Requested Role</th>
@@ -545,7 +551,7 @@ export default function UserManagementPage() {
                   </thead>
                   <tbody className="bg-white">
                     {filteredRequests.map((request) => (
-                      <tr key={request.user_id} className={`border-b border-[${color.ui.border}] hover:bg-gradient-to-r hover:from-[${color.entities.users}]/5 hover:to-[${color.sentra.main}]/5 transition-all duration-200 group`}>
+                      <tr key={request.user_id} className={`border-b border-[${color.ui.border}]/30 hover:bg-gradient-to-r hover:from-[${color.entities.users}]/5 hover:to-[${color.sentra.main}]/5 transition-all duration-200 group`}>
                         <td className="px-8 py-6">
                           <div className="flex items-center">
                             <div className="flex-shrink-0">
