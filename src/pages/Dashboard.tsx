@@ -16,6 +16,7 @@ import OfferTypesPage from '../components/dashboard/OfferTypesPage';
 import OfferCategoriesPage from '../components/dashboard/OfferCategoriesPage';
 import UserManagementPage from '../components/dashboard/UserManagementPage';
 import ConfigurationPage from '../components/dashboard/ConfigurationPage';
+import ControlGroupsPage from '../components/dashboard/ControlGroupsPage';
 
 export default function Dashboard() {
   return (
@@ -37,6 +38,7 @@ export default function Dashboard() {
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/segments" element={<SegmentManagementPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
+        <Route path="/control-groups" element={<ControlGroupsPage />} />
       </Routes>
     </DashboardLayout>
   );

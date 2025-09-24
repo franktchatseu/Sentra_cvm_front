@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Gift, Plus, Edit, Trash2, Target, Users, AlertCircle, Link, Copy, Save, X, Check } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Gift, Target, Users, X } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, CampaignOffer } from '../../../types/campaign';
 import OfferSelectionModal from './OfferSelectionModal';
 import CreateOfferModalWrapper from './CreateOfferModalWrapper';
@@ -28,106 +28,83 @@ export default function OfferMappingStep({
 }: OfferMappingStepProps) {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showCreateOfferModal, setShowCreateOfferModal] = useState(false);
-  const [offerMappings, setOfferMappings] = useState<{[offerId: string]: {segmentIds: string[], priority: number}}>({});
-  const [editingOffer, setEditingOffer] = useState<string | null>(null);
-  const [editingOfferData, setEditingOfferData] = useState<Partial<CampaignOffer>>({});
+  const [offerMappings, setOfferMappings] = useState<{[segmentId: string]: {offerIds: string[], priority: number}}>({});
+  const [editingSegmentId, setEditingSegmentId] = useState<string | null>(null);
 
   const handleNext = () => {
-    if (selectedOffers.length > 0 && Object.keys(offerMappings).length > 0) {
-      // Update formData with offer mappings
+    if (selectedSegments.length > 0 && Object.keys(offerMappings).length > 0) {
+      // Update formData with offer-segment mappings
+      const offerMappingsList: any[] = [];
+      Object.entries(offerMappings).forEach(([segmentId, mapping]) => {
+        mapping.offerIds.forEach(offerId => {
+          offerMappingsList.push({
+            offer_id: offerId,
+            segment_ids: [segmentId],
+            priority: mapping.priority
+          });
+        });
+      });
       setFormData({
         ...formData,
-        offers: Object.keys(offerMappings).map(offerId => ({
-          offer_id: offerId,
-          segment_ids: offerMappings[offerId].segmentIds,
-          priority: offerMappings[offerId].priority
-        }))
+        offers: offerMappingsList
       });
       onNext();
     }
   };
 
   const handleOfferSelect = (offers: CampaignOffer[]) => {
-    setSelectedOffers(offers);
+    if (editingSegmentId && offers.length > 0) {
+      // Map all selected offers to the current segment
+      setOfferMappings(prev => ({
+        ...prev,
+        [editingSegmentId]: {
+          offerIds: offers.map(o => o.id),
+          priority: 1
+        }
+      }));
+      
+      // Add to selected offers if not already present
+      const newOffers = [...selectedOffers];
+      offers.forEach(offer => {
+        if (!newOffers.find(o => o.id === offer.id)) {
+          newOffers.push(offer);
+        }
+      });
+      setSelectedOffers(newOffers);
+    }
     setShowOfferModal(false);
+    setEditingSegmentId(null);
   };
 
-  const handleEditOffer = (offerId: string) => {
-    const offer = selectedOffers.find(o => o.id === offerId);
-    if (offer) {
-      setEditingOffer(offerId);
-      setEditingOfferData({ ...offer });
+  const handleRemoveOfferFromSegment = (segmentId: string, offerId: string) => {
+    const currentMapping = offerMappings[segmentId];
+    if (currentMapping) {
+      const updatedOfferIds = currentMapping.offerIds.filter(id => id !== offerId);
+      
+      if (updatedOfferIds.length > 0) {
+        // Update mapping with remaining offers
+        setOfferMappings(prev => ({
+          ...prev,
+          [segmentId]: {
+            ...currentMapping,
+            offerIds: updatedOfferIds
+          }
+        }));
+      } else {
+        // Remove mapping entirely if no offers left
+        const newMappings = { ...offerMappings };
+        delete newMappings[segmentId];
+        setOfferMappings(newMappings);
+      }
     }
   };
 
-  const handleSaveEdit = () => {
-    if (editingOffer && editingOfferData) {
-      const updatedOffers = selectedOffers.map(offer => 
-        offer.id === editingOffer 
-          ? { ...offer, ...editingOfferData }
-          : offer
-      );
-      setSelectedOffers(updatedOffers);
-      setEditingOffer(null);
-      setEditingOfferData({});
-    }
-  };
 
-  const handleCancelEdit = () => {
-    setEditingOffer(null);
-    setEditingOfferData({});
-  };
 
-  const handleDuplicateOffer = (offer: CampaignOffer) => {
-    const duplicatedOffer: CampaignOffer = {
-      ...offer,
-      id: `${offer.id}-copy-${Date.now()}`,
-      name: `${offer.name} (Copie)`,
-    };
-    setSelectedOffers([...selectedOffers, duplicatedOffer]);
-  };
 
-  const handleDeleteOffer = (offerId: string) => {
-    setSelectedOffers(selectedOffers.filter(offer => offer.id !== offerId));
-    // Remove from mappings as well
-    const newMappings = { ...offerMappings };
-    delete newMappings[offerId];
-    setOfferMappings(newMappings);
-  };
-
-  const updateOfferMapping = (offerId: string, segmentIds: string[]) => {
-    setOfferMappings(prev => ({
-      ...prev,
-      [offerId]: { segmentIds, priority: 1 }
-    }));
-  };
-
-  const toggleSegmentForOffer = (offerId: string, segmentId: string) => {
-    const currentMapping = offerMappings[offerId] || { segmentIds: [], priority: 1 };
-    const isSelected = currentMapping.segmentIds.includes(segmentId);
-    
-    if (isSelected) {
-      updateOfferMapping(offerId, currentMapping.segmentIds.filter(id => id !== segmentId));
-    } else {
-      updateOfferMapping(offerId, [...currentMapping.segmentIds, segmentId]);
-    }
-  };
-
-  const getSegmentName = (segmentId: string) => {
-    return selectedSegments.find(s => s.id === segmentId)?.name || 'Unknown Segment';
-  };
-
-  const getMappedSegmentsForOffer = (offerId: string) => {
-    return offerMappings[offerId]?.segmentIds || [];
-  };
-
-  const getEstimatedReach = (segmentIds: string[]) => {
-    return selectedSegments
-      .filter(segment => segmentIds.includes(segment.id))
-      .reduce((total, segment) => total + segment.customer_count, 0);
-  };
-
-  const isFormValid = selectedOffers.length > 0 && Object.values(offerMappings).every(mapping => mapping.segmentIds.length > 0);
+  const isFormValid = selectedSegments.length > 0 && selectedSegments.every(segment => 
+    offerMappings[segment.id] && offerMappings[segment.id].offerIds.length > 0
+  );
 
   return (
     <div className="space-y-8">
@@ -142,203 +119,74 @@ export default function OfferMappingStep({
         </p>
       </div>
 
-      {/* Selected Segments Summary */}
-      {selectedSegments.length > 0 && (
-        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center">
-              <Target className="w-4 h-4 text-emerald-600 mr-2" />
-              Available Segments ({selectedSegments.length})
-            </h3>
-            <div className="text-xs text-gray-500">
-              Total: {selectedSegments.reduce((total, segment) => total + segment.customer_count, 0).toLocaleString()} customers
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedSegments.map((segment) => (
-              <div key={segment.id} className="inline-flex items-center bg-white rounded-full px-3 py-1.5 border border-emerald-200 shadow-sm">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
-                <span className="font-medium text-gray-900 text-xs">{segment.name}</span>
-                <span className="text-xs text-gray-500 ml-2">({segment.customer_count.toLocaleString()})</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Selected Offers and Mappings */}
+      {/* Segment to Offer Mappings */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Offer Mappings</h3>
-          <button
-            onClick={() => setShowOfferModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-[#3b8169] text-white rounded-lg hover:bg-[#2d5f4e] transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Offers
-          </button>
+          <h3 className="text-lg font-semibold text-gray-900">Segment to Offer Mappings</h3>
         </div>
 
-        {selectedOffers.length === 0 ? (
+        {selectedSegments.length === 0 ? (
           <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-            <Gift className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No offers selected</h3>
-            <p className="text-gray-500 mb-4">Select offers to include in your campaign</p>
-            <button
-              onClick={() => setShowOfferModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-[#3b8169] text-white rounded-lg hover:bg-[#2d5f4e] transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Select Offers
-            </button>
+            <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No segments available</h3>
+            <p className="text-gray-500 mb-4">Please select audience segments in the previous step to map offers</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {selectedOffers.map((offer) => {
-              const mappedSegmentIds = getMappedSegmentsForOffer(offer.id);
-              const estimatedReach = getEstimatedReach(mappedSegmentIds);
-              const isEditing = editingOffer === offer.id;
+            {selectedSegments.map((segment) => {
+              const mappedOffers = offerMappings[segment.id]?.offerIds || [];
+              const segmentOffers = mappedOffers.map(offerId => selectedOffers.find(o => o.id === offerId)).filter((offer): offer is CampaignOffer => offer !== undefined);
               
               return (
-                <div
-                  key={offer.id}
-                  className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-sm transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start space-x-4 flex-1">
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Gift className="w-6 h-6 text-purple-600" />
+                <div key={segment.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-[#588157] rounded-lg flex items-center justify-center">
+                        <Target className="w-5 h-5 text-white" />
                       </div>
-                      <div className="flex-1">
-                        {isEditing ? (
-                          <div className="space-y-3">
-                            <input
-                              type="text"
-                              value={editingOfferData.name || offer.name}
-                              onChange={(e) => setEditingOfferData({...editingOfferData, name: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                              placeholder="Nom de l'offre"
-                            />
-                            <textarea
-                              value={editingOfferData.description || offer.description}
-                              onChange={(e) => setEditingOfferData({...editingOfferData, description: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                              rows={2}
-                              placeholder="Description de l'offre"
-                            />
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={handleSaveEdit}
-                                className="inline-flex items-center px-3 py-1 bg-[#3b8169] text-white text-sm rounded-lg hover:bg-[#2d5f4e] transition-colors"
-                              >
-                                <Save className="w-3 h-3 mr-1" />
-                                Sauvegarder
-                              </button>
-                              <button
-                                onClick={handleCancelEdit}
-                                className="inline-flex items-center px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400 transition-colors"
-                              >
-                                <X className="w-3 h-3 mr-1" />
-                                Annuler
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{offer.name}</h4>
-                            <p className="text-sm text-gray-500 mt-1">{offer.description}</p>
-                            <div className="flex items-center space-x-4 mt-2">
-                              <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
-                                {offer.reward_type}
-                              </span>
-                              <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                                {offer.offer_type}
-                              </span>
-                              <span className="text-sm font-medium text-[#3b8169]">
-                                {offer.reward_value}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {!isEditing && (
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEditOffer(offer.id)}
-                          className="p-2 text-gray-400 hover:text-[#3b8169] transition-colors"
-                          title="Éditer l'offre"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDuplicateOffer(offer)}
-                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                          title="Dupliquer l'offre"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteOffer(offer.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                          title="Supprimer l'offre"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Segment Mapping */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Link className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-700">Mapped to Segments</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Select Segments
-                        </label>
-                        <div className="space-y-2">
-                          {selectedSegments.map((segment) => (
-                            <label key={segment.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={mappedSegmentIds.includes(segment.id)}
-                                onChange={() => toggleSegmentForOffer(offer.id, segment.id)}
-                                className="w-4 h-4 text-[#3b8169] border-gray-300 rounded focus:ring-[#3b8169]"
-                              />
-                              <div className="flex items-center space-x-2 flex-1">
-                                <Target className="w-3 h-3 text-blue-600" />
-                                <span className="text-sm text-gray-700 font-medium">{segment.name}</span>
-                                <span className="text-xs text-gray-500">
-                                  ({segment.customer_count.toLocaleString()})
-                                </span>
-                              </div>
-                              {mappedSegmentIds.includes(segment.id) && (
-                                <Check className="w-4 h-4 text-[#3b8169]" />
-                              )}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Estimated Reach */}
-                    {mappedSegmentIds.length > 0 && (
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700">Portée estimée:</span>
-                          <span className="text-sm font-semibold text-[#3b8169]">
-                            {estimatedReach.toLocaleString()} clients
+                        <h4 className="font-semibold text-gray-900">{segment.name}</h4>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {segment.customer_count.toLocaleString()} customers
                           </span>
                         </div>
                       </div>
-                    )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingSegmentId(segment.id);
+                        setShowOfferModal(true);
+                      }}
+                      className="text-[#588157] hover:text-[#3A5A40] hover:bg-[#588157]/10 px-3 py-1.5 rounded-md border border-[#588157]/30 hover:border-[#588157] flex items-center space-x-1.5 transition-all text-sm font-medium"
+                    >
+                      <Gift className="w-3.5 h-3.5" />
+                      <span>Add Offer</span>
+                    </button>
                   </div>
+
+                  {/* Mapped Offers */}
+                  {segmentOffers.length > 0 && (
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Mapped Offers:</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {segmentOffers.map((offer) => (
+                          <div key={offer.id} className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 flex items-center space-x-2 group">
+                            <Gift className="w-3 h-3 text-purple-600" />
+                            <span className="text-sm text-purple-800">{offer.name}</span>
+                            <button
+                              onClick={() => handleRemoveOfferFromSegment(segment.id, offer.id)}
+                              className="opacity-0 group-hover:opacity-100 text-purple-400 hover:text-purple-600 transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -346,48 +194,12 @@ export default function OfferMappingStep({
         )}
       </div>
 
-      {/* Mapping Validation */}
-      {selectedOffers.length > 0 && (
-        <div className="space-y-4">
-          {Object.values(offerMappings).some(mapping => mapping.segmentIds.length === 0) && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start space-x-2">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-red-900">Offres non associées</h4>
-                  <p className="text-sm text-red-700 mt-1">
-                    Certaines offres ne sont associées à aucun segment. Veuillez associer toutes les offres à au moins un segment.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Mapping Summary */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-blue-900 mb-2">Mapping Summary</h4>
-            <div className="space-y-2">
-              {Object.entries(offerMappings).map(([offerId, mapping]) => {
-                const offer = selectedOffers.find(o => o.id === offerId);
-                if (!offer || mapping.segmentIds.length === 0) return null;
-                
-                return (
-                  <div key={offerId} className="text-sm text-blue-700">
-                    <span className="font-medium">{offer.name}</span> → {' '}
-                    {mapping.segmentIds.map(segmentId => getSegmentName(segmentId)).join(', ')}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Navigation */}
       <div className="flex justify-between pt-6 border-t border-gray-200">
         <button
           onClick={onPrev}
-          className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
+          className="px-6 py-2 border border-[#A3B18A] text-[#3A5A40] rounded-lg hover:bg-[#DAD7CD] flex items-center space-x-2 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Previous
@@ -395,11 +207,7 @@ export default function OfferMappingStep({
         <button
           onClick={handleNext}
           disabled={!isFormValid}
-          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-            isFormValid
-              ? 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+          className="px-6 py-2 bg-[#588157] hover:bg-[#3A5A40] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg flex items-center space-x-2 transition-colors"
         >
           Next Step
           <ArrowRight className="w-5 h-5 ml-2" />
@@ -412,10 +220,10 @@ export default function OfferMappingStep({
           isOpen={showOfferModal}
           onClose={() => {
             setShowOfferModal(false);
-            setEditingOffer(null);
+            setEditingSegmentId(null);
           }}
           onSelect={handleOfferSelect}
-          selectedOffers={selectedOffers}
+          selectedOffers={editingSegmentId ? (offerMappings[editingSegmentId]?.offerIds.map(id => selectedOffers.find(o => o.id === id)).filter((offer): offer is CampaignOffer => offer !== undefined) || []) : []}
           onCreateNew={() => {
             setShowOfferModal(false);
             setShowCreateOfferModal(true);
@@ -428,7 +236,7 @@ export default function OfferMappingStep({
         <CreateOfferModalWrapper
           isOpen={showCreateOfferModal}
           onClose={() => setShowCreateOfferModal(false)}
-          onOfferCreated={(offerId) => {
+          onOfferCreated={() => {
             // Handle the newly created offer
             setShowCreateOfferModal(false);
             // Optionally refresh offers list or add to selected offers

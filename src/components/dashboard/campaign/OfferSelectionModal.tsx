@@ -205,7 +205,7 @@ export default function OfferSelectionModal({
             </select>
             <button
               onClick={onCreateNew}
-              className="inline-flex items-center px-4 py-2 bg-[#3b8169] text-white rounded-lg hover:bg-[#2d5f4e] transition-colors whitespace-nowrap"
+              className="inline-flex items-center px-4 py-2 bg-[#588157] text-white rounded-lg hover:bg-[#3A5A40] transition-colors whitespace-nowrap"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New
@@ -244,12 +244,12 @@ export default function OfferSelectionModal({
                   onClick={() => handleOfferToggle(offer)}
                   className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-sm ${
                     isSelected
-                      ? 'border-[#3b8169] bg-[#3b8169]/5'
+                      ? 'border-[#588157] bg-[#588157]/5'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   {isSelected && (
-                    <div className="absolute top-3 right-3 w-5 h-5 bg-[#3b8169] rounded-full flex items-center justify-center">
+                    <div className="absolute top-3 right-3 w-5 h-5 bg-[#588157] rounded-full flex items-center justify-center">
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
@@ -324,7 +324,7 @@ export default function OfferSelectionModal({
               disabled={tempSelectedOffers.length === 0}
               className={`px-6 py-2 rounded-lg font-medium transition-colors ${
                 tempSelectedOffers.length > 0
-                  ? 'bg-[#3b8169] text-white hover:bg-[#2d5f4e]'
+                  ? 'bg-[#588157] text-white hover:bg-[#3A5A40]'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
