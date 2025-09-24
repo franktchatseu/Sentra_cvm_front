@@ -4,7 +4,7 @@ import { User } from '../../types/auth';
 import { authService } from '../../services/authService';
 import { useToast } from '../../contexts/ToastContext';
 import HeadlessSelect from '../ui/HeadlessSelect';
-import AnimatedButton from '../ui/AnimatedButton';
+import { color, tw } from '../../design/utils';
 
 interface UserModalProps {
   isOpen: boolean;
@@ -68,7 +68,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
       if (user) {
         // Update existing user
         await authService.updateUser(user.user_id, formData);
-        success('Utilisateur modifié', `${formData.first_name} ${formData.last_name} a été modifié avec succès`);
+        success('User Updated', `${formData.first_name} ${formData.last_name} has been updated successfully`);
       } else {
         // Create new user
         await authService.createUser({
@@ -77,15 +77,15 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
           email: formData.private_email_address,
           role: formData.role
         });
-        success('Utilisateur créé', `${formData.first_name} ${formData.last_name} a été créé avec succès`);
+        success('User Created', `${formData.first_name} ${formData.last_name} has been created successfully`);
       }
-      
+
       onUserSaved();
       onClose();
     } catch (err) {
       error(
-        user ? 'Erreur de modification' : 'Erreur de création',
-        err instanceof Error ? err.message : 'Une erreur est survenue'
+        user ? 'Update Error' : 'Creation Error',
+        err instanceof Error ? err.message : 'An error occurred'
       );
     } finally {
       setIsLoading(false);
@@ -98,20 +98,25 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className={`flex items-center justify-between p-6 border-b border-[${color.ui.border}]`}>
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl">
+            <div
+              className="p-2 rounded-xl"
+              style={{
+                backgroundColor: color.entities.users
+              }}
+            >
               {user ? <UserIcon className="w-5 h-5 text-white" /> : <UserPlus className="w-5 h-5 text-white" />}
             </div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {user ? 'Modifier l\'utilisateur' : 'Ajouter un utilisateur'}
+            <h2 className={`text-xl font-bold ${tw.textPrimary}`}>
+              {user ? 'Edit User' : 'Add User'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`p-2 hover:bg-[${color.ui.surface}] rounded-lg transition-colors`}
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className={`w-5 h-5 ${tw.textMuted}`} />
           </button>
         </div>
 
@@ -119,50 +124,50 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Prénom *
+              <label className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}>
+                First Name *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <UserIcon className="w-5 h-5 text-gray-400" />
+                  <UserIcon className={`w-5 h-5 ${tw.textMuted}`} />
                 </div>
                 <input
                   name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200"
-                  placeholder="Prénom"
+                  className={`block w-full pl-10 pr-3 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                  placeholder="First Name"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Nom *
+              <label className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}>
+                Last Name *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <UserIcon className="w-5 h-5 text-gray-400" />
+                  <UserIcon className={`w-5 h-5 ${tw.textMuted}`} />
                 </div>
                 <input
                   name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200"
-                  placeholder="Nom"
+                  className={`block w-full pl-10 pr-3 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                  placeholder="Last Name"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}>
               Email *
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="w-5 h-5 text-gray-400" />
+                <Mail className={`w-5 h-5 ${tw.textMuted}`} />
               </div>
               <input
                 name="private_email_address"
@@ -170,25 +175,26 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                 value={formData.private_email_address}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none  transition-all duration-200"
+                className={`block w-full pl-10 pr-3 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
                 placeholder="email@example.com"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <Shield className="w-4 h-4 inline mr-2" />
-              Rôle
+            <label className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}>
+              <Shield className={`w-4 h-4 inline mr-2 ${tw.textMuted}`} />
+              Role
             </label>
             <HeadlessSelect
               options={[
-                { value: 'user', label: 'Utilisateur' },
-                { value: 'admin', label: 'Administrateur' }
+                { value: 'user', label: 'User' },
+                { value: 'admin', label: 'Administrator' }
               ]}
               value={formData.role}
-              onChange={(value) => setFormData({ ...formData, role: value as string })}
+              onChange={(value) => setFormData({ ...formData, role: value as 'admin' | 'user' })}
               placeholder="Select role"
+              className="text-sm"
             />
           </div>
 
@@ -198,10 +204,10 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
               name="is_activated"
               checked={formData.is_activated}
               onChange={handleChange}
-              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
+              className={`w-4 h-4 text-[${color.sentra.main}] border-[${color.ui.border}] rounded focus:outline-none`}
             />
-            <label className="ml-2 text-sm font-medium text-gray-700">
-              Compte activé
+            <label className={`ml-2 text-sm font-medium ${tw.textPrimary}`}>
+              Account Activated
             </label>
           </div>
 
@@ -210,18 +216,25 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className={`flex-1 px-4 py-3 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors font-medium text-sm`}
             >
-              Annuler
+              Cancel
             </button>
-            <AnimatedButton
+            <button
               type="submit"
-              loading={isLoading}
-              className="flex-1 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all duration-200 font-medium"
+              disabled={isLoading}
+              className="flex-1 text-white rounded-lg transition-all duration-200 font-medium text-sm flex items-center justify-center"
+              style={{ backgroundColor: color.sentra.main }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              }}
             >
               <Save className="w-4 h-4 mr-2" />
-              {user ? 'Modifier' : 'Créer'}
-            </AnimatedButton>
+              {user ? 'Update' : 'Create'}
+            </button>
           </div>
         </form>
       </div>

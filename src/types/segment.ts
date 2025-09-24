@@ -23,6 +23,7 @@ export interface SegmentConditionGroup {
     list_label?: string;
     list_headers?: string;
   };
+  profileConditions?: SegmentCondition[]; // For 360 profile conditions
 }
 
 export interface Segment {
@@ -42,6 +43,7 @@ export interface CreateSegmentRequest {
   name: string;
   description: string;
   tags: string[];
+  type: String;
   conditions: SegmentConditionGroup[];
 }
 
@@ -115,6 +117,58 @@ export const SEGMENT_FIELDS: SegmentField[] = [
     key: 'customer_profile.last_activity',
     label: 'Last Activity',
     type: 'string',
+    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+  }
+];
+
+// 360 Profile specific fields
+export const PROFILE_360_FIELDS: SegmentField[] = [
+  {
+    key: 'engagement_score',
+    label: 'Engagement Score',
+    type: 'number',
+    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+  },
+  {
+    key: 'lifetime_value',
+    label: 'Lifetime Value',
+    type: 'number',
+    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+  },
+  {
+    key: 'churn_risk',
+    label: 'Churn Risk',
+    type: 'string',
+    operators: ['equals', 'not_equals', 'in', 'not_in']
+  },
+  {
+    key: 'purchase_frequency',
+    label: 'Purchase Frequency',
+    type: 'string',
+    operators: ['equals', 'not_equals', 'in', 'not_in']
+  },
+  {
+    key: 'preferred_channel',
+    label: 'Preferred Channel',
+    type: 'string',
+    operators: ['equals', 'not_equals', 'in', 'not_in']
+  },
+  {
+    key: 'customer_segment',
+    label: 'Customer Segment',
+    type: 'string',
+    operators: ['equals', 'not_equals', 'in', 'not_in']
+  },
+  {
+    key: 'satisfaction_score',
+    label: 'Satisfaction Score',
+    type: 'number',
+    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+  },
+  {
+    key: 'recency_score',
+    label: 'Recency Score',
+    type: 'number',
     operators: ['equals', 'not_equals', 'greater_than', 'less_than']
   }
 ];

@@ -1,25 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Save, 
-  Eye, 
-  Package, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  Eye,
+  Package,
   CheckCircle,
   AlertCircle,
   Info,
   Target,
   Palette
 } from 'lucide-react';
-import AnimatedButton from '../components/ui/AnimatedButton';
-import AnimatedCard from '../components/ui/AnimatedCard';
-import AnimatedInput from '../components/ui/AnimatedInput';
 import Stepper from '../components/ui/Stepper';
 import FormSection from '../components/ui/FormSection';
 import HeadlessSelect from '../components/ui/HeadlessSelect';
 import HeadlessMultiSelect from '../components/ui/HeadlessMultiSelect';
 import TagInput from '../components/ui/TagInput';
+import { colors as color } from '../design/tokens';
+import { tw } from '../design/utils';
 
 // Types based on the database schema
 interface OfferFormData {
@@ -27,17 +26,17 @@ interface OfferFormData {
   name: string;
   description: string;
   category_id: number | null;
-  
+
   // Product Association
   product_ids: number[];
   primary_product_id: number | null;
-  
+
   // Offer Configuration
   lifecycle_status: 'draft' | 'active' | 'expired' | 'suspended';
   approval_status: 'pending' | 'approved' | 'rejected';
   reusable: boolean;
   multi_language: boolean;
-  
+
   // Eligibility Rules (JSONB)
   eligibility_rules: {
     customer_segments?: string[];
@@ -54,7 +53,7 @@ interface OfferFormData {
       hours_of_day?: string[];
     };
   };
-  
+
   // Creative Content
   creatives: {
     channel: 'sms' | 'email' | 'push' | 'web' | 'app';
@@ -235,15 +234,22 @@ export default function CreateOfferPage() {
               icon={Info}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <AnimatedInput
-                  label="Offer Name *"
-                  value={formData.name}
-                  onChange={(value) => setFormData({ ...formData, name: value })}
-                  placeholder="Enter offer name"
-                  error={errors.name}
-                  required
-                />
-                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Offer Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Enter offer name"
+                    className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200`}
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Category *
@@ -260,14 +266,21 @@ export default function CreateOfferPage() {
                 </div>
               </div>
 
-              <AnimatedInput
-                label="Description *"
-                value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value })}
-                placeholder="Describe your offer in detail"
-                error={errors.description}
-                type="text"
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Description *
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe your offer in detail"
+                  rows={4}
+                  className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200 resize-none`}
+                />
+                {errors.description && (
+                  <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -276,7 +289,7 @@ export default function CreateOfferPage() {
                       type="checkbox"
                       checked={formData.reusable}
                       onChange={(e) => setFormData({ ...formData, reusable: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:outline-none border-gray-300 rounded"
+                      className={`h-4 w-4 text-[${color.sentra.main}] focus:outline-none border-[${color.ui.border}] rounded`}
                     />
                     <span className="text-sm font-medium text-gray-700">Reusable Offer</span>
                   </label>
@@ -289,7 +302,7 @@ export default function CreateOfferPage() {
                       type="checkbox"
                       checked={formData.multi_language}
                       onChange={(e) => setFormData({ ...formData, multi_language: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:outline-none border-gray-300 rounded"
+                      className={`h-4 w-4 text-[${color.sentra.main}] focus:outline-none border-[${color.ui.border}] rounded`}
                     />
                     <span className="text-sm font-medium text-gray-700">Multi-language Support</span>
                   </label>
@@ -453,19 +466,18 @@ export default function CreateOfferPage() {
             >
               <div className="space-y-6">
                 {formData.creatives.map((creative, index) => (
-                  <AnimatedCard key={index} variant="elevated" className="p-6">
+                  <div key={index} className={`bg-white border border-[${color.ui.border}] rounded-lg p-6 shadow-sm`}>
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-lg font-medium text-gray-900">
                         Creative #{index + 1}
                       </h4>
                       {formData.creatives.length > 1 && (
-                        <AnimatedButton
-                          variant="error"
-                          size="sm"
+                        <button
                           onClick={() => removeCreative(index)}
+                          className="px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
                         >
                           Remove
-                        </AnimatedButton>
+                        </button>
                       )}
                     </div>
 
@@ -496,41 +508,56 @@ export default function CreateOfferPage() {
                     </div>
 
                     <div className="space-y-4">
-                      <AnimatedInput
-                        label="Title"
-                        value={creative.title}
-                        onChange={(value) => updateCreative(index, 'title', value)}
-                        placeholder="Enter creative title"
-                      />
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Title
+                        </label>
+                        <input
+                          type="text"
+                          value={creative.title}
+                          onChange={(e) => updateCreative(index, 'title', e.target.value)}
+                          placeholder="Enter creative title"
+                          className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200`}
+                        />
+                      </div>
 
-                      <AnimatedInput
-                        label="Text Content"
-                        value={creative.text_body}
-                        onChange={(value) => updateCreative(index, 'text_body', value)}
-                        placeholder="Enter text content for this creative"
-                        type="text"
-                      />
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Text Content
+                        </label>
+                        <textarea
+                          value={creative.text_body}
+                          onChange={(e) => updateCreative(index, 'text_body', e.target.value)}
+                          placeholder="Enter text content for this creative"
+                          rows={3}
+                          className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200 resize-none`}
+                        />
+                      </div>
 
                       {(creative.channel === 'email' || creative.channel === 'web') && (
-                        <AnimatedInput
-                          label="HTML Content"
-                          value={creative.html_body}
-                          onChange={(value) => updateCreative(index, 'html_body', value)}
-                          placeholder="Enter HTML content (optional)"
-                          type="text"
-                        />
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            HTML Content
+                          </label>
+                          <textarea
+                            value={creative.html_body}
+                            onChange={(e) => updateCreative(index, 'html_body', e.target.value)}
+                            placeholder="Enter HTML content (optional)"
+                            rows={4}
+                            className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200 resize-none`}
+                          />
+                        </div>
                       )}
                     </div>
-                  </AnimatedCard>
+                  </div>
                 ))}
 
-                <AnimatedButton
-                  variant="secondary"
+                <button
                   onClick={addCreative}
-                  className="w-full"
+                  className={`w-full px-4 py-2 text-sm font-medium rounded-lg border border-[${color.ui.border}] text-[${color.sentra.main}] hover:bg-[${color.sentra.main}] hover:text-white transition-all duration-200`}
                 >
                   Add Creative
-                </AnimatedButton>
+                </button>
 
                 {errors.creatives && (
                   <p className="text-sm text-red-600">{errors.creatives}</p>
@@ -549,7 +576,7 @@ export default function CreateOfferPage() {
               icon={CheckCircle}
             >
               <div className="space-y-6">
-                <AnimatedCard variant="elevated" className="p-6">
+                <div className={`bg-white border border-[${color.ui.border}] rounded-lg p-6 shadow-sm`}>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Offer Summary</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
@@ -571,7 +598,7 @@ export default function CreateOfferPage() {
                       <span className="ml-2 text-gray-900">{formData.creatives.length} created</span>
                     </div>
                   </div>
-                </AnimatedCard>
+                </div>
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
@@ -597,40 +624,36 @@ export default function CreateOfferPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className={`bg-white border-b border-[${color.ui.border}] shadow-sm`}>
         <div className="max-w-7xl mx-auto px-8 sm:px-8 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <AnimatedButton
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => navigate('/dashboard/offers')}
-                className="flex items-center space-x-2"
+                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`}
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Offers</span>
-              </AnimatedButton>
-              <div className="h-6 w-px bg-gray-300" />
-              <h1 className="text-xl font-semibold text-gray-900">Create New Offer</h1>
+              </button>
+              <div className={`h-6 w-px bg-[${color.ui.border}]`} />
+              <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>Create New Offer</h1>
             </div>
-            
+
             <div className="flex items-center space-x-3">
-              <AnimatedButton
-                variant="ghost"
+              <button
                 onClick={handleSaveDraft}
-                className="flex items-center space-x-2"
+                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`}
               >
                 <Save className="w-4 h-4" />
                 <span>Save Draft</span>
-              </AnimatedButton>
-              
-              <AnimatedButton
-                variant="secondary"
-                className="flex items-center space-x-2"
+              </button>
+
+              <button
+                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`}
               >
                 <Eye className="w-4 h-4" />
                 <span>Preview</span>
-              </AnimatedButton>
+              </button>
             </div>
           </div>
         </div>
@@ -649,42 +672,65 @@ export default function CreateOfferPage() {
           </div>
 
           {/* Form Content */}
-          <AnimatedCard variant="glass" className="p-8 mb-8">
+          <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-8 mb-8`}>
             {renderStepContent()}
-          </AnimatedCard>
+          </div>
 
           {/* Navigation */}
           <div className="flex items-center justify-between">
-            <AnimatedButton
-              variant="ghost"
+            <button
               onClick={handlePrevious}
               disabled={currentStep === 1}
-              className="flex items-center space-x-2"
+              className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${currentStep === 1
+                ? `${tw.textMuted} cursor-not-allowed`
+                : `${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`
+                }`}
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Previous</span>
-            </AnimatedButton>
+            </button>
 
             <div className="flex items-center space-x-3">
               {currentStep === STEPS.length ? (
-                <AnimatedButton
-                  variant="primary"
+                <button
                   onClick={handleSubmit}
-                  className="flex items-center space-x-2"
-                  glowEffect
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-all duration-200"
+                  style={{
+                    backgroundColor: `${color.sentra.main} !important`,
+                    background: 'none !important'
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
+                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
+                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                  }}
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>Submit Offer</span>
-                </AnimatedButton>
+                </button>
               ) : (
-                <AnimatedButton
-                  variant="primary"
+                <button
                   onClick={handleNext}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-all duration-200"
+                  style={{
+                    backgroundColor: `${color.sentra.main} !important`,
+                    background: 'none !important'
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
+                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
+                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                  }}
                 >
                   <span>Next</span>
                   <ArrowRight className="w-4 h-4" />
-                </AnimatedButton>
+                </button>
               )}
             </div>
           </div>
