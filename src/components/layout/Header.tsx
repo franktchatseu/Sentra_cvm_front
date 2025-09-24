@@ -141,7 +141,7 @@ export function GuestHeader({
 
           {showUserInfo && (
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-white/80 truncate max-w-32">
+              <div className="text-sm text-white/80">
                 {(user as UserType & { email?: string })?.email || 'User'}
               </div>
 

@@ -9,7 +9,6 @@ import {
   Filter,
   MessageSquare,
   Settings,
-  ArrowRight,
   BarChart3,
   Heart,
   Send
@@ -136,58 +135,55 @@ export default function AuthenticatedLandingPage() {
     <>
       <style>
         {`
-          @keyframes hexagonFloat {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(2deg); }
+          @keyframes cardFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
           }
           
-          @keyframes hexagonPulse {
+          @keyframes cardPulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.02); }
           }
           
-          .hexagon {
-            width: 80px;
-            height: 80px;
+          .hexagon-card {
+            width: 160px;
+            height: 160px;
             position: relative;
-            margin: 40px auto;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid #3A5A40;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            margin: 0 auto;
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            padding: 20px;
           }
           
-          .hexagon:before,
-          .hexagon:after {
-            content: "";
-            position: absolute;
-            width: 0;
-            border-left: 40px solid transparent;
-            border-right: 40px solid transparent;
+          .hexagon-card:hover {
+            border-color: #2f4a35;
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(58, 90, 64, 0.3);
           }
           
-          .hexagon:before {
-            bottom: 100%;
-            border-bottom: 23px solid white;
-          }
-          
-          .hexagon:after {
-            top: 100%;
-            border-top: 23px solid white;
-          }
-          
-          .hexagon-content {
-            width: 80px;
-            height: 46px;
+          .hexagon-icon {
+            width: 45px;
+            height: 45px;
+            position: relative;
+            margin: 20px auto 15px auto;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            z-index: 1;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
           }
           
-          .animate-hexagon-float {
-            animation: hexagonFloat 4s ease-in-out infinite;
+          .animate-card-float {
+            animation: cardFloat 4s ease-in-out infinite;
           }
           
-          .animate-hexagon-pulse {
-            animation: hexagonPulse 3s ease-in-out infinite;
+          .animate-card-pulse {
+            animation: cardPulse 3s ease-in-out infinite;
           }
           
           .email-truncate {
@@ -220,7 +216,7 @@ export default function AuthenticatedLandingPage() {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 2rem;
-            max-width: 72rem;
+            max-width: 80rem;
             margin: 0 auto;
           }
           
@@ -283,41 +279,28 @@ export default function AuthenticatedLandingPage() {
                   <div
                     key={module.id}
                     onClick={() => handleModuleClick(module)}
-                    className={`login-card group cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-2 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+                    className={`module-card group cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-2 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                       }`}
                     style={{ transitionDelay: `${index * 100}ms` }}
                   >
-                    <div
-                      className=" login-card-content rounded-2xl p-8 hover:bg-[var(--primary-dark-color-hover)] hover:border-white/20 transition-all duration-300 h-full flex flex-col min-w-0"
-                    >
-                      {/* Hexagonal Icon */}
-                      <div className="flex justify-center mb-6">
-                        <div className={`hexagon animate-hexagon-float`} style={{ animationDelay: `${index * 0.5}s` }}>
-                          <div className={`hexagon-content bg-gradient-to-br ${module.color} animate-hexagon-pulse`}>
-                            <IconComponent className="w-8 h-8 text-white" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="text-center flex flex-col flex-grow">
-                        <h3 className="text-xl font-bold text-white mb-2">
+                    <div className="flex flex-col items-center">
+                      {/* Hexagonal Shape with Heading Inside */}
+                      <div className="hexagon-card mb-12 flex flex-col items-center justify-center">
+                        <h3 className="text-base font-bold text-white mb-2 text-center leading-tight">
                           {module.name}
                         </h3>
                         {module.subtitle && (
-                          <p className="text-emerald-400 font-semibold mb-3">
+                          <p className="text-green-300 font-semibold text-sm text-center leading-tight">
                             {module.subtitle}
                           </p>
                         )}
-                        <p className="text-white/70 text-sm leading-relaxed mb-6 flex-grow">
+                      </div>
+
+                      {/* Description Below Hexagon */}
+                      <div className="text-center my-3">
+                        <p className="text-white/80 text-sm leading-relaxed max-w-xs">
                           {module.description}
                         </p>
-
-                        {/* Explore Button */}
-                        <button className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 group-hover:bg-white/20 mt-auto">
-                          <span>Explore Module</span>
-                          <ArrowRight className="w-4 h-4 arrow-white group-hover:translate-x-1 transition-transform duration-300" style={{ color: 'white', fill: 'white' }} />
-                        </button>
                       </div>
                     </div>
                   </div>
