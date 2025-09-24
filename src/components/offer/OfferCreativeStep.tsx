@@ -36,11 +36,11 @@ const LOCALES = [
   { value: 'pt', label: 'Portuguese' }
 ];
 
-export default function OfferCreativeStep({ 
-  creatives, 
-  onCreativesChange, 
-  onNext, 
-  onPrev 
+export default function OfferCreativeStep({
+  creatives,
+  onCreativesChange,
+  onNext,
+  onPrev
 }: OfferCreativeStepProps) {
   const [selectedCreative, setSelectedCreative] = useState<string | null>(
     creatives.length > 0 ? creatives[0].id : null
@@ -58,7 +58,7 @@ export default function OfferCreativeStep({
       html_body: '',
       variables: {}
     };
-    
+
     const updatedCreatives = [...creatives, newCreative];
     onCreativesChange(updatedCreatives);
     setSelectedCreative(newCreative.id);
@@ -67,14 +67,14 @@ export default function OfferCreativeStep({
   const removeCreative = (id: string) => {
     const updatedCreatives = creatives.filter(c => c.id !== id);
     onCreativesChange(updatedCreatives);
-    
+
     if (selectedCreative === id) {
       setSelectedCreative(updatedCreatives.length > 0 ? updatedCreatives[0].id : null);
     }
   };
 
   const updateCreative = (id: string, updates: Partial<OfferCreative>) => {
-    const updatedCreatives = creatives.map(c => 
+    const updatedCreatives = creatives.map(c =>
       c.id === id ? { ...c, ...updates } : c
     );
     onCreativesChange(updatedCreatives);
@@ -130,16 +130,15 @@ export default function OfferCreativeStep({
                 {creatives.map((creative) => {
                   const channelConfig = getChannelConfig(creative.channel);
                   const Icon = channelConfig?.icon || MessageSquare;
-                  
+
                   return (
                     <div
                       key={creative.id}
                       onClick={() => setSelectedCreative(creative.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        selectedCreative === creative.id
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedCreative === creative.id
                           ? 'border-blue-300 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">

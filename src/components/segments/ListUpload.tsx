@@ -87,14 +87,14 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
     const file = event.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      
+
       // Read file content
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
         const lines = content.split('\n');
         const headers = lines[0];
-        
+
         onListDataChange({
           ...listData,
           file_text: content,

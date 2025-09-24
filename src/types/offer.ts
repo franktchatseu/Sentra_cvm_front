@@ -120,6 +120,7 @@ export interface CreateOfferRequest {
   description?: string;
   category_id?: number;
   product_id?: number;
+  offer_type?: string;
   eligibility_rules?: EligibilityRules;
   lifecycle_status: LifecycleStatus;
   approval_status: ApprovalStatus;

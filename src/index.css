@@ -5,6 +5,12 @@
 @tailwind components;
 @tailwind utilities;
 
+
+:root {
+  --primary-color: #0a192f;
+  --primary-dark-color: rgba(15, 23, 42, 0.7);
+  --primary-dark-color-hover: rgba(15, 23, 42, 0.9);
+}
 /* New Login Page Styles */
 .sentra-landing {
   display: flex;
@@ -39,6 +45,59 @@
   background-size: 100px 100px;
   z-index: 1;
   animation: hexagonMove 60s linear infinite;
+}
+
+/* Fixed background elements for non-scrolling backgrounds */
+.fixed-bg-gradients {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at 10% 20%, rgba(8, 69, 110, 0.33) 0%, transparent 40%),
+              radial-gradient(circle at 80% 70%, rgba(5, 150, 105, 0.28) 0%, transparent 40%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.fixed-bg-hex {
+  position: fixed;
+  bottom: -100px;
+  left: 0;
+  width: 100vw;
+  height: 300px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M50 0L93.3 25v50L50 100L6.7 75V25L50 0z" fill="none" stroke="%23184e77" stroke-width="1" opacity="0.2"/></svg>');
+  background-size: 100px 100px;
+  z-index: -1;
+  animation: hexagonMove 60s linear infinite;
+  pointer-events: none;
+}
+
+.fixed-bg-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: -1;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.fixed-bg-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: -1;
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 @keyframes hexagonMove {
@@ -1881,7 +1940,12 @@
   background-color: #1a3d2e;
 }
 
-/* Active Grotesk Font */
+/* Space Grotesk Font (fixed naming) */
+.font-space-grotesk {
+  font-family: 'Space Grotesk', Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Legacy support */
 .font-active-grotesk {
   font-family: 'Space Grotesk', Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }

@@ -33,7 +33,7 @@ const TRACKING_TYPES = [
 ];
 
 const PARAMETERS = [
-  'Amount', 'Channel', 'Customer_Segment', 'Product_Type', 'Transaction_Type', 
+  'Amount', 'Channel', 'Customer_Segment', 'Product_Type', 'Transaction_Type',
   'Location', 'Time_Period', 'Usage_Volume', 'Frequency'
 ];
 
@@ -45,11 +45,11 @@ const CONDITIONS = [
   { value: 'is_any_of', label: 'Is any of' }
 ];
 
-export default function OfferTrackingStep({ 
-  trackingSources, 
-  onTrackingSourcesChange, 
-  onNext, 
-  onPrev 
+export default function OfferTrackingStep({
+  trackingSources,
+  onTrackingSourcesChange,
+  onNext,
+  onPrev
 }: OfferTrackingStepProps) {
   const [selectedSource, setSelectedSource] = useState<string | null>(
     trackingSources.length > 0 ? trackingSources[0].id : null
@@ -67,7 +67,7 @@ export default function OfferTrackingStep({
       enabled: true,
       rules: []
     };
-    
+
     const updatedSources = [...trackingSources, newSource];
     onTrackingSourcesChange(updatedSources);
     setSelectedSource(newSource.id);
@@ -76,14 +76,14 @@ export default function OfferTrackingStep({
   const removeTrackingSource = (id: string) => {
     const updatedSources = trackingSources.filter(s => s.id !== id);
     onTrackingSourcesChange(updatedSources);
-    
+
     if (selectedSource === id) {
       setSelectedSource(updatedSources.length > 0 ? updatedSources[0].id : null);
     }
   };
 
   const updateTrackingSource = (id: string, updates: Partial<TrackingSource>) => {
-    const updatedSources = trackingSources.map(s => 
+    const updatedSources = trackingSources.map(s =>
       s.id === id ? { ...s, ...updates } : s
     );
     onTrackingSourcesChange(updatedSources);
@@ -99,7 +99,7 @@ export default function OfferTrackingStep({
       value: '',
       enabled: true
     };
-    
+
     setEditingRule(newRule);
     setShowRuleModal(true);
   };
@@ -110,7 +110,7 @@ export default function OfferTrackingStep({
 
     const existingRuleIndex = source.rules.findIndex(r => r.id === rule.id);
     let updatedRules;
-    
+
     if (existingRuleIndex >= 0) {
       updatedRules = [...source.rules];
       updatedRules[existingRuleIndex] = rule;
@@ -181,20 +181,17 @@ export default function OfferTrackingStep({
                   <div
                     key={source.id}
                     onClick={() => setSelectedSource(source.id)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedSource === source.id
-                        ? 'border-emerald-300 bg-emerald-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedSource === source.id
+                      ? 'border-emerald-300 bg-emerald-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          source.enabled ? 'bg-emerald-100' : 'bg-gray-100'
-                        }`}>
-                          <BarChart3 className={`w-4 h-4 ${
-                            source.enabled ? 'text-emerald-600' : 'text-gray-400'
-                          }`} />
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${source.enabled ? 'bg-emerald-100' : 'bg-gray-100'
+                          }`}>
+                          <BarChart3 className={`w-4 h-4 ${source.enabled ? 'text-emerald-600' : 'text-gray-400'
+                            }`} />
                         </div>
                         <div>
                           <div className="font-medium text-sm text-gray-900">
@@ -392,7 +389,7 @@ export default function OfferTrackingStep({
                   type="text"
                   value={editingRule.name}
                   onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                 />
               </div>
 
@@ -405,7 +402,7 @@ export default function OfferTrackingStep({
                   min="1"
                   value={editingRule.priority}
                   onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                 />
               </div>
 
@@ -416,7 +413,7 @@ export default function OfferTrackingStep({
                 <select
                   value={editingRule.parameter}
                   onChange={(e) => setEditingRule({ ...editingRule, parameter: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                 >
                   {PARAMETERS.map(param => (
                     <option key={param} value={param}>{param}</option>
@@ -430,8 +427,8 @@ export default function OfferTrackingStep({
                 </label>
                 <select
                   value={editingRule.condition}
-                  onChange={(e) => setEditingRule({ ...editingRule, condition: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) => setEditingRule({ ...editingRule, condition: e.target.value as 'equals' | 'greater_than' | 'less_than' | 'contains' | 'is_any_of' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                 >
                   {CONDITIONS.map(condition => (
                     <option key={condition.value} value={condition.value}>
@@ -450,7 +447,7 @@ export default function OfferTrackingStep({
                   value={editingRule.value}
                   onChange={(e) => setEditingRule({ ...editingRule, value: e.target.value })}
                   placeholder="Enter value..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                 />
               </div>
 
