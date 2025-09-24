@@ -189,19 +189,16 @@ function BasicInfoStep({ onNext, formData, setFormData }: Omit<StepProps, 'curre
           disabled={!formData.name.trim() || !formData.offer_type}
           className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
+            backgroundColor: color.sentra.main
           }}
           onMouseEnter={(e) => {
             if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
             }
           }}
           onMouseLeave={(e) => {
             if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
             }
           }}
         >
@@ -260,16 +257,13 @@ function ProductStepWrapper({ onNext, onPrev, formData, setFormData }: Omit<Step
           onClick={handleNext}
           className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
           style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
+            backgroundColor: color.sentra.main
           }}
           onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
           }}
           onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
           }}
         >
           Next Step
@@ -452,16 +446,13 @@ function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<S
           onClick={handleNext}
           className="px-4 py-2 text-white rounded-lg transition-all shadow-lg flex items-center gap-2 text-base"
           style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
+            backgroundColor: color.sentra.main
           }}
           onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
           }}
           onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-            (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
           }}
         >
           Next
@@ -658,19 +649,16 @@ function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, re
           disabled={isLoading}
           className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
+            backgroundColor: color.sentra.main
           }}
           onMouseEnter={(e) => {
             if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
             }
           }}
           onMouseLeave={(e) => {
             if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
             }
           }}
         >
@@ -977,19 +965,16 @@ function SettingsStepOld({ onPrev, onSubmit, formData, setFormData, isLoading }:
           disabled={isLoading}
           className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           style={{
-            backgroundColor: `${color.sentra.main} !important`,
-            background: 'none !important'
+            backgroundColor: color.sentra.main
           }}
           onMouseEnter={(e) => {
             if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
             }
           }}
           onMouseLeave={(e) => {
             if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-              (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
             }
           }}
         >
