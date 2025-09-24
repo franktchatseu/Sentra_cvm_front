@@ -1,6 +1,14 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Users, Plus, Target, Edit, Trash2, Settings } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Users, Plus, Target, Edit, Trash2, Settings, GripVertical, AlertCircle } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../../types/campaign';
+
+interface AvailableControlGroup {
+  id: string;
+  name: string;
+  description: string;
+  percentage: number;
+  created_at: string;
+}
 import SegmentSelectionModal from './SegmentSelectionModal';
 import UniversalControlGroupModal from './UniversalControlGroupModal';
 import SegmentModal from '../../modals/SegmentModal';
@@ -26,11 +34,10 @@ export default function AudienceConfigurationStep({
   selectedSegments,
   setSelectedSegments,
   controlGroup,
-  setControlGroup
+  setControlGroup: _setControlGroup
 }: AudienceConfigurationStepProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCreateSegmentModal, setShowCreateSegmentModal] = useState(false);
-  const [controlGroupModalSegment, setControlGroupModalSegment] = useState<CampaignSegment | null>(null);
   const [showUniversalControlGroupModal, setShowUniversalControlGroupModal] = useState(false);
   const [editingControlGroup, setEditingControlGroup] = useState<string | null>(null);
   const [showControlGroupModal, setShowControlGroupModal] = useState(false);
@@ -76,7 +83,8 @@ export default function AudienceConfigurationStep({
   };
 
   const handleRemoveSegment = (segmentId: string) => {
-    setSelectedSegments(segments => segments.filter(s => s.id !== segmentId));
+    const updatedSegments = selectedSegments.filter(s => s.id !== segmentId);
+    setSelectedSegments(updatedSegments);
   };
 
   const handleDragStart = (e: React.DragEvent, segmentId: string) => {
@@ -152,10 +160,6 @@ export default function AudienceConfigurationStep({
     return 'bg-gray-100 text-gray-700';
   };
 
-  const handleEditSegment = (segment: CampaignSegment) => {
-    setEditingSegment(segment);
-    setIsModalOpen(true);
-  };
 
   const totalAudienceSize = selectedSegments.reduce((total, segment) => total + segment.customer_count, 0);
   const controlGroupSize = controlGroup.enabled ? Math.round(totalAudienceSize * (controlGroup.percentage / 100)) : 0;
@@ -207,12 +211,11 @@ export default function AudienceConfigurationStep({
               onChange={(e) => {
                 setMutuallyExclusive(e.target.checked);
                 // Update all segments with mutual exclusivity
-                setSelectedSegments(segments => 
-                  segments.map(segment => ({
-                    ...segment,
-                    is_mutually_exclusive: e.target.checked
-                  }))
-                );
+                const updatedSegments = selectedSegments.map(segment => ({
+                  ...segment,
+                  is_mutually_exclusive: e.target.checked
+                }));
+                setSelectedSegments(updatedSegments);
               }}
               className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157] rounded"
             />
@@ -318,7 +321,10 @@ export default function AudienceConfigurationStep({
                       <Settings className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => setEditingSegment(segment)}
+                      onClick={() => {
+                        // TODO: Implement segment editing functionality
+                        console.log('Edit segment:', segment.name);
+                      }}
                       className="p-1 text-gray-400 hover:text-[#588157] transition-colors"
                       title="Edit Segment"
                     >

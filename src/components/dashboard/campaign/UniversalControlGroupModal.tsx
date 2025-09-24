@@ -233,9 +233,26 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
     { id: 3, name: 'Scheduling', icon: Calendar }
   ];
 
+  const canProceedToNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        return formData.name && formData.name.trim() !== '';
+      case 2:
+        return true; // No required fields in step 2
+      case 3:
+        return true; // No required fields in step 3
+      default:
+        return false;
+    }
+  };
+
   const handleNext = () => {
-    if (currentStep < 3) {
+    console.log('handleNext called, currentStep:', currentStep);
+    if (currentStep < 3 && canProceedToNextStep()) {
       setCurrentStep(currentStep + 1);
+      console.log('Moving to step:', currentStep + 1);
+    } else {
+      console.log('Cannot proceed - validation failed or at last step');
     }
   };
 
@@ -548,7 +565,8 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
             ) : (
               <button
                 onClick={handleNext}
-                className="px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40]"
+                disabled={!canProceedToNextStep()}
+                className="px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 Next
               </button>
