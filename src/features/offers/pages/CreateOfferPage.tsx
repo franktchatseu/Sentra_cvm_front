@@ -1,734 +1,1257 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
   ArrowRight,
-  Save,
-  Eye,
-  Package,
-  CheckCircle,
-  AlertCircle,
-  Info,
   Target,
-  Palette
+  Calendar,
+  DollarSign,
+  Package,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  Check,
+  Gift,
+  Users,
+  Settings,
+
 } from 'lucide-react';
-import Stepper from '../../../shared/componen../../../shared/components/ui/Stepper';
-import FormSection from '../../../shared/componen../../../shared/components/ui/FormSection';
-import HeadlessSelect from '../../../shared/componen../../../shared/components/ui/HeadlessSelect';
-import HeadlessMultiSelect from '../../../shared/componen../../../shared/components/ui/HeadlessMultiSelect';
-import TagInput from '../../../shared/componen../../../shared/components/ui/TagInput';
+import { CreateOfferRequest, LifecycleStatus, ApprovalStatus } from '../types/offer';
+import { Product } from '../../products/types/product';
+import { offerService } from '../services/offerService';
+import ProductSelector from '../../products/components/ProductSelector';
+import OfferCreativeStep from '../components/OfferCreativeStep';
+import OfferTrackingStep from '../components/OfferTrackingStep';
+import OfferRewardStep from '../components/OfferRewardStep';
+import StepNavigation from '../components/StepNavigation';
+import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 import { colors as color } from '../../../shared/utils/tokens';
-import { tw } from '../../../shared/utils/utils';
 
-// Types based on the database schema
-interface OfferFormData {
-  // Basic Information
-  name: string;
-  description: string;
-  category_id: number | null;
-
-  // Product Association
-  product_ids: number[];
-  primary_product_id: number | null;
-
-  // Offer Configuration
-  lifecycle_status: 'draft' | 'active' | 'expired' | 'suspended';
-  approval_status: 'pending' | 'approved' | 'rejected';
-  reusable: boolean;
-  multi_language: boolean;
-
-  // Eligibility Rules (JSONB)
-  eligibility_rules: {
-    customer_segments?: string[];
-    usage_criteria?: {
-      min_usage?: number;
-      max_usage?: number;
-      usage_type?: string;
-    };
-    geographic_restrictions?: string[];
-    time_restrictions?: {
-      start_date?: string;
-      end_date?: string;
-      days_of_week?: string[];
-      hours_of_day?: string[];
-    };
-  };
-
-  // Creative Content
-  creatives: {
-    channel: 'sms' | 'email' | 'push' | 'web' | 'app';
-    locale: string;
-    title: string;
-    text_body: string;
-    html_body: string;
-    variables: Record<string, string>;
-  }[];
+interface OfferCreative {
+  id: string;
+  channel: 'sms' | 'email' | 'push' | 'web' | 'whatsapp';
+  locale: string;
+  title: string;
+  text_body: string;
+  html_body: string;
+  variables: Record<string, string | number | boolean>;
 }
 
-const STEPS = [
-  'Basic Info',
-  'Products',
-  'Eligibility',
-  'Content',
-  'Review'
-];
+interface TrackingRule {
+  id: string;
+  name: string;
+  priority: number;
+  parameter: string;
+  condition: 'equals' | 'greater_than' | 'less_than' | 'contains' | 'is_any_of';
+  value: string;
+  enabled: boolean;
+}
 
-// Mock data - in real app, these would come from API
-const CATEGORIES = [
-  { id: 1, label: 'Data Offers', value: 1 },
-  { id: 2, label: 'Voice Offers', value: 2 },
-  { id: 3, label: 'Combo Offers', value: 3 },
-  { id: 4, label: 'Loyalty Rewards', value: 4 },
-  { id: 5, label: 'Promotional', value: 5 }
-];
+interface TrackingSource {
+  id: string;
+  name: string;
+  type: 'recharge' | 'usage_metric' | 'custom';
+  enabled: boolean;
+  rules: TrackingRule[];
+}
 
-const PRODUCTS = [
-  { id: 1, label: '1GB Data Bundle', value: 1 },
-  { id: 2, label: '5GB Data Bundle', value: 2 },
-  { id: 3, label: '100 Minutes Voice', value: 3 },
-  { id: 4, label: '500 Minutes Voice', value: 4 },
-  { id: 5, label: 'Unlimited Weekend Data', value: 5 }
-];
+interface RewardRule {
+  id: string;
+  name: string;
+  bundle_subscription_track: string;
+  priority: number;
+  condition: string;
+  value: string;
+  reward_type: 'bundle' | 'points' | 'discount' | 'cashback';
+  reward_value: string;
+  fulfillment_response: string;
+  success_text: string;
+  default_failure: string;
+  error_group: string;
+  failure_text: string;
+  enabled: boolean;
+}
 
-const CUSTOMER_SEGMENTS = [
-  { id: 1, label: 'Premium Customers', value: 'premium' },
-  { id: 2, label: 'New Customers', value: 'new' },
-  { id: 3, label: 'High Usage', value: 'high_usage' },
-  { id: 4, label: 'Low Usage', value: 'low_usage' },
-  { id: 5, label: 'Churning Risk', value: 'churning_risk' }
-];
+interface OfferReward {
+  id: string;
+  name: string;
+  type: 'default' | 'sms_night' | 'custom';
+  rules: RewardRule[];
+}
 
-const CHANNELS = [
-  { id: 1, label: 'SMS', value: 'sms' },
-  { id: 2, label: 'Email', value: 'email' },
-  { id: 3, label: 'Push Notification', value: 'push' },
-  { id: 4, label: 'Web Portal', value: 'web' },
-  { id: 5, label: 'Mobile App', value: 'app' }
-];
+interface StepProps {
+  currentStep: number;
+  totalSteps: number;
+  onNext: () => void;
+  onPrev: () => void;
+  onSubmit: () => void;
+  formData: CreateOfferRequest;
+  setFormData: (data: CreateOfferRequest) => void;
+  creatives: OfferCreative[];
+  setCreatives: (creatives: OfferCreative[]) => void;
+  trackingSources: TrackingSource[];
+  setTrackingSources: (sources: TrackingSource[]) => void;
+  rewards: OfferReward[];
+  setRewards: (rewards: OfferReward[]) => void;
+  isLoading?: boolean;
+  validationErrors?: Record<string, string>;
+  clearValidationErrors?: () => void;
+}
 
-const LOCALES = [
-  { id: 1, label: 'English (US)', value: 'en-US' },
-  { id: 2, label: 'French (FR)', value: 'fr-FR' },
-  { id: 3, label: 'Spanish (ES)', value: 'es-ES' },
-  { id: 4, label: 'Arabic (AR)', value: 'ar-AR' }
-];
-
-export default function CreateOfferPage() {
-  const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [isVisible, setIsVisible] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const [formData, setFormData] = useState<OfferFormData>({
-    name: '',
-    description: '',
-    category_id: null,
-    product_ids: [],
-    primary_product_id: null,
-    lifecycle_status: 'draft',
-    approval_status: 'pending',
-    reusable: true,
-    multi_language: true,
-    eligibility_rules: {},
-    creatives: []
-  });
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  const validateStep = (step: number): boolean => {
-    const stepErrors: Record<string, string> = {};
-
-    switch (step) {
-      case 1:
-        if (!formData.name.trim()) stepErrors.name = 'Offer name is required';
-        if (!formData.description.trim()) stepErrors.description = 'Description is required';
-        if (!formData.category_id) stepErrors.category_id = 'Category is required';
-        break;
-      case 2:
-        if (formData.product_ids.length === 0) stepErrors.product_ids = 'At least one product is required';
-        if (!formData.primary_product_id) stepErrors.primary_product_id = 'Primary product is required';
-        break;
-      case 3:
-        // Eligibility validation can be optional
-        break;
-      case 4:
-        if (formData.creatives.length === 0) stepErrors.creatives = 'At least one creative is required';
-        break;
-    }
-
-    setErrors(stepErrors);
-    return Object.keys(stepErrors).length === 0;
-  };
-
+// Step 1: Basic Information
+function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearValidationErrors }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onPrev' | 'onSubmit'>) {
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      if (!completedSteps.includes(currentStep)) {
-        setCompletedSteps([...completedSteps, currentStep]);
-      }
-      if (currentStep < STEPS.length) {
-        setCurrentStep(currentStep + 1);
-      }
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSaveDraft = async () => {
-    // Save as draft logic
-    console.log('Saving draft:', formData);
-  };
-
-  const handleSubmit = async () => {
-    if (validateStep(currentStep)) {
-      // Submit logic
-      console.log('Submitting offer:', formData);
-      navigate('/dashboard/offers');
-    }
-  };
-
-  const addCreative = () => {
-    setFormData({
-      ...formData,
-      creatives: [
-        ...formData.creatives,
-        {
-          channel: 'sms',
-          locale: 'en-US',
-          title: '',
-          text_body: '',
-          html_body: '',
-          variables: {}
-        }
-      ]
-    });
-  };
-
-  const updateCreative = (index: number, field: string, value: string | number) => {
-    const updatedCreatives = [...formData.creatives];
-    updatedCreatives[index] = { ...updatedCreatives[index], [field]: value };
-    setFormData({ ...formData, creatives: updatedCreatives });
-  };
-
-  const removeCreative = (index: number) => {
-    setFormData({
-      ...formData,
-      creatives: formData.creatives.filter((_, i) => i !== index)
-    });
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-8">
-            <FormSection
-              title="Basic Information"
-              description="Define the core details of your offer"
-              icon={Info}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Offer Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Enter offer name"
-                    className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200`}
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Category *
-                  </label>
-                  <HeadlessSelect
-                    options={CATEGORIES}
-                    value={formData.category_id?.toString() || ''}
-                    onChange={(value) => setFormData({ ...formData, category_id: value ? Number(value) : null })}
-                    placeholder="Select category"
-                  />
-                  {errors.category_id && (
-                    <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Description *
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe your offer in detail"
-                  rows={4}
-                  className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200 resize-none`}
-                />
-                {errors.description && (
-                  <p className="mt-1 text-sm text-red-600">{errors.description}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.reusable}
-                      onChange={(e) => setFormData({ ...formData, reusable: e.target.checked })}
-                      className={`h-4 w-4 text-[${color.sentra.main}] focus:outline-none border-[${color.ui.border}] rounded`}
-                    />
-                    <span className="text-sm font-medium text-gray-700">Reusable Offer</span>
-                  </label>
-                  <p className="text-xs text-gray-500 ml-7">Allow this offer to be used in multiple campaigns</p>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.multi_language}
-                      onChange={(e) => setFormData({ ...formData, multi_language: e.target.checked })}
-                      className={`h-4 w-4 text-[${color.sentra.main}] focus:outline-none border-[${color.ui.border}] rounded`}
-                    />
-                    <span className="text-sm font-medium text-gray-700">Multi-language Support</span>
-                  </label>
-                  <p className="text-xs text-gray-500 ml-7">Enable content in multiple languages</p>
-                </div>
-              </div>
-            </FormSection>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-8">
-            <FormSection
-              title="Product Association"
-              description="Link your offer to specific products from the billing system"
-              icon={Package}
-            >
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Associated Products *
-                </label>
-                <HeadlessMultiSelect
-                  options={PRODUCTS}
-                  value={formData.product_ids}
-                  onChange={(value) => setFormData({ ...formData, product_ids: value as number[] })}
-                  placeholder="Select products to include in this offer"
-                />
-                {errors.product_ids && (
-                  <p className="mt-1 text-sm text-red-600">{errors.product_ids}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Primary Product *
-                </label>
-                <HeadlessSelect
-                  options={PRODUCTS.filter(p => formData.product_ids.includes(p.value as number))}
-                  value={formData.primary_product_id?.toString() || ''}
-                  onChange={(value) => setFormData({ ...formData, primary_product_id: value ? Number(value) : null })}
-                  placeholder="Select the main product for this offer"
-                />
-                {errors.primary_product_id && (
-                  <p className="mt-1 text-sm text-red-600">{errors.primary_product_id}</p>
-                )}
-              </div>
-
-              {formData.product_ids.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-medium text-blue-900">Product Integration</h4>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Selected products will be automatically linked to this offer for billing and provisioning purposes.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </FormSection>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-8">
-            <FormSection
-              title="Eligibility Rules"
-              description="Define who can access this offer and when"
-              icon={Target}
-            >
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Customer Segments
-                  </label>
-                  <HeadlessMultiSelect
-                    options={CUSTOMER_SEGMENTS}
-                    value={formData.eligibility_rules.customer_segments || []}
-                    onChange={(value) => setFormData({
-                      ...formData,
-                      eligibility_rules: {
-                        ...formData.eligibility_rules,
-                        customer_segments: value as string[]
-                      }
-                    })}
-                    placeholder="Select target customer segments"
-                  />
-                </div>
-
-                <TagInput
-                  label="Geographic Restrictions"
-                  value={formData.eligibility_rules.geographic_restrictions || []}
-                  onChange={(value) => setFormData({
-                    ...formData,
-                    eligibility_rules: {
-                      ...formData.eligibility_rules,
-                      geographic_restrictions: value
-                    }
-                  })}
-                  placeholder="Add regions, cities, or countries"
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Valid From
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.eligibility_rules.time_restrictions?.start_date || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        eligibility_rules: {
-                          ...formData.eligibility_rules,
-                          time_restrictions: {
-                            ...formData.eligibility_rules.time_restrictions,
-                            start_date: e.target.value
-                          }
-                        }
-                      })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200 focus:outline-none focus:border-gray-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Valid Until
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.eligibility_rules.time_restrictions?.end_date || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        eligibility_rules: {
-                          ...formData.eligibility_rules,
-                          time_restrictions: {
-                            ...formData.eligibility_rules.time_restrictions,
-                            end_date: e.target.value
-                          }
-                        }
-                      })}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl transition-all duration-200 focus:outline-none focus:border-gray-400"
-                    />
-                  </div>
-                </div>
-              </div>
-            </FormSection>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-8">
-            <FormSection
-              title="Creative Content"
-              description="Design how your offer will be presented to customers"
-              icon={Palette}
-            >
-              <div className="space-y-6">
-                {formData.creatives.map((creative, index) => (
-                  <div key={index} className={`bg-white border border-[${color.ui.border}] rounded-lg p-6 shadow-sm`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-medium text-gray-900">
-                        Creative #{index + 1}
-                      </h4>
-                      {formData.creatives.length > 1 && (
-                        <button
-                          onClick={() => removeCreative(index)}
-                          className="px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Channel
-                        </label>
-                        <HeadlessSelect
-                          options={CHANNELS}
-                          value={creative.channel}
-                          onChange={(value) => updateCreative(index, 'channel', value)}
-                          placeholder="Select channel"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Language
-                        </label>
-                        <HeadlessSelect
-                          options={LOCALES}
-                          value={creative.locale}
-                          onChange={(value) => updateCreative(index, 'locale', value)}
-                          placeholder="Select language"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Title
-                        </label>
-                        <input
-                          type="text"
-                          value={creative.title}
-                          onChange={(e) => updateCreative(index, 'title', e.target.value)}
-                          placeholder="Enter creative title"
-                          className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200`}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Text Content
-                        </label>
-                        <textarea
-                          value={creative.text_body}
-                          onChange={(e) => updateCreative(index, 'text_body', e.target.value)}
-                          placeholder="Enter text content for this creative"
-                          rows={3}
-                          className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200 resize-none`}
-                        />
-                      </div>
-
-                      {(creative.channel === 'email' || creative.channel === 'web') && (
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            HTML Content
-                          </label>
-                          <textarea
-                            value={creative.html_body}
-                            onChange={(e) => updateCreative(index, 'html_body', e.target.value)}
-                            placeholder="Enter HTML content (optional)"
-                            rows={4}
-                            className={`w-full px-3 py-2 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] transition-colors duration-200 resize-none`}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  onClick={addCreative}
-                  className={`w-full px-4 py-2 text-sm font-medium rounded-lg border border-[${color.ui.border}] text-[${color.sentra.main}] hover:bg-[${color.sentra.main}] hover:text-white transition-all duration-200`}
-                >
-                  Add Creative
-                </button>
-
-                {errors.creatives && (
-                  <p className="text-sm text-red-600">{errors.creatives}</p>
-                )}
-              </div>
-            </FormSection>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-8">
-            <FormSection
-              title="Review & Submit"
-              description="Review all offer details before submission"
-              icon={CheckCircle}
-            >
-              <div className="space-y-6">
-                <div className={`bg-white border border-[${color.ui.border}] rounded-lg p-6 shadow-sm`}>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Offer Summary</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Name:</span>
-                      <span className="ml-2 text-gray-900">{formData.name}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Category:</span>
-                      <span className="ml-2 text-gray-900">
-                        {CATEGORIES.find(c => c.value === formData.category_id)?.label || 'N/A'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Products:</span>
-                      <span className="ml-2 text-gray-900">{formData.product_ids.length} selected</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Creatives:</span>
-                      <span className="ml-2 text-gray-900">{formData.creatives.length} created</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-medium text-yellow-900">Approval Required</h4>
-                      <p className="text-sm text-yellow-700 mt-1">
-                        This offer will be submitted for approval and won't be active until approved by an administrator.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </FormSection>
-          </div>
-        );
-
-      default:
-        return null;
+    if (formData.name.trim() && formData.offer_type) {
+      onNext();
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-8 sm:px-8 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Gift className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
+        <p className="text-gray-600">Let's start with the essential details of your offer</p>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Offer Name *
+          </label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => {
+              setFormData({ ...formData, name: e.target.value });
+              if (validationErrors?.name && clearValidationErrors) {
+                clearValidationErrors();
+              }
+            }}
+            placeholder="e.g., Summer Data Bundle"
+            className={`w-full px-4 py-3 border rounded-xl focus:outline-none transition-all duration-200 ${validationErrors?.name ? 'border-red-500' : 'border-gray-200'
+              }`}
+            required
+          />
+          {validationErrors?.name && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Describe what this offer provides to customers..."
+            rows={4}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Offer Type *
+          </label>
+          <HeadlessSelect
+            options={[
+              { value: '', label: 'Select offer type' },
+              { value: 'STV', label: 'STV' },
+              { value: 'Short Text (SMS/USSD)', label: 'Short Text (SMS/USSD)' },
+              { value: 'Email', label: 'Email' },
+              { value: 'Voice Push', label: 'Voice Push' },
+              { value: 'WAP Push', label: 'WAP Push' },
+              { value: 'Rich Media', label: 'Rich Media' }
+            ]}
+            value={formData.offer_type || ''}
+            onChange={(value) => {
+              setFormData({ ...formData, offer_type: value ? String(value) : undefined });
+              if (validationErrors?.offer_type && clearValidationErrors) {
+                clearValidationErrors();
+              }
+            }}
+            placeholder="Select offer type"
+          />
+          {validationErrors?.offer_type && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.offer_type}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Category *
+          </label>
+          <HeadlessSelect
+            options={[
+              { value: '', label: 'Select category' },
+              { value: '1', label: 'Data' },
+              { value: '2', label: 'Voice' },
+              { value: '3', label: 'Combo' },
+              { value: '4', label: 'Loyalty' }
+            ]}
+            value={formData.category_id || ''}
+            onChange={(value) => {
+              setFormData({ ...formData, category_id: value ? Number(value) : undefined });
+              if (validationErrors?.category_id && clearValidationErrors) {
+                clearValidationErrors();
+              }
+            }}
+            placeholder="Select category"
+          />
+          {validationErrors?.category_id && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.category_id}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleNext}
+          disabled={!formData.name.trim() || !formData.offer_type}
+          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            backgroundColor: color.sentra.main
+          }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }
+          }}
+        >
+          Next Step
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Step 2: Offer Products
+function ProductStepWrapper({ onNext, onPrev, formData, setFormData, validationErrors, clearValidationErrors }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit'>) {
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+
+  const handleNext = () => {
+    // Store only the first selected product ID (backend expects single product_id)
+    const firstProductId = selectedProducts.length > 0 ? selectedProducts[0].id : undefined;
+    setFormData({
+      ...formData,
+      product_id: firstProductId ? Number(firstProductId) : undefined
+    });
+    onNext();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Package className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Products</h2>
+        <p className="text-gray-600">Select the products that will be included in this offer</p>
+      </div>
+
+      <div className="space-y-6">
+        <ProductSelector
+          selectedProducts={selectedProducts}
+          onProductsChange={(products) => {
+            setSelectedProducts(products);
+            if (validationErrors?.product_id && clearValidationErrors) {
+              clearValidationErrors();
+            }
+          }}
+          multiSelect={true}
+        />
+        {validationErrors?.product_id && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{validationErrors.product_id}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-between">
+        <button
+          onClick={onPrev}
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Previous
+        </button>
+        <button
+          onClick={handleNext}
+          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          style={{
+            backgroundColor: color.sentra.main
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+          }}
+        >
+          Next Step
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Step 3: Offer Creative
+function OfferCreativeStepWrapper({ onNext, onPrev, creatives, setCreatives }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
+  return (
+    <div className="space-y-6">
+      <OfferCreativeStep
+        creatives={creatives}
+        onCreativesChange={setCreatives}
+      />
+
+      <StepNavigation
+        onPrev={onPrev}
+        onNext={onNext}
+      />
+    </div>
+  );
+}
+
+// Step 4: Offer Tracking
+function OfferTrackingStepWrapper({ onNext, onPrev, trackingSources, setTrackingSources }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
+  return (
+    <div className="space-y-6">
+      <OfferTrackingStep
+        trackingSources={trackingSources}
+        onTrackingSourcesChange={setTrackingSources}
+      />
+
+      <StepNavigation
+        onPrev={onPrev}
+        onNext={onNext}
+      />
+    </div>
+  );
+}
+
+// Step 5: Offer Reward
+function OfferRewardStepWrapper({ onNext, onPrev, rewards, setRewards }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
+  return (
+    <div className="space-y-6">
+      <OfferRewardStep
+        rewards={rewards}
+        onRewardsChange={setRewards}
+      />
+
+      <StepNavigation
+        onPrev={onPrev}
+        onNext={onNext}
+      />
+    </div>
+  );
+}
+
+// Legacy Step 2: Eligibility Rules (kept for reference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<StepProps, 'currentStep' | 'totalSteps'>) {
+  const [eligibilityRules, setEligibilityRules] = useState({
+    min_spend: formData.eligibility_rules?.min_spend || 0,
+    customer_segment: formData.eligibility_rules?.customer_segment || [],
+    valid_days: formData.eligibility_rules?.valid_days || []
+  });
+
+  const customerSegments = ['new', 'returning', 'vip', 'premium', 'standard'];
+  const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+  const handleNext = () => {
+    setFormData({
+      ...formData,
+      eligibility_rules: eligibilityRules
+    });
+    onNext();
+  };
+
+  const toggleSegment = (segment: string) => {
+    setEligibilityRules(prev => ({
+      ...prev,
+      customer_segment: prev.customer_segment.includes(segment)
+        ? prev.customer_segment.filter(s => s !== segment)
+        : [...prev.customer_segment, segment]
+    }));
+  };
+
+  const toggleDay = (day: string) => {
+    setEligibilityRules(prev => ({
+      ...prev,
+      valid_days: prev.valid_days.includes(day)
+        ? prev.valid_days.filter(d => d !== day)
+        : [...prev.valid_days, day]
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Target className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Eligibility Rules</h2>
+        <p className="text-gray-600">Define who can access this offer and when</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        {/* Minimum Spend */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-700">
+            Minimum Spend Amount
+          </label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={eligibilityRules.min_spend}
+              onChange={(e) => setEligibilityRules(prev => ({
+                ...prev,
+                min_spend: parseFloat(e.target.value) || 0
+              }))}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
+              placeholder="0.00"
+            />
+          </div>
+          <p className="text-sm text-gray-500">Minimum amount customer must spend to be eligible</p>
+        </div>
+
+        {/* Customer Segments */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-700">
+            Customer Segments
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {customerSegments.map((segment) => (
               <button
-                onClick={() => navigate('/dashboard/offers')}
-                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`}
+                key={segment}
+                type="button"
+                onClick={() => toggleSegment(segment)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${eligibilityRules.customer_segment.includes(segment)
+                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                  : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
+                  }`}
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Offers</span>
+                {segment.charAt(0).toUpperCase() + segment.slice(1)}
               </button>
-              <div className="h-6 w-px bg-gray-300" />
-              <h1 className="text-xl font-semibold text-gray-900">Create New Offer</h1>
+            ))}
+          </div>
+          <p className="text-sm text-gray-500">Select which customer segments are eligible</p>
+        </div>
+
+        {/* Valid Days */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-700">
+            Valid Days
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {weekDays.map((day) => (
+              <button
+                key={day}
+                type="button"
+                onClick={() => toggleDay(day)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${eligibilityRules.valid_days.includes(day)
+                  ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                  : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
+                  }`}
+              >
+                <Calendar className="w-4 h-4 inline mr-1" />
+                {day.charAt(0).toUpperCase() + day.slice(1)}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-gray-500">Select which days the offer is valid</p>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex justify-between pt-6">
+        <button
+          onClick={onPrev}
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Previous
+        </button>
+        <button
+          onClick={handleNext}
+          className="px-4 py-2 text-white rounded-lg transition-all shadow-lg flex items-center gap-2 text-base"
+          style={{
+            backgroundColor: color.sentra.main
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+          }}
+        >
+          Next
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+// Step 6: Review
+function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, rewards, isLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext' | 'setFormData'>) {
+  const handleSubmit = () => {
+    onSubmit();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Eye className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Review & Create</h2>
+        <p className="text-gray-600">Review your offer details before creating</p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Offer Summary */}
+        <div
+          className="rounded-2xl p-6"
+          style={{ backgroundColor: `${color.sentra.main}10` }}
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Offer Summary</h3>
+
+          {/* Basic Information */}
+          <div className="space-y-4 mb-6">
+            <h4 className="font-medium text-gray-700 border-b border-gray-200 pb-2">Basic Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Name:</span>
+                <span className="font-medium">{formData.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Offer Type:</span>
+                <span className="font-medium">{formData.offer_type || 'Not selected'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Category:</span>
+                <span className="font-medium">
+                  {formData.category_id ? `Category ${formData.category_id}` : 'Not selected'}
+                </span>
+              </div>
+              <div className="flex justify-between col-span-2">
+                <span className="text-gray-600">Description:</span>
+                <span className="font-medium text-right max-w-md">{formData.description || 'No description'}</span>
+              </div>
             </div>
+          </div>
 
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleSaveDraft}
-                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`}
-              >
-                <Save className="w-4 h-4" />
-                <span>Save Draft</span>
-              </button>
+          {/* Offer Creative Summary */}
+          <div className="space-y-4 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Offer Creatives</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Creatives:</span>
+                  <span className="font-medium">{creatives.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Channels:</span>
+                  <span className="font-medium">
+                    {creatives.length > 0
+                      ? [...new Set(creatives.map(c => c.channel))].join(', ')
+                      : 'None configured'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Locales:</span>
+                  <span className="font-medium">
+                    {creatives.length > 0
+                      ? [...new Set(creatives.map(c => c.locale))].join(', ')
+                      : 'None configured'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-              <button
-                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`}
-              >
-                <Eye className="w-4 h-4" />
-                <span>Preview</span>
-              </button>
+          {/* Tracking Summary */}
+          <div className="space-y-4 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Tracking Configuration</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tracking Sources:</span>
+                  <span className="font-medium">{trackingSources.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Active Sources:</span>
+                  <span className="font-medium">
+                    {trackingSources.filter(s => s.enabled).length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Rules:</span>
+                  <span className="font-medium">
+                    {trackingSources.reduce((total, source) => total + source.rules.length, 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rewards Summary */}
+          <div className="space-y-4 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Offer Rewards</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Rewards:</span>
+                  <span className="font-medium">{rewards.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Reward Types:</span>
+                  <span className="font-medium">
+                    {rewards.length > 0
+                      ? [...new Set(rewards.map(r => r.type))].join(', ')
+                      : 'None configured'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Rules:</span>
+                  <span className="font-medium">
+                    {rewards.reduce((total, reward) => total + reward.rules.length, 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Selected Product */}
+          <div className="space-y-4 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Selected Product</h3>
+              {formData.product_id ? (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-700">Product ID: {formData.product_id}</span>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No product selected</p>
+              )}
+            </div>
+          </div>
+
+          {/* Settings */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-700 border-b border-gray-200 pb-2">Settings</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Status:</span>
+                <span className="font-medium capitalize">{formData.lifecycle_status}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Approval:</span>
+                <span className="font-medium capitalize">{formData.approval_status}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Reusable:</span>
+                <span className="font-medium">{formData.reusable ? 'Yes' : 'No'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Multi-language:</span>
+                <span className="font-medium">{formData.multi_language ? 'Yes' : 'No'}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="px-6 sm:px-8 lg:px-8 py-8">
-        <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          {/* Progress Stepper */}
-          <div className="mb-8">
-            <Stepper
-              steps={STEPS}
-              currentStep={currentStep}
-              completedSteps={completedSteps}
+      <div className="flex justify-between">
+        <button
+          onClick={onPrev}
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Previous
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={isLoading}
+          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            backgroundColor: color.sentra.main
+          }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }
+          }}
+        >
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              Creating...
+            </>
+          ) : (
+            <>
+              <Check className="w-5 h-5" />
+              Create Offer
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Legacy Eligibility Step (kept for reference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<StepProps, 'currentStep' | 'totalSteps'>) {
+  const [eligibilityRules, setEligibilityRules] = useState(formData.eligibility_rules || {});
+
+  const handleNext = () => {
+    setFormData({ ...formData, eligibility_rules: eligibilityRules });
+    onNext();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Users className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Eligibility Rules</h2>
+        <p className="text-gray-600">Define who can access this offer</p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Minimum Spend ($)
+            </label>
+            <input
+              type="number"
+              value={eligibilityRules.min_spend || ''}
+              onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_spend: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="0"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
             />
           </div>
 
-          {/* Form Content */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-            {renderStepContent()}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Customer Tier
+            </label>
+            <HeadlessSelect
+              options={[
+                { value: '', label: 'Any tier' },
+                { value: 'bronze', label: 'Bronze' },
+                { value: 'silver', label: 'Silver' },
+                { value: 'gold', label: 'Gold' },
+                { value: 'vip', label: 'VIP' }
+              ]}
+              value={eligibilityRules.customer_tier || ''}
+              onChange={(value) => setEligibilityRules({ ...eligibilityRules, customer_tier: value ? String(value) : undefined })}
+              placeholder="Any tier"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Minimum Account Age (days)
+            </label>
+            <input
+              type="number"
+              value={eligibilityRules.min_account_age_days || ''}
+              onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_account_age_days: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="0"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            />
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handlePrevious}
-              disabled={currentStep === 1}
-              className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${currentStep === 1
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Previous</span>
-            </button>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Minimum Purchase Count
+            </label>
+            <input
+              type="number"
+              value={eligibilityRules.min_purchase_count || ''}
+              onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_purchase_count: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="0"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            />
+          </div>
+        </div>
 
-            <div className="flex items-center space-x-3">
-              {currentStep === STEPS.length ? (
-                <button
-                  onClick={handleSubmit}
-                  className={`flex items-center space-x-2 px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors duration-200`}
-                  style={{
-                    backgroundColor: color.sentra.main,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                  }}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Submit Offer</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleNext}
-                  className={`flex items-center space-x-2 px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors duration-200`}
-                  style={{
-                    backgroundColor: color.sentra.main,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                  }}
-                >
-                  <span>Next</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Valid From
+            </label>
+            <input
+              type="date"
+              value={eligibilityRules.valid_from || ''}
+              onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_from: e.target.value || undefined })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Valid To
+            </label>
+            <input
+              type="date"
+              value={eligibilityRules.valid_to || ''}
+              onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_to: e.target.value || undefined })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Max Usage Per Customer
+          </label>
+          <input
+            type="number"
+            value={eligibilityRules.max_usage_per_customer || ''}
+            onChange={(e) => setEligibilityRules({ ...eligibilityRules, max_usage_per_customer: e.target.value ? Number(e.target.value) : undefined })}
+            placeholder="Unlimited"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+          />
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="combinable"
+            checked={eligibilityRules.combinable_with_other_offers || false}
+            onChange={(e) => setEligibilityRules({ ...eligibilityRules, combinable_with_other_offers: e.target.checked })}
+            className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
+          />
+          <label htmlFor="combinable" className="ml-2 text-sm text-gray-700">
+            Can be combined with other offers
+          </label>
+        </div>
+      </div>
+
+      <div className="flex justify-between">
+        <button
+          onClick={onPrev}
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Previous
+        </button>
+        <button
+          onClick={handleNext}
+          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+        >
+          Next Step
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Legacy Settings Step (kept for reference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function SettingsStepOld({ onPrev, onSubmit, formData, setFormData, isLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext'>) {
+  const handleSubmit = () => {
+    onSubmit();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: color.sentra.main }}
+        >
+          <Settings className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Settings & Configuration</h2>
+        <p className="text-gray-600">Configure the final settings for your offer</p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Lifecycle Status
+            </label>
+            <HeadlessSelect
+              options={[
+                { value: 'draft', label: 'Draft' },
+                { value: 'active', label: 'Active' },
+                { value: 'paused', label: 'Paused' }
+              ]}
+              value={formData.lifecycle_status}
+              onChange={(value) => setFormData({ ...formData, lifecycle_status: value as LifecycleStatus })}
+              placeholder="Select status"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Approval Status
+            </label>
+            <HeadlessSelect
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' }
+              ]}
+              value={formData.approval_status}
+              onChange={(value) => setFormData({ ...formData, approval_status: value as ApprovalStatus })}
+              placeholder="Select status"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="reusable"
+              checked={formData.reusable}
+              onChange={(e) => setFormData({ ...formData, reusable: e.target.checked })}
+              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
+            />
+            <label htmlFor="reusable" className="ml-2 text-sm text-gray-700">
+              Reusable across multiple campaigns
+            </label>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="multiLanguage"
+              checked={formData.multi_language}
+              onChange={(e) => setFormData({ ...formData, multi_language: e.target.checked })}
+              className="w-4 h-4 text-[#1a3d2e] border-gray-300 rounded focus:outline-none"
+            />
+            <label htmlFor="multiLanguage" className="ml-2 text-sm text-gray-700">
+              Multi-language support
+            </label>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div
+          className="rounded-2xl p-6"
+          style={{ backgroundColor: `${color.sentra.main}10` }}
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Offer Summary</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Name:</span>
+              <span className="font-medium">{formData.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Category:</span>
+              <span className="font-medium">
+                {formData.category_id ? `Category ${formData.category_id}` : 'Not selected'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Status:</span>
+              <span className="font-medium capitalize">{formData.lifecycle_status}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Approval:</span>
+              <span className="font-medium capitalize">{formData.approval_status}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Reusable:</span>
+              <span className="font-medium">{formData.reusable ? 'Yes' : 'No'}</span>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="flex justify-between">
+        <button
+          onClick={onPrev}
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Previous
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={isLoading}
+          className="text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            backgroundColor: color.sentra.main
+          }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!e.currentTarget.disabled) {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }
+          }}
+        >
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              Creating...
+            </>
+          ) : (
+            <>
+              <Check className="w-5 h-5" />
+              Create Offer
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function CreateOfferPage() {
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const totalSteps = 6;
+
+  const [formData, setFormData] = useState<CreateOfferRequest>({
+    name: '',
+    description: '',
+    offer_type: '',
+    category_id: undefined,
+    product_id: undefined,
+    eligibility_rules: {},
+    lifecycle_status: 'draft',
+    approval_status: 'pending',
+    reusable: false,
+    multi_language: false,
+  });
+
+  const [creatives, setCreatives] = useState<OfferCreative[]>([]);
+  const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
+  const [rewards, setRewards] = useState<OfferReward[]>([]);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Validation functions
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    // Required fields validation
+    if (!formData.name?.trim()) {
+      errors.name = 'Offer name is required';
+    }
+
+    if (!formData.offer_type?.trim()) {
+      errors.offer_type = 'Offer type is required';
+    }
+
+    if (!formData.category_id) {
+      errors.category_id = 'Category is required';
+    }
+
+    if (!formData.product_id) {
+      errors.product_id = 'Product selection is required';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearValidationErrors = () => {
+    setValidationErrors({});
+  };
+
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      clearValidationErrors();
+
+      // Validate form before submission
+      if (!validateForm()) {
+        setError('Please fix the validation errors before submitting');
+        return;
+      }
+
+      await offerService.createOffer(formData);
+      navigate('/dashboard/offers');
+    } catch (err: unknown) {
+      console.error('Create offer error:', err);
+
+      // Parse API error response for better error messages
+      let errorMessage = 'Failed to create offer';
+
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errorResponse = err as { response?: { data?: { message?: string; error?: string; details?: unknown } } };
+
+        if (errorResponse.response?.data?.message) {
+          errorMessage = errorResponse.response.data.message;
+        } else if (errorResponse.response?.data?.error) {
+          errorMessage = errorResponse.response.data.error;
+        } else if (errorResponse.response?.data?.details) {
+          // Handle validation errors from API
+          const details = errorResponse.response.data.details;
+          if (Array.isArray(details)) {
+            const fieldErrors: Record<string, string> = {};
+            details.forEach((detail: { field?: string; message?: string }) => {
+              if (detail.field) {
+                fieldErrors[detail.field] = detail.message || 'Invalid value';
+              }
+            });
+            setValidationErrors(fieldErrors);
+            errorMessage = 'Please fix the validation errors below';
+          } else if (typeof details === 'object') {
+            setValidationErrors(details as Record<string, string>);
+            errorMessage = 'Please fix the validation errors below';
+          }
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const stepProps = {
+    currentStep,
+    totalSteps,
+    onNext: handleNext,
+    onPrev: handlePrev,
+    onSubmit: handleSubmit,
+    formData,
+    setFormData,
+    creatives,
+    setCreatives,
+    trackingSources,
+    setTrackingSources,
+    rewards,
+    setRewards,
+    isLoading,
+    validationErrors,
+    clearValidationErrors,
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <button
+          onClick={() => navigate('/dashboard/offers')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Offers
+        </button>
+
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Create New Offer
+          </h1>
+          <p className="text-gray-600">Follow the steps to create a comprehensive offer for your customers</p>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          {[1, 2, 3, 4, 5, 6].map((step) => (
+            <div key={step} className="flex items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${step <= currentStep
+                ? 'bg-[#3b8169] text-white'
+                : 'bg-gray-200 text-gray-500'
+                }`}>
+                {step < currentStep ? <Check className="w-5 h-5" /> : step}
+              </div>
+              {step < 6 && (
+                <div
+                  className={`w-12 h-1 mx-2 transition-all duration-200 ${step < currentStep ? '' : 'bg-gray-200'}`}
+                  style={step < currentStep ? { backgroundColor: color.sentra.main } : {}}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>Basic Info</span>
+          <span>Products</span>
+          <span>Creative</span>
+          <span>Tracking</span>
+          <span>Rewards</span>
+          <span>Review</span>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Step Content */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        {currentStep === 1 && <BasicInfoStep {...stepProps} />}
+        {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
+        {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
+        {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
+        {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
+        {currentStep === 6 && <ReviewStep {...stepProps} />}
       </div>
     </div>
   );
