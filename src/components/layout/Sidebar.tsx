@@ -104,22 +104,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Settings', href: '/dashboard/settings', icon: Settings, type: 'single', entity: 'configuration' as const },
   ];
 
-  // Helper functions for consistent styling with our design system
   const getEntityColor = (entity?: NavigationItem['entity']) => {
     return entity ? helpers.entityColor(entity) : color.sentra.main;
   };
 
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     return isActive
-      ? `bg-gradient-to-r from-[${getEntityColor(entity)}]/10 to-[${getEntityColor(entity)}]/5 text-[${getEntityColor(entity)}] border-l-4 border-[${getEntityColor(entity)}] shadow-sm font-semibold`
-      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 hover:shadow-sm transition-all duration-200`;
+      ? `bg-[${getEntityColor(entity)}]/20 text-[${getEntityColor(entity)}] border-l-4 border-[${getEntityColor(entity)}] font-semibold shadow-sm`
+      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 transition-all duration-200`;
   };
 
   const getIconClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     if (isActive) {
       return `text-[${getEntityColor(entity)}]`;
     }
-    // Use the same green color as the logo for inactive items
     return 'text-[#3A5A40]';
   };
 
@@ -298,17 +296,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col">
         <div className="grid grid-rows-[auto_1fr_auto] bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 px-6 py-6" style={{ height: '100vh' }}>
-          {/* Logo */}
           <div className="flex h-16 items-center">
             <div className="w-32 h-32 flex items-center justify-center">
               <img src={logo} alt="Sentra Logo" className="w-full h-full object-contain" />
             </div>
           </div>
 
-          {/* Navigation - Scrollable */}
           <nav className="overflow-y-auto">
             <ul className="space-y-3">
               {navigation.map((item) => {
@@ -425,7 +420,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </ul>
           </nav>
 
-          {/* Secondary Navigation - Always at bottom */}
           <div className="pt-6 border-t border-gray-200">
             <ul className="space-y-1">
               {secondaryNavigation.map((item) => {

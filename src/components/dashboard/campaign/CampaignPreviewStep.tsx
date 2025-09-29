@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft, Eye, AlertCircle, Users, Gift, Target, TrendingUp, DollarSign, Send, Save } from 'lucide-react';
+import { Eye, AlertCircle, Users, Gift, Target, TrendingUp, DollarSign, Send, Save } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, CampaignOffer } from '../../../types/campaign';
+import { tw } from '../../../design/utils';
+import StepNavigation from '../../ui/StepNavigation';
 
 interface CampaignPreviewStepProps {
   currentStep: number;
@@ -125,43 +127,39 @@ export default function CampaignPreviewStep({
               Hide
             </button>
           </div>
-          
+
           {validationIssues.map((issue, index) => (
             <div
               key={index}
-              className={`border rounded-lg p-4 ${
-                issue.type === 'error' 
-                  ? 'bg-red-50 border-red-200' 
-                  : issue.type === 'warning'
+              className={`border rounded-lg p-4 ${issue.type === 'error'
+                ? 'bg-red-50 border-red-200'
+                : issue.type === 'warning'
                   ? 'bg-amber-50 border-amber-200'
                   : 'bg-blue-50 border-blue-200'
-              }`}
+                }`}
             >
               <div className="flex items-start space-x-2">
-                <AlertCircle className={`w-5 h-5 mt-0.5 ${
-                  issue.type === 'error' 
-                    ? 'text-red-600' 
-                    : issue.type === 'warning'
+                <AlertCircle className={`w-5 h-5 mt-0.5 ${issue.type === 'error'
+                  ? 'text-red-600'
+                  : issue.type === 'warning'
                     ? 'text-amber-600'
                     : 'text-blue-600'
-                }`} />
+                  }`} />
                 <div>
-                  <h4 className={`text-sm font-medium ${
-                    issue.type === 'error' 
-                      ? 'text-red-900' 
-                      : issue.type === 'warning'
+                  <h4 className={`text-sm font-medium ${issue.type === 'error'
+                    ? 'text-red-900'
+                    : issue.type === 'warning'
                       ? 'text-amber-900'
                       : 'text-blue-900'
-                  }`}>
+                    }`}>
                     {issue.type === 'error' ? 'Error' : issue.type === 'warning' ? 'Warning' : 'Info'}
                   </h4>
-                  <p className={`text-sm mt-1 ${
-                    issue.type === 'error' 
-                      ? 'text-red-700' 
-                      : issue.type === 'warning'
+                  <p className={`text-sm mt-1 ${issue.type === 'error'
+                    ? 'text-red-700'
+                    : issue.type === 'warning'
                       ? 'text-amber-700'
                       : 'text-blue-700'
-                  }`}>
+                    }`}>
                     {issue.message}
                   </p>
                 </div>
@@ -217,7 +215,7 @@ export default function CampaignPreviewStep({
       {/* Campaign Details */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900">Campaign Details</h3>
-        
+
         {/* Basic Information */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <h4 className="font-medium text-gray-900 mb-4">Basic Information</h4>
@@ -386,26 +384,25 @@ export default function CampaignPreviewStep({
           <ArrowLeft className="w-5 h-5 mr-2" />
           Previous
         </button>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={() => console.log('Save as draft')}
-            className="inline-flex items-center px-4 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
+            className={`inline-flex items-center px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${tw.button.secondary}`}
           >
             <Save className="w-5 h-5 mr-2" />
             Save Draft
           </button>
-          
+
           <button
             onClick={onSubmit}
             disabled={hasErrors || isLoading}
-            className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              hasErrors || isLoading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : hasWarnings
+            className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${hasErrors || isLoading
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : hasWarnings
                 ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:scale-105'
-                : 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
-            }`}
+                : `${tw.button.primary} hover:shadow-lg hover:scale-105`
+              }`}
           >
             {isLoading ? (
               <>

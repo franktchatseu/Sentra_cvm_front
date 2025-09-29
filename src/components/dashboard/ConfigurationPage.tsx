@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
-  Settings,
   Target,
   MessageSquare,
   Package,
@@ -106,7 +105,7 @@ export default function ConfigurationPage() {
         subConfigs: ['User Roles', 'Permissions', 'Account Settings'],
         lastModified: '2025-01-15',
         status: 'active',
-        icon: Settings,
+        icon: Users,
         color: 'users',
         gradient: `from-[${color.entities.users}] to-[${color.entities.users}]80`,
         navigationPath: '/dashboard/user-management'
@@ -203,17 +202,17 @@ export default function ConfigurationPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className={`bg-white rounded-2xl p-6 border border-[${color.ui.border}] mb-8`}>
+      <div className={` mb-8`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 w-full">
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${tw.textMuted}`} />
             <input
               type="text"
               placeholder="Search configurations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+              className={`w-full pl-10 pr-4 py-4 border border-[${color.ui.border}] rounded-xl focus:outline-none transition-all duration-200 text-sm`}
             />
           </div>
 
@@ -248,7 +247,7 @@ export default function ConfigurationPage() {
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
                 className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${selectedCategory === category.id
-                  ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}] border border-[${color.sentra.main}]/20`
+                  ? `bg-[${color.sentra.light}] text-[${color.sentra.main}] border border-[${color.sentra.main}]/20`
                   : `bg-[${color.ui.surface}] ${tw.textSecondary} hover:bg-[${color.ui.surface}]/80 border border-[${color.ui.border}]`
                   }`}
               >

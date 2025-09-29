@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Users, Plus, Eye, Edit, Trash2, Target, AlertCircle } from 'lucide-react';
+import { Users, Plus, Eye, Edit, Trash2, Target, AlertCircle, ChevronDown } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, ControlGroup } from '../../../types/campaign';
 import SegmentSelectionModal from './SegmentSelectionModal';
 import SegmentModal from '../../modals/SegmentModal';
+import { Listbox, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
+import { tw, color } from '../../../design/utils';
+import StepNavigation from '../../ui/StepNavigation';
 
 interface AudienceConfigurationStepProps {
   currentStep: number;
@@ -114,13 +118,15 @@ export default function AudienceConfigurationStep({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Selected Segments</h3>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-[#3b8169] text-white rounded-lg hover:bg-[#2d5f4e] transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Segments
-          </button>
+          {selectedSegments.length > 0 && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${tw.button.primary}`}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Segments
+            </button>
+          )}
         </div>
 
         {selectedSegments.length === 0 ? (
@@ -235,14 +241,55 @@ export default function AudienceConfigurationStep({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Control Group Type
                   </label>
-                  <select
-                    value={controlGroup.type}
-                    onChange={(e) => setControlGroup({ ...controlGroup, type: e.target.value as 'standard' | 'universal' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                  >
-                    <option value="standard">Standard Control Group</option>
-                    <option value="universal">Universal Control Group</option>
-                  </select>
+                  <Listbox value={controlGroup.type} onChange={(value) => setControlGroup({ ...controlGroup, type: value as 'standard' | 'universal' })}>
+                    <div className="relative">
+                      <Listbox.Button className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent text-left cursor-pointer flex items-center justify-between">
+                        {({ open }) => (
+                          <>
+                            <span className="block truncate">
+                              {controlGroup.type === 'standard' ? 'Standard Control Group' : 'Universal Control Group'}
+                            </span>
+                            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                          </>
+                        )}
+                      </Listbox.Button>
+                      <Transition
+                        as={Fragment}
+                        leave="transition ease-in duration-100"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                      >
+                        <Listbox.Options className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                          <Listbox.Option
+                            value="standard"
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-gray-50' : 'text-gray-900'
+                              }`
+                            }
+                          >
+                            {({ selected }) => (
+                              <span className={`block truncate text-sm ${selected ? 'font-medium' : 'font-normal'}`}>
+                                Standard Control Group
+                              </span>
+                            )}
+                          </Listbox.Option>
+                          <Listbox.Option
+                            value="universal"
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-gray-50' : 'text-gray-900'
+                              }`
+                            }
+                          >
+                            {({ selected }) => (
+                              <span className={`block truncate text-sm ${selected ? 'font-medium' : 'font-normal'}`}>
+                                Universal Control Group
+                              </span>
+                            )}
+                          </Listbox.Option>
+                        </Listbox.Options>
+                      </Transition>
+                    </div>
+                  </Listbox>
                 </div>
               </div>
 
@@ -251,17 +298,58 @@ export default function AudienceConfigurationStep({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Universal Control Frequency
                   </label>
-                  <select
-                    value={controlGroup.universal_frequency || 'monthly'}
-                    onChange={(e) => setControlGroup({ 
-                      ...controlGroup, 
-                      universal_frequency: e.target.value as 'monthly' | 'quarterly' 
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                  >
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                  </select>
+                  <Listbox value={controlGroup.universal_frequency || 'monthly'} onChange={(value) => setControlGroup({
+                    ...controlGroup,
+                    universal_frequency: value as 'monthly' | 'quarterly'
+                  })}>
+                    <div className="relative">
+                      <Listbox.Button className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent text-left cursor-pointer flex items-center justify-between">
+                        {({ open }) => (
+                          <>
+                            <span className="block truncate">
+                              {controlGroup.universal_frequency === 'quarterly' ? 'Quarterly' : 'Monthly'}
+                            </span>
+                            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                          </>
+                        )}
+                      </Listbox.Button>
+                      <Transition
+                        as={Fragment}
+                        leave="transition ease-in duration-100"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                      >
+                        <Listbox.Options className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                          <Listbox.Option
+                            value="monthly"
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-gray-50' : 'text-gray-900'
+                              }`
+                            }
+                          >
+                            {({ selected }) => (
+                              <span className={`block truncate text-sm ${selected ? 'font-medium' : 'font-normal'}`}>
+                                Monthly
+                              </span>
+                            )}
+                          </Listbox.Option>
+                          <Listbox.Option
+                            value="quarterly"
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-gray-50' : 'text-gray-900'
+                              }`
+                            }
+                          >
+                            {({ selected }) => (
+                              <span className={`block truncate text-sm ${selected ? 'font-medium' : 'font-normal'}`}>
+                                Quarterly
+                              </span>
+                            )}
+                          </Listbox.Option>
+                        </Listbox.Options>
+                      </Transition>
+                    </div>
+                  </Listbox>
                   <p className="text-xs text-gray-500 mt-1">
                     How often the universal control group is applied
                   </p>
@@ -274,7 +362,7 @@ export default function AudienceConfigurationStep({
                   <div>
                     <h4 className="text-sm font-medium text-blue-900">Control Group Information</h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      {controlGroup.type === 'universal' 
+                      {controlGroup.type === 'universal'
                         ? 'Universal control groups are applied across multiple campaigns to provide consistent measurement.'
                         : 'Standard control groups are specific to this campaign and will not receive any campaign communications.'
                       }
@@ -302,28 +390,11 @@ export default function AudienceConfigurationStep({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-between pt-6 border-t border-gray-200">
-        <button
-          onClick={onPrev}
-          className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Previous
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!isFormValid}
-          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-            isFormValid
-              ? 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </button>
-      </div>
+      <StepNavigation
+        onNext={handleNext}
+        onPrev={onPrev}
+        isNextDisabled={!isFormValid}
+      />
 
       {/* Segment Selection Modal */}
       {isModalOpen && (

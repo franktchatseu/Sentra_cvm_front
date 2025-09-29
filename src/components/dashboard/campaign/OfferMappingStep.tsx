@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Gift, Plus, Edit, Trash2, Target, Users, AlertCircle, Link, Copy, Save, X, Check } from 'lucide-react';
+import { Gift, Plus, Edit, Trash2, Target, AlertCircle, Link, Copy, Save, X, Check } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, CampaignOffer } from '../../../types/campaign';
 import OfferSelectionModal from './OfferSelectionModal';
 import CreateOfferModalWrapper from './CreateOfferModalWrapper';
+import { tw } from '../../../design/utils';
+import StepNavigation from '../../ui/StepNavigation';
 
 interface OfferMappingStepProps {
   currentStep: number;
@@ -28,7 +30,7 @@ export default function OfferMappingStep({
 }: OfferMappingStepProps) {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showCreateOfferModal, setShowCreateOfferModal] = useState(false);
-  const [offerMappings, setOfferMappings] = useState<{[offerId: string]: {segmentIds: string[], priority: number}}>({});
+  const [offerMappings, setOfferMappings] = useState<{ [offerId: string]: { segmentIds: string[], priority: number } }>({});
   const [editingOffer, setEditingOffer] = useState<string | null>(null);
   const [editingOfferData, setEditingOfferData] = useState<Partial<CampaignOffer>>({});
 
@@ -62,8 +64,8 @@ export default function OfferMappingStep({
 
   const handleSaveEdit = () => {
     if (editingOffer && editingOfferData) {
-      const updatedOffers = selectedOffers.map(offer => 
-        offer.id === editingOffer 
+      const updatedOffers = selectedOffers.map(offer =>
+        offer.id === editingOffer
           ? { ...offer, ...editingOfferData }
           : offer
       );
@@ -105,7 +107,7 @@ export default function OfferMappingStep({
   const toggleSegmentForOffer = (offerId: string, segmentId: string) => {
     const currentMapping = offerMappings[offerId] || { segmentIds: [], priority: 1 };
     const isSelected = currentMapping.segmentIds.includes(segmentId);
-    
+
     if (isSelected) {
       updateOfferMapping(offerId, currentMapping.segmentIds.filter(id => id !== segmentId));
     } else {
@@ -170,13 +172,15 @@ export default function OfferMappingStep({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Offer Mappings</h3>
-          <button
-            onClick={() => setShowOfferModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-[#3b8169] text-white rounded-lg hover:bg-[#2d5f4e] transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Offers
-          </button>
+          {selectedOffers.length > 0 && (
+            <button
+              onClick={() => setShowOfferModal(true)}
+              className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${tw.button.primary}`}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Offers
+            </button>
+          )}
         </div>
 
         {selectedOffers.length === 0 ? (
@@ -198,7 +202,7 @@ export default function OfferMappingStep({
               const mappedSegmentIds = getMappedSegmentsForOffer(offer.id);
               const estimatedReach = getEstimatedReach(mappedSegmentIds);
               const isEditing = editingOffer === offer.id;
-              
+
               return (
                 <div
                   key={offer.id}
@@ -215,13 +219,13 @@ export default function OfferMappingStep({
                             <input
                               type="text"
                               value={editingOfferData.name || offer.name}
-                              onChange={(e) => setEditingOfferData({...editingOfferData, name: e.target.value})}
+                              onChange={(e) => setEditingOfferData({ ...editingOfferData, name: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
                               placeholder="Nom de l'offre"
                             />
                             <textarea
                               value={editingOfferData.description || offer.description}
-                              onChange={(e) => setEditingOfferData({...editingOfferData, description: e.target.value})}
+                              onChange={(e) => setEditingOfferData({ ...editingOfferData, description: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
                               rows={2}
                               placeholder="Description de l'offre"
@@ -295,7 +299,7 @@ export default function OfferMappingStep({
                       <Link className="w-4 h-4 text-gray-400" />
                       <span className="text-sm font-medium text-gray-700">Mapped to Segments</span>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -370,7 +374,7 @@ export default function OfferMappingStep({
               {Object.entries(offerMappings).map(([offerId, mapping]) => {
                 const offer = selectedOffers.find(o => o.id === offerId);
                 if (!offer || mapping.segmentIds.length === 0) return null;
-                
+
                 return (
                   <div key={offerId} className="text-sm text-blue-700">
                     <span className="font-medium">{offer.name}</span> → {' '}
@@ -383,28 +387,11 @@ export default function OfferMappingStep({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-between pt-6 border-t border-gray-200">
-        <button
-          onClick={onPrev}
-          className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Previous
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!isFormValid}
-          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-            isFormValid
-              ? 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </button>
-      </div>
+      <StepNavigation
+        onNext={handleNext}
+        onPrev={onPrev}
+        isNextDisabled={!isFormValid}
+      />
 
       {/* Offer Selection Modal */}
       {showOfferModal && (
@@ -428,7 +415,7 @@ export default function OfferMappingStep({
         <CreateOfferModalWrapper
           isOpen={showCreateOfferModal}
           onClose={() => setShowCreateOfferModal(false)}
-          onOfferCreated={(offerId) => {
+          onOfferCreated={() => {
             // Handle the newly created offer
             setShowCreateOfferModal(false);
             // Optionally refresh offers list or add to selected offers

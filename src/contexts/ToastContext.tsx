@@ -21,7 +21,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
   const showToast = (type: ToastType, title: string, message?: string, duration?: number) => {
     const id = Math.random().toString(36).substr(2, 9);
     const toast: Toast = { id, type, title, message, duration };
-    
+
     setToasts(prev => [...prev, toast]);
   };
 
@@ -37,9 +37,9 @@ export function ToastProvider({ children }: ToastProviderProps) {
   return (
     <ToastContext.Provider value={{ showToast, success, error, warning, info }}>
       {children}
-      
+
       {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2">
         {toasts.map(toast => (
           <ToastComponent
             key={toast.id}

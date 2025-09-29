@@ -1,5 +1,9 @@
-import { ArrowRight, Target } from 'lucide-react';
+import { Target, ChevronDown } from 'lucide-react';
 import { CreateCampaignRequest } from '../../../types/campaign';
+import { tw, components } from '../../../design/utils';
+import { Listbox, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
+import StepNavigation from '../../ui/StepNavigation';
 
 interface CampaignDefinitionStepProps {
   currentStep: number;
@@ -15,7 +19,7 @@ const objectiveOptions = [
     label: 'New Customer Acquisition',
     description: 'Attract and convert new customers to your service',
     icon: '🎯',
-    color: 'border-blue-200 hover:border-blue-300 hover:bg-blue-50'
+    color: 'border-green-300 hover:border-green-400 hover:bg-green-50'
   },
   {
     value: 'retention',
@@ -111,10 +115,10 @@ const categoryOptions = [
 ];
 
 
-export default function CampaignDefinitionStep({ 
-  onNext, 
-  formData, 
-  setFormData 
+export default function CampaignDefinitionStep({
+  onNext,
+  formData,
+  setFormData
 }: CampaignDefinitionStepProps) {
   const handleNext = () => {
     if (formData.name.trim() && formData.primary_objective && formData.category) {
@@ -125,33 +129,30 @@ export default function CampaignDefinitionStep({
   const isFormValid = formData.name.trim() && formData.primary_objective && formData.category;
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="bg-white rounded-2xl border border-gray-200 p-8 space-y-8">
       <div className="text-center">
         <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Target className="w-8 h-8 text-blue-600" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Campaign Definition & Objectives</h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <h2 className={`text-2xl font-bold ${tw.textPrimary} mb-2`}>Campaign Definition & Objectives</h2>
+        <p className={`${tw.textMuted} max-w-2xl mx-auto`}>
           Define your campaign goals and choose how you want to create your campaign
         </p>
       </div>
 
 
-      {/* Campaign Information */}
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">Campaign Information</h3>
-        
-        {/* Campaign Name */}
+        <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Campaign Information</h3>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${tw.textMuted} mb-2`}>
             Campaign Name *
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+            className={`w-full px-4 py-3 text-base ${components.input.default}`}
             placeholder="Enter campaign name..."
             required
           />
@@ -159,13 +160,13 @@ export default function CampaignDefinitionStep({
 
         {/* Campaign Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${tw.textMuted} mb-2`}>
             Campaign Description
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+            className={`w-full px-4 py-3 text-base ${components.input.default}`}
             placeholder="Describe your campaign objectives and strategy..."
             rows={3}
           />
@@ -175,36 +176,65 @@ export default function CampaignDefinitionStep({
       {/* Campaign Category */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className={`block text-sm font-medium ${tw.textMuted} mb-3`}>
             Campaign Category *
           </label>
-          <div className="relative">
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white appearance-none cursor-pointer"
-              required
-            >
-              <option value="">Select a campaign category...</option>
-              {categoryOptions.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.icon} {category.label}
-                </option>
-              ))}
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+          <Listbox value={formData.category} onChange={(value) => setFormData({ ...formData, category: value })}>
+            <div className="relative">
+              <Listbox.Button className={`w-full  px-4 py-3 text-base ${components.input.default} text-left cursor-pointer flex items-center justify-between`}>
+                {({ open }) => (
+                  <>
+                    <span className="block truncate">
+                      {formData.category ? (
+                        <span className="flex items-center">
+                          <span className="mr-2">{categoryOptions.find(cat => cat.value === formData.category)?.icon}</span>
+                          {categoryOptions.find(cat => cat.value === formData.category)?.label}
+                        </span>
+                      ) : (
+                        'Select a campaign category...'
+                      )}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  </>
+                )}
+              </Listbox.Button>
+              <Transition
+                as={Fragment}
+                leave="transition ease-in duration-100"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <Listbox.Options className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                  {categoryOptions.map((category) => (
+                    <Listbox.Option
+                      key={category.value}
+                      value={category.value}
+                      className={({ active }) =>
+                        `relative cursor-pointer select-none py-2 px-4 ${active ? 'bg-gray-50' : 'text-gray-900'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <span className={`block truncate text-sm ${selected ? 'font-medium' : 'font-normal'}`}>
+                          <span className="flex items-center">
+                            <span className="mr-3 text-lg">{category.icon}</span>
+                            {category.label}
+                          </span>
+                        </span>
+                      )}
+                    </Listbox.Option>
+                  ))}
+                </Listbox.Options>
+              </Transition>
             </div>
-          </div>
+          </Listbox>
         </div>
       </div>
 
       {/* Primary Objective */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className={`block text-sm font-medium ${tw.textMuted} mb-3`}>
             Primary Objective *
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -213,36 +243,27 @@ export default function CampaignDefinitionStep({
                 key={option.value}
                 type="button"
                 onClick={() => setFormData({ ...formData, primary_objective: option.value as CreateCampaignRequest['primary_objective'] })}
-                className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
-                  formData.primary_objective === option.value
-                    ? `${option.color} border-[#3b8169] bg-gradient-to-br from-[#3b8169]/5 to-[#2d5f4e]/5`
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
-                }`}
+                className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${formData.primary_objective === option.value
+                  ? `${option.color} border-[#3b8169] bg-gradient-to-br from-[#3b8169]/5 to-[#2d5f4e]/5`
+                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
               >
                 <div className="text-2xl mb-2">{option.icon}</div>
-                <div className="font-medium text-gray-900 mb-1">{option.label}</div>
-                <div className="text-sm text-gray-500">{option.description}</div>
+                <div className={`font-medium ${tw.textPrimary} mb-1`}>{option.label}</div>
+                <div className={`text-sm ${tw.textMuted}`}>{option.description}</div>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex justify-end pt-6 border-t border-gray-200">
-        <button
-          onClick={handleNext}
-          disabled={!isFormValid}
-          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-            isFormValid
-              ? 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </button>
-      </div>
+      <StepNavigation
+        onNext={handleNext}
+        onPrev={() => { }} // First step, no previous
+        isNextDisabled={!isFormValid}
+        showPrevButton={false}
+        className="justify-end"
+      />
     </div>
   );
 }

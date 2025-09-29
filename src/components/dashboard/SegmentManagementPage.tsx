@@ -242,7 +242,7 @@ export default function SegmentManagementPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className={`bg-white rounded-xl p-6`}>
+      <div className={``}>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="flex-1 relative">
             <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-[${color.ui.text.muted}] w-5 h-5`} />

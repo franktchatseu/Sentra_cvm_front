@@ -284,7 +284,6 @@ export default function AuthenticatedLandingPage() {
             white-space: nowrap;
           }
           
-          /* Force white color for arrow icons */
           .arrow-white svg {
             color: white !important;
             fill: white !important;
@@ -331,6 +330,11 @@ export default function AuthenticatedLandingPage() {
               grid-template-columns: repeat(3, 1fr);
               gap: 2rem;
             }
+          }
+          
+          /* Center the last card when it's alone in the row */
+          .modules-grid > div:last-child:nth-child(3n+1) {
+            grid-column: 2;
           }
           
         `}

@@ -1,13 +1,94 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Plus, Filter, Search, Target, Users, Calendar, MoreHorizontal, Eye, Play, Pause, Edit } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Plus,
+  Filter,
+  Search,
+  Target,
+  Users,
+  Calendar,
+  MoreHorizontal,
+  Eye,
+  Play,
+  Pause,
+  Edit,
+  Copy,
+  Archive,
+  Trash2,
+  Download,
+  History,
+  CheckCircle,
+} from 'lucide-react';
 import { color, tw } from '../../design/utils';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import { campaignService } from '../../services/campaignService';
+import { useFileDownload } from '../../hooks/useFileDownload';
+import { useClickOutside } from '../../hooks/useClickOutside';
+import DeleteConfirmModal from '../ui/DeleteConfirmModal';
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
+  const { downloadBlob } = useFileDownload();
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    category: 'all',
+    approvalStatus: 'all',
+    startDateFrom: '',
+    startDateTo: '',
+    sortBy: 'createdAt',
+    sortDirection: 'desc'
+  });
+  const filterRef = useRef<HTMLDivElement>(null);
+  const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
+  // Use click outside hook for filter modal
+  useClickOutside(filterRef, () => setShowAdvancedFilters(false), { enabled: showAdvancedFilters });
+
+  // Calculate dropdown position based on button position
+  const calculateDropdownPosition = (buttonElement: HTMLElement) => {
+    const rect = buttonElement.getBoundingClientRect();
+    const dropdownWidth = 256; // w-64 = 16rem = 256px
+    const dropdownHeight = 300; // Approximate height for action menu
+
+    // Position dropdown below button with small gap
+    let top = rect.bottom + 8;
+    // Align dropdown's right edge with button's right edge for proper alignment
+    let left = rect.right - dropdownWidth;
+
+    // Prevent dropdown from going off the left edge of screen
+    if (left < 8) left = 8;
+    // Prevent dropdown from going off the right edge of screen
+    if (left + dropdownWidth > window.innerWidth - 8) {
+      left = window.innerWidth - dropdownWidth - 8;
+    }
+
+    // If dropdown would go off bottom of screen, show it above the button instead
+    if (top + dropdownHeight > window.innerHeight - 8) {
+      top = rect.top - dropdownHeight - 8;
+    }
+
+    return { top, left };
+  };
+
+  const handleActionMenuToggle = (campaignId: number, buttonElement: HTMLElement) => {
+    if (showActionMenu === campaignId) {
+      setShowActionMenu(null);
+      setDropdownPosition(null);
+      setDropdownPosition(null);
+    } else {
+      const position = calculateDropdownPosition(buttonElement);
+      setDropdownPosition(position);
+      setShowActionMenu(campaignId);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -17,12 +98,32 @@ export default function CampaignsPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Close action menus when clicking outside
+  useEffect(() => {
+    const handleClickOutsideActionMenus = (event: MouseEvent) => {
+      const clickedOutsideActionMenus = Object.values(actionMenuRefs.current).every(ref =>
+        ref && !ref.contains(event.target as Node)
+      );
+      if (clickedOutsideActionMenus) {
+        setShowActionMenu(null);
+        setDropdownPosition(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutsideActionMenus);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideActionMenus);
+    };
+  }, []);
+
   const campaigns = [
     {
       id: 1,
       name: 'Summer Data Bundle Promotion',
+      description: 'A targeted campaign to promote our summer data bundle offers to high-value customers',
       status: 'active',
       type: 'Acquisition',
+      category: 'Promotional',
       segment: 'High Value Users',
       offer: 'Double Data Bundle',
       startDate: '2025-01-15',
@@ -38,8 +139,10 @@ export default function CampaignsPage() {
     {
       id: 2,
       name: 'Churn Prevention - Q1',
+      description: 'Prevent at-risk customers from leaving with special retention offers',
       status: 'scheduled',
       type: 'Retention',
+      category: 'Customer Lifecycle',
       segment: 'At Risk Customers',
       offer: 'Special Retention Offer',
       startDate: '2025-01-22',
@@ -55,8 +158,10 @@ export default function CampaignsPage() {
     {
       id: 3,
       name: 'New Customer Welcome Series',
+      description: 'Welcome new subscribers with onboarding offers and guidance',
       status: 'active',
       type: 'Onboarding',
+      category: 'Customer Lifecycle',
       segment: 'New Subscribers',
       offer: 'Welcome Bonus Package',
       startDate: '2025-01-10',
@@ -72,8 +177,10 @@ export default function CampaignsPage() {
     {
       id: 4,
       name: 'Weekend Voice Bundle Push',
+      description: 'Promote weekend voice bundles to voice-heavy users',
       status: 'paused',
       type: 'Upsell',
+      category: 'Promotional',
       segment: 'Voice Heavy Users',
       offer: 'Weekend Voice Bundle',
       startDate: '2025-01-08',
@@ -96,6 +203,33 @@ export default function CampaignsPage() {
     { value: 'completed', label: 'Completed', count: 0 }
   ];
 
+  const categoryOptions = [
+    { value: 'all', label: 'All Categories' },
+    { value: 'Promotional', label: 'Promotional' },
+    { value: 'Seasonal', label: 'Seasonal' },
+    { value: 'Product Launch', label: 'Product Launch' },
+    { value: 'Customer Lifecycle', label: 'Customer Lifecycle' },
+    { value: 'Behavioral Trigger', label: 'Behavioral Trigger' },
+    { value: 'Loyalty Program', label: 'Loyalty Program' },
+    { value: 'Win-back', label: 'Win-back' },
+    { value: 'Educational', label: 'Educational' },
+    { value: 'Event-based', label: 'Event-based' }
+  ];
+
+  const approvalStatusOptions = [
+    { value: 'all', label: 'All Approval Status' },
+    { value: 'pending', label: 'Pending Approval' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' }
+  ];
+
+  const sortOptions = [
+    { value: 'createdAt', label: 'Date Created' },
+    { value: 'name', label: 'Campaign Name' },
+    { value: 'status', label: 'Status' },
+    { value: 'performance', label: 'Performance' }
+  ];
+
   const getStatusBadge = (status: string) => {
     const badges = {
       active: `bg-[${color.status.success.light}] text-[${color.status.success.main}]`,
@@ -106,13 +240,142 @@ export default function CampaignsPage() {
     return badges[status as keyof typeof badges] || badges.active;
   };
 
-  const filteredCampaigns = selectedStatus === 'all'
-    ? campaigns
-    : campaigns.filter(campaign => campaign.status === selectedStatus);
+  // Action handlers using service layer
+  const handleDuplicateCampaign = async (campaignId: number) => {
+    try {
+      const newName = `Copy of Campaign ${campaignId}`;
+      await campaignService.cloneCampaign(campaignId, { newName });
+      console.log('Campaign duplicated successfully');
+      // Refresh campaigns list or show success message
+      setShowActionMenu(null);
+      setDropdownPosition(null);
+      setDropdownPosition(null);
+    } catch (error) {
+      console.error('Failed to duplicate campaign:', error);
+    }
+  };
+
+  const handleCloneCampaign = async (campaignId: number) => {
+    try {
+      const newName = `Clone of Campaign ${campaignId}`;
+      await campaignService.cloneCampaign(campaignId, { newName });
+      console.log('Campaign cloned successfully');
+      // Navigate to edit page or show success message
+      setShowActionMenu(null);
+      setDropdownPosition(null);
+    } catch (error) {
+      console.error('Failed to clone campaign:', error);
+    }
+  };
+
+  const handleArchiveCampaign = async (campaignId: number) => {
+    try {
+      await campaignService.archiveCampaign(campaignId);
+      console.log('Campaign archived successfully');
+      // Update campaign status or refresh list
+      setShowActionMenu(null);
+      setDropdownPosition(null);
+    } catch (error) {
+      console.error('Failed to archive campaign:', error);
+    }
+  };
+
+  const handleDeleteCampaign = (campaignId: number, campaignName: string) => {
+    setCampaignToDelete({ id: campaignId, name: campaignName });
+    setShowDeleteModal(true);
+    setShowActionMenu(null);
+    setDropdownPosition(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!campaignToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await campaignService.deleteCampaign(campaignToDelete.id);
+      console.log('Campaign deleted successfully');
+      // Remove from list or refresh
+      setShowDeleteModal(false);
+      setCampaignToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setCampaignToDelete(null);
+  };
+
+  const handleExportCampaign = async (campaignId: number) => {
+    try {
+      const blob = await campaignService.exportCampaign(campaignId);
+      downloadBlob(blob, `campaign-${campaignId}-data.csv`);
+      setShowActionMenu(null);
+      setDropdownPosition(null);
+    } catch (error) {
+      console.error('Failed to export campaign:', error);
+    }
+  };
+
+  // const handleViewAnalytics = (campaignId: number) => {
+  //   navigate(`/dashboard/campaigns/${campaignId}/analytics`);
+  //   setShowActionMenu(null);
+  // };
+
+  // const handleViewApprovalHistory = (campaignId: number) => {
+  //   navigate(`/dashboard/campaigns/${campaignId}/approval-history`);
+  //   setShowActionMenu(null);
+  // };
+
+  // const handleViewLifecycleHistory = (campaignId: number) => {
+  //   navigate(`/dashboard/campaigns/${campaignId}/lifecycle-history`);
+  //   setShowActionMenu(null);
+  // };
+
+  const filteredCampaigns = campaigns.filter(campaign => {
+    // Status filter
+    const statusMatch = selectedStatus === 'all' || campaign.status === selectedStatus;
+
+    // Search filter
+    const searchMatch = searchQuery === '' ||
+      campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Category filter
+    const categoryMatch = filters.category === 'all' || campaign.category === filters.category;
+
+    // Date range filter
+    const dateMatch = !filters.startDateFrom || !filters.startDateTo ||
+      (campaign.startDate >= filters.startDateFrom && campaign.startDate <= filters.startDateTo);
+
+    return statusMatch && searchMatch && categoryMatch && dateMatch;
+  }).sort((a, b) => {
+    // Sorting logic
+    switch (filters.sortBy) {
+      case 'name':
+        return filters.sortDirection === 'asc'
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
+      case 'status':
+        return filters.sortDirection === 'asc'
+          ? a.status.localeCompare(b.status)
+          : b.status.localeCompare(a.status);
+      case 'performance':
+        return filters.sortDirection === 'asc'
+          ? a.performance.revenue - b.performance.revenue
+          : b.performance.revenue - a.performance.revenue;
+      default: // createdAt
+        return filters.sortDirection === 'asc'
+          ? new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+          : new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    }
+  });
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
           <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Campaigns</h1>
@@ -132,7 +395,6 @@ export default function CampaignsPage() {
 
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          {/* Status Tabs */}
           <div className="flex flex-wrap gap-3">
             {statusOptions.map((option) => (
               <button
@@ -165,25 +427,29 @@ export default function CampaignsPage() {
             ))}
           </div>
 
-          {/* Search */}
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
               <input
                 type="text"
                 placeholder="Search campaigns..."
-                className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:ring-0 focus:border-gray-300 w-72 text-sm`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:ring-0 focus:border-[${color.sentra.main}] w-72 text-sm`}
               />
             </div>
-            <button className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors text-base font-medium`}>
+            <button
+              onClick={() => setShowAdvancedFilters(true)}
+              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors text-base font-medium`}
+            >
               <Filter className="h-5 w-5 mr-2" />
-              Filter
+              Filters
             </button>
           </div>
         </div>
       </div>
 
-      <div className={`bg-white rounded-2xl border border-[${color.ui.border}] overflow-hidden`}>
+      <div className={`bg-white rounded-2xl border border-[${color.ui.border}] overflow-visible`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
@@ -264,24 +530,111 @@ export default function CampaignsPage() {
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center space-x-2">
-                        <button className={`group p-3 rounded-xl ${tw.textMuted} hover:text-white transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.status.info.main; }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="View Details">
+                        <button
+                          onClick={() => navigate(`/dashboard/campaigns/${campaign.id}`)}
+                          className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.campaigns}]/10 transition-all duration-300`}
+                          title="View Details"
+                        >
                           <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                         </button>
                         {campaign.status === 'paused' ? (
-                          <button className={`group p-3 rounded-xl ${tw.textMuted} hover:text-white transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Resume">
+                          <button className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Resume">
                             <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           </button>
                         ) : campaign.status === 'active' ? (
-                          <button className={`group p-3 rounded-xl ${tw.textMuted} hover:text-white transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.status.warning.main; }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Pause">
+                          <button className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Pause">
                             <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           </button>
                         ) : null}
-                        <button className={`group p-3 rounded-xl ${tw.textMuted} hover:text-white transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Edit">
+                        <button className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Edit">
                           <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                         </button>
-                        <button className={`group p-3 rounded-xl ${tw.textMuted} hover:text-white transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.ui.gray[600]; }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}>
-                          <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                        </button>
+                        <div className="relative" ref={(el) => { actionMenuRefs.current[campaign.id] = el; }}>
+                          <button
+                            onClick={(e) => handleActionMenuToggle(campaign.id, e.currentTarget)}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.campaigns}]/10 transition-all duration-300`}
+                          >
+                            <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          </button>
+
+                          {showActionMenu === campaign.id && dropdownPosition && (
+                            <div
+                              className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3"
+                              style={{
+                                zIndex: 99999,
+                                top: `${dropdownPosition.top}px`,
+                                left: `${dropdownPosition.left}px`,
+                                maxHeight: '80vh',
+                                overflowY: 'auto'
+                              }}
+                            >
+                              <button
+                                onClick={() => handleDuplicateCampaign(campaign.id)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                Duplicate Campaign
+                              </button>
+
+                              <button
+                                onClick={() => handleCloneCampaign(campaign.id)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                Clone with Changes
+                              </button>
+
+                              <button
+                                onClick={() => handleArchiveCampaign(campaign.id)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <Archive className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                Archive Campaign
+                              </button>
+
+                              <button
+                                // onClick={() => handleViewAnalytics(campaign.id)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <Target className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                View Analytics
+                              </button>
+
+                              <button
+                                onClick={() => handleExportCampaign(campaign.id)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <Download className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                Export Data
+                              </button>
+
+                              <button
+                                // onClick={() => handleViewApprovalHistory(campaign.id)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                Approval History
+                              </button>
+
+                              <button
+                                // onClick={() => handleViewLifecycleHistory(campaign.id)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <History className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                Lifecycle History
+                              </button>
+
+
+                              <button
+                                onClick={() => handleDeleteCampaign(campaign.id, campaign.name)}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4 mr-4 text-red-500" />
+                                Delete Campaign
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -314,6 +667,164 @@ export default function CampaignsPage() {
           </div>
         )}
       </div>
+
+      {/* Filters Side Modal */}
+      {showAdvancedFilters && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
+          <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">Filter Campaigns</h2>
+                <button
+                  onClick={() => setShowAdvancedFilters(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  {/* Category Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
+                    <select
+                      value={filters.category}
+                      onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                    >
+                      {categoryOptions.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Approval Status Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Approval Status</label>
+                    <select
+                      value={filters.approvalStatus}
+                      onChange={(e) => setFilters({ ...filters, approvalStatus: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                    >
+                      {approvalStatusOptions.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Date Range Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Date Range</label>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Start Date From</label>
+                        <input
+                          type="date"
+                          value={filters.startDateFrom}
+                          onChange={(e) => setFilters({ ...filters, startDateFrom: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Start Date To</label>
+                        <input
+                          type="date"
+                          value={filters.startDateTo}
+                          onChange={(e) => setFilters({ ...filters, startDateTo: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sorting */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Sort By</label>
+                    <div className="space-y-3">
+                      <select
+                        value={filters.sortBy}
+                        onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      >
+                        {sortOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setFilters({ ...filters, sortDirection: 'asc' })}
+                          className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${filters.sortDirection === 'asc'
+                            ? 'bg-[#3b8169] text-white border-[#3b8169]'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                          ↑ Ascending
+                        </button>
+                        <button
+                          onClick={() => setFilters({ ...filters, sortDirection: 'desc' })}
+                          className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${filters.sortDirection === 'desc'
+                            ? 'bg-[#3b8169] text-white border-[#3b8169]'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                          ↓ Descending
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setFilters({
+                        category: 'all',
+                        approvalStatus: 'all',
+                        startDateFrom: '',
+                        startDateTo: '',
+                        sortBy: 'createdAt',
+                        sortDirection: 'desc'
+                      });
+                      setSearchQuery('');
+                    }}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    onClick={() => setShowAdvancedFilters(false)}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#3b8169] rounded-lg hover:bg-[#2d5f4a] transition-colors"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Campaign"
+        description="Are you sure you want to delete this campaign? This action cannot be undone."
+        itemName={campaignToDelete?.name || ''}
+        isLoading={isDeleting}
+        confirmText="Delete Campaign"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

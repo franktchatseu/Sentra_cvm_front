@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, ArrowLeft, Calendar, AlertCircle } from 'lucide-react';
 import { CreateCampaignRequest, CampaignScheduling } from '../../../types/campaign';
+import { tw } from '../../../design/utils';
 
 interface SchedulingStepProps {
   currentStep: number;
@@ -69,7 +70,7 @@ export default function SchedulingStep({
   };
 
   const toggleDayOfWeek = (day: number) => {
-    setSelectedDays(prev => 
+    setSelectedDays(prev =>
       prev.includes(day)
         ? prev.filter(d => d !== day)
         : [...prev, day].sort()
@@ -94,7 +95,7 @@ export default function SchedulingStep({
       {/* Broadcast Schedule Range */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900">Broadcast Schedule Range</h3>
-        
+
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           {/* Start Options */}
           <div className="mb-6">
@@ -134,16 +135,16 @@ export default function SchedulingStep({
                     type="date"
                     value={scheduling.start_date?.split('T')[0] || '2025-09-22'}
                     onChange={(e) => updateScheduling({ start_date: e.target.value + 'T08:00' })}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
-                    style={{ minWidth: '140px' }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white text-gray-900"
+                    style={{ minWidth: '140px', backgroundColor: 'white' }}
                   />
                 </div>
                 <div className="relative">
                   <input
                     type="time"
                     value="08:00"
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
-                    style={{ minWidth: '100px' }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white text-gray-900"
+                    style={{ minWidth: '100px', backgroundColor: 'white' }}
                   />
                 </div>
               </div>
@@ -194,16 +195,16 @@ export default function SchedulingStep({
                     type="date"
                     value={scheduling.end_date?.split('T')[0] || '2025-12-31'}
                     onChange={(e) => updateScheduling({ end_date: e.target.value + 'T23:59' })}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
-                    style={{ minWidth: '140px' }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white text-gray-900"
+                    style={{ minWidth: '140px', backgroundColor: 'white' }}
                   />
                 </div>
                 <div className="relative">
                   <input
                     type="time"
                     value="23:59"
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
-                    style={{ minWidth: '100px' }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white text-gray-900"
+                    style={{ minWidth: '100px', backgroundColor: 'white' }}
                   />
                 </div>
               </div>
@@ -231,7 +232,7 @@ export default function SchedulingStep({
       {/* Recurrence Pattern and Delivery */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900">Recurrence Pattern and Delivery</h3>
-        
+
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* Recurrence Pattern */}
@@ -308,7 +309,7 @@ export default function SchedulingStep({
               />
               <span className="ml-3 text-sm font-medium text-gray-700">Set specific start time for days</span>
             </label>
-            
+
             <label className="flex items-center">
               <input
                 type="checkbox"
@@ -325,7 +326,7 @@ export default function SchedulingStep({
       {/* Target Render Time */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900">Target Render Time</h3>
-        
+
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="flex items-center space-x-8 mb-6">
             <label className="flex items-center">
@@ -339,7 +340,7 @@ export default function SchedulingStep({
               />
               <span className="ml-2 text-sm font-medium text-gray-700">Pre-Render</span>
             </label>
-            
+
             <label className="flex items-center">
               <input
                 type="radio"
@@ -351,7 +352,7 @@ export default function SchedulingStep({
               />
               <span className="ml-2 text-sm font-medium text-gray-700">Real Time</span>
             </label>
-            
+
             <label className="flex items-center">
               <input
                 type="radio"
@@ -380,7 +381,7 @@ export default function SchedulingStep({
                     <option value="At">At</option>
                   </select>
                 </div>
-                
+
                 {startBroadcastBefore === 'At' ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
@@ -403,7 +404,7 @@ export default function SchedulingStep({
                   </div>
                 )}
               </div>
-              
+
               {startBroadcastBefore !== 'At' && (
                 <div className="text-right">
                   <span className="text-sm text-gray-600">from broadcast send time</span>
@@ -421,7 +422,7 @@ export default function SchedulingStep({
 
       {/* Preview Schedule Button */}
       <div className="text-center">
-        <button className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <button className={`inline-flex items-center px-6 py-3 rounded-lg transition-colors ${tw.button.primary}`}>
           <Calendar className="w-5 h-5 mr-2" />
           Preview Schedule
         </button>
@@ -454,11 +455,10 @@ export default function SchedulingStep({
         <button
           onClick={handleNext}
           disabled={!isFormValid}
-          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-            isFormValid
-              ? 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${isFormValid
+            ? 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
         >
           Next Step
           <ArrowRight className="w-5 h-5 ml-2" />

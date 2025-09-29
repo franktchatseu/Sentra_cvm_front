@@ -1,50 +1,43 @@
-// Design System Tokens
-// Central place to manage all colors, fonts, and design tokens
-
 export const colors = {
-  // Core Brand Palette 
   brand: {
-    cream: '#DAD7CD',        // Light neutral background
-    sage: '#A3B18A',         // Sage green - secondary actions
-    medium: '#588157',       // Medium green - primary actions
-    dark: '#3A5A40',         // Dark green - your logo color
-    darkest: '#344E41',      // Darkest green - text/emphasis
+    cream: '#DAD7CD',
+    sage: '#A3B18A',
+    medium: '#588157',
+    dark: '#3A5A40',
+    darkest: '#344E41',
   },
 
-  // Sentra Brand Colors 
   sentra: {
-    light: '#588157',        // Medium green for light variants
-    main: '#3A5A40',         // Your logo color - ALL BUTTONS
-    dark: '#344E41',         // Darkest green for emphasis
-    hover: '#2f4a35',        // Slightly darker for hover states
+    light: '#588157',
+    main: '#3A5A40',
+    dark: '#344E41',
+    hover: '#2f4a35',
   },
 
-  // Entity-Specific Colors (Muted Professional Palette)
   entities: {
-    products: '#DC2626',      // Muted Red
-    offers: '#059669',        // Muted Green
-    campaigns: '#7C3AED',     // Purple
-    segments: '#0D9488',      // Teal
-    users: '#8B5CF6',         // Light Purple
-    analytics: '#DB2777',     // Muted Pink
-    configuration: '#747D8C',  // Medium Gray
+    products: '#DC2626',
+    offers: '#059669',
+    campaigns: '#8B5CF6',
+    segments: '#0D9488',
+    users: '#3B82F6',
+    analytics: '#DB2777',
+    configuration: '#747D8C',
   },
 
-  // Status Colors 
   status: {
     success: {
       light: '#e8f1e8',
-      main: '#588157',        // Our green
+      main: '#588157',
       dark: '#4a6d4a',
     },
     warning: {
       light: '#f5f1e8',
-      main: '#C4A676',        // Warm golden-beige
+      main: '#C4A676',
       dark: '#a68d5f',
     },
     error: {
       light: '#f0ebe8',
-      main: '#A67B5B',        // Muted terracotta
+      main: '#A67B5B',
       dark: '#8f6a4e',
     },
     info: {
@@ -53,8 +46,6 @@ export const colors = {
       dark: '#798b76',
     },
   },
-
-  // UI Colors (grays and neutrals)
   ui: {
     background: '#FFFFFF',    
     surface: '#DAD7CD',       
@@ -89,19 +80,16 @@ export const colors = {
 };
 
 export const fonts = {
-  // Primary Font Family (for body text, forms, UI)
   primary: {
     name: 'Inter',
     fallback: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   
-  // Heading Font 
   heading: {
     name: 'Space Grotesk',
     fallback: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   
-  // Font Weights
   weights: {
     light: 300,
     normal: 400,
@@ -111,104 +99,82 @@ export const fonts = {
     extrabold: 800,
   },
   
-  // Semantic Font Sizes 
   sizes: {
-    // Small text
-    caption: '0.75rem',      // 12px - captions, labels
-    small: '0.875rem',       // 14px - small text
-    
-    // Body text
-    body: '1rem',            // 16px - main body text
-    bodyLg: '1.125rem',      // 18px - large body text
-    
-    // Headings
-    h6: '1rem',              // 16px - smallest heading
-    h5: '1.125rem',          // 18px
-    h4: '1.25rem',           // 20px
-    h3: '1.5rem',            // 24px
-    h2: '1.875rem',          // 30px
-    h1: '2.25rem',           // 36px
-    
-    // Display (large headings)
-    displaySm: '3rem',       // 48px
-    displayMd: '3.75rem',    // 60px
-    displayLg: '4.5rem',     // 72px
+    caption: '0.75rem',
+    small: '0.875rem',
+    body: '1rem',
+    bodyLg: '1.125rem',
+    h6: '1rem',
+    h5: '1.125rem',
+    h4: '1.25rem',
+    h3: '1.5rem',
+    h2: '1.875rem',
+    h1: '2.25rem',
+    displaySm: '3rem',
+    displayMd: '3.75rem',
+    displayLg: '4.5rem',
   },
 
-  // Typography Scale (semantic usage)
   typography: {
-    // Page titles
     pageTitle: {
-      size: '1.875rem',      // 30px
-      weight: 700,           // Bold
-      family: 'heading',     // Space Grotesk
+      size: '1.875rem',
+      weight: 700,
+      family: 'heading',
     },
-    
-    // Section headings
     sectionTitle: {
-      size: '1.5rem',        // 24px
-      weight: 600,           // Semibold
+      size: '1.5rem',
+      weight: 600,
       family: 'heading',
     },
-    
-    // Card titles
     cardTitle: {
-      size: '1.25rem',       // 20px
-      weight: 600,           // Semibold
+      size: '1.25rem',
+      weight: 600,
       family: 'heading',
     },
-    
-    // Body text
     body: {
-      size: '1rem',          // 16px
-      weight: 400,           // Normal
-      family: 'primary',     // Inter
+      size: '1rem',
+      weight: 400,
+      family: 'primary',
     },
-    
-    // Small text
     caption: {
-      size: '0.875rem',      // 14px
-      weight: 400,           // Normal
+      size: '0.875rem',
+      weight: 400,
       family: 'primary',
     },
-    
-    // Buttons
     button: {
-      size: '1rem',          // 16px
-      weight: 500,           // Medium
+      size: '1rem',
+      weight: 500,
       family: 'primary',
     },
-    
-    // Form labels
     label: {
-      size: '0.875rem',      // 14px
-      weight: 500,           // Medium
+      size: '0.875rem',
+      weight: 500,
       family: 'primary',
     },
   },
 };
 
 export const spacing = {
-  xs: '0.25rem',   // 4px
-  sm: '0.5rem',    // 8px
-  md: '1rem',      // 16px
-  lg: '1.5rem',    // 24px
-  xl: '2rem',      // 32px
-  '2xl': '3rem',   // 48px
-  '3xl': '4rem',   // 64px
-  '4xl': '6rem',   // 96px
-  '5xl': '8rem',   // 128px
+  xs: '0.25rem',
+  sm: '0.5rem',
+  md: '1rem',
+  lg: '1.5rem',
+  xl: '2rem',
+  '2xl': '3rem',
+  '3xl': '4rem',
+  '4xl': '6rem',
+  '5xl': '8rem',
 };
 
 export const borderRadius = {
   none: '0',
-  sm: '0.125rem',   // 2px
-  base: '0.25rem',  // 4px
-  md: '0.375rem',   // 6px
-  lg: '0.5rem',     // 8px
-  xl: '0.75rem',    // 12px
-  '2xl': '1rem',    // 16px
-  '3xl': '1.5rem',  // 24px
+  sm: '0.125rem',
+  base: '0.25rem',
+  md: '0.375rem',
+  lg: '0.5rem',
+  xl: '0.75rem',
+  '2xl': '1rem',
+  '3xl': '1.5rem',
   full: '9999px',
 };
 
@@ -241,15 +207,12 @@ export const cssVariables = {
   '--color-text-secondary': colors.ui.text.secondary,
   '--color-text-muted': colors.ui.text.muted,
   
-  // Fonts
   '--font-primary': `"${fonts.primary.name}", ${fonts.primary.fallback}`,
   '--font-heading': `"${fonts.heading.name}", ${fonts.heading.fallback}`,
 };
 
-// Utility functions
 export const getColor = (colorPath: string): string => {
   const keys = colorPath.split('.');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let value: any = colors;
   
   for (const key of keys) {
@@ -267,17 +230,14 @@ export const getFont = (fontName: keyof typeof fonts) => {
   return fonts[fontName];
 };
 
-// Entity color helper
 export const getEntityColor = (entity: 'products' | 'offers' | 'campaigns' | 'segments' | 'users' | 'analytics' | 'configuration') => {
   return colors.entities[entity];
 };
 
-// Status color helper
 export const getStatusColor = (status: 'success' | 'warning' | 'error' | 'info', variant: 'light' | 'main' | 'dark' = 'main') => {
   return colors.status[status][variant];
 };
 
-// Typography helper
 export const getTypography = (type: keyof typeof fonts.typography) => {
   return fonts.typography[type];
 };
