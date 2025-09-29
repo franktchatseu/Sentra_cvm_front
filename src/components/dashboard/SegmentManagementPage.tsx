@@ -16,7 +16,6 @@ import { segmentService } from '../../services/segmentService';
 import { useToast } from '../../contexts/ToastContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import SegmentModal from '../modals/SegmentModal';
-import HeadlessSelect from '../ui/HeadlessSelect';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { color, tw } from '../../design/utils';
 
@@ -101,6 +100,7 @@ export default function SegmentManagementPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
@@ -257,45 +257,41 @@ export default function SegmentManagementPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <HeadlessSelect
-              options={statusOptions}
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
-              placeholder="Select status..."
-              className="min-w-[140px]"
-            />
             <button
-              onClick={handleSearch}
-              className={`flex items-center px-3 py-2 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors duration-200`}
+              onClick={() => setShowAdvancedFilters(true)}
+              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors text-base font-medium`}
             >
               <Filter className="h-5 w-5 mr-2" />
-              Filter
+              Filters
             </button>
           </div>
         </div>
 
-        {/* Tags Filter */}
-        {allTags.length > 0 && (
+        {/* Active Filters Display */}
+        {(selectedTags.length > 0 || statusFilter !== 'all') && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[${color.ui.border}]/30">
-            <span className={`text-sm font-medium ${tw.textPrimary} py-2`}>Filter by tags:</span>
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                onClick={() => {
-                  setSelectedTags(prev =>
-                    prev.includes(tag)
-                      ? prev.filter(t => t !== tag)
-                      : [...prev, tag]
-                  );
-                }}
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors ${selectedTags.includes(tag)
-                  ? `bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] border border-[${color.entities.segments}]/20`
-                  : `bg-[${color.ui.surface}] ${tw.textSecondary} border border-[${color.ui.border}] hover:bg-[${color.ui.surface}]/80`
-                  }`}
-              >
-                <Tag className="w-3 h-3 mr-1" />
+            <span className={`text-sm font-medium ${tw.textPrimary} py-2`}>Active filters:</span>
+            {statusFilter !== 'all' && (
+              <span className="inline-flex items-center px-3 py-1.5 text-sm bg-[${color.sentra.main}]/10 text-[${color.sentra.main}] rounded-full border border-[${color.sentra.main}]/20">
+                Status: {statusFilter === 'active' ? 'Active' : 'Inactive'}
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className="ml-2 text-[${color.sentra.main}] hover:text-[${color.sentra.hover}]"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {selectedTags.map(tag => (
+              <span key={tag} className="inline-flex items-center px-3 py-1.5 text-sm bg-[${color.sentra.main}]/10 text-[${color.sentra.main}] rounded-full border border-[${color.sentra.main}]/20">
                 {tag}
-              </button>
+                <button
+                  onClick={() => setSelectedTags(prev => prev.filter(t => t !== tag))}
+                  className="ml-2 text-[${color.sentra.main}] hover:text-[${color.sentra.hover}]"
+                >
+                  ×
+                </button>
+              </span>
             ))}
           </div>
         )}
@@ -486,6 +482,99 @@ export default function SegmentManagementPage() {
         onSave={handleSaveSegment}
         segment={selectedSegment}
       />
+
+      {/* Advanced Filters Side Modal */}
+      {showAdvancedFilters && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
+          <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl">
+            <div className="p-6 border-b border-[${color.ui.border}]">
+              <div className="flex items-center justify-between">
+                <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Segments</h3>
+                <button
+                  onClick={() => setShowAdvancedFilters(false)}
+                  className={`p-2 ${tw.textMuted} hover:bg-[${color.ui.surface}] rounded-lg transition-colors`}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Status Filter */}
+              <div>
+                <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Status</label>
+                <div className="space-y-2">
+                  {statusOptions.map((option) => (
+                    <label key={option.value} className="flex items-center">
+                      <input
+                        type="radio"
+                        name="status"
+                        value={option.value}
+                        checked={statusFilter === option.value}
+                        onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                        className="mr-3 text-[${color.sentra.main}] focus:ring-[${color.sentra.main}]"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tags Filter */}
+              {allTags.length > 0 && (
+                <div>
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Tags</label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {allTags.map(tag => (
+                      <label key={tag} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedTags.includes(tag)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedTags(prev => [...prev, tag]);
+                            } else {
+                              setSelectedTags(prev => prev.filter(t => t !== tag));
+                            }
+                          }}
+                          className="mr-3 text-[${color.sentra.main}] focus:ring-[${color.sentra.main}]"
+                        />
+                        <span className={`text-sm ${tw.textSecondary}`}>{tag}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-4 border-t border-[${color.ui.border}]">
+                <button
+                  onClick={() => {
+                    setStatusFilter('all');
+                    setSelectedTags([]);
+                  }}
+                  className={`flex-1 px-4 py-2 text-sm border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors`}
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => {
+                    handleSearch();
+                    setShowAdvancedFilters(false);
+                  }}
+                  className={`flex-1 px-4 py-2 text-sm text-white rounded-lg transition-colors`}
+                  style={{ backgroundColor: color.sentra.main }}
+                  onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+                  onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

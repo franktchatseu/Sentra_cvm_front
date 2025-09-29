@@ -44,9 +44,10 @@ class SegmentService {
       params.append('tags', filters.tags.join(','));
     }
     
-    if (filters?.is_active !== undefined) {
-      params.append('is_active', filters.is_active.toString());
-    }
+    // Note: Backend API doesn't support active status filtering
+    // if (filters?.is_active !== undefined) {
+    //   params.append('active', filters.is_active.toString());
+    // }
 
     const queryString = params.toString();
     const endpoint = queryString ? `?${queryString}` : '';

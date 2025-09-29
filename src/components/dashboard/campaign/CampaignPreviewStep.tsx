@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, AlertCircle, Users, Gift, Target, TrendingUp, DollarSign, Send, Save } from 'lucide-react';
+import { Eye, AlertCircle, Users, Gift, Target, TrendingUp, DollarSign, Send, Save, ArrowLeft } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, CampaignOffer } from '../../../types/campaign';
 import { tw } from '../../../design/utils';
 import StepNavigation from '../../ui/StepNavigation';
@@ -388,7 +388,7 @@ export default function CampaignPreviewStep({
         <div className="flex items-center space-x-3">
           <button
             onClick={() => console.log('Save as draft')}
-            className={`inline-flex items-center px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${tw.button.secondary}`}
+            className={`inline-flex items-center px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${tw.button.secondary}`}
           >
             <Save className="w-5 h-5 mr-2" />
             Save Draft

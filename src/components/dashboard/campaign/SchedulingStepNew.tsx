@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Calendar, AlertCircle } from 'lucide-react';
+import { Calendar, AlertCircle } from 'lucide-react';
 import { CreateCampaignRequest, CampaignScheduling } from '../../../types/campaign';
 import { tw } from '../../../design/utils';
+import StepNavigation from '../../ui/StepNavigation';
 
 interface SchedulingStepProps {
   currentStep: number;
@@ -77,7 +78,7 @@ export default function SchedulingStep({
     );
   };
 
-  const isFormValid = scheduling.start_date && scheduling.time_zone;
+  const isFormValid = scheduling.start_date && scheduling.start_date !== '' && scheduling.time_zone;
 
   return (
     <div className="space-y-8">
@@ -143,6 +144,7 @@ export default function SchedulingStep({
                   <input
                     type="time"
                     value="08:00"
+                    onChange={(e) => updateScheduling({ start_date: scheduling.start_date?.split('T')[0] + 'T' + e.target.value || '2025-09-22T' + e.target.value })}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white text-gray-900"
                     style={{ minWidth: '100px', backgroundColor: 'white' }}
                   />
@@ -203,6 +205,7 @@ export default function SchedulingStep({
                   <input
                     type="time"
                     value="23:59"
+                    onChange={(e) => updateScheduling({ end_date: scheduling.end_date?.split('T')[0] + 'T' + e.target.value || '2025-12-31T' + e.target.value })}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white text-gray-900"
                     style={{ minWidth: '100px', backgroundColor: 'white' }}
                   />
@@ -388,6 +391,7 @@ export default function SchedulingStep({
                     <input
                       type="time"
                       value="12:00"
+                      onChange={(e) => console.log('Time changed:', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
                     />
                   </div>
@@ -429,7 +433,7 @@ export default function SchedulingStep({
       </div>
 
       {/* Validation Warning */}
-      {!scheduling.start_date && (
+      {(!scheduling.start_date || scheduling.start_date === '') && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-start space-x-2">
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
@@ -443,27 +447,11 @@ export default function SchedulingStep({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-between pt-6 border-t border-gray-200">
-        <button
-          onClick={onPrev}
-          className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Previous
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!isFormValid}
-          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${isFormValid
-            ? 'bg-gradient-to-r from-[#3b8169] to-[#2d5f4e] text-white hover:shadow-lg hover:scale-105'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </button>
-      </div>
+      <StepNavigation
+        onNext={handleNext}
+        onPrev={onPrev}
+        isNextDisabled={!isFormValid}
+      />
     </div>
   );
 }
