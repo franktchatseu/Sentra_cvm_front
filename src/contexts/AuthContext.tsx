@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { authService } from '../services/authService';
-import { User, LoginResponse, CreateUserRequest, CreateUserResponse } from '../types/auth';
+import { authService } from '../features/auth/services/authService';
+import { User, LoginResponse, CreateUserRequest, CreateUserResponse } from '../features/auth/types/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const savedToken = localStorage.getItem('auth_token');
     const savedUser = localStorage.getItem('auth_user');
     const savedSessionId = localStorage.getItem('session_id');
-    
+
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
@@ -47,15 +47,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await authService.login({ email, password });
-      
+
       // Store auth data
       localStorage.setItem('auth_token', response.token);
       localStorage.setItem('session_id', response.session_id.toString());
-      
+
       setToken(response.token);
       setSessionId(response.session_id);
       setIsAuthenticated(true);
-      
+
       // Note: We don't have user data from login response, 
       // you might need to fetch user profile separately
       // For now, we'll create a basic user object
@@ -69,10 +69,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       setUser(basicUser);
       localStorage.setItem('auth_user', JSON.stringify(basicUser));
-      
+
       return response;
     } catch (error) {
       throw error;
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setToken(null);
       setSessionId(null);
-      
+
       // Clear localStorage
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
@@ -126,16 +126,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      user, 
-      token, 
-      login, 
-      logout, 
+    <AuthContext.Provider value={{
+      isAuthenticated,
+      user,
+      token,
+      login,
+      logout,
       createUser,
       requestPasswordReset,
       resetPassword,
-      loading 
+      loading
     }}>
       {children}
     </AuthContext.Provider>

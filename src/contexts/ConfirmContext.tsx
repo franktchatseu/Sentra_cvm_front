@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import ConfirmModal, { ConfirmType } from '../components/ui/ConfirmModal';
+import ConfirmModal, { ConfirmType } from '../shared/components/ui/ConfirmModal';
 
 interface ConfirmOptions {
   title: string;

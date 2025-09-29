@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import ToastComponent, { Toast, ToastType } from '../components/ui/Toast';
+import ToastComponent, { Toast, ToastType } from '../shared/components/ui/Toast';
 
 interface ToastContextType {
   showToast: (type: ToastType, title: string, message?: string, duration?: number) => void;

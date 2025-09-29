@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import RequestAccountPage from './pages/RequestAccountPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import LandingPage from './pages/LandingPage';
-import AuthenticatedLandingPage from './components/dashboard/AuthenticatedLandingPage';
-import Dashboard from './pages/Dashboard';
+import LoginPage from './features/auth/pages/LoginPage';
+import RequestAccountPage from './features/auth/pages/RequestAccountPage';
+import ResetPasswordPage from './features/auth/pages/ResetPasswordPage';
+import LandingPage from './features/auth/pages/LandingPage';
+import AuthenticatedLandingPage from './features/dashboard/components/AuthenticatedLandingPage';
+import Dashboard from './features/dashboard/pages/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
