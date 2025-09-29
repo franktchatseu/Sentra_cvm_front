@@ -34,8 +34,18 @@ export default function OffersPage() {
     sortDirection: 'DESC'
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<LifecycleStatus | 'all'>('all');
   const [selectedApproval, setSelectedApproval] = useState<ApprovalStatus | 'all'>('all');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const loadOffers = async () => {
     try {
@@ -44,7 +54,7 @@ export default function OffersPage() {
 
       const filterParams: OfferFilters = {
         ...filters,
-        search: searchTerm || undefined,
+        search: debouncedSearchTerm || undefined,
         lifecycleStatus: selectedStatus !== 'all' ? selectedStatus : undefined,
         approvalStatus: selectedApproval !== 'all' ? selectedApproval : undefined
       };
@@ -63,7 +73,7 @@ export default function OffersPage() {
   // Load offers on component mount and filter changes
   useEffect(() => {
     loadOffers();
-  }, [filters, selectedStatus, selectedApproval, searchTerm]);
+  }, [filters, selectedStatus, selectedApproval, debouncedSearchTerm]);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);

@@ -113,8 +113,18 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -122,7 +132,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
 
       // Load products from API
       const response = await productService.getProducts({
-        search: searchTerm || undefined,
+        search: debouncedSearchTerm || undefined,
         isActive: true, // Only show active products
         page: 1,
         pageSize: 100 // Load more products for selection
@@ -155,11 +165,11 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory]);
+  }, [debouncedSearchTerm, selectedCategory]);
 
   useEffect(() => {
     loadProducts();
-  }, [searchTerm, selectedCategory]);
+  }, [debouncedSearchTerm, selectedCategory]);
 
   const handleProductToggle = (product: Product) => {
     if (multiSelect) {

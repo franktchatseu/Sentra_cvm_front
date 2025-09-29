@@ -624,7 +624,7 @@ export default function CreateOfferPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
       {/* Header */}
-      <div className={`bg-white border-b border-[${color.ui.border}] shadow-sm`}>
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-8 sm:px-8 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -635,8 +635,8 @@ export default function CreateOfferPage() {
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Offers</span>
               </button>
-              <div className={`h-6 w-px bg-[${color.ui.border}]`} />
-              <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>Create New Offer</h1>
+              <div className="h-6 w-px bg-gray-300" />
+              <h1 className="text-xl font-semibold text-gray-900">Create New Offer</h1>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -660,7 +660,7 @@ export default function CreateOfferPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-8 py-8">
+      <div className="px-6 sm:px-8 lg:px-8 py-8">
         <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           {/* Progress Stepper */}
           <div className="mb-8">
@@ -672,7 +672,7 @@ export default function CreateOfferPage() {
           </div>
 
           {/* Form Content */}
-          <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-8 mb-8`}>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
             {renderStepContent()}
           </div>
 
@@ -682,8 +682,8 @@ export default function CreateOfferPage() {
               onClick={handlePrevious}
               disabled={currentStep === 1}
               className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${currentStep === 1
-                ? `${tw.textMuted} cursor-not-allowed`
-                : `${tw.textSecondary} hover:${tw.textPrimary} hover:bg-[${color.ui.background}]`
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -694,18 +694,15 @@ export default function CreateOfferPage() {
               {currentStep === STEPS.length ? (
                 <button
                   onClick={handleSubmit}
-                  className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-all duration-200"
+                  className={`flex items-center space-x-2 px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors duration-200`}
                   style={{
-                    backgroundColor: `${color.sentra.main} !important`,
-                    background: 'none !important'
+                    backgroundColor: color.sentra.main,
                   }}
                   onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
                   }}
                 >
                   <CheckCircle className="w-4 h-4" />
@@ -714,18 +711,15 @@ export default function CreateOfferPage() {
               ) : (
                 <button
                   onClick={handleNext}
-                  className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-all duration-200"
+                  className={`flex items-center space-x-2 px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors duration-200`}
                   style={{
-                    backgroundColor: `${color.sentra.main} !important`,
-                    background: 'none !important'
+                    backgroundColor: color.sentra.main,
                   }}
                   onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.hover, 'important');
-                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.setProperty('background-color', color.sentra.main, 'important');
-                    (e.target as HTMLButtonElement).style.setProperty('background', 'none', 'important');
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
                   }}
                 >
                   <span>Next</span>

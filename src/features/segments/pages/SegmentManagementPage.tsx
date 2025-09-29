@@ -96,6 +96,7 @@ export default function SegmentManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -105,13 +106,22 @@ export default function SegmentManagementPage() {
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const loadSegments = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
 
       const filters: SegmentFilters = {};
-      if (searchTerm) filters.search = searchTerm;
+      if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
       if (selectedTags.length > 0) filters.tags = selectedTags;
       if (statusFilter !== 'all') filters.is_active = statusFilter === 'active';
 
@@ -122,7 +132,7 @@ export default function SegmentManagementPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, selectedTags, statusFilter]);
+  }, [debouncedSearchTerm, selectedTags, statusFilter]);
 
   useEffect(() => {
     loadSegments();

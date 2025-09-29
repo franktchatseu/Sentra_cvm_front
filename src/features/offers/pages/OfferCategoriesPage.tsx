@@ -4,23 +4,15 @@ import { Plus, Search, Edit, Trash2, X, MessageSquare, ArrowLeft } from 'lucide-
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
-
-interface OfferCategory {
-  id: number;
-  name: string;
-  description?: string;
-  color?: string;
-  isActive: boolean;
-  offerCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { offerCategoryService } from '../services/offerCategoryService';
+import { OfferCategory, CreateOfferCategoryRequest, UpdateOfferCategoryRequest } from '../types/offerCategory';
+import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   category?: OfferCategory;
-  onSave: (category: OfferCategory) => void;
+  onSave: (category: { name: string; description?: string }) => void;
 }
 
 function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps) {
@@ -54,21 +46,12 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const savedCategory: OfferCategory = {
-        id: category?.id || Date.now(),
+      const categoryData = {
         name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        color: category?.color || '#3B82F6',
-        isActive: category?.isActive ?? true,
-        offerCount: category?.offerCount || 0,
-        createdAt: category?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        description: formData.description.trim() || undefined
       };
 
-      onSave(savedCategory);
+      onSave(categoryData);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save category');
@@ -172,74 +155,38 @@ export default function OfferCategoriesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<OfferCategory | undefined>();
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [debouncedSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadCategories = async () => {
+  const loadCategories = async (skipCache = false) => {
     try {
       setLoading(true);
-      // Mock data - in real app, this would come from API
-      const mockOfferCategories: OfferCategory[] = [
-        {
-          id: 1,
-          name: 'Data Offers',
-          description: 'Mobile data bundles and internet packages',
-          color: '#3B82F6',
-          isActive: true,
-          offerCount: 12,
-          createdAt: '2024-01-15',
-          updatedAt: '2024-01-15'
-        },
-        {
-          id: 2,
-          name: 'Voice Offers',
-          description: 'Call minutes and voice packages',
-          color: '#10B981',
-          isActive: true,
-          offerCount: 8,
-          createdAt: '2024-01-16',
-          updatedAt: '2024-01-16'
-        },
-        {
-          id: 3,
-          name: 'Combo Offers',
-          description: 'Combined data and voice packages',
-          color: '#8B5CF6',
-          isActive: true,
-          offerCount: 15,
-          createdAt: '2024-01-17',
-          updatedAt: '2024-01-17'
-        },
-        {
-          id: 4,
-          name: 'Loyalty Rewards',
-          description: 'Customer loyalty and retention programs',
-          color: '#F59E0B',
-          isActive: true,
-          offerCount: 6,
-          createdAt: '2024-01-18',
-          updatedAt: '2024-01-18'
-        },
-        {
-          id: 5,
-          name: 'Promotional',
-          description: 'Special promotional offers and campaigns',
-          color: '#EF4444',
-          isActive: false,
-          offerCount: 3,
-          createdAt: '2024-01-19',
-          updatedAt: '2024-01-19'
-        }
-      ];
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setOfferCategories(mockOfferCategories);
+      const response = await offerCategoryService.getOfferCategories({
+        search: debouncedSearchTerm || undefined,
+        pageSize: 100, // Get all categories
+        sortBy: 'created_at',
+        sortDirection: 'DESC',
+        skipCache: skipCache ? 'true' : undefined
+      });
+      setOfferCategories(response.data || []);
       setError('');
     } catch (err) {
+      console.error('Failed to load categories:', err);
       setError(err instanceof Error ? err.message : 'Error loading categories');
+      showError('Failed to load offer categories', 'Please try again later.');
+      setOfferCategories([]);
     } finally {
       setLoading(false);
     }
@@ -268,8 +215,7 @@ export default function OfferCategoriesPage() {
     if (!confirmed) return;
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await offerCategoryService.deleteOfferCategory(parseInt(category.id));
       setOfferCategories(prev => prev.filter(c => c.id !== category.id));
       success('Category Deleted', `"${category.name}" has been deleted successfully.`);
     } catch (err) {
@@ -278,26 +224,40 @@ export default function OfferCategoriesPage() {
     }
   };
 
-  const handleCategorySaved = (savedCategory: OfferCategory) => {
-    if (editingCategory) {
-      // Update existing category
-      setOfferCategories(prev =>
-        prev.map(cat => cat.id === savedCategory.id ? savedCategory : cat)
-      );
-    } else {
-      // Add new category
-      setOfferCategories(prev => [...prev, savedCategory]);
+  const handleCategorySaved = async (categoryData: { name: string; description?: string }) => {
+    try {
+      if (editingCategory) {
+        // Update existing category
+        await offerCategoryService.updateOfferCategory(
+          parseInt(editingCategory.id),
+          categoryData as UpdateOfferCategoryRequest
+        );
+        // Refresh the list to get updated data (bypass cache)
+        await loadCategories(true);
+        success('Category updated successfully');
+      } else {
+        // Create new category
+        const newCategory = await offerCategoryService.createOfferCategory(
+          categoryData as CreateOfferCategoryRequest
+        );
+        setOfferCategories(prev => [...prev, newCategory]);
+        success('Category created successfully');
+      }
+      setIsModalOpen(false);
+      setEditingCategory(undefined);
+    } catch (err) {
+      console.error('Failed to save category:', err);
+      showError('Failed to save category', 'Please try again later.');
     }
   };
 
-  const filteredOfferCategories = offerCategories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredOfferCategories = (offerCategories || []).filter(category =>
+    category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (category?.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
           <button
@@ -329,7 +289,6 @@ export default function OfferCategoriesPage() {
         </div>
       </div>
 
-      {/* Search */}
       <div className={`bg-white my-5`}>
         <div className="relative w-full">
           <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
@@ -343,19 +302,18 @@ export default function OfferCategoriesPage() {
         </div>
       </div>
 
-      {/* Categories Table */}
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]`}></div>
-            <span className={`ml-3 ${tw.textSecondary}`}>Loading categories...</span>
+            <LoadingSpinner variant="modern" size="lg" color="primary" className="mr-3" />
+            <span className={`${tw.textSecondary}`}>Loading categories...</span>
           </div>
         ) : error ? (
           <div className="p-8 text-center">
             <div className={`bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 text-[${color.status.error.main}] rounded-xl p-6`}>
               <p className="font-medium mb-3">{error}</p>
               <button
-                onClick={loadCategories}
+                onClick={() => loadCategories()}
                 className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors font-medium"
                 style={{ backgroundColor: color.status.error.main }}
               >
@@ -385,7 +343,6 @@ export default function OfferCategoriesPage() {
           </div>
         ) : (
           <>
-            {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
@@ -430,7 +387,7 @@ export default function OfferCategoriesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
-                          {category.offerCount} offer{category.offerCount !== 1 ? 's' : ''}
+                          {category.offer_count || 0} offer{(category.offer_count || 0) !== 1 ? 's' : ''}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -465,14 +422,13 @@ export default function OfferCategoriesPage() {
               </table>
             </div>
 
-            {/* Mobile Cards */}
             <div className="lg:hidden">
               {filteredOfferCategories.map((category) => (
                 <div key={category.id} className="p-4 border-b border-gray-200 last:border-b-0">
                   <div className="flex items-start space-x-3">
                     <div
                       className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: category.color || color.entities.offers }}
+                      style={{ backgroundColor: color.entities.offers }}
                     >
                       <MessageSquare className="w-5 h-5 text-white" />
                     </div>
@@ -485,7 +441,7 @@ export default function OfferCategoriesPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
-                          {category.offerCount} offer{category.offerCount !== 1 ? 's' : ''}
+                          {category.offer_count || 0} offer{(category.offer_count || 0) !== 1 ? 's' : ''}
                         </span>
                         <div className="flex items-center space-x-2">
                           <button
@@ -521,7 +477,6 @@ export default function OfferCategoriesPage() {
         )}
       </div>
 
-      {/* Category Modal */}
       <CategoryModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

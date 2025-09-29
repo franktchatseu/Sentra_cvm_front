@@ -1,6 +1,7 @@
 import offerService from '../../offers/services/offerService';
 import { segmentService } from '../../segments/services/segmentService';
 import campaignService from '../../campaigns/services/campaignService';
+import { Campaign } from '../../campaigns/types/campaign';
 
 export interface DashboardStats {
   totalOffers: number;
@@ -12,17 +13,30 @@ export interface DashboardStats {
 class DashboardService {
   async getDashboardStats(): Promise<DashboardStats> {
     try {
-      const [totalOffers, totalSegments, activeCampaignsCount] = await Promise.all([
-        offerService.getTotalOffers(),
-        segmentService.getTotalSegments(),
-        campaignService.getActiveCampaignsCount()
+      const [offersResponse, segmentsResponse, campaignsResponse] = await Promise.all([
+        offerService.getOffers(), 
+        segmentService.getSegments(), 
+        campaignService.getAllCampaigns() 
       ]);
 
+      // Calculate conversion rate
+      const totalCampaigns = campaignsResponse.meta?.total || 0;
+      const campaigns = campaignsResponse.data || [];
+      
+      // Count successful campaigns 
+      const successfulCampaigns = (campaigns as Campaign[]).filter(campaign => 
+        campaign.status === 'completed'
+      ).length;
+      
+      const conversionRate = totalCampaigns > 0 
+        ? Math.round((successfulCampaigns / totalCampaigns) * 100) 
+        : 0;
+
       return {
-        totalOffers,
-        totalSegments,
-        activeCampaigns: activeCampaignsCount,
-        conversionRate: 0 // Placeholder for now
+        totalOffers: offersResponse.meta?.total || 0,
+        totalSegments: segmentsResponse.total || segmentsResponse.segments?.length || 0,
+        activeCampaigns: totalCampaigns, 
+        conversionRate
       };
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
