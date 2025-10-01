@@ -124,7 +124,7 @@ export default function CampaignDefinitionStep({
   return (
     <div className="max-w-7xl space-y-6">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mt-8 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Campaign Definition & Objectives</h2>
         <p className="text-sm text-gray-600">
           Define your campaign goals and choose how you want to create your campaign
@@ -290,57 +290,59 @@ export default function CampaignDefinitionStep({
       </div>
 
       {/* Additional Settings */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <h3 className="text-base font-medium text-gray-900 mb-4">Additional Settings</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+        <h3 className="text-base font-medium text-gray-900">Additional Settings</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Campaign Priority */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Campaign Priority
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: 'low', label: 'Low', icon: '⬇️' },
-                { value: 'medium', label: 'Medium', icon: '➡️' },
-                { value: 'high', label: 'High', icon: '⬆️' },
-                { value: 'critical', label: 'Critical', icon: '🚨' }
-              ].map((priority) => (
-                <button
-                  key={priority.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical' })}
-                  className={`p-2 rounded-md border text-center transition-colors text-sm ${formData.priority === priority.value
-                    ? 'border-[#588157] bg-[#588157]/5 text-[#588157]'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                    }`}
-                >
-                  <div className="text-base mb-1">{priority.icon}</div>
-                  <div className="text-xs font-medium">{priority.label}</div>
-                </button>
-              ))}
-            </div>
+        {/* Campaign Priority */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Campaign Priority
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { value: 'low', label: 'Low', icon: '⬇️', color: 'border-gray-300 hover:border-gray-400 hover:bg-gray-50' },
+              { value: 'medium', label: 'Medium', icon: '➡️', color: 'border-blue-300 hover:border-blue-400 hover:bg-blue-50' },
+              { value: 'high', label: 'High', icon: '⬆️', color: 'border-orange-300 hover:border-orange-400 hover:bg-orange-50' },
+              { value: 'critical', label: 'Critical', icon: '🚨', color: 'border-red-300 hover:border-red-400 hover:bg-red-50' }
+            ].map((priority) => (
+              <button
+                key={priority.value}
+                type="button"
+                onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical' })}
+                className={`p-3 rounded-lg border-2 text-center transition-all duration-200 ${formData.priority === priority.value
+                  ? 'border-[#588157] bg-[#588157]/10 text-[#588157] shadow-sm'
+                  : `${priority.color} text-gray-700`
+                  }`}
+              >
+                <div className="text-xl mb-1">{priority.icon}</div>
+                <div className="text-xs font-medium">{priority.label}</div>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Campaign Policy */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Campaign Policy
-            </label>
-            <div className="bg-gray-50 rounded-md p-3">
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.is_definitive || false}
-                  onChange={(e) => setFormData({ ...formData, is_definitive: e.target.checked })}
-                  className="mt-0.5 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157] rounded"
-                />
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Definitive Campaign</div>
-                  <div className="text-xs text-gray-500">Cannot be modified after launch</div>
+        {/* Campaign Policy */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Campaign Policy
+          </label>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
+            <label className="flex items-start space-x-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={formData.is_definitive || false}
+                onChange={(e) => setFormData({ ...formData, is_definitive: e.target.checked })}
+                className="mt-0.5 w-5 h-5 text-[#588157] border-gray-300 focus:ring-[#588157] rounded cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900 group-hover:text-[#588157] transition-colors">
+                  Definitive Campaign
                 </div>
-              </label>
-            </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  Once launched, this campaign cannot be modified. Only pause, resume, or termination actions will be available.
+                </div>
+              </div>
+            </label>
           </div>
         </div>
       </div>

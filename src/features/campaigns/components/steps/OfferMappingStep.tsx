@@ -109,7 +109,7 @@ export default function OfferMappingStep({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mt-8 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Offer Selection & Mapping</h2>
         <p className="text-sm text-gray-600">
           Select offers and map them to your audience segments
@@ -124,10 +124,16 @@ export default function OfferMappingStep({
         </div>
 
         {selectedSegments.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-            <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No segments available</h3>
-            <p className="text-gray-500 mb-4">Please select audience segments in the previous step to map offers</p>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+                <Target className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Segments Available</h3>
+              <p className="text-sm text-gray-600 mb-6 max-w-md text-center">
+                Please select audience segments in the previous step before mapping offers to them.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -157,9 +163,9 @@ export default function OfferMappingStep({
                         setEditingSegmentId(segment.id);
                         setShowOfferModal(true);
                       }}
-                      className="text-[#588157] hover:text-[#3A5A40] hover:bg-[#588157]/10 px-3 py-1.5 rounded-md border border-[#588157]/30 hover:border-[#588157] flex items-center space-x-1.5 transition-all text-sm font-medium"
+                      className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
                     >
-                      <Gift className="w-3.5 h-3.5" />
+                      <Gift className="w-4 h-4 mr-2" />
                       <span>Add Offer</span>
                     </button>
                   </div>

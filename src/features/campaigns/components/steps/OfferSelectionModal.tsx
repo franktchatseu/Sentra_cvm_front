@@ -134,14 +134,14 @@ export default function OfferSelectionModal({
 
   const filteredOffers = mockOffers.filter(offer => {
     const matchesSearch = offer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         offer.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      offer.description.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (selectedFilter === 'all') return matchesSearch;
     if (selectedFilter === 'bundle') return matchesSearch && offer.reward_type === 'bundle';
     if (selectedFilter === 'discount') return matchesSearch && offer.reward_type === 'discount';
     if (selectedFilter === 'points') return matchesSearch && offer.reward_type === 'points';
     if (selectedFilter === 'cashback') return matchesSearch && offer.reward_type === 'cashback';
-    
+
     return matchesSearch;
   });
 
@@ -205,7 +205,7 @@ export default function OfferSelectionModal({
             </select>
             <button
               onClick={onCreateNew}
-              className="inline-flex items-center px-4 py-2 bg-[#588157] text-white rounded-lg hover:bg-[#3A5A40] transition-colors whitespace-nowrap"
+              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-md text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New
@@ -237,23 +237,22 @@ export default function OfferSelectionModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredOffers.map((offer) => {
               const isSelected = tempSelectedOffers.some(o => o.id === offer.id);
-              
+
               return (
                 <div
                   key={offer.id}
                   onClick={() => handleOfferToggle(offer)}
-                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-sm ${
-                    isSelected
+                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-sm ${isSelected
                       ? 'border-[#588157] bg-[#588157]/5'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   {isSelected && (
                     <div className="absolute top-3 right-3 w-5 h-5 bg-[#588157] rounded-full flex items-center justify-center">
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
-                  
+
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Gift className="w-5 h-5 text-purple-600" />
@@ -261,7 +260,7 @@ export default function OfferSelectionModal({
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 truncate">{offer.name}</h4>
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.description}</p>
-                      
+
                       <div className="flex items-center space-x-2 mt-3">
                         <span className={`text-xs px-2 py-1 rounded-full ${rewardTypeColors[offer.reward_type]}`}>
                           {offer.reward_type}
@@ -270,7 +269,7 @@ export default function OfferSelectionModal({
                           {offer.offer_type}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center space-x-1">
                           <DollarSign className="w-4 h-4 text-[#3b8169]" />
@@ -285,7 +284,7 @@ export default function OfferSelectionModal({
                           </span>
                         </div>
                       </div>
-                      
+
                       {offer.terms_conditions && (
                         <p className="text-xs text-gray-400 mt-2 line-clamp-1">
                           {offer.terms_conditions}
@@ -315,18 +314,17 @@ export default function OfferSelectionModal({
           <div className="flex items-center space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={tempSelectedOffers.length === 0}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                tempSelectedOffers.length > 0
-                  ? 'bg-[#588157] text-white hover:bg-[#3A5A40]'
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${tempSelectedOffers.length > 0
+                  ? 'bg-[#3A5A40] text-white hover:bg-[#2f4a35]'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+                }`}
             >
               Confirm Selection
             </button>

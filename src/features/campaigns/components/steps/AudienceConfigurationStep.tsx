@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft, Users, Plus, Target, Edit, Trash2, Settings, GripVertical, AlertCircle } from 'lucide-react';
+import { Users, Plus, Target, Edit, Trash2, Settings, GripVertical, AlertCircle } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
 import { Segment } from '../../../segments/types/segment';
+import StepNavigation from '../../../../shared/components/ui/StepNavigation';
 
 interface AvailableControlGroup {
   id: string;
@@ -170,7 +171,7 @@ export default function AudienceConfigurationStep({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mt-8 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Audience Configuration</h2>
         <p className="text-sm text-gray-600">
           Select and configure your target audience segments for this campaign
@@ -236,7 +237,7 @@ export default function AudienceConfigurationStep({
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 bg-[#588157] hover:bg-[#3A5A40] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Segments
@@ -245,16 +246,23 @@ export default function AudienceConfigurationStep({
         </div>
 
         {selectedSegments.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No segments selected</h3>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-[#588157] text-[#588157] bg-white hover:bg-[#588157] hover:text-white rounded-md text-sm font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Select Segments
-            </button>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+                <Users className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Segments Selected</h3>
+              <p className="text-sm text-gray-600 mb-6 max-w-md text-center">
+                Start building your campaign by selecting target audience segments. You can select multiple segments and configure their priority.
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center px-5 py-2.5 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-all shadow-sm hover:shadow-md"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Select Segments
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -357,26 +365,11 @@ export default function AudienceConfigurationStep({
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between pt-6 border-t border-gray-200">
-        <button
-          onClick={onPrev}
-          className="inline-flex items-center px-6 py-3 bg-[#DAD7CD] text-[#344E41] rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Previous
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={!isFormValid}
-          className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${isFormValid
-            ? 'bg-[#588157] hover:bg-[#3A5A40] text-white hover:shadow-lg hover:scale-105'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </button>
-      </div>
+      <StepNavigation
+        onNext={handleNext}
+        onPrev={onPrev}
+        isNextDisabled={!isFormValid}
+      />
 
       {/* Segment Selection Modal */}
       {isModalOpen && (
@@ -824,13 +817,13 @@ function ControlGroupConfigModal({
         <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-[#A3B18A] text-[#3A5A40] rounded-lg hover:bg-[#DAD7CD] transition-colors"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 bg-[#588157] hover:bg-[#3A5A40] text-white rounded-lg transition-colors"
+            className="px-5 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
           >
             Save Configuration
           </button>

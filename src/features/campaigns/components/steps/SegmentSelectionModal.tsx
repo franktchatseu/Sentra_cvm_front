@@ -127,10 +127,10 @@ export default function SegmentSelectionModal({
 
   const filteredSegments = mockSegments.filter(segment => {
     const matchesSearch = segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         segment.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      segment.description.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (selectedFilter === 'all') return matchesSearch;
-    
+
     // Add more filter logic here based on segment criteria
     return matchesSearch;
   });
@@ -197,7 +197,7 @@ export default function SegmentSelectionModal({
             </select>
             <button
               onClick={onCreateNew}
-              className="inline-flex items-center px-4 py-2 bg-[#588157] text-white rounded-lg hover:bg-[#3A5A40] transition-colors whitespace-nowrap"
+              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-md text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New
@@ -232,23 +232,22 @@ export default function SegmentSelectionModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredSegments.map((segment) => {
               const isSelected = tempSelectedSegments.some(s => s.id === segment.id);
-              
+
               return (
                 <div
                   key={segment.id}
                   onClick={() => handleSegmentToggle(segment)}
-                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-sm ${
-                    isSelected
-                      ? 'border-[#588157] bg-[#588157]/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-sm ${isSelected
+                    ? 'border-[#588157] bg-[#588157]/5'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   {isSelected && (
                     <div className="absolute top-3 right-3 w-5 h-5 bg-[#588157] rounded-full flex items-center justify-center">
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
-                  
+
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Target className="w-5 h-5 text-emerald-600" />
@@ -291,18 +290,17 @@ export default function SegmentSelectionModal({
           <div className="flex items-center space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={tempSelectedSegments.length === 0}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                tempSelectedSegments.length > 0
-                  ? 'bg-[#588157] text-white hover:bg-[#3A5A40]'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${tempSelectedSegments.length > 0
+                ? 'bg-[#3A5A40] text-white hover:bg-[#2f4a35]'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
             >
               Confirm Selection
             </button>
