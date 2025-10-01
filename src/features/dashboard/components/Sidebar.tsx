@@ -19,7 +19,8 @@ import {
   Layers,
   BarChart3,
   Calendar,
-  Zap
+  Zap,
+  Folder
 } from 'lucide-react';
 import logo from '../../../assets/logo.png';
 
@@ -57,6 +58,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       entity: 'campaigns',
       children: [
         { name: 'All Campaigns', href: '/dashboard/campaigns', icon: Target, type: 'single', entity: 'campaigns' },
+        { name: 'Campaign Categories', href: '/dashboard/campaign-categories', icon: Folder, type: 'single', entity: 'campaigns' },
         { name: 'Segments', href: '/dashboard/segments', icon: Users, type: 'single', entity: 'segments' },
         {
           name: 'Offer Configuration',
@@ -110,15 +112,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     return isActive
-      ? `bg-[${getEntityColor(entity)}]/20 text-[${getEntityColor(entity)}] border-l-4 border-[${getEntityColor(entity)}] font-semibold shadow-sm`
-      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 transition-all duration-200`;
+      ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] border-l-[5px] border-[${getEntityColor(entity)}] font-semibold shadow-md`
+      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 hover:shadow-sm transition-all duration-200`;
   };
 
   const getIconClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     if (isActive) {
-      return `text-[${getEntityColor(entity)}]`;
+      return `text-[${getEntityColor(entity)}] drop-shadow-sm`;
     }
-    return 'text-[#3A5A40]';
+    return 'text-[#3A5A40] group-hover:text-[#588157]';
   };
 
   const toggleExpanded = (itemName: string) => {
@@ -248,7 +250,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 : getItemClasses(false, grandchild.entity)
                                                 }`}
                                             >
-                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
+                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isGrandchildActive, grandchild.entity)}`} />
                                               {grandchild.name}
                                             </Link>
                                           );
@@ -267,7 +269,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   onClick={handleLinkClick}
                                   className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${getItemClasses(isChildActive, child.entity)}`}
                                 >
-                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
+                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
                                   {child.name}
                                 </Link>
                               );
@@ -285,7 +287,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       onClick={handleLinkClick}
                       className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
+                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                       {item.name}
                     </Link>
                   );
@@ -319,7 +321,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                       >
                         <div className="flex items-center gap-x-3">
-                          <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
+                          <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                           {item.name}
                         </div>
                         {isExpanded ? (
@@ -348,7 +350,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                       }`}
                                   >
                                     <div className="flex items-center gap-x-3">
-                                      <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
+                                      <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
                                       {child.name}
                                     </div>
                                     {isChildExpanded ? (
@@ -370,7 +372,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                               onClick={handleLinkClick}
                                               className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${getItemClasses(isGrandchildActive, grandchild.entity)}`}
                                             >
-                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
+                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isGrandchildActive, grandchild.entity)}`} />
                                               {grandchild.name}
                                             </Link>
                                           </li>
@@ -393,7 +395,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     : getItemClasses(false, child.entity)
                                     }`}
                                 >
-                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(false, undefined)}`} />
+                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
                                   {child.name}
                                 </Link>
                               </li>
@@ -411,7 +413,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       to={item.href}
                       className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
+                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                       {item.name}
                     </Link>
                   </li>
@@ -431,7 +433,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       to={item.href}
                       className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(false, undefined)}`} />
+                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                       {item.name}
                     </Link>
                   </li>

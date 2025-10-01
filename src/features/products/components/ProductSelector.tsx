@@ -217,7 +217,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
           <h4 className="text-sm font-semibold text-gray-700">Selected Products ({selectedProducts.length})</h4>
           <div className="grid grid-cols-1 gap-3">
             {selectedProducts.map((product) => (
-              <div key={product.id} className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-xl">
+              <div key={product.id} className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-[#3b8169] rounded-lg flex items-center justify-center text-white text-xl">
                     {getCategoryIcon(product.category)}
@@ -249,7 +249,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
       <div className="flex justify-center">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-6 py-3 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md"
+          className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md text-sm"
         >
           <Plus className="w-5 h-5" />
           <span className="font-medium">
@@ -317,7 +317,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
                       <div
                         key={product.id}
                         onClick={() => handleProductToggle(product)}
-                        className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${isSelected
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${isSelected
                           ? 'border-green-500 bg-green-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                           }`}
@@ -361,7 +361,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
                 </span>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2 text-white rounded-lg transition-colors duration-200"
+                  className="px-4 py-2 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
                   style={{
                     backgroundColor: '#3b8169'
                   }}

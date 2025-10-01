@@ -1,5 +1,21 @@
 import { API_CONFIG, buildApiUrl, getAuthHeaders } from '../../../shared/services/api';
-import { CreateCampaignRequest, Campaign } from '../../../shared/types/campaign';
+import { CreateCampaignRequest, Campaign } from '../types/campaign';
+import { 
+  RunCampaignRequest, 
+  RunCampaignResponse,
+  ValidateCampaignRequest,
+  ValidateCampaignResponse,
+  CloneCampaignWithModificationsRequest,
+  CloneCampaignWithModificationsResponse,
+  CloneCampaignRequest,
+  CloneCampaignResponse,
+  ApproveCampaignRequest,
+  ApproveCampaignResponse,
+  RejectCampaignRequest,
+  RejectCampaignResponse,
+  PauseCampaignRequest,
+  PauseCampaignResponse,
+} from '../types';
 
 export interface CampaignResponse {
   success: boolean;
@@ -30,7 +46,15 @@ class CampaignService {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorBody = await response.text();
+      console.error('API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        url,
+        params: options.body
+      });
+      throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`);
     }
 
     return response.json();
@@ -56,49 +80,77 @@ class CampaignService {
     });
   }
 
-  async getCampaignById(id: string): Promise<Campaign> {
-    return this.request<Campaign>(`/${id}`);
+  async getCampaignById(id: string | number, skipCache?: boolean): Promise<Campaign> {
+    const params = new URLSearchParams();
+    if (skipCache) params.append('skipCache', 'true');
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<Campaign>(`/${id}${query}`);
   }
 
-  async getAllCampaigns(): Promise<CampaignResponse> {
-    return this.request<CampaignResponse>('/all');
+  async getAllCampaigns(params?: {
+    search?: string;
+    status?: string;
+    approvalStatus?: string;        // camelCase
+    categoryId?: number;            // camelCase
+    programId?: number;             // camelCase
+    startDateFrom?: string;         // camelCase
+    startDateTo?: string;           // camelCase
+    sortBy?: string;                // camelCase
+    sortDirection?: 'ASC' | 'DESC'; // camelCase
+    page?: number;
+    pageSize?: number;              // camelCase
+    skipCache?: boolean;            // camelCase
+  }): Promise<CampaignResponse> {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request<CampaignResponse>(`/all${query}`);
   }
 
-  // Campaign execution
-  async runCampaign(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${id}/run`, {
+  async runCampaign(request: RunCampaignRequest): Promise<RunCampaignResponse> {
+    return this.request<RunCampaignResponse>('/run', {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  async validateCampaign(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${id}/validate`, {
+  async validateCampaign(request: ValidateCampaignRequest): Promise<ValidateCampaignResponse> {
+    return this.request<ValidateCampaignResponse>('/validate', {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  // Approval workflow
-  async approveCampaign(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${id}/approve`, {
+  async approveCampaign(id: number, request?: ApproveCampaignRequest): Promise<ApproveCampaignResponse> {
+    return this.request<ApproveCampaignResponse>(`/${id}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify(request || {}),
+    });
+  }
+
+  async rejectCampaign(id: number, request: RejectCampaignRequest): Promise<RejectCampaignResponse> {
+    return this.request<RejectCampaignResponse>(`/${id}/reject`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
   }
 
-  async rejectCampaign(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${id}/reject`, {
+  async activateCampaign(id: number): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/${id}/activate`, {
       method: 'PUT',
-      body: JSON.stringify(request),
     });
   }
 
-  // Campaign lifecycle
-  async pauseCampaign(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${id}/pause`, {
+  async pauseCampaign(id: number, request?: PauseCampaignRequest): Promise<PauseCampaignResponse> {
+    return this.request<PauseCampaignResponse>(`/${id}/pause`, {
       method: 'PUT',
-      body: JSON.stringify(request),
+      body: JSON.stringify(request || {}),
     });
   }
 
@@ -114,34 +166,43 @@ class CampaignService {
     });
   }
 
-  // Campaign cloning
-  async cloneCampaign(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${id}/clone`, {
+  async cloneCampaign(id: number, request: CloneCampaignRequest): Promise<CloneCampaignResponse> {
+    return this.request<CloneCampaignResponse>(`/${id}/clone`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  async duplicateCampaign(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async cloneCampaignWithModifications(id: number, request: CloneCampaignWithModificationsRequest): Promise<CloneCampaignWithModificationsResponse> {
+    return this.request<CloneCampaignWithModificationsResponse>(`/${id}/clone-with-modifications`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async duplicateCampaign(id: number, request: { newName: string }): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(`/${id}/duplicate`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  // Campaign categories
-  async getCampaignCategories(): Promise<Record<string, unknown>[]> {
-    return this.request<Record<string, unknown>[]>('/categories');
+  async getCampaignCategories(params?: { search?: string; skipCache?: boolean }): Promise<Record<string, unknown>[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.skipCache) queryParams.append('skipCache', 'true');
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request<Record<string, unknown>[]>(`/categories${query}`);
   }
 
-  async createCampaignCategory(request: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async createCampaignCategory(request: { name: string; description?: string }): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>('/categories', {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  async updateCampaignCategory(id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async updateCampaignCategory(id: number, request: { name?: string; description?: string }): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(`/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(request),
@@ -154,15 +215,13 @@ class CampaignService {
     });
   }
 
-  // Campaign linking
-  async linkCampaignToOffer(campaignId: number, request: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${campaignId}/link-offer`, {
+  async linkCampaignToOffer(campaignId: number, request: { offer_id: number; created_by: number }): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/link-to-offer/${campaignId}`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  // Export and history
   async exportCampaign(id: number): Promise<Blob> {
     const response = await fetch(`${BASE_URL}/${id}/export`, {
       method: 'GET',
@@ -176,29 +235,20 @@ class CampaignService {
     return response.blob();
   }
 
-  async downloadCampaignData(id: number, filename?: string): Promise<void> {
-    const blob = await this.exportCampaign(id);
-    const defaultFilename = `campaign-${id}-data.csv`;
-    const finalFilename = filename || defaultFilename;
-    
-    // Create download link and trigger download
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = finalFilename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+ 
+
+  async getApprovalHistory(id: number, skipCache?: boolean): Promise<Record<string, unknown>[]> {
+    const params = new URLSearchParams();
+    if (skipCache) params.append('skipCache', 'true');
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<Record<string, unknown>[]>(`/${id}/approval-history${query}`);
   }
 
-  async getApprovalHistory(id: number): Promise<Record<string, unknown>[]> {
-    return this.request<Record<string, unknown>[]>(`/${id}/approval-history`);
-  }
-
-  async getLifecycleHistory(id: number): Promise<Record<string, unknown>[]> {
-    return this.request<Record<string, unknown>[]>(`/${id}/lifecycle-history`);
+  async getLifecycleHistory(id: number, skipCache?: boolean): Promise<Record<string, unknown>[]> {
+    const params = new URLSearchParams();
+    if (skipCache) params.append('skipCache', 'true');
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<Record<string, unknown>[]>(`/${id}/lifecycle-history${query}`);
   }
 }
 

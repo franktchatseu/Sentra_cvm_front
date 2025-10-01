@@ -143,48 +143,51 @@ export default function OfferRewardStep({
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Gift className="w-8 h-8 text-gray-600" />
+      {rewards.length === 0 ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Gift className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Rewards Added</h3>
+          <p className="text-gray-500 text-sm mb-6">Define what customers will receive when they engage with your offer</p>
+          <button
+            onClick={addReward}
+            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
+            style={{ backgroundColor: '#3b8169' }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Reward
+          </button>
         </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Offer Rewards</h2>
-        <p className="text-gray-600">Configure reward rules and fulfillment responses</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        {/* Rewards List */}
-        <div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Rewards</h3>
-              <button
-                onClick={addReward}
-                className="inline-flex items-center px-3 py-1.5 text-xs text-white rounded-lg transition-colors font-medium"
-                style={{ backgroundColor: '#3b8169' }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </button>
-            </div>
-
-            {rewards.length === 0 ? (
-              <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Gift className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Rewards Added</h3>
-                <p className="text-gray-500 text-sm mb-4">Define what customers will receive when they engage with your offer</p>
-                <div className="text-xs text-gray-400">
-                  Click the "Add" button above to get started
-                </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Rewards List */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Rewards</h3>
+                <button
+                  onClick={addReward}
+                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
+                  style={{ backgroundColor: '#3b8169' }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                  }}
+                >
+                  <Plus className="w-5 h-5 mr-1.5" />
+                  Add Reward
+                </button>
               </div>
-            ) : (
+
               <div className="space-y-2">
                 {rewards.map((reward) => (
                   <div
@@ -225,78 +228,57 @@ export default function OfferRewardStep({
                   </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Reward Configuration */}
-        <div className="lg:col-span-2">
-          {selectedRewardData ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="space-y-6">
-                {/* Reward Settings */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Reward Configuration */}
+          <div className="lg:col-span-2">
+            {selectedRewardData ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="space-y-6">
+                  {/* Reward Settings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reward Name
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedRewardData.name}
+                        onChange={(e) => updateReward(selectedRewardData.id, {
+                          name: e.target.value
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reward Type
+                      </label>
+                      <select
+                        value={selectedRewardData.type}
+                        onChange={(e) => updateReward(selectedRewardData.id, {
+                          type: e.target.value as 'default' | 'sms_night' | 'custom'
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      >
+                        {REWARD_TYPES.map(type => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Rules Section */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reward Name
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedRewardData.name}
-                      onChange={(e) => updateReward(selectedRewardData.id, {
-                        name: e.target.value
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reward Type
-                    </label>
-                    <select
-                      value={selectedRewardData.type}
-                      onChange={(e) => updateReward(selectedRewardData.id, {
-                        type: e.target.value as 'default' | 'sms_night' | 'custom'
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                    >
-                      {REWARD_TYPES.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Rules Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-900">Reward Rules</h4>
-                    <button
-                      onClick={() => addRule()}
-                      className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
-                      style={{ backgroundColor: '#3b8169' }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                      }}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add Rule
-                    </button>
-                  </div>
-
-                  {selectedRewardData.rules.length === 0 ? (
-                    <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                      <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm mb-4">No rules configured</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-900">Reward Rules</h4>
                       <button
                         onClick={() => addRule()}
-                        className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
+                        className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
                         style={{ backgroundColor: '#3b8169' }}
                         onMouseEnter={(e) => {
                           (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
@@ -305,244 +287,265 @@ export default function OfferRewardStep({
                           (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
                         }}
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4 mr-1" />
                         Add Rule
                       </button>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {selectedRewardData.rules.map((rule) => (
-                        <div key={rule.id} className="p-4 border border-gray-200 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-3">
-                              <span className="font-medium text-sm text-gray-900">{rule.name}</span>
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                Priority: {rule.priority}
-                              </span>
-                              <span className={`px-2 py-1 text-xs rounded ${rule.enabled
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-700'
-                                }`}>
-                                {rule.enabled ? 'Enabled' : 'Disabled'}
-                              </span>
+
+                    {selectedRewardData.rules.length === 0 ? (
+                      <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm mb-4">No rules configured</p>
+                        <button
+                          onClick={() => addRule()}
+                          className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
+                          style={{ backgroundColor: '#3b8169' }}
+                          onMouseEnter={(e) => {
+                            (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Rule
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedRewardData.rules.map((rule) => (
+                          <div key={rule.id} className="p-4 border border-gray-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-3">
+                                <span className="font-medium text-sm text-gray-900">{rule.name}</span>
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                  Priority: {rule.priority}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded ${rule.enabled
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-700'
+                                  }`}>
+                                  {rule.enabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingRule(rule);
+                                    setShowRuleModal(true);
+                                  }}
+                                  className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => removeRule(selectedRewardData.id, rule.id)}
+                                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => {
-                                  setEditingRule(rule);
-                                  setShowRuleModal(true);
-                                }}
-                                className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => removeRule(selectedRewardData.id, rule.id)}
-                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div>Track: {rule.bundle_subscription_track}</div>
+                              <div>Type: {rule.reward_type} - Value: {rule.reward_value}</div>
+                              <div>Success: {rule.success_text || 'Default success message'}</div>
                             </div>
                           </div>
-                          <div className="text-sm text-gray-600 space-y-1">
-                            <div>Track: {rule.bundle_subscription_track}</div>
-                            <div>Type: {rule.reward_type} - Value: {rule.reward_value}</div>
-                            <div>Success: {rule.success_text || 'Default success message'}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Gift className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Reward Selected</h3>
-              <p className="text-gray-500 text-sm">Select a reward from the list above to start configuring.</p>
-            </div>
-          )}
-          {/* Rule Modal */}
-          {showRuleModal && editingRule && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {editingRule.id ? 'Edit Reward Rule' : 'Add Reward Rule'}
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setShowRuleModal(false);
-                      setEditingRule(null);
-                    }}
-                    className="p-1 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Rule Name
-                      </label>
-                      <input
-                        type="text"
-                        value={editingRule.name}
-                        onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Priority
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={editingRule.priority}
-                        onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                      />
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bundle Subscription Track
-                    </label>
-                    <select
-                      value={editingRule.bundle_subscription_track}
-                      onChange={(e) => setEditingRule({ ...editingRule, bundle_subscription_track: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Gift className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Reward Selected</h3>
+                <p className="text-gray-500 text-sm">Select a reward from the list above to start configuring.</p>
+              </div>
+            )}
+            {/* Rule Modal */}
+            {showRuleModal && editingRule && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {editingRule.id ? 'Edit Reward Rule' : 'Add Reward Rule'}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowRuleModal(false);
+                        setEditingRule(null);
+                      }}
+                      className="p-1 text-gray-400 hover:text-gray-600"
                     >
-                      {BUNDLE_TRACKS.map(track => (
-                        <option key={track} value={track}>{track}</option>
-                      ))}
-                    </select>
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Rule Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editingRule.name}
+                          onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Priority
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={editingRule.priority}
+                          onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reward Type
+                        Bundle Subscription Track
                       </label>
                       <select
-                        value={editingRule.reward_type}
-                        onChange={(e) => setEditingRule({ ...editingRule, reward_type: e.target.value as 'bundle' | 'points' | 'discount' | 'cashback' })}
+                        value={editingRule.bundle_subscription_track}
+                        onChange={(e) => setEditingRule({ ...editingRule, bundle_subscription_track: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                       >
-                        {REWARD_RULE_TYPES.map(type => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
+                        {BUNDLE_TRACKS.map(track => (
+                          <option key={track} value={track}>{track}</option>
                         ))}
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reward Value
-                      </label>
-                      <input
-                        type="text"
-                        value={editingRule.reward_value}
-                        onChange={(e) => setEditingRule({ ...editingRule, reward_value: e.target.value })}
-                        placeholder="Enter reward value..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                      />
-                    </div>
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Reward Type
+                        </label>
+                        <select
+                          value={editingRule.reward_type}
+                          onChange={(e) => setEditingRule({ ...editingRule, reward_type: e.target.value as 'bundle' | 'points' | 'discount' | 'cashback' })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                        >
+                          {REWARD_RULE_TYPES.map(type => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Success Text
-                    </label>
-                    <textarea
-                      value={editingRule.success_text}
-                      onChange={(e) => setEditingRule({ ...editingRule, success_text: e.target.value })}
-                      placeholder="Enter success message..."
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Error Group
-                      </label>
-                      <input
-                        type="text"
-                        value={editingRule.error_group}
-                        onChange={(e) => setEditingRule({ ...editingRule, error_group: e.target.value })}
-                        placeholder="e.g., Low balance Failure [01]"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Reward Value
+                        </label>
+                        <input
+                          type="text"
+                          value={editingRule.reward_value}
+                          onChange={(e) => setEditingRule({ ...editingRule, reward_value: e.target.value })}
+                          placeholder="Enter reward value..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                        />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Failure Text
+                        Success Text
                       </label>
-                      <input
-                        type="text"
-                        value={editingRule.failure_text}
-                        onChange={(e) => setEditingRule({ ...editingRule, failure_text: e.target.value })}
-                        placeholder="Enter failure message..."
+                      <textarea
+                        value={editingRule.success_text}
+                        onChange={(e) => setEditingRule({ ...editingRule, success_text: e.target.value })}
+                        placeholder="Enter success message..."
+                        rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                       />
                     </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Error Group
+                        </label>
+                        <input
+                          type="text"
+                          value={editingRule.error_group}
+                          onChange={(e) => setEditingRule({ ...editingRule, error_group: e.target.value })}
+                          placeholder="e.g., Low balance Failure [01]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Failure Text
+                        </label>
+                        <input
+                          type="text"
+                          value={editingRule.failure_text}
+                          onChange={(e) => setEditingRule({ ...editingRule, failure_text: e.target.value })}
+                          placeholder="Enter failure message..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="rule-enabled"
+                        checked={editingRule.enabled}
+                        onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
+                        className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
+                      />
+                      <label htmlFor="rule-enabled" className="ml-2 text-sm text-gray-700">
+                        Enable this rule
+                      </label>
+                    </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="rule-enabled"
-                      checked={editingRule.enabled}
-                      onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
-                      className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
-                    />
-                    <label htmlFor="rule-enabled" className="ml-2 text-sm text-gray-700">
-                      Enable this rule
-                    </label>
+                  <div className="flex justify-end space-x-3 mt-6">
+                    <button
+                      onClick={() => {
+                        setShowRuleModal(false);
+                        setEditingRule(null);
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => selectedRewardData && saveRule(selectedRewardData.id, editingRule)}
+                      className="px-4 py-2 text-white rounded-lg transition-colors"
+                      style={{ backgroundColor: '#3b8169' }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                      }}
+                    >
+                      Save Rule
+                    </button>
                   </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 mt-6">
-                  <button
-                    onClick={() => {
-                      setShowRuleModal(false);
-                      setEditingRule(null);
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => selectedRewardData && saveRule(selectedRewardData.id, editingRule)}
-                    className="px-4 py-2 text-white rounded-lg transition-colors"
-                    style={{ backgroundColor: '#3b8169' }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                    }}
-                  >
-                    Save Rule
-                  </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

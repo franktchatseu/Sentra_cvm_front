@@ -131,48 +131,51 @@ export default function OfferTrackingStep({
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <BarChart3 className="w-8 h-8 text-gray-600" />
+      {trackingSources.length === 0 ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Tracking Sources Added</h3>
+          <p className="text-gray-500 text-sm mb-6">Set up how you'll track customer engagement and measure offer performance</p>
+          <button
+            onClick={addTrackingSource}
+            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
+            style={{ backgroundColor: '#3b8169' }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Tracking Source
+          </button>
         </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Offer Tracking</h2>
-        <p className="text-gray-600">Configure tracking sources and rules for offer performance</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        {/* Tracking Sources List */}
-        <div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Tracking Sources</h3>
-              <button
-                onClick={addTrackingSource}
-                className="inline-flex items-center px-3 py-1.5 text-xs text-white rounded-lg transition-colors font-medium"
-                style={{ backgroundColor: '#3b8169' }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </button>
-            </div>
-
-            {trackingSources.length === 0 ? (
-              <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Tracking Sources Added</h3>
-                <p className="text-gray-500 text-sm mb-4">Set up how you'll track customer engagement and measure offer performance</p>
-                <div className="text-xs text-gray-400">
-                  Click the "Add" button above to get started
-                </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Tracking Sources List */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Tracking Sources</h3>
+                <button
+                  onClick={addTrackingSource}
+                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
+                  style={{ backgroundColor: '#3b8169' }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                  }}
+                >
+                  <Plus className="w-5 h-5 mr-1.5" />
+                  Add Source
+                </button>
               </div>
-            ) : (
+
               <div className="space-y-2">
                 {trackingSources.map((source) => (
                   <div
@@ -215,289 +218,293 @@ export default function OfferTrackingStep({
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Tracking Configuration */}
+          <div className="lg:col-span-2">
+            {selectedSourceData ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6 w-full">
+                <div className="space-y-6">
+                  {/* Source Settings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Source Name
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedSourceData.name}
+                        onChange={(e) => updateTrackingSource(selectedSourceData.id, {
+                          name: e.target.value
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Type
+                      </label>
+                      <select
+                        value={selectedSourceData.type}
+                        onChange={(e) => updateTrackingSource(selectedSourceData.id, {
+                          type: e.target.value as 'recharge' | 'usage_metric' | 'custom'
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      >
+                        {TRACKING_TYPES.map(type => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`enabled-${selectedSourceData.id}`}
+                      checked={selectedSourceData.enabled}
+                      onChange={(e) => updateTrackingSource(selectedSourceData.id, {
+                        enabled: e.target.checked
+                      })}
+                      className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
+                    />
+                    <label htmlFor={`enabled-${selectedSourceData.id}`} className="ml-2 text-sm text-gray-700">
+                      Set as default tracking source
+                    </label>
+                  </div>
+
+                  {/* Rules Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-900">Tracking Rules</h4>
+                      <button
+                        onClick={() => addRule()}
+                        className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
+                        style={{ backgroundColor: '#3b8169' }}
+                        onMouseEnter={(e) => {
+                          (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Rule
+                      </button>
+                    </div>
+
+                    {selectedSourceData.rules.length === 0 ? (
+                      <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm mb-4">No rules configured</p>
+                        <button
+                          onClick={() => addRule()}
+                          className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
+                          style={{ backgroundColor: '#3b8169' }}
+                          onMouseEnter={(e) => {
+                            (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Rule
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedSourceData.rules.map((rule) => (
+                          <div key={rule.id} className="p-4 border border-gray-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-3">
+                                <span className="font-medium text-sm text-gray-900">{rule.name}</span>
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                  Priority: {rule.priority}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded ${rule.enabled
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-700'
+                                  }`}>
+                                  {rule.enabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingRule(rule);
+                                    setShowRuleModal(true);
+                                  }}
+                                  className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => removeRule(selectedSourceData.id, rule.id)}
+                                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {rule.parameter} {CONDITIONS.find(c => c.value === rule.condition)?.label.toLowerCase()} "{rule.value}"
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Source Selected</h3>
+                <p className="text-gray-500 text-sm">Select a tracking source from the list above to start configuring.</p>
+              </div>
             )}
           </div>
         </div>
+      )}
 
-        {selectedSourceData ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="space-y-6">
-              {/* Source Settings */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Source Name
-                  </label>
-                  <input
-                    type="text"
-                    value={selectedSourceData.name}
-                    onChange={(e) => updateTrackingSource(selectedSourceData.id, {
-                      name: e.target.value
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  />
-                </div>
+      {/* Rule Modal */}
+      {showRuleModal && editingRule && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {editingRule.id ? 'Edit Rule' : 'Add Rule'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowRuleModal(false);
+                  setEditingRule(null);
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type
-                  </label>
-                  <select
-                    value={selectedSourceData.type}
-                    onChange={(e) => updateTrackingSource(selectedSourceData.id, {
-                      type: e.target.value as 'recharge' | 'usage_metric' | 'custom'
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  >
-                    {TRACKING_TYPES.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rule Name
+                </label>
+                <input
+                  type="text"
+                  value={editingRule.name}
+                  onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Priority
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editingRule.priority}
+                  onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Parameter
+                </label>
+                <select
+                  value={editingRule.parameter}
+                  onChange={(e) => setEditingRule({ ...editingRule, parameter: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                >
+                  {PARAMETERS.map(param => (
+                    <option key={param} value={param}>{param}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Condition
+                </label>
+                <select
+                  value={editingRule.condition}
+                  onChange={(e) => setEditingRule({ ...editingRule, condition: e.target.value as 'equals' | 'greater_than' | 'less_than' | 'contains' | 'is_any_of' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                >
+                  {CONDITIONS.map(condition => (
+                    <option key={condition.value} value={condition.value}>
+                      {condition.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Value
+                </label>
+                <input
+                  type="text"
+                  value={editingRule.value}
+                  onChange={(e) => setEditingRule({ ...editingRule, value: e.target.value })}
+                  placeholder="Enter value..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                />
               </div>
 
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  id={`enabled-${selectedSourceData.id}`}
-                  checked={selectedSourceData.enabled}
-                  onChange={(e) => updateTrackingSource(selectedSourceData.id, {
-                    enabled: e.target.checked
-                  })}
+                  id="rule-enabled"
+                  checked={editingRule.enabled}
+                  onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
                   className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
                 />
-                <label htmlFor={`enabled-${selectedSourceData.id}`} className="ml-2 text-sm text-gray-700">
-                  Set as default tracking source
+                <label htmlFor="rule-enabled" className="ml-2 text-sm text-gray-700">
+                  Enable this rule
                 </label>
               </div>
+            </div>
 
-              {/* Rules Section */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium text-gray-900">Tracking Rules</h4>
-                  <button
-                    onClick={() => addRule()}
-                    className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
-                    style={{ backgroundColor: '#3b8169' }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Rule
-                  </button>
-                </div>
-
-                {selectedSourceData.rules.length === 0 ? (
-                  <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                    <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm mb-4">No rules configured</p>
-                    <button
-                      onClick={() => addRule()}
-                      className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
-                      style={{ backgroundColor: '#3b8169' }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                      }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Rule
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedSourceData.rules.map((rule) => (
-                      <div key={rule.id} className="p-4 border border-gray-200 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-3">
-                            <span className="font-medium text-sm text-gray-900">{rule.name}</span>
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                              Priority: {rule.priority}
-                            </span>
-                            <span className={`px-2 py-1 text-xs rounded ${rule.enabled
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
-                              }`}>
-                              {rule.enabled ? 'Enabled' : 'Disabled'}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => {
-                                setEditingRule(rule);
-                                setShowRuleModal(true);
-                              }}
-                              className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => removeRule(selectedSourceData.id, rule.id)}
-                              className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {rule.parameter} {CONDITIONS.find(c => c.value === rule.condition)?.label.toLowerCase()} "{rule.value}"
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowRuleModal(false);
+                  setEditingRule(null);
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => selectedSourceData && saveRule(selectedSourceData.id, editingRule)}
+                className="px-4 py-2 text-white rounded-lg transition-colors"
+                style={{ backgroundColor: '#3b8169' }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                }}
+              >
+                Save Rule
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Source Selected</h3>
-            <p className="text-gray-500 text-sm">Select a tracking source from the list above to start configuring.</p>
-          </div>
-        )}
-        {/* Rule Modal */}
-        {showRuleModal && editingRule && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {editingRule.id ? 'Edit Rule' : 'Add Rule'}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowRuleModal(false);
-                    setEditingRule(null);
-                  }}
-                  className="p-1 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Rule Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editingRule.name}
-                    onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priority
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={editingRule.priority}
-                    onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Parameter
-                  </label>
-                  <select
-                    value={editingRule.parameter}
-                    onChange={(e) => setEditingRule({ ...editingRule, parameter: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  >
-                    {PARAMETERS.map(param => (
-                      <option key={param} value={param}>{param}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Condition
-                  </label>
-                  <select
-                    value={editingRule.condition}
-                    onChange={(e) => setEditingRule({ ...editingRule, condition: e.target.value as 'equals' | 'greater_than' | 'less_than' | 'contains' | 'is_any_of' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  >
-                    {CONDITIONS.map(condition => (
-                      <option key={condition.value} value={condition.value}>
-                        {condition.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Value
-                  </label>
-                  <input
-                    type="text"
-                    value={editingRule.value}
-                    onChange={(e) => setEditingRule({ ...editingRule, value: e.target.value })}
-                    placeholder="Enter value..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="rule-enabled"
-                    checked={editingRule.enabled}
-                    onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
-                    className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
-                  />
-                  <label htmlFor="rule-enabled" className="ml-2 text-sm text-gray-700">
-                    Enable this rule
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => {
-                    setShowRuleModal(false);
-                    setEditingRule(null);
-                  }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => selectedSourceData && saveRule(selectedSourceData.id, editingRule)}
-                  className="px-4 py-2 text-white rounded-lg transition-colors"
-                  style={{ backgroundColor: '#3b8169' }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                  }}
-                >
-                  Save Rule
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

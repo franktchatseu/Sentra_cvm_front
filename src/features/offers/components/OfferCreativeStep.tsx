@@ -81,50 +81,55 @@ export default function OfferCreativeStep({
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <MessageSquare className="w-8 h-8 text-gray-600" />
+      {creatives.length === 0 ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MessageSquare className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Creatives Added</h3>
+          <p className="text-gray-500 text-sm mb-6">Create compelling content for your offer across different channels</p>
+          <button
+            onClick={addCreative}
+            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
+            style={{
+              backgroundColor: '#3b8169'
+            }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Creative
+          </button>
         </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Offer Creative</h2>
-        <p className="text-gray-600">Create channel-specific creative content for your offer</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        {/* Creative List */}
-        <div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Creatives</h3>
-              <button
-                onClick={addCreative}
-                className="inline-flex items-center px-3 py-1.5 text-xs text-white rounded-lg transition-colors font-medium"
-                style={{
-                  backgroundColor: '#3b8169'
-                }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </button>
-            </div>
-
-            {creatives.length === 0 ? (
-              <div className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Creatives Added</h3>
-                <p className="text-gray-500 text-sm mb-4">Create compelling content for your offer across different channels</p>
-                <div className="text-xs text-gray-400">
-                  Click the "Add" button above to get started
-                </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Creative List */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Creatives</h3>
+                <button
+                  onClick={addCreative}
+                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
+                  style={{
+                    backgroundColor: '#3b8169'
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                  }}
+                >
+                  <Plus className="w-5 h-5 mr-1.5" />
+                  Add Creative
+                </button>
               </div>
-            ) : (
+
               <div className="space-y-2">
                 {creatives.map((creative) => {
                   const channelConfig = getChannelConfig(creative.channel);
@@ -173,146 +178,146 @@ export default function OfferCreativeStep({
                   );
                 })}
               </div>
+            </div>
+          </div>
+
+          {/* Creative Editor */}
+          <div className="lg:col-span-2">
+            {selectedCreativeData ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6 w-full">
+                <div className="space-y-6">
+                  {/* Channel and Locale */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Channel
+                      </label>
+                      <select
+                        value={selectedCreativeData.channel}
+                        onChange={(e) => updateCreative(selectedCreativeData.id, {
+                          channel: e.target.value as 'sms' | 'email' | 'push' | 'web' | 'whatsapp'
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      >
+                        {CHANNELS.map(channel => (
+                          <option key={channel.value} value={channel.value}>
+                            {channel.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Locale
+                      </label>
+                      <select
+                        value={selectedCreativeData.locale}
+                        onChange={(e) => updateCreative(selectedCreativeData.id, {
+                          locale: e.target.value
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      >
+                        {LOCALES.map(locale => (
+                          <option key={locale.value} value={locale.value}>
+                            {locale.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Title (160 characters max)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={160}
+                      value={selectedCreativeData.title}
+                      onChange={(e) => updateCreative(selectedCreativeData.id, {
+                        title: e.target.value
+                      })}
+                      placeholder="Enter creative title..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      {selectedCreativeData.title.length}/160 characters
+                    </div>
+                  </div>
+
+                  {/* Text Body */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Text Body
+                    </label>
+                    <textarea
+                      value={selectedCreativeData.text_body}
+                      onChange={(e) => updateCreative(selectedCreativeData.id, {
+                        text_body: e.target.value
+                      })}
+                      placeholder="Enter the text content..."
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    />
+                  </div>
+
+                  {/* HTML Body (for email/web) */}
+                  {(selectedCreativeData.channel === 'email' || selectedCreativeData.channel === 'web') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        HTML Body
+                      </label>
+                      <textarea
+                        value={selectedCreativeData.html_body}
+                        onChange={(e) => updateCreative(selectedCreativeData.id, {
+                          html_body: e.target.value
+                        })}
+                        placeholder="Enter HTML content..."
+                        rows={6}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none font-mono text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {/* Variables */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Variables (JSON)
+                    </label>
+                    <textarea
+                      value={JSON.stringify(selectedCreativeData.variables, null, 2)}
+                      onChange={(e) => {
+                        try {
+                          const variables = JSON.parse(e.target.value);
+                          updateCreative(selectedCreativeData.id, { variables });
+                        } catch {
+                          // Invalid JSON, don't update
+                        }
+                      }}
+                      placeholder='{"variable_name": "value"}'
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none font-mono text-sm"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      Use variables like {`{{variable_name}}`} in your content
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Creative Selected</h3>
+                <p className="text-gray-500 text-sm">Select a creative from the list above to start editing.</p>
+              </div>
             )}
           </div>
         </div>
-
-        {/* Creative Editor */}
-        <div className="lg:col-span-2">
-          {selectedCreativeData ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="space-y-6">
-                {/* Channel and Locale */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Channel
-                    </label>
-                    <select
-                      value={selectedCreativeData.channel}
-                      onChange={(e) => updateCreative(selectedCreativeData.id, {
-                        channel: e.target.value as 'sms' | 'email' | 'push' | 'web' | 'whatsapp'
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                    >
-                      {CHANNELS.map(channel => (
-                        <option key={channel.value} value={channel.value}>
-                          {channel.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Locale
-                    </label>
-                    <select
-                      value={selectedCreativeData.locale}
-                      onChange={(e) => updateCreative(selectedCreativeData.id, {
-                        locale: e.target.value
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                    >
-                      {LOCALES.map(locale => (
-                        <option key={locale.value} value={locale.value}>
-                          {locale.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title (160 characters max)
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={160}
-                    value={selectedCreativeData.title}
-                    onChange={(e) => updateCreative(selectedCreativeData.id, {
-                      title: e.target.value
-                    })}
-                    placeholder="Enter creative title..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  />
-                  <div className="text-xs text-gray-500 mt-1">
-                    {selectedCreativeData.title.length}/160 characters
-                  </div>
-                </div>
-
-                {/* Text Body */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Text Body
-                  </label>
-                  <textarea
-                    value={selectedCreativeData.text_body}
-                    onChange={(e) => updateCreative(selectedCreativeData.id, {
-                      text_body: e.target.value
-                    })}
-                    placeholder="Enter the text content..."
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  />
-                </div>
-
-                {/* HTML Body (for email/web) */}
-                {(selectedCreativeData.channel === 'email' || selectedCreativeData.channel === 'web') && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      HTML Body
-                    </label>
-                    <textarea
-                      value={selectedCreativeData.html_body}
-                      onChange={(e) => updateCreative(selectedCreativeData.id, {
-                        html_body: e.target.value
-                      })}
-                      placeholder="Enter HTML content..."
-                      rows={6}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none font-mono text-sm"
-                    />
-                  </div>
-                )}
-
-                {/* Variables */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Variables (JSON)
-                  </label>
-                  <textarea
-                    value={JSON.stringify(selectedCreativeData.variables, null, 2)}
-                    onChange={(e) => {
-                      try {
-                        const variables = JSON.parse(e.target.value);
-                        updateCreative(selectedCreativeData.id, { variables });
-                      } catch {
-                        // Invalid JSON, don't update
-                      }
-                    }}
-                    placeholder='{"variable_name": "value"}'
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none font-mono text-sm"
-                  />
-                  <div className="text-xs text-gray-500 mt-1">
-                    Use variables like {`{{variable_name}}`} in your content
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Creative Selected</h3>
-              <p className="text-gray-500 text-sm">Select a creative from the list above to start editing.</p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

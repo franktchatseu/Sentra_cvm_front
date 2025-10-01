@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -19,6 +19,8 @@ import {
 import { CreateOfferRequest, LifecycleStatus, ApprovalStatus } from '../types/offer';
 import { Product } from '../../products/types/product';
 import { offerService } from '../services/offerService';
+import { offerCategoryService } from '../services/offerCategoryService';
+import { OfferCategory } from '../types/offerCategory';
 import ProductSelector from '../../products/components/ProductSelector';
 import OfferCreativeStep from '../components/OfferCreativeStep';
 import OfferTrackingStep from '../components/OfferTrackingStep';
@@ -96,10 +98,12 @@ interface StepProps {
   isLoading?: boolean;
   validationErrors?: Record<string, string>;
   clearValidationErrors?: () => void;
+  offerCategories?: OfferCategory[];
+  categoriesLoading?: boolean;
 }
 
 // Step 1: Basic Information
-function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearValidationErrors }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onPrev' | 'onSubmit'>) {
+function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearValidationErrors, offerCategories, categoriesLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onPrev' | 'onSubmit' | 'creatives' | 'setCreatives' | 'trackingSources' | 'setTrackingSources' | 'rewards' | 'setRewards'>) {
   const handleNext = () => {
     if (formData.name.trim() && formData.offer_type) {
       onNext();
@@ -134,7 +138,7 @@ function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearV
               }
             }}
             placeholder="e.g., Summer Data Bundle"
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none transition-all duration-200 ${validationErrors?.name ? 'border-red-500' : 'border-gray-200'
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 ${validationErrors?.name ? 'border-red-500' : 'border-gray-200'
               }`}
             required
           />
@@ -152,7 +156,7 @@ function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearV
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this offer provides to customers..."
             rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
           />
         </div>
 
@@ -190,13 +194,13 @@ function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearV
           </label>
           <HeadlessSelect
             options={[
-              { value: '', label: 'Select category' },
-              { value: '1', label: 'Data' },
-              { value: '2', label: 'Voice' },
-              { value: '3', label: 'Combo' },
-              { value: '4', label: 'Loyalty' }
+              { value: '', label: categoriesLoading ? 'Loading categories...' : 'Select category' },
+              ...(offerCategories || []).map(category => ({
+                value: category.id,
+                label: category.name
+              }))
             ]}
-            value={formData.category_id || ''}
+            value={formData.category_id?.toString() || ''}
             onChange={(value) => {
               setFormData({ ...formData, category_id: value ? Number(value) : undefined });
               if (validationErrors?.category_id && clearValidationErrors) {
@@ -204,6 +208,7 @@ function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearV
               }
             }}
             placeholder="Select category"
+            disabled={categoriesLoading}
           />
           {validationErrors?.category_id && (
             <p className="mt-1 text-sm text-red-600">{validationErrors.category_id}</p>
@@ -215,7 +220,7 @@ function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearV
         <button
           onClick={handleNext}
           disabled={!formData.name.trim() || !formData.offer_type}
-          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm"
           style={{
             backgroundColor: color.sentra.main
           }}
@@ -286,14 +291,14 @@ function ProductStepWrapper({ onNext, onPrev, formData, setFormData, validationE
       <div className="flex justify-between">
         <button
           onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
         >
           <ArrowLeft className="w-5 h-5" />
           Previous
         </button>
         <button
           onClick={handleNext}
-          className="text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          className="text-white px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
           style={{
             backgroundColor: color.sentra.main
           }}
@@ -414,7 +419,7 @@ function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<S
         <p className="text-gray-600">Define who can access this offer and when</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
         {/* Minimum Spend */}
         <div className="space-y-3">
           <label className="block text-sm font-medium text-gray-700">
@@ -692,7 +697,7 @@ function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, re
       <div className="flex justify-between">
         <button
           onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
         >
           <ArrowLeft className="w-5 h-5" />
           Previous
@@ -766,7 +771,7 @@ function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<Step
               value={eligibilityRules.min_spend || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_spend: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
             />
           </div>
 
@@ -799,7 +804,7 @@ function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<Step
               value={eligibilityRules.min_account_age_days || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_account_age_days: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
             />
           </div>
 
@@ -812,7 +817,7 @@ function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<Step
               value={eligibilityRules.min_purchase_count || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, min_purchase_count: e.target.value ? Number(e.target.value) : undefined })}
               placeholder="0"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
             />
           </div>
         </div>
@@ -826,7 +831,7 @@ function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<Step
               type="date"
               value={eligibilityRules.valid_from || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_from: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
             />
           </div>
 
@@ -838,7 +843,7 @@ function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<Step
               type="date"
               value={eligibilityRules.valid_to || ''}
               onChange={(e) => setEligibilityRules({ ...eligibilityRules, valid_to: e.target.value || undefined })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
             />
           </div>
         </div>
@@ -852,7 +857,7 @@ function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<Step
             value={eligibilityRules.max_usage_per_customer || ''}
             onChange={(e) => setEligibilityRules({ ...eligibilityRules, max_usage_per_customer: e.target.value ? Number(e.target.value) : undefined })}
             placeholder="Unlimited"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
           />
         </div>
 
@@ -873,7 +878,7 @@ function EligibilityStepOld({ onNext, onPrev, formData, setFormData }: Omit<Step
       <div className="flex justify-between">
         <button
           onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
         >
           <ArrowLeft className="w-5 h-5" />
           Previous
@@ -1008,7 +1013,7 @@ function SettingsStepOld({ onPrev, onSubmit, formData, setFormData, isLoading }:
       <div className="flex justify-between">
         <button
           onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
         >
           <ArrowLeft className="w-5 h-5" />
           Previous
@@ -1072,6 +1077,32 @@ export default function CreateOfferPage() {
   const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
   const [rewards, setRewards] = useState<OfferReward[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Offer categories state
+  const [offerCategories, setOfferCategories] = useState<OfferCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Load offer categories on component mount
+  useEffect(() => {
+    const loadOfferCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await offerCategoryService.getOfferCategories({
+          pageSize: 100, // Get all categories
+          sortBy: 'name',
+          sortDirection: 'ASC'
+        });
+        setOfferCategories(response.data || []);
+      } catch (err) {
+        console.error('Failed to load offer categories:', err);
+        // Keep empty array on error, user can still proceed
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadOfferCategories();
+  }, []);
 
   // Validation functions
   const validateForm = () => {
@@ -1185,6 +1216,8 @@ export default function CreateOfferPage() {
     isLoading,
     validationErrors,
     clearValidationErrors,
+    offerCategories,
+    categoriesLoading,
   };
 
   return (
@@ -1239,13 +1272,13 @@ export default function CreateOfferPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p className="text-red-700">{error}</p>
         </div>
       )}
 
       {/* Step Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         {currentStep === 1 && <BasicInfoStep {...stepProps} />}
         {currentStep === 2 && <ProductStepWrapper {...stepProps} />}
         {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}

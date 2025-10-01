@@ -4,7 +4,6 @@ import {
     ArrowLeft,
     Calendar,
     Target,
-    Eye,
     MousePointer,
     DollarSign,
     AlertCircle,
@@ -12,13 +11,41 @@ import {
     Pause,
     Edit,
     Trash2,
-    Tag
+    Tag,
+    CheckCircle,
+    XCircle,
+    Zap,
+    Clock,
+    MoreVertical
 } from 'lucide-react';
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw } from '../../../shared/utils/utils';
-import LoadingSpinner from '../../../shared/componen../../../shared/components/ui/LoadingSpinner';
-// import { campaignService } from '../services/campaignService';
-import { CampaignDetails } from '../../../../shared/type./components/steps/campaignDetails';
+import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
+import { campaignService } from '../services/campaignService';
+import DeleteConfirmModal from '../../../shared/components/ui/DeleteConfirmModal';
+
+interface CampaignDetails {
+    id: string;
+    name: string;
+    description: string;
+    type: string;
+    category: string;
+    segment: string;
+    offer: string;
+    status: string;
+    approval_status?: 'pending' | 'approved' | 'rejected';
+    startDate: string;
+    endDate: string;
+    createdDate: string;
+    lastModified: string;
+    performance: {
+        delivered: number;      // How many messages successfully delivered
+        response: number;       // How many users responded/clicked
+        converted: number;      // How many completed desired action
+        revenue: number;        // Total revenue generated
+        last_updated?: string;  // When analytics were last refreshed
+    };
+}
 
 export default function CampaignDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -26,6 +53,11 @@ export default function CampaignDetailsPage() {
     const { showToast } = useToast();
     const [campaign, setCampaign] = useState<CampaignDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const [rejectComments, setRejectComments] = useState('');
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     useEffect(() => {
         const fetchCampaignDetails = async () => {
@@ -44,21 +76,18 @@ export default function CampaignDetailsPage() {
                     category: 'Data Bundle',
                     segment: 'High Value Customers',
                     offer: 'Double Data Bundle',
-                    status: 'active',
+                    status: 'draft',
+                    approval_status: 'pending', // Set to pending to test approval workflow
                     startDate: '2025-01-15',
                     endDate: '2025-01-31',
                     createdDate: '2025-01-10',
                     lastModified: '2025-01-14',
                     performance: {
-                        sent: 15420,
-                        delivered: 14892,
-                        opened: 8934,
-                        clicked: 2847,
-                        converted: 1847,
-                        revenue: 45280,
-                        conversionRate: 12.4,
-                        openRate: 60.0,
-                        clickRate: 19.1
+                        delivered: 14892,     // Successfully delivered messages
+                        response: 2847,       // Users who responded/clicked
+                        converted: 1847,      // Users who completed desired action
+                        revenue: 45280,       // Total revenue generated
+                        last_updated: '2025-01-20T14:30:00Z'  // Last analytics refresh
                     }
                 };
 
@@ -76,6 +105,122 @@ export default function CampaignDetailsPage() {
         }
     }, [id, showToast]);
 
+    // Action handlers
+    const handleApproveCampaign = async () => {
+        if (!id) return;
+
+        try {
+            setIsActionLoading(true);
+            await campaignService.approveCampaign(parseInt(id), { comments: 'Approved from details page' });
+            showToast('success', 'Campaign approved successfully');
+            // Refresh campaign data
+            if (campaign) {
+                setCampaign({ ...campaign, approval_status: 'approved' });
+            }
+        } catch (error) {
+            console.error('Failed to approve campaign:', error);
+            showToast('error', 'Failed to approve campaign');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleRejectCampaign = async () => {
+        if (!id || !rejectComments.trim()) {
+            showToast('error', 'Please provide rejection comments');
+            return;
+        }
+
+        try {
+            setIsActionLoading(true);
+            await campaignService.rejectCampaign(parseInt(id), { comments: rejectComments });
+            showToast('success', 'Campaign rejected');
+            setShowRejectModal(false);
+            setRejectComments('');
+            // Refresh campaign data
+            if (campaign) {
+                setCampaign({ ...campaign, approval_status: 'rejected' });
+            }
+        } catch (error) {
+            console.error('Failed to reject campaign:', error);
+            showToast('error', 'Failed to reject campaign');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleActivateCampaign = async () => {
+        if (!id) return;
+
+        try {
+            setIsActionLoading(true);
+            await campaignService.activateCampaign(parseInt(id));
+            showToast('success', 'Campaign activated successfully');
+            // Refresh campaign data
+            if (campaign) {
+                setCampaign({ ...campaign, status: 'active' });
+            }
+        } catch (error) {
+            console.error('Failed to activate campaign:', error);
+            showToast('error', 'Failed to activate campaign');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handlePauseCampaign = async () => {
+        if (!id) return;
+
+        try {
+            setIsActionLoading(true);
+            await campaignService.pauseCampaign(parseInt(id), { comments: 'Paused from details page' });
+            showToast('success', 'Campaign paused');
+            if (campaign) {
+                setCampaign({ ...campaign, status: 'paused' });
+            }
+        } catch (error) {
+            console.error('Failed to pause campaign:', error);
+            showToast('error', 'Failed to pause campaign');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleResumeCampaign = async () => {
+        if (!id) return;
+
+        try {
+            setIsActionLoading(true);
+            await campaignService.resumeCampaign(parseInt(id));
+            showToast('success', 'Campaign resumed');
+            if (campaign) {
+                setCampaign({ ...campaign, status: 'active' });
+            }
+        } catch (error) {
+            console.error('Failed to resume campaign:', error);
+            showToast('error', 'Failed to resume campaign');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleDeleteCampaign = async () => {
+        if (!id) return;
+
+        try {
+            setIsActionLoading(true);
+            await campaignService.deleteCampaign(parseInt(id));
+            showToast('success', 'Campaign deleted successfully');
+            navigate('/dashboard/campaigns');
+        } catch (error) {
+            console.error('Failed to delete campaign:', error);
+            showToast('error', 'Failed to delete campaign');
+        } finally {
+            setIsActionLoading(false);
+            setShowDeleteModal(false);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status.toLowerCase()) {
             case 'active':
@@ -88,6 +233,19 @@ export default function CampaignDetailsPage() {
                 return 'bg-blue-100 text-blue-800';
             default:
                 return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getApprovalBadge = (status?: string) => {
+        switch (status) {
+            case 'approved':
+                return 'bg-green-100 text-green-800 border-green-200';
+            case 'rejected':
+                return 'bg-red-100 text-red-800 border-red-200';
+            case 'pending':
+                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-200';
         }
     };
 
@@ -148,28 +306,36 @@ export default function CampaignDetailsPage() {
                         <p className={`${tw.textSecondary} mt-2 text-sm`}>View and manage campaign information</p>
                     </div>
                 </div>
-                <div className="flex flex-col sm:flex-row xl:flex-row lg:flex-col gap-3">
-                    <button
-                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit text-white ${campaign.status === 'active'
-                            ? 'bg-yellow-600 hover:bg-yellow-700'
-                            : 'bg-green-600 hover:bg-green-700'
-                            }`}
-                    >
-                        {campaign.status === 'active' ? (
-                            <>
-                                <Pause className="w-4 h-4" />
-                                Pause Campaign
-                            </>
-                        ) : (
-                            <>
-                                <Play className="w-4 h-4" />
-                                Resume Campaign
-                            </>
-                        )}
-                    </button>
+                <div className="flex flex-wrap gap-3">
+                    {/* Primary Workflow Actions */}
+                    {campaign.approval_status === 'pending' && (
+                        <button
+                            onClick={handleApproveCampaign}
+                            disabled={isActionLoading}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
+                        >
+                            <CheckCircle className="w-4 h-4" />
+                            Approve
+                        </button>
+                    )}
+
+                    {/* Activate Button */}
+                    {campaign.approval_status === 'approved' && campaign.status === 'draft' && (
+                        <button
+                            onClick={handleActivateCampaign}
+                            disabled={isActionLoading}
+                            className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
+                            style={{ backgroundColor: color.entities.campaigns }}
+                        >
+                            <Zap className="w-4 h-4" />
+                            Activate
+                        </button>
+                    )}
+
+                    {/* Edit Button - Always Visible */}
                     <button
                         onClick={() => navigate(`/dashboard/campaigns/${id}/edit`)}
-                        className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit"
+                        className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
                         style={{ backgroundColor: color.sentra.main }}
                         onMouseEnter={(e) => {
                             (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
@@ -179,14 +345,81 @@ export default function CampaignDetailsPage() {
                         }}
                     >
                         <Edit className="w-4 h-4" />
-                        Edit Campaign
+                        Edit
                     </button>
-                    <button
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-red-700 flex items-center gap-2 text-sm w-fit"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                    </button>
+
+                    {/* More Actions Dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowMoreMenu(!showMoreMenu)}
+                            className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm`}
+                            style={{
+                                borderColor: color.ui.border,
+                                color: color.ui.text.primary
+                            }}
+                        >
+                            <MoreVertical className="w-4 h-4" />
+                            More
+                        </button>
+
+                        {showMoreMenu && (
+                            <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
+                                {/* Reject - Only if pending */}
+                                {campaign.approval_status === 'pending' && (
+                                    <button
+                                        onClick={() => {
+                                            setShowRejectModal(true);
+                                            setShowMoreMenu(false);
+                                        }}
+                                        className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                        <XCircle className="w-4 h-4 mr-3" />
+                                        Reject Campaign
+                                    </button>
+                                )}
+
+                                {/* Pause - Only if active */}
+                                {campaign.status === 'active' && (
+                                    <button
+                                        onClick={() => {
+                                            handlePauseCampaign();
+                                            setShowMoreMenu(false);
+                                        }}
+                                        className="w-full flex items-center px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors"
+                                    >
+                                        <Pause className="w-4 h-4 mr-3" />
+                                        Pause Campaign
+                                    </button>
+                                )}
+
+                                {/* Resume - Only if paused */}
+                                {campaign.status === 'paused' && (
+                                    <button
+                                        onClick={() => {
+                                            handleResumeCampaign();
+                                            setShowMoreMenu(false);
+                                        }}
+                                        className="w-full flex items-center px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors"
+                                    >
+                                        <Play className="w-4 h-4 mr-3" />
+                                        Resume Campaign
+                                    </button>
+                                )}
+
+                                {/* Delete - Always available */}
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteModal(true);
+                                        setShowMoreMenu(false);
+                                    }}
+                                    className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100 mt-1 pt-2"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-3" />
+                                    Delete Campaign
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -199,8 +432,8 @@ export default function CampaignDetailsPage() {
                             </div>
                         </div>
                         <div className="ml-4">
-                            <p className={`text-sm font-medium ${tw.textMuted}`}>Total Sent</p>
-                            <p className={`text-2xl font-bold ${tw.textPrimary}`}>{campaign.performance.sent.toLocaleString()}</p>
+                            <p className={`text-sm font-medium ${tw.textMuted}`}>Delivered</p>
+                            <p className={`text-2xl font-bold ${tw.textPrimary}`}>{campaign.performance.delivered.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -209,12 +442,12 @@ export default function CampaignDetailsPage() {
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
                             <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                                <Eye className="w-6 h-6" style={{ color: color.entities.segments }} />
+                                <MousePointer className="w-6 h-6" style={{ color: color.entities.segments }} />
                             </div>
                         </div>
                         <div className="ml-4">
-                            <p className={`text-sm font-medium ${tw.textMuted}`}>Open Rate</p>
-                            <p className={`text-2xl font-bold ${tw.textPrimary}`}>{campaign.performance.openRate}%</p>
+                            <p className={`text-sm font-medium ${tw.textMuted}`}>Response</p>
+                            <p className={`text-2xl font-bold ${tw.textPrimary}`}>{campaign.performance.response.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -223,12 +456,12 @@ export default function CampaignDetailsPage() {
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
                             <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.offers}20` }}>
-                                <MousePointer className="w-6 h-6" style={{ color: color.entities.offers }} />
+                                <CheckCircle className="w-6 h-6" style={{ color: color.entities.offers }} />
                             </div>
                         </div>
                         <div className="ml-4">
-                            <p className={`text-sm font-medium ${tw.textMuted}`}>Click Rate</p>
-                            <p className={`text-2xl font-bold ${tw.textPrimary}`}>{campaign.performance.clickRate}%</p>
+                            <p className={`text-sm font-medium ${tw.textMuted}`}>Converted</p>
+                            <p className={`text-2xl font-bold ${tw.textPrimary}`}>{campaign.performance.converted.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -265,10 +498,18 @@ export default function CampaignDetailsPage() {
                                 <p className={`${tw.textSecondary} mb-4`}>
                                     {campaign.description}
                                 </p>
-                                <div className="flex items-center space-x-3">
+                                <div className="flex items-center flex-wrap gap-2">
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(campaign.status)}`}>
                                         {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
                                     </span>
+                                    {campaign.approval_status && (
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getApprovalBadge(campaign.approval_status)}`}>
+                                            {campaign.approval_status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
+                                            {campaign.approval_status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
+                                            {campaign.approval_status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                                            {campaign.approval_status.charAt(0).toUpperCase() + campaign.approval_status.slice(1)}
+                                        </span>
+                                    )}
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
                                         <Tag className="w-4 h-4 mr-1" />
                                         {campaign.category}
@@ -368,15 +609,9 @@ export default function CampaignDetailsPage() {
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className={`text-sm ${tw.textMuted}`}>Opened</span>
+                                <span className={`text-sm ${tw.textMuted}`}>Response</span>
                                 <span className={`text-sm font-medium ${tw.textPrimary}`}>
-                                    {campaign.performance.opened.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className={`text-sm ${tw.textMuted}`}>Clicked</span>
-                                <span className={`text-sm font-medium ${tw.textPrimary}`}>
-                                    {campaign.performance.clicked.toLocaleString()}
+                                    {campaign.performance.response.toLocaleString()}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -385,10 +620,96 @@ export default function CampaignDetailsPage() {
                                     {campaign.performance.converted.toLocaleString()}
                                 </span>
                             </div>
+                            <div className="flex justify-between items-center">
+                                <span className={`text-sm ${tw.textMuted}`}>Revenue</span>
+                                <span className={`text-sm font-medium text-[${color.sentra.main}]`}>
+                                    ${campaign.performance.revenue.toLocaleString()}
+                                </span>
+                            </div>
+                            {campaign.performance.last_updated && (
+                                <div className="pt-3 border-t border-gray-200">
+                                    <div className="flex items-center justify-between">
+                                        <span className={`text-xs ${tw.textMuted}`}>Last Updated</span>
+                                        <span className={`text-xs ${tw.textMuted}`}>
+                                            {new Date(campaign.performance.last_updated).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Reject Campaign Modal */}
+            {showRejectModal && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex min-h-screen items-center justify-center px-4">
+                        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowRejectModal(false)} />
+                        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                    <XCircle className="w-6 h-6 text-red-600" />
+                                </div>
+                                <div>
+                                    <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Reject Campaign</h3>
+                                    <p className={`text-sm ${tw.textMuted}`}>Please provide a reason</p>
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+                                    Rejection Comments <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    value={rejectComments}
+                                    onChange={(e) => setRejectComments(e.target.value)}
+                                    placeholder="Explain why this campaign is being rejected..."
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    rows={4}
+                                    maxLength={500}
+                                />
+                                <p className={`text-xs ${tw.textMuted} mt-1`}>
+                                    {rejectComments.length}/500 characters
+                                </p>
+                            </div>
+
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={() => {
+                                        setShowRejectModal(false);
+                                        setRejectComments('');
+                                    }}
+                                    disabled={isActionLoading}
+                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleRejectCampaign}
+                                    disabled={isActionLoading || !rejectComments.trim()}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50"
+                                >
+                                    {isActionLoading ? 'Rejecting...' : 'Reject Campaign'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDeleteCampaign}
+                title="Delete Campaign"
+                description="Are you sure you want to delete this campaign? This action cannot be undone and all campaign data will be permanently removed."
+                itemName={campaign?.name || ''}
+                isLoading={isActionLoading}
+                confirmText="Delete Campaign"
+                cancelText="Cancel"
+            />
         </div>
     );
 }

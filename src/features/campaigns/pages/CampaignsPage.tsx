@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Plus,
   Filter,
@@ -25,6 +25,28 @@ import { campaignService } from '../services/campaignService';
 import { useFileDownload } from '../../../shared/hooks/useFileDownload';
 import { useClickOutside } from '../../../shared/hooks/useClickOutside';
 import DeleteConfirmModal from '../../../shared/components/ui/DeleteConfirmModal';
+import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
+
+// Define a type for campaign display (since API response might be different from Campaign type)
+interface CampaignDisplay {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  type?: string;
+  category?: string;
+  segment?: string;
+  offer?: string;
+  startDate?: string;
+  endDate?: string;
+  performance?: {
+    sent: number;
+    delivered: number;
+    opened?: number;
+    converted: number;
+    revenue: number;
+  };
+}
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
@@ -34,12 +56,12 @@ export default function CampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filters, setFilters] = useState({
-    category: 'all',
+    categoryId: 'all',
     approvalStatus: 'all',
     startDateFrom: '',
     startDateTo: '',
-    sortBy: 'createdAt',
-    sortDirection: 'desc'
+    sortBy: 'created_at',
+    sortDirection: 'DESC' as 'ASC' | 'DESC'
   });
   const filterRef = useRef<HTMLDivElement>(null);
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
@@ -48,6 +70,11 @@ export default function CampaignsPage() {
   const [campaignToDelete, setCampaignToDelete] = useState<{ id: number; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
+  const [totalCampaigns, setTotalCampaigns] = useState(0);
+  const [currentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string; description?: string }>>([]);
 
   // Use click outside hook for filter modal
   useClickOutside(filterRef, () => setShowAdvancedFilters(false), { enabled: showAdvancedFilters });
@@ -90,13 +117,131 @@ export default function CampaignsPage() {
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
+  // Fetch campaign categories from API
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await campaignService.getCampaignCategories();
+      console.log('Categories fetched:', response);
+      const categoriesData = Array.isArray(response)
+        ? response
+        : (response as Record<string, unknown>)?.data || [];
+      setCategories(categoriesData as Array<{ id: number; name: string; description?: string }>);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      setCategories([]);
+    }
   }, []);
+
+  // Fetch campaigns from API
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      // Build params - backend uses mixed conventions!
+      const params: Record<string, string | number | boolean> = {
+        page: currentPage,
+        pageSize: pageSize,           // camelCase (not page_size)
+        sortBy: filters.sortBy,       // camelCase (not sort_by)
+        sortDirection: filters.sortDirection.toUpperCase() as 'ASC' | 'DESC',  // camelCase
+      };
+
+      // Add search query if present
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+
+      // Add status filter if not 'all'
+      if (selectedStatus !== 'all') {
+        params.status = selectedStatus;
+      }
+
+      // Add approval status filter if not 'all'
+      if (filters.approvalStatus !== 'all') {
+        params.approvalStatus = filters.approvalStatus;  // camelCase!
+      }
+
+      // Add category filter if not 'all'
+      if (filters.categoryId !== 'all') {
+        params.categoryId = parseInt(filters.categoryId);  // camelCase!
+      }
+
+      // Add date range filters
+      if (filters.startDateFrom) {
+        params.startDateFrom = filters.startDateFrom;  // camelCase!
+      }
+      if (filters.startDateTo) {
+        params.startDateTo = filters.startDateTo;  // camelCase!
+      }
+
+      const response = await campaignService.getAllCampaigns(params);
+      console.log('Campaigns fetched:', response);
+
+      const campaignsData = (response.data as CampaignDisplay[]) || [];
+
+      // Add dummy campaign for testing if API returns empty
+      if (campaignsData.length === 0) {
+        const dummyCampaign: CampaignDisplay = {
+          id: 1,
+          name: 'Test Campaign - Data Bundle Promotion',
+          description: 'A test campaign to verify all functionality',
+          status: 'active',
+          type: 'Acquisition',
+          category: 'Promotional',
+          segment: 'High Value Users',
+          offer: 'Double Data Bundle',
+          startDate: '2025-01-15',
+          endDate: '2025-01-31',
+          performance: {
+            sent: 15420,
+            delivered: 14892,
+            opened: 8934,
+            converted: 2847,
+            revenue: 45280
+          }
+        };
+        setCampaigns([dummyCampaign]);
+        setTotalCampaigns(1);
+      } else {
+        setCampaigns(campaignsData);
+        setTotalCampaigns(response.meta?.total || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+      // Use dummy campaign on error for testing
+      const dummyCampaign: CampaignDisplay = {
+        id: 1,
+        name: 'Test Campaign - Data Bundle Promotion',
+        description: 'A test campaign to verify all functionality',
+        status: 'active',
+        type: 'Acquisition',
+        category: 'Promotional',
+        segment: 'High Value Users',
+        offer: 'Double Data Bundle',
+        startDate: '2025-01-15',
+        endDate: '2025-01-31',
+        performance: {
+          sent: 15420,
+          delivered: 14892,
+          opened: 8934,
+          converted: 2847,
+          revenue: 45280
+        }
+      };
+      setCampaigns([dummyCampaign]);
+      setTotalCampaigns(1);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedStatus, searchQuery, filters, currentPage, pageSize]);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Fetch campaigns when filters change
+  useEffect(() => {
+    fetchCampaigns();
+  }, [fetchCampaigns]);
 
   // Close action menus when clicking outside
   useEffect(() => {
@@ -116,104 +261,20 @@ export default function CampaignsPage() {
     };
   }, []);
 
-  const campaigns = [
-    {
-      id: 1,
-      name: 'Summer Data Bundle Promotion',
-      description: 'A targeted campaign to promote our summer data bundle offers to high-value customers',
-      status: 'active',
-      type: 'Acquisition',
-      category: 'Promotional',
-      segment: 'High Value Users',
-      offer: 'Double Data Bundle',
-      startDate: '2025-01-15',
-      endDate: '2025-01-31',
-      performance: {
-        sent: 15420,
-        delivered: 14892,
-        opened: 8934,
-        converted: 2847,
-        revenue: 45280
-      }
-    },
-    {
-      id: 2,
-      name: 'Churn Prevention - Q1',
-      description: 'Prevent at-risk customers from leaving with special retention offers',
-      status: 'scheduled',
-      type: 'Retention',
-      category: 'Customer Lifecycle',
-      segment: 'At Risk Customers',
-      offer: 'Special Retention Offer',
-      startDate: '2025-01-22',
-      endDate: '2025-02-15',
-      performance: {
-        sent: 0,
-        delivered: 0,
-        opened: 0,
-        converted: 0,
-        revenue: 0
-      }
-    },
-    {
-      id: 3,
-      name: 'New Customer Welcome Series',
-      description: 'Welcome new subscribers with onboarding offers and guidance',
-      status: 'active',
-      type: 'Onboarding',
-      category: 'Customer Lifecycle',
-      segment: 'New Subscribers',
-      offer: 'Welcome Bonus Package',
-      startDate: '2025-01-10',
-      endDate: '2025-02-10',
-      performance: {
-        sent: 3245,
-        delivered: 3198,
-        opened: 2456,
-        converted: 894,
-        revenue: 12340
-      }
-    },
-    {
-      id: 4,
-      name: 'Weekend Voice Bundle Push',
-      description: 'Promote weekend voice bundles to voice-heavy users',
-      status: 'paused',
-      type: 'Upsell',
-      category: 'Promotional',
-      segment: 'Voice Heavy Users',
-      offer: 'Weekend Voice Bundle',
-      startDate: '2025-01-08',
-      endDate: '2025-01-20',
-      performance: {
-        sent: 8765,
-        delivered: 8432,
-        opened: 4321,
-        converted: 1234,
-        revenue: 18750
-      }
-    }
-  ];
-
   const statusOptions = [
-    { value: 'all', label: 'All Campaigns', count: campaigns.length },
-    { value: 'active', label: 'Active', count: campaigns.filter(c => c.status === 'active').length },
-    { value: 'scheduled', label: 'Scheduled', count: campaigns.filter(c => c.status === 'scheduled').length },
-    { value: 'paused', label: 'Paused', count: campaigns.filter(c => c.status === 'paused').length },
-    { value: 'completed', label: 'Completed', count: 0 }
+    { value: 'all', label: 'All Campaigns', count: totalCampaigns },
+    { value: 'active', label: 'Active', count: selectedStatus === 'active' ? totalCampaigns : campaigns.filter(c => c.status === 'active').length },
+    { value: 'scheduled', label: 'Scheduled', count: selectedStatus === 'scheduled' ? totalCampaigns : campaigns.filter(c => c.status === 'scheduled').length },
+    { value: 'paused', label: 'Paused', count: selectedStatus === 'paused' ? totalCampaigns : campaigns.filter(c => c.status === 'paused').length },
+    { value: 'completed', label: 'Completed', count: selectedStatus === 'completed' ? totalCampaigns : campaigns.filter(c => c.status === 'completed').length },
+    { value: 'draft', label: 'Draft', count: selectedStatus === 'draft' ? totalCampaigns : campaigns.filter(c => c.status === 'draft').length },
+    { value: 'archived', label: 'Archived', count: selectedStatus === 'archived' ? totalCampaigns : campaigns.filter(c => c.status === 'archived').length }
   ];
 
+  // Category options from API
   const categoryOptions = [
     { value: 'all', label: 'All Categories' },
-    { value: 'Promotional', label: 'Promotional' },
-    { value: 'Seasonal', label: 'Seasonal' },
-    { value: 'Product Launch', label: 'Product Launch' },
-    { value: 'Customer Lifecycle', label: 'Customer Lifecycle' },
-    { value: 'Behavioral Trigger', label: 'Behavioral Trigger' },
-    { value: 'Loyalty Program', label: 'Loyalty Program' },
-    { value: 'Win-back', label: 'Win-back' },
-    { value: 'Educational', label: 'Educational' },
-    { value: 'Event-based', label: 'Event-based' }
+    ...categories.map(cat => ({ value: cat.id.toString(), label: cat.name }))
   ];
 
   const approvalStatusOptions = [
@@ -224,10 +285,12 @@ export default function CampaignsPage() {
   ];
 
   const sortOptions = [
-    { value: 'createdAt', label: 'Date Created' },
+    { value: 'created_at', label: 'Date Created' },
+    { value: 'updated_at', label: 'Date Updated' },
     { value: 'name', label: 'Campaign Name' },
     { value: 'status', label: 'Status' },
-    { value: 'performance', label: 'Performance' }
+    { value: 'approval_status', label: 'Approval Status' },
+    { value: 'start_date', label: 'Start Date' }
   ];
 
   const getStatusBadge = (status: string) => {
@@ -244,27 +307,37 @@ export default function CampaignsPage() {
   const handleDuplicateCampaign = async (campaignId: number) => {
     try {
       const newName = `Copy of Campaign ${campaignId}`;
-      await campaignService.cloneCampaign(campaignId, { newName });
+      await campaignService.duplicateCampaign(campaignId, { newName });
       console.log('Campaign duplicated successfully');
-      // Refresh campaigns list or show success message
       setShowActionMenu(null);
       setDropdownPosition(null);
-      setDropdownPosition(null);
+      fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
       console.error('Failed to duplicate campaign:', error);
     }
   };
 
-  const handleCloneCampaign = async (campaignId: number) => {
+  const handleCloneWithChanges = async (campaignId: number) => {
+    // TODO: Open a modal to collect modifications
+    // For now, navigate to edit page of the cloned campaign
     try {
       const newName = `Clone of Campaign ${campaignId}`;
-      await campaignService.cloneCampaign(campaignId, { newName });
-      console.log('Campaign cloned successfully');
-      // Navigate to edit page or show success message
+      const response = await campaignService.cloneCampaignWithModifications(campaignId, {
+        newName,
+        modifications: {} // Empty modifications - user will edit in the edit page
+      });
+      console.log('Campaign cloned successfully:', response);
       setShowActionMenu(null);
       setDropdownPosition(null);
+
+      // Navigate to edit page of the newly cloned campaign
+      if (response.clonedCampaignId) {
+        navigate(`/dashboard/campaigns/${response.clonedCampaignId}/edit`);
+      } else {
+        fetchCampaigns(); // Fallback: just refresh list
+      }
     } catch (error) {
-      console.error('Failed to clone campaign:', error);
+      console.error('Failed to clone campaign with modifications:', error);
     }
   };
 
@@ -272,9 +345,9 @@ export default function CampaignsPage() {
     try {
       await campaignService.archiveCampaign(campaignId);
       console.log('Campaign archived successfully');
-      // Update campaign status or refresh list
       setShowActionMenu(null);
       setDropdownPosition(null);
+      fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
       console.error('Failed to archive campaign:', error);
     }
@@ -294,9 +367,9 @@ export default function CampaignsPage() {
     try {
       await campaignService.deleteCampaign(campaignToDelete.id);
       console.log('Campaign deleted successfully');
-      // Remove from list or refresh
       setShowDeleteModal(false);
       setCampaignToDelete(null);
+      fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
       console.error('Failed to delete campaign:', error);
     } finally {
@@ -320,59 +393,38 @@ export default function CampaignsPage() {
     }
   };
 
-  // const handleViewAnalytics = (campaignId: number) => {
-  //   navigate(`/dashboard/campaigns/${campaignId}/analytics`);
-  //   setShowActionMenu(null);
-  // };
-
-  // const handleViewApprovalHistory = (campaignId: number) => {
-  //   navigate(`/dashboard/campaigns/${campaignId}/approval-history`);
-  //   setShowActionMenu(null);
-  // };
-
-  // const handleViewLifecycleHistory = (campaignId: number) => {
-  //   navigate(`/dashboard/campaigns/${campaignId}/lifecycle-history`);
-  //   setShowActionMenu(null);
-  // };
-
-  const filteredCampaigns = campaigns.filter(campaign => {
-    // Status filter
-    const statusMatch = selectedStatus === 'all' || campaign.status === selectedStatus;
-
-    // Search filter
-    const searchMatch = searchQuery === '' ||
-      campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      campaign.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    // Category filter
-    const categoryMatch = filters.category === 'all' || campaign.category === filters.category;
-
-    // Date range filter
-    const dateMatch = !filters.startDateFrom || !filters.startDateTo ||
-      (campaign.startDate >= filters.startDateFrom && campaign.startDate <= filters.startDateTo);
-
-    return statusMatch && searchMatch && categoryMatch && dateMatch;
-  }).sort((a, b) => {
-    // Sorting logic
-    switch (filters.sortBy) {
-      case 'name':
-        return filters.sortDirection === 'asc'
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      case 'status':
-        return filters.sortDirection === 'asc'
-          ? a.status.localeCompare(b.status)
-          : b.status.localeCompare(a.status);
-      case 'performance':
-        return filters.sortDirection === 'asc'
-          ? a.performance.revenue - b.performance.revenue
-          : b.performance.revenue - a.performance.revenue;
-      default: // createdAt
-        return filters.sortDirection === 'asc'
-          ? new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-          : new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+  const handlePauseCampaign = async (campaignId: number) => {
+    try {
+      await campaignService.pauseCampaign(campaignId, { comments: 'Paused from campaigns list' });
+      console.log('Campaign paused successfully');
+      fetchCampaigns(); // Refresh list
+    } catch (error) {
+      console.error('Failed to pause campaign:', error);
     }
-  });
+  };
+
+  const handleResumeCampaign = async (campaignId: number) => {
+    try {
+      await campaignService.resumeCampaign(campaignId);
+      console.log('Campaign resumed successfully');
+      fetchCampaigns(); // Refresh list
+    } catch (error) {
+      console.error('Failed to resume campaign:', error);
+    }
+  };
+
+  const handleViewApprovalHistory = (campaignId: number) => {
+    navigate(`/dashboard/campaigns/${campaignId}/approval-history`);
+    setShowActionMenu(null);
+  };
+
+  const handleViewLifecycleHistory = (campaignId: number) => {
+    navigate(`/dashboard/campaigns/${campaignId}/lifecycle-history`);
+    setShowActionMenu(null);
+  };
+
+  // Campaigns are already filtered and sorted by the API
+  const filteredCampaigns = campaigns;
 
   return (
     <div className="space-y-6">
@@ -500,7 +552,7 @@ export default function CampaignsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      {campaign.status === 'active' ? (
+                      {campaign.status === 'active' && campaign.performance ? (
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className={`${tw.textSecondary}`}>Conversion:</span>
@@ -538,15 +590,33 @@ export default function CampaignsPage() {
                           <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                         </button>
                         {campaign.status === 'paused' ? (
-                          <button className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Resume">
+                          <button
+                            onClick={() => handleResumeCampaign(campaign.id)}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300`}
+                            style={{ backgroundColor: 'transparent' }}
+                            onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                            title="Resume Campaign"
+                          >
                             <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           </button>
                         ) : campaign.status === 'active' ? (
-                          <button className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Pause">
+                          <button
+                            onClick={() => handlePauseCampaign(campaign.id)}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300`}
+                            style={{ backgroundColor: 'transparent' }}
+                            onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                            title="Pause Campaign"
+                          >
                             <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           </button>
                         ) : null}
-                        <button className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`} style={{ backgroundColor: 'transparent' }} onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }} title="Edit">
+                        <button
+                          onClick={() => navigate(`/dashboard/campaigns/${campaign.id}/edit`)}
+                          className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`}
+                          style={{ backgroundColor: 'transparent' }}
+                          onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                          title="Edit"
+                        >
                           <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                         </button>
                         <div className="relative" ref={(el) => { actionMenuRefs.current[campaign.id] = el; }}>
@@ -577,10 +647,10 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                onClick={() => handleCloneCampaign(campaign.id)}
+                                onClick={() => handleCloneWithChanges(campaign.id)}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
                               >
-                                <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                <Copy className="w-4 h-4 mr-4" style={{ color: color.entities.campaigns }} />
                                 Clone with Changes
                               </button>
 
@@ -609,7 +679,7 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                // onClick={() => handleViewApprovalHistory(campaign.id)}
+                                onClick={() => handleViewApprovalHistory(campaign.id)}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
                               >
                                 <CheckCircle className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -617,7 +687,7 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                // onClick={() => handleViewLifecycleHistory(campaign.id)}
+                                onClick={() => handleViewLifecycleHistory(campaign.id)}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
                               >
                                 <History className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -693,29 +763,24 @@ export default function CampaignsPage() {
                   {/* Category Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
-                    <select
-                      value={filters.category}
-                      onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                    >
-                      {categoryOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                    <HeadlessSelect
+                      options={categoryOptions}
+                      value={filters.categoryId}
+                      onChange={(value) => setFilters({ ...filters, categoryId: value as string })}
+                      placeholder="Select a category..."
+                      searchable={true}
+                    />
                   </div>
 
                   {/* Approval Status Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">Approval Status</label>
-                    <select
+                    <HeadlessSelect
+                      options={approvalStatusOptions}
                       value={filters.approvalStatus}
-                      onChange={(e) => setFilters({ ...filters, approvalStatus: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                    >
-                      {approvalStatusOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                      onChange={(value) => setFilters({ ...filters, approvalStatus: value as string })}
+                      placeholder="Select approval status..."
+                    />
                   </div>
 
                   {/* Date Range Filter */}
@@ -747,19 +812,16 @@ export default function CampaignsPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">Sort By</label>
                     <div className="space-y-3">
-                      <select
+                      <HeadlessSelect
+                        options={sortOptions}
                         value={filters.sortBy}
-                        onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                      >
-                        {sortOptions.map(option => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
-                        ))}
-                      </select>
+                        onChange={(value) => setFilters({ ...filters, sortBy: value as string })}
+                        placeholder="Select sort field..."
+                      />
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => setFilters({ ...filters, sortDirection: 'asc' })}
-                          className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${filters.sortDirection === 'asc'
+                          onClick={() => setFilters({ ...filters, sortDirection: 'ASC' })}
+                          className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${filters.sortDirection === 'ASC'
                             ? 'bg-[#3b8169] text-white border-[#3b8169]'
                             : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                             }`}
@@ -767,8 +829,8 @@ export default function CampaignsPage() {
                           ↑ Ascending
                         </button>
                         <button
-                          onClick={() => setFilters({ ...filters, sortDirection: 'desc' })}
-                          className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${filters.sortDirection === 'desc'
+                          onClick={() => setFilters({ ...filters, sortDirection: 'DESC' })}
+                          className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${filters.sortDirection === 'DESC'
                             ? 'bg-[#3b8169] text-white border-[#3b8169]'
                             : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                             }`}
@@ -787,12 +849,12 @@ export default function CampaignsPage() {
                   <button
                     onClick={() => {
                       setFilters({
-                        category: 'all',
+                        categoryId: 'all',
                         approvalStatus: 'all',
                         startDateFrom: '',
                         startDateTo: '',
-                        sortBy: 'createdAt',
-                        sortDirection: 'desc'
+                        sortBy: 'created_at',
+                        sortDirection: 'DESC'
                       });
                       setSearchQuery('');
                     }}

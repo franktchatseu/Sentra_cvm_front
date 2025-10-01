@@ -6,6 +6,7 @@ import { productCategoryService } from '../services/productCategoryService';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
+import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 
 export default function ProductCategoriesPage() {
   const navigate = useNavigate();
@@ -125,7 +126,7 @@ export default function ProductCategoriesPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]"></div>
+          <LoadingSpinner size="lg" variant="default" color="primary" />
         </div>
       </div>
     );
