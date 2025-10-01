@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Tag, Save, Eye } from 'lucide-react';
-import { Segment, CreateSegmentRequest, SegmentConditionGroup } from '../../../../shared/types/segment';
+import { Segment, CreateSegmentRequest, SegmentConditionGroup } from '../types/segment';
 import SegmentConditionsBuilder from './SegmentConditionsBuilder';
 import { segmentService } from '../services/segmentService';
 import { color, tw } from '../../../shared/utils/utils';
@@ -31,9 +31,9 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
       if (segment) {
         setFormData({
           name: segment.name,
-          description: segment.description,
-          tags: segment.tags,
-          conditions: segment.conditions,
+          description: segment.description || '',
+          tags: segment.tags || [],
+          conditions: segment.conditions || [],
           type: "dynamic"
         });
       } else {
@@ -79,10 +79,33 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
     setIsPreviewLoading(true);
     try {
-      const result = await segmentService.getSegmentPreview(formData.conditions);
-      setPreviewCount(result.count);
+      // Transform conditions to backend criteria format
+      const criteria = {
+        conditions: formData.conditions.flatMap(group =>
+          group.conditions.map((condition: { field: string; operator: string; value: string | number | string[] }) => ({
+            field: condition.field,
+            operator: condition.operator,
+            value: condition.value
+          }))
+        )
+      };
+
+      const result = await segmentService.validateCriteria({
+        criteria,
+        segment_type: formData.type as 'static' | 'dynamic' | 'trigger'
+      });
+
+      if (result.valid) {
+
+        setPreviewCount(null);
+        setError(''); // Clear any previous errors
+      } else {
+        setError(result.errors?.join(', ') || 'Invalid criteria');
+        setPreviewCount(null);
+      }
     } catch (err) {
       console.error('Preview failed:', err);
+      setError((err as Error).message || 'Failed to validate criteria');
       setPreviewCount(null);
     } finally {
       setIsPreviewLoading(false);
@@ -109,7 +132,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
       if (segment) {
         // Update existing segment
-        savedSegment = await segmentService.updateSegment(segment.segment_id, formData);
+        savedSegment = await segmentService.updateSegment(segment.segment_id || segment.id!, formData);
       } else {
         // Create new segment
         const createRequest: CreateSegmentRequest = {

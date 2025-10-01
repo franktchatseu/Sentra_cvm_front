@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, FileText, X, Search, Plus, List } from 'lucide-react';
+import { color, tw } from '../../../shared/utils/utils';
 
 interface ExistingList {
   list_id: number;
@@ -155,29 +156,51 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
   };
 
   return (
-    <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-      <h4 className="font-medium text-blue-900">List Configuration</h4>
-      
+    <div className="space-y-4 p-4 rounded-lg border border-gray-200" style={{ backgroundColor: `${color.entities.segments}10` }}>
+      <h4 className={`font-medium ${tw.textPrimary}`}>List Configuration</h4>
+
       {/* Mode Selection */}
       <div className="flex space-x-2 mb-4">
         <button
           onClick={() => handleModeChange('existing')}
-          className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
-            mode === 'existing'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-blue-600 border border-blue-600 hover:bg-blue-50'
-          }`}
+          className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors text-white"
+          style={{
+            backgroundColor: mode === 'existing' ? color.sentra.main : 'transparent',
+            color: mode === 'existing' ? 'white' : color.sentra.main,
+            border: `2px solid ${color.sentra.main}`
+          }}
+          onMouseEnter={(e) => {
+            if (mode !== 'existing') {
+              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (mode !== 'existing') {
+              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+            }
+          }}
         >
           <List className="w-4 h-4 mr-2" />
           Select Existing List
         </button>
         <button
           onClick={() => handleModeChange('new')}
-          className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
-            mode === 'new'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-blue-600 border border-blue-600 hover:bg-blue-50'
-          }`}
+          className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors text-white"
+          style={{
+            backgroundColor: mode === 'new' ? color.sentra.main : 'transparent',
+            color: mode === 'new' ? 'white' : color.sentra.main,
+            border: `2px solid ${color.sentra.main}`
+          }}
+          onMouseEnter={(e) => {
+            if (mode !== 'new') {
+              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (mode !== 'new') {
+              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+            }
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Create New List
@@ -194,7 +217,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search lists by name or description..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
             />
           </div>
 
@@ -209,11 +232,13 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
                 <div
                   key={list.list_id}
                   onClick={() => handleListSelection(list)}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedList?.list_id === list.list_id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-25'
-                  }`}
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedList?.list_id === list.list_id
+                    ? 'bg-white'
+                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                    }`}
+                  style={{
+                    borderColor: selectedList?.list_id === list.list_id ? color.sentra.main : color.ui.border
+                  }}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -232,8 +257,8 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
           </div>
 
           {selectedList && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800">
+            <div className="p-3 rounded-lg border" style={{ backgroundColor: `${color.status.success.light}`, borderColor: color.status.success.main }}>
+              <p className="text-sm" style={{ color: color.status.success.dark }}>
                 <strong>Selected:</strong> {selectedList.name} ({selectedList.subscriber_count.toLocaleString()} subscribers)
               </p>
             </div>
@@ -249,7 +274,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
             <select
               value={listData?.list_type || 'standard'}
               onChange={(e) => handleInputChange('list_type', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
             >
               <option value="seed">Seed</option>
               <option value="and">And</option>
@@ -267,7 +292,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
               onChange={(e) => handleInputChange('list_description', e.target.value)}
               placeholder="Enter list description"
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none resize-none"
             />
           </div>
 
@@ -281,7 +306,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
               value={listData?.subscriber_id_col_name || ''}
               onChange={(e) => handleInputChange('subscriber_id_col_name', e.target.value)}
               placeholder="e.g., email, user_id, phone"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
             />
           </div>
 
@@ -293,7 +318,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
             <select
               value={listData?.file_delimiter || ','}
               onChange={(e) => handleInputChange('file_delimiter', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
             >
               <option value=",">Comma (,)</option>
               <option value=";">Semicolon (;)</option>
@@ -307,11 +332,22 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Upload List File
             </label>
-            
+
             {!uploadedFile ? (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer transition-colors"
+                style={{
+                  borderColor: color.ui.border
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLDivElement).style.borderColor = color.sentra.main;
+                  (e.target as HTMLDivElement).style.backgroundColor = `${color.sentra.main}05`;
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLDivElement).style.borderColor = color.ui.border;
+                  (e.target as HTMLDivElement).style.backgroundColor = 'transparent';
+                }}
               >
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600">
@@ -324,7 +360,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
             ) : (
               <div className="flex items-center justify-between p-3 bg-white border border-gray-300 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                  <FileText className="w-5 h-5" style={{ color: color.sentra.main }} />
                   <span className="text-sm font-medium text-gray-900">
                     {uploadedFile.name}
                   </span>
@@ -341,7 +377,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
                 </button>
               </div>
             )}
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -361,7 +397,7 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
               value={listData?.list_label || ''}
               onChange={(e) => handleInputChange('list_label', e.target.value)}
               placeholder="Enter a label for this list"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
             />
           </div>
 

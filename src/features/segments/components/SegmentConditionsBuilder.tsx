@@ -1,13 +1,13 @@
 import { Plus, Trash2 } from 'lucide-react';
-import { 
-  SegmentCondition, 
-  SegmentConditionGroup, 
-  SEGMENT_FIELDS, 
+import {
+  SegmentCondition,
+  SegmentConditionGroup,
+  SEGMENT_FIELDS,
   PROFILE_360_FIELDS,
-  OPERATOR_LABELS 
+  OPERATOR_LABELS
 } from '../types/segment';
 import ListUpload from './ListUpload';
-import { color } from '../../../shared/utils/utils';
+import { color, tw } from '../../../shared/utils/utils';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 
 interface SegmentConditionsBuilderProps {
@@ -99,7 +99,7 @@ export default function SegmentConditionsBuilder({
   const renderConditionValue = (groupId: string, condition: SegmentCondition, isProfile360 = false) => {
     const fieldType = getFieldType(condition.field, isProfile360);
     const updateFunction = isProfile360 ? updateProfileCondition : updateCondition;
-    
+
     if (condition.operator === 'in' || condition.operator === 'not_in') {
       return (
         <input
@@ -138,36 +138,36 @@ export default function SegmentConditionsBuilder({
       type: 'string'
     };
 
-    onChange(conditions.map(group => 
-      group.id === groupId 
-        ? { 
-            ...group, 
-            profileConditions: [...(group.profileConditions || []), newCondition] 
-          }
+    onChange(conditions.map(group =>
+      group.id === groupId
+        ? {
+          ...group,
+          profileConditions: [...(group.profileConditions || []), newCondition]
+        }
         : group
     ));
   };
 
   const removeProfileCondition = (groupId: string, conditionId: string) => {
-    onChange(conditions.map(group => 
-      group.id === groupId 
-        ? { 
-            ...group, 
-            profileConditions: (group.profileConditions || []).filter(c => c.id !== conditionId) 
-          }
+    onChange(conditions.map(group =>
+      group.id === groupId
+        ? {
+          ...group,
+          profileConditions: (group.profileConditions || []).filter(c => c.id !== conditionId)
+        }
         : group
     ));
   };
 
   const updateProfileCondition = (groupId: string, conditionId: string, updates: Partial<SegmentCondition>) => {
-    onChange(conditions.map(group => 
-      group.id === groupId 
+    onChange(conditions.map(group =>
+      group.id === groupId
         ? {
-            ...group,
-            profileConditions: (group.profileConditions || []).map(condition =>
-              condition.id === conditionId ? { ...condition, ...updates } : condition
-            )
-          }
+          ...group,
+          profileConditions: (group.profileConditions || []).map(condition =>
+            condition.id === conditionId ? { ...condition, ...updates } : condition
+          )
+        }
         : group
     ));
   };
@@ -206,7 +206,7 @@ export default function SegmentConditionsBuilder({
               {/* Condition Type Selection */}
               <div className="flex items-center space-x-2">
                 <label className="text-sm font-medium text-gray-700">Type:</label>
-                <div className="w-32">
+                <div className="w-48">
                   <HeadlessSelect
                     options={[
                       { value: 'rule', label: 'Rule' },
@@ -326,9 +326,9 @@ export default function SegmentConditionsBuilder({
 
           {/* Segments Selection */}
           {group.conditionType === 'segments' && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h4 className="font-medium text-green-900 mb-2">Select Segments</h4>
-              <p className="text-sm text-green-700 mb-3">Choose existing segments to include in this condition group.</p>
+            <div className="p-4 rounded-lg border border-gray-200" style={{ backgroundColor: `${color.entities.segments}10` }}>
+              <h4 className={`font-medium ${tw.textPrimary} mb-2`}>Select Segments</h4>
+              <p className={`text-sm ${tw.textSecondary} mb-3`}>Choose existing segments to include in this condition group.</p>
               <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
                 <option value="">Select a segment...</option>
                 {/* This would be populated with actual segments from the backend */}
@@ -338,17 +338,20 @@ export default function SegmentConditionsBuilder({
 
           {/* 360 Profile */}
           {group.conditionType === '360' && (
-            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <h4 className="font-medium text-purple-900 mb-2">360 Customer Profile</h4>
-              <p className="text-sm text-purple-700 mb-3">Configure conditions based on comprehensive customer profile data.</p>
-              
+            <div className="p-4 rounded-lg border border-gray-200" style={{ backgroundColor: `${color.entities.segments}10` }}>
+              <h4 className={`font-medium ${tw.textPrimary} mb-2`}>360 Customer Profile</h4>
+              <p className={`text-sm ${tw.textSecondary} mb-3`}>Configure conditions based on comprehensive customer profile data.</p>
+
               <div className="space-y-3">
                 {(group.profileConditions || []).length === 0 ? (
                   <div className="text-center py-4">
                     <p className="text-gray-500 mb-3">No profile conditions defined yet</p>
                     <button
                       onClick={() => addProfileCondition(group.id)}
-                      className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="inline-flex items-center px-3 py-2 text-white rounded-lg transition-colors"
+                      style={{ backgroundColor: color.sentra.main }}
+                      onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+                      onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Profile Condition
@@ -359,11 +362,11 @@ export default function SegmentConditionsBuilder({
                     {group.profileConditions?.map((condition, conditionIndex) => (
                       <div key={condition.id} className="flex items-center space-x-3 bg-white p-3 rounded border">
                         {conditionIndex > 0 && (
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                          <span className="px-2 py-1 text-xs font-medium rounded" style={{ backgroundColor: `${color.entities.segments}20`, color: color.entities.segments }}>
                             AND
                           </span>
                         )}
-                        
+
                         {/* Profile Field Selection */}
                         <select
                           value={condition.field}
@@ -372,12 +375,15 @@ export default function SegmentConditionsBuilder({
                             const availableOperators = getAvailableOperators(e.target.value, true);
                             updateProfileCondition(group.id, condition.id, {
                               field: e.target.value,
-                              operator: availableOperators[0] as any,
+                              operator: availableOperators[0] as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in',
                               type: fieldType,
                               value: fieldType === 'number' ? 0 : ''
                             });
                           }}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-w-[200px]"
+                          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none min-w-[200px]"
+                          style={{
+                            borderColor: color.ui.border
+                          }}
                         >
                           {PROFILE_360_FIELDS.map(field => (
                             <option key={field.key} value={field.key}>
@@ -389,8 +395,11 @@ export default function SegmentConditionsBuilder({
                         {/* Operator Selection */}
                         <select
                           value={condition.operator}
-                          onChange={(e) => updateProfileCondition(group.id, condition.id, { operator: e.target.value as any })}
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          onChange={(e) => updateProfileCondition(group.id, condition.id, { operator: e.target.value as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in' })}
+                          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                          style={{
+                            borderColor: color.ui.border
+                          }}
                         >
                           {getAvailableOperators(condition.field, true).map(op => (
                             <option key={op} value={op}>
@@ -413,11 +422,21 @@ export default function SegmentConditionsBuilder({
                         </button>
                       </div>
                     ))}
-                    
+
                     {/* Add Profile Condition Button */}
                     <button
                       onClick={() => addProfileCondition(group.id)}
-                      className="inline-flex items-center px-3 py-1 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded transition-colors"
+                      className="inline-flex items-center px-3 py-1 text-sm rounded transition-colors"
+                      style={{
+                        color: color.sentra.main,
+                        backgroundColor: `${color.sentra.main}10`
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}20`;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                      }}
                     >
                       <Plus className="w-3 h-3 mr-1" />
                       Add Profile Condition
