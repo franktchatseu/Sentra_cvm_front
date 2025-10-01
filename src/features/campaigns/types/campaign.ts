@@ -15,6 +15,8 @@ export interface Campaign {
   scheduling: CampaignScheduling;
   control_group?: ControlGroup;
   approval_workflow?: ApprovalWorkflow;
+  is_definitive?: boolean;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface CampaignSegment {
@@ -24,6 +26,9 @@ export interface CampaignSegment {
   customer_count: number;
   criteria: SegmentCriteria;
   created_at: string;
+  control_group_config?: SegmentControlGroupConfig;
+  priority?: number;
+  is_mutually_exclusive?: boolean;
 }
 
 export interface SegmentCriteria {
@@ -105,6 +110,28 @@ export interface ControlGroup {
   exclusion_criteria?: Record<string, any>;
 }
 
+export interface SegmentControlGroupConfig {
+  type: 'none' | 'with_control_group' | 'multiple_control_group';
+  // Sub-types for 'with_control_group'
+  control_group_method?: 'fixed_percentage' | 'fixed_number' | 'advanced_parameters';
+  percentage?: number; // For 'fixed_percentage' method (0.1 - 50%)
+  set_limits?: boolean; // Enable limits for percentage type
+  lower_limit?: number; // Lower limit for control group
+  upper_limit?: number; // Upper limit for control group
+  fixed_number?: number; // For 'fixed_number' method
+  confidence_level?: number; // For 'advanced_parameters' method (90-99%)
+  margin_of_error?: number; // For 'advanced_parameters' method (1-10%)
+  selected_control_group_id?: string; // For 'multiple_control_group' type
+}
+
+export interface AvailableControlGroup {
+  id: string;
+  name: string;
+  description: string;
+  percentage: number;
+  created_at: string;
+}
+
 export interface ApprovalWorkflow {
   required: boolean;
   approvers: string[];
@@ -123,6 +150,8 @@ export interface CreateCampaignRequest {
   offers: CampaignOfferMapping[];
   scheduling: CampaignScheduling;
   control_group?: ControlGroup;
+  is_definitive?: boolean;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface CampaignOfferMapping {

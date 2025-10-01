@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw } from '../../../shared/utils/utils';
-import { CreateCampaignRequest, CampaignSegment, CampaignOffer, ControlGroup } from '../../../../shared/types/campaign';
+import { CreateCampaignRequest, CampaignSegment, CampaignOffer, ControlGroup } from '../types/campaign';
 import CampaignDefinitionStep from '../components/steps/CampaignDefinitionStep';
 import AudienceConfigurationStep from '../components/steps/AudienceConfigurationStep';
 import OfferMappingStep from '../components/steps/OfferMappingStep';

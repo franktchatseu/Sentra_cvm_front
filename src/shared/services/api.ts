@@ -1,7 +1,12 @@
 // API Configuration
+const isLocalhost = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 export const API_CONFIG = {
-  // BASE_URL: 'http://localhost:8080/api',
-  BASE_URL: 'http://cvm.groupngs.com:8080/api/database-service',
+  // Use direct API for localhost, proxy for production to avoid mixed content issues
+  BASE_URL: isLocalhost
+    ? 'http://localhost:8080/api'
+    : '/api/proxy',
   ENDPOINTS: {
     OFFERS: '/offers',
     PRODUCTS: '/products',

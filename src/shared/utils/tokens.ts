@@ -48,7 +48,7 @@ export const colors = {
   },
   ui: {
     background: '#FFFFFF',    
-    surface: '#DAD7CD',       
+   // surface: '#DAD7CD',       
     border: '#C5C2B7',        
     divider: '#B8B5AA',       
     text: {

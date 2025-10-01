@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Grid3X3,
   List,
+  Shield,
 } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 
@@ -19,7 +20,7 @@ interface ConfigurationItem {
   id: string;
   name: string;
   description: string;
-  type: 'campaign' | 'offer' | 'product' | 'segment' | 'user' | 'config';
+  type: 'campaign' | 'offer' | 'product' | 'segment' | 'user' | 'config' | 'control-group';
   category: string;
   subConfigs?: string[];
   lastModified: string;
@@ -110,6 +111,20 @@ export default function ConfigurationPage() {
         gradient: `from-[${color.entities.users}] to-[${color.entities.users}]80`,
         navigationPath: '/dashboard/user-management'
       },
+      {
+        id: 'control-group-1',
+        name: 'Universal Control Groups',
+        description: 'Configure and manage universal control groups for campaigns',
+        type: 'control-group',
+        category: 'Configuration',
+        subConfigs: ['Control Group Templates', 'Customer Base Rules', 'Scheduling Settings', 'Variance Calculations'],
+        lastModified: '2025-01-22',
+        status: 'active',
+        icon: Shield,
+        color: 'campaigns',
+        gradient: `from-[${color.entities.campaigns}] to-[${color.entities.campaigns}]80`,
+        navigationPath: '/dashboard/control-groups'
+      },
       // {
       //   id: 'config-1',
       //   name: 'System Configuration',
@@ -136,6 +151,7 @@ export default function ConfigurationPage() {
     { id: 'product', name: 'Product', count: configurations.filter(c => c.type === 'product').length },
     { id: 'segment', name: 'Segment', count: configurations.filter(c => c.type === 'segment').length },
     { id: 'user', name: 'User', count: configurations.filter(c => c.type === 'user').length },
+    { id: 'control-group', name: 'Control Group', count: configurations.filter(c => c.type === 'control-group').length },
     { id: 'config', name: 'Configuration', count: configurations.filter(c => c.type === 'config').length }
   ];
 
