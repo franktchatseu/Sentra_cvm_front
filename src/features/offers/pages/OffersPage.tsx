@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -14,15 +14,23 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Phone
+  Phone,
+  Trash2,
+  Play,
+  Pause,
+  Archive
 } from 'lucide-react';
-import { Offer, OfferFilters, LifecycleStatus, ApprovalStatus } from '../../../../shared/types/offer';
+import { Offer, OfferFilters, LifecycleStatus, ApprovalStatus } from '../types/offer';
 import { offerService } from '../services/offerService';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 import { color, tw } from '../../../shared/utils/utils';
+import { useToast } from '../../../contexts/ToastContext';
+import { useConfirm } from '../../../contexts/ConfirmContext';
 
 export default function OffersPage() {
   const navigate = useNavigate();
+  const { success, error: showError } = useToast();
+  const { confirm } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +45,11 @@ export default function OffersPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<LifecycleStatus | 'all'>('all');
   const [selectedApproval, setSelectedApproval] = useState<ApprovalStatus | 'all'>('all');
+
+  // Dropdown menu state
+  const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Debounce search term
   useEffect(() => {
@@ -73,6 +86,7 @@ export default function OffersPage() {
   // Load offers on component mount and filter changes
   useEffect(() => {
     loadOffers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, selectedStatus, selectedApproval, debouncedSearchTerm]);
 
   const handleSearch = (term: string) => {
@@ -100,6 +114,184 @@ export default function OffersPage() {
 
   const handleCopyOfferId = (id: number) => {
     navigator.clipboard.writeText(id.toString());
+    success('Copied', 'Offer ID copied to clipboard');
+  };
+
+  // Calculate dropdown position
+  const calculateDropdownPosition = (buttonElement: HTMLElement) => {
+    const rect = buttonElement.getBoundingClientRect();
+    const dropdownWidth = 256; // w-64
+    const dropdownHeight = 300;
+
+    let top = rect.bottom + 8;
+    let left = rect.right - dropdownWidth;
+
+    if (left < 8) left = 8;
+    if (left + dropdownWidth > window.innerWidth - 8) {
+      left = window.innerWidth - dropdownWidth - 8;
+    }
+    if (top + dropdownHeight > window.innerHeight - 8) {
+      top = rect.top - dropdownHeight - 8;
+    }
+
+    return { top, left };
+  };
+
+  const handleActionMenuToggle = (offerId: number, buttonElement: HTMLElement) => {
+    if (showActionMenu === offerId) {
+      setShowActionMenu(null);
+      setDropdownPosition(null);
+    } else {
+      const position = calculateDropdownPosition(buttonElement);
+      setDropdownPosition(position);
+      setShowActionMenu(offerId);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showActionMenu !== null) {
+        const target = event.target as HTMLElement;
+        const isInsideDropdown = target.closest('.action-dropdown');
+        const isInsideButton = target.closest('.action-button');
+
+        if (!isInsideDropdown && !isInsideButton) {
+          setShowActionMenu(null);
+          setDropdownPosition(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showActionMenu]);
+
+  const handleDeleteOffer = async (id: number, name: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Offer',
+      message: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await offerService.deleteOffer(id);
+      success('Offer Deleted', `"${name}" has been deleted successfully.`);
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to delete offer');
+      console.error('Delete offer error:', err);
+    }
+  };
+
+  const handleActivateOffer = async (id: number) => {
+    try {
+      await offerService.activateOffer(id);
+      success('Offer Activated', 'Offer has been activated successfully.');
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to activate offer');
+      console.error('Activate offer error:', err);
+    }
+  };
+
+  const handleDeactivateOffer = async (id: number) => {
+    try {
+      await offerService.deactivateOffer(id);
+      success('Offer Deactivated', 'Offer has been deactivated successfully.');
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to deactivate offer');
+      console.error('Deactivate offer error:', err);
+    }
+  };
+
+  const handlePauseOffer = async (id: number) => {
+    try {
+      await offerService.pauseOffer(id);
+      success('Offer Paused', 'Offer has been paused successfully.');
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to pause offer');
+      console.error('Pause offer error:', err);
+    }
+  };
+
+  const handleDuplicateOffer = async () => {
+    try {
+      // TODO: Implement duplicate functionality when endpoint is available
+      success('Coming Soon', 'Duplicate offer functionality will be available soon.');
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to duplicate offer');
+      console.error('Duplicate offer error:', err);
+    }
+  };
+
+  const handleArchiveOffer = async (id: number) => {
+    try {
+      await offerService.archiveOffer(id);
+      success('Offer Archived', 'Offer has been archived successfully.');
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to archive offer');
+      console.error('Archive offer error:', err);
+    }
+  };
+
+  const handleRequestApproval = async (id: number) => {
+    try {
+      await offerService.requestApproval(id);
+      success('Approval Requested', 'Approval request has been sent successfully.');
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to request approval');
+      console.error('Request approval error:', err);
+    }
+  };
+
+  const handleApproveOffer = async (id: number) => {
+    try {
+      await offerService.approveOffer(id);
+      success('Offer Approved', 'Offer has been approved successfully.');
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to approve offer');
+      console.error('Approve offer error:', err);
+    }
+  };
+
+  const handleRejectOffer = async (id: number) => {
+    try {
+      await offerService.rejectOffer(id);
+      success('Offer Rejected', 'Offer has been rejected.');
+      loadOffers();
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to reject offer');
+      console.error('Reject offer error:', err);
+    }
+  };
+
+  const handleViewApprovalHistory = (id: number) => {
+    navigate(`/dashboard/offers/${id}/approval-history`);
+    setShowActionMenu(null);
+  };
+
+  const handleViewLifecycleHistory = (id: number) => {
+    navigate(`/dashboard/offers/${id}/lifecycle-history`);
+    setShowActionMenu(null);
   };
 
   // Helper functions for display
@@ -403,13 +595,147 @@ export default function OffersPage() {
                         >
                           <Copy className="h-4 w-4" />
                         </button>
-                        <div className="relative">
+                        <div className="relative" ref={(el) => { actionMenuRefs.current[offer.id!] = el; }}>
                           <button
-                            className={`${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
+                            onClick={(e) => offer.id && handleActionMenuToggle(offer.id, e.currentTarget)}
+                            className={`action-button ${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
                             title="More Actions"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </button>
+
+                          {showActionMenu === offer.id && dropdownPosition && (
+                            <div
+                              className="action-dropdown fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-2"
+                              style={{
+                                zIndex: 99999,
+                                top: `${dropdownPosition.top}px`,
+                                left: `${dropdownPosition.left}px`,
+                                maxHeight: '80vh',
+                                overflowY: 'auto'
+                              }}
+                            >
+                              {/* Duplicate Offer */}
+                              <button
+                                onClick={handleDuplicateOffer}
+                                className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <Copy className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                Duplicate Offer
+                              </button>
+
+                              {/* Lifecycle Actions - Context Aware */}
+                              {offer.lifecycle_status === 'draft' && (
+                                <button
+                                  onClick={() => offer.id && handleActivateOffer(offer.id)}
+                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <Play className="w-4 h-4 mr-3 text-green-600" />
+                                  Activate Offer
+                                </button>
+                              )}
+
+                              {offer.lifecycle_status === 'active' && (
+                                <>
+                                  <button
+                                    onClick={() => offer.id && handlePauseOffer(offer.id)}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Pause className="w-4 h-4 mr-3 text-yellow-600" />
+                                    Pause Offer
+                                  </button>
+                                  <button
+                                    onClick={() => offer.id && handleDeactivateOffer(offer.id)}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <XCircle className="w-4 h-4 mr-3 text-orange-600" />
+                                    Deactivate Offer
+                                  </button>
+                                </>
+                              )}
+
+                              {(offer.lifecycle_status === 'paused' || offer.lifecycle_status === 'expired') && (
+                                <button
+                                  onClick={() => offer.id && handleActivateOffer(offer.id)}
+                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <Play className="w-4 h-4 mr-3 text-green-600" />
+                                  Activate Offer
+                                </button>
+                              )}
+
+                              {/* Archive */}
+                              {offer.lifecycle_status !== 'archived' && (
+                                <button
+                                  onClick={() => offer.id && handleArchiveOffer(offer.id)}
+                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <Archive className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                  Archive Offer
+                                </button>
+                              )}
+
+                              <div className="border-t border-gray-200 my-2"></div>
+
+                              {/* Approval Actions - Context Aware */}
+                              {offer.lifecycle_status === 'draft' && offer.approval_status !== 'pending' && (
+                                <button
+                                  onClick={() => offer.id && handleRequestApproval(offer.id)}
+                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.status.info.main }} />
+                                  Request Approval
+                                </button>
+                              )}
+
+                              {offer.approval_status === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() => offer.id && handleApproveOffer(offer.id)}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-3 text-green-600" />
+                                    Approve Offer
+                                  </button>
+                                  <button
+                                    onClick={() => offer.id && handleRejectOffer(offer.id)}
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <XCircle className="w-4 h-4 mr-3 text-red-600" />
+                                    Reject Offer
+                                  </button>
+                                </>
+                              )}
+
+                              {/* History Links */}
+                              <div className="border-t border-gray-200 my-2"></div>
+                              <button
+                                onClick={() => offer.id && handleViewApprovalHistory(offer.id)}
+                                className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                Approval History
+                              </button>
+
+                              <button
+                                onClick={() => offer.id && handleViewLifecycleHistory(offer.id)}
+                                className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <Clock className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                Lifecycle History
+                              </button>
+
+                              {/* Delete - Dangerous Action */}
+                              <div className="border-t border-gray-200 my-2"></div>
+                              <button
+                                onClick={() => offer.id && handleDeleteOffer(offer.id, offer.name)}
+                                className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4 mr-3" />
+                                Delete Offer
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>

@@ -34,8 +34,8 @@ export default function CampaignLifecycleHistoryPage() {
                     campaignService.getCampaignById(id)
                 ]);
 
-                setHistory(historyData as LifecycleHistoryEntry[]);
-                setCampaignName((campaignData as any)?.name || `Campaign ${id}`);
+                setHistory(historyData as unknown as LifecycleHistoryEntry[]);
+                setCampaignName((campaignData as unknown as Record<string, unknown>)?.name as string || `Campaign ${id}`);
             } catch (error) {
                 console.error('Failed to fetch lifecycle history:', error);
                 setHistory([]);

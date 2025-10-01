@@ -9,7 +9,11 @@ import CampaignApprovalHistoryPage from '../../campaigns/pages/CampaignApprovalH
 import CampaignLifecycleHistoryPage from '../../campaigns/pages/CampaignLifecycleHistoryPage';
 import CampaignCategoriesPage from '../../campaigns/pages/CampaignCategoriesPage';
 import OffersPage from '../../offers/pages/OffersPage';
+import OfferDetailsPage from '../../offers/pages/OfferDetailsPage';
+import EditOfferPage from '../../offers/pages/EditOfferPage';
 import SegmentManagementPage from '../../segments/pages/SegmentManagementPage';
+import SegmentDetailsPage from '../../segments/pages/SegmentDetailsPage';
+import EditSegmentPage from '../../segments/pages/EditSegmentPage';
 import CreateOfferPage from '../../offers/pages/CreateOfferPage';
 import ProductsPage from '../../products/pages/ProductsPage';
 import CreateProductPage from '../../products/pages/CreateProductPage';
@@ -36,6 +40,8 @@ export default function Dashboard() {
         <Route path="/campaign-categories" element={<CampaignCategoriesPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/offers/create" element={<CreateOfferPage />} />
+        <Route path="/offers/:id" element={<OfferDetailsPage />} />
+        <Route path="/offers/:id/edit" element={<EditOfferPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/create" element={<CreateProductPage />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />
@@ -46,6 +52,8 @@ export default function Dashboard() {
         <Route path="/offer-categories" element={<OfferCategoriesPage />} />
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/segments" element={<SegmentManagementPage />} />
+        <Route path="/segments/:id" element={<SegmentDetailsPage />} />
+        <Route path="/segments/:id/edit" element={<EditSegmentPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
       </Routes>
     </DashboardLayout>

@@ -26,46 +26,243 @@ export interface SegmentConditionGroup {
   profileConditions?: SegmentCondition[]; // For 360 profile conditions
 }
 
+export type SegmentType = 'static' | 'dynamic' | 'trigger';
+export type SegmentVisibility = 'private' | 'public';
+export type SortDirection = 'ASC' | 'DESC';
+export type ExportFormat = 'csv' | 'json' | 'xml';
+
 export interface Segment {
-  segment_id: number;
+  id?: number;
+  segment_id?: number;
   name: string;
-  description: string;
-  tags: string[];
-  conditions: SegmentConditionGroup[];
+  description?: string;
+  type: SegmentType;
+  tags?: string[];
+  conditions?: SegmentConditionGroup[];
+  criteria?: Record<string, unknown>; // Backend segment criteria definition
+  definition?: Record<string, unknown>;
   customer_count?: number;
-  created_on: string;
-  updated_on: string;
-  created_by: number;
-  is_active: boolean;
+  size_estimate?: number;
+  created_on?: string;
+  created_at?: string;
+  updated_on?: string;
+  updated_at?: string;
+  created_by?: number;
+  is_active?: boolean;
+  category?: number;
+  business_purpose?: string;
+  refresh_frequency?: string;
+  version?: string;
+  visibility?: SegmentVisibility;
 }
 
 export interface CreateSegmentRequest {
   name: string;
-  description: string;
-  tags: string[];
-  type: String;
-  conditions: SegmentConditionGroup[];
+  type: SegmentType;
+  description?: string;
+  definition?: Record<string, unknown>;
+  size_estimate?: number;
+  category?: number;
+  refresh_frequency?: string;
+  version?: string;
+  tags?: string[];
+  visibility?: SegmentVisibility;
+  criteria?: Record<string, unknown>;
+  conditions?: SegmentConditionGroup[];
 }
 
 export interface UpdateSegmentRequest {
   name?: string;
   description?: string;
+  definition?: Record<string, unknown>;
+  size_estimate?: number;
+  category?: number;
+  business_purpose?: string;
+  refresh_frequency?: string;
+  version?: string;
   tags?: string[];
+  visibility?: SegmentVisibility;
   conditions?: SegmentConditionGroup[];
   is_active?: boolean;
 }
 
 export interface SegmentFilters {
   search?: string;
+  categoryId?: number;
+  type?: SegmentType;
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'id' | 'name' | 'type' | 'category' | 'created_at' | 'updated_at';
+  sortDirection?: SortDirection;
+  skipCache?: boolean;
   tags?: string[];
   is_active?: boolean;
 }
 
+export interface SegmentSearchFilters {
+  q?: string;
+  category?: number;
+  type?: SegmentType;
+  visibility?: SegmentVisibility;
+  tags?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'id' | 'name' | 'type' | 'created_at' | 'updated_at';
+  sortDirection?: SortDirection;
+  skipCache?: boolean;
+}
+
 export interface SegmentResponse {
-  segments: Segment[];
-  total: number;
-  page: number;
-  limit: number;
+  success: boolean;
+  message?: string;
+  data: Segment[];
+  segments?: Segment[];
+  meta?: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    sortBy?: string;
+    sortDirection?: string;
+    isCachedResponse?: boolean;
+    cacheDurationSec?: number;
+  };
+  total?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface DuplicateSegmentRequest {
+  newName: string;
+}
+
+export interface ValidateCriteriaRequest {
+  criteria: Record<string, unknown>;
+  segment_type: SegmentType;
+}
+
+export interface SegmentRule {
+  id?: number;
+  segment_id?: number;
+  rule_json: Record<string, unknown>;
+  rule_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateSegmentRuleRequest {
+  rule_json: Record<string, unknown>;
+  rule_order?: number;
+}
+
+export interface UpdateSegmentRuleRequest {
+  rule_json?: Record<string, unknown>;
+  rule_order?: number;
+}
+
+export interface ValidateRulesRequest {
+  rules: Array<{
+    rule_json: Record<string, unknown>;
+    rule_order: number;
+  }>;
+  segment_type: SegmentType;
+}
+
+export interface ComputeSegmentRequest {
+  force_recompute?: boolean;
+}
+
+export interface BatchComputeRequest {
+  segment_ids: number[];
+  force_recompute?: boolean;
+}
+
+export interface ComputationStatus {
+  job_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress?: number;
+  started_at?: string;
+  completed_at?: string;
+  error?: string;
+}
+
+export interface PreviewSegmentRequest {
+  criteria_override?: Record<string, unknown>;
+  limit?: number;
+}
+
+export interface PreviewCountRequest {
+  criteria_override?: Record<string, unknown>;
+}
+
+export interface SegmentMember {
+  customer_id: string | number;
+  joined_at?: string;
+  [key: string]: unknown;
+}
+
+export interface SegmentMembersResponse {
+  success: boolean;
+  data: SegmentMember[];
+  meta?: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+}
+
+export interface AddSegmentMembersRequest {
+  customer_ids: Array<string | number>;
+}
+
+export interface DeleteSegmentMembersRequest {
+  customer_ids: Array<string | number>;
+}
+
+export interface SearchSegmentMembersRequest {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ExportSegmentRequest {
+  format?: ExportFormat;
+  fields?: string[];
+  filters?: Record<string, unknown>;
+  include_metadata?: boolean;
+}
+
+export interface ExportStatus {
+  job_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  download_url?: string;
+  expires_at?: string;
+  error?: string;
+}
+
+export interface SegmentCategory {
+  id: number;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateSegmentCategoryRequest {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateSegmentCategoryRequest {
+  name?: string;
+  description?: string;
+}
+
+export interface SegmentCategoriesResponse {
+  success: boolean;
+  data: SegmentCategory[];
+  message?: string;
 }
 
 // Available fields for segment conditions
