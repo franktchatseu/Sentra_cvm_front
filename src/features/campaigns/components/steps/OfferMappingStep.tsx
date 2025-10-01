@@ -109,12 +109,9 @@ export default function OfferMappingStep({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Gift className="w-8 h-8 text-purple-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Selection & Mapping</h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Offer Selection & Mapping</h2>
+        <p className="text-sm text-gray-600">
           Select offers and map them to your audience segments
         </p>
       </div>

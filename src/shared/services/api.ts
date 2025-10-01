@@ -3,9 +3,9 @@ const isLocalhost = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 export const API_CONFIG = {
-  // Use direct API for localhost, proxy for production to avoid mixed content issues
+  // Use direct API for localhost (from .env), proxy for production to avoid mixed content issues
   BASE_URL: isLocalhost
-    ? 'http://localhost:8080/api'
+    ? import.meta.env.VITE_API_BASE_URL
     : '/api/proxy',
   ENDPOINTS: {
     OFFERS: '/offers',

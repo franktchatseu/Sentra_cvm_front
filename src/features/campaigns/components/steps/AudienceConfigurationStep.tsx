@@ -170,12 +170,9 @@ export default function AudienceConfigurationStep({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Users className="w-8 h-8 text-emerald-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Audience Configuration</h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Audience Configuration</h2>
+        <p className="text-sm text-gray-600">
           Select and configure your target audience segments for this campaign
         </p>
       </div>
@@ -185,15 +182,15 @@ export default function AudienceConfigurationStep({
         <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Audience Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
+            <div>
               <div className="text-2xl font-bold text-emerald-600">{totalAudienceSize.toLocaleString()}</div>
               <div className="text-sm text-gray-600">Total Audience</div>
             </div>
-            <div className="text-center">
+            <div>
               <div className="text-2xl font-bold text-[#3b8169]">{targetGroupSize.toLocaleString()}</div>
               <div className="text-sm text-gray-600">Target Group</div>
             </div>
-            <div className="text-center">
+            <div>
               <div className="text-2xl font-bold text-gray-500">{controlGroupSize.toLocaleString()}</div>
               <div className="text-sm text-gray-600">Control Group</div>
             </div>

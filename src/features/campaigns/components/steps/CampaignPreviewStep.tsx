@@ -105,12 +105,9 @@ export default function CampaignPreviewStep({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-r from-rose-100 to-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Eye className="w-8 h-8 text-rose-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Campaign Preview & Validation</h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Campaign Preview & Validation</h2>
+        <p className="text-sm text-gray-600">
           Review your campaign configuration and launch when ready
         </p>
       </div>

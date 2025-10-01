@@ -122,7 +122,7 @@ export default function CampaignDefinitionStep({
   const isFormValid = formData.name.trim() && formData.primary_objective && formData.category;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-7xl space-y-6">
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Campaign Definition & Objectives</h2>
@@ -311,8 +311,8 @@ export default function CampaignDefinitionStep({
                   type="button"
                   onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical' })}
                   className={`p-2 rounded-md border text-center transition-colors text-sm ${formData.priority === priority.value
-                      ? 'border-[#588157] bg-[#588157]/5 text-[#588157]'
-                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                    ? 'border-[#588157] bg-[#588157]/5 text-[#588157]'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
                     }`}
                 >
                   <div className="text-base mb-1">{priority.icon}</div>
