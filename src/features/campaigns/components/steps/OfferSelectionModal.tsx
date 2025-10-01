@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Plus, Gift, Filter, Check, DollarSign, Calendar } from 'lucide-react';
-import { CampaignOffer } from '../../../../../shared/types/campaign';
+import { X, Search, Plus, Gift, Check, DollarSign, Calendar } from 'lucide-react';
+import { CampaignOffer } from '../../types/campaign';
+import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
 
 interface OfferSelectionModalProps {
   isOpen: boolean;
@@ -124,6 +125,14 @@ export default function OfferSelectionModal({
   const [tempSelectedOffers, setTempSelectedOffers] = useState<CampaignOffer[]>(selectedOffers);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  const filterOptions = [
+    { value: 'all', label: 'All Offers' },
+    { value: 'bundle', label: 'Bundles' },
+    { value: 'discount', label: 'Discounts' },
+    { value: 'points', label: 'Points' },
+    { value: 'cashback', label: 'Cashback' }
+  ];
+
   useEffect(() => {
     if (isOpen) {
       setTempSelectedOffers(selectedOffers);
@@ -192,17 +201,14 @@ export default function OfferSelectionModal({
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
               />
             </div>
-            <select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-            >
-              <option value="all">All Offers</option>
-              <option value="bundle">Bundles</option>
-              <option value="discount">Discounts</option>
-              <option value="points">Points</option>
-              <option value="cashback">Cashback</option>
-            </select>
+            <div className="w-48">
+              <HeadlessSelect
+                options={filterOptions}
+                value={selectedFilter}
+                onChange={(value: string | number) => setSelectedFilter(value as string)}
+                placeholder="Filter offers"
+              />
+            </div>
             <button
               onClick={onCreateNew}
               className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-md text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"
@@ -243,8 +249,8 @@ export default function OfferSelectionModal({
                   key={offer.id}
                   onClick={() => handleOfferToggle(offer)}
                   className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-sm ${isSelected
-                      ? 'border-[#588157] bg-[#588157]/5'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-[#588157] bg-[#588157]/5'
+                    : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
                   {isSelected && (
@@ -322,8 +328,8 @@ export default function OfferSelectionModal({
               onClick={handleConfirm}
               disabled={tempSelectedOffers.length === 0}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${tempSelectedOffers.length > 0
-                  ? 'bg-[#3A5A40] text-white hover:bg-[#2f4a35]'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-[#3A5A40] text-white hover:bg-[#2f4a35]'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               Confirm Selection

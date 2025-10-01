@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Plus, Target, Users, Filter, Check } from 'lucide-react';
-import { CampaignSegment } from '../../../../../shared/types/campaign';
+import { X, Search, Plus, Target, Users, Check } from 'lucide-react';
+import { CampaignSegment } from '../../types/campaign';
+import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
 
 interface SegmentSelectionModalProps {
   isOpen: boolean;
@@ -115,7 +116,14 @@ export default function SegmentSelectionModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [tempSelectedSegments, setTempSelectedSegments] = useState<CampaignSegment[]>(selectedSegments);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  const filterOptions = [
+    { value: 'all', label: 'All Segments' },
+    { value: 'high_value', label: 'High Value' },
+    { value: 'at_risk', label: 'At Risk' },
+    { value: 'new', label: 'New Customers' },
+    { value: 'inactive', label: 'Inactive' }
+  ];
 
   useEffect(() => {
     if (isOpen) {
@@ -127,7 +135,7 @@ export default function SegmentSelectionModal({
 
   const filteredSegments = mockSegments.filter(segment => {
     const matchesSearch = segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      segment.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (segment.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
     if (selectedFilter === 'all') return matchesSearch;
 
@@ -184,17 +192,14 @@ export default function SegmentSelectionModal({
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
               />
             </div>
-            <select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-            >
-              <option value="all">All Segments</option>
-              <option value="high_value">High Value</option>
-              <option value="at_risk">At Risk</option>
-              <option value="new">New Customers</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <div className="w-48">
+              <HeadlessSelect
+                options={filterOptions}
+                value={selectedFilter}
+                onChange={(value: string | number) => setSelectedFilter(value as string)}
+                placeholder="Filter segments"
+              />
+            </div>
             <button
               onClick={onCreateNew}
               className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-md text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"

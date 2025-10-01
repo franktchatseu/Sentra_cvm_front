@@ -1,20 +1,19 @@
 import { useState } from 'react';
-import { 
-  Shield, 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import {
+  Shield,
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   Calendar,
   Users,
   Percent,
   Clock,
-  Filter,
   MoreVertical,
   X,
   BarChart3
 } from 'lucide-react';
-import { campaignColors } from '../../config/campaignColors';
+import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 
 interface UniversalControlGroup {
   id: string;
@@ -35,6 +34,13 @@ export default function ControlGroupsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'expired'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const statusFilterOptions = [
+    { value: 'all', label: 'All Status' },
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+    { value: 'expired', label: 'Expired' }
+  ];
 
   // Mock data
   const controlGroups: UniversalControlGroup[] = [
@@ -141,19 +147,65 @@ export default function ControlGroupsPage() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-all duration-200 hover:scale-105"
-          style={{ backgroundColor: campaignColors.primary }}
+          className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-2" />
           <span>Create Control Group</span>
         </button>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div
+              className="p-3 rounded-lg bg-[#3A5A40]/10"
+            >
+              <Shield className="h-6 w-6 text-[#3A5A40]" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Control Groups</p>
+              <p className="text-2xl font-bold text-gray-900">{controlGroups.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-lg bg-green-100">
+              <Users className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Active Groups</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {controlGroups.filter(g => g.status === 'active').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-lg bg-blue-100">
+              <Percent className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Avg Percentage</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {controlGroups.length > 0
+                  ? (controlGroups.reduce((sum, g) => sum + g.percentage, 0) / controlGroups.length).toFixed(1)
+                  : 0}%
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Filters and Search */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+      <div className="">
+        <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
@@ -165,18 +217,13 @@ export default function ControlGroupsPage() {
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-gray-400" />
-            <select
+          <div className="w-full lg:w-48">
+            <HeadlessSelect
+              options={statusFilterOptions}
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="expired">Expired</option>
-            </select>
+              onChange={(value: string | number) => setStatusFilter(value as 'all' | 'active' | 'inactive' | 'expired')}
+              placeholder="Filter by status"
+            />
           </div>
         </div>
       </div>
@@ -219,11 +266,10 @@ export default function ControlGroupsPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div 
-                          className="h-10 w-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${campaignColors.primary}20` }}
+                        <div
+                          className="h-10 w-10 rounded-lg flex items-center justify-center bg-[#3A5A40]/10"
                         >
-                          <Shield className="h-5 w-5" style={{ color: campaignColors.primary }} />
+                          <Shield className="h-5 w-5 text-[#3A5A40]" />
                         </div>
                       </div>
                       <div className="ml-4">
@@ -270,19 +316,19 @@ export default function ControlGroupsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button 
+                      <button
                         className="text-gray-400 hover:text-blue-600 transition-colors duration-200"
                         title="Edit"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         className="text-gray-400 hover:text-red-600 transition-colors duration-200"
                         title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
                         title="More options"
                       >
@@ -306,59 +352,13 @@ export default function ControlGroupsPage() {
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 text-white rounded-lg transition-all duration-200"
-              style={{ backgroundColor: campaignColors.primary }}
+              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
             >
+              <Plus className="h-4 w-4 mr-2" />
               Create Control Group
             </button>
           </div>
         )}
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div 
-              className="p-3 rounded-lg"
-              style={{ backgroundColor: `${campaignColors.primary}20` }}
-            >
-              <Shield className="h-6 w-6" style={{ color: campaignColors.primary }} />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Control Groups</p>
-              <p className="text-2xl font-bold text-gray-900">{controlGroups.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-green-100">
-              <Users className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Groups</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {controlGroups.filter(g => g.status === 'active').length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-100">
-              <Percent className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Members</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {controlGroups.reduce((sum, g) => sum + g.memberCount, 0).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Universal Control Group Modal - Direct to Create */}
@@ -477,12 +477,12 @@ export default function ControlGroupsPage() {
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  className="px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40]"
+                  className="px-4 py-2 bg-[#3A5A40] text-white rounded-md text-sm font-medium hover:bg-[#2f4a35] transition-colors"
                 >
                   Next
                 </button>

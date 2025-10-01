@@ -263,8 +263,8 @@ export default function ConfigurationPage() {
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
                 className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${selectedCategory === category.id
-                  ? `bg-[${color.sentra.light}] text-[${color.sentra.main}] border border-[${color.sentra.main}]/20`
-                  : `bg-[${color.ui.surface}] ${tw.textSecondary} hover:bg-[${color.ui.surface}]/80 border border-[${color.ui.border}]`
+                  ? `bg-[${color.sentra.main}] text-white border border-[${color.sentra.main}]`
+                  : `bg-white ${tw.textSecondary} hover:bg-gray-50 border border-gray-300`
                   }`}
               >
                 {category.name} ({category.count})
