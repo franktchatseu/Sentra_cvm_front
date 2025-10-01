@@ -234,15 +234,17 @@ export default function AudienceConfigurationStep({
               <p className="text-sm text-gray-500 mt-1">Drag segments to reorder priority (top = highest priority)</p>
             )}
           </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Segments
-            </button>
-          </div>
+          {selectedSegments.length > 0 && (
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Segments
+              </button>
+            </div>
+          )}
         </div>
 
         {selectedSegments.length === 0 ? (
@@ -378,6 +380,10 @@ export default function AudienceConfigurationStep({
           onClose={() => setIsModalOpen(false)}
           onSelect={handleSegmentSelect}
           selectedSegments={selectedSegments}
+          onCreateNew={() => {
+            setIsModalOpen(false);
+            setShowCreateSegmentModal(true);
+          }}
         />
       )}
 
