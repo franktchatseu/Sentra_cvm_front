@@ -64,34 +64,8 @@ export default function CampaignDetailsPage() {
             try {
                 setIsLoading(true);
 
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Mock campaign data (primary source for now)
-                const mockCampaign: CampaignDetails = {
-                    id: id || '1',
-                    name: 'Summer Data Promotion',
-                    description: 'Special promotion offering double data bundles for summer season to increase customer engagement and retention.',
-                    type: 'Promotional',
-                    category: 'Data Bundle',
-                    segment: 'High Value Customers',
-                    offer: 'Double Data Bundle',
-                    status: 'draft',
-                    approval_status: 'pending', // Set to pending to test approval workflow
-                    startDate: '2025-01-15',
-                    endDate: '2025-01-31',
-                    createdDate: '2025-01-10',
-                    lastModified: '2025-01-14',
-                    performance: {
-                        delivered: 14892,     // Successfully delivered messages
-                        response: 2847,       // Users who responded/clicked
-                        converted: 1847,      // Users who completed desired action
-                        revenue: 45280,       // Total revenue generated
-                        last_updated: '2025-01-20T14:30:00Z'  // Last analytics refresh
-                    }
-                };
-
-                setCampaign(mockCampaign);
+                const campaignData = await campaignService.getCampaignById(id);
+                setCampaign(campaignData as unknown as CampaignDetails);
             } catch (error) {
                 console.error('Failed to fetch campaign details:', error);
                 showToast('error', 'Failed to load campaign details');

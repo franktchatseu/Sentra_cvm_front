@@ -177,57 +177,12 @@ export default function CampaignsPage() {
 
       const campaignsData = (response.data as CampaignDisplay[]) || [];
 
-      // Add dummy campaign for testing if API returns empty
-      if (campaignsData.length === 0) {
-        const dummyCampaign: CampaignDisplay = {
-          id: 1,
-          name: 'Test Campaign - Data Bundle Promotion',
-          description: 'A test campaign to verify all functionality',
-          status: 'active',
-          type: 'Acquisition',
-          category: 'Promotional',
-          segment: 'High Value Users',
-          offer: 'Double Data Bundle',
-          startDate: '2025-01-15',
-          endDate: '2025-01-31',
-          performance: {
-            sent: 15420,
-            delivered: 14892,
-            opened: 8934,
-            converted: 2847,
-            revenue: 45280
-          }
-        };
-        setCampaigns([dummyCampaign]);
-        setTotalCampaigns(1);
-      } else {
-        setCampaigns(campaignsData);
-        setTotalCampaigns(response.meta?.total || 0);
-      }
+      setCampaigns(campaignsData);
+      setTotalCampaigns(response.meta?.total || campaignsData.length);
     } catch (error) {
       console.error('Failed to fetch campaigns:', error);
-      // Use dummy campaign on error for testing
-      const dummyCampaign: CampaignDisplay = {
-        id: 1,
-        name: 'Test Campaign - Data Bundle Promotion',
-        description: 'A test campaign to verify all functionality',
-        status: 'active',
-        type: 'Acquisition',
-        category: 'Promotional',
-        segment: 'High Value Users',
-        offer: 'Double Data Bundle',
-        startDate: '2025-01-15',
-        endDate: '2025-01-31',
-        performance: {
-          sent: 15420,
-          delivered: 14892,
-          opened: 8934,
-          converted: 2847,
-          revenue: 45280
-        }
-      };
-      setCampaigns([dummyCampaign]);
-      setTotalCampaigns(1);
+      setCampaigns([]);
+      setTotalCampaigns(0);
     } finally {
       setIsLoading(false);
     }
@@ -726,6 +681,7 @@ export default function CampaignsPage() {
             </p>
             {selectedStatus !== 'completed' && (
               <button
+                onClick={() => navigate('/dashboard/campaigns/create')}
                 className="mt-4 px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200"
                 style={{ backgroundColor: color.sentra.main }}
                 onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}

@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import { CreateCampaignRequest } from '../../types/campaign';
-import StepNavigation from '../../../../shared/components/ui/StepNavigation';
 
 interface CampaignDefinitionStepProps {
-  currentStep: number;
-  totalSteps: number;
-  onNext: () => void;
   formData: CreateCampaignRequest;
   setFormData: (data: CreateCampaignRequest) => void;
 }
@@ -51,50 +47,28 @@ const objectiveOptions = [
 
 const categoryOptions = [
   {
-    value: 'Acquisition',
-    label: 'Acquisition',
+    value: 'acquisition',
+    label: 'Customer Acquisition',
     description: 'Campaigns focused on acquiring new customers'
   },
   {
-    value: 'Retention',
-    label: 'Retention',
+    value: 'retention',
+    label: 'Customer Retention',
     description: 'Campaigns to retain existing customers'
   },
   {
-    value: 'Churn Prevention',
-    label: 'Churn Prevention',
-    description: 'Campaigns to prevent customer churn'
-  },
-  {
-    value: 'Upsell/Cross-sell',
-    label: 'Upsell/Cross-sell',
-    description: 'Campaigns to increase customer value'
-  },
-  {
-    value: 'Reactivation',
-    label: 'Reactivation',
-    description: 'Campaigns to reactivate dormant customers'
-  },
-  {
-    value: 'Engagement',
-    label: 'Engagement',
+    value: 'engagement',
+    label: 'Customer Engagement',
     description: 'Campaigns to increase customer engagement'
   },
   {
-    value: 'Loyalty',
-    label: 'Loyalty',
-    description: 'Campaigns to build customer loyalty'
-  },
-  {
-    value: 'Promotional',
+    value: 'promotional',
     label: 'Promotional',
     description: 'Promotional and discount campaigns'
   }
 ];
 
-
 export default function CampaignDefinitionStep({
-  onNext,
   formData,
   setFormData
 }: CampaignDefinitionStepProps) {
@@ -103,23 +77,6 @@ export default function CampaignDefinitionStep({
   const [objectiveSearchTerm, setObjectiveSearchTerm] = useState('');
   const [isObjectiveDropdownOpen, setIsObjectiveDropdownOpen] = useState(false);
 
-  const filteredCategories = categoryOptions.filter(category =>
-    category.label.toLowerCase().includes(categorySearchTerm.toLowerCase()) ||
-    category.description.toLowerCase().includes(categorySearchTerm.toLowerCase())
-  );
-
-  const filteredObjectives = objectiveOptions.filter(objective =>
-    objective.label.toLowerCase().includes(objectiveSearchTerm.toLowerCase()) ||
-    objective.description.toLowerCase().includes(objectiveSearchTerm.toLowerCase())
-  );
-
-  const handleNext = () => {
-    if (formData.name.trim() && formData.primary_objective && formData.category) {
-      onNext();
-    }
-  };
-
-  const isFormValid = formData.name.trim() && formData.primary_objective && formData.category;
 
   return (
     <div className="max-w-7xl space-y-6">
@@ -130,8 +87,6 @@ export default function CampaignDefinitionStep({
           Define your campaign goals and choose how you want to create your campaign
         </p>
       </div>
-
-
       {/* Campaign Information */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
         <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Information</h3>
@@ -170,38 +125,40 @@ export default function CampaignDefinitionStep({
               </button>
 
               {isCategoryDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                  <div className="p-2 border-b border-gray-200">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2">
                     <div className="relative">
-                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="Search categories..."
                         value={categorySearchTerm}
                         onChange={(e) => setCategorySearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                        placeholder="Search categories..."
                       />
                     </div>
                   </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    {filteredCategories.map((category) => (
-                      <button
-                        key={category.value}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, category: category.value });
-                          setIsCategoryDropdownOpen(false);
-                          setCategorySearchTerm('');
-                        }}
-                        className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
-                      >
-                        <div className="font-medium text-gray-900 text-sm">{category.label}</div>
-                        <div className="text-xs text-gray-500">{category.description}</div>
-                      </button>
-                    ))}
-                    {filteredCategories.length === 0 && (
-                      <div className="px-3 py-2 text-sm text-gray-500">No categories found</div>
-                    )}
+                  <div className="py-1">
+                    {categoryOptions
+                      .filter(category =>
+                        category.label.toLowerCase().includes(categorySearchTerm.toLowerCase()) ||
+                        category.description.toLowerCase().includes(categorySearchTerm.toLowerCase())
+                      )
+                      .map((category) => (
+                        <button
+                          key={category.value}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, category: category.value });
+                            setIsCategoryDropdownOpen(false);
+                            setCategorySearchTerm('');
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                        >
+                          <div className="font-medium">{category.label}</div>
+                          <div className="text-gray-500 text-xs">{category.description}</div>
+                        </button>
+                      ))}
                   </div>
                 </div>
               )}
@@ -218,85 +175,86 @@ export default function CampaignDefinitionStep({
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
-            placeholder="Describe your campaign objectives and strategy"
-            rows={2}
+            placeholder="Describe your campaign goals and objectives"
+            rows={3}
           />
         </div>
       </div>
 
+      {/* Campaign Objectives */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+        <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Objectives</h3>
 
-      {/* Primary Objective */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-base font-medium text-gray-900 mb-4">Primary Objective *</h3>
         <div className="relative">
-          <button
-            type="button"
-            onClick={() => setIsObjectiveDropdownOpen(!isObjectiveDropdownOpen)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
-          >
-            <span className={formData.primary_objective ? 'text-gray-900' : 'text-gray-500'}>
-              {formData.primary_objective ? (
-                <div className="flex items-center">
-                  <span className="text-lg mr-2">{objectiveOptions.find(o => o.value === formData.primary_objective)?.icon}</span>
-                  <span>{objectiveOptions.find(o => o.value === formData.primary_objective)?.label}</span>
-                </div>
-              ) : (
-                'Select primary objective'
-              )}
-            </span>
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isObjectiveDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Primary Objective *
+          </label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsObjectiveDropdownOpen(!isObjectiveDropdownOpen)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
+            >
+              <span className={formData.primary_objective ? 'text-gray-900' : 'text-gray-500'}>
+                {formData.primary_objective ? objectiveOptions.find(o => o.value === formData.primary_objective)?.label : 'Select objective'}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isObjectiveDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
 
-          {isObjectiveDropdownOpen && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-              <div className="p-2 border-b border-gray-200">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Search objectives..."
-                    value={objectiveSearchTerm}
-                    onChange={(e) => setObjectiveSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
-                  />
+            {isObjectiveDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="p-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={objectiveSearchTerm}
+                      onChange={(e) => setObjectiveSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                      placeholder="Search objectives..."
+                    />
+                  </div>
+                </div>
+                <div className="py-1">
+                  {objectiveOptions
+                    .filter(objective =>
+                      objective.label.toLowerCase().includes(objectiveSearchTerm.toLowerCase()) ||
+                      objective.description.toLowerCase().includes(objectiveSearchTerm.toLowerCase())
+                    )
+                    .map((objective) => (
+                      <button
+                        key={objective.value}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, primary_objective: objective.value as 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation' });
+                          setIsObjectiveDropdownOpen(false);
+                          setObjectiveSearchTerm('');
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-lg">{objective.icon}</span>
+                          <div>
+                            <div className="font-medium">{objective.label}</div>
+                            <div className="text-gray-500 text-xs">{objective.description}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
                 </div>
               </div>
-              <div className="max-h-60 overflow-y-auto">
-                {filteredObjectives.map((objective) => (
-                  <button
-                    key={objective.value}
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, primary_objective: objective.value as CreateCampaignRequest['primary_objective'] });
-                      setIsObjectiveDropdownOpen(false);
-                      setObjectiveSearchTerm('');
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
-                  >
-                    <div className="flex items-center mb-1">
-                      <span className="text-lg mr-2">{objective.icon}</span>
-                      <span className="font-medium text-gray-900 text-sm">{objective.label}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 ml-7">{objective.description}</div>
-                  </button>
-                ))}
-                {filteredObjectives.length === 0 && (
-                  <div className="px-3 py-2 text-sm text-gray-500">No objectives found</div>
-                )}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Additional Settings */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
-        <h3 className="text-base font-medium text-gray-900">Additional Settings</h3>
+      {/* Campaign Priority */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+        <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Priority</h3>
 
-        {/* Campaign Priority */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Campaign Priority
+            Priority Level
           </label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
@@ -346,15 +304,6 @@ export default function CampaignDefinitionStep({
           </div>
         </div>
       </div>
-
-      {/* Navigation */}
-      <StepNavigation
-        onNext={handleNext}
-        onPrev={() => { }} // First step, no previous
-        isNextDisabled={!isFormValid}
-        showPrevButton={false}
-        className="justify-end"
-      />
     </div>
   );
 }

@@ -39,20 +39,8 @@ export default function EditCampaignPage() {
             try {
                 setIsLoading(true);
 
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Mock campaign data (primary source for now)
-                setFormData({
-                    name: 'Summer Data Promotion',
-                    description: 'Special promotion offering double data bundles for summer season to increase customer engagement and retention.',
-                    type: 'Promotional',
-                    category: 'Data Bundle',
-                    segment: 'High Value Customers',
-                    offer: 'Double Data Bundle',
-                    startDate: '2025-01-15',
-                    endDate: '2025-01-31'
-                });
+                const campaignData = await campaignService.getCampaignById(id);
+                setFormData(campaignData as unknown as CreateCampaignRequest);
             } catch (error) {
                 console.error('Failed to fetch campaign data:', error);
                 showToast('Failed to load campaign data', 'error');

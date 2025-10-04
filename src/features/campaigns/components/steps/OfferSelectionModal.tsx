@@ -12,6 +12,7 @@ interface OfferSelectionModalProps {
   onCreateNew?: () => void;
 }
 
+// TODO: Replace with real API call to fetch offers
 // Mock offer data - in a real app, this would come from an API
 const mockOffers: CampaignOffer[] = [
   {

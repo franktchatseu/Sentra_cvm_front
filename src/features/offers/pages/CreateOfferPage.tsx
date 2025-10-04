@@ -5,13 +5,10 @@ import {
   Target,
   Calendar,
   DollarSign,
-  Package,
-  Eye,
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
   Check,
-  Gift,
   Users,
   Settings,
 
@@ -25,8 +22,8 @@ import ProductSelector from '../../products/components/ProductSelector';
 import OfferCreativeStep from '../components/OfferCreativeStep';
 import OfferTrackingStep from '../components/OfferTrackingStep';
 import OfferRewardStep from '../components/OfferRewardStep';
-import StepNavigation from '../components/StepNavigation';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
+import StepFlowLayout from '../../../shared/components/ui/StepFlowLayout';
 import { colors as color } from '../../../shared/utils/tokens';
 
 interface OfferCreative {
@@ -100,29 +97,27 @@ interface StepProps {
   clearValidationErrors?: () => void;
   offerCategories?: OfferCategory[];
   categoriesLoading?: boolean;
+  onSaveDraft?: () => void;
+  onCancel?: () => void;
 }
 
 // Step 1: Basic Information
-function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearValidationErrors, offerCategories, categoriesLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onPrev' | 'onSubmit' | 'creatives' | 'setCreatives' | 'trackingSources' | 'setTrackingSources' | 'rewards' | 'setRewards'>) {
-  const handleNext = () => {
-    if (formData.name.trim() && formData.offer_type) {
-      onNext();
-    }
-  };
+function BasicInfoStep({ currentStep, totalSteps, onNext, onPrev, formData, setFormData, validationErrors, clearValidationErrors, offerCategories, categoriesLoading, onSaveDraft, onCancel }: StepProps) {
+  const isFormValid = formData.name.trim() && formData.offer_type;
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ backgroundColor: color.sentra.main }}
-        >
-          <Gift className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
-        <p className="text-gray-600">Let's start with the essential details of your offer</p>
-      </div>
-
+    <StepFlowLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      stepTitle="Basic Information"
+      stepDescription="Let's start with the essential details of your offer"
+      onNext={onNext}
+      onPrev={onPrev}
+      onSaveDraft={onSaveDraft}
+      onCancel={onCancel}
+      isNextDisabled={!isFormValid}
+      nextButtonText="Next Step"
+    >
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -215,36 +210,12 @@ function BasicInfoStep({ onNext, formData, setFormData, validationErrors, clearV
           )}
         </div>
       </div>
-
-      <div className="flex justify-end">
-        <button
-          onClick={handleNext}
-          disabled={!formData.name.trim() || !formData.offer_type}
-          className="text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm"
-          style={{
-            backgroundColor: color.sentra.main
-          }}
-          onMouseEnter={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!e.currentTarget.disabled) {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-            }
-          }}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
+    </StepFlowLayout>
   );
 }
 
 // Step 2: Offer Products
-function ProductStepWrapper({ onNext, onPrev, formData, setFormData, validationErrors, clearValidationErrors }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit'>) {
+function ProductStepWrapper({ currentStep, totalSteps, onNext, onPrev, formData, setFormData, validationErrors, clearValidationErrors, onSaveDraft, onCancel }: StepProps) {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
 
   const handleNext = () => {
@@ -257,19 +228,21 @@ function ProductStepWrapper({ onNext, onPrev, formData, setFormData, validationE
     onNext();
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ backgroundColor: color.sentra.main }}
-        >
-          <Package className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Products</h2>
-        <p className="text-gray-600">Select the products that will be included in this offer</p>
-      </div>
+  const isFormValid = selectedProducts.length > 0;
 
+  return (
+    <StepFlowLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      stepTitle="Offer Products"
+      stepDescription="Select the products that will be included in this offer"
+      onNext={handleNext}
+      onPrev={onPrev}
+      onSaveDraft={onSaveDraft}
+      onCancel={onCancel}
+      isNextDisabled={!isFormValid}
+      nextButtonText="Next Step"
+    >
       <div className="space-y-6">
         <ProductSelector
           selectedProducts={selectedProducts}
@@ -287,84 +260,76 @@ function ProductStepWrapper({ onNext, onPrev, formData, setFormData, validationE
           </div>
         )}
       </div>
-
-      <div className="flex justify-between">
-        <button
-          onClick={onPrev}
-          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Previous
-        </button>
-        <button
-          onClick={handleNext}
-          className="text-white px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-          style={{
-            backgroundColor: color.sentra.main
-          }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-          }}
-        >
-          Next Step
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
+    </StepFlowLayout>
   );
 }
 
 // Step 3: Offer Creative
-function OfferCreativeStepWrapper({ onNext, onPrev, creatives, setCreatives }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
+function OfferCreativeStepWrapper({ currentStep, totalSteps, onNext, onPrev, creatives, setCreatives, onSaveDraft, onCancel }: Omit<StepProps, 'onSubmit' | 'formData' | 'setFormData'>) {
   return (
-    <div className="space-y-6">
+    <StepFlowLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      stepTitle="Offer Creative"
+      stepDescription="Design the creative content for your offer"
+      onNext={onNext}
+      onPrev={onPrev}
+      onSaveDraft={onSaveDraft}
+      onCancel={onCancel}
+      isNextDisabled={false}
+      nextButtonText="Next Step"
+    >
       <OfferCreativeStep
         creatives={creatives}
         onCreativesChange={setCreatives}
       />
-
-      <StepNavigation
-        onPrev={onPrev}
-        onNext={onNext}
-      />
-    </div>
+    </StepFlowLayout>
   );
 }
 
 // Step 4: Offer Tracking
-function OfferTrackingStepWrapper({ onNext, onPrev, trackingSources, setTrackingSources }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
+function OfferTrackingStepWrapper({ currentStep, totalSteps, onNext, onPrev, trackingSources, setTrackingSources, onSaveDraft, onCancel }: Omit<StepProps, 'onSubmit' | 'formData' | 'setFormData'>) {
   return (
-    <div className="space-y-6">
+    <StepFlowLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      stepTitle="Offer Tracking"
+      stepDescription="Configure tracking and analytics for your offer"
+      onNext={onNext}
+      onPrev={onPrev}
+      onSaveDraft={onSaveDraft}
+      onCancel={onCancel}
+      isNextDisabled={false}
+      nextButtonText="Next Step"
+    >
       <OfferTrackingStep
         trackingSources={trackingSources}
         onTrackingSourcesChange={setTrackingSources}
       />
-
-      <StepNavigation
-        onPrev={onPrev}
-        onNext={onNext}
-      />
-    </div>
+    </StepFlowLayout>
   );
 }
 
 // Step 5: Offer Reward
-function OfferRewardStepWrapper({ onNext, onPrev, rewards, setRewards }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onSubmit' | 'formData' | 'setFormData'>) {
+function OfferRewardStepWrapper({ currentStep, totalSteps, onNext, onPrev, rewards, setRewards, onSaveDraft, onCancel }: Omit<StepProps, 'onSubmit' | 'formData' | 'setFormData'>) {
   return (
-    <div className="space-y-6">
+    <StepFlowLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      stepTitle="Offer Rewards"
+      stepDescription="Configure rewards and incentives for your offer"
+      onNext={onNext}
+      onPrev={onPrev}
+      onSaveDraft={onSaveDraft}
+      onCancel={onCancel}
+      isNextDisabled={false}
+      nextButtonText="Next Step"
+    >
       <OfferRewardStep
         rewards={rewards}
         onRewardsChange={setRewards}
       />
-
-      <StepNavigation
-        onPrev={onPrev}
-        onNext={onNext}
-      />
-    </div>
+    </StepFlowLayout>
   );
 }
 
@@ -523,23 +488,24 @@ function EligibilityStepLegacy({ onNext, onPrev, formData, setFormData }: Omit<S
 
 
 // Step 6: Review
-function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, rewards, isLoading }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext' | 'setFormData'>) {
+function ReviewStep({ currentStep, totalSteps, onPrev, onSubmit, formData, creatives, trackingSources, rewards, isLoading, onSaveDraft, onCancel }: Omit<StepProps, 'onNext' | 'setFormData'>) {
   const handleSubmit = () => {
     onSubmit();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ backgroundColor: color.sentra.main }}
-        >
-          <Eye className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Review & Create</h2>
-        <p className="text-gray-600">Review your offer details before creating</p>
-      </div>
+    <StepFlowLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      stepTitle="Review & Create"
+      stepDescription="Review your offer details before creating"
+      onNext={handleSubmit}
+      onPrev={onPrev}
+      onSaveDraft={onSaveDraft}
+      onCancel={onCancel}
+      isNextDisabled={isLoading}
+      nextButtonText={isLoading ? "Creating..." : "Create Offer"}
+    >
 
       <div className="space-y-6">
         {/* Offer Summary */}
@@ -733,7 +699,7 @@ function ReviewStep({ onPrev, onSubmit, formData, creatives, trackingSources, re
           )}
         </button>
       </div>
-    </div>
+    </StepFlowLayout>
   );
 }
 
@@ -1199,6 +1165,15 @@ export default function CreateOfferPage() {
     }
   };
 
+  const handleSaveDraft = () => {
+    // TODO: Implement save draft functionality
+    console.log('Save draft functionality not yet implemented');
+  };
+
+  const handleCancel = () => {
+    navigate('/dashboard/offers');
+  };
+
   const stepProps = {
     currentStep,
     totalSteps,
@@ -1218,6 +1193,8 @@ export default function CreateOfferPage() {
     clearValidationErrors,
     offerCategories,
     categoriesLoading,
+    onSaveDraft: handleSaveDraft,
+    onCancel: handleCancel,
   };
 
   return (

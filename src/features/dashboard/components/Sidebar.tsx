@@ -112,8 +112,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     return isActive
-      ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] border-l-[5px] border-[${getEntityColor(entity)}] font-semibold shadow-md`
-      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 hover:shadow-sm transition-all duration-200`;
+      ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] border-l-[5px] border-[${getEntityColor(entity)}] font-semibold`
+      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 transition-all duration-200`;
   };
 
   const getIconClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
@@ -192,7 +192,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <div key={item.name}>
                         <button
                           onClick={() => toggleExpanded(item.name.toLowerCase())}
-                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                         >
                           <div className="flex items-center gap-x-3">
                             <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
@@ -285,7 +285,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={item.name}
                       to={item.href}
                       onClick={handleLinkClick}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
                       <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                       {item.name}
@@ -318,7 +318,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <li key={item.name}>
                       <button
                         onClick={() => toggleExpanded(item.name.toLowerCase())}
-                        className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                        className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                       >
                         <div className="flex items-center gap-x-3">
                           <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
@@ -411,7 +411,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <li key={item.name}>
                     <Link
                       to={item.href}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
                       <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                       {item.name}
@@ -431,7 +431,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <li key={item.name}>
                     <Link
                       to={item.href}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
                     >
                       <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
                       {item.name}

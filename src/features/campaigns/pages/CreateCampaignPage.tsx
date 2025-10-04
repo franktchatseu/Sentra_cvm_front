@@ -7,18 +7,18 @@ import {
   Users,
   Gift,
   Calendar,
-  Eye,
-  Save,
-  RotateCcw
+  Eye
 } from 'lucide-react';
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw } from '../../../shared/utils/utils';
 import { CreateCampaignRequest, CampaignSegment, CampaignOffer, ControlGroup } from '../types/campaign';
+import { campaignService } from '../services/campaignService';
 import CampaignDefinitionStep from '../components/steps/CampaignDefinitionStep';
 import AudienceConfigurationStep from '../components/steps/AudienceConfigurationStep';
 import OfferMappingStep from '../components/steps/OfferMappingStep';
 import SchedulingStep from '../components/steps/SchedulingStepNew';
 import CampaignPreviewStep from '../components/steps/CampaignPreviewStep';
+import StepNavigation from '../../../shared/components/ui/StepNavigation';
 
 interface StepProps {
   currentStep: number;
@@ -35,6 +35,8 @@ interface StepProps {
   controlGroup: ControlGroup;
   setControlGroup: (group: ControlGroup) => void;
   isLoading?: boolean;
+  onSaveDraft?: () => void;
+  onCancel?: () => void;
 }
 
 const steps = [
@@ -132,57 +134,67 @@ export default function CreateCampaignPage() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      // await campaignService.createCampaign(formData);
-      console.log('Creating campaign:', formData);
+      await campaignService.createCampaign(formData);
+      console.log('Campaign created successfully:', formData);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      showToast('success', 'Campaign created successfully!');
 
-      // Navigate back to campaigns page
       navigate('/dashboard/campaigns');
     } catch (error) {
       console.error('Error creating campaign:', error);
+      showToast('error', 'Failed to create campaign. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSaveDraft = () => {
-    console.log('Saving draft:', formData);
-    showToast('success', 'Draft saved successfully');
+  const handleSaveDraft = async () => {
+    try {
+      setIsLoading(true);
+      if (!formData.name.trim()) {
+        showToast('error', 'Please enter a campaign name to save draft');
+        return;
+      }
+
+      const draftData = {
+        name: formData.name,
+        description: formData.description || '',
+        primary_objective: formData.primary_objective || 'acquisition',
+        category: formData.category || '',
+        lifecycle_status: 'draft' as const,
+        approval_status: 'pending' as const,
+        segments: formData.segments || [],
+        offers: formData.offers || [],
+        scheduling: formData.scheduling || {
+          type: 'scheduled',
+          time_zone: 'UTC',
+          delivery_times: ['09:00'],
+          frequency_capping: {
+            max_per_day: 1,
+            max_per_week: 3,
+            max_per_month: 10
+          },
+          throttling: {
+            max_per_hour: 1000,
+            max_per_day: 10000
+          }
+        }
+      };
+
+      const savedCampaign = await campaignService.createCampaign(draftData);
+      console.log('Draft saved successfully:', savedCampaign);
+      showToast('success', 'Draft saved successfully!');
+
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      showToast('error', 'Failed to save draft. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleReset = () => {
-    setFormData({
-      name: '',
-      description: '',
-      primary_objective: 'acquisition',
-      category: '',
-      segments: [],
-      offers: [],
-      scheduling: {
-        type: 'scheduled',
-        time_zone: 'UTC',
-        delivery_times: ['09:00'],
-        frequency_capping: {
-          max_per_day: 1,
-          max_per_week: 3,
-          max_per_month: 10
-        },
-        throttling: {
-          max_per_hour: 1000,
-          max_per_day: 10000
-        }
-      }
-    });
-    setSelectedSegments([]);
-    setSelectedOffers([]);
-    setControlGroup({
-      enabled: false,
-      percentage: 5,
-      type: 'standard'
-    });
-    setCurrentStep(1);
-    showToast('success', 'Form reset successfully');
+  const handleCancel = () => {
+    navigate('/dashboard/campaigns');
   };
 
   const stepProps: StepProps = {
@@ -199,7 +211,9 @@ export default function CreateCampaignPage() {
     setSelectedOffers,
     controlGroup,
     setControlGroup,
-    isLoading
+    isLoading,
+    onSaveDraft: handleSaveDraft,
+    onCancel: handleCancel
   };
 
   const renderStep = () => {
@@ -228,70 +242,69 @@ export default function CreateCampaignPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-4`}>
-        <div className="">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => navigate('/dashboard/campaigns')}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div>
-                  <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>Create Campaign</h1>
-                  <p className={`text-sm ${tw.textMuted}`}>Step {currentStep} of {steps.length}</p>
-                </div>
-              </div>
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4 ">
+            <StepNavigation
+              onPrev={handlePrev}
+              onNext={handleNext}
+              showPrevButton={currentStep > 1}
+              className="border-none pt-0"
+            />
 
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleSaveDraft}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
-                  style={{ backgroundColor: color.sentra.main }}
-                  onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                  onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Draft
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Reset
-                </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleCancel}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDraft}
+                disabled={isLoading}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: color.sentra.main }}
+                onMouseEnter={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+                onMouseLeave={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Draft'
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/dashboard/campaigns')}
+                className=" text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>Create Campaign</h1>
+                <p className={`text-sm ${tw.textMuted}`}>Step {currentStep} of {steps.length}</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="px-4 sm:px-6 lg:px-8 py-6">
-          <nav aria-label="Progress">
-            <ol className="flex items-center justify-between">
+          <nav aria-label="Progress" className="py-6">
+            <div className="flex items-center justify-between w-full">
               {steps.map((step, stepIdx) => {
                 const status = getStepStatus(step.id);
                 const Icon = step.icon;
 
                 return (
-                  <li key={step.id} className="relative flex-1">
-                    {stepIdx !== steps.length - 1 && (
-                      <div className="absolute top-4 left-1/2 w-full h-0.5 bg-gray-200">
-                        <div
-                          className={`h-full transition-all duration-500 ${status === 'completed' ? `bg-[${color.sentra.main}]` : 'bg-gray-200'
-                            }`}
-                          style={{
-                            width: status === 'completed' ? '100%' : '0%'
-                          }}
-                        />
-                      </div>
-                    )}
-
+                  <div key={step.id} className="flex items-center">
                     <button
                       onClick={() => setCurrentStep(step.id)}
-                      className="relative flex flex-col items-center group"
-                      disabled={step.id > currentStep}
+                      className="relative flex flex-col items-center group z-10"
+                      disabled={step.id > currentStep + 2}
                     >
                       <div className={`
                       flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
@@ -301,7 +314,7 @@ export default function CreateCampaignPage() {
                             ? `bg-white border-[${color.sentra.main}] text-[${color.sentra.main}]`
                             : 'bg-white border-gray-300 text-gray-400'
                         }
-                      ${step.id <= currentStep ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
+                      ${step.id <= currentStep + 2 ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
                     `}>
                         {status === 'completed' ? (
                           <Check className="w-4 h-4" />
@@ -321,16 +334,29 @@ export default function CreateCampaignPage() {
                         </div>
                       </div>
                     </button>
-                  </li>
+
+                    {stepIdx !== steps.length - 1 && (
+                      <div className="">
+                        <div className="h-0.5 bg-gray-200">
+                          <div
+                            className={`h-full transition-all duration-500 ${step.id < currentStep ? `bg-[${color.sentra.main}]` : 'bg-gray-200'
+                              }`}
+                            style={{
+                              width: step.id < currentStep ? '100%' : '0%'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
-            </ol>
+            </div>
           </nav>
-        </div>
 
-        {/* Main Content */}
-        <div className="px-4 sm:px-6 lg:px-8 pb-8">
-          {renderStep()}
+          <div className="pb-8">
+            {renderStep()}
+          </div>
         </div>
       </div>
     </div>

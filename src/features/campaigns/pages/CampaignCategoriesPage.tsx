@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, X, Target, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, Target, ArrowLeft, Eye } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -170,6 +170,12 @@ export default function CampaignCategoriesPage() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
+    // Campaigns modal state
+    const [isCampaignsModalOpen, setIsCampaignsModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<CampaignCategory | null>(null);
+    const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [campaignsLoading, setCampaignsLoading] = useState(false);
+
     // Debounce search term
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -263,6 +269,27 @@ export default function CampaignCategoriesPage() {
             showError('Failed to save category', 'Please try again later.');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleViewCampaigns = async (category: CampaignCategory) => {
+        try {
+            setSelectedCategory(category);
+            setIsCampaignsModalOpen(true);
+            setCampaignsLoading(true);
+
+            // Fetch campaigns for this category
+            const response = await campaignService.getAllCampaigns({
+                categoryId: category.id,
+                pageSize: 50 // Get more campaigns to show in modal
+            });
+            setCampaigns(response.data || []);
+        } catch (err) {
+            console.error('Failed to fetch campaigns:', err);
+            showError('Failed to load campaigns', 'Please try again later.');
+            setCampaigns([]);
+        } finally {
+            setCampaignsLoading(false);
         }
     };
 
@@ -401,9 +428,20 @@ export default function CampaignCategoriesPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
-                                                    {category.campaign_count || 0} campaign{(category.campaign_count || 0) !== 1 ? 's' : ''}
-                                                </span>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
+                                                        {category.campaign_count || 0} campaign{(category.campaign_count || 0) !== 1 ? 's' : ''}
+                                                    </span>
+                                                    {(category.campaign_count || 0) > 0 && (
+                                                        <button
+                                                            onClick={() => handleViewCampaigns(category)}
+                                                            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                                            title="View campaigns"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end space-x-2">
@@ -455,9 +493,20 @@ export default function CampaignCategoriesPage() {
                                                 {category.description || 'No description'}
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
-                                                    {category.campaign_count || 0} campaign{(category.campaign_count || 0) !== 1 ? 's' : ''}
-                                                </span>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
+                                                        {category.campaign_count || 0} campaign{(category.campaign_count || 0) !== 1 ? 's' : ''}
+                                                    </span>
+                                                    {(category.campaign_count || 0) > 0 && (
+                                                        <button
+                                                            onClick={() => handleViewCampaigns(category)}
+                                                            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                                            title="View campaigns"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center space-x-2">
                                                     <button
                                                         onClick={() => handleEditCategory(category)}
@@ -502,6 +551,84 @@ export default function CampaignCategoriesPage() {
                 onSave={handleCategorySaved}
                 isSaving={isSaving}
             />
+
+            {/* Campaigns Modal */}
+            {isCampaignsModalOpen && selectedCategory && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-900">
+                                    Campaigns in "{selectedCategory.name}"
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''} found
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsCampaignsModalOpen(false);
+                                    setSelectedCategory(null);
+                                    setCampaigns([]);
+                                }}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto max-h-[60vh]">
+                            {campaignsLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <LoadingSpinner />
+                                    <span className="ml-2 text-gray-600">Loading campaigns...</span>
+                                </div>
+                            ) : campaigns.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <div className="text-gray-400 mb-2">
+                                        <Target className="w-12 h-12 mx-auto" />
+                                    </div>
+                                    <p className="text-gray-600">No campaigns found in this category</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {campaigns.map((campaign, index) => (
+                                        <div key={campaign.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <h3 className="font-semibold text-gray-900 mb-1">
+                                                        {campaign.name || 'Unnamed Campaign'}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mb-2">
+                                                        {campaign.description || 'No description available'}
+                                                    </p>
+                                                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                                        <span>Status: {campaign.status || 'Unknown'}</span>
+                                                        <span>Approval: {campaign.approval_status || 'Unknown'}</span>
+                                                        {campaign.start_date && <span>Start: {new Date(campaign.start_date).toLocaleDateString()}</span>}
+                                                        {campaign.end_date && <span>End: {new Date(campaign.end_date).toLocaleDateString()}</span>}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsCampaignsModalOpen(false);
+                                                            navigate(`/dashboard/campaigns/${campaign.id}`);
+                                                        }}
+                                                        className="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors"
+                                                    >
+                                                        View Details
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
