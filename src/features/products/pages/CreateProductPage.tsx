@@ -5,18 +5,19 @@ import {
   Save,
   AlertCircle
 } from 'lucide-react';
-import { CreateProductRequest } from '../../../../shared/types/product';
+import { CreateProductRequest } from '../types/product';
 import { productService } from '../services/productService';
 import CategorySelector from '../../../shared/components/CategorySelector';
+import CreateCategoryModal from '../../../shared/components/CreateCategoryModal';
+import { tw } from '../../../shared/utils/utils';
+import { useToast } from '../../../contexts/ToastContext';
 
 export default function CreateProductPage() {
   const navigate = useNavigate();
+  const { success } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDescription, setNewCategoryDescription] = useState('');
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState<CreateProductRequest>({
     product_id: '',
     name: '',
@@ -26,21 +27,6 @@ export default function CreateProductPage() {
     is_active: true
   });
 
-  const handleCreateNewCategory = async () => {
-    if (!newCategoryName.trim()) return;
-
-    try {
-      setIsCreatingCategory(true);
-      // This will be handled by the CategorySelector component
-      setShowNewCategoryModal(false);
-      setNewCategoryName('');
-      setNewCategoryDescription('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create category');
-    } finally {
-      setIsCreatingCategory(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +41,7 @@ export default function CreateProductPage() {
       setError(null);
 
       await productService.createProduct(formData);
+      success('Product Created', `"${formData.name}" has been created successfully.`);
       navigate('/dashboard/products');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create product');
@@ -66,6 +53,7 @@ export default function CreateProductPage() {
   const handleInputChange = (field: keyof CreateProductRequest, value: string | number | boolean | undefined) => {
     setFormData({ ...formData, [field]: value });
   };
+
 
   return (
     <div className="space-y-6">
@@ -155,7 +143,7 @@ export default function CreateProductPage() {
                 onChange={(categoryId) => handleInputChange('category_id', categoryId)}
                 placeholder="Select Category"
                 allowCreate={true}
-                onCreateCategory={() => setShowNewCategoryModal(true)}
+                onCreateCategory={() => setShowCreateModal(true)}
               />
             </div>
 
@@ -208,14 +196,14 @@ export default function CreateProductPage() {
             <button
               type="button"
               onClick={() => navigate('/dashboard/products')}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className={`${tw.ghostButton} px-3 py-2 text-sm rounded-lg flex items-center gap-2`}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${tw.primaryButton} px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isLoading ? (
                 <>
@@ -233,76 +221,12 @@ export default function CreateProductPage() {
         </form>
       </div>
 
-      {/* New Category Modal */}
-      {showNewCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">New Category</h2>
-              <button
-                onClick={() => {
-                  setShowNewCategoryModal(false);
-                  setNewCategoryName('');
-                  setNewCategoryDescription('');
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                ×
-              </button>
-            </div>
+      {/* Create Category Modal */}
+      <CreateCategoryModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
 
-            <div className="p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category Name *
-                </label>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg "
-                  placeholder="e.g., Data, Voice, SMS..."
-                  required
-                />
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={newCategoryDescription}
-                  onChange={(e) => setNewCategoryDescription(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg "
-                  placeholder="Category description..."
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNewCategoryModal(false);
-                    setNewCategoryName('');
-                    setNewCategoryDescription('');
-                  }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateNewCategory}
-                  disabled={!newCategoryName.trim() || isCreatingCategory}
-                  className="px-4 py-2 bg-[#3b8169] hover:bg-[#2d5f4e] text-white rounded-lg transition-all disabled:opacity-50"
-                >
-                  {isCreatingCategory ? 'Creating...' : 'Create Category'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search, Plus, X } from 'lucide-react';
-import { ProductCategory } from '../../../../shared/types/productCategory';
+import { ChevronDown, Search, Plus } from 'lucide-react';
+import { ProductCategory } from '../../features/products/types/productCategory';
 import { productCategoryService } from '../../features/products/services/productCategoryService';
 import { color } from '../utils/utils';
 
@@ -28,10 +28,6 @@ export default function CategorySelector({
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDescription, setNewCategoryDescription] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -88,158 +84,34 @@ export default function CategorySelector({
   const handleCreateNew = () => {
     if (onCreateCategory) {
       onCreateCategory();
-    } else {
-      setShowCreateModal(true);
     }
     setIsOpen(false);
     setSearchTerm('');
   };
 
-  const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) return;
-
-    try {
-      setIsCreating(true);
-      const newCategory = await productCategoryService.createCategory({
-        name: newCategoryName.trim(),
-        description: newCategoryDescription.trim() || undefined
-      });
-
-      // Refresh categories list
-      await loadCategories();
-
-      // Select the newly created category
-      onChange(newCategory.id);
-
-      // Close modal and reset form
-      setShowCreateModal(false);
-      setNewCategoryName('');
-      setNewCategoryDescription('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create category');
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   return (
-    <>
-      <div className={`flex gap-2 ${className}`}>
-        {/* Category Selector */}
-        <div className="flex-1 relative" ref={dropdownRef}>
-          <button
-            type="button"
-            onClick={() => !disabled && setIsOpen(!isOpen)}
-            disabled={disabled}
-            className={`w-full px-3 py-2 text-left border border-gray-300 rounded-lg text-sm transition-colors ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-400'
-              } ${isOpen ? `border-[${color.sentra.main}]` : ''}`}
-          >
-            <div className="flex items-center justify-between">
-              <span className={selectedCategory ? 'text-gray-900' : 'text-gray-500'}>
-                {selectedCategory ? selectedCategory.name : placeholder}
-              </span>
-              <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </div>
-          </button>
-
-          {/* Dropdown */}
-          {isOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-hidden">
-              {/* Search Input */}
-              <div className="p-3 border-b border-gray-200">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search categories..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Categories List */}
-              <div className="max-h-48 overflow-y-auto">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[${color.sentra.main}]"></div>
-                    <span className="ml-2 text-sm text-gray-600">Loading...</span>
-                  </div>
-                ) : error ? (
-                  <div className="p-3 text-center text-red-600 text-sm">
-                    <p>{error}</p>
-                    <button
-                      onClick={loadCategories}
-                      className="mt-1 text-[${color.sentra.main}] hover:text-[${color.sentra.hover}] underline"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {/* Clear Selection Option */}
-                    <button
-                      onClick={() => handleSelect(undefined)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Clear selection
-                    </button>
-
-                    {/* Categories */}
-                    {filteredCategories.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500 text-sm">
-                        {searchTerm ? 'No categories found' : 'No categories available'}
-                      </div>
-                    ) : (
-                      filteredCategories.map((category) => (
-                        <button
-                          key={category.id}
-                          onClick={() => handleSelect(category.id)}
-                          className={`w-full px-4 py-2 text-left text-sm hover:bg-[${color.sentra.main}]/10 flex items-center justify-between ${value === category.id ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}]` : 'text-gray-900'
-                            }`}
-                        >
-                          <div>
-                            <div className="font-medium">{category.name}</div>
-                            {category.description && (
-                              <div className="text-xs text-gray-500 mt-0.5">{category.description}</div>
-                            )}
-                          </div>
-                          {category.productCount !== undefined && (
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                              {category.productCount}
-                            </span>
-                          )}
-                        </button>
-                      ))
-                    )}
-
-                    {/* Create New Category Option */}
-                    {allowCreate && onCreateCategory && (
-                      <div className="border-t border-gray-200">
-                        <button
-                          onClick={handleCreateNew}
-                          className="w-full px-4 py-2 text-left text-sm text-[${color.sentra.main}] hover:bg-[${color.sentra.main}]/10 flex items-center"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create new category
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
+          className={`flex-1 px-3 py-2 text-left border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-400'
+            }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={selectedCategory ? 'text-gray-900' : 'text-gray-500'}>
+              {selectedCategory ? selectedCategory.name : placeholder}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
 
         {/* Add Category Button */}
         {allowCreate && (
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
+            onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
             className="px-3 py-2 text-white rounded-lg transition-colors flex items-center justify-center text-sm"
             style={{ backgroundColor: color.sentra.main }}
             onMouseEnter={(e) => {
@@ -255,85 +127,71 @@ export default function CategorySelector({
         )}
       </div>
 
-      {/* Create Category Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">New Category</h2>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewCategoryName('');
-                  setNewCategoryDescription('');
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="p-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
+          </div>
 
-            <div className="p-8">
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-800 mb-3">
-                  Category Name *
-                </label>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl  transition-all bg-gray-50 focus:bg-white"
-                  placeholder="e.g., Data, Voice, SMS..."
-                  required
-                />
+          <div className="max-h-48 overflow-y-auto">
+            {isLoading ? (
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">Loading...</div>
+            ) : error ? (
+              <div className="px-4 py-3 text-sm text-red-500 text-center">{error}</div>
+            ) : filteredCategories.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                {searchTerm ? 'No categories found' : 'No categories available'}
               </div>
+            ) : (
+              <>
+                {filteredCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleSelect(category.id)}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[${color.sentra.main}]/10 flex items-center justify-between ${value === category.id ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}]` : 'text-gray-900'
+                      }`}
+                  >
+                    <div>
+                      <div className="font-medium">{category.name}</div>
+                      {category.description && (
+                        <div className="text-xs text-gray-500 mt-0.5">{category.description}</div>
+                      )}
+                    </div>
+                    {category.productCount !== undefined && (
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        {category.productCount}
+                      </span>
+                    )}
+                  </button>
+                ))}
 
-              <div className="mb-8">
-                <label className="block text-sm font-semibold text-gray-800 mb-3">
-                  Description
-                </label>
-                <textarea
-                  value={newCategoryDescription}
-                  onChange={(e) => setNewCategoryDescription(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl  transition-all bg-gray-50 focus:bg-white resize-none"
-                  placeholder="Category description..."
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setNewCategoryName('');
-                    setNewCategoryDescription('');
-                  }}
-                  className="px-6 py-3 text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateCategory}
-                  disabled={!newCategoryName.trim() || isCreating}
-                  className="px-6 py-3 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-                  style={{ backgroundColor: color.sentra.main }}
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                  }}
-                >
-                  {isCreating ? 'Creating...' : 'Create Category'}
-                </button>
-              </div>
-            </div>
+                {/* Create New Category Option */}
+                {allowCreate && (
+                  <div className="border-t border-gray-200">
+                    <button
+                      onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
+                      className="w-full px-4 py-2 text-left text-sm text-[${color.sentra.main}] hover:bg-[${color.sentra.main}]/10 flex items-center"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create new category
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
