@@ -97,7 +97,7 @@ export default function CreateProductPage() {
                 required
                 value={formData.product_id}
                 onChange={(e) => handleInputChange('product_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="e.g., VOICE_BUNDLE_001"
               />
               <p className="text-sm text-gray-500 mt-1">Unique identifier for the product</p>
@@ -113,7 +113,7 @@ export default function CreateProductPage() {
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="e.g., Premium Voice Bundle"
               />
             </div>
@@ -127,7 +127,7 @@ export default function CreateProductPage() {
                 type="text"
                 value={formData.da_id}
                 onChange={(e) => handleInputChange('da_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="e.g., DA_001"
               />
               <p className="text-sm text-gray-500 mt-1">Data Analytics identifier</p>
@@ -156,7 +156,7 @@ export default function CreateProductPage() {
                 rows={4}
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="Describe the product features and benefits..."
               />
             </div>
@@ -173,7 +173,7 @@ export default function CreateProductPage() {
                     name="is_active"
                     checked={formData.is_active === true}
                     onChange={() => handleInputChange('is_active', true)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
+                    className="w-4 h-4 text-blue-600 border-gray-300 "
                   />
                   <span className="ml-2 text-sm text-gray-700">Active</span>
                 </label>
@@ -183,7 +183,7 @@ export default function CreateProductPage() {
                     name="is_active"
                     checked={formData.is_active === false}
                     onChange={() => handleInputChange('is_active', false)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
+                    className="w-4 h-4 text-blue-600 border-gray-300 "
                   />
                   <span className="ml-2 text-sm text-gray-700">Inactive</span>
                 </label>

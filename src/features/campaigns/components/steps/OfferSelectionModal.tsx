@@ -3,6 +3,8 @@ import { X, Search, Plus, Gift, Check, DollarSign, Calendar } from 'lucide-react
 import { CampaignOffer } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
 import { color } from '../../../../shared/utils/utils';
+import { offerService } from '../../../offers/services/offerService';
+import { Offer } from '../../../offers/types/offer';
 
 interface OfferSelectionModalProps {
   isOpen: boolean;
@@ -13,98 +15,6 @@ interface OfferSelectionModalProps {
   onCreateNew?: () => void;
 }
 
-// TODO: Replace with real API call to fetch offers
-// Mock offer data - in a real app, this would come from an API
-const mockOffers: CampaignOffer[] = [
-  {
-    id: 'offer-001',
-    name: 'Double Data Bundle',
-    description: 'Get double the data for the same price - limited time offer',
-    offer_type: 'Data Bundle',
-    reward_type: 'bundle',
-    reward_value: '2x Data',
-    validity_period: 30,
-    terms_conditions: 'Valid for 30 days from activation',
-    segments: []
-  },
-  {
-    id: 'offer-002',
-    name: 'Welcome Bonus Package',
-    description: 'Special welcome package for new subscribers',
-    offer_type: 'Welcome Package',
-    reward_type: 'bundle',
-    reward_value: '50% Off First Month',
-    validity_period: 7,
-    terms_conditions: 'For new customers only',
-    segments: []
-  },
-  {
-    id: 'offer-003',
-    name: 'Loyalty Points Bonus',
-    description: '500 bonus loyalty points for active customers',
-    offer_type: 'Loyalty Reward',
-    reward_type: 'points',
-    reward_value: '500 Points',
-    validity_period: 60,
-    terms_conditions: 'Minimum 3 months active subscription required',
-    segments: []
-  },
-  {
-    id: 'offer-004',
-    name: 'Weekend Voice Bundle',
-    description: 'Unlimited weekend calls at discounted rate',
-    offer_type: 'Voice Bundle',
-    reward_type: 'bundle',
-    reward_value: 'Unlimited Weekend Calls',
-    validity_period: 30,
-    terms_conditions: 'Valid Saturday-Sunday only',
-    segments: []
-  },
-  {
-    id: 'offer-005',
-    name: 'Cashback Promotion',
-    description: '10% cashback on next recharge',
-    offer_type: 'Cashback',
-    reward_type: 'cashback',
-    reward_value: '10% Cashback',
-    validity_period: 14,
-    terms_conditions: 'Minimum recharge of $20 required',
-    segments: []
-  },
-  {
-    id: 'offer-006',
-    name: 'Free International Minutes',
-    description: '100 free international minutes to selected countries',
-    offer_type: 'International Package',
-    reward_type: 'free_service',
-    reward_value: '100 Free Minutes',
-    validity_period: 30,
-    terms_conditions: 'Valid to US, UK, Canada only',
-    segments: []
-  },
-  {
-    id: 'offer-007',
-    name: 'Student Discount',
-    description: '25% discount for verified students',
-    offer_type: 'Student Offer',
-    reward_type: 'discount',
-    reward_value: '25% Discount',
-    validity_period: 90,
-    terms_conditions: 'Valid student ID required',
-    segments: []
-  },
-  {
-    id: 'offer-008',
-    name: 'Family Plan Upgrade',
-    description: 'Free upgrade to family plan for 3 months',
-    offer_type: 'Plan Upgrade',
-    reward_type: 'free_service',
-    reward_value: '3 Months Free Upgrade',
-    validity_period: 90,
-    terms_conditions: 'Existing customers only',
-    segments: []
-  }
-];
 
 const rewardTypeColors = {
   bundle: 'bg-blue-100 text-blue-700',
@@ -125,6 +35,9 @@ export default function OfferSelectionModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [tempSelectedOffers, setTempSelectedOffers] = useState<CampaignOffer[]>(selectedOffers);
+  const [offers, setOffers] = useState<CampaignOffer[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filterOptions = [
     { value: 'all', label: 'All Offers' },
@@ -137,12 +50,44 @@ export default function OfferSelectionModal({
   useEffect(() => {
     if (isOpen) {
       setTempSelectedOffers(selectedOffers);
+      loadOffers();
     }
   }, [isOpen, selectedOffers]);
 
+  const loadOffers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await offerService.getOffers({
+        pageSize: 100, // Get all offers for selection
+        lifecycleStatus: 'active'
+      });
+
+      // Convert Offer objects to CampaignOffer format
+      const campaignOffers: CampaignOffer[] = response.offers.map((offer: Offer) => ({
+        id: offer.id?.toString() || '',
+        name: offer.name,
+        description: offer.description || '',
+        offer_type: offer.category?.name || 'General',
+        reward_type: 'bundle' as const, // Default since Offer doesn't have reward_type
+        reward_value: 'Special Offer',
+        validity_period: 30,
+        terms_conditions: 'See offer details',
+        segments: []
+      }));
+
+      setOffers(campaignOffers);
+    } catch (err) {
+      console.error('Failed to load offers:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load offers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
-  const filteredOffers = mockOffers.filter(offer => {
+  const filteredOffers = offers.filter(offer => {
     const matchesSearch = offer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (offer.description && offer.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -244,82 +189,103 @@ export default function OfferSelectionModal({
 
         {/* Offers List */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredOffers.map((offer) => {
-              const isSelected = tempSelectedOffers.some(o => o.id === offer.id);
-
-              return (
-                <div
-                  key={offer.id}
-                  onClick={() => handleOfferToggle(offer)}
-                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isSelected
-                    ? ''
-                    : 'border-gray-100'
-                    }`}
-                  style={isSelected ? {
-                    borderColor: color.entities.offers,
-                    backgroundColor: 'white'
-                  } : {
-                    backgroundColor: 'white'
-                  }}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading offers...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <p className="text-red-600 mb-4">{error}</p>
+                <button
+                  onClick={loadOffers}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  {isSelected && (
-                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: color.entities.offers }}>
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : filteredOffers.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Gift className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-2">No offers found</p>
+                <p className="text-sm text-gray-500">
+                  {searchTerm ? 'Try adjusting your search terms.' : 'No offers available at the moment.'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredOffers.map((offer) => {
+                const isSelected = tempSelectedOffers.some(o => o.id === offer.id);
 
-                  <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.offers}20` }}>
-                      <Gift className="w-5 h-5" style={{ color: color.entities.offers }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 truncate">{offer.name}</h4>
-                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.description}</p>
-
-                      <div className="flex items-center space-x-2 mt-3">
-                        <span className={`text-xs px-2 py-1 rounded-full ${rewardTypeColors[offer.reward_type]}`}>
-                          {offer.reward_type}
-                        </span>
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                          {offer.offer_type}
-                        </span>
+                return (
+                  <div
+                    key={offer.id}
+                    onClick={() => handleOfferToggle(offer)}
+                    className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isSelected
+                      ? ''
+                      : 'border-gray-100'
+                      }`}
+                    style={isSelected ? {
+                      borderColor: color.entities.offers,
+                      backgroundColor: 'white'
+                    } : {
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: color.entities.offers }}>
+                        <Check className="w-3 h-3 text-white" />
                       </div>
+                    )}
 
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center space-x-1">
-                          <DollarSign className="w-4 h-4 text-[#3b8169]" />
-                          <span className="text-sm font-medium text-[#3b8169]">
-                            {offer.reward_value}
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.offers}20` }}>
+                        <Gift className="w-5 h-5" style={{ color: color.entities.offers }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 truncate">{offer.name}</h4>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{offer.description}</p>
+
+                        <div className="flex items-center space-x-2 mt-3">
+                          <span className={`text-xs px-2 py-1 rounded-full ${rewardTypeColors[offer.reward_type as keyof typeof rewardTypeColors] || 'bg-gray-100 text-gray-700'}`}>
+                            {offer.reward_type}
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                            {offer.offer_type}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span className="text-xs text-gray-500">
-                            {offer.validity_period} days
-                          </span>
-                        </div>
-                      </div>
 
-                      {offer.terms_conditions && (
-                        <p className="text-xs text-gray-400 mt-2 line-clamp-1">
-                          {offer.terms_conditions}
-                        </p>
-                      )}
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center space-x-1">
+                            <DollarSign className="w-4 h-4 text-[#3b8169]" />
+                            <span className="text-sm font-medium text-[#3b8169]">
+                              {offer.reward_value}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <span className="text-xs text-gray-500">
+                              {offer.validity_period} days
+                            </span>
+                          </div>
+                        </div>
+
+                        {offer.terms_conditions && (
+                          <p className="text-xs text-gray-400 mt-2 line-clamp-1">
+                            {offer.terms_conditions}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {filteredOffers.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${color.entities.offers}20` }}>
-                <Gift className="w-8 h-8" style={{ color: color.entities.offers }} />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No offers found</h3>
-              <p className="text-gray-500">Try adjusting your search or create a new offer</p>
+                );
+              })}
             </div>
           )}
         </div>

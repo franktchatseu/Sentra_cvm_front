@@ -12,7 +12,9 @@ import {
   Power,
   PowerOff,
   X,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Segment, SegmentFilters, SegmentType, SortDirection } from '../types/segment';
 import { segmentService } from '../services/segmentService';
@@ -23,25 +25,160 @@ import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 import { color, tw } from '../../../shared/utils/utils';
 
 // Mock data for testing
-const MOCK_SEGMENT: Segment = {
-  id: 1,
-  segment_id: 1,
-  name: 'High Value Customers',
-  description: 'Customers with ARPU > $50 and active for 6+ months',
-  type: 'dynamic',
-  tags: ['vip', 'high-value', 'premium'],
-  customer_count: 15420,
-  size_estimate: 15420,
-  created_at: '2025-01-15T10:30:00Z',
-  created_on: '2025-01-15T10:30:00Z',
-  updated_at: '2025-01-18T14:22:00Z',
-  updated_on: '2025-01-18T14:22:00Z',
-  created_by: 1,
-  is_active: true,
-  category: 1,
-  visibility: 'private',
-  refresh_frequency: 'daily'
-};
+const MOCK_SEGMENTS: Segment[] = [
+  {
+    id: 1,
+    segment_id: 1,
+    name: 'High Value Customers',
+    description: 'Customers with monthly spend > $100',
+    type: 'dynamic',
+    tags: ['vip', 'high-value', 'premium'],
+    customer_count: 15420,
+    size_estimate: 15420,
+    created_at: '2024-01-15T10:30:00Z',
+    created_on: '2024-01-15T10:30:00Z',
+    updated_at: '2024-01-15T14:22:00Z',
+    updated_on: '2024-01-15T14:22:00Z',
+    created_by: 1,
+    is_active: true,
+    category: 1,
+    visibility: 'private',
+    refresh_frequency: 'daily'
+  },
+  {
+    id: 2,
+    segment_id: 2,
+    name: 'At Risk Customers',
+    description: 'Customers showing churn signals',
+    type: 'dynamic',
+    tags: ['at-risk', 'churn', 'retention'],
+    customer_count: 8934,
+    size_estimate: 8934,
+    created_at: '2024-01-10T09:15:00Z',
+    created_on: '2024-01-10T09:15:00Z',
+    updated_at: '2024-01-10T11:30:00Z',
+    updated_on: '2024-01-10T11:30:00Z',
+    created_by: 1,
+    is_active: true,
+    category: 2,
+    visibility: 'private',
+    refresh_frequency: 'daily'
+  },
+  {
+    id: 3,
+    segment_id: 3,
+    name: 'New Subscribers',
+    description: 'Customers who joined in the last 30 days',
+    type: 'dynamic',
+    tags: ['new', 'onboarding', 'recent'],
+    customer_count: 3245,
+    size_estimate: 3245,
+    created_at: '2024-01-20T08:45:00Z',
+    created_on: '2024-01-20T08:45:00Z',
+    updated_at: '2024-01-20T10:20:00Z',
+    updated_on: '2024-01-20T10:20:00Z',
+    created_by: 1,
+    is_active: true,
+    category: 1,
+    visibility: 'public',
+    refresh_frequency: 'daily'
+  },
+  {
+    id: 4,
+    segment_id: 4,
+    name: 'Voice Heavy Users',
+    description: 'Customers with high voice usage patterns',
+    type: 'dynamic',
+    tags: ['voice', 'heavy-users', 'communication'],
+    customer_count: 12678,
+    size_estimate: 12678,
+    created_at: '2024-01-12T13:20:00Z',
+    created_on: '2024-01-12T13:20:00Z',
+    updated_at: '2024-01-12T15:45:00Z',
+    updated_on: '2024-01-12T15:45:00Z',
+    created_by: 1,
+    is_active: true,
+    category: 3,
+    visibility: 'private',
+    refresh_frequency: 'daily'
+  },
+  {
+    id: 5,
+    segment_id: 5,
+    name: 'Data Bundle Enthusiasts',
+    description: 'Customers who frequently purchase data bundles',
+    type: 'dynamic',
+    tags: ['data', 'bundles', 'heavy-data'],
+    customer_count: 18923,
+    size_estimate: 18923,
+    created_at: '2024-01-08T11:10:00Z',
+    created_on: '2024-01-08T11:10:00Z',
+    updated_at: '2024-01-08T16:30:00Z',
+    updated_on: '2024-01-08T16:30:00Z',
+    created_by: 1,
+    is_active: true,
+    category: 2,
+    visibility: 'public',
+    refresh_frequency: 'daily'
+  },
+  {
+    id: 6,
+    segment_id: 6,
+    name: 'Weekend Warriors',
+    description: 'Customers with high weekend usage',
+    type: 'dynamic',
+    tags: ['weekend', 'leisure', 'entertainment'],
+    customer_count: 7456,
+    size_estimate: 7456,
+    created_at: '2024-01-18T14:00:00Z',
+    created_on: '2024-01-18T14:00:00Z',
+    updated_at: '2024-01-18T16:15:00Z',
+    updated_on: '2024-01-18T16:15:00Z',
+    created_by: 1,
+    is_active: true,
+    category: 1,
+    visibility: 'private',
+    refresh_frequency: 'weekly'
+  },
+  {
+    id: 7,
+    segment_id: 7,
+    name: 'Business Customers',
+    description: 'B2B customers and corporate accounts',
+    type: 'static',
+    tags: ['business', 'corporate', 'b2b'],
+    customer_count: 4321,
+    size_estimate: 4321,
+    created_at: '2024-01-05T09:30:00Z',
+    created_on: '2024-01-05T09:30:00Z',
+    updated_at: '2024-01-05T12:45:00Z',
+    updated_on: '2024-01-05T12:45:00Z',
+    created_by: 1,
+    is_active: true,
+    category: 3,
+    visibility: 'private',
+    refresh_frequency: 'monthly'
+  },
+  {
+    id: 8,
+    segment_id: 8,
+    name: 'Dormant Users',
+    description: 'Customers with no activity in 60+ days',
+    type: 'dynamic',
+    tags: ['dormant', 'inactive', 're-engagement'],
+    customer_count: 5678,
+    size_estimate: 5678,
+    created_at: '2024-01-14T10:15:00Z',
+    created_on: '2024-01-14T10:15:00Z',
+    updated_at: '2024-01-14T13:20:00Z',
+    updated_on: '2024-01-14T13:20:00Z',
+    created_by: 1,
+    is_active: false,
+    category: 2,
+    visibility: 'private',
+    refresh_frequency: 'daily'
+  }
+];
 
 const USE_MOCK_DATA = true; // Toggle this to switch between mock and real data
 
@@ -55,55 +192,26 @@ export default function SegmentManagementPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [typeFilter, setTypeFilter] = useState<SegmentType | 'all'>('all');
-  const [page] = useState(1); // TODO: Implement pagination
+  const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [sortBy] = useState<'id' | 'name' | 'type' | 'category' | 'created_at' | 'updated_at'>('created_at');
   const [sortDirection] = useState<SortDirection>('DESC');
-  // const [totalPages, setTotalPages] = useState(1); // TODO: Use for pagination
-  // const [totalCount, setTotalCount] = useState(0); // TODO: Use for pagination display
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
   const actionMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
 
-  // Calculate dropdown position based on button position
-  const calculateDropdownPosition = (buttonElement: HTMLElement) => {
-    const rect = buttonElement.getBoundingClientRect();
-    const dropdownWidth = 256; // w-64 = 16rem = 256px
-    const dropdownHeight = 300; // Approximate height for action menu
 
-    // Position dropdown below button with small gap
-    let top = rect.bottom + 8;
-    // Align dropdown's right edge with button's right edge for proper alignment
-    let left = rect.right - dropdownWidth;
-
-    // Prevent dropdown from going off the left edge of screen
-    if (left < 8) left = 8;
-    // Prevent dropdown from going off the right edge of screen
-    if (left + dropdownWidth > window.innerWidth - 8) {
-      left = window.innerWidth - dropdownWidth - 8;
-    }
-
-    // If dropdown would go off bottom of screen, show it above the button instead
-    if (top + dropdownHeight > window.innerHeight - 8) {
-      top = rect.top - dropdownHeight - 8;
-    }
-
-    return { top, left };
-  };
-
-  const handleActionMenuToggle = (segmentId: number, buttonElement: HTMLElement) => {
+  const handleActionMenuToggle = (segmentId: number) => {
     if (showActionMenu === segmentId) {
       setShowActionMenu(null);
-      setDropdownPosition(null);
     } else {
-      const position = calculateDropdownPosition(buttonElement);
-      setDropdownPosition(position);
       setShowActionMenu(segmentId);
     }
   };
@@ -118,7 +226,6 @@ export default function SegmentManagementPage() {
         );
         if (!isInsideMenu) {
           setShowActionMenu(null);
-          setDropdownPosition(null);
         }
       }
     };
@@ -143,12 +250,10 @@ export default function SegmentManagementPage() {
 
       if (USE_MOCK_DATA) {
         // Use mock data for testing
-        setTimeout(() => {
-          setSegments([MOCK_SEGMENT]);
-          // setTotalCount(1);
-          // setTotalPages(1);
-          setIsLoading(false);
-        }, 500); // Simulate API delay
+        setSegments(MOCK_SEGMENTS);
+        setTotalCount(MOCK_SEGMENTS.length);
+        setTotalPages(Math.ceil(MOCK_SEGMENTS.length / pageSize));
+        setIsLoading(false);
         return;
       }
 
@@ -170,8 +275,6 @@ export default function SegmentManagementPage() {
       // Handle both response formats
       const segmentData = response.data || response.segments || [];
       setSegments(segmentData);
-      // setTotalCount(response.meta?.total || response.total || 0);
-      // setTotalPages(response.meta?.totalPages || 1);
     } catch (err: unknown) {
       setError((err as Error).message || 'Failed to load segments');
       setSegments([]);
@@ -196,18 +299,15 @@ export default function SegmentManagementPage() {
   const handleViewSegment = (segmentId: number) => {
     navigate(`/dashboard/segments/${segmentId}`);
     setShowActionMenu(null);
-    setDropdownPosition(null);
   };
 
   const handleEditSegment = (segmentId: number) => {
     navigate(`/dashboard/segments/${segmentId}/edit`);
     setShowActionMenu(null);
-    setDropdownPosition(null);
   };
 
   const handleDeleteSegment = async (segment: Segment) => {
     setShowActionMenu(null);
-    setDropdownPosition(null);
     const confirmed = await confirm({
       title: 'Delete Segment',
       message: `Are you sure you want to delete "${segment.name}"? This action cannot be undone.`,
@@ -230,7 +330,6 @@ export default function SegmentManagementPage() {
 
   const handleToggleStatus = async (segment: Segment) => {
     setShowActionMenu(null);
-    setDropdownPosition(null);
     const action = segment.is_active ? 'deactivate' : 'activate';
     const confirmed = await confirm({
       title: `${action.charAt(0).toUpperCase() + action.slice(1)} Segment`,
@@ -328,7 +427,7 @@ export default function SegmentManagementPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors text-base font-medium`}
+              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium`}
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -425,7 +524,7 @@ export default function SegmentManagementPage() {
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="min-w-full">
-                <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
+                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
                   <tr>
                     <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Segment</th>
                     <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Type</th>
@@ -438,7 +537,7 @@ export default function SegmentManagementPage() {
                 </thead>
                 <tbody className={`bg-white divide-y divide-[${color.ui.border}]/50`}>
                   {filteredSegments.map((segment) => (
-                    <tr key={segment.segment_id} className={`group hover:bg-[${color.ui.surface}]/30 transition-all duration-300`}>
+                    <tr key={segment.segment_id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-4">
                           <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.segments}` }}>
@@ -515,19 +614,16 @@ export default function SegmentManagementPage() {
                           </button>
                           <div className="relative" ref={(el) => { actionMenuRefs.current[String(segment.segment_id || segment.id!)] = el; }}>
                             <button
-                              onClick={(e) => handleActionMenuToggle(segment.segment_id || segment.id!, e.currentTarget)}
+                              onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
                               className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.segments}]/10 transition-all duration-300`}
                             >
                               <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                             </button>
 
-                            {showActionMenu === (segment.segment_id || segment.id) && dropdownPosition && (
+                            {showActionMenu === (segment.segment_id || segment.id) && (
                               <div
-                                className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3"
+                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
                                 style={{
-                                  zIndex: 99999,
-                                  top: `${dropdownPosition.top}px`,
-                                  left: `${dropdownPosition.left}px`,
                                   maxHeight: '80vh',
                                   overflowY: 'auto'
                                 }}
@@ -599,7 +695,7 @@ export default function SegmentManagementPage() {
                       </button>
                       <div className="relative" ref={(el) => { actionMenuRefs.current[`mobile-${segment.segment_id || segment.id!}`] = el; }}>
                         <button
-                          onClick={(e) => handleActionMenuToggle(segment.segment_id || segment.id!, e.currentTarget)}
+                          onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
                           className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -647,6 +743,37 @@ export default function SegmentManagementPage() {
         )}
       </div>
 
+      {/* Pagination */}
+      {!isLoading && !error && filteredSegments.length > 0 && (
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] px-4 sm:px-6 py-4`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
+              Showing {((page - 1) * pageSize) + 1} to{' '}
+              {Math.min(page * pageSize, totalCount)} of {totalCount} segments
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <button
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page <= 1}
+                className={`p-2 border border-[${color.ui.border}] rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className={`text-base ${tw.textSecondary} px-2`}>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page >= totalPages}
+                className={`p-2 border border-[${color.ui.border}] rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Segment Modal */}
       <SegmentModal
         isOpen={isModalOpen}
@@ -668,7 +795,7 @@ export default function SegmentManagementPage() {
                 <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Segments</h3>
                 <button
                   onClick={() => setShowAdvancedFilters(false)}
-                  className={`p-2 ${tw.textMuted} hover:bg-[${color.ui.surface}] rounded-lg transition-colors`}
+                  className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
                 >
                   ×
                 </button>
