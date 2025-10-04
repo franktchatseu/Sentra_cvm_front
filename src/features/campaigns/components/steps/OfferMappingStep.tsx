@@ -1,17 +1,11 @@
 import { useState } from 'react';
-import { Gift, Target, Users, X } from 'lucide-react';
-import { CreateCampaignRequest, CampaignSegment, CampaignOffer } from '../../types/campaign';
+import { Gift, Users, X, Target } from 'lucide-react';
+import { CampaignSegment, CampaignOffer } from '../../types/campaign';
 import OfferSelectionModal from './OfferSelectionModal';
 import CreateOfferModalWrapper from './CreateOfferModalWrapper';
-import StepNavigation from '../../../../shared/components/ui/StepNavigation';
+import { color } from '../../../../shared/utils/utils';
 
 interface OfferMappingStepProps {
-  currentStep: number;
-  totalSteps: number;
-  onNext: () => void;
-  onPrev: () => void;
-  formData: CreateCampaignRequest;
-  setFormData: (data: CreateCampaignRequest) => void;
   selectedSegments: CampaignSegment[];
   selectedOffers: CampaignOffer[];
   setSelectedOffers: (offers: CampaignOffer[]) => void;
@@ -19,10 +13,6 @@ interface OfferMappingStepProps {
 
 
 export default function OfferMappingStep({
-  onNext,
-  onPrev,
-  formData,
-  setFormData,
   selectedSegments,
   selectedOffers,
   setSelectedOffers
@@ -32,26 +22,6 @@ export default function OfferMappingStep({
   const [offerMappings, setOfferMappings] = useState<{ [segmentId: string]: { offerIds: string[], priority: number } }>({});
   const [editingSegmentId, setEditingSegmentId] = useState<string | null>(null);
 
-  const handleNext = () => {
-    if (selectedSegments.length > 0 && Object.keys(offerMappings).length > 0) {
-      // Update formData with offer-segment mappings
-      const offerMappingsList: { offer_id: string; segment_ids: string[]; priority: number }[] = [];
-      Object.entries(offerMappings).forEach(([segmentId, mapping]) => {
-        mapping.offerIds.forEach(offerId => {
-          offerMappingsList.push({
-            offer_id: offerId,
-            segment_ids: [segmentId],
-            priority: mapping.priority
-          });
-        });
-      });
-      setFormData({
-        ...formData,
-        offers: offerMappingsList
-      });
-      onNext();
-    }
-  };
 
   const handleOfferSelect = (offers: CampaignOffer[]) => {
     if (editingSegmentId && offers.length > 0) {
@@ -102,9 +72,6 @@ export default function OfferMappingStep({
 
 
 
-  const isFormValid = selectedSegments.length > 0 && selectedSegments.every(segment =>
-    offerMappings[segment.id] && offerMappings[segment.id].offerIds.length > 0
-  );
 
   return (
     <div className="space-y-8">
@@ -145,8 +112,8 @@ export default function OfferMappingStep({
                 <div key={segment.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-[#588157] rounded-lg flex items-center justify-center">
-                        <Target className="w-5 h-5 text-white" />
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: color.entities.segments }}>
+                        <Users className="w-5 h-5 text-white" />
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">{segment.name}</h4>
@@ -176,12 +143,13 @@ export default function OfferMappingStep({
                       <h5 className="text-sm font-medium text-gray-700 mb-2">Mapped Offers:</h5>
                       <div className="flex flex-wrap gap-2">
                         {segmentOffers.map((offer) => (
-                          <div key={offer.id} className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 flex items-center space-x-2 group">
-                            <Gift className="w-3 h-3 text-purple-600" />
-                            <span className="text-sm text-purple-800">{offer.name}</span>
+                          <div key={offer.id} className="rounded-lg px-3 py-2 flex items-center space-x-2 group border" style={{ backgroundColor: `${color.entities.offers}10`, borderColor: `${color.entities.offers}40` }}>
+                            <Gift className="w-3 h-3" style={{ color: color.entities.offers }} />
+                            <span className="text-sm font-medium" style={{ color: color.entities.offers }}>{offer.name}</span>
                             <button
                               onClick={() => handleRemoveOfferFromSegment(segment.id, offer.id)}
-                              className="opacity-0 group-hover:opacity-100 text-purple-400 hover:text-purple-600 transition-all"
+                              className="opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
+                              style={{ color: `${color.entities.offers}80` }}
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -196,14 +164,6 @@ export default function OfferMappingStep({
           </div>
         )}
       </div>
-
-
-      {/* Navigation */}
-      <StepNavigation
-        onNext={handleNext}
-        onPrev={onPrev}
-        isNextDisabled={!isFormValid}
-      />
 
       {/* Offer Selection Modal */}
       {showOfferModal && (

@@ -1,18 +1,11 @@
 import { useState } from 'react';
-import { Eye, AlertCircle, Users, Gift, Target, TrendingUp, DollarSign, Send, Save, ArrowLeft } from 'lucide-react';
-import { CreateCampaignRequest, CampaignSegment, CampaignOffer } from '../../../../../shared/types/campaign';
-import { tw } from '../../../../shared/utils/utils';
-import StepNavigation from '../../../../shared/components/ui/StepNavigation';
+import { AlertCircle, Users, Gift, Target, TrendingUp, DollarSign } from 'lucide-react';
+import { CreateCampaignRequest, CampaignSegment, CampaignOffer } from '../../types/campaign';
 
 interface CampaignPreviewStepProps {
-  currentStep: number;
-  totalSteps: number;
-  onPrev: () => void;
-  onSubmit: () => void;
   formData: CreateCampaignRequest;
   selectedSegments: CampaignSegment[];
   selectedOffers: CampaignOffer[];
-  isLoading?: boolean;
 }
 
 interface ValidationIssue {
@@ -22,12 +15,9 @@ interface ValidationIssue {
 }
 
 export default function CampaignPreviewStep({
-  onPrev,
-  onSubmit,
   formData,
   selectedSegments,
-  selectedOffers,
-  isLoading
+  selectedOffers
 }: CampaignPreviewStepProps) {
   const [showValidation, setShowValidation] = useState(true);
   const [approvalComments, setApprovalComments] = useState('');
@@ -78,8 +68,6 @@ export default function CampaignPreviewStep({
   };
 
   const validationIssues = getValidationIssues();
-  const hasErrors = validationIssues.some(issue => issue.type === 'error');
-  const hasWarnings = validationIssues.some(issue => issue.type === 'warning');
 
   const getObjectiveLabel = (objective: string) => {
     const labels = {
@@ -372,49 +360,6 @@ export default function CampaignPreviewStep({
         />
       </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between pt-6 border-t border-gray-200">
-        <button
-          onClick={onPrev}
-          className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Previous
-        </button>
-
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => console.log('Save as draft')}
-            className={`inline-flex items-center px-4 py-3 rounded-lg font-semibold transition-all duration-200 ${tw.button.secondary}`}
-          >
-            <Save className="w-5 h-5 mr-2" />
-            Save Draft
-          </button>
-
-          <button
-            onClick={onSubmit}
-            disabled={hasErrors || isLoading}
-            className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${hasErrors || isLoading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : hasWarnings
-                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:scale-105'
-                : `${tw.button.primary} hover:shadow-lg hover:scale-105`
-              }`}
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Creating Campaign...
-              </>
-            ) : (
-              <>
-                <Send className="w-5 h-5 mr-2" />
-                {hasWarnings ? 'Launch with Warnings' : 'Launch Campaign'}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

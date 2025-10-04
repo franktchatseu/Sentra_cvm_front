@@ -1,16 +1,10 @@
 import { useState } from 'react';
 import { Calendar, AlertCircle } from 'lucide-react';
-import { CreateCampaignRequest, CampaignScheduling } from '../../../../../shared/types/campaign';
+import { CreateCampaignRequest, CampaignScheduling } from '../../types/campaign';
 import { tw } from '../../../../shared/utils/utils';
-import StepNavigation from '../../../../shared/components/ui/StepNavigation';
 
 interface SchedulingStepProps {
-  currentStep: number;
-  totalSteps: number;
-  onNext: () => void;
-  onPrev: () => void;
   formData: CreateCampaignRequest;
-  setFormData: (data: CreateCampaignRequest) => void;
 }
 
 const daysOfWeek = [
@@ -24,10 +18,7 @@ const daysOfWeek = [
 ];
 
 export default function SchedulingStep({
-  onNext,
-  onPrev,
-  formData,
-  setFormData
+  formData
 }: SchedulingStepProps) {
   const [scheduling, setScheduling] = useState<CampaignScheduling>(
     formData.scheduling || {
@@ -51,23 +42,9 @@ export default function SchedulingStep({
   const [startBroadcastBefore, setStartBroadcastBefore] = useState('Before');
   const [hoursBeforeBroadcast, setHoursBeforeBroadcast] = useState(0);
 
-  const handleNext = () => {
-    setFormData({
-      ...formData,
-      scheduling: {
-        ...scheduling,
-        frequency: {
-          type: recurrencePattern.toLowerCase() as 'daily' | 'weekly',
-          interval: recurrenceInterval,
-          days_of_week: selectedDays
-        }
-      }
-    });
-    onNext();
-  };
 
   const updateScheduling = (updates: Partial<CampaignScheduling>) => {
-    setScheduling(prev => ({ ...prev, ...updates }));
+    setScheduling((prev: CampaignScheduling) => ({ ...prev, ...updates }));
   };
 
   const toggleDayOfWeek = (day: number) => {
@@ -78,7 +55,6 @@ export default function SchedulingStep({
     );
   };
 
-  const isFormValid = scheduling.start_date && scheduling.start_date !== '' && scheduling.time_zone;
 
   return (
     <div className="space-y-8">
@@ -443,12 +419,6 @@ export default function SchedulingStep({
           </div>
         </div>
       )}
-
-      <StepNavigation
-        onNext={handleNext}
-        onPrev={onPrev}
-        isNextDisabled={!isFormValid}
-      />
     </div>
   );
 }

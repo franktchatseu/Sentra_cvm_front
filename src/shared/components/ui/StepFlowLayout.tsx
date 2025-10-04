@@ -1,11 +1,10 @@
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { Save, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../../contexts/ToastContext';
 
 interface StepFlowLayoutProps {
     currentStep: number;
-    totalSteps: number;
     stepTitle: string;
     stepDescription: string;
     onNext: () => void;
@@ -21,7 +20,6 @@ interface StepFlowLayoutProps {
 
 export default function StepFlowLayout({
     currentStep,
-    totalSteps,
     stepTitle,
     stepDescription,
     onNext,
@@ -41,7 +39,7 @@ export default function StepFlowLayout({
         if (onSaveDraft) {
             onSaveDraft();
         } else {
-            showToast('Draft saved successfully!', 'success');
+            showToast('success', 'Draft saved successfully!');
         }
     };
 

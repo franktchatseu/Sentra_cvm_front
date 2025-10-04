@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import { CreateCampaignRequest } from '../../types/campaign';
+import { campaignService } from '../../services/campaignService';
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 
 interface CampaignDefinitionStepProps {
   formData: CreateCampaignRequest;
@@ -45,28 +47,11 @@ const objectiveOptions = [
   }
 ];
 
-const categoryOptions = [
-  {
-    value: 'acquisition',
-    label: 'Customer Acquisition',
-    description: 'Campaigns focused on acquiring new customers'
-  },
-  {
-    value: 'retention',
-    label: 'Customer Retention',
-    description: 'Campaigns to retain existing customers'
-  },
-  {
-    value: 'engagement',
-    label: 'Customer Engagement',
-    description: 'Campaigns to increase customer engagement'
-  },
-  {
-    value: 'promotional',
-    label: 'Promotional',
-    description: 'Promotional and discount campaigns'
-  }
-];
+interface CampaignCategory {
+  id: number;
+  name: string;
+  description: string;
+}
 
 export default function CampaignDefinitionStep({
   formData,
@@ -76,23 +61,45 @@ export default function CampaignDefinitionStep({
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [objectiveSearchTerm, setObjectiveSearchTerm] = useState('');
   const [isObjectiveDropdownOpen, setIsObjectiveDropdownOpen] = useState(false);
+  const [categories, setCategories] = useState<CampaignCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const objectiveDropdownRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(categoryDropdownRef, () => setIsCategoryDropdownOpen(false));
+  useClickOutside(objectiveDropdownRef, () => setIsObjectiveDropdownOpen(false));
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await campaignService.getCampaignCategories();
+        const categories = Array.isArray(response) ? response : (response as { data: CampaignCategory[] }).data || [];
+        setCategories(categories as CampaignCategory[]);
+      } catch (error) {
+        console.error('Failed to fetch campaign categories:', error);
+        setCategories([]);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   return (
-    <div className="max-w-7xl space-y-6">
-      {/* Header */}
+    <div className=" space-y-6">
       <div className="mt-8 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Campaign Definition & Objectives</h2>
         <p className="text-sm text-gray-600">
           Define your campaign goals and choose how you want to create your campaign
         </p>
       </div>
-      {/* Campaign Information */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
         <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Information</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Campaign Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Name *
@@ -107,19 +114,18 @@ export default function CampaignDefinitionStep({
             />
           </div>
 
-          {/* Campaign Category */}
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Category *
             </label>
-            <div className="relative">
+            <div className="relative" ref={categoryDropdownRef}>
               <button
                 type="button"
                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
                 <span className={formData.category ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.category ? categoryOptions.find(c => c.value === formData.category)?.label : 'Select category'}
+                  {formData.category ? categories.find(c => c.id.toString() === formData.category)?.name : 'Select category'}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -139,26 +145,32 @@ export default function CampaignDefinitionStep({
                     </div>
                   </div>
                   <div className="py-1">
-                    {categoryOptions
-                      .filter(category =>
-                        category.label.toLowerCase().includes(categorySearchTerm.toLowerCase()) ||
-                        category.description.toLowerCase().includes(categorySearchTerm.toLowerCase())
-                      )
-                      .map((category) => (
-                        <button
-                          key={category.value}
-                          type="button"
-                          onClick={() => {
-                            setFormData({ ...formData, category: category.value });
-                            setIsCategoryDropdownOpen(false);
-                            setCategorySearchTerm('');
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                        >
-                          <div className="font-medium">{category.label}</div>
-                          <div className="text-gray-500 text-xs">{category.description}</div>
-                        </button>
-                      ))}
+                    {isLoadingCategories ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">Loading categories...</div>
+                    ) : categories.length === 0 ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">No categories available</div>
+                    ) : (
+                      categories
+                        .filter(category =>
+                          category.name.toLowerCase().includes(categorySearchTerm.toLowerCase()) ||
+                          category.description.toLowerCase().includes(categorySearchTerm.toLowerCase())
+                        )
+                        .map((category) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, category: category.id.toString() });
+                              setIsCategoryDropdownOpen(false);
+                              setCategorySearchTerm('');
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                          >
+                            <div className="font-medium">{category.name}</div>
+                            <div className="text-gray-500 text-xs">{category.description}</div>
+                          </button>
+                        ))
+                    )}
                   </div>
                 </div>
               )}
@@ -166,7 +178,6 @@ export default function CampaignDefinitionStep({
           </div>
         </div>
 
-        {/* Campaign Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Campaign Description
@@ -181,7 +192,6 @@ export default function CampaignDefinitionStep({
         </div>
       </div>
 
-      {/* Campaign Objectives */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
         <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Objectives</h3>
 
@@ -189,7 +199,7 @@ export default function CampaignDefinitionStep({
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Primary Objective *
           </label>
-          <div className="relative">
+          <div className="relative" ref={objectiveDropdownRef}>
             <button
               type="button"
               onClick={() => setIsObjectiveDropdownOpen(!isObjectiveDropdownOpen)}
@@ -256,30 +266,29 @@ export default function CampaignDefinitionStep({
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Priority Level
           </label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="flex items-center space-x-2">
             {[
-              { value: 'low', label: 'Low', icon: '⬇️', color: 'border-gray-300 hover:border-gray-400 hover:bg-gray-50' },
-              { value: 'medium', label: 'Medium', icon: '➡️', color: 'border-blue-300 hover:border-blue-400 hover:bg-blue-50' },
-              { value: 'high', label: 'High', icon: '⬆️', color: 'border-orange-300 hover:border-orange-400 hover:bg-orange-50' },
-              { value: 'critical', label: 'Critical', icon: '🚨', color: 'border-red-300 hover:border-red-400 hover:bg-red-50' }
+              { value: 'low', label: 'Low', icon: '⬇️' },
+              { value: 'medium', label: 'Medium', icon: '➡️' },
+              { value: 'high', label: 'High', icon: '⬆️' },
+              { value: 'critical', label: 'Critical', icon: '🚨' }
             ].map((priority) => (
               <button
                 key={priority.value}
                 type="button"
                 onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical' })}
-                className={`p-3 rounded-lg border-2 text-center transition-all duration-200 ${formData.priority === priority.value
-                  ? 'border-[#588157] bg-[#588157]/10 text-[#588157] shadow-sm'
-                  : `${priority.color} text-gray-700`
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${formData.priority === priority.value
+                  ? 'bg-[#588157] text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
-                <div className="text-xl mb-1">{priority.icon}</div>
-                <div className="text-xs font-medium">{priority.label}</div>
+                <span className="text-sm">{priority.icon}</span>
+                <span>{priority.label}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Campaign Policy */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Campaign Policy

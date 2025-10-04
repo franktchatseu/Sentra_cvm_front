@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Users, Plus, Target, Edit, Trash2, Settings, GripVertical, AlertCircle } from 'lucide-react';
-import { CreateCampaignRequest, CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
+import { Users, Plus, Edit, Trash2, Settings, GripVertical, AlertCircle } from 'lucide-react';
+import { CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
 import { Segment } from '../../../segments/types/segment';
-import StepNavigation from '../../../../shared/components/ui/StepNavigation';
+import { color } from '../../../../shared/utils/utils';
 
 interface AvailableControlGroup {
   id: string;
@@ -18,10 +18,6 @@ import SegmentModal from '../../../segments/components/SegmentModal';
 interface AudienceConfigurationStepProps {
   currentStep: number;
   totalSteps: number;
-  onNext: () => void;
-  onPrev: () => void;
-  formData: CreateCampaignRequest;
-  setFormData: (data: CreateCampaignRequest) => void;
   selectedSegments: CampaignSegment[];
   setSelectedSegments: (segments: CampaignSegment[]) => void;
   controlGroup: ControlGroup;
@@ -29,10 +25,6 @@ interface AudienceConfigurationStepProps {
 }
 
 export default function AudienceConfigurationStep({
-  onNext,
-  onPrev,
-  formData,
-  setFormData,
   selectedSegments,
   setSelectedSegments,
   controlGroup
@@ -53,16 +45,6 @@ export default function AudienceConfigurationStep({
     { id: '4', name: 'Multiple Target Groups (Non-Exclusive)', description: 'Non-exclusive multi-variant control', percentage: 25, created_at: '2024-02-10' }
   ]);
 
-  const handleNext = () => {
-    if (selectedSegments.length > 0) {
-      // Update formData with selected segment IDs
-      setFormData({
-        ...formData,
-        segments: selectedSegments.map(segment => segment.id)
-      });
-      onNext();
-    }
-  };
 
   const handleSegmentSelect = (segments: CampaignSegment[]) => {
     setSelectedSegments(segments);
@@ -166,11 +148,8 @@ export default function AudienceConfigurationStep({
   const controlGroupSize = controlGroup.enabled ? Math.round(totalAudienceSize * (controlGroup.percentage / 100)) : 0;
   const targetGroupSize = totalAudienceSize - controlGroupSize;
 
-  const isFormValid = selectedSegments.length > 0;
-
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="mt-8 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Audience Configuration</h2>
         <p className="text-sm text-gray-600">
@@ -178,7 +157,6 @@ export default function AudienceConfigurationStep({
         </p>
       </div>
 
-      {/* Audience Overview */}
       {selectedSegments.length > 0 && (
         <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Audience Overview</h3>
@@ -201,7 +179,7 @@ export default function AudienceConfigurationStep({
 
       {/* Mutually Exclusive Segments Checkbox */}
       {selectedSegments.length > 1 && (
-        <div className="bg-[#DAD7CD]/20 rounded-lg p-4">
+        <div className="rounded-lg p-4">
           <label className="flex items-start space-x-3 cursor-pointer">
             <input
               type="checkbox"
@@ -250,7 +228,7 @@ export default function AudienceConfigurationStep({
         {selectedSegments.length === 0 ? (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
             <div className="flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
                 <Users className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Segments Selected</h3>
@@ -259,7 +237,7 @@ export default function AudienceConfigurationStep({
               </p>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center px-5 py-2.5 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-all shadow-sm hover:shadow-md"
+                className="inline-flex items-center px-5 py-2.5 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-all"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Select Segments
@@ -276,7 +254,7 @@ export default function AudienceConfigurationStep({
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, segment.id)}
                 onDragEnd={handleDragEnd}
-                className={`bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow ${selectedSegments.length > 1 ? 'cursor-move' : ''
+                className={`bg-white border border-gray-200 rounded-xl p-4 transition-all ${selectedSegments.length > 1 ? 'cursor-move' : ''
                   } ${draggedSegment === segment.id ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center justify-between">
@@ -289,8 +267,8 @@ export default function AudienceConfigurationStep({
                         </div>
                       </div>
                     )}
-                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                      <Target className="w-5 h-5 text-emerald-600" />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.segments}20` }}>
+                      <Users className="w-5 h-5" style={{ color: color.entities.segments }} />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
@@ -366,12 +344,6 @@ export default function AudienceConfigurationStep({
         </div>
       )}
 
-      {/* Navigation */}
-      <StepNavigation
-        onNext={handleNext}
-        onPrev={onPrev}
-        isNextDisabled={!isFormValid}
-      />
 
       {/* Segment Selection Modal */}
       {isModalOpen && (
@@ -484,7 +456,7 @@ function ControlGroupConfigModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-300">
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Configure Control Group</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -549,7 +521,7 @@ function ControlGroupConfigModal({
 
           {/* Control Group Method Selection */}
           {config.type === 'with_control_group' && (
-            <div className="space-y-4 p-4 bg-[#A3B18A]/20 rounded-lg">
+            <div className="space-y-4 p-4 rounded-lg">
               <h4 className="font-medium text-gray-900">Control Group Configuration Method</h4>
 
               <div className="space-y-3">
@@ -603,7 +575,7 @@ function ControlGroupConfigModal({
 
           {/* Fixed Percentage Configuration */}
           {config.type === 'with_control_group' && config.control_group_method === 'fixed_percentage' && (
-            <div className="space-y-4 p-4 bg-[#A3B18A]/20 rounded-lg">
+            <div className="space-y-4 p-4 rounded-lg">
               <h4 className="font-medium text-gray-900">Fixed Percentage Configuration</h4>
 
               <div className="space-y-4">
@@ -680,7 +652,7 @@ function ControlGroupConfigModal({
 
           {/* Fixed Number Configuration */}
           {config.type === 'with_control_group' && config.control_group_method === 'fixed_number' && (
-            <div className="space-y-4 p-4 bg-[#A3B18A]/20 rounded-lg">
+            <div className="space-y-4 p-4 rounded-lg">
               <h4 className="font-medium text-gray-900">Fixed Number Configuration</h4>
 
               <div>
@@ -704,46 +676,46 @@ function ControlGroupConfigModal({
 
           {/* Multiple Control Group Selection */}
           {config.type === 'multiple_control_group' && (
-            <div className="space-y-4 p-4 bg-[#588157]/10 rounded-lg">
+            <div className="space-y-4 p-4">
               <h4 className="font-medium text-gray-900">Select Universal Control Group</h4>
 
-              <div>
+              <div className="border border-gray-300 rounded-lg p-4 space-y-3">
                 <input
                   type="text"
                   placeholder="Search universal control groups..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent mb-3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
                 />
-              </div>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {filteredControlGroups.map((group) => (
-                  <label key={group.id} className="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-white cursor-pointer">
-                    <input
-                      type="radio"
-                      name="selectedControlGroup"
-                      value={group.id}
-                      checked={config.selected_control_group_id === group.id}
-                      onChange={(e) => setConfig({ ...config, selected_control_group_id: e.target.value })}
-                      className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{group.name}</div>
-                      <div className="text-sm text-gray-500">{group.description}</div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {group.percentage}% control group • Created {group.created_at}
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {filteredControlGroups.map((group) => (
+                    <label key={group.id} className="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-white cursor-pointer">
+                      <input
+                        type="radio"
+                        name="selectedControlGroup"
+                        value={group.id}
+                        checked={config.selected_control_group_id === group.id}
+                        onChange={(e) => setConfig({ ...config, selected_control_group_id: e.target.value })}
+                        className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{group.name}</div>
+                        <div className="text-sm text-gray-500">{group.description}</div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {group.percentage}% control group • Created {group.created_at}
+                        </div>
                       </div>
-                    </div>
-                  </label>
-                ))}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {/* Advanced Parameters Configuration */}
           {config.type === 'with_control_group' && config.control_group_method === 'advanced_parameters' && (
-            <div className="space-y-4 p-4 bg-[#A3B18A]/20 rounded-lg">
+            <div className="space-y-4 p-4 rounded-lg">
               <h4 className="font-medium text-gray-900">Advanced Parameters</h4>
 
               <div className="space-y-4">
@@ -790,7 +762,7 @@ function ControlGroupConfigModal({
 
           {/* Summary */}
           {config.type !== 'none' && (
-            <div className="bg-[#DAD7CD]/30 rounded-lg p-4">
+            <div className="rounded-lg p-4">
               <h4 className="font-medium text-gray-900 mb-2">Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>

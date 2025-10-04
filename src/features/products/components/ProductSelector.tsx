@@ -212,7 +212,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
   return (
     <div className="space-y-4">
       {/* Selected Products Display */}
-      {selectedProducts.length > 0 && (
+      {selectedProducts.length > 0 ? (
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-gray-700">Selected Products ({selectedProducts.length})</h4>
           <div className="grid grid-cols-1 gap-3">
@@ -243,25 +243,44 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
             ))}
           </div>
         </div>
+      ) : (
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
+          <div className="flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
+              <Package className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Products Selected</h3>
+            <p className="text-sm text-gray-600 mb-6 max-w-md text-center">
+              Start building your offer by selecting products. You can choose from various product categories and configure their details.
+            </p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center px-5 py-2.5 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-all"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Select Products
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Add Product Button */}
-      <div className="flex justify-center">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md text-sm"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="font-medium">
-            {selectedProducts.length === 0 ? 'Select Products' : 'Add More Products'}
-          </span>
-        </button>
-      </div>
+      {/* Add More Products Button (only show when products are selected) */}
+      {selectedProducts.length > 0 && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2 text-gray-700 hover:text-gray-900 text-sm"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">Add More Products</span>
+          </button>
+        </div>
+      )}
 
       {/* Product Selection Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">

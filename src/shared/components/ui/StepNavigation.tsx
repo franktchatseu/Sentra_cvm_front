@@ -21,7 +21,7 @@ export default function StepNavigation({
     className = ''
 }: StepNavigationProps) {
     return (
-        <div className={`flex justify-between pt-6 border-t border-gray-200 ${className}`}>
+        <div className={`flex justify-between pt-6 border-t gap-6 border-gray-200 ${className}`}>
             {showPrevButton && (
                 <button
                     onClick={onPrev}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Search, Plus, Gift, Check, DollarSign, Calendar } from 'lucide-react';
 import { CampaignOffer } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
+import { color } from '../../../../shared/utils/utils';
 
 interface OfferSelectionModalProps {
   isOpen: boolean;
@@ -124,7 +125,6 @@ export default function OfferSelectionModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [tempSelectedOffers, setTempSelectedOffers] = useState<CampaignOffer[]>(selectedOffers);
-  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const filterOptions = [
     { value: 'all', label: 'All Offers' },
@@ -144,7 +144,7 @@ export default function OfferSelectionModal({
 
   const filteredOffers = mockOffers.filter(offer => {
     const matchesSearch = offer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      offer.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (offer.description && offer.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (selectedFilter === 'all') return matchesSearch;
     if (selectedFilter === 'bundle') return matchesSearch && offer.reward_type === 'bundle';
@@ -190,7 +190,7 @@ export default function OfferSelectionModal({
         </div>
 
         {/* Search and Filters */}
-        <div className="p-6 border-b border-gray-200 space-y-4 flex-shrink-0">
+        <div className="px-6 pt-4 space-y-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -199,20 +199,22 @@ export default function OfferSelectionModal({
                 placeholder="Search offers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
               />
             </div>
             <div className="w-48">
-              <HeadlessSelect
-                options={filterOptions}
-                value={selectedFilter}
-                onChange={(value: string | number) => setSelectedFilter(value as string)}
-                placeholder="Filter offers"
-              />
+              <div className="[&_button]:py-2 [&_li]:py-1.5">
+                <HeadlessSelect
+                  options={filterOptions}
+                  value={selectedFilter}
+                  onChange={(value: string | number) => setSelectedFilter(value as string)}
+                  placeholder="Filter offers"
+                />
+              </div>
             </div>
             <button
               onClick={onCreateNew}
-              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-md text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"
+              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-lg text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New
@@ -221,16 +223,17 @@ export default function OfferSelectionModal({
 
           {/* Selection Summary */}
           {tempSelectedOffers.length > 0 && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div className="rounded-lg p-4 border" style={{ backgroundColor: `${color.entities.offers}15`, borderColor: `${color.entities.offers}40` }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-sm font-medium text-purple-900">
+                  <span className="text-sm font-medium" style={{ color: color.entities.offers }}>
                     {tempSelectedOffers.length} offer{tempSelectedOffers.length !== 1 ? 's' : ''} selected
                   </span>
                 </div>
                 <button
                   onClick={() => setTempSelectedOffers([])}
-                  className="text-sm text-purple-700 hover:text-purple-900 font-medium"
+                  className="text-sm font-medium hover:opacity-80 transition-opacity"
+                  style={{ color: color.entities.offers }}
                 >
                   Clear All
                 </button>
@@ -249,20 +252,26 @@ export default function OfferSelectionModal({
                 <div
                   key={offer.id}
                   onClick={() => handleOfferToggle(offer)}
-                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-sm ${isSelected
-                    ? 'border-[#588157] bg-[#588157]/5'
-                    : 'border-gray-200 hover:border-gray-300'
+                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isSelected
+                    ? ''
+                    : 'border-gray-100'
                     }`}
+                  style={isSelected ? {
+                    borderColor: color.entities.offers,
+                    backgroundColor: 'white'
+                  } : {
+                    backgroundColor: 'white'
+                  }}
                 >
                   {isSelected && (
-                    <div className="absolute top-3 right-3 w-5 h-5 bg-[#588157] rounded-full flex items-center justify-center">
+                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: color.entities.offers }}>
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
 
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Gift className="w-5 h-5 text-purple-600" />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.offers}20` }}>
+                      <Gift className="w-5 h-5" style={{ color: color.entities.offers }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 truncate">{offer.name}</h4>
@@ -306,7 +315,9 @@ export default function OfferSelectionModal({
 
           {filteredOffers.length === 0 && (
             <div className="text-center py-12">
-              <Gift className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <div className="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${color.entities.offers}20` }}>
+                <Gift className="w-8 h-8" style={{ color: color.entities.offers }} />
+              </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No offers found</h3>
               <p className="text-gray-500">Try adjusting your search or create a new offer</p>
             </div>

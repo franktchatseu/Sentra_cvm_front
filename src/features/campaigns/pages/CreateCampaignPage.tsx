@@ -240,24 +240,27 @@ export default function CreateCampaignPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-4`}>
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4 ">
+          <div className="flex justify-between items-center pb-6 ">
             <StepNavigation
               onPrev={handlePrev}
-              onNext={handleNext}
+              onNext={currentStep === 5 ? handleSubmit : handleNext}
               showPrevButton={currentStep > 1}
+              nextButtonText={currentStep === 5 ? 'Launch Campaign' : 'Next Step'}
               className="border-none pt-0"
             />
 
             <div className="flex items-center space-x-3">
-              <button
-                onClick={handleCancel}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200"
-              >
-                Cancel
-              </button>
+              {currentStep !== 5 && (
+                <button
+                  onClick={handleCancel}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 onClick={handleSaveDraft}
                 disabled={isLoading}
@@ -300,7 +303,7 @@ export default function CreateCampaignPage() {
                 const Icon = step.icon;
 
                 return (
-                  <div key={step.id} className="flex items-center">
+                  <div key={step.id} className="relative">
                     <button
                       onClick={() => setCurrentStep(step.id)}
                       className="relative flex flex-col items-center group z-10"
@@ -336,16 +339,19 @@ export default function CreateCampaignPage() {
                     </button>
 
                     {stepIdx !== steps.length - 1 && (
-                      <div className="">
-                        <div className="h-0.5 bg-gray-200">
-                          <div
-                            className={`h-full transition-all duration-500 ${step.id < currentStep ? `bg-[${color.sentra.main}]` : 'bg-gray-200'
-                              }`}
-                            style={{
-                              width: step.id < currentStep ? '100%' : '0%'
-                            }}
-                          />
-                        </div>
+                      <div
+                        className="absolute top-4 left-1/2 w-full h-0.5 bg-gray-200"
+                        style={{
+                          transform: 'translateX(0%)',
+                          zIndex: 1
+                        }}
+                      >
+                        <div
+                          className={`h-full transition-all duration-500 ${step.id < currentStep
+                            ? `bg-[${color.sentra.main}] w-full`
+                            : "bg-gray-200 w-0"
+                            }`}
+                        />
                       </div>
                     )}
                   </div>
