@@ -90,25 +90,11 @@ export default function CreateCampaignPage() {
 
   const [formData, setFormData] = useState<CreateCampaignRequest>({
     name: '',
-    description: '',
-    primary_objective: 'acquisition',
-    category: '',
-    segments: [],
-    offers: [],
-    scheduling: {
-      type: 'scheduled',
-      time_zone: 'UTC',
-      delivery_times: ['09:00'],
-      frequency_capping: {
-        max_per_day: 1,
-        max_per_week: 3,
-        max_per_month: 10
-      },
-      throttling: {
-        max_per_hour: 1000,
-        max_per_day: 10000
-      }
-    }
+    description: undefined,
+    objective: undefined,
+    category_id: undefined,
+    start_date: undefined,
+    end_date: undefined
   });
 
   const [selectedSegments, setSelectedSegments] = useState<CampaignSegment[]>([]);
@@ -134,14 +120,25 @@ export default function CreateCampaignPage() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      await campaignService.createCampaign(formData);
-      console.log('Campaign created successfully:', formData);
+      if (!formData.name.trim()) {
+        showToast('error', 'Campaign name is required to create the campaign');
+        return;
+      }
 
-      showToast('success', 'Campaign created successfully!');
+      const campaignData: CreateCampaignRequest = {
+        name: formData.name,
+        ...(formData.description && { description: formData.description }),
+        ...(formData.objective && { objective: formData.objective }),
+        ...(formData.category_id && { category_id: formData.category_id }),
+        ...(formData.start_date && { start_date: formData.start_date }),
+        ...(formData.end_date && { end_date: formData.end_date })
+      };
+      await campaignService.createCampaign(campaignData);
+
+      showToast('success', 'Campaign created successfully! You can now review and launch it from the campaigns page.');
 
       navigate('/dashboard/campaigns');
-    } catch (error) {
-      console.error('Error creating campaign:', error);
+    } catch {
       showToast('error', 'Failed to create campaign. Please try again.');
     } finally {
       setIsLoading(false);
@@ -152,41 +149,23 @@ export default function CreateCampaignPage() {
     try {
       setIsLoading(true);
       if (!formData.name.trim()) {
-        showToast('error', 'Please enter a campaign name to save draft');
+        showToast('error', 'Campaign name is required to save draft');
         return;
       }
 
-      const draftData = {
+      const draftData: CreateCampaignRequest = {
         name: formData.name,
-        description: formData.description || '',
-        primary_objective: formData.primary_objective || 'acquisition',
-        category: formData.category || '',
-        lifecycle_status: 'draft' as const,
-        approval_status: 'pending' as const,
-        segments: formData.segments || [],
-        offers: formData.offers || [],
-        scheduling: formData.scheduling || {
-          type: 'scheduled',
-          time_zone: 'UTC',
-          delivery_times: ['09:00'],
-          frequency_capping: {
-            max_per_day: 1,
-            max_per_week: 3,
-            max_per_month: 10
-          },
-          throttling: {
-            max_per_hour: 1000,
-            max_per_day: 10000
-          }
-        }
+        ...(formData.description && { description: formData.description }),
+        ...(formData.objective && { objective: formData.objective }),
+        ...(formData.category_id && { category_id: formData.category_id }),
+        ...(formData.start_date && { start_date: formData.start_date }),
+        ...(formData.end_date && { end_date: formData.end_date })
       };
 
-      const savedCampaign = await campaignService.createCampaign(draftData);
-      console.log('Draft saved successfully:', savedCampaign);
+      await campaignService.createCampaign(draftData);
       showToast('success', 'Draft saved successfully!');
 
-    } catch (error) {
-      console.error('Failed to save draft:', error);
+    } catch {
       showToast('error', 'Failed to save draft. Please try again.');
     } finally {
       setIsLoading(false);
@@ -248,7 +227,7 @@ export default function CreateCampaignPage() {
               onPrev={handlePrev}
               onNext={currentStep === 5 ? handleSubmit : handleNext}
               showPrevButton={currentStep > 1}
-              nextButtonText={currentStep === 5 ? 'Launch Campaign' : 'Next Step'}
+              nextButtonText={currentStep === 5 ? 'Create Campaign' : 'Next Step'}
               className="border-none pt-0"
             />
 

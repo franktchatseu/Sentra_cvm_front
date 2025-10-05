@@ -142,16 +142,14 @@ export interface ApprovalWorkflow {
 }
 
 export interface CreateCampaignRequest {
-  name: string;
+  name: string; // Required field
   description?: string;
-  primary_objective: Campaign['primary_objective'];
-  category: string;
-  segments: string[]; // Segment IDs
-  offers: CampaignOfferMapping[];
-  scheduling: CampaignScheduling;
-  control_group?: ControlGroup;
-  is_definitive?: boolean;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  objective?: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
+  category_id?: number;
+  program_id?: number;
+  owner_team?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface CampaignOfferMapping {
