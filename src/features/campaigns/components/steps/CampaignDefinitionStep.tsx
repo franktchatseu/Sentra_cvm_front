@@ -124,8 +124,8 @@ export default function CampaignDefinitionStep({
                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
-                <span className={formData.category ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.category ? categories.find(c => c.id.toString() === formData.category)?.name : 'Select catalog'}
+                <span className={formData.category_id ? 'text-gray-900' : 'text-gray-500'}>
+                  {formData.category_id ? categories.find(c => c.id === formData.category_id)?.name : 'Select catalog'}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -160,7 +160,7 @@ export default function CampaignDefinitionStep({
                             key={category.id}
                             type="button"
                             onClick={() => {
-                              setFormData({ ...formData, category: category.id.toString() });
+                              setFormData({ ...formData, category_id: category.id });
                               setIsCategoryDropdownOpen(false);
                               setCategorySearchTerm('');
                             }}
@@ -205,8 +205,8 @@ export default function CampaignDefinitionStep({
               onClick={() => setIsObjectiveDropdownOpen(!isObjectiveDropdownOpen)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
             >
-              <span className={formData.primary_objective ? 'text-gray-900' : 'text-gray-500'}>
-                {formData.primary_objective ? objectiveOptions.find(o => o.value === formData.primary_objective)?.label : 'Select objective'}
+              <span className={formData.objective ? 'text-gray-900' : 'text-gray-500'}>
+                {formData.objective ? objectiveOptions.find(o => o.value === formData.objective)?.label : 'Select objective'}
               </span>
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isObjectiveDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -236,7 +236,7 @@ export default function CampaignDefinitionStep({
                         key={objective.value}
                         type="button"
                         onClick={() => {
-                          setFormData({ ...formData, primary_objective: objective.value as 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation' });
+                          setFormData({ ...formData, objective: objective.value as 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation' });
                           setIsObjectiveDropdownOpen(false);
                           setObjectiveSearchTerm('');
                         }}

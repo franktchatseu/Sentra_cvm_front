@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Target,
   DollarSign,
@@ -491,9 +491,12 @@ function ReviewStep({ formData, creatives, trackingSources, rewards }: Omit<Step
 
 export default function CreateOfferPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoadingOffer, setIsLoadingOffer] = useState(false);
   const totalSteps = 6;
 
   const [formData, setFormData] = useState<CreateOfferRequest>({
@@ -513,6 +516,56 @@ export default function CreateOfferPage() {
   const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
   const [rewards, setRewards] = useState<OfferReward[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Load offer data for edit mode
+  const loadOfferData = useCallback(async () => {
+    if (!id) return;
+
+    setIsLoadingOffer(true);
+    try {
+      const offer = await offerService.getOfferById(parseInt(id));
+      console.log('Loaded offer data:', offer);
+      const newFormData = {
+        name: offer.name || '',
+        description: offer.description || '',
+        offer_type: offer.offer_type || '',
+        category_id: offer.category_id || undefined,
+        product_id: offer.product_id || undefined,
+        eligibility_rules: offer.eligibility_rules || {},
+        lifecycle_status: offer.lifecycle_status || 'draft',
+        approval_status: offer.approval_status || 'pending',
+        reusable: offer.reusable || false,
+        multi_language: offer.multi_language || false
+      };
+      console.log('Setting form data:', newFormData);
+      setFormData(newFormData);
+    } catch {
+      console.error('Failed to load offer data');
+      navigate('/dashboard/offers');
+    } finally {
+      setIsLoadingOffer(false);
+    }
+  }, [id, navigate]);
+
+  // Detect edit mode and load data
+  useEffect(() => {
+    if (id) {
+      setIsEditMode(true);
+      loadOfferData();
+    }
+  }, [id, loadOfferData]);
+
+  // Show loading state while loading offer data
+  if (isLoadingOffer) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#588157] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading offer...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Offer categories state
   const [offerCategories, setOfferCategories] = useState<OfferCategory[]>([]);
@@ -593,7 +646,13 @@ export default function CreateOfferPage() {
         return;
       }
 
-      await offerService.createOffer(formData);
+      if (isEditMode && id) {
+        await offerService.updateOffer(parseInt(id), formData);
+        console.log('Offer updated successfully');
+      } else {
+        await offerService.createOffer(formData);
+        console.log('Offer created successfully');
+      }
       navigate('/dashboard/offers');
     } catch (err: unknown) {
       console.error('Create offer error:', err);
@@ -701,7 +760,7 @@ export default function CreateOfferPage() {
               onPrev={handlePrev}
               onNext={currentStep === 6 ? handleSubmit : handleNext}
               showPrevButton={currentStep > 1}
-              nextButtonText={currentStep === 6 ? 'Create Offer' : 'Next Step'}
+              nextButtonText={currentStep === 6 ? (isEditMode ? 'Update Offer' : 'Create Offer') : 'Next Step'}
               className="border-none pt-0"
             />
 
@@ -743,7 +802,7 @@ export default function CreateOfferPage() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>Create Offer</h1>
+                <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>{isEditMode ? 'Edit Offer' : 'Create Offer'}</h1>
                 <p className={`text-sm ${tw.textMuted}`}>Step {currentStep} of {steps.length}</p>
               </div>
             </div>

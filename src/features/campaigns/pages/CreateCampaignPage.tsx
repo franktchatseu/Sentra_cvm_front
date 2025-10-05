@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Check,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw } from '../../../shared/utils/utils';
+import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 import { CreateCampaignRequest, CampaignSegment, CampaignOffer, ControlGroup } from '../types/campaign';
 import { campaignService } from '../services/campaignService';
 import CampaignDefinitionStep from '../components/steps/CampaignDefinitionStep';
@@ -84,9 +85,12 @@ const steps = [
 
 export default function CreateCampaignPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
 
   const [formData, setFormData] = useState<CreateCampaignRequest>({
     name: '',
@@ -105,6 +109,38 @@ export default function CreateCampaignPage() {
     type: 'standard'
   });
 
+  const loadCampaignData = useCallback(async () => {
+    if (!id) return;
+
+    setIsLoadingCampaign(true);
+    try {
+      const campaign = await campaignService.getCampaignById(id);
+      console.log('Loaded campaign data:', campaign);
+      const newFormData = {
+        name: campaign.name || '',
+        description: campaign.description || '',
+        objective: campaign.objective || undefined,
+        category_id: campaign.category_id || undefined,
+        start_date: campaign.start_date || undefined,
+        end_date: campaign.end_date || undefined
+      };
+      console.log('Setting form data:', newFormData);
+      setFormData(newFormData);
+    } catch {
+      showToast('error', 'Failed to load campaign data');
+      navigate('/dashboard/campaigns');
+    } finally {
+      setIsLoadingCampaign(false);
+    }
+  }, [id, showToast, navigate]);
+
+  useEffect(() => {
+    if (id) {
+      setIsEditMode(true);
+      loadCampaignData();
+    }
+  }, [id, loadCampaignData]);
+
   const handleNext = () => {
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
@@ -121,7 +157,7 @@ export default function CreateCampaignPage() {
     setIsLoading(true);
     try {
       if (!formData.name.trim()) {
-        showToast('error', 'Campaign name is required to create the campaign');
+        showToast('error', 'Campaign name is required');
         return;
       }
 
@@ -133,13 +169,18 @@ export default function CreateCampaignPage() {
         ...(formData.start_date && { start_date: formData.start_date }),
         ...(formData.end_date && { end_date: formData.end_date })
       };
-      await campaignService.createCampaign(campaignData);
 
-      showToast('success', 'Campaign created successfully! You can now review and launch it from the campaigns page.');
+      if (isEditMode && id) {
+        await campaignService.updateCampaign(parseInt(id), campaignData);
+        showToast('success', 'Campaign updated successfully!');
+      } else {
+        await campaignService.createCampaign(campaignData);
+        showToast('success', 'Campaign created successfully! You can now review and launch it from the campaigns page.');
+      }
 
       navigate('/dashboard/campaigns');
     } catch {
-      showToast('error', 'Failed to create campaign. Please try again.');
+      showToast('error', `Failed to ${isEditMode ? 'update' : 'create'} campaign. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -218,6 +259,14 @@ export default function CreateCampaignPage() {
     return 'pending';
   };
 
+  if (isLoadingCampaign) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-4`}>
@@ -227,7 +276,7 @@ export default function CreateCampaignPage() {
               onPrev={handlePrev}
               onNext={currentStep === 5 ? handleSubmit : handleNext}
               showPrevButton={currentStep > 1}
-              nextButtonText={currentStep === 5 ? 'Create Campaign' : 'Next Step'}
+              nextButtonText={currentStep === 5 ? (isEditMode ? 'Update Campaign' : 'Create Campaign') : 'Next Step'}
               className="border-none pt-0"
             />
 
@@ -269,7 +318,9 @@ export default function CreateCampaignPage() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>Create Campaign</h1>
+                <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>
+                  {isEditMode ? 'Edit Campaign' : 'Create Campaign'}
+                </h1>
                 <p className={`text-sm ${tw.textMuted}`}>Step {currentStep} of {steps.length}</p>
               </div>
             </div>

@@ -2,9 +2,10 @@ export interface Campaign {
   id: string;
   name: string;
   description?: string;
-  primary_objective: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
-  category: string;
+  objective: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
+  category_id?: number;
   status: 'draft' | 'pending_approval' | 'approved' | 'active' | 'paused' | 'completed' | 'cancelled';
+  approval_status?: 'pending' | 'approved' | 'rejected';
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -17,6 +18,13 @@ export interface Campaign {
   approval_workflow?: ApprovalWorkflow;
   is_definitive?: boolean;
   priority?: 'low' | 'medium' | 'high' | 'critical';
+  performance?: {
+    delivered: number;
+    response: number;
+    converted: number;
+    revenue: number;
+    last_updated?: string;
+  };
 }
 
 export interface CampaignSegment {
