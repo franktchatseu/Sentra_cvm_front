@@ -618,7 +618,7 @@ export default function EditOfferPage() {
         }
 
         if (!formData.category_id) {
-            errors.category_id = 'Category is required';
+            errors.category_id = 'Catalog is required';
         }
 
         if (!formData.product_id) {

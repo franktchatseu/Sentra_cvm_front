@@ -17,7 +17,7 @@ interface CategorySelectorProps {
 export default function CategorySelector({
   value,
   onChange,
-  placeholder = "Select Category",
+  placeholder = "Select Catalog",
   disabled = false,
   allowCreate = false,
   onCreateCategory,
@@ -120,7 +120,7 @@ export default function CategorySelector({
             onMouseLeave={(e) => {
               (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
             }}
-            title="Create new category"
+            title="Create new catalog"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -183,7 +183,7 @@ export default function CategorySelector({
                       className="w-full px-4 py-2 text-left text-sm text-[${color.sentra.main}] hover:bg-[${color.sentra.main}]/10 flex items-center"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Create new category
+                      Create new catalog
                     </button>
                   </div>
                 )}

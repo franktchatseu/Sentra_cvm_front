@@ -214,7 +214,7 @@ export default function CampaignPreviewStep({
               <span className="font-medium text-gray-900">{getObjectiveLabel(formData.primary_objective)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Category:</span>
+              <span className="text-gray-600">Catalog:</span>
               <span className="font-medium text-gray-900">{formData.category}</span>
             </div>
             <div className="flex justify-between">

@@ -27,7 +27,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
     try {
       const response = await productCategoryService.getCategories();
       const categoryOptions = [
-        { value: 'all', label: 'All Categories' },
+        { value: 'all', label: 'All Catalogs' },
         ...response.categories.map((category: ProductCategory) => ({
           value: category.name.toLowerCase(),
           label: category.name
@@ -208,7 +208,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
                     options={categories}
                     value={selectedCategory}
                     onChange={(value) => setSelectedCategory(String(value))}
-                    placeholder="All Categories"
+                    placeholder="All Catalogs"
                     className="min-w-[200px] border border-gray-200 rounded-lg"
                   />
                   {searchTerm && (

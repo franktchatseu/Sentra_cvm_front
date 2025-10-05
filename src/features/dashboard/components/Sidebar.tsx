@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       entity: 'campaigns',
       children: [
         { name: 'All Campaigns', href: '/dashboard/campaigns', icon: Target, type: 'single', entity: 'campaigns' },
-        { name: 'Campaign Categories', href: '/dashboard/campaign-categories', icon: Folder, type: 'single', entity: 'campaigns' },
+        { name: 'Campaign Catalogs', href: '/dashboard/campaign-catalogs', icon: Folder, type: 'single', entity: 'campaigns' },
         { name: 'Segments', href: '/dashboard/segments', icon: Users, type: 'single', entity: 'segments' },
         {
           name: 'Offer Configuration',
@@ -69,7 +69,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           children: [
             { name: 'All Offers', href: '/dashboard/offers', icon: MessageSquare, type: 'single', entity: 'offers' },
             { name: 'Offer Types', href: '/dashboard/offer-types', icon: Tag, type: 'single', entity: 'offers' },
-            { name: 'Offer Categories', href: '/dashboard/offer-categories', icon: FolderOpen, type: 'single', entity: 'offers' },
+            { name: 'Offer Catalogs', href: '/dashboard/offer-catalogs', icon: FolderOpen, type: 'single', entity: 'offers' },
           ]
         },
         {
@@ -81,7 +81,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           children: [
             { name: 'All Products', href: '/dashboard/products', icon: Package, type: 'single', entity: 'products' },
             { name: 'Product Types', href: '/dashboard/product-types', icon: Layers, type: 'single', entity: 'products' },
-            { name: 'Product Categories', href: '/dashboard/products/categories', icon: FolderOpen, type: 'single', entity: 'products' },
+            { name: 'Product Catalogs', href: '/dashboard/products/catalogs', icon: FolderOpen, type: 'single', entity: 'products' },
           ]
         },
       ]
@@ -113,7 +113,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     return isActive
       ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] border-l-[5px] border-[${getEntityColor(entity)}] font-semibold`
-      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-[${color.ui.surface}]/50 transition-all duration-200`;
+      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-gray-50/50 transition-all duration-200`;
   };
 
   const getIconClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {

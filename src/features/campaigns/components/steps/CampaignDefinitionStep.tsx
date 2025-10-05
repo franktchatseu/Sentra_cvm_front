@@ -116,7 +116,7 @@ export default function CampaignDefinitionStep({
 
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Campaign Category *
+              Campaign Catalog *
             </label>
             <div className="relative" ref={categoryDropdownRef}>
               <button
@@ -125,7 +125,7 @@ export default function CampaignDefinitionStep({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
                 <span className={formData.category ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.category ? categories.find(c => c.id.toString() === formData.category)?.name : 'Select category'}
+                  {formData.category ? categories.find(c => c.id.toString() === formData.category)?.name : 'Select catalog'}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
               </button>

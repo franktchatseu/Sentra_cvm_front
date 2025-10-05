@@ -136,12 +136,12 @@ export default function CreateProductPage() {
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                Catalog
               </label>
               <CategorySelector
                 value={formData.category_id}
                 onChange={(categoryId) => handleInputChange('category_id', categoryId)}
-                placeholder="Select Category"
+                placeholder="Select Catalog"
                 allowCreate={true}
                 onCreateCategory={() => setShowCreateModal(true)}
               />
@@ -221,7 +221,7 @@ export default function CreateProductPage() {
         </form>
       </div>
 
-      {/* Create Category Modal */}
+      {/* Create Catalog Modal */}
       <CreateCategoryModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

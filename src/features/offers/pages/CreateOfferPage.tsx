@@ -213,11 +213,11 @@ function BasicInfoStep({ formData, setFormData, validationErrors, clearValidatio
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Category *
+            Catalog *
           </label>
           <HeadlessSelect
             options={[
-              { value: '', label: categoriesLoading ? 'Loading categories...' : 'Select category' },
+              { value: '', label: categoriesLoading ? 'Loading catalogs...' : 'Select catalog' },
               ...(offerCategories || []).map(category => ({
                 value: category.id,
                 label: category.name
@@ -230,7 +230,7 @@ function BasicInfoStep({ formData, setFormData, validationErrors, clearValidatio
                 clearValidationErrors();
               }
             }}
-            placeholder="Select category"
+            placeholder="Select catalog"
             disabled={categoriesLoading}
           />
           {validationErrors?.category_id && (
@@ -352,9 +352,9 @@ function ReviewStep({ formData, creatives, trackingSources, rewards }: Omit<Step
                 <span className="font-medium">{formData.offer_type || 'Not selected'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Category:</span>
+                <span className="text-gray-600">Catalog:</span>
                 <span className="font-medium">
-                  {formData.category_id ? `Category ${formData.category_id}` : 'Not selected'}
+                  {formData.category_id ? `Catalog ${formData.category_id}` : 'Not selected'}
                 </span>
               </div>
               <div className="flex justify-between col-span-2">
@@ -554,7 +554,7 @@ export default function CreateOfferPage() {
     }
 
     if (!formData.category_id) {
-      errors.category_id = 'Category is required';
+      errors.category_id = 'Catalog is required';
     }
 
     if (!formData.product_id) {

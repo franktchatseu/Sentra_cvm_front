@@ -38,7 +38,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      setError('Category name is required');
+      setError('Catalog name is required');
       return;
     }
 
@@ -67,7 +67,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
-            {category ? 'Edit Offer Category' : 'Create New Offer Category'}
+            {category ? 'Edit Offer Catalog' : 'Create New Offer Catalog'}
           </h2>
           <button
             onClick={onClose}
@@ -81,14 +81,14 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Offer Category Name *
+                Offer Catalog Name *
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                placeholder="Enter offer category name"
+                placeholder="Enter offer catalog name"
                 required
               />
             </div>
@@ -101,7 +101,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                placeholder="Enter offer category description"
+                placeholder="Enter offer catalog description"
                 rows={3}
               />
             </div>
@@ -267,8 +267,8 @@ export default function OfferCategoriesPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Offer Categories</h1>
-            <p className={`${tw.textSecondary} mt-2 text-sm`}>Organize and manage your offer categories with ease</p>
+            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Offer Catalogs</h1>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>Organize and manage your offer catalogs with ease</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -284,7 +284,7 @@ export default function OfferCategoriesPage() {
             }}
           >
             <Plus className="w-4 h-4" />
-            Create Offer Category
+            Create Offer Catalog
           </button>
         </div>
       </div>
@@ -337,7 +337,7 @@ export default function OfferCategoriesPage() {
                 style={{ backgroundColor: color.sentra.main }}
               >
                 <Plus className="w-4 h-4" />
-                Create Offer Category
+                Create Offer Catalog
               </button>
             )}
           </div>

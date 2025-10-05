@@ -38,7 +38,7 @@ export default function Dashboard() {
         <Route path="/campaigns/:id/approval-history" element={<CampaignApprovalHistoryPage />} />
         <Route path="/campaigns/:id/lifecycle-history" element={<CampaignLifecycleHistoryPage />} />
         <Route path="/campaigns/create" element={<CreateCampaignPage />} />
-        <Route path="/campaign-categories" element={<CampaignCategoriesPage />} />
+        <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/offers/create" element={<CreateOfferPage />} />
         <Route path="/offers/:id" element={<OfferDetailsPage />} />
@@ -47,10 +47,10 @@ export default function Dashboard() {
         <Route path="/products/create" element={<CreateProductPage />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />
         <Route path="/products/:id/edit" element={<EditProductPage />} />
-        <Route path="/products/categories" element={<ProductCategoriesPage />} />
+        <Route path="/products/catalogs" element={<ProductCategoriesPage />} />
         <Route path="/product-types" element={<ProductTypesPage />} />
         <Route path="/offer-types" element={<OfferTypesPage />} />
-        <Route path="/offer-categories" element={<OfferCategoriesPage />} />
+        <Route path="/offer-catalogs" element={<OfferCategoriesPage />} />
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/segments" element={<SegmentManagementPage />} />
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />

@@ -109,9 +109,9 @@ export default function CampaignsPage() {
       // Build params - backend uses mixed conventions!
       const params: Record<string, string | number | boolean> = {
         page: currentPage,
-        pageSize: pageSize,           // camelCase (not page_size)
-        sortBy: filters.sortBy,       // camelCase (not sort_by)
-        sortDirection: filters.sortDirection.toUpperCase() as 'ASC' | 'DESC',  // camelCase
+        pageSize: pageSize,
+        sortBy: filters.sortBy,
+        sortDirection: filters.sortDirection.toUpperCase() as 'ASC' | 'DESC',
       };
 
       // Add search query if present
@@ -126,20 +126,20 @@ export default function CampaignsPage() {
 
       // Add approval status filter if not 'all'
       if (filters.approvalStatus !== 'all') {
-        params.approvalStatus = filters.approvalStatus;  // camelCase!
+        params.approvalStatus = filters.approvalStatus;
       }
 
       // Add category filter if not 'all'
       if (filters.categoryId !== 'all') {
-        params.categoryId = parseInt(filters.categoryId);  // camelCase!
+        params.categoryId = parseInt(filters.categoryId);
       }
 
       // Add date range filters
       if (filters.startDateFrom) {
-        params.startDateFrom = filters.startDateFrom;  // camelCase!
+        params.startDateFrom = filters.startDateFrom;
       }
       if (filters.startDateTo) {
-        params.startDateTo = filters.startDateTo;  // camelCase!
+        params.startDateTo = filters.startDateTo;
       }
 
       const response = await campaignService.getAllCampaigns(params);
@@ -197,7 +197,7 @@ export default function CampaignsPage() {
 
   // Category options from API
   const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
+    { value: 'all', label: 'All Catalogs' },
     ...categories.map(cat => ({ value: cat.id.toString(), label: cat.name }))
   ];
 
@@ -679,12 +679,12 @@ export default function CampaignsPage() {
                 <div className="space-y-6">
                   {/* Category Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Catalog</label>
                     <HeadlessSelect
                       options={categoryOptions}
                       value={filters.categoryId}
                       onChange={(value) => setFilters({ ...filters, categoryId: value as string })}
-                      placeholder="Select a category..."
+                      placeholder="Select a catalog..."
                       searchable={true}
                     />
                   </div>

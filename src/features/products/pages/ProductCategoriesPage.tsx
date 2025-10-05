@@ -9,7 +9,7 @@ import { useToast } from '../../../contexts/ToastContext';
 import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 import CreateCategoryModal from '../../../shared/components/CreateCategoryModal';
 
-export default function ProductCategoriesPage() {
+export default function ProductCatalogsPage() {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
@@ -19,7 +19,7 @@ export default function ProductCategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
+  const [editingCatalog, setEditingCatalog] = useState<ProductCategory | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -46,24 +46,24 @@ export default function ProductCategoriesPage() {
     loadCategories();
   };
 
-  const handleEditCategory = (category: ProductCategory) => {
-    setEditingCategory(category);
+  const handleEditCatalog = (category: ProductCategory) => {
+    setEditingCatalog(category);
     setEditName(category.name);
     setEditDescription(category.description || '');
   };
 
-  const handleUpdateCategory = async () => {
-    if (!editingCategory || !editName.trim()) return;
+  const handleUpdateCatalog = async () => {
+    if (!editingCatalog || !editName.trim()) return;
 
     try {
       setIsUpdating(true);
-      await productCategoryService.updateCategory(editingCategory.id, {
+      await productCategoryService.updateCategory(editingCatalog.id, {
         name: editName.trim(),
         description: editDescription.trim() || undefined
       });
 
-      success('Category Updated', `"${editName}" has been updated successfully.`);
-      setEditingCategory(null);
+      success('Catalog Updated', `"${editName}" has been updated successfully.`);
+      setEditingCatalog(null);
       setEditName('');
       setEditDescription('');
       loadCategories();
@@ -75,9 +75,9 @@ export default function ProductCategoriesPage() {
     }
   };
 
-  const handleDeleteCategory = async (category: ProductCategory) => {
+  const handleDeleteCatalog = async (category: ProductCategory) => {
     const confirmed = await confirm({
-      title: 'Delete Category',
+      title: 'Delete Catalog',
       message: `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
       type: 'danger',
       confirmText: 'Delete',
@@ -88,7 +88,7 @@ export default function ProductCategoriesPage() {
 
     try {
       await productCategoryService.deleteCategory(category.id);
-      success('Category Deleted', `"${category.name}" has been deleted successfully.`);
+      success('Catalog Deleted', `"${category.name}" has been deleted successfully.`);
       loadCategories();
     } catch (err) {
       console.error('Failed to delete category:', err);
@@ -96,7 +96,7 @@ export default function ProductCategoriesPage() {
     }
   };
 
-  const filteredCategories = categories.filter(category =>
+  const filteredCatalogs = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -123,8 +123,8 @@ export default function ProductCategoriesPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Product Categories</h1>
-            <p className={`${tw.textSecondary} mt-2 text-sm`}>Manage product categories</p>
+            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Product Catalogs</h1>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>Manage product catalogs</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -140,7 +140,7 @@ export default function ProductCategoriesPage() {
             }}
           >
             <Plus className="w-4 h-4" />
-            Create Category
+            Create Catalog
           </button>
         </div>
       </div>
@@ -166,13 +166,13 @@ export default function ProductCategoriesPage() {
         </div>
       )}
 
-      {/* Categories Table */}
+      {/* Catalogs Table */}
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
-        {filteredCategories.length === 0 ? (
+        {filteredCatalogs.length === 0 ? (
           <div className="text-center py-12">
             <Tag className={`w-16 h-16 text-[${color.entities.products}] mx-auto mb-4`} />
             <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
-              {searchTerm ? 'No Categories Found' : 'No Categories'}
+              {searchTerm ? 'No Catalogs Found' : 'No Catalogs'}
             </h3>
             <p className={`${tw.textMuted} mb-6`}>
               {searchTerm ? 'Try adjusting your search terms.' : 'Create your first product category to get started.'}
@@ -184,7 +184,7 @@ export default function ProductCategoriesPage() {
                 style={{ backgroundColor: color.sentra.main }}
               >
                 <Plus className="w-4 h-4" />
-                Create Category
+                Create Catalog
               </button>
             )}
           </div>
@@ -196,7 +196,7 @@ export default function ProductCategoriesPage() {
                 <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-gray-200`}>
                   <tr>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Category
+                      Catalog
                     </th>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                       Description
@@ -213,7 +213,7 @@ export default function ProductCategoriesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredCategories.map((category) => (
+                  {filteredCatalogs.map((category) => (
                     <tr key={category.id} className="hover:bg-[${color.ui.surface}]/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
@@ -248,7 +248,7 @@ export default function ProductCategoriesPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
                           <button
-                            onClick={() => handleEditCategory(category)}
+                            onClick={() => handleEditCatalog(category)}
                             className="p-2 rounded-lg transition-colors"
                             style={{
                               color: color.sentra.main,
@@ -264,7 +264,7 @@ export default function ProductCategoriesPage() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteCategory(category)}
+                            onClick={() => handleDeleteCatalog(category)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -279,7 +279,7 @@ export default function ProductCategoriesPage() {
 
             {/* Mobile Cards */}
             <div className="lg:hidden">
-              {filteredCategories.map((category) => (
+              {filteredCatalogs.map((category) => (
                 <div key={category.id} className="p-4 border-b border-gray-200 last:border-b-0">
                   <div className="flex items-start space-x-3">
                     <div
@@ -306,7 +306,7 @@ export default function ProductCategoriesPage() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => handleEditCategory(category)}
+                            onClick={() => handleEditCatalog(category)}
                             className="p-2 rounded-lg transition-colors"
                             style={{
                               color: color.sentra.main,
@@ -322,7 +322,7 @@ export default function ProductCategoriesPage() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteCategory(category)}
+                            onClick={() => handleDeleteCatalog(category)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -338,22 +338,22 @@ export default function ProductCategoriesPage() {
         )}
       </div>
 
-      {/* Create Category Modal */}
+      {/* Create Catalog Modal */}
       <CreateCategoryModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCategoryCreated={handleCategoryCreated}
       />
 
-      {/* Edit Category Modal */}
-      {editingCategory && (
+      {/* Edit Catalog Modal */}
+      {editingCatalog && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Category</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Edit Catalog</h2>
               <button
                 onClick={() => {
-                  setEditingCategory(null);
+                  setEditingCatalog(null);
                   setEditName('');
                   setEditDescription('');
                 }}
@@ -366,7 +366,7 @@ export default function ProductCategoriesPage() {
             <div className="p-6">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category Name *
+                  Catalog Name *
                 </label>
                 <input
                   type="text"
@@ -387,7 +387,7 @@ export default function ProductCategoriesPage() {
                   onChange={(e) => setEditDescription(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
-                  placeholder="Category description..."
+                  placeholder="Catalog description..."
                 />
               </div>
 
@@ -395,7 +395,7 @@ export default function ProductCategoriesPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setEditingCategory(null);
+                    setEditingCatalog(null);
                     setEditName('');
                     setEditDescription('');
                   }}
@@ -404,7 +404,7 @@ export default function ProductCategoriesPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleUpdateCategory}
+                  onClick={handleUpdateCatalog}
                   disabled={!editName.trim() || isUpdating}
                   className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
                   style={{ backgroundColor: color.sentra.main }}
@@ -425,7 +425,7 @@ export default function ProductCategoriesPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      Update Category
+                      Update Catalog
                     </>
                   )}
                 </button>
