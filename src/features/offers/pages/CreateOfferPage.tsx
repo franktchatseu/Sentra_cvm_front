@@ -502,9 +502,9 @@ export default function CreateOfferPage() {
   const [formData, setFormData] = useState<CreateOfferRequest>({
     name: '',
     description: '',
-    offer_type: '',
     category_id: undefined,
     product_id: undefined,
+    offer_type: '',
     eligibility_rules: {},
     lifecycle_status: 'draft',
     approval_status: 'pending',
@@ -523,14 +523,15 @@ export default function CreateOfferPage() {
 
     setIsLoadingOffer(true);
     try {
-      const offer = await offerService.getOfferById(parseInt(id));
-      console.log('Loaded offer data:', offer);
+      const response = await offerService.getOfferById(parseInt(id)) as any;
+      console.log('Loaded offer data:', response);
+      const offer = response.data || response;
       const newFormData = {
         name: offer.name || '',
         description: offer.description || '',
+        category_id: offer.category_id ? parseInt(offer.category_id) : undefined,
+        product_id: offer.product_id ? parseInt(offer.product_id) : undefined,
         offer_type: offer.offer_type || '',
-        category_id: offer.category_id || undefined,
-        product_id: offer.product_id || undefined,
         eligibility_rules: offer.eligibility_rules || {},
         lifecycle_status: offer.lifecycle_status || 'draft',
         approval_status: offer.approval_status || 'pending',
@@ -546,26 +547,6 @@ export default function CreateOfferPage() {
       setIsLoadingOffer(false);
     }
   }, [id, navigate]);
-
-  // Detect edit mode and load data
-  useEffect(() => {
-    if (id) {
-      setIsEditMode(true);
-      loadOfferData();
-    }
-  }, [id, loadOfferData]);
-
-  // Show loading state while loading offer data
-  if (isLoadingOffer) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#588157] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading offer...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Offer categories state
   const [offerCategories, setOfferCategories] = useState<OfferCategory[]>([]);
@@ -592,6 +573,26 @@ export default function CreateOfferPage() {
 
     loadOfferCategories();
   }, []);
+
+  // Detect edit mode and load data
+  useEffect(() => {
+    if (id) {
+      setIsEditMode(true);
+      loadOfferData();
+    }
+  }, [id, loadOfferData]);
+
+  // Show loading state while loading offer data
+  if (isLoadingOffer) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#588157] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading offer...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Validation functions
   const validateForm = () => {

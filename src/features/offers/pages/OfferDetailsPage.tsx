@@ -185,192 +185,185 @@ export default function OfferDetailsPage() {
     const ApprovalIcon = approvalStatus.icon;
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between py-6">
-                        <div className="flex items-center space-x-4">
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <div className="flex items-center space-x-4">
+                    <button
+                        onClick={() => navigate('/dashboard/offers')}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                        <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Offer Details</h1>
+                        <p className={`${tw.textSecondary} mt-1`}>View and manage offer information</p>
+                    </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                    {/* Lifecycle Actions */}
+                    {offer.lifecycle_status === 'draft' && (
+                        <button
+                            onClick={handleActivate}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
+                        >
+                            <Play className="w-4 h-4" />
+                            Activate
+                        </button>
+                    )}
+
+                    {offer.lifecycle_status === 'active' && (
+                        <>
                             <button
-                                onClick={() => navigate('/dashboard/offers')}
-                                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                onClick={handlePause}
+                                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
                             >
-                                <ArrowLeft className="w-5 h-5" />
+                                <Pause className="w-4 h-4" />
+                                Pause
                             </button>
-                            <div>
-                                <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Offer Details</h1>
-                                <p className={`${tw.textSecondary} mt-2 text-sm`}>View and manage offer information</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            {/* Lifecycle Actions */}
-                            {offer.lifecycle_status === 'draft' && (
-                                <button
-                                    onClick={handleActivate}
-                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
-                                >
-                                    <Play className="w-4 h-4" />
-                                    Activate
-                                </button>
-                            )}
-
-                            {offer.lifecycle_status === 'active' && (
-                                <>
-                                    <button
-                                        onClick={handlePause}
-                                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
-                                    >
-                                        <Pause className="w-4 h-4" />
-                                        Pause
-                                    </button>
-                                    <button
-                                        onClick={handleDeactivate}
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
-                                    >
-                                        <Archive className="w-4 h-4" />
-                                        Deactivate
-                                    </button>
-                                </>
-                            )}
-
-                            {/* Approval Actions */}
-                            {offer.approval_status === 'pending' && (
-                                <>
-                                    <div className="border-t border-gray-200 my-2"></div>
-                                    <button
-                                        onClick={handleApprove}
-                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
-                                    >
-                                        <CheckCircle className="w-4 h-4" />
-                                        Approve
-                                    </button>
-                                    <button
-                                        onClick={handleReject}
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
-                                    >
-                                        <XCircle className="w-4 h-4" />
-                                        Reject
-                                    </button>
-                                </>
-                            )}
-
-                            {/* Edit Button */}
                             <button
-                                onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
+                                onClick={handleDeactivate}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
                             >
-                                <Edit className="w-4 h-4" />
-                                Edit
+                                <Archive className="w-4 h-4" />
+                                Deactivate
                             </button>
+                        </>
+                    )}
 
-                            {/* More Menu */}
-                            <div className="relative">
+                    {/* Approval Actions */}
+                    {offer.approval_status === 'pending' && (
+                        <>
+                            <div className="border-t border-gray-200 my-2"></div>
+                            <button
+                                onClick={handleApprove}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
+                            >
+                                <CheckCircle className="w-4 h-4" />
+                                Approve
+                            </button>
+                            <button
+                                onClick={handleReject}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
+                            >
+                                <XCircle className="w-4 h-4" />
+                                Reject
+                            </button>
+                        </>
+                    )}
+
+                    {/* Edit Button */}
+                    <button
+                        onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
+                        className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+                        style={{ backgroundColor: color.sentra.main }}
+                        onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover}
+                        onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main}
+                    >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                    </button>
+
+                    {/* More Menu */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowMoreMenu(!showMoreMenu)}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {showMoreMenu && (
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
                                 <button
-                                    onClick={() => setShowMoreMenu(!showMoreMenu)}
-                                    className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                    onClick={handleDelete}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                 >
-                                    <MoreVertical className="w-5 h-5" />
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete Offer
                                 </button>
-                                {showMoreMenu && (
-                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                                        <button
-                                            onClick={handleDelete}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                            Delete Offer
-                                        </button>
-                                    </div>
-                                )}
                             </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Offer Info */}
+            <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                <div className="flex items-start space-x-4">
+                    <div
+                        className="h-12 w-12 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: color.entities.offers }}
+                    >
+                        <Gift className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <h2 className={`text-xl font-bold ${tw.textPrimary} mb-2`}>{offer.name}</h2>
+                        <p className={`${tw.textSecondary} mb-4`}>
+                            {offer.description || 'No description available'}
+                        </p>
+                        <div className="flex items-center flex-wrap gap-2">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${lifecycleStatus.bg} ${lifecycleStatus.text}`}>
+                                <LifecycleIcon className="w-4 h-4 mr-1" />
+                                {offer.lifecycle_status}
+                            </span>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${approvalStatus.bg} ${approvalStatus.text}`}>
+                                <ApprovalIcon className="w-4 h-4 mr-1" />
+                                {offer.approval_status}
+                            </span>
+                            {offer.reusable && (
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
+                                    Reusable
+                                </span>
+                            )}
+                            {offer.multi_language && (
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
+                                    Multi-language
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="space-y-6">
-                    {/* Main Offer Info */}
-                    <div className={`bg-white rounded-lg border border-[${color.ui.border}] p-6`}>
-                        <div className="flex items-start space-x-4">
-                            <div
-                                className="h-12 w-12 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: color.entities.offers }}
-                            >
-                                <Gift className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <h2 className={`text-xl font-bold ${tw.textPrimary} mb-2`}>{offer.name}</h2>
-                                <p className={`${tw.textSecondary} mb-4`}>
-                                    {offer.description || 'No description available'}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${lifecycleStatus.bg} ${lifecycleStatus.text}`}>
-                                        <LifecycleIcon className="w-4 h-4 mr-1" />
-                                        {offer.lifecycle_status}
-                                    </span>
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${approvalStatus.bg} ${approvalStatus.text}`}>
-                                        <ApprovalIcon className="w-4 h-4 mr-1" />
-                                        {offer.approval_status}
-                                    </span>
-                                    {offer.reusable && (
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.status.info.light}] text-[${color.status.info.main}]`}>
-                                            Reusable
-                                        </span>
-                                    )}
-                                    {offer.multi_language && (
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
-                                            Multi-language
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+            {/* Offer Details */}
+            <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Offer Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Offer ID</label>
+                        <p className={`text-base ${tw.textPrimary} font-mono`}>
+                            {offer.id}
+                        </p>
                     </div>
-
-                    {/* Offer Details */}
-                    <div className={`bg-white rounded-lg border border-[${color.ui.border}] p-6`}>
-                        <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Offer Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Offer ID</label>
-                                <p className={`text-base ${tw.textPrimary} font-mono`}>
-                                    {offer.id}
-                                </p>
-                            </div>
-                            <div>
-                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Category</label>
-                                <p className={`text-base ${tw.textPrimary}`}>
-                                    {offer.category?.name || 'Uncategorized'}
-                                </p>
-                            </div>
-                            <div>
-                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Product</label>
-                                <p className={`text-base ${tw.textPrimary}`}>
-                                    {offer.product?.name || 'No product assigned'}
-                                </p>
-                            </div>
-                            <div>
-                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Offer Type</label>
-                                <p className={`text-base ${tw.textPrimary}`}>
-                                    Not specified
-                                </p>
-                            </div>
-                            <div>
-                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Created Date</label>
-                                <p className={`text-base ${tw.textPrimary} flex items-center`}>
-                                    <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                                    {offer.created_at ? new Date(offer.created_at).toLocaleDateString() : 'N/A'}
-                                </p>
-                            </div>
-                            <div>
-                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Last Updated</label>
-                                <p className={`text-base ${tw.textPrimary}`}>
-                                    {offer.updated_at ? new Date(offer.updated_at).toLocaleDateString() : 'N/A'}
-                                </p>
-                            </div>
-                        </div>
+                    <div>
+                        <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Category</label>
+                        <p className={`text-base ${tw.textPrimary}`}>
+                            {offer.category?.name || 'Uncategorized'}
+                        </p>
+                    </div>
+                    <div>
+                        <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Product</label>
+                        <p className={`text-base ${tw.textPrimary}`}>
+                            {offer.product?.name || 'No product assigned'}
+                        </p>
+                    </div>
+                    <div>
+                        <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Offer Type</label>
+                        <p className={`text-base ${tw.textPrimary}`}>
+                            Not specified
+                        </p>
+                    </div>
+                    <div>
+                        <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Created Date</label>
+                        <p className={`text-base ${tw.textPrimary} flex items-center`}>
+                            <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                            {offer.created_at ? new Date(offer.created_at).toLocaleDateString() : 'N/A'}
+                        </p>
+                    </div>
+                    <div>
+                        <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Last Updated</label>
+                        <p className={`text-base ${tw.textPrimary}`}>
+                            {offer.updated_at ? new Date(offer.updated_at).toLocaleDateString() : 'N/A'}
+                        </p>
                     </div>
                 </div>
             </div>

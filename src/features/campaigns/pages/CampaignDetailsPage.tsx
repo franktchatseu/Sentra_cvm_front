@@ -465,7 +465,7 @@ export default function CampaignDetailsPage() {
                                     )}
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
                                         <Tag className="w-4 h-4 mr-1" />
-                                        {campaign.category}
+                                        {campaign.category || 'Uncategorized'}
                                     </span>
                                 </div>
                             </div>
@@ -491,7 +491,7 @@ export default function CampaignDetailsPage() {
                             <div>
                                 <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Category</label>
                                 <p className={`text-base ${tw.textPrimary}`}>
-                                    {campaign.category}
+                                    {campaign.category || 'Uncategorized'}
                                 </p>
                             </div>
                             <div>

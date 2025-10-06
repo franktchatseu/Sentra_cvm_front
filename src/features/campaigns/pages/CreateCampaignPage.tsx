@@ -114,8 +114,9 @@ export default function CreateCampaignPage() {
 
     setIsLoadingCampaign(true);
     try {
-      const campaign = await campaignService.getCampaignById(id);
-      console.log('Loaded campaign data:', campaign);
+      const response = await campaignService.getCampaignById(id) as any;
+      console.log('Loaded campaign data:', response);
+      const campaign = response.data || response;
       const newFormData = {
         name: campaign.name || '',
         description: campaign.description || '',

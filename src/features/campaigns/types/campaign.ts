@@ -47,7 +47,7 @@ export interface SegmentCriteria {
   purchase_behavior?: string[];
   location?: string[];
   channel_preference?: string[];
-  custom_attributes?: Record<string, any>;
+  custom_attributes?: Record<string, string | number | boolean>;
 }
 
 export interface CampaignOffer {
@@ -106,7 +106,7 @@ export interface TriggerCondition {
   id: string;
   name: string;
   event_type: string;
-  conditions: Record<string, any>;
+  conditions: Record<string, string | number | boolean>;
   delay_minutes?: number;
 }
 
@@ -115,7 +115,7 @@ export interface ControlGroup {
   percentage: number;
   type: 'standard' | 'universal';
   universal_frequency?: 'monthly' | 'quarterly';
-  exclusion_criteria?: Record<string, any>;
+  exclusion_criteria?: Record<string, string | number | boolean>;
 }
 
 export interface SegmentControlGroupConfig {
@@ -172,7 +172,7 @@ export interface CampaignTemplate {
   name: string;
   description: string;
   category: string;
-  primary_objective: Campaign['primary_objective'];
+  primary_objective: Campaign['objective'];
   default_segments: string[];
   default_offers: string[];
   default_scheduling: Partial<CampaignScheduling>;
