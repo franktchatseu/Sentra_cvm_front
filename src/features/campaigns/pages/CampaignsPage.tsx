@@ -342,7 +342,6 @@ export default function CampaignsPage() {
     setShowActionMenu(null);
   };
 
-  // Campaigns are already filtered and sorted by the API
   const filteredCampaigns = campaigns;
 
   return (
@@ -420,14 +419,14 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      <div className={`bg-white rounded-2xl border border-[${color.ui.border}] overflow-visible`}>
+      <div className={`bg-white rounded-2xl border border-[${color.ui.border}]`} style={{ overflow: 'visible' }}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
             <p className={`${tw.textMuted} font-medium text-sm`}>Loading campaigns...</p>
           </div>
         ) : filteredCampaigns.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" style={{ overflowY: 'visible' }}>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-#f9fafb">
                 <tr>

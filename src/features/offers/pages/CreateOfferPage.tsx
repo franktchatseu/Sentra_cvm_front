@@ -10,7 +10,7 @@ import {
   BarChart,
   Eye
 } from 'lucide-react';
-import { CreateOfferRequest } from '../types/offer';
+import { CreateOfferRequest, Offer } from '../types/offer';
 import { Product } from '../../products/types/product';
 import { offerService } from '../services/offerService';
 import { offerCategoryService } from '../services/offerCategoryService';
@@ -23,6 +23,7 @@ import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 import StepNavigation from '../../../shared/components/ui/StepNavigation';
 import { colors as color } from '../../../shared/utils/tokens';
 import { color as utilColor, tw } from '../../../shared/utils/utils';
+import { useToast } from '../../../contexts/ToastContext';
 
 interface OfferCreative {
   id: string;
@@ -161,7 +162,7 @@ function BasicInfoStep({ formData, setFormData, validationErrors, clearValidatio
               }
             }}
             placeholder="e.g., Summer Data Bundle"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 ${validationErrors?.name ? 'border-red-500' : 'border-gray-200'
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none transition-all duration-200 ${validationErrors?.name ? 'border-red-500' : 'border-gray-300'
               }`}
             required
           />
@@ -179,7 +180,7 @@ function BasicInfoStep({ formData, setFormData, validationErrors, clearValidatio
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this offer provides to customers..."
             rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition-all duration-200"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none transition-all duration-200"
           />
         </div>
 
@@ -492,6 +493,7 @@ function ReviewStep({ formData, creatives, trackingSources, rewards }: Omit<Step
 export default function CreateOfferPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { success: showToast, error: showError } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -523,22 +525,20 @@ export default function CreateOfferPage() {
 
     setIsLoadingOffer(true);
     try {
-      const response = await offerService.getOfferById(parseInt(id)) as any;
-      console.log('Loaded offer data:', response);
-      const offer = response.data || response;
+      const response = await offerService.getOfferById(parseInt(id)) as { data?: Offer; success?: boolean };
+      const offer = response.data || response as Offer;
       const newFormData = {
         name: offer.name || '',
         description: offer.description || '',
-        category_id: offer.category_id ? parseInt(offer.category_id) : undefined,
-        product_id: offer.product_id ? parseInt(offer.product_id) : undefined,
-        offer_type: offer.offer_type || '',
+        category_id: offer.category_id ? Number(offer.category_id) : undefined,
+        product_id: offer.product_id ? Number(offer.product_id) : undefined,
+        offer_type: (offer as Offer & { offer_type?: string }).offer_type || '',
         eligibility_rules: offer.eligibility_rules || {},
         lifecycle_status: offer.lifecycle_status || 'draft',
         approval_status: offer.approval_status || 'pending',
         reusable: offer.reusable || false,
         multi_language: offer.multi_language || false
       };
-      console.log('Setting form data:', newFormData);
       setFormData(newFormData);
     } catch {
       console.error('Failed to load offer data');
@@ -695,9 +695,35 @@ export default function CreateOfferPage() {
     }
   };
 
-  const handleSaveDraft = () => {
-    // TODO: Implement save draft functionality
-    console.log('Save draft functionality not yet implemented');
+  const handleSaveDraft = async () => {
+    try {
+      setIsLoading(true);
+      if (!formData.name.trim()) {
+        showError('Offer name is required to save draft');
+        return;
+      }
+
+      const draftData: CreateOfferRequest = {
+        name: formData.name,
+        ...(formData.description && { description: formData.description }),
+        ...(formData.category_id && { category_id: formData.category_id }),
+        ...(formData.product_id && { product_id: formData.product_id }),
+        ...(formData.offer_type && { offer_type: formData.offer_type }),
+        ...(formData.eligibility_rules && { eligibility_rules: formData.eligibility_rules }),
+        lifecycle_status: formData.lifecycle_status,
+        approval_status: formData.approval_status,
+        reusable: formData.reusable,
+        multi_language: formData.multi_language
+      };
+
+      await offerService.createOffer(draftData);
+      showToast('Draft saved successfully!');
+
+    } catch {
+      showError('Failed to save draft. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {

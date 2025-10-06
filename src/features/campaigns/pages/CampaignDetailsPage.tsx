@@ -16,7 +16,7 @@ import {
     XCircle,
     Zap,
     Clock,
-    MoreVertical
+    MoreHorizontal
 } from 'lucide-react';
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw } from '../../../shared/utils/utils';
@@ -42,7 +42,8 @@ export default function CampaignDetailsPage() {
             try {
                 setIsLoading(true);
 
-                const campaignData = await campaignService.getCampaignById(id!);
+                const response = await campaignService.getCampaignById(id!) as { data?: Campaign; success?: boolean };
+                const campaignData = response.data || response as Campaign;
                 setCampaign(campaignData);
             } catch (error) {
                 console.error('Failed to fetch campaign details:', error);
@@ -58,6 +59,23 @@ export default function CampaignDetailsPage() {
     }, [id, showToast]);
 
     // Action handlers
+    const handleSubmitForApproval = async () => {
+        if (!id) return;
+
+        try {
+            setIsActionLoading(true);
+            showToast('success', 'Campaign submitted for approval');
+            if (campaign) {
+                setCampaign({ ...campaign, approval_status: 'pending' });
+            }
+        } catch (error) {
+            console.error('Failed to submit campaign for approval:', error);
+            showToast('error', 'Failed to submit campaign for approval');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
     const handleApproveCampaign = async () => {
         if (!id) return;
 
@@ -244,6 +262,7 @@ export default function CampaignDetailsPage() {
         );
     }
 
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -260,19 +279,44 @@ export default function CampaignDetailsPage() {
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                    {/* Primary Workflow Actions */}
+                    {/* Primary Action - Based on Status */}
                     {campaign.approval_status === 'pending' && (
                         <button
                             onClick={handleApproveCampaign}
                             disabled={isActionLoading}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
+                            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 bg-white hover:bg-[#3A5A40]/20 text-gray-700 border border-gray-200"
                         >
-                            <CheckCircle className="w-4 h-4" />
-                            Approve
+                            {isActionLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                            ) : (
+                                <CheckCircle className="w-4 h-4" />
+                            )}
+                            {isActionLoading ? 'Approving...' : 'Approve'}
                         </button>
                     )}
 
-                    {/* Activate Button */}
+                    {(campaign.status === 'draft' || campaign.status === undefined) && (campaign.approval_status === null || campaign.approval_status === undefined || !campaign.approval_status) && (
+                        <button
+                            onClick={handleSubmitForApproval}
+                            disabled={isActionLoading}
+                            className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
+                            style={{ backgroundColor: color.sentra.main }}
+                            onMouseEnter={(e) => {
+                                if (!isActionLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isActionLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            }}
+                        >
+                            {isActionLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                                <CheckCircle className="w-4 h-4" />
+                            )}
+                            {isActionLoading ? 'Submitting...' : 'Submit for Approval'}
+                        </button>
+                    )}
+
                     {campaign.approval_status === 'approved' && campaign.status === 'draft' && (
                         <button
                             onClick={handleActivateCampaign}
@@ -280,8 +324,42 @@ export default function CampaignDetailsPage() {
                             className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
                             style={{ backgroundColor: color.entities.campaigns }}
                         >
-                            <Zap className="w-4 h-4" />
-                            Activate
+                            {isActionLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                                <Zap className="w-4 h-4" />
+                            )}
+                            {isActionLoading ? 'Activating...' : 'Activate'}
+                        </button>
+                    )}
+
+                    {campaign.status === 'active' && (
+                        <button
+                            onClick={handlePauseCampaign}
+                            disabled={isActionLoading}
+                            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 bg-white hover:bg-[#3A5A40]/20 text-gray-700 border border-gray-200"
+                        >
+                            {isActionLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                            ) : (
+                                <Pause className="w-4 h-4" />
+                            )}
+                            {isActionLoading ? 'Pausing...' : 'Pause'}
+                        </button>
+                    )}
+
+                    {campaign.status === 'paused' && (
+                        <button
+                            onClick={handleResumeCampaign}
+                            disabled={isActionLoading}
+                            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 bg-white hover:bg-[#3A5A40]/20 text-gray-700 border border-gray-200"
+                        >
+                            {isActionLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                            ) : (
+                                <Play className="w-4 h-4" />
+                            )}
+                            {isActionLoading ? 'Resuming...' : 'Resume'}
                         </button>
                     )}
 
@@ -301,17 +379,12 @@ export default function CampaignDetailsPage() {
                         Edit
                     </button>
 
-                    {/* More Actions Dropdown */}
                     <div className="relative">
                         <button
                             onClick={() => setShowMoreMenu(!showMoreMenu)}
-                            className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm`}
-                            style={{
-                                borderColor: color.ui.border,
-                                color: color.ui.text.primary
-                            }}
+                            className="px-4 py-2 border border-gray-200 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm bg-white hover:bg-[#3A5A40]/20 text-gray-700"
                         >
-                            <MoreVertical className="w-4 h-4" />
+                            <MoreHorizontal className="w-4 h-4" />
                             More
                         </button>
 
@@ -331,41 +404,13 @@ export default function CampaignDetailsPage() {
                                     </button>
                                 )}
 
-                                {/* Pause - Only if active */}
-                                {campaign.status === 'active' && (
-                                    <button
-                                        onClick={() => {
-                                            handlePauseCampaign();
-                                            setShowMoreMenu(false);
-                                        }}
-                                        className="w-full flex items-center px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors"
-                                    >
-                                        <Pause className="w-4 h-4 mr-3" />
-                                        Pause Campaign
-                                    </button>
-                                )}
-
-                                {/* Resume - Only if paused */}
-                                {campaign.status === 'paused' && (
-                                    <button
-                                        onClick={() => {
-                                            handleResumeCampaign();
-                                            setShowMoreMenu(false);
-                                        }}
-                                        className="w-full flex items-center px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors"
-                                    >
-                                        <Play className="w-4 h-4 mr-3" />
-                                        Resume Campaign
-                                    </button>
-                                )}
-
                                 {/* Delete - Always available */}
                                 <button
                                     onClick={() => {
                                         setShowDeleteModal(true);
                                         setShowMoreMenu(false);
                                     }}
-                                    className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100 mt-1 pt-2"
+                                    className={`w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors ${campaign.approval_status === 'pending' ? 'border-t border-gray-100 mt-1 pt-2' : ''}`}
                                 >
                                     <Trash2 className="w-4 h-4 mr-3" />
                                     Delete Campaign
@@ -465,7 +510,7 @@ export default function CampaignDetailsPage() {
                                     )}
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
                                         <Tag className="w-4 h-4 mr-1" />
-                                        {campaign.category || 'Uncategorized'}
+                                        {campaign.category_id ? String(campaign.category_id) : 'Uncategorized'}
                                     </span>
                                 </div>
                             </div>
@@ -491,7 +536,7 @@ export default function CampaignDetailsPage() {
                             <div>
                                 <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Category</label>
                                 <p className={`text-base ${tw.textPrimary}`}>
-                                    {campaign.category || 'Uncategorized'}
+                                    {campaign.category_id ? String(campaign.category_id) : 'Uncategorized'}
                                 </p>
                             </div>
                             <div>

@@ -44,7 +44,7 @@ export default function HeadlessSelect({
       <Listbox value={value} onChange={onChange} disabled={disabled}>
         <div className="relative">
           <Listbox.Button className={`
-            relative w-full cursor-default rounded-lg bg-white py-3 pl-4 pr-10 text-left shadow-sm border transition-all duration-200
+            relative w-full cursor-default rounded-md bg-white py-2 pl-3 pr-10 text-left shadow-sm border transition-all duration-200
             ${error
               ? 'border-red-300'
               : 'border-gray-300'
@@ -72,7 +72,7 @@ export default function HeadlessSelect({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+            <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {searchable && (
                 <div className="px-3 py-2 border-b border-gray-200">
                   <input
@@ -80,7 +80,7 @@ export default function HeadlessSelect({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search options..."
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-200"
+                    className="w-full px-2 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-200"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
