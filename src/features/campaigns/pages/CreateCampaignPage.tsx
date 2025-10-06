@@ -89,6 +89,7 @@ export default function CreateCampaignPage() {
   const [formData, setFormData] = useState<CreateCampaignRequest>({
     name: '',
     description: '',
+    campaign_type: 'multiple_target_group',
     primary_objective: 'acquisition',
     category: '',
     segments: [],
@@ -155,6 +156,7 @@ export default function CreateCampaignPage() {
     setFormData({
       name: '',
       description: '',
+      campaign_type: 'multiple_target_group',
       primary_objective: 'acquisition',
       category: '',
       segments: [],
