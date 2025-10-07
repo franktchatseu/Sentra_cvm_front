@@ -1,4 +1,7 @@
-export interface Campaign {
+export type CampaignType = 'multiple_target_group' | 'champion_challenger' | 'ab_test' | 'round_robin' | 'multiple_level';
+
+// Base Campaign Interface
+interface CampaignBase {
   id: string;
   name: string;
   description?: string;
@@ -11,10 +14,7 @@ export interface Campaign {
   created_by: string;
   start_date?: string;
   end_date?: string;
-  segments: CampaignSegment[];
-  offers: CampaignOffer[];
   scheduling: CampaignScheduling;
-  control_group?: ControlGroup;
   approval_workflow?: ApprovalWorkflow;
   is_definitive?: boolean;
   priority?: 'low' | 'medium' | 'high' | 'critical';
@@ -27,6 +27,62 @@ export interface Campaign {
   };
 }
 
+// Multiple Target Group Campaign
+export interface MultipleTargetGroupCampaign extends CampaignBase {
+  campaign_type: 'multiple_target_group';
+  config: {
+    segments: CampaignSegment[];
+    offer_mappings: CampaignOfferMapping[];
+    mutually_exclusive?: boolean;
+  };
+}
+
+// Champion-Challenger Campaign
+export interface ChampionChallengerCampaign extends CampaignBase {
+  campaign_type: 'champion_challenger';
+  config: {
+    champion: CampaignSegment;
+    challengers: CampaignSegment[];
+    offer_mappings: CampaignOfferMapping[];
+  };
+}
+
+// A/B Test Campaign
+export interface ABTestCampaign extends CampaignBase {
+  campaign_type: 'ab_test';
+  config: {
+    variant_a: CampaignSegment;
+    variant_b: CampaignSegment;
+    offer_mappings: CampaignOfferMapping[];
+  };
+}
+
+// Round Robin Campaign
+export interface RoundRobinCampaign extends CampaignBase {
+  campaign_type: 'round_robin';
+  config: {
+    segment: CampaignSegment;
+    offer_sequence: SequentialOfferMapping[];
+  };
+}
+
+// Multiple Level Campaign
+export interface MultipleLevelCampaign extends CampaignBase {
+  campaign_type: 'multiple_level';
+  config: {
+    segment: CampaignSegment;
+    offer_sequence: SequentialOfferMapping[];
+  };
+}
+
+// Discriminated Union Type
+export type Campaign = 
+  | MultipleTargetGroupCampaign 
+  | ChampionChallengerCampaign 
+  | ABTestCampaign 
+  | RoundRobinCampaign 
+  | MultipleLevelCampaign;
+
 export interface CampaignSegment {
   id: string;
   name: string;
@@ -36,7 +92,6 @@ export interface CampaignSegment {
   created_at: string;
   control_group_config?: SegmentControlGroupConfig;
   priority?: number;
-  is_mutually_exclusive?: boolean;
 }
 
 export interface SegmentCriteria {
@@ -60,7 +115,6 @@ export interface CampaignOffer {
   validity_period: number;
   terms_conditions?: string;
   personalization?: OfferPersonalization;
-  segments: string[]; // Segment IDs this offer is mapped to
 }
 
 export interface OfferPersonalization {
@@ -152,12 +206,21 @@ export interface ApprovalWorkflow {
 export interface CreateCampaignRequest {
   name: string; // Required field
   description?: string;
+  campaign_type: CampaignType;
+  // primary_objective: Campaign['primary_objective'];
   objective?: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
   category_id?: number;
   program_id?: number;
   owner_team?: string;
   start_date?: string;
   end_date?: string;
+  category: string;
+  segments: string[]; // Segment IDs
+  offers: CampaignOfferMapping[];
+  scheduling: CampaignScheduling;
+  control_group?: ControlGroup;
+  is_definitive?: boolean;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface CampaignOfferMapping {
@@ -186,4 +249,29 @@ export interface CampaignPreview {
   estimated_revenue: number;
   roi_projection: number;
   delivery_schedule: { date: string; estimated_sends: number }[];
+}
+
+// Round Robin Configuration
+export interface IntervalConfig {
+  interval_type: 'hours' | 'days' | 'weeks';
+  interval_value: number;
+  description?: string;
+}
+
+// Multiple Level Configuration
+export interface ConditionConfig {
+  condition_type: 'customer_attribute' | 'behavior' | 'transaction' | 'custom';
+  operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'not_contains';
+  field: string;
+  value: string | number | boolean;
+  description?: string;
+}
+
+// Offer Mapping for Round Robin and Multiple Level
+export interface SequentialOfferMapping {
+  offer_id: string;
+  segment_id: string;
+  sequence_order: number;
+  interval_config?: IntervalConfig; // For Round Robin
+  condition_config?: ConditionConfig; // For Multiple Level
 }

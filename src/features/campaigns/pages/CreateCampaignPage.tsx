@@ -94,11 +94,26 @@ export default function CreateCampaignPage() {
 
   const [formData, setFormData] = useState<CreateCampaignRequest>({
     name: '',
-    description: undefined,
-    objective: undefined,
-    category_id: undefined,
-    start_date: undefined,
-    end_date: undefined
+    description: '',
+    campaign_type: 'multiple_target_group',
+    objective: 'acquisition',
+    category: '',
+    segments: [],
+    offers: [],
+    scheduling: {
+      type: 'scheduled',
+      time_zone: 'UTC',
+      delivery_times: ['09:00'],
+      frequency_capping: {
+        max_per_day: 1,
+        max_per_week: 3,
+        max_per_month: 10
+      },
+      throttling: {
+        max_per_hour: 1000,
+        max_per_day: 10000
+      }
+    }
   });
 
   const [selectedSegments, setSelectedSegments] = useState<CampaignSegment[]>([]);
@@ -114,16 +129,34 @@ export default function CreateCampaignPage() {
 
     setIsLoadingCampaign(true);
     try {
-      const response = await campaignService.getCampaignById(id) as any;
+      const response = await campaignService.getCampaignById(id);
       console.log('Loaded campaign data:', response);
-      const campaign = response.data || response;
-      const newFormData = {
+      const campaign = (response as any).data || response;
+      const newFormData: CreateCampaignRequest = {
         name: campaign.name || '',
         description: campaign.description || '',
-        objective: campaign.objective || undefined,
+        campaign_type: campaign.campaign_type || 'multiple_target_group',
+        objective: campaign.objective || 'acquisition',
+        category: campaign.category || '',
         category_id: campaign.category_id || undefined,
         start_date: campaign.start_date || undefined,
-        end_date: campaign.end_date || undefined
+        end_date: campaign.end_date || undefined,
+        segments: campaign.segments || [],
+        offers: campaign.offers || [],
+        scheduling: campaign.scheduling || {
+          type: 'scheduled',
+          time_zone: 'UTC',
+          delivery_times: ['09:00'],
+          frequency_capping: {
+            max_per_day: 1,
+            max_per_week: 3,
+            max_per_month: 10
+          },
+          throttling: {
+            max_per_hour: 1000,
+            max_per_day: 10000
+          }
+        }
       };
       console.log('Setting form data:', newFormData);
       setFormData(newFormData);
@@ -164,8 +197,13 @@ export default function CreateCampaignPage() {
 
       const campaignData: CreateCampaignRequest = {
         name: formData.name,
+        campaign_type: formData.campaign_type,
+        objective: formData.objective,
+        category: formData.category,
+        segments: formData.segments,
+        offers: formData.offers,
+        scheduling: formData.scheduling,
         ...(formData.description && { description: formData.description }),
-        ...(formData.objective && { objective: formData.objective }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.start_date && { start_date: formData.start_date }),
         ...(formData.end_date && { end_date: formData.end_date })
@@ -197,8 +235,13 @@ export default function CreateCampaignPage() {
 
       const draftData: CreateCampaignRequest = {
         name: formData.name,
+        campaign_type: formData.campaign_type,
+        objective: formData.objective,
+        category: formData.category,
+        segments: formData.segments,
+        offers: formData.offers,
+        scheduling: formData.scheduling,
         ...(formData.description && { description: formData.description }),
-        ...(formData.objective && { objective: formData.objective }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.start_date && { start_date: formData.start_date }),
         ...(formData.end_date && { end_date: formData.end_date })
@@ -217,6 +260,41 @@ export default function CreateCampaignPage() {
   const handleCancel = () => {
     navigate('/dashboard/campaigns');
   };
+
+  // const handleReset = () => {
+  //   setFormData({
+  //     name: '',
+  //     description: '',
+  //     campaign_type: 'multiple_target_group',
+  //     objective: 'acquisition',
+  //     category: '',
+  //     segments: [],
+  //     offers: [],
+  //     scheduling: {
+  //       type: 'scheduled',
+  //       time_zone: 'UTC',
+  //       delivery_times: ['09:00'],
+  //       frequency_capping: {
+  //         max_per_day: 1,
+  //         max_per_week: 3,
+  //         max_per_month: 10
+  //       },
+  //       throttling: {
+  //         max_per_hour: 1000,
+  //         max_per_day: 10000
+  //       }
+  //     }
+  //   });
+  //   setSelectedSegments([]);
+  //   setSelectedOffers([]);
+  //   setControlGroup({
+  //     enabled: false,
+  //     percentage: 5,
+  //     type: 'standard'
+  //   });
+  //   setCurrentStep(1);
+  //   showToast('success', 'Form reset successfully');
+  // };
 
   const stepProps: StepProps = {
     currentStep,

@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Users, Plus, Edit, Trash2, Settings, GripVertical, AlertCircle } from 'lucide-react';
-import { CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
+import { Users, Plus, Edit, Trash2, Settings, GripVertical, AlertCircle, Award, TestTube, RotateCw, Layers } from 'lucide-react';
+import { CreateCampaignRequest, CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
 import { Segment } from '../../../segments/types/segment';
+import ChampionChallengerDisplay from '../displays/ChampionChallengerDisplay';
+import ABTestDisplay from '../displays/ABTestDisplay';
+import SequentialCampaignDisplay from '../displays/SequentialCampaignDisplay';
 import { color } from '../../../../shared/utils/utils';
 
 interface AvailableControlGroup {
@@ -18,16 +21,35 @@ import SegmentModal from '../../../segments/components/SegmentModal';
 interface AudienceConfigurationStepProps {
   currentStep: number;
   totalSteps: number;
+  onNext: () => void;
+  onPrev: () => void;
+  onSubmit: () => void;
+  formData: CreateCampaignRequest;
+  setFormData: (data: CreateCampaignRequest) => void;
   selectedSegments: CampaignSegment[];
   setSelectedSegments: (segments: CampaignSegment[]) => void;
   controlGroup: ControlGroup;
   setControlGroup: (group: ControlGroup) => void;
+  isLoading?: boolean;
+  onSaveDraft?: () => void;
+  onCancel?: () => void;
 }
 
 export default function AudienceConfigurationStep({
+  currentStep: _currentStep,
+  totalSteps: _totalSteps,
+  onNext: _onNext,
+  onPrev: _onPrev,
+  onSubmit: _onSubmit,
+  formData,
+  setFormData,
   selectedSegments,
   setSelectedSegments,
-  controlGroup
+  controlGroup,
+  setControlGroup: _setControlGroup,
+  isLoading: _isLoading,
+  onSaveDraft: _onSaveDraft,
+  onCancel: _onCancel
 }: AudienceConfigurationStepProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCreateSegmentModal, setShowCreateSegmentModal] = useState(false);
@@ -47,7 +69,31 @@ export default function AudienceConfigurationStep({
 
 
   const handleSegmentSelect = (segments: CampaignSegment[]) => {
-    setSelectedSegments(segments);
+    if (formData.campaign_type === 'champion_challenger') {
+      // For Champion-Challenger: first segment is champion (priority 1), rest are challengers
+      const processedSegments = segments.map((seg, index) => {
+        if (selectedSegments.length === 0 && index === 0) {
+          // First segment when none exist = Champion with priority 1
+          return { ...seg, priority: 1 };
+        } else {
+          // All others are challengers with priority > 1
+          return { ...seg, priority: selectedSegments.length + index + 1 };
+        }
+      });
+      setSelectedSegments([...selectedSegments, ...processedSegments]);
+    } else if (formData.campaign_type === 'ab_test') {
+      // For A/B Test: only 2 segments allowed
+      const processedSegments = segments.slice(0, 2 - selectedSegments.length).map((seg, index) => {
+        return { ...seg, priority: selectedSegments.length + index + 1 };
+      });
+      setSelectedSegments([...selectedSegments, ...processedSegments]);
+    } else if (formData.campaign_type === 'round_robin' || formData.campaign_type === 'multiple_level') {
+      // For Round Robin and Multiple Level: only 1 segment allowed
+      setSelectedSegments([segments[0]]);
+    } else {
+      // Multiple Target Group: normal behavior
+      setSelectedSegments(segments);
+    }
     setIsModalOpen(false);
   };
 
@@ -59,9 +105,24 @@ export default function AudienceConfigurationStep({
       description: segment.description,
       customer_count: segment.customer_count || 0,
       created_at: segment.created_at || new Date().toISOString(),
-      criteria: {} // Empty criteria object - will be populated from conditions if needed
+      criteria: {}, // Empty criteria object - will be populated from conditions if needed
+      priority: selectedSegments.length + 1
     };
-    setSelectedSegments([...selectedSegments, campaignSegment]);
+
+    // For Champion-Challenger: first segment gets priority 1
+    if (formData.campaign_type === 'champion_challenger' && selectedSegments.length === 0) {
+      campaignSegment.priority = 1;
+    }
+
+    // Handle different campaign types
+    if (formData.campaign_type === 'round_robin' || formData.campaign_type === 'multiple_level') {
+      setSelectedSegments([campaignSegment]); // Only one segment
+    } else if (formData.campaign_type === 'ab_test' && selectedSegments.length >= 2) {
+      // Don't add if already have 2 segments
+      return;
+    } else {
+      setSelectedSegments([...selectedSegments, campaignSegment]);
+    }
     setShowCreateSegmentModal(false);
   };
 
@@ -153,10 +214,127 @@ export default function AudienceConfigurationStep({
       <div className="mt-8 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Audience Configuration</h2>
         <p className="text-sm text-gray-600">
-          Select and configure your target audience segments for this campaign
+          Select campaign type and configure your target audience segments
         </p>
       </div>
 
+      {/* Campaign Type Selection */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaign Type</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {/* Multiple Target Group */}
+          <button
+            onClick={() => {
+              setFormData({ ...formData, campaign_type: 'multiple_target_group' });
+              setSelectedSegments([]);
+            }}
+            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_target_group'
+              ? 'border-[#588157] bg-[#588157]/5'
+              : 'border-gray-200 hover:border-[#A3B18A]'
+              }`}
+          >
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'multiple_target_group' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
+                }`}>
+                <Users className={`w-6 h-6 ${formData.campaign_type === 'multiple_target_group' ? 'text-white' : 'text-[#344E41]'
+                  }`} />
+              </div>
+              <div className="font-semibold text-sm text-gray-900">Multiple Target</div>
+              <div className="text-xs text-gray-500">Multiple segments with offers</div>
+            </div>
+          </button>
+
+          {/* Champion-Challenger */}
+          <button
+            onClick={() => {
+              setFormData({ ...formData, campaign_type: 'champion_challenger' });
+              setSelectedSegments([]);
+            }}
+            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'champion_challenger'
+              ? 'border-[#588157] bg-[#588157]/5'
+              : 'border-gray-200 hover:border-[#A3B18A]'
+              }`}
+          >
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'champion_challenger' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
+                }`}>
+                <Award className={`w-6 h-6 ${formData.campaign_type === 'champion_challenger' ? 'text-white' : 'text-[#344E41]'
+                  }`} />
+              </div>
+              <div className="font-semibold text-sm text-gray-900">Champion-Challenger</div>
+              <div className="text-xs text-gray-500">Main segment + challengers</div>
+            </div>
+          </button>
+
+          {/* A/B Test */}
+          <button
+            onClick={() => {
+              setFormData({ ...formData, campaign_type: 'ab_test' });
+              setSelectedSegments([]);
+            }}
+            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'ab_test'
+              ? 'border-[#588157] bg-[#588157]/5'
+              : 'border-gray-200 hover:border-[#A3B18A]'
+              }`}
+          >
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'ab_test' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
+                }`}>
+                <TestTube className={`w-6 h-6 ${formData.campaign_type === 'ab_test' ? 'text-white' : 'text-[#344E41]'
+                  }`} />
+              </div>
+              <div className="font-semibold text-sm text-gray-900">A/B Test</div>
+              <div className="text-xs text-gray-500">Two segments: A and B</div>
+            </div>
+          </button>
+
+          {/* Round Robin */}
+          <button
+            onClick={() => {
+              setFormData({ ...formData, campaign_type: 'round_robin' });
+              setSelectedSegments([]);
+            }}
+            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'round_robin'
+              ? 'border-[#588157] bg-[#588157]/5'
+              : 'border-gray-200 hover:border-[#A3B18A]'
+              }`}
+          >
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'round_robin' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
+                }`}>
+                <RotateCw className={`w-6 h-6 ${formData.campaign_type === 'round_robin' ? 'text-white' : 'text-[#344E41]'
+                  }`} />
+              </div>
+              <div className="font-semibold text-sm text-gray-900">Round Robin</div>
+              <div className="text-xs text-gray-500">Offers with intervals</div>
+            </div>
+          </button>
+
+          {/* Multiple Level */}
+          <button
+            onClick={() => {
+              setFormData({ ...formData, campaign_type: 'multiple_level' });
+              setSelectedSegments([]);
+            }}
+            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_level'
+              ? 'border-[#588157] bg-[#588157]/5'
+              : 'border-gray-200 hover:border-[#A3B18A]'
+              }`}
+          >
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'multiple_level' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
+                }`}>
+                <Layers className={`w-6 h-6 ${formData.campaign_type === 'multiple_level' ? 'text-white' : 'text-[#344E41]'
+                  }`} />
+              </div>
+              <div className="font-semibold text-sm text-gray-900">Multiple Level</div>
+              <div className="text-xs text-gray-500">Offers with conditions</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Audience Overview */}
       {selectedSegments.length > 0 && (
         <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Audience Overview</h3>
@@ -203,29 +381,95 @@ export default function AudienceConfigurationStep({
         </div>
       )}
 
-      {/* Selected Segments */}
+      {/* Selected Segments - Adapted by Campaign Type */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Selected Segments</h3>
-            {selectedSegments.length > 1 && (
+            <h3 className="text-lg font-semibold text-gray-900">
+              {formData.campaign_type === 'champion_challenger' && 'Champion & Challengers'}
+              {formData.campaign_type === 'ab_test' && 'A/B Test Segments'}
+              {formData.campaign_type === 'round_robin' && 'Target Segment'}
+              {formData.campaign_type === 'multiple_level' && 'Target Segment'}
+              {formData.campaign_type === 'multiple_target_group' && 'Selected Segments'}
+            </h3>
+            {selectedSegments.length > 1 && formData.campaign_type === 'multiple_target_group' && (
               <p className="text-sm text-gray-500 mt-1">Drag segments to reorder priority (top = highest priority)</p>
+            )}
+            {formData.campaign_type === 'champion_challenger' && (
+              <p className="text-sm text-gray-500 mt-1">Define champion segment and its challengers</p>
+            )}
+            {formData.campaign_type === 'ab_test' && (
+              <p className="text-sm text-gray-500 mt-1">Create exactly two segments for A/B testing</p>
+            )}
+            {(formData.campaign_type === 'round_robin' || formData.campaign_type === 'multiple_level') && (
+              <p className="text-sm text-gray-500 mt-1">Define single target segment for sequential offers</p>
             )}
           </div>
           {selectedSegments.length > 0 && (
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Segments
-              </button>
+              {/* Show Add button based on campaign type */}
+              {(formData.campaign_type === 'multiple_target_group' ||
+                (formData.campaign_type === 'champion_challenger' && selectedSegments.length > 0) ||
+                (formData.campaign_type === 'ab_test' && selectedSegments.length < 2)) && (
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {formData.campaign_type === 'champion_challenger' && selectedSegments.length === 0 ? 'Add Champion' :
+                      formData.campaign_type === 'champion_challenger' ? 'Add Challenger' :
+                        'Add Segment'}
+                  </button>
+                )}
             </div>
           )}
         </div>
 
-        {selectedSegments.length === 0 ? (
+        {/* Champion-Challenger Display */}
+        {formData.campaign_type === 'champion_challenger' && (
+          <ChampionChallengerDisplay
+            champion={selectedSegments.find(s => s.priority === 1) || null}
+            challengers={selectedSegments.filter(s => s.priority !== 1)}
+            onAddChampion={() => setIsModalOpen(true)}
+            onAddChallenger={() => setIsModalOpen(true)}
+            onRemoveSegment={handleRemoveSegment}
+            onConfigureControlGroup={(segmentId) => {
+              setEditingControlGroup(segmentId);
+              setShowControlGroupModal(true);
+            }}
+          />
+        )}
+
+        {/* A/B Test Display */}
+        {formData.campaign_type === 'ab_test' && (
+          <ABTestDisplay
+            variantA={selectedSegments[0] || null}
+            variantB={selectedSegments[1] || null}
+            onAddVariant={() => setIsModalOpen(true)}
+            onRemoveSegment={handleRemoveSegment}
+            onConfigureControlGroup={(segmentId) => {
+              setEditingControlGroup(segmentId);
+              setShowControlGroupModal(true);
+            }}
+          />
+        )}
+
+        {/* Round Robin / Multiple Level Display */}
+        {(formData.campaign_type === 'round_robin' || formData.campaign_type === 'multiple_level') && (
+          <SequentialCampaignDisplay
+            campaignType={formData.campaign_type}
+            segment={selectedSegments[0] || null}
+            onAddSegment={() => setIsModalOpen(true)}
+            onRemoveSegment={handleRemoveSegment}
+            onConfigureControlGroup={(segmentId) => {
+              setEditingControlGroup(segmentId);
+              setShowControlGroupModal(true);
+            }}
+          />
+        )}
+
+        {/* Standard Display for Multiple Target Group */}
+        {formData.campaign_type === 'multiple_target_group' && selectedSegments.length === 0 && (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
             <div className="flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
@@ -244,7 +488,9 @@ export default function AudienceConfigurationStep({
               </button>
             </div>
           </div>
-        ) : (
+        )}
+
+        {formData.campaign_type === 'multiple_target_group' && selectedSegments.length > 0 && (
           <div className="space-y-3">
             {selectedSegments.map((segment, index) => (
               <div
@@ -273,11 +519,6 @@ export default function AudienceConfigurationStep({
                     <div>
                       <div className="flex items-center space-x-2">
                         <h4 className="font-medium text-gray-900">{segment.name}</h4>
-                        {segment.is_mutually_exclusive && (
-                          <span className="text-xs px-2 py-1 bg-[#A3B18A] text-[#344E41] rounded-full">
-                            Exclusive
-                          </span>
-                        )}
                       </div>
                       <p className="text-sm text-gray-500">{segment.description}</p>
                       <div className="flex items-center space-x-4 mt-1">
