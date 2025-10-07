@@ -419,16 +419,16 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      <div className={`bg-white rounded-2xl border border-[${color.ui.border}]`} style={{ overflow: 'visible' }}>
+      <div className={`bg-white rounded-2xl border border-[${color.ui.border}]`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
             <p className={`${tw.textMuted} font-medium text-sm`}>Loading campaigns...</p>
           </div>
         ) : filteredCampaigns.length > 0 ? (
-          <div className="overflow-x-auto" style={{ overflowY: 'visible' }}>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-#f9fafb">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
                 <tr>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Campaign</th>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
