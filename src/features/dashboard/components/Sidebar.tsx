@@ -40,7 +40,7 @@ interface NavigationItem {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['campaign management', 'product configuration']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['campaign management', 'campaign configuration', 'offer configuration', 'product configuration']);
 
   const navigation: NavigationItem[] = [
     {
@@ -57,9 +57,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       type: 'parent',
       entity: 'campaigns',
       children: [
-        { name: 'All Campaigns', href: '/dashboard/campaigns', icon: Target, type: 'single', entity: 'campaigns' },
-        { name: 'Campaign Catalogs', href: '/dashboard/campaign-catalogs', icon: Folder, type: 'single', entity: 'campaigns' },
-        { name: 'Segments', href: '/dashboard/segments', icon: Users, type: 'single', entity: 'segments' },
+        {
+          name: 'Campaign Configuration',
+          href: '/dashboard/campaigns',
+          icon: Target,
+          type: 'parent',
+          entity: 'campaigns',
+          children: [
+            { name: 'All Campaigns', href: '/dashboard/campaigns', icon: Target, type: 'single', entity: 'campaigns' },
+            { name: 'Campaign Catalogs', href: '/dashboard/campaign-catalogs', icon: Folder, type: 'single', entity: 'campaigns' },
+            { name: 'Campaign Objective', href: '/dashboard/campaign-objectives', icon: Target, type: 'single', entity: 'campaigns' },
+            { name: 'Campaign Communication Policy', href: '/dashboard/campaign-communication-policy', icon: MessageSquare, type: 'single', entity: 'campaigns' },
+          ]
+        },
         {
           name: 'Offer Configuration',
           href: '/dashboard/offers',
@@ -84,6 +94,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             { name: 'Product Catalogs', href: '/dashboard/products/catalogs', icon: FolderOpen, type: 'single', entity: 'products' },
           ]
         },
+        { name: 'Segments', href: '/dashboard/segments', icon: Users, type: 'single', entity: 'segments' },
       ]
     },
     {

@@ -27,7 +27,6 @@ import { useClickOutside } from '../../../shared/hooks/useClickOutside';
 import DeleteConfirmModal from '../../../shared/components/ui/DeleteConfirmModal';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 
-// Define a type for campaign display (since API response might be different from Campaign type)
 interface CampaignDisplay {
   id: number;
   name: string;
@@ -35,8 +34,10 @@ interface CampaignDisplay {
   status: string;
   type?: string;
   category?: string;
+  category_id?: number;
   segment?: string;
   offer?: string;
+  objective?: string;
   startDate?: string;
   endDate?: string;
   performance?: {
@@ -147,7 +148,104 @@ export default function CampaignsPage() {
 
       const campaignsData = (response.data as CampaignDisplay[]) || [];
 
-      setCampaigns(campaignsData);
+      // Add dummy performance data and dates for campaigns that don't have them
+      const campaignsWithDummyData = campaignsData.map(campaign => {
+        // Ensure category_id is properly set from API response
+        if ((campaign as CampaignDisplay & { category_id?: string }).category_id) {
+          campaign.category_id = parseInt((campaign as CampaignDisplay & { category_id: string }).category_id);
+        }
+        // Add dummy performance data if not present
+        if (!campaign.performance) {
+          // Generate realistic dummy performance data based on campaign status
+          const baseSent = Math.floor(Math.random() * 10000) + 1000;
+          const deliveryRate = 0.95 + Math.random() * 0.04; // 95-99% delivery rate
+          const openRate = 0.15 + Math.random() * 0.25; // 15-40% open rate
+          const conversionRate = 0.02 + Math.random() * 0.08; // 2-10% conversion rate
+
+          const delivered = Math.floor(baseSent * deliveryRate);
+          const opened = Math.floor(delivered * openRate);
+          const converted = Math.floor(delivered * conversionRate);
+          const revenue = converted * (50 + Math.random() * 200); // $50-$250 per conversion
+
+          campaign.performance = {
+            sent: baseSent,
+            delivered: delivered,
+            opened: opened,
+            converted: converted,
+            revenue: Math.round(revenue)
+          };
+        }
+
+        // Add dummy dates if not present
+        if (!campaign.startDate || !campaign.endDate) {
+          const now = new Date();
+          const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
+          const campaignDuration = Math.floor(Math.random() * 14) + 1; // 1-14 days duration
+
+          const startDate = new Date(now);
+          startDate.setDate(startDate.getDate() - daysAgo);
+
+          const endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + campaignDuration);
+
+          campaign.startDate = startDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+          campaign.endDate = endDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+        }
+
+        // Add dummy segment if not present (consistent based on campaign ID)
+        if (!campaign.segment) {
+          const existingSegments = [
+            'High Value Customers',
+            'At Risk Customers',
+            'New Subscribers',
+            'Voice Heavy Users',
+            'Data Bundle Enthusiasts',
+            'Weekend Warriors',
+            'Business Customers',
+            'Dormant Users'
+          ];
+
+          // Use campaign ID to ensure consistent segment from existing segments
+          campaign.segment = existingSegments[campaign.id % existingSegments.length];
+        }
+
+        // Add dummy campaign type and objective if not present (consistent based on campaign ID)
+        if (!campaign.type) {
+          const campaignTypes = [
+            'Multiple Target',
+            'Champion Challenger',
+            'A/B Test',
+            'Round Robin',
+            'Multiple Level'
+          ];
+          // Use campaign ID to ensure consistent type
+          campaign.type = campaignTypes[campaign.id % campaignTypes.length];
+        }
+
+        if (!campaign.objective) {
+          const objectives = [
+            'acquisition',
+            'retention',
+            'engagement',
+            'conversion',
+            'reactivation'
+          ];
+          // Use campaign ID to ensure consistent objective
+          campaign.objective = objectives[campaign.id % objectives.length];
+        }
+
+        return campaign;
+      });
+
+      setCampaigns(campaignsWithDummyData);
       setTotalCampaigns(response.meta?.total || campaignsData.length);
     } catch (error) {
       console.error('Failed to fetch campaigns:', error);
@@ -426,7 +524,7 @@ export default function CampaignsPage() {
             <p className={`${tw.textMuted} font-medium text-sm`}>Loading campaigns...</p>
           </div>
         ) : filteredCampaigns.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div>
             <table className="min-w-full">
               <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
                 <tr>
@@ -448,12 +546,12 @@ export default function CampaignsPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className={`font-semibold text-base ${tw.textPrimary} truncate`}>{campaign.name}</div>
-                          <div className={`text-sm ${tw.textSecondary} truncate flex items-center space-x-2 mt-1`}>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium`} style={{ background: `${color.entities.campaigns}20`, color: color.entities.campaigns }}>
-                              {campaign.type}
+                          <div className="mt-2 flex items-center space-x-2">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: '#E9D5FF', color: '#8B5CF6' }}>
+                              <span className="capitalize">{campaign.objective || 'Acquisition'}</span>
                             </span>
                             <span className="text-gray-400">•</span>
-                            <span className="truncate">{campaign.offer}</span>
+                            <span className="text-sm text-gray-600">{campaign.type || 'Multiple Target'}</span>
                           </div>
                         </div>
                       </div>
@@ -470,8 +568,14 @@ export default function CampaignsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      {campaign.status === 'active' && campaign.performance ? (
-                        <div className="space-y-2">
+                      {campaign.performance ? (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className={`${tw.textSecondary}`}>Sent:</span>
+                            <span className={`font-medium ${tw.textPrimary}`}>
+                              {campaign.performance.sent.toLocaleString()}
+                            </span>
+                          </div>
                           <div className="flex justify-between text-sm">
                             <span className={`${tw.textSecondary}`}>Conversion:</span>
                             <span className={`font-medium ${tw.textPrimary}`}>
@@ -486,7 +590,7 @@ export default function CampaignsPage() {
                           </div>
                         </div>
                       ) : (
-                        <span className={`text-sm ${tw.textMuted}`}>-</span>
+                        <span className={`text-sm ${tw.textMuted}`}>No data</span>
                       )}
                     </td>
                     <td className="px-6 py-5">

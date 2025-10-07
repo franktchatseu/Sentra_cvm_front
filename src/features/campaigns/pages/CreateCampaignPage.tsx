@@ -19,7 +19,6 @@ import AudienceConfigurationStep from '../components/steps/AudienceConfiguration
 import OfferMappingStep from '../components/steps/OfferMappingStep';
 import SchedulingStep from '../components/steps/SchedulingStepNew';
 import CampaignPreviewStep from '../components/steps/CampaignPreviewStep';
-import StepNavigation from '../../../shared/components/ui/StepNavigation';
 
 interface StepProps {
   currentStep: number;
@@ -89,31 +88,17 @@ export default function CreateCampaignPage() {
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
 
   const [formData, setFormData] = useState<CreateCampaignRequest>({
     name: '',
     description: '',
-    campaign_type: 'multiple_target_group',
     objective: 'acquisition',
-    category: '',
-    segments: [],
-    offers: [],
-    scheduling: {
-      type: 'scheduled',
-      time_zone: 'UTC',
-      delivery_times: ['09:00'],
-      frequency_capping: {
-        max_per_day: 1,
-        max_per_week: 3,
-        max_per_month: 10
-      },
-      throttling: {
-        max_per_hour: 1000,
-        max_per_day: 10000
-      }
-    }
+    category_id: undefined,
+    start_date: undefined,
+    end_date: undefined
   });
 
   const [selectedSegments, setSelectedSegments] = useState<CampaignSegment[]>([]);
@@ -135,28 +120,10 @@ export default function CreateCampaignPage() {
       const newFormData: CreateCampaignRequest = {
         name: campaign.name || '',
         description: campaign.description || '',
-        campaign_type: campaign.campaign_type || 'multiple_target_group',
         objective: campaign.objective || 'acquisition',
-        category: campaign.category || '',
         category_id: campaign.category_id || undefined,
         start_date: campaign.start_date || undefined,
-        end_date: campaign.end_date || undefined,
-        segments: campaign.segments || [],
-        offers: campaign.offers || [],
-        scheduling: campaign.scheduling || {
-          type: 'scheduled',
-          time_zone: 'UTC',
-          delivery_times: ['09:00'],
-          frequency_capping: {
-            max_per_day: 1,
-            max_per_week: 3,
-            max_per_month: 10
-          },
-          throttling: {
-            max_per_hour: 1000,
-            max_per_day: 10000
-          }
-        }
+        end_date: campaign.end_date || undefined
       };
       console.log('Setting form data:', newFormData);
       setFormData(newFormData);
@@ -175,8 +142,42 @@ export default function CreateCampaignPage() {
     }
   }, [id, loadCampaignData]);
 
+  // Validation function for each step
+  const validateCurrentStep = () => {
+    switch (currentStep) {
+      case 1: // Definition step
+        return formData.name.trim() !== '' && formData.objective !== '' && formData.category_id !== undefined;
+      case 2: // Audience step
+        return selectedSegments.length > 0;
+      case 3: // Offers step
+        return selectedOffers.length > 0;
+      case 4: // Schedule step
+        return formData.scheduling && formData.scheduling.type !== '';
+      case 5: // Preview step
+        return true; // Preview step doesn't need validation
+      default:
+        return false;
+    }
+  };
+
+  const canNavigateToStep = (targetStep: number) => {
+    // Can always go to previous steps
+    if (targetStep < currentStep) return true;
+
+    // Can't go to future steps beyond current + 1
+    if (targetStep > currentStep + 1) return false;
+
+    // Can go to next step only if current step is valid
+    if (targetStep === currentStep + 1) return validateCurrentStep();
+
+    // Can stay on current step
+    if (targetStep === currentStep) return true;
+
+    return false;
+  };
+
   const handleNext = () => {
-    if (currentStep < steps.length) {
+    if (validateCurrentStep() && currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -184,6 +185,12 @@ export default function CreateCampaignPage() {
   const handlePrev = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleStepClick = (stepId: number) => {
+    if (canNavigateToStep(stepId)) {
+      setCurrentStep(stepId);
     }
   };
 
@@ -195,14 +202,27 @@ export default function CreateCampaignPage() {
         return;
       }
 
+      // Auto-assign a random dummy segment if no segments are selected
+      let finalSegments = formData.segments;
+      if (finalSegments.length === 0) {
+        const dummySegments = [
+          'High Value Customers',
+          'At Risk Customers',
+          'New Subscribers',
+          'Voice Heavy Users',
+          'Data Bundle Enthusiasts',
+          'Weekend Warriors',
+          'Business Customers',
+          'Dormant Users'
+        ];
+
+        const randomSegment = dummySegments[Math.floor(Math.random() * dummySegments.length)];
+        finalSegments = [randomSegment];
+      }
+
       const campaignData: CreateCampaignRequest = {
         name: formData.name,
-        campaign_type: formData.campaign_type,
         objective: formData.objective,
-        category: formData.category,
-        segments: formData.segments,
-        offers: formData.offers,
-        scheduling: formData.scheduling,
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.start_date && { start_date: formData.start_date }),
@@ -227,7 +247,7 @@ export default function CreateCampaignPage() {
 
   const handleSaveDraft = async () => {
     try {
-      setIsLoading(true);
+      setIsSavingDraft(true);
       if (!formData.name.trim()) {
         showToast('error', 'Campaign name is required to save draft');
         return;
@@ -235,12 +255,7 @@ export default function CreateCampaignPage() {
 
       const draftData: CreateCampaignRequest = {
         name: formData.name,
-        campaign_type: formData.campaign_type,
         objective: formData.objective,
-        category: formData.category,
-        segments: formData.segments,
-        offers: formData.offers,
-        scheduling: formData.scheduling,
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.start_date && { start_date: formData.start_date }),
@@ -253,7 +268,7 @@ export default function CreateCampaignPage() {
     } catch {
       showToast('error', 'Failed to save draft. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSavingDraft(false);
     }
   };
 
@@ -350,15 +365,8 @@ export default function CreateCampaignPage() {
     <div className="min-h-screen">
       <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-4`}>
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center pb-6 ">
-            <StepNavigation
-              onPrev={handlePrev}
-              onNext={currentStep === 5 ? handleSubmit : handleNext}
-              showPrevButton={currentStep > 1}
-              nextButtonText={currentStep === 5 ? (isEditMode ? 'Update Campaign' : 'Create Campaign') : 'Next Step'}
-              className="border-none pt-0"
-            />
-
+          <div className="flex justify-between items-center pb-6">
+            <div></div>
             <div className="flex items-center space-x-3">
               {currentStep !== 5 && (
                 <button
@@ -370,13 +378,13 @@ export default function CreateCampaignPage() {
               )}
               <button
                 onClick={handleSaveDraft}
-                disabled={isLoading}
+                disabled={isSavingDraft}
                 className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.sentra.main }}
-                onMouseEnter={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                onMouseLeave={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                onMouseEnter={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+                onMouseLeave={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
               >
-                {isLoading ? (
+                {isSavingDraft ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Saving...
@@ -405,7 +413,8 @@ export default function CreateCampaignPage() {
             </div>
           </div>
 
-          <nav aria-label="Progress" className="py-6">
+          {/* Sticky Progress Navigation */}
+          <nav aria-label="Progress" className="sticky top-0 z-50 bg-white py-6 border-b border-gray-200">
             <div className="flex items-center justify-between w-full">
               {steps.map((step, stepIdx) => {
                 const status = getStepStatus(step.id);
@@ -414,9 +423,9 @@ export default function CreateCampaignPage() {
                 return (
                   <div key={step.id} className="relative">
                     <button
-                      onClick={() => setCurrentStep(step.id)}
+                      onClick={() => handleStepClick(step.id)}
                       className="relative flex flex-col items-center group z-10"
-                      disabled={step.id > currentStep + 2}
+                      disabled={!canNavigateToStep(step.id)}
                     >
                       <div className={`
                       flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
@@ -471,6 +480,36 @@ export default function CreateCampaignPage() {
 
           <div className="pb-8">
             {renderStep()}
+          </div>
+
+          {/* Sticky Bottom Navigation */}
+          <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-4">
+            <div className="flex justify-between items-center">
+              <button
+                onClick={handlePrev}
+                disabled={currentStep === 1}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={currentStep === 5 ? handleSubmit : handleNext}
+                disabled={isLoading || !validateCurrentStep()}
+                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: color.sentra.main }}
+                onMouseEnter={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+                onMouseLeave={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {currentStep === 5 ? (isEditMode ? 'Updating...' : 'Creating...') : 'Loading...'}
+                  </>
+                ) : (
+                  currentStep === 5 ? (isEditMode ? 'Update Campaign' : 'Create Campaign') : 'Next Step'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

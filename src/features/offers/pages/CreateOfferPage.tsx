@@ -623,8 +623,44 @@ export default function CreateOfferPage() {
     setValidationErrors({});
   };
 
+  // Validation function for each step
+  const validateCurrentStep = () => {
+    switch (currentStep) {
+      case 1: // Basic Info step
+        return formData.name.trim() !== '' && formData.offer_type !== '' && formData.category_id !== undefined;
+      case 2: // Products step
+        return formData.product_id !== undefined;
+      case 3: // Creative step
+        return creatives.length > 0;
+      case 4: // Tracking step
+        return trackingSources.length > 0;
+      case 5: // Rewards step
+        return rewards.length > 0;
+      case 6: // Review step
+        return true; // Review step doesn't need validation
+      default:
+        return false;
+    }
+  };
+
+  const canNavigateToStep = (targetStep: number) => {
+    // Can always go to previous steps
+    if (targetStep < currentStep) return true;
+
+    // Can't go to future steps beyond current + 1
+    if (targetStep > currentStep + 1) return false;
+
+    // Can go to next step only if current step is valid
+    if (targetStep === currentStep + 1) return validateCurrentStep();
+
+    // Can stay on current step
+    if (targetStep === currentStep) return true;
+
+    return false;
+  };
+
   const handleNext = () => {
-    if (currentStep < totalSteps) {
+    if (validateCurrentStep() && currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -632,6 +668,12 @@ export default function CreateOfferPage() {
   const handlePrev = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleStepClick = (stepId: number) => {
+    if (canNavigateToStep(stepId)) {
+      setCurrentStep(stepId);
     }
   };
 
@@ -783,14 +825,7 @@ export default function CreateOfferPage() {
       <div className={`bg-white rounded-xl border border-[${utilColor.ui.border}] p-4`}>
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center pb-6 min-h-[48px]">
-            <StepNavigation
-              onPrev={handlePrev}
-              onNext={currentStep === 6 ? handleSubmit : handleNext}
-              showPrevButton={currentStep > 1}
-              nextButtonText={currentStep === 6 ? (isEditMode ? 'Update Offer' : 'Create Offer') : 'Next Step'}
-              className="border-none pt-0"
-            />
-
+            <div></div>
             <div className="flex items-center space-x-3">
               {currentStep !== 6 && (
                 <button
@@ -835,7 +870,8 @@ export default function CreateOfferPage() {
             </div>
           </div>
 
-          <nav aria-label="Progress" className="py-6">
+          {/* Sticky Progress Navigation */}
+          <nav aria-label="Progress" className="sticky top-0 z-50 bg-white py-6 border-b border-gray-200">
             <div className="flex items-center justify-between w-full">
               {steps.map((step, stepIdx) => {
                 const status = getStepStatus(step.id);
@@ -844,9 +880,9 @@ export default function CreateOfferPage() {
                 return (
                   <div key={step.id} className="relative">
                     <button
-                      onClick={() => setCurrentStep(step.id)}
+                      onClick={() => handleStepClick(step.id)}
                       className="relative flex flex-col items-center group z-10"
-                      disabled={step.id > currentStep + 2}
+                      disabled={!canNavigateToStep(step.id)}
                     >
                       <div className={`
                         flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
@@ -907,6 +943,36 @@ export default function CreateOfferPage() {
 
           <div className="pb-8">
             {renderStep()}
+          </div>
+
+          {/* Sticky Bottom Navigation */}
+          <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-4">
+            <div className="flex justify-between items-center">
+              <button
+                onClick={handlePrev}
+                disabled={currentStep === 1}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={currentStep === 6 ? handleSubmit : handleNext}
+                disabled={isLoading || !validateCurrentStep()}
+                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: utilColor.sentra.main }}
+                onMouseEnter={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
+                onMouseLeave={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {currentStep === 6 ? (isEditMode ? 'Updating...' : 'Creating...') : 'Loading...'}
+                  </>
+                ) : (
+                  currentStep === 6 ? (isEditMode ? 'Update Offer' : 'Create Offer') : 'Next Step'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

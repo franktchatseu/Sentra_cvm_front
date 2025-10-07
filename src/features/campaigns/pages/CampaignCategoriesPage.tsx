@@ -173,8 +173,9 @@ export default function CampaignCategoriesPage() {
     // Campaigns modal state
     const [isCampaignsModalOpen, setIsCampaignsModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<CampaignCategory | null>(null);
-    const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [campaigns, setCampaigns] = useState<Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>>([]);
     const [campaignsLoading, setCampaignsLoading] = useState(false);
+    const [allCampaigns, setAllCampaigns] = useState<Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>>([]);
 
     // Debounce search term
     useEffect(() => {
@@ -187,7 +188,39 @@ export default function CampaignCategoriesPage() {
 
     useEffect(() => {
         loadCategories();
+        loadAllCampaigns();
     }, [debouncedSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const loadAllCampaigns = async () => {
+        try {
+            const response = await campaignService.getAllCampaigns({
+                pageSize: 1000 // Get all campaigns to count by category
+            });
+            setAllCampaigns((response.data as Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) || []);
+        } catch (err) {
+            console.error('Failed to load campaigns for counting:', err);
+            setAllCampaigns([]);
+        }
+    };
+
+    const getCampaignCountForCategory = (categoryId: number) => {
+        const count = allCampaigns.filter(campaign => {
+            // Check if campaign has category_id that matches (handle both string and number)
+            return campaign.category_id === categoryId ||
+                campaign.category_id === categoryId.toString() ||
+                (campaign as any).category_id === categoryId ||
+                (campaign as any).category_id === categoryId.toString();
+        }).length;
+
+        console.log(`Category ${categoryId} has ${count} campaigns:`, allCampaigns.filter(campaign =>
+            campaign.category_id === categoryId ||
+            campaign.category_id === categoryId.toString() ||
+            (campaign as any).category_id === categoryId ||
+            (campaign as any).category_id === categoryId.toString()
+        ));
+
+        return count;
+    };
 
     const loadCategories = async (skipCache = false) => {
         try {
@@ -202,7 +235,18 @@ export default function CampaignCategoriesPage() {
                 ? response
                 : (response as Record<string, unknown>)?.data || [];
 
-            setCampaignCategories(categoriesData as CampaignCategory[]);
+            // Add campaign count to each category
+            const categoriesWithCounts = (categoriesData as CampaignCategory[]).map(category => {
+                const count = getCampaignCountForCategory(category.id);
+                console.log(`Setting count for category ${category.id} (${category.name}): ${count}`);
+                return {
+                    ...category,
+                    campaign_count: count
+                };
+            });
+
+            console.log('Categories with counts:', categoriesWithCounts);
+            setCampaignCategories(categoriesWithCounts);
             setError('');
         } catch (err) {
             console.error('Failed to load categories:', err);
@@ -283,7 +327,7 @@ export default function CampaignCategoriesPage() {
                 categoryId: category.id,
                 pageSize: 50 // Get more campaigns to show in modal
             });
-            setCampaigns(response.data || []);
+            setCampaigns((response.data as Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) || []);
         } catch (err) {
             console.error('Failed to fetch campaigns:', err);
             showError('Failed to load campaigns', 'Please try again later.');
@@ -387,7 +431,7 @@ export default function CampaignCategoriesPage() {
                     <>
                         <div className="hidden lg:block overflow-x-auto">
                             <table className="w-full">
-                                <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
+                                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
                                     <tr>
                                         <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                                             Category
@@ -405,7 +449,7 @@ export default function CampaignCategoriesPage() {
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {filteredCampaignCategories.map((category) => (
-                                        <tr key={category.id} className="hover:bg-[${color.ui.surface}]/30 transition-colors">
+                                        <tr key={category.id} className="hover:bg-gray-50/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-3">
                                                     <div
@@ -559,7 +603,7 @@ export default function CampaignCategoriesPage() {
                         <div className="flex items-center justify-between p-6 border-b border-gray-200">
                             <div>
                                 <h2 className="text-xl font-semibold text-gray-900">
-                                    Campaigns in "{selectedCategory.name}"
+                                    Campaigns in {selectedCategory.name}
                                 </h2>
                                 <p className="text-sm text-gray-600 mt-1">
                                     {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''} found
@@ -615,7 +659,14 @@ export default function CampaignCategoriesPage() {
                                                             setIsCampaignsModalOpen(false);
                                                             navigate(`/dashboard/campaigns/${campaign.id}`);
                                                         }}
-                                                        className="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors"
+                                                        className="px-3 py-1 text-sm text-white rounded transition-colors"
+                                                        style={{ backgroundColor: color.sentra.main }}
+                                                        onMouseEnter={(e) => {
+                                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                                        }}
                                                     >
                                                         View Details
                                                     </button>

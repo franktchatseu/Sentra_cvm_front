@@ -178,6 +178,34 @@ export default function CampaignDefinitionStep({
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Campaign Tag
+            </label>
+            <input
+              type="text"
+              value={formData.tag || ''}
+              onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              placeholder="Enter campaign tag"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Campaign Business
+            </label>
+            <input
+              type="text"
+              value={formData.business || ''}
+              onChange={(e) => setFormData({ ...formData, business: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              placeholder="Enter campaign business"
+            />
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Campaign Description
@@ -276,7 +304,7 @@ export default function CampaignDefinitionStep({
               <button
                 key={priority.value}
                 type="button"
-                onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical' })}
+                onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical', priority_rank: 1 })}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${formData.priority === priority.value
                   ? 'bg-[#588157] text-white shadow-sm'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -288,6 +316,34 @@ export default function CampaignDefinitionStep({
             ))}
           </div>
         </div>
+
+        {/* Priority Rank - Only shows when priority is selected */}
+        {formData.priority && (
+          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Rank within {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)} Priority
+            </label>
+            <div className="flex items-center space-x-2">
+              {[1, 2, 3, 4, 5].map((rank) => (
+                <button
+                  key={rank}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, priority_rank: rank })}
+                  className={`w-10 h-10 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center ${
+                    formData.priority_rank === rank
+                      ? 'bg-[#588157] text-white shadow-sm'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                  }`}
+                >
+                  {rank}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Rank 1 is highest priority within {formData.priority} level
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">

@@ -18,6 +18,7 @@ interface CampaignBase {
   approval_workflow?: ApprovalWorkflow;
   is_definitive?: boolean;
   priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority_rank?: number;
   performance?: {
     delivered: number;
     response: number;
@@ -206,21 +207,10 @@ export interface ApprovalWorkflow {
 export interface CreateCampaignRequest {
   name: string; // Required field
   description?: string;
-  campaign_type: CampaignType;
-  // primary_objective: Campaign['primary_objective'];
   objective?: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
   category_id?: number;
-  program_id?: number;
-  owner_team?: string;
   start_date?: string;
   end_date?: string;
-  category: string;
-  segments: string[]; // Segment IDs
-  offers: CampaignOfferMapping[];
-  scheduling: CampaignScheduling;
-  control_group?: ControlGroup;
-  is_definitive?: boolean;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface CampaignOfferMapping {
