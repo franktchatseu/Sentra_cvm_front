@@ -1,7 +1,7 @@
 import { Bell, Search, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import logo from '../../../assets/logo.png';
-import { User as UserType } from '../../../../shared/types/auth';
+import { User as UserType } from '../../../shared/types/auth';
 import { color } from '../../../shared/utils/utils';
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -11,8 +11,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="top-0 z-40  mb-5">
-      <div className="flex h-20 items-center justify-between ">
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 ">
+      <div className="flex h-16 items-center justify-between px-5 lg:px-8">
         <div className="flex items-center gap-x-4 flex-1">
           <button
             onClick={onMenuClick}

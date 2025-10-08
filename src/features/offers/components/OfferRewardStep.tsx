@@ -280,12 +280,12 @@ export default function OfferRewardStep({
                       <button
                         onClick={() => addRule()}
                         className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
-                        style={{ backgroundColor: '#3b8169' }}
+                        style={{ backgroundColor: utilColor.sentra.main }}
                         onMouseEnter={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
                         }}
                         onMouseLeave={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
                         }}
                       >
                         <Plus className="w-4 h-4 mr-1" />
@@ -300,12 +300,12 @@ export default function OfferRewardStep({
                         <button
                           onClick={() => addRule()}
                           className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
-                          style={{ backgroundColor: '#3b8169' }}
+                          style={{ backgroundColor: utilColor.sentra.main }}
                           onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
                           }}
                           onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
                           }}
                         >
                           <Plus className="w-4 h-4 mr-2" />
@@ -368,182 +368,183 @@ export default function OfferRewardStep({
                 <p className="text-gray-500 text-sm">Select a reward from the list above to start configuring.</p>
               </div>
             )}
-            {/* Rule Modal */}
-            {showRuleModal && editingRule && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {editingRule.id ? 'Edit Reward Rule' : 'Add Reward Rule'}
-                    </h3>
-                    <button
-                      onClick={() => {
-                        setShowRuleModal(false);
-                        setEditingRule(null);
-                      }}
-                      className="p-1 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
+          </div>
+        </div>
+      )}
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Rule Name
-                        </label>
-                        <input
-                          type="text"
-                          value={editingRule.name}
-                          onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                        />
-                      </div>
+      {/* Rule Modal */}
+      {showRuleModal && editingRule && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {editingRule.id ? 'Edit Reward Rule' : 'Add Reward Rule'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowRuleModal(false);
+                  setEditingRule(null);
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Priority
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={editingRule.priority}
-                          onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                        />
-                      </div>
-                    </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rule Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRule.name}
+                    onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Bundle Subscription Track
-                      </label>
-                      <select
-                        value={editingRule.bundle_subscription_track}
-                        onChange={(e) => setEditingRule({ ...editingRule, bundle_subscription_track: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                      >
-                        {BUNDLE_TRACKS.map(track => (
-                          <option key={track} value={track}>{track}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Reward Type
-                        </label>
-                        <select
-                          value={editingRule.reward_type}
-                          onChange={(e) => setEditingRule({ ...editingRule, reward_type: e.target.value as 'bundle' | 'points' | 'discount' | 'cashback' })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                        >
-                          {REWARD_RULE_TYPES.map(type => (
-                            <option key={type.value} value={type.value}>
-                              {type.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Reward Value
-                        </label>
-                        <input
-                          type="text"
-                          value={editingRule.reward_value}
-                          onChange={(e) => setEditingRule({ ...editingRule, reward_value: e.target.value })}
-                          placeholder="Enter reward value..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Success Text
-                      </label>
-                      <textarea
-                        value={editingRule.success_text}
-                        onChange={(e) => setEditingRule({ ...editingRule, success_text: e.target.value })}
-                        placeholder="Enter success message..."
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Error Group
-                        </label>
-                        <input
-                          type="text"
-                          value={editingRule.error_group}
-                          onChange={(e) => setEditingRule({ ...editingRule, error_group: e.target.value })}
-                          placeholder="e.g., Low balance Failure [01]"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Failure Text
-                        </label>
-                        <input
-                          type="text"
-                          value={editingRule.failure_text}
-                          onChange={(e) => setEditingRule({ ...editingRule, failure_text: e.target.value })}
-                          placeholder="Enter failure message..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="rule-enabled"
-                        checked={editingRule.enabled}
-                        onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
-                        className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
-                      />
-                      <label htmlFor="rule-enabled" className="ml-2 text-sm text-gray-700">
-                        Enable this rule
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-3 mt-6">
-                    <button
-                      onClick={() => {
-                        setShowRuleModal(false);
-                        setEditingRule(null);
-                      }}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => selectedRewardData && saveRule(selectedRewardData.id, editingRule)}
-                      className="px-4 py-2 text-white rounded-lg transition-colors"
-                      style={{ backgroundColor: '#3b8169' }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
-                      }}
-                    >
-                      Save Rule
-                    </button>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Priority
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingRule.priority}
+                    onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
                 </div>
               </div>
-            )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bundle Subscription Track
+                </label>
+                <select
+                  value={editingRule.bundle_subscription_track}
+                  onChange={(e) => setEditingRule({ ...editingRule, bundle_subscription_track: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                >
+                  {BUNDLE_TRACKS.map(track => (
+                    <option key={track} value={track}>{track}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reward Type
+                  </label>
+                  <select
+                    value={editingRule.reward_type}
+                    onChange={(e) => setEditingRule({ ...editingRule, reward_type: e.target.value as 'bundle' | 'points' | 'discount' | 'cashback' })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  >
+                    {REWARD_RULE_TYPES.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reward Value
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRule.reward_value}
+                    onChange={(e) => setEditingRule({ ...editingRule, reward_value: e.target.value })}
+                    placeholder="Enter reward value..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Success Text
+                </label>
+                <textarea
+                  value={editingRule.success_text}
+                  onChange={(e) => setEditingRule({ ...editingRule, success_text: e.target.value })}
+                  placeholder="Enter success message..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Error Group
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRule.error_group}
+                    onChange={(e) => setEditingRule({ ...editingRule, error_group: e.target.value })}
+                    placeholder="e.g., Low balance Failure [01]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Failure Text
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRule.failure_text}
+                    onChange={(e) => setEditingRule({ ...editingRule, failure_text: e.target.value })}
+                    placeholder="Enter failure message..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="rule-enabled"
+                  checked={editingRule.enabled}
+                  onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
+                  className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:outline-none"
+                />
+                <label htmlFor="rule-enabled" className="ml-2 text-sm text-gray-700">
+                  Enable this rule
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowRuleModal(false);
+                  setEditingRule(null);
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => selectedRewardData && saveRule(selectedRewardData.id, editingRule)}
+                className="px-4 py-2 text-white rounded-lg transition-colors"
+                style={{ backgroundColor: utilColor.sentra.main }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                }}
+              >
+                Save Rule
+              </button>
+            </div>
           </div>
         </div>
       )}

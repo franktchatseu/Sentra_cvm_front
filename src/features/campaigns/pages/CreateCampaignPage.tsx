@@ -414,7 +414,7 @@ export default function CreateCampaignPage() {
           </div>
 
           {/* Sticky Progress Navigation */}
-          <nav aria-label="Progress" className="sticky top-0 z-50 bg-white py-6 border-b border-gray-200">
+          <nav aria-label="Progress" className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200">
             <div className="flex items-center justify-between w-full">
               {steps.map((step, stepIdx) => {
                 const status = getStepStatus(step.id);

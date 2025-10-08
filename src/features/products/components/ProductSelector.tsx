@@ -12,10 +12,11 @@ interface ProductSelectorProps {
   selectedProducts: Product[];
   onProductsChange: (products: Product[]) => void;
   multiSelect?: boolean;
+  showAddButtonInline?: boolean;
 }
 
 
-export default function ProductSelector({ selectedProducts, onProductsChange, multiSelect = true }: ProductSelectorProps) {
+export default function ProductSelector({ selectedProducts, onProductsChange, multiSelect = true, showAddButtonInline = false }: ProductSelectorProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Array<{ value: string, label: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -107,7 +108,21 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
     <div className="space-y-4">
       {selectedProducts.length > 0 ? (
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-gray-700">Selected Products ({selectedProducts.length})</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-700">Selected Products ({selectedProducts.length})</h4>
+            {showAddButtonInline && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200"
+                style={{ backgroundColor: color.sentra.main }}
+                onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
+                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Products
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 gap-3">
             {selectedProducts.map((product) => (
               <div key={product.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
@@ -157,8 +172,8 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
         </div>
       )}
 
-      {/* Add More Products Button (only show when products are selected) */}
-      {selectedProducts.length > 0 && (
+      {/* Add More Products Button (only show when products are selected and not inline) */}
+      {selectedProducts.length > 0 && !showAddButtonInline && (
         <div className="flex justify-center">
           <button
             onClick={() => setIsModalOpen(true)}
@@ -172,7 +187,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
 
       {/* Product Selection Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-200 bg-white">

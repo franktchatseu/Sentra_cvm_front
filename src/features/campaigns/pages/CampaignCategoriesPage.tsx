@@ -186,43 +186,34 @@ export default function CampaignCategoriesPage() {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
-    useEffect(() => {
-        loadCategories();
-        loadAllCampaigns();
-    }, [debouncedSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
-
     const loadAllCampaigns = async () => {
         try {
             const response = await campaignService.getAllCampaigns({
                 pageSize: 1000 // Get all campaigns to count by category
             });
-            setAllCampaigns((response.data as Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) || []);
+            const campaigns = (response.data as Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) || [];
+            setAllCampaigns(campaigns);
+            return campaigns; // Return campaigns for immediate use
         } catch (err) {
             console.error('Failed to load campaigns for counting:', err);
             setAllCampaigns([]);
+            return [];
         }
     };
 
-    const getCampaignCountForCategory = (categoryId: number) => {
-        const count = allCampaigns.filter(campaign => {
-            // Check if campaign has category_id that matches (handle both string and number)
-            return campaign.category_id === categoryId ||
-                campaign.category_id === categoryId.toString() ||
-                (campaign as any).category_id === categoryId ||
-                (campaign as any).category_id === categoryId.toString();
+    const getCampaignCountForCategory = (categoryId: number, campaigns: Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) => {
+        const count = campaigns.filter(campaign => {
+            // Handle both string and number category_id from API
+            const campaignCategoryId = (campaign as { category_id?: number | string }).category_id;
+            return campaignCategoryId === categoryId ||
+                campaignCategoryId === String(categoryId) ||
+                Number(campaignCategoryId) === categoryId;
         }).length;
-
-        console.log(`Category ${categoryId} has ${count} campaigns:`, allCampaigns.filter(campaign =>
-            campaign.category_id === categoryId ||
-            campaign.category_id === categoryId.toString() ||
-            (campaign as any).category_id === categoryId ||
-            (campaign as any).category_id === categoryId.toString()
-        ));
 
         return count;
     };
 
-    const loadCategories = async (skipCache = false) => {
+    const loadCategories = async (skipCache = false, campaignsData?: Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) => {
         try {
             setLoading(true);
             const response = await campaignService.getCampaignCategories({
@@ -235,17 +226,18 @@ export default function CampaignCategoriesPage() {
                 ? response
                 : (response as Record<string, unknown>)?.data || [];
 
+            // Use provided campaigns data or fall back to state
+            const campaignsToUse = campaignsData || allCampaigns;
+
             // Add campaign count to each category
             const categoriesWithCounts = (categoriesData as CampaignCategory[]).map(category => {
-                const count = getCampaignCountForCategory(category.id);
-                console.log(`Setting count for category ${category.id} (${category.name}): ${count}`);
+                const count = getCampaignCountForCategory(category.id, campaignsToUse);
                 return {
                     ...category,
                     campaign_count: count
                 };
             });
 
-            console.log('Categories with counts:', categoriesWithCounts);
             setCampaignCategories(categoriesWithCounts);
             setError('');
         } catch (err) {
@@ -257,6 +249,14 @@ export default function CampaignCategoriesPage() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const loadData = async () => {
+            const campaigns = await loadAllCampaigns();
+            await loadCategories(false, campaigns); // Pass campaigns directly
+        };
+        loadData();
+    }, [debouncedSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleCreateCategory = () => {
         setEditingCategory(undefined);

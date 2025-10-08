@@ -250,9 +250,11 @@ function ProductStepWrapper({ formData, setFormData }: Omit<StepProps, 'currentS
 
   return (
     <div className="space-y-6">
-      <div className="mt-8 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Offer Products</h2>
-        <p className="text-sm text-gray-600">Select the products that will be included in this offer</p>
+      <div className="mt-8 mb-8 flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Offer Products</h2>
+          <p className="text-sm text-gray-600">Select the products that will be included in this offer</p>
+        </div>
       </div>
       <div className="space-y-6">
         <ProductSelector
@@ -266,6 +268,7 @@ function ProductStepWrapper({ formData, setFormData }: Omit<StepProps, 'currentS
             });
           }}
           multiSelect={true}
+          showAddButtonInline={true}
         />
       </div>
     </div>
@@ -871,7 +874,7 @@ export default function CreateOfferPage() {
           </div>
 
           {/* Sticky Progress Navigation */}
-          <nav aria-label="Progress" className="sticky top-0 z-50 bg-white py-6 border-b border-gray-200">
+          <nav aria-label="Progress" className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200">
             <div className="flex items-center justify-between w-full">
               {steps.map((step, stepIdx) => {
                 const status = getStepStatus(step.id);
@@ -941,12 +944,12 @@ export default function CreateOfferPage() {
             </div>
           )}
 
-          <div className="pb-8">
+          <div className="pb-10">
             {renderStep()}
           </div>
 
           {/* Sticky Bottom Navigation */}
-          <div className="sticky bottom-0 z-50 bg-white border-t border-gray-200 py-4">
+          <div className="sticky bottom-0 z-50 bg-white py-4">
             <div className="flex justify-between items-center">
               <button
                 onClick={handlePrev}

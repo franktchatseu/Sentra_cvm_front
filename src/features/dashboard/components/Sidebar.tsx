@@ -24,6 +24,17 @@ import {
 } from 'lucide-react';
 import logo from '../../../assets/logo.png';
 
+// Hide scrollbar CSS
+const hideScrollbarStyle = `
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -172,6 +183,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
+      <style>{hideScrollbarStyle}</style>
       {/* Mobile Sidebar Overlay */}
       {isOpen && (
         <div className="fixed inset-0 z-[9999] lg:hidden">
@@ -190,7 +202,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <X className="h-6 w-6" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-6 py-4 hide-scrollbar">
               <nav className="space-y-2">
                 {navigation.map((item) => {
                   const Icon = item.icon;
@@ -216,7 +228,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           )}
                         </button>
 
-                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
                           }`}>
                           <div className="mt-2 ml-6 space-y-2">
                             {item.children?.map((child) => {
@@ -310,14 +322,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col">
-        <div className="grid grid-rows-[auto_1fr_auto] bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 px-6 py-6" style={{ height: '100vh' }}>
-          <div className="flex h-16 items-center">
+        <div className="flex flex-col h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 px-6 py-6">
+          <div className="flex h-16 items-center flex-shrink-0">
             <div className="w-32 h-32 flex items-center justify-center">
               <img src={logo} alt="Sentra Logo" className="w-full h-full object-contain" />
             </div>
           </div>
 
-          <nav className="overflow-y-auto">
+          <nav className="flex-1 overflow-y-auto py-4 hide-scrollbar">
             <ul className="space-y-3">
               {navigation.map((item) => {
                 const Icon = item.icon;
@@ -342,7 +354,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         )}
                       </button>
 
-                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
                         }`}>
                         <ul className="mt-2 ml-6 space-y-2">
                           {item.children?.map((child) => {
@@ -433,7 +445,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </ul>
           </nav>
 
-          <div className="pt-6 border-t border-gray-200">
+          <div className="pt-6 border-t border-gray-200 flex-shrink-0">
             <ul className="space-y-1">
               {secondaryNavigation.map((item) => {
                 const Icon = item.icon;

@@ -285,12 +285,12 @@ export default function OfferTrackingStep({
                       <button
                         onClick={() => addRule()}
                         className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
-                        style={{ backgroundColor: '#3b8169' }}
+                        style={{ backgroundColor: utilColor.sentra.main }}
                         onMouseEnter={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
                         }}
                         onMouseLeave={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
                         }}
                       >
                         <Plus className="w-4 h-4 mr-1" />
@@ -305,12 +305,12 @@ export default function OfferTrackingStep({
                         <button
                           onClick={() => addRule()}
                           className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
-                          style={{ backgroundColor: '#3b8169' }}
+                          style={{ backgroundColor: utilColor.sentra.main }}
                           onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
                           }}
                           onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
                           }}
                         >
                           <Plus className="w-4 h-4 mr-2" />
@@ -377,7 +377,7 @@ export default function OfferTrackingStep({
 
       {/* Rule Modal */}
       {showRuleModal && editingRule && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -492,12 +492,12 @@ export default function OfferTrackingStep({
               <button
                 onClick={() => selectedSourceData && saveRule(selectedSourceData.id, editingRule)}
                 className="px-4 py-2 text-white rounded-lg transition-colors"
-                style={{ backgroundColor: '#3b8169' }}
+                style={{ backgroundColor: utilColor.sentra.main }}
                 onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#2d5a4a';
+                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
                 }}
                 onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#3b8169';
+                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
                 }}
               >
                 Save Rule
