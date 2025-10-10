@@ -159,7 +159,7 @@ function CategoryModal({ isOpen, onClose, category, onSave, isSaving = false }: 
 export default function CampaignCategoriesPage() {
     const navigate = useNavigate();
     const { confirm } = useConfirm();
-    const { success, error: showError } = useToast();
+    const { success: showToast, error: showError } = useToast();
 
     const [campaignCategories, setCampaignCategories] = useState<CampaignCategory[]>([]);
     const [loading, setLoading] = useState(true);
@@ -176,6 +176,11 @@ export default function CampaignCategoriesPage() {
     const [campaigns, setCampaigns] = useState<Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>>([]);
     const [campaignsLoading, setCampaignsLoading] = useState(false);
     const [allCampaigns, setAllCampaigns] = useState<Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>>([]);
+
+    // Campaign assignment state
+    const [showAssignDropdown, setShowAssignDropdown] = useState(false);
+    const [unassignedCampaigns, setUnassignedCampaigns] = useState<Array<{ id: string; name: string; description?: string }>>([]);
+    const [assigningCampaign, setAssigningCampaign] = useState(false);
 
     // Debounce search term
     useEffect(() => {
@@ -205,9 +210,14 @@ export default function CampaignCategoriesPage() {
         const count = campaigns.filter(campaign => {
             // Handle both string and number category_id from API
             const campaignCategoryId = (campaign as { category_id?: number | string }).category_id;
-            return campaignCategoryId === categoryId ||
+            const matchesCategory = campaignCategoryId === categoryId ||
                 campaignCategoryId === String(categoryId) ||
                 Number(campaignCategoryId) === categoryId;
+
+            // Exclude archived campaigns from count
+            const isNotArchived = campaign.status !== 'archived';
+
+            return matchesCategory && isNotArchived;
         }).length;
 
         return count;
@@ -282,7 +292,7 @@ export default function CampaignCategoriesPage() {
         try {
             await campaignService.deleteCampaignCategory(category.id);
             setCampaignCategories(prev => prev.filter(c => c.id !== category.id));
-            success('Category Deleted', `"${category.name}" has been deleted successfully.`);
+            showToast('Category Deleted', `"${category.name}" has been deleted successfully.`);
         } catch (err) {
             console.error('Error deleting category:', err);
             showError('Error', err instanceof Error ? err.message : 'Failed to delete category');
@@ -299,12 +309,12 @@ export default function CampaignCategoriesPage() {
                     categoryData
                 );
                 await loadCategories(true);
-                success('Category updated successfully');
+                showToast('Category updated successfully');
             } else {
                 // Create new category
                 await campaignService.createCampaignCategory(categoryData);
                 await loadCategories(true);
-                success('Category created successfully');
+                showToast('Category created successfully');
             }
             setIsModalOpen(false);
             setEditingCategory(undefined);
@@ -327,7 +337,10 @@ export default function CampaignCategoriesPage() {
                 categoryId: category.id,
                 pageSize: 50 // Get more campaigns to show in modal
             });
-            setCampaigns((response.data as Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) || []);
+            // Filter out archived campaigns
+            const allCampaigns = (response.data as Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) || [];
+            const activeCampaigns = allCampaigns.filter(campaign => campaign.status !== 'archived');
+            setCampaigns(activeCampaigns);
         } catch (err) {
             console.error('Failed to fetch campaigns:', err);
             showError('Failed to load campaigns', 'Please try again later.');
@@ -335,6 +348,57 @@ export default function CampaignCategoriesPage() {
         } finally {
             setCampaignsLoading(false);
         }
+    };
+
+    const loadUnassignedCampaigns = async () => {
+        try {
+            const response = await campaignService.getAllCampaigns({
+                pageSize: 100
+            });
+            const allCampaignsData = (response.data as Array<{ id: string; name: string; description?: string; category_id?: number | null; status?: string }>) || [];
+            // Filter campaigns that are NOT in this catalog (and not archived)
+            const availableCampaigns = allCampaignsData.filter(campaign => {
+                const isNotInThisCategory = Number(campaign.category_id) !== Number(selectedCategory?.id);
+                const isNotArchived = campaign.status !== 'archived';
+                return isNotInThisCategory && isNotArchived;
+            });
+            setUnassignedCampaigns(availableCampaigns);
+        } catch (err) {
+            console.error('Failed to load campaigns:', err);
+            setUnassignedCampaigns([]);
+        }
+    };
+
+    const handleAssignCampaign = async (campaignId: string) => {
+        if (!selectedCategory) return;
+
+        try {
+            setAssigningCampaign(true);
+            // Update campaign with category_id
+            await campaignService.updateCampaign(Number(campaignId), {
+                category_id: selectedCategory.id
+            });
+
+            showToast('Campaign assigned successfully!');
+            setShowAssignDropdown(false);
+
+            // Reload campaigns for this category
+            await handleViewCampaigns(selectedCategory);
+
+            // Reload categories to update counts
+            const campaigns = await loadAllCampaigns();
+            await loadCategories(false, campaigns);
+        } catch (err) {
+            console.error('Failed to assign campaign:', err);
+            showError('Failed to assign campaign', 'Please try again later.');
+        } finally {
+            setAssigningCampaign(false);
+        }
+    };
+
+    const handleCreateNewCampaign = () => {
+        if (!selectedCategory) return;
+        navigate(`/dashboard/campaigns/create?categoryId=${selectedCategory.id}`);
     };
 
     const filteredCampaignCategories = (campaignCategories || []).filter(category =>
@@ -614,11 +678,75 @@ export default function CampaignCategoriesPage() {
                                     setIsCampaignsModalOpen(false);
                                     setSelectedCategory(null);
                                     setCampaigns([]);
+                                    setShowAssignDropdown(false);
                                 }}
                                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="px-6 pt-4 pb-2 border-b border-gray-200 bg-gray-50">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => {
+                                            if (!showAssignDropdown) {
+                                                loadUnassignedCampaigns();
+                                            }
+                                            setShowAssignDropdown(!showAssignDropdown);
+                                        }}
+                                        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                                        disabled={assigningCampaign}
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Assign Campaign
+                                    </button>
+
+                                    {/* Dropdown for available campaigns */}
+                                    {showAssignDropdown && (
+                                        <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
+                                            {unassignedCampaigns.length === 0 ? (
+                                                <div className="p-4 text-center text-gray-500">
+                                                    No available campaigns to assign
+                                                </div>
+                                            ) : (
+                                                <div className="py-2">
+                                                    {unassignedCampaigns.map((campaign) => (
+                                                        <button
+                                                            key={campaign.id}
+                                                            onClick={() => handleAssignCampaign(campaign.id)}
+                                                            disabled={assigningCampaign}
+                                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
+                                                        >
+                                                            <div className="font-medium text-gray-900">{campaign.name}</div>
+                                                            {campaign.description && (
+                                                                <div className="text-sm text-gray-600 mt-1 line-clamp-2">{campaign.description}</div>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={handleCreateNewCampaign}
+                                    className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+                                    style={{ backgroundColor: color.sentra.main }}
+                                    onMouseEnter={(e) => {
+                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                    }}
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Create New Campaign
+                                </button>
+                            </div>
                         </div>
 
                         <div className="p-6 overflow-y-auto max-h-[60vh]">

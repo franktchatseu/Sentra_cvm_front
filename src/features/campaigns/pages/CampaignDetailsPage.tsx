@@ -36,15 +36,48 @@ export default function CampaignDetailsPage() {
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [rejectComments, setRejectComments] = useState('');
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [categoryName, setCategoryName] = useState<string>('Uncategorized');
 
     useEffect(() => {
         const fetchCampaignDetails = async () => {
             try {
                 setIsLoading(true);
 
-                const response = await campaignService.getCampaignById(id!) as { data?: Campaign; success?: boolean };
-                const campaignData = response.data || response as Campaign;
+                // Skip cache to get fresh data
+                const response = await campaignService.getCampaignById(id!, true) as { data?: Campaign; success?: boolean };
+                let campaignData = response.data || response as Campaign;
+
+                // Add dummy segment if not present (same logic as CampaignsPage for consistency)
+                if (!(campaignData as { segment?: string }).segment) {
+                    const existingSegments = [
+                        'High Value Customers',
+                        'At Risk Customers',
+                        'New Subscribers',
+                        'Voice Heavy Users',
+                        'Data Bundle Enthusiasts',
+                        'Weekend Warriors',
+                        'Business Customers',
+                        'Dormant Users'
+                    ];
+                    const campaignId = parseInt(campaignData.id);
+                    (campaignData as { segment?: string }).segment = existingSegments[campaignId % existingSegments.length];
+                }
+
                 setCampaign(campaignData);
+
+                // Fetch category name if category_id exists
+                if (campaignData.category_id) {
+                    try {
+                        const categoriesResponse = await campaignService.getCampaignCategories() as { data?: Array<{ id: string | number; name: string }> };
+                        const categories = categoriesResponse.data || [];
+                        const category = categories.find(cat => String(cat.id) === String(campaignData.category_id));
+                        if (category) {
+                            setCategoryName(category.name);
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch category name:', error);
+                    }
+                }
             } catch (error) {
                 console.error('Failed to fetch campaign details:', error);
                 showToast('error', 'Failed to load campaign details');
@@ -56,25 +89,11 @@ export default function CampaignDetailsPage() {
         if (id) {
             fetchCampaignDetails();
         }
-    }, [id, showToast]);
+    }, [id]);
 
     // Action handlers
-    const handleSubmitForApproval = async () => {
-        if (!id) return;
-
-        try {
-            setIsActionLoading(true);
-            showToast('success', 'Campaign submitted for approval');
-            if (campaign) {
-                setCampaign({ ...campaign, approval_status: 'pending' });
-            }
-        } catch (error) {
-            console.error('Failed to submit campaign for approval:', error);
-            showToast('error', 'Failed to submit campaign for approval');
-        } finally {
-            setIsActionLoading(false);
-        }
-    };
+    // Note: Campaigns are automatically set to 'pending' approval status when created
+    // No manual submit is needed - editing a rejected campaign automatically resets to pending
 
     const handleApproveCampaign = async () => {
         if (!id) return;
@@ -143,10 +162,12 @@ export default function CampaignDetailsPage() {
 
         try {
             setIsActionLoading(true);
-            await campaignService.pauseCampaign(parseInt(id), { comments: 'Paused from details page' });
+            const pauseResponse = await campaignService.pauseCampaign(parseInt(id), { comments: 'Paused from details page' });
             showToast('success', 'Campaign paused');
-            if (campaign) {
-                setCampaign({ ...campaign, status: 'paused' });
+
+            // Use fresh API data instead of optimistic update
+            if (pauseResponse.success && pauseResponse.data) {
+                setCampaign({ ...campaign, ...pauseResponse.data } as Campaign);
             }
         } catch (error) {
             console.error('Failed to pause campaign:', error);
@@ -161,10 +182,12 @@ export default function CampaignDetailsPage() {
 
         try {
             setIsActionLoading(true);
-            await campaignService.resumeCampaign(parseInt(id));
+            const resumeResponse = await campaignService.resumeCampaign(parseInt(id));
             showToast('success', 'Campaign resumed');
-            if (campaign) {
-                setCampaign({ ...campaign, status: 'active' });
+
+            // Use fresh API data instead of optimistic update
+            if (resumeResponse.success && resumeResponse.data) {
+                setCampaign({ ...campaign, ...resumeResponse.data } as Campaign);
             }
         } catch (error) {
             console.error('Failed to resume campaign:', error);
@@ -295,27 +318,6 @@ export default function CampaignDetailsPage() {
                         </button>
                     )}
 
-                    {(campaign.status === 'draft' || campaign.status === undefined) && (campaign.approval_status === null || campaign.approval_status === undefined || !campaign.approval_status) && (
-                        <button
-                            onClick={handleSubmitForApproval}
-                            disabled={isActionLoading}
-                            className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
-                            style={{ backgroundColor: color.sentra.main }}
-                            onMouseEnter={(e) => {
-                                if (!isActionLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isActionLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                            }}
-                        >
-                            {isActionLoading ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            ) : (
-                                <CheckCircle className="w-4 h-4" />
-                            )}
-                            {isActionLoading ? 'Submitting...' : 'Submit for Approval'}
-                        </button>
-                    )}
 
                     {campaign.approval_status === 'approved' && campaign.status === 'draft' && (
                         <button
@@ -510,7 +512,7 @@ export default function CampaignDetailsPage() {
                                     )}
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
                                         <Tag className="w-4 h-4 mr-1" />
-                                        {campaign.category_id ? String(campaign.category_id) : 'Uncategorized'}
+                                        {categoryName}
                                     </span>
                                 </div>
                             </div>
@@ -536,13 +538,13 @@ export default function CampaignDetailsPage() {
                             <div>
                                 <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Category</label>
                                 <p className={`text-base ${tw.textPrimary}`}>
-                                    {campaign.category_id ? String(campaign.category_id) : 'Uncategorized'}
+                                    {categoryName}
                                 </p>
                             </div>
                             <div>
                                 <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Segments</label>
                                 <p className={`text-base ${tw.textPrimary}`}>
-                                    {campaign.segments?.length || 0} segments
+                                    {(campaign as { segment?: string }).segment || 'No segments assigned'}
                                 </p>
                             </div>
                             <div>

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useToast } from '../../../contexts/ToastContext';
 import {
   Plus,
   Filter,
@@ -52,6 +53,7 @@ interface CampaignDisplay {
 export default function CampaignsPage() {
   const navigate = useNavigate();
   const { downloadBlob } = useFileDownload();
+  const { showToast } = useToast();
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,6 +73,7 @@ export default function CampaignsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
+  const [allCampaignsUnfiltered, setAllCampaignsUnfiltered] = useState<CampaignDisplay[]>([]);
   const [totalCampaigns, setTotalCampaigns] = useState(0);
   const [currentPage] = useState(1);
   const [pageSize] = useState(10);
@@ -143,10 +146,23 @@ export default function CampaignsPage() {
         params.startDateTo = filters.startDateTo;
       }
 
-      const response = await campaignService.getAllCampaigns(params);
-      console.log('Campaigns fetched:', response);
+      // Add skipCache to get fresh data
+      const response = await campaignService.getAllCampaigns({ ...params, skipCache: true });
 
       const campaignsData = (response.data as CampaignDisplay[]) || [];
+
+      // Helper function to generate consistent random values based on campaign ID
+      const seededRandom = (seed: number, min: number, max: number) => {
+        const x = Math.sin(seed) * 10000;
+        const random = x - Math.floor(x);
+        return Math.floor(random * (max - min + 1)) + min;
+      };
+
+      const seededRandomFloat = (seed: number, min: number, max: number) => {
+        const x = Math.sin(seed) * 10000;
+        const random = x - Math.floor(x);
+        return random * (max - min) + min;
+      };
 
       // Add dummy performance data and dates for campaigns that don't have them
       const campaignsWithDummyData = campaignsData.map(campaign => {
@@ -156,16 +172,16 @@ export default function CampaignsPage() {
         }
         // Add dummy performance data if not present
         if (!campaign.performance) {
-          // Generate realistic dummy performance data based on campaign status
-          const baseSent = Math.floor(Math.random() * 10000) + 1000;
-          const deliveryRate = 0.95 + Math.random() * 0.04; // 95-99% delivery rate
-          const openRate = 0.15 + Math.random() * 0.25; // 15-40% open rate
-          const conversionRate = 0.02 + Math.random() * 0.08; // 2-10% conversion rate
+          // Generate realistic dummy performance data based on campaign ID (consistent values)
+          const baseSent = seededRandom(campaign.id * 1, 1000, 11000);
+          const deliveryRate = seededRandomFloat(campaign.id * 2, 0.95, 0.99);
+          const openRate = seededRandomFloat(campaign.id * 3, 0.15, 0.40);
+          const conversionRate = seededRandomFloat(campaign.id * 4, 0.02, 0.10);
 
           const delivered = Math.floor(baseSent * deliveryRate);
           const opened = Math.floor(delivered * openRate);
           const converted = Math.floor(delivered * conversionRate);
-          const revenue = converted * (50 + Math.random() * 200); // $50-$250 per conversion
+          const revenue = converted * seededRandom(campaign.id * 5, 50, 250);
 
           campaign.performance = {
             sent: baseSent,
@@ -179,8 +195,8 @@ export default function CampaignsPage() {
         // Add dummy dates if not present
         if (!campaign.startDate || !campaign.endDate) {
           const now = new Date();
-          const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
-          const campaignDuration = Math.floor(Math.random() * 14) + 1; // 1-14 days duration
+          const daysAgo = seededRandom(campaign.id * 6, 1, 30);
+          const campaignDuration = seededRandom(campaign.id * 7, 1, 14);
 
           const startDate = new Date(now);
           startDate.setDate(startDate.getDate() - daysAgo);
@@ -242,11 +258,20 @@ export default function CampaignsPage() {
           campaign.objective = objectives[campaign.id % objectives.length];
         }
 
+
         return campaign;
       });
 
-      setCampaigns(campaignsWithDummyData);
-      setTotalCampaigns(response.meta?.total || campaignsData.length);
+      setAllCampaignsUnfiltered(campaignsWithDummyData);
+
+      const finalCampaigns = selectedStatus === 'all'
+        ? campaignsWithDummyData.filter(c => c.status !== 'archived')
+        : campaignsWithDummyData;
+
+      setCampaigns(finalCampaigns);
+      setTotalCampaigns(selectedStatus === 'all'
+        ? finalCampaigns.length
+        : response.meta?.total || campaignsData.length);
     } catch (error) {
       console.error('Failed to fetch campaigns:', error);
       setCampaigns([]);
@@ -264,7 +289,8 @@ export default function CampaignsPage() {
   // Fetch campaigns when filters change
   useEffect(() => {
     fetchCampaigns();
-  }, [fetchCampaigns]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStatus, searchQuery, filters, currentPage, pageSize]);
 
   // Close action menus when clicking outside
   useEffect(() => {
@@ -285,12 +311,12 @@ export default function CampaignsPage() {
 
   const statusOptions = [
     { value: 'all', label: 'All Campaigns', count: totalCampaigns },
-    { value: 'active', label: 'Active', count: selectedStatus === 'active' ? totalCampaigns : campaigns.filter(c => c.status === 'active').length },
-    { value: 'scheduled', label: 'Scheduled', count: selectedStatus === 'scheduled' ? totalCampaigns : campaigns.filter(c => c.status === 'scheduled').length },
-    { value: 'paused', label: 'Paused', count: selectedStatus === 'paused' ? totalCampaigns : campaigns.filter(c => c.status === 'paused').length },
-    { value: 'completed', label: 'Completed', count: selectedStatus === 'completed' ? totalCampaigns : campaigns.filter(c => c.status === 'completed').length },
-    { value: 'draft', label: 'Draft', count: selectedStatus === 'draft' ? totalCampaigns : campaigns.filter(c => c.status === 'draft').length },
-    { value: 'archived', label: 'Archived', count: selectedStatus === 'archived' ? totalCampaigns : campaigns.filter(c => c.status === 'archived').length }
+    { value: 'active', label: 'Active', count: selectedStatus === 'active' ? totalCampaigns : allCampaignsUnfiltered.filter(c => c.status === 'active').length },
+    { value: 'scheduled', label: 'Scheduled', count: selectedStatus === 'scheduled' ? totalCampaigns : allCampaignsUnfiltered.filter(c => c.status === 'scheduled').length },
+    { value: 'paused', label: 'Paused', count: selectedStatus === 'paused' ? totalCampaigns : allCampaignsUnfiltered.filter(c => c.status === 'paused').length },
+    { value: 'completed', label: 'Completed', count: selectedStatus === 'completed' ? totalCampaigns : allCampaignsUnfiltered.filter(c => c.status === 'completed').length },
+    { value: 'draft', label: 'Draft', count: selectedStatus === 'draft' ? totalCampaigns : allCampaignsUnfiltered.filter(c => c.status === 'draft').length },
+    { value: 'archived', label: 'Archived', count: selectedStatus === 'archived' ? totalCampaigns : allCampaignsUnfiltered.filter(c => c.status === 'archived').length }
   ];
 
   // Category options from API
@@ -412,21 +438,45 @@ export default function CampaignsPage() {
 
   const handlePauseCampaign = async (campaignId: number) => {
     try {
-      await campaignService.pauseCampaign(campaignId, { comments: 'Paused from campaigns list' });
-      console.log('Campaign paused successfully');
-      fetchCampaigns(); // Refresh list
+      const pauseResponse = await campaignService.pauseCampaign(campaignId, { comments: 'Paused from campaigns list' });
+
+      // Update the campaign directly with the fresh data from API response
+      if (pauseResponse.success && pauseResponse.data) {
+        setCampaigns(prevCampaigns =>
+          prevCampaigns.map(campaign =>
+            campaign.id === campaignId
+              ? { ...campaign, ...pauseResponse.data }
+              : campaign
+          )
+        );
+      }
+
+      showToast('success', 'Campaign paused successfully');
     } catch (error) {
       console.error('Failed to pause campaign:', error);
+      showToast('error', 'Failed to pause campaign');
     }
   };
 
   const handleResumeCampaign = async (campaignId: number) => {
     try {
-      await campaignService.resumeCampaign(campaignId);
-      console.log('Campaign resumed successfully');
-      fetchCampaigns(); // Refresh list
+      const resumeResponse = await campaignService.resumeCampaign(campaignId);
+
+      // Update the campaign directly with the fresh data from API response
+      if (resumeResponse.success && resumeResponse.data) {
+        setCampaigns(prevCampaigns =>
+          prevCampaigns.map(campaign =>
+            campaign.id === campaignId
+              ? { ...campaign, ...resumeResponse.data }
+              : campaign
+          )
+        );
+      }
+
+      showToast('success', 'Campaign resumed successfully');
     } catch (error) {
       console.error('Failed to resume campaign:', error);
+      showToast('error', 'Failed to resume campaign');
     }
   };
 
@@ -495,20 +545,20 @@ export default function CampaignsPage() {
             ))}
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <div className="relative w-full sm:w-auto">
               <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
               <input
                 type="text"
                 placeholder="Search campaigns..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:ring-0 focus:border-[${color.sentra.main}] w-72 text-sm`}
+                className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:ring-0 focus:border-[${color.sentra.main}] w-full sm:w-72 text-sm`}
               />
             </div>
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium`}
+              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium w-full sm:w-auto`}
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -530,16 +580,16 @@ export default function CampaignsPage() {
                 <tr>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Campaign</th>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
-                  <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Segment</th>
-                  <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Performance</th>
-                  <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Dates</th>
+                  <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider hidden lg:table-cell`}>Segment</th>
+                  <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider hidden md:table-cell`}>Performance</th>
+                  <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider hidden xl:table-cell`}>Dates</th>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
                 </tr>
               </thead>
               <tbody className={`bg-white divide-y divide-[${color.ui.border}]/50`}>
                 {filteredCampaigns.map((campaign) => (
-                  <tr key={campaign.id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
-                    <td className="px-6 py-5">
+                  <tr key={campaign.id} className={`group hover:bg-gray-50/30 transition-all duration-300 relative`}>
+                    <td className="px-6 py-3">
                       <div className="flex items-center space-x-4">
                         <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.campaigns}` }}>
                           <Target className={`w-5 h-5 text-white`} />
@@ -556,26 +606,20 @@ export default function CampaignsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-3">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(campaign.status)}`}>
                         {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-3 hidden lg:table-cell">
                       <div className="flex items-center space-x-2">
                         <Users className={`w-4 h-4 text-[${color.entities.segments}] flex-shrink-0`} />
                         <span className={`text-sm ${tw.textPrimary} truncate`}>{campaign.segment}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-3 hidden md:table-cell">
                       {campaign.performance ? (
                         <div className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className={`${tw.textSecondary}`}>Sent:</span>
-                            <span className={`font-medium ${tw.textPrimary}`}>
-                              {campaign.performance.sent.toLocaleString()}
-                            </span>
-                          </div>
                           <div className="flex justify-between text-sm">
                             <span className={`${tw.textSecondary}`}>Conversion:</span>
                             <span className={`font-medium ${tw.textPrimary}`}>
@@ -593,16 +637,12 @@ export default function CampaignsPage() {
                         <span className={`text-sm ${tw.textMuted}`}>No data</span>
                       )}
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center space-x-3">
-                        <Calendar className={`w-4 h-4 text-[${color.entities.analytics}] flex-shrink-0`} />
-                        <div className={`text-sm ${tw.textPrimary} space-y-1`}>
-                          <div className="font-medium">{campaign.startDate}</div>
-                          <div className={`${tw.textMuted} text-sm`}>to {campaign.endDate}</div>
-                        </div>
+                    <td className="px-6 py-3 hidden xl:table-cell">
+                      <div className={`text-sm ${tw.textPrimary} whitespace-nowrap`}>
+                        {campaign.startDate} - {campaign.endDate}
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-3">
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => navigate(`/dashboard/campaigns/${campaign.id}`)}
@@ -611,6 +651,7 @@ export default function CampaignsPage() {
                         >
                           <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                         </button>
+                        {/* Only show pause/resume for campaigns that can be paused/resumed */}
                         {campaign.status === 'paused' ? (
                           <button
                             onClick={() => handleResumeCampaign(campaign.id)}
@@ -621,7 +662,7 @@ export default function CampaignsPage() {
                           >
                             <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           </button>
-                        ) : campaign.status === 'active' ? (
+                        ) : (campaign.status === 'active' || campaign.status === 'running') ? (
                           <button
                             onClick={() => handlePauseCampaign(campaign.id)}
                             className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300`}
@@ -651,14 +692,18 @@ export default function CampaignsPage() {
 
                           {showActionMenu === campaign.id && (
                             <div
-                              className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
+                              className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3"
                               style={{
                                 maxHeight: '80vh',
-                                overflowY: 'auto'
+                                overflowY: 'auto',
+                                zIndex: 9999
                               }}
                             >
                               <button
-                                onClick={() => handleDuplicateCampaign(campaign.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDuplicateCampaign(campaign.id);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -666,7 +711,10 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                onClick={() => handleCloneWithChanges(campaign.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCloneWithChanges(campaign.id);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <Copy className="w-4 h-4 mr-4" style={{ color: color.entities.campaigns }} />
@@ -674,7 +722,10 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                onClick={() => handleArchiveCampaign(campaign.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleArchiveCampaign(campaign.id);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <Archive className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -682,7 +733,10 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                // onClick={() => handleViewAnalytics(campaign.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // handleViewAnalytics(campaign.id);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <Target className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -690,7 +744,10 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                onClick={() => handleExportCampaign(campaign.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleExportCampaign(campaign.id);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <Download className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -698,7 +755,10 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                onClick={() => handleViewApprovalHistory(campaign.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewApprovalHistory(campaign.id);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <CheckCircle className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -706,7 +766,10 @@ export default function CampaignsPage() {
                               </button>
 
                               <button
-                                onClick={() => handleViewLifecycleHistory(campaign.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewLifecycleHistory(campaign.id);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <History className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
@@ -715,7 +778,10 @@ export default function CampaignsPage() {
 
 
                               <button
-                                onClick={() => handleDeleteCampaign(campaign.id, campaign.name)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCampaign(campaign.id, campaign.name);
+                                }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-red-50 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4 mr-4 text-red-500" />
@@ -760,9 +826,9 @@ export default function CampaignsPage() {
 
       {/* Filters Side Modal */}
       {showAdvancedFilters && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 999999, top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
-          <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl">
+          <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl" style={{ zIndex: 1000000 }}>
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">

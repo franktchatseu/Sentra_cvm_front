@@ -96,10 +96,10 @@ export default function CampaignDefinitionStep({
           Define your campaign goals and choose how you want to create your campaign
         </p>
       </div>
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Information</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-8 space-y-6">
+        <h3 className="text-base font-medium text-gray-900 mb-6">Campaign Information</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Name *
@@ -125,7 +125,7 @@ export default function CampaignDefinitionStep({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
                 <span className={formData.category_id ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.category_id ? categories.find(c => c.id === formData.category_id)?.name : 'Select catalog'}
+                  {formData.category_id ? (categories.find(c => Number(c.id) === Number(formData.category_id))?.name || (isLoadingCategories ? 'Loading...' : 'Select catalog')) : 'Select catalog'}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -178,7 +178,7 @@ export default function CampaignDefinitionStep({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Tag
@@ -220,8 +220,8 @@ export default function CampaignDefinitionStep({
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Objectives</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-8 space-y-6">
+        <h3 className="text-base font-medium text-gray-900 mb-6">Campaign Objectives</h3>
 
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -287,8 +287,8 @@ export default function CampaignDefinitionStep({
       </div>
 
       {/* Campaign Priority */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Priority</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-8 space-y-6">
+        <h3 className="text-base font-medium text-gray-900 mb-6">Campaign Priority</h3>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -329,11 +329,10 @@ export default function CampaignDefinitionStep({
                   key={rank}
                   type="button"
                   onClick={() => setFormData({ ...formData, priority_rank: rank })}
-                  className={`w-10 h-10 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center ${
-                    formData.priority_rank === rank
-                      ? 'bg-[#588157] text-white shadow-sm'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                  }`}
+                  className={`w-10 h-10 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center ${formData.priority_rank === rank
+                    ? 'bg-[#588157] text-white shadow-sm'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                    }`}
                 >
                   {rank}
                 </button>

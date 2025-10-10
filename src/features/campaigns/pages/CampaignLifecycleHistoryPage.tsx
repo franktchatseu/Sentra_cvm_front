@@ -30,12 +30,19 @@ export default function CampaignLifecycleHistoryPage() {
             try {
                 setIsLoading(true);
                 const [historyData, campaignData] = await Promise.all([
-                    campaignService.getLifecycleHistory(parseInt(id)),
-                    campaignService.getCampaignById(id)
+                    campaignService.getLifecycleHistory(parseInt(id), true), // Skip cache
+                    campaignService.getCampaignById(id, true) // Skip cache
                 ]);
 
-                setHistory(historyData as unknown as LifecycleHistoryEntry[]);
-                setCampaignName((campaignData as unknown as Record<string, unknown>)?.name as string || `Campaign ${id}`);
+                console.log('Lifecycle history data:', historyData);
+                console.log('Campaign data:', campaignData);
+
+                // Extract data from API response structure
+                const historyArray = (historyData as { success: boolean; data: LifecycleHistoryEntry[] })?.data || [];
+                const campaignInfo = (campaignData as { success: boolean; data: { name: string } })?.data;
+
+                setHistory(historyArray);
+                setCampaignName(campaignInfo?.name || `Campaign ${id}`);
             } catch (error) {
                 console.error('Failed to fetch lifecycle history:', error);
                 setHistory([]);

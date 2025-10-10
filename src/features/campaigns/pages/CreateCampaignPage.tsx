@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Check,
@@ -85,6 +85,7 @@ const steps = [
 export default function CreateCampaignPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,11 +93,15 @@ export default function CreateCampaignPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
 
+  // Get categoryId from URL params
+  const categoryIdParam = searchParams.get('categoryId');
+  const preselectedCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+
   const [formData, setFormData] = useState<CreateCampaignRequest>({
     name: '',
     description: '',
     objective: 'acquisition',
-    category_id: undefined,
+    category_id: preselectedCategoryId,
     start_date: undefined,
     end_date: undefined
   });
@@ -230,11 +235,13 @@ export default function CreateCampaignPage() {
       };
 
       if (isEditMode && id) {
+        // Update campaign configuration (approval_status remains unchanged)
         await campaignService.updateCampaign(parseInt(id), campaignData);
         showToast('success', 'Campaign updated successfully!');
       } else {
+        // New campaigns are automatically created with status: 'draft', approval_status: 'pending'
         await campaignService.createCampaign(campaignData);
-        showToast('success', 'Campaign created successfully! You can now review and launch it from the campaigns page.');
+        showToast('success', 'Campaign created and submitted for approval!');
       }
 
       navigate('/dashboard/campaigns');

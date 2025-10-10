@@ -135,7 +135,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     return isActive
       ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] border-l-[5px] border-[${getEntityColor(entity)}] font-semibold`
-      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-gray-50/50 transition-all duration-200`;
+      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-gray-50/50 transition-all duration-200 font-normal`;
   };
 
   const getIconClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
@@ -242,7 +242,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   <div key={child.name}>
                                     <button
                                       onClick={() => toggleExpanded(child.name.toLowerCase())}
-                                      className={`group w-full flex items-center justify-between rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${isChildActive
+                                      className={`group w-full flex items-center justify-between rounded-lg p-2.5 text-sm transition-all duration-200 ${isChildActive
                                         ? getItemClasses(isChildActive, child.entity)
                                         : getItemClasses(false, child.entity)
                                         }`}
@@ -268,7 +268,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                               key={grandchild.name}
                                               to={grandchild.href}
                                               onClick={handleLinkClick}
-                                              className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${isGrandchildActive
+                                              className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${isGrandchildActive
                                                 ? getItemClasses(isGrandchildActive, grandchild.entity)
                                                 : getItemClasses(false, grandchild.entity)
                                                 }`}
@@ -290,7 +290,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   key={child.name}
                                   to={child.href}
                                   onClick={handleLinkClick}
-                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${getItemClasses(isChildActive, child.entity)}`}
+                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${getItemClasses(isChildActive, child.entity)}`}
                                 >
                                   <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
                                   {child.name}
@@ -367,7 +367,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 <li key={child.name}>
                                   <button
                                     onClick={() => toggleExpanded(child.name.toLowerCase())}
-                                    className={`group w-full flex items-center justify-between rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${isChildActive
+                                    className={`group w-full flex items-center justify-between rounded-lg p-2.5 text-sm transition-all duration-200 ${isChildActive
                                       ? getItemClasses(isChildActive, child.entity)
                                       : getItemClasses(false, child.entity)
                                       }`}
@@ -393,7 +393,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                             <Link
                                               to={grandchild.href}
                                               onClick={handleLinkClick}
-                                              className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${getItemClasses(isGrandchildActive, grandchild.entity)}`}
+                                              className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${getItemClasses(isGrandchildActive, grandchild.entity)}`}
                                             >
                                               <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isGrandchildActive, grandchild.entity)}`} />
                                               {grandchild.name}
@@ -413,7 +413,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 <Link
                                   to={child.href}
                                   onClick={handleLinkClick}
-                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm font-medium transition-all duration-200 ${isChildActive
+                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${isChildActive
                                     ? getItemClasses(isChildActive, child.entity)
                                     : getItemClasses(false, child.entity)
                                     }`}
