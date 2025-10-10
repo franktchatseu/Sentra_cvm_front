@@ -7,7 +7,7 @@ import {
   Search,
   Target,
   Users,
-  Calendar,
+  // Calendar,
   MoreHorizontal,
   Eye,
   Play,
@@ -441,11 +441,13 @@ export default function CampaignsPage() {
       const pauseResponse = await campaignService.pauseCampaign(campaignId, { comments: 'Paused from campaigns list' });
 
       // Update the campaign directly with the fresh data from API response
-      if (pauseResponse.success && pauseResponse.data) {
+      const responseData = pauseResponse as unknown as { success: boolean; data?: { status?: string } };
+      if (responseData.success && responseData.data?.status) {
+        const newStatus = responseData.data.status;
         setCampaigns(prevCampaigns =>
           prevCampaigns.map(campaign =>
             campaign.id === campaignId
-              ? { ...campaign, ...pauseResponse.data }
+              ? { ...campaign, status: newStatus }
               : campaign
           )
         );
@@ -463,11 +465,13 @@ export default function CampaignsPage() {
       const resumeResponse = await campaignService.resumeCampaign(campaignId);
 
       // Update the campaign directly with the fresh data from API response
-      if (resumeResponse.success && resumeResponse.data) {
+      const responseData = resumeResponse as unknown as { success: boolean; data?: { status?: string } };
+      if (responseData.success && responseData.data?.status) {
+        const newStatus = responseData.data.status;
         setCampaigns(prevCampaigns =>
           prevCampaigns.map(campaign =>
             campaign.id === campaignId
-              ? { ...campaign, ...resumeResponse.data }
+              ? { ...campaign, status: newStatus }
               : campaign
           )
         );

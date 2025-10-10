@@ -45,7 +45,7 @@ export default function CampaignDetailsPage() {
 
                 // Skip cache to get fresh data
                 const response = await campaignService.getCampaignById(id!, true) as { data?: Campaign; success?: boolean };
-                let campaignData = response.data || response as Campaign;
+                const campaignData = response.data || response as Campaign;
 
                 // Add dummy segment if not present (same logic as CampaignsPage for consistency)
                 if (!(campaignData as { segment?: string }).segment) {
@@ -89,6 +89,7 @@ export default function CampaignDetailsPage() {
         if (id) {
             fetchCampaignDetails();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     // Action handlers
@@ -166,8 +167,10 @@ export default function CampaignDetailsPage() {
             showToast('success', 'Campaign paused');
 
             // Use fresh API data instead of optimistic update
-            if (pauseResponse.success && pauseResponse.data) {
-                setCampaign({ ...campaign, ...pauseResponse.data } as Campaign);
+            const responseData = pauseResponse as unknown as { success: boolean; data?: { status?: string } };
+            if (responseData.success && responseData.data?.status) {
+                const newCampaign = { ...campaign, status: responseData.data.status } as Campaign;
+                setCampaign(newCampaign);
             }
         } catch (error) {
             console.error('Failed to pause campaign:', error);
@@ -186,8 +189,9 @@ export default function CampaignDetailsPage() {
             showToast('success', 'Campaign resumed');
 
             // Use fresh API data instead of optimistic update
-            if (resumeResponse.success && resumeResponse.data) {
-                setCampaign({ ...campaign, ...resumeResponse.data } as Campaign);
+            const responseData = resumeResponse as unknown as { success: boolean; data?: { status?: string } };
+            if (responseData.success && responseData.data?.status) {
+                setCampaign({ ...campaign, status: responseData.data.status } as Campaign);
             }
         } catch (error) {
             console.error('Failed to resume campaign:', error);
@@ -550,7 +554,7 @@ export default function CampaignDetailsPage() {
                             <div>
                                 <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Offers</label>
                                 <p className={`text-base ${tw.textPrimary}`}>
-                                    {campaign.offers?.length || 0} offers
+                                    {(campaign as { offers?: unknown[] }).offers?.length || 0} offers
                                 </p>
                             </div>
                             <div>

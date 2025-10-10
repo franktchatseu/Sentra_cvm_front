@@ -38,8 +38,8 @@ export default function CampaignLifecycleHistoryPage() {
                 console.log('Campaign data:', campaignData);
 
                 // Extract data from API response structure
-                const historyArray = (historyData as { success: boolean; data: LifecycleHistoryEntry[] })?.data || [];
-                const campaignInfo = (campaignData as { success: boolean; data: { name: string } })?.data;
+                const historyArray = (historyData as unknown as { success: boolean; data: LifecycleHistoryEntry[] })?.data || [];
+                const campaignInfo = (campaignData as unknown as { success: boolean; data: { name: string } })?.data;
 
                 setHistory(historyArray);
                 setCampaignName(campaignInfo?.name || `Campaign ${id}`);
@@ -74,7 +74,7 @@ export default function CampaignLifecycleHistoryPage() {
             <div className="flex items-center space-x-4">
                 <button
                     onClick={() => navigate('/dashboard/campaigns')}
-                    className={`p-2 rounded-lg hover:bg-[${color.ui.surface}] transition-colors`}
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
