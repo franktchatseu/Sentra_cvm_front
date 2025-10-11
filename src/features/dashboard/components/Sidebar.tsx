@@ -20,7 +20,10 @@ import {
   BarChart3,
   Calendar,
   Zap,
-  Folder
+  Folder,
+  Briefcase,
+  Flag,
+  Bell
 } from 'lucide-react';
 import logo from '../../../assets/logo.png';
 
@@ -77,8 +80,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           children: [
             { name: 'All Campaigns', href: '/dashboard/campaigns', icon: Target, type: 'single', entity: 'campaigns' },
             { name: 'Campaign Catalogs', href: '/dashboard/campaign-catalogs', icon: Folder, type: 'single', entity: 'campaigns' },
-            { name: 'Campaign Objective', href: '/dashboard/campaign-objectives', icon: Target, type: 'single', entity: 'campaigns' },
-            { name: 'Campaign Communication Policy', href: '/dashboard/campaign-communication-policy', icon: MessageSquare, type: 'single', entity: 'campaigns' },
+            { name: 'Campaign Objective', href: '/dashboard/campaign-objectives', icon: Flag, type: 'single', entity: 'campaigns' },
+            { name: 'Programs', href: '/dashboard/programs', icon: Briefcase, type: 'single', entity: 'campaigns' },
+            { name: 'Campaign Communication Policy', href: '/dashboard/campaign-communication-policy', icon: Bell, type: 'single', entity: 'campaigns' },
           ]
         },
         {

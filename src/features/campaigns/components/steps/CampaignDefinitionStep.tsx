@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import { CreateCampaignRequest } from '../../types/campaign';
 import { campaignService } from '../../services/campaignService';
+import { programService } from '../../services/programService';
+import { Program } from '../../types/program';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 
 interface CampaignDefinitionStepProps {
@@ -59,15 +61,21 @@ export default function CampaignDefinitionStep({
 }: CampaignDefinitionStepProps) {
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [programSearchTerm, setProgramSearchTerm] = useState('');
+  const [isProgramDropdownOpen, setIsProgramDropdownOpen] = useState(false);
   const [objectiveSearchTerm, setObjectiveSearchTerm] = useState('');
   const [isObjectiveDropdownOpen, setIsObjectiveDropdownOpen] = useState(false);
   const [categories, setCategories] = useState<CampaignCategory[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const programDropdownRef = useRef<HTMLDivElement>(null);
   const objectiveDropdownRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(categoryDropdownRef, () => setIsCategoryDropdownOpen(false));
+  useClickOutside(programDropdownRef, () => setIsProgramDropdownOpen(false));
   useClickOutside(objectiveDropdownRef, () => setIsObjectiveDropdownOpen(false));
 
   useEffect(() => {
@@ -86,6 +94,26 @@ export default function CampaignDefinitionStep({
     };
 
     fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        setIsLoadingPrograms(true);
+        const response = await programService.getAllPrograms({
+          pageSize: 100,
+          skipCache: true
+        });
+        setPrograms(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch programs:', error);
+        setPrograms([]);
+      } finally {
+        setIsLoadingPrograms(false);
+      }
+    };
+
+    fetchPrograms();
   }, []);
 
   return (
@@ -192,6 +220,71 @@ export default function CampaignDefinitionStep({
             />
           </div>
 
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Program
+            </label>
+            <div className="relative" ref={programDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsProgramDropdownOpen(!isProgramDropdownOpen)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
+              >
+                <span className={(formData as { program_id?: number }).program_id ? 'text-gray-900' : 'text-gray-500'}>
+                  {(formData as { program_id?: number }).program_id ? programs.find(p => Number(p.id) === Number((formData as { program_id?: number }).program_id))?.name : 'Select program (optional)'}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isProgramDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isProgramDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={programSearchTerm}
+                        onChange={(e) => setProgramSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                        placeholder="Search programs..."
+                      />
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    {isLoadingPrograms ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">Loading programs...</div>
+                    ) : programs.length === 0 ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">No programs available</div>
+                    ) : (
+                      programs
+                        .filter(program =>
+                          program.name.toLowerCase().includes(programSearchTerm.toLowerCase()) ||
+                          (program.description && program.description.toLowerCase().includes(programSearchTerm.toLowerCase()))
+                        )
+                        .map((program) => (
+                          <button
+                            key={program.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, program_id: Number(program.id) } as CreateCampaignRequest);
+                              setIsProgramDropdownOpen(false);
+                              setProgramSearchTerm('');
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                          >
+                            <div className="font-medium">{program.name}</div>
+                            {program.description && <div className="text-gray-500 text-xs">{program.description}</div>}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Business

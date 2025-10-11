@@ -1,28 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, X, Flag, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, Briefcase, ArrowLeft } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
 import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
+import { programService } from '../services/programService';
+import { Program } from '../types/program';
 
-interface CampaignObjective {
-    id: number;
-    name: string;
-    description?: string;
-    created_at?: string;
-    updated_at?: string;
-}
-
-interface ObjectiveModalProps {
+interface ProgramModalProps {
     isOpen: boolean;
     onClose: () => void;
-    objective?: CampaignObjective;
-    onSave: (objective: { name: string; description?: string }) => Promise<void>;
+    program?: Program;
+    onSave: (program: { name: string; description?: string }) => Promise<void>;
     isSaving?: boolean;
 }
 
-function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }: ObjectiveModalProps) {
+function ProgramModal({ isOpen, onClose, program, onSave, isSaving = false }: ProgramModalProps) {
     const [formData, setFormData] = useState({
         name: '',
         description: ''
@@ -30,42 +24,37 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (objective) {
+        if (program) {
             setFormData({
-                name: objective.name,
-                description: objective.description || ''
+                name: program.name,
+                description: program.description || ''
             });
         } else {
             setFormData({ name: '', description: '' });
         }
         setError('');
-    }, [objective, isOpen]);
+    }, [program, isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name.trim()) {
-            setError('Objective name is required');
+            setError('Program name is required');
             return;
         }
 
-        if (formData.name.length > 100) {
-            setError('Objective name must be 100 characters or less');
-            return;
-        }
-
-        if (formData.description && formData.description.length > 500) {
-            setError('Description must be 500 characters or less');
+        if (formData.name.length > 128) {
+            setError('Program name must be 128 characters or less');
             return;
         }
 
         setError('');
 
-        const objectiveData = {
+        const programData = {
             name: formData.name.trim(),
             description: formData.description.trim() || undefined
         };
 
-        await onSave(objectiveData);
+        await onSave(programData);
     };
 
     if (!isOpen) return null;
@@ -75,7 +64,7 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 className="text-xl font-bold text-gray-900">
-                        {objective ? 'Edit Campaign Objective' : 'Create New Campaign Objective'}
+                        {program ? 'Edit Program' : 'Create New Program'}
                     </h2>
                     <button
                         onClick={onClose}
@@ -89,15 +78,15 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Objective Name *
+                                Program Name *
                             </label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="Enter objective name"
-                                maxLength={100}
+                                placeholder="Enter program name"
+                                maxLength={128}
                                 required
                             />
                         </div>
@@ -110,9 +99,8 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
                                 value={formData.description}
                                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="Enter objective description"
+                                placeholder="Enter program description"
                                 rows={3}
-                                maxLength={500}
                             />
                         </div>
                     </div>
@@ -145,7 +133,7 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
                                 (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
                             }}
                         >
-                            {isSaving ? 'Saving...' : (objective ? 'Update Objective' : 'Create Objective')}
+                            {isSaving ? 'Saving...' : (program ? 'Update Program' : 'Create Program')}
                         </button>
                     </div>
                 </form>
@@ -154,71 +142,55 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
     );
 }
 
-export default function CampaignObjectivesPage() {
+export default function ProgramsPage() {
     const navigate = useNavigate();
     const { confirm } = useConfirm();
     const { success: showToast, error: showError } = useToast();
 
-    // Hardcoded objectives (same as in campaign creation)
-    const hardcodedObjectives: CampaignObjective[] = [
-        {
-            id: 1,
-            name: 'New Customer Acquisition',
-            description: 'Attract and convert new customers to your service',
-            created_at: '2024-01-15T10:30:00Z',
-            updated_at: '2024-01-20T14:45:00Z'
-        },
-        {
-            id: 2,
-            name: 'Customer Retention',
-            description: 'Keep existing customers engaged and loyal',
-            created_at: '2024-01-10T09:15:00Z',
-            updated_at: '2024-01-18T16:20:00Z'
-        },
-        {
-            id: 3,
-            name: 'Churn Prevention',
-            description: 'Prevent at-risk customers from leaving',
-            created_at: '2024-01-12T11:00:00Z',
-            updated_at: '2024-01-19T13:30:00Z'
-        },
-        {
-            id: 4,
-            name: 'Upsell/Cross-sell',
-            description: 'Increase revenue from existing customers',
-            created_at: '2024-01-14T15:30:00Z',
-            updated_at: '2024-01-21T10:15:00Z'
-        },
-        {
-            id: 5,
-            name: 'Dormant Customer Reactivation',
-            description: 'Re-engage inactive or dormant customers',
-            created_at: '2024-01-08T08:45:00Z',
-            updated_at: '2024-01-15T12:00:00Z'
-        }
-    ];
-
-    const [campaignObjectives, setCampaignObjectives] = useState<CampaignObjective[]>(hardcodedObjectives);
-    const [loading] = useState(false);
+    const [programs, setPrograms] = useState<Program[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingObjective, setEditingObjective] = useState<CampaignObjective | undefined>();
+    const [editingProgram, setEditingProgram] = useState<Program | undefined>();
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleCreateObjective = () => {
-        setEditingObjective(undefined);
+    useEffect(() => {
+        loadPrograms(true); // Always skip cache to get fresh data
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm]);
+
+    const loadPrograms = async (skipCache = false) => {
+        try {
+            setLoading(true);
+            const response = await programService.getAllPrograms({
+                search: searchTerm || undefined,
+                pageSize: 100,
+                skipCache: skipCache
+            });
+            setPrograms(response.data || []);
+        } catch (err) {
+            console.error('Failed to load programs:', err);
+            showError('Failed to load programs', 'Please try again later.');
+            setPrograms([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreateProgram = () => {
+        setEditingProgram(undefined);
         setIsModalOpen(true);
     };
 
-    const handleEditObjective = (objective: CampaignObjective) => {
-        setEditingObjective(objective);
+    const handleEditProgram = (program: Program) => {
+        setEditingProgram(program);
         setIsModalOpen(true);
     };
 
-    const handleDeleteObjective = async (objective: CampaignObjective) => {
+    const handleDeleteProgram = async (program: Program) => {
         const confirmed = await confirm({
-            title: 'Delete Objective',
-            message: `Are you sure you want to delete "${objective.name}"? This action cannot be undone.`,
+            title: 'Delete Program',
+            message: `Are you sure you want to delete "${program.name}"? This action cannot be undone.`,
             type: 'danger',
             confirmText: 'Delete',
             cancelText: 'Cancel'
@@ -227,50 +199,41 @@ export default function CampaignObjectivesPage() {
         if (!confirmed) return;
 
         try {
-            // Simulate API call
-            setCampaignObjectives(prev => prev.filter(o => o.id !== objective.id));
-            showToast('Objective Deleted', `"${objective.name}" has been deleted successfully.`);
+            await programService.deleteProgram(Number(program.id));
+            showToast('Program Deleted', `"${program.name}" has been deleted successfully.`);
+            await loadPrograms(true); // Skip cache to get fresh data
         } catch (err) {
-            console.error('Error deleting objective:', err);
-            showError('Error', err instanceof Error ? err.message : 'Failed to delete objective');
+            console.error('Error deleting program:', err);
+            showError('Error', err instanceof Error ? err.message : 'Failed to delete program');
         }
     };
 
-    const handleObjectiveSaved = async (objectiveData: { name: string; description?: string }) => {
+    const handleProgramSaved = async (programData: { name: string; description?: string }) => {
         try {
             setIsSaving(true);
-            if (editingObjective) {
-                // Update existing objective
-                setCampaignObjectives(prev => prev.map(obj =>
-                    obj.id === editingObjective.id
-                        ? { ...obj, ...objectiveData, updated_at: new Date().toISOString() }
-                        : obj
-                ));
-                showToast('Objective updated successfully');
+            if (editingProgram) {
+                // Update existing program
+                await programService.updateProgram(Number(editingProgram.id), programData);
+                showToast('Program updated successfully');
             } else {
-                // Create new objective
-                const newObjective: CampaignObjective = {
-                    id: Math.max(...campaignObjectives.map(o => o.id)) + 1,
-                    ...objectiveData,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
-                setCampaignObjectives(prev => [...prev, newObjective]);
-                showToast('Objective created successfully');
+                // Create new program
+                await programService.createProgram(programData);
+                showToast('Program created successfully');
             }
             setIsModalOpen(false);
-            setEditingObjective(undefined);
+            setEditingProgram(undefined);
+            await loadPrograms(true); // Skip cache to get fresh data
         } catch (err) {
-            console.error('Failed to save objective:', err);
-            showError('Failed to save objective', 'Please try again later.');
+            console.error('Failed to save program:', err);
+            showError('Failed to save program', 'Please try again later.');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const filteredObjectives = (campaignObjectives || []).filter(objective =>
-        objective?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (objective?.description && objective.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filteredPrograms = (programs || []).filter(program =>
+        program?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (program?.description && program.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -284,13 +247,13 @@ export default function CampaignObjectivesPage() {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Campaign Objectives</h1>
-                        <p className={`${tw.textSecondary} mt-2 text-sm`}>Define and manage your campaign objectives</p>
+                        <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Programs</h1>
+                        <p className={`${tw.textSecondary} mt-2 text-sm`}>Organize campaigns into programs</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={handleCreateObjective}
+                        onClick={handleCreateProgram}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
                         style={{ backgroundColor: color.sentra.main }}
                         onMouseEnter={(e) => {
@@ -301,7 +264,7 @@ export default function CampaignObjectivesPage() {
                         }}
                     >
                         <Plus className="w-4 h-4" />
-                        Create Objective
+                        Create Program
                     </button>
                 </div>
             </div>
@@ -311,7 +274,7 @@ export default function CampaignObjectivesPage() {
                     <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
                     <input
                         type="text"
-                        placeholder="Search objectives by name or description..."
+                        placeholder="Search programs by name or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
@@ -323,25 +286,21 @@ export default function CampaignObjectivesPage() {
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <LoadingSpinner variant="modern" size="lg" color="primary" className="mr-3" />
-                        <span className={`${tw.textSecondary}`}>Loading objectives...</span>
+                        <span className={`${tw.textSecondary}`}>Loading programs...</span>
                     </div>
-                ) : filteredObjectives.length === 0 ? (
+                ) : filteredPrograms.length === 0 ? (
                     <div className="text-center py-12">
-                        <Flag className={`w-16 h-16 text-[${color.entities.campaigns}] mx-auto mb-4`} />
-                        <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
-                            {searchTerm ? 'No Objectives Found' : 'No Objectives'}
-                        </h3>
                         <p className={`${tw.textMuted} mb-6`}>
-                            {searchTerm ? 'Try adjusting your search terms.' : 'Create your first objective to get started.'}
+                            {searchTerm ? 'Try adjusting your search terms.' : 'Create your first program to get started.'}
                         </p>
                         {!searchTerm && (
                             <button
-                                onClick={handleCreateObjective}
+                                onClick={handleCreateProgram}
                                 className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
                                 style={{ backgroundColor: color.sentra.main }}
                             >
                                 <Plus className="w-4 h-4" />
-                                Create Objective
+                                Create Program
                             </button>
                         )}
                     </div>
@@ -352,7 +311,7 @@ export default function CampaignObjectivesPage() {
                                 <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
                                     <tr>
                                         <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Objective
+                                            Program
                                         </th>
                                         <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                                             Description
@@ -363,33 +322,33 @@ export default function CampaignObjectivesPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {filteredObjectives.map((objective) => (
-                                        <tr key={objective.id} className="hover:bg-gray-50/30 transition-colors">
+                                    {filteredPrograms.map((program) => (
+                                        <tr key={program.id} className="hover:bg-gray-50/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-3">
                                                     <div
                                                         className="h-10 w-10 rounded-lg flex items-center justify-center"
                                                         style={{ backgroundColor: color.entities.campaigns }}
                                                     >
-                                                        <Flag className="w-5 h-5 text-white" />
+                                                        <Briefcase className="w-5 h-5 text-white" />
                                                     </div>
                                                     <div>
                                                         <div className={`text-base font-semibold ${tw.textPrimary}`}>
-                                                            {objective.name}
+                                                            {program.name}
                                                         </div>
-                                                        <div className={`text-sm ${tw.textMuted}`}>ID: {objective.id}</div>
+                                                        <div className={`text-sm ${tw.textMuted}`}>ID: {program.id}</div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className={`text-sm ${tw.textSecondary} max-w-md`}>
-                                                    {objective.description || 'No description'}
+                                                    {program.description || 'No description'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end space-x-2">
                                                     <button
-                                                        onClick={() => handleEditObjective(objective)}
+                                                        onClick={() => handleEditProgram(program)}
                                                         className="p-2 rounded-lg transition-colors"
                                                         style={{
                                                             color: color.sentra.main,
@@ -405,7 +364,7 @@ export default function CampaignObjectivesPage() {
                                                         <Edit className="w-4 h-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDeleteObjective(objective)}
+                                                        onClick={() => handleDeleteProgram(program)}
                                                         className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -419,25 +378,25 @@ export default function CampaignObjectivesPage() {
                         </div>
 
                         <div className="lg:hidden">
-                            {filteredObjectives.map((objective) => (
-                                <div key={objective.id} className="p-4 border-b border-gray-200 last:border-b-0">
+                            {filteredPrograms.map((program) => (
+                                <div key={program.id} className="p-4 border-b border-gray-200 last:border-b-0">
                                     <div className="flex items-start space-x-3">
                                         <div
                                             className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
                                             style={{ backgroundColor: color.entities.campaigns }}
                                         >
-                                            <Flag className="w-5 h-5 text-white" />
+                                            <Briefcase className="w-5 h-5 text-white" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
-                                                {objective.name}
+                                                {program.name}
                                             </div>
                                             <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                                                {objective.description || 'No description'}
+                                                {program.description || 'No description'}
                                             </div>
                                             <div className="flex items-center justify-end space-x-2">
                                                 <button
-                                                    onClick={() => handleEditObjective(objective)}
+                                                    onClick={() => handleEditProgram(program)}
                                                     className="p-2 rounded-lg transition-colors"
                                                     style={{
                                                         color: color.sentra.main,
@@ -453,7 +412,7 @@ export default function CampaignObjectivesPage() {
                                                     <Edit className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteObjective(objective)}
+                                                    onClick={() => handleDeleteProgram(program)}
                                                     className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -468,14 +427,14 @@ export default function CampaignObjectivesPage() {
                 )}
             </div>
 
-            <ObjectiveModal
+            <ProgramModal
                 isOpen={isModalOpen}
                 onClose={() => {
                     setIsModalOpen(false);
-                    setEditingObjective(undefined);
+                    setEditingProgram(undefined);
                 }}
-                objective={editingObjective}
-                onSave={handleObjectiveSaved}
+                program={editingProgram}
+                onSave={handleProgramSaved}
                 isSaving={isSaving}
             />
         </div>

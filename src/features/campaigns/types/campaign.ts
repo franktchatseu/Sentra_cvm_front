@@ -209,8 +209,14 @@ export interface CreateCampaignRequest {
   description?: string;
   objective?: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
   category_id?: number;
+  program_id?: number;
   start_date?: string;
   end_date?: string;
+  tag?: string;
+  business?: string;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority_rank?: number;
+  is_definitive?: boolean;
 }
 
 export interface CampaignOfferMapping {

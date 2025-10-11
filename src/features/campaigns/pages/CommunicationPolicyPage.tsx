@@ -1,71 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, X, Flag, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, Bell, ArrowLeft } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
-import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
+import { CommunicationPolicy } from '../types/communicationPolicy';
 
-interface CampaignObjective {
-    id: number;
-    name: string;
-    description?: string;
-    created_at?: string;
-    updated_at?: string;
-}
-
-interface ObjectiveModalProps {
+interface PolicyModalProps {
     isOpen: boolean;
     onClose: () => void;
-    objective?: CampaignObjective;
-    onSave: (objective: { name: string; description?: string }) => Promise<void>;
+    policy?: CommunicationPolicy;
+    onSave: (policy: { name: string; description?: string }) => Promise<void>;
     isSaving?: boolean;
 }
 
-function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }: ObjectiveModalProps) {
+function PolicyModal({ isOpen, onClose, policy, onSave, isSaving = false }: PolicyModalProps) {
     const [formData, setFormData] = useState({
         name: '',
         description: ''
     });
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        if (objective) {
+    React.useEffect(() => {
+        if (policy) {
             setFormData({
-                name: objective.name,
-                description: objective.description || ''
+                name: policy.name,
+                description: policy.description || ''
             });
         } else {
             setFormData({ name: '', description: '' });
         }
         setError('');
-    }, [objective, isOpen]);
+    }, [policy, isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name.trim()) {
-            setError('Objective name is required');
+            setError('Policy name is required');
             return;
         }
 
-        if (formData.name.length > 100) {
-            setError('Objective name must be 100 characters or less');
-            return;
-        }
-
-        if (formData.description && formData.description.length > 500) {
-            setError('Description must be 500 characters or less');
+        if (formData.name.length > 128) {
+            setError('Policy name must be 128 characters or less');
             return;
         }
 
         setError('');
 
-        const objectiveData = {
+        const policyData = {
             name: formData.name.trim(),
             description: formData.description.trim() || undefined
         };
 
-        await onSave(objectiveData);
+        await onSave(policyData);
     };
 
     if (!isOpen) return null;
@@ -75,7 +62,7 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 className="text-xl font-bold text-gray-900">
-                        {objective ? 'Edit Campaign Objective' : 'Create New Campaign Objective'}
+                        {policy ? 'Edit Communication Policy' : 'Create Communication Policy'}
                     </h2>
                     <button
                         onClick={onClose}
@@ -89,15 +76,15 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Objective Name *
+                                Policy Name *
                             </label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="Enter objective name"
-                                maxLength={100}
+                                placeholder="Enter policy name"
+                                maxLength={128}
                                 required
                             />
                         </div>
@@ -110,9 +97,8 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
                                 value={formData.description}
                                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="Enter objective description"
+                                placeholder="Enter policy description"
                                 rows={3}
-                                maxLength={500}
                             />
                         </div>
                     </div>
@@ -145,7 +131,7 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
                                 (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
                             }}
                         >
-                            {isSaving ? 'Saving...' : (objective ? 'Update Objective' : 'Create Objective')}
+                            {isSaving ? 'Saving...' : (policy ? 'Update Policy' : 'Create Policy')}
                         </button>
                     </div>
                 </form>
@@ -154,71 +140,110 @@ function ObjectiveModal({ isOpen, onClose, objective, onSave, isSaving = false }
     );
 }
 
-export default function CampaignObjectivesPage() {
+export default function CommunicationPolicyPage() {
     const navigate = useNavigate();
     const { confirm } = useConfirm();
     const { success: showToast, error: showError } = useToast();
 
-    // Hardcoded objectives (same as in campaign creation)
-    const hardcodedObjectives: CampaignObjective[] = [
+    // Hardcoded communication policies (matching existing dummy data patterns)
+    const hardcodedPolicies: CommunicationPolicy[] = [
         {
             id: 1,
-            name: 'New Customer Acquisition',
-            description: 'Attract and convert new customers to your service',
+            name: 'Standard Customer Policy',
+            description: 'Default communication limits for regular customers',
+            frequency_capping: {
+                max_per_day: 1,
+                max_per_week: 3,
+                max_per_month: 10
+            },
+            throttling: {
+                max_per_hour: 1000,
+                max_per_day: 10000
+            },
+            channels: ['NORMAL_SMS', 'EMAIL', 'PUSH'],
+            blackout_windows: [
+                { start_time: '22:00', end_time: '08:00' }
+            ],
             created_at: '2024-01-15T10:30:00Z',
             updated_at: '2024-01-20T14:45:00Z'
         },
         {
             id: 2,
-            name: 'Customer Retention',
-            description: 'Keep existing customers engaged and loyal',
+            name: 'VIP Customer Policy',
+            description: 'Higher frequency limits for VIP customers',
+            frequency_capping: {
+                max_per_day: 3,
+                max_per_week: 7,
+                max_per_month: 20
+            },
+            throttling: {
+                max_per_hour: 2000,
+                max_per_day: 20000
+            },
+            channels: ['NORMAL_SMS', 'FLASH_SMS', 'EMAIL', 'PUSH', 'WHATSAPP'],
+            blackout_windows: [
+                { start_time: '23:00', end_time: '07:00' }
+            ],
             created_at: '2024-01-10T09:15:00Z',
             updated_at: '2024-01-18T16:20:00Z'
         },
         {
             id: 3,
-            name: 'Churn Prevention',
-            description: 'Prevent at-risk customers from leaving',
+            name: 'Promotional Campaign Policy',
+            description: 'Moderate limits for promotional campaigns',
+            frequency_capping: {
+                max_per_day: 2,
+                max_per_week: 5,
+                max_per_month: 15
+            },
+            throttling: {
+                max_per_hour: 1500,
+                max_per_day: 15000
+            },
+            channels: ['NORMAL_SMS', 'EMAIL', 'PUSH', 'INAPP'],
             created_at: '2024-01-12T11:00:00Z',
             updated_at: '2024-01-19T13:30:00Z'
         },
         {
             id: 4,
-            name: 'Upsell/Cross-sell',
-            description: 'Increase revenue from existing customers',
-            created_at: '2024-01-14T15:30:00Z',
-            updated_at: '2024-01-21T10:15:00Z'
-        },
-        {
-            id: 5,
-            name: 'Dormant Customer Reactivation',
-            description: 'Re-engage inactive or dormant customers',
+            name: 'Urgent Alerts Policy',
+            description: 'Relaxed limits for critical/urgent communications',
+            frequency_capping: {
+                max_per_day: 5,
+                max_per_week: 15,
+                max_per_month: 40
+            },
+            throttling: {
+                max_per_hour: 5000,
+                max_per_day: 50000
+            },
+            channels: ['FLASH_SMS', 'NORMAL_SMS', 'PUSH', 'EMAIL'],
             created_at: '2024-01-08T08:45:00Z',
             updated_at: '2024-01-15T12:00:00Z'
         }
     ];
 
-    const [campaignObjectives, setCampaignObjectives] = useState<CampaignObjective[]>(hardcodedObjectives);
+    const [policies, setPolicies] = useState<CommunicationPolicy[]>(hardcodedPolicies);
     const [loading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingObjective, setEditingObjective] = useState<CampaignObjective | undefined>();
+    const [editingPolicy, setEditingPolicy] = useState<CommunicationPolicy | undefined>();
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleCreateObjective = () => {
-        setEditingObjective(undefined);
+    const handleCreatePolicy = () => {
+        setEditingPolicy(undefined);
         setIsModalOpen(true);
     };
 
-    const handleEditObjective = (objective: CampaignObjective) => {
-        setEditingObjective(objective);
+    const handleEditPolicy = (policy: CommunicationPolicy) => {
+        setEditingPolicy(policy);
         setIsModalOpen(true);
     };
 
-    const handleDeleteObjective = async (objective: CampaignObjective) => {
+    const handleDeletePolicy = async (policy: CommunicationPolicy) => {
         const confirmed = await confirm({
-            title: 'Delete Objective',
-            message: `Are you sure you want to delete "${objective.name}"? This action cannot be undone.`,
+            title: 'Delete Policy',
+            message: `Are you sure you want to delete "${policy.name}"? This action cannot be undone.`,
             type: 'danger',
             confirmText: 'Delete',
             cancelText: 'Cancel'
@@ -227,50 +252,59 @@ export default function CampaignObjectivesPage() {
         if (!confirmed) return;
 
         try {
-            // Simulate API call
-            setCampaignObjectives(prev => prev.filter(o => o.id !== objective.id));
-            showToast('Objective Deleted', `"${objective.name}" has been deleted successfully.`);
+            setPolicies(prev => prev.filter(p => p.id !== policy.id));
+            showToast('Policy Deleted', `"${policy.name}" has been deleted successfully.`);
         } catch (err) {
-            console.error('Error deleting objective:', err);
-            showError('Error', err instanceof Error ? err.message : 'Failed to delete objective');
+            console.error('Error deleting policy:', err);
+            showError('Error', err instanceof Error ? err.message : 'Failed to delete policy');
         }
     };
 
-    const handleObjectiveSaved = async (objectiveData: { name: string; description?: string }) => {
+    const handlePolicySaved = async (policyData: { name: string; description?: string }) => {
         try {
             setIsSaving(true);
-            if (editingObjective) {
-                // Update existing objective
-                setCampaignObjectives(prev => prev.map(obj =>
-                    obj.id === editingObjective.id
-                        ? { ...obj, ...objectiveData, updated_at: new Date().toISOString() }
-                        : obj
+            if (editingPolicy) {
+                // Update existing policy
+                setPolicies(prev => prev.map(p =>
+                    p.id === editingPolicy.id
+                        ? { ...p, ...policyData, updated_at: new Date().toISOString() }
+                        : p
                 ));
-                showToast('Objective updated successfully');
+                showToast('Policy updated successfully');
             } else {
-                // Create new objective
-                const newObjective: CampaignObjective = {
-                    id: Math.max(...campaignObjectives.map(o => o.id)) + 1,
-                    ...objectiveData,
+                // Create new policy
+                const newPolicy: CommunicationPolicy = {
+                    id: Math.max(...policies.map(p => Number(p.id))) + 1,
+                    ...policyData,
+                    frequency_capping: {
+                        max_per_day: 1,
+                        max_per_week: 3,
+                        max_per_month: 10
+                    },
+                    throttling: {
+                        max_per_hour: 1000,
+                        max_per_day: 10000
+                    },
+                    channels: ['NORMAL_SMS', 'EMAIL'],
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 };
-                setCampaignObjectives(prev => [...prev, newObjective]);
-                showToast('Objective created successfully');
+                setPolicies(prev => [...prev, newPolicy]);
+                showToast('Policy created successfully');
             }
             setIsModalOpen(false);
-            setEditingObjective(undefined);
+            setEditingPolicy(undefined);
         } catch (err) {
-            console.error('Failed to save objective:', err);
-            showError('Failed to save objective', 'Please try again later.');
+            console.error('Failed to save policy:', err);
+            showError('Failed to save policy', 'Please try again later.');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const filteredObjectives = (campaignObjectives || []).filter(objective =>
-        objective?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (objective?.description && objective.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filteredPolicies = (policies || []).filter(policy =>
+        policy?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (policy?.description && policy.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -284,13 +318,13 @@ export default function CampaignObjectivesPage() {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Campaign Objectives</h1>
-                        <p className={`${tw.textSecondary} mt-2 text-sm`}>Define and manage your campaign objectives</p>
+                        <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Communication Policies</h1>
+                        <p className={`${tw.textSecondary} mt-2 text-sm`}>Manage customer communication frequency and fatigue rules</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={handleCreateObjective}
+                        onClick={handleCreatePolicy}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
                         style={{ backgroundColor: color.sentra.main }}
                         onMouseEnter={(e) => {
@@ -301,7 +335,7 @@ export default function CampaignObjectivesPage() {
                         }}
                     >
                         <Plus className="w-4 h-4" />
-                        Create Objective
+                        Create Policy
                     </button>
                 </div>
             </div>
@@ -311,7 +345,7 @@ export default function CampaignObjectivesPage() {
                     <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
                     <input
                         type="text"
-                        placeholder="Search objectives by name or description..."
+                        placeholder="Search policies by name or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
@@ -322,26 +356,21 @@ export default function CampaignObjectivesPage() {
             <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <LoadingSpinner variant="modern" size="lg" color="primary" className="mr-3" />
-                        <span className={`${tw.textSecondary}`}>Loading objectives...</span>
+                        <span className={`${tw.textSecondary}`}>Loading policies...</span>
                     </div>
-                ) : filteredObjectives.length === 0 ? (
+                ) : filteredPolicies.length === 0 ? (
                     <div className="text-center py-12">
-                        <Flag className={`w-16 h-16 text-[${color.entities.campaigns}] mx-auto mb-4`} />
-                        <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
-                            {searchTerm ? 'No Objectives Found' : 'No Objectives'}
-                        </h3>
                         <p className={`${tw.textMuted} mb-6`}>
-                            {searchTerm ? 'Try adjusting your search terms.' : 'Create your first objective to get started.'}
+                            {searchTerm ? 'Try adjusting your search terms.' : 'Create your first communication policy to get started.'}
                         </p>
                         {!searchTerm && (
                             <button
-                                onClick={handleCreateObjective}
+                                onClick={handleCreatePolicy}
                                 className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
                                 style={{ backgroundColor: color.sentra.main }}
                             >
                                 <Plus className="w-4 h-4" />
-                                Create Objective
+                                Create Policy
                             </button>
                         )}
                     </div>
@@ -352,10 +381,16 @@ export default function CampaignObjectivesPage() {
                                 <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
                                     <tr>
                                         <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Objective
+                                            Policy
                                         </th>
                                         <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                                             Description
+                                        </th>
+                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                                            Frequency Cap
+                                        </th>
+                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                                            Channels
                                         </th>
                                         <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                                             Actions
@@ -363,33 +398,63 @@ export default function CampaignObjectivesPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {filteredObjectives.map((objective) => (
-                                        <tr key={objective.id} className="hover:bg-gray-50/30 transition-colors">
+                                    {filteredPolicies.map((policy) => (
+                                        <tr key={policy.id} className="hover:bg-gray-50/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-3">
                                                     <div
                                                         className="h-10 w-10 rounded-lg flex items-center justify-center"
                                                         style={{ backgroundColor: color.entities.campaigns }}
                                                     >
-                                                        <Flag className="w-5 h-5 text-white" />
+                                                        <Bell className="w-5 h-5 text-white" />
                                                     </div>
                                                     <div>
                                                         <div className={`text-base font-semibold ${tw.textPrimary}`}>
-                                                            {objective.name}
+                                                            {policy.name}
                                                         </div>
-                                                        <div className={`text-sm ${tw.textMuted}`}>ID: {objective.id}</div>
+                                                        <div className={`text-sm ${tw.textMuted}`}>ID: {policy.id}</div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className={`text-sm ${tw.textSecondary} max-w-md`}>
-                                                    {objective.description || 'No description'}
+                                                    {policy.description || 'No description'}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm space-y-1">
+                                                    <div className={tw.textSecondary}>
+                                                        <span className="font-medium">Day:</span> {policy.frequency_capping.max_per_day}
+                                                    </div>
+                                                    <div className={tw.textSecondary}>
+                                                        <span className="font-medium">Week:</span> {policy.frequency_capping.max_per_week}
+                                                    </div>
+                                                    <div className={tw.textSecondary}>
+                                                        <span className="font-medium">Month:</span> {policy.frequency_capping.max_per_month}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {policy.channels.slice(0, 3).map((channel, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}
+                                                        >
+                                                            {channel.replace('_', ' ')}
+                                                        </span>
+                                                    ))}
+                                                    {policy.channels.length > 3 && (
+                                                        <span className={`text-xs ${tw.textMuted}`}>
+                                                            +{policy.channels.length - 3} more
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end space-x-2">
                                                     <button
-                                                        onClick={() => handleEditObjective(objective)}
+                                                        onClick={() => handleEditPolicy(policy)}
                                                         className="p-2 rounded-lg transition-colors"
                                                         style={{
                                                             color: color.sentra.main,
@@ -405,7 +470,7 @@ export default function CampaignObjectivesPage() {
                                                         <Edit className="w-4 h-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDeleteObjective(objective)}
+                                                        onClick={() => handleDeletePolicy(policy)}
                                                         className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -419,25 +484,45 @@ export default function CampaignObjectivesPage() {
                         </div>
 
                         <div className="lg:hidden">
-                            {filteredObjectives.map((objective) => (
-                                <div key={objective.id} className="p-4 border-b border-gray-200 last:border-b-0">
+                            {filteredPolicies.map((policy) => (
+                                <div key={policy.id} className="p-4 border-b border-gray-200 last:border-b-0">
                                     <div className="flex items-start space-x-3">
                                         <div
                                             className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
                                             style={{ backgroundColor: color.entities.campaigns }}
                                         >
-                                            <Flag className="w-5 h-5 text-white" />
+                                            <Bell className="w-5 h-5 text-white" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
-                                                {objective.name}
+                                                {policy.name}
                                             </div>
                                             <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                                                {objective.description || 'No description'}
+                                                {policy.description || 'No description'}
+                                            </div>
+                                            <div className="text-xs space-y-1 mb-2">
+                                                <div className={tw.textSecondary}>
+                                                    Limits: {policy.frequency_capping.max_per_day}/day, {policy.frequency_capping.max_per_week}/week, {policy.frequency_capping.max_per_month}/month
+                                                </div>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {policy.channels.slice(0, 3).map((channel, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}
+                                                        >
+                                                            {channel.replace('_', ' ')}
+                                                        </span>
+                                                    ))}
+                                                    {policy.channels.length > 3 && (
+                                                        <span className={`text-xs ${tw.textMuted}`}>
+                                                            +{policy.channels.length - 3} more
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="flex items-center justify-end space-x-2">
                                                 <button
-                                                    onClick={() => handleEditObjective(objective)}
+                                                    onClick={() => handleEditPolicy(policy)}
                                                     className="p-2 rounded-lg transition-colors"
                                                     style={{
                                                         color: color.sentra.main,
@@ -453,7 +538,7 @@ export default function CampaignObjectivesPage() {
                                                     <Edit className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteObjective(objective)}
+                                                    onClick={() => handleDeletePolicy(policy)}
                                                     className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -468,14 +553,14 @@ export default function CampaignObjectivesPage() {
                 )}
             </div>
 
-            <ObjectiveModal
+            <PolicyModal
                 isOpen={isModalOpen}
                 onClose={() => {
                     setIsModalOpen(false);
-                    setEditingObjective(undefined);
+                    setEditingPolicy(undefined);
                 }}
-                objective={editingObjective}
-                onSave={handleObjectiveSaved}
+                policy={editingPolicy}
+                onSave={handlePolicySaved}
                 isSaving={isSaving}
             />
         </div>
