@@ -12,7 +12,13 @@ import {
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw } from '../../../shared/utils/utils';
 import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
-import { CreateCampaignRequest, CampaignSegment, CampaignOffer, ControlGroup } from '../types/campaign';
+import { CreateCampaignRequest, CampaignSegment, CampaignOffer, ControlGroup, CampaignScheduling } from '../types/campaign';
+
+// Extended type for form data that includes all properties needed during creation
+interface CampaignFormData extends CreateCampaignRequest {
+  scheduling?: CampaignScheduling;
+  segments?: CampaignSegment[];
+}
 import { campaignService } from '../services/campaignService';
 import CampaignDefinitionStep from '../components/steps/CampaignDefinitionStep';
 import AudienceConfigurationStep from '../components/steps/AudienceConfigurationStep';
@@ -97,7 +103,7 @@ export default function CreateCampaignPage() {
   const categoryIdParam = searchParams.get('categoryId');
   const preselectedCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
 
-  const [formData, setFormData] = useState<CreateCampaignRequest>({
+  const [formData, setFormData] = useState<CampaignFormData>({
     name: '',
     description: '',
     objective: 'acquisition',
@@ -121,14 +127,15 @@ export default function CreateCampaignPage() {
     try {
       const response = await campaignService.getCampaignById(id);
       console.log('Loaded campaign data:', response);
-      const campaign = (response as any).data || response;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const campaign = (response as { data?: any } | any).data || response;
       const newFormData: CreateCampaignRequest = {
-        name: campaign.name || '',
-        description: campaign.description || '',
-        objective: campaign.objective || 'acquisition',
-        category_id: campaign.category_id || undefined,
-        start_date: campaign.start_date || undefined,
-        end_date: campaign.end_date || undefined
+        name: campaign?.name || '',
+        description: campaign?.description || '',
+        objective: campaign?.objective || 'acquisition',
+        category_id: campaign?.category_id || undefined,
+        start_date: campaign?.start_date || undefined,
+        end_date: campaign?.end_date || undefined
       };
       console.log('Setting form data:', newFormData);
       setFormData(newFormData);
@@ -151,13 +158,13 @@ export default function CreateCampaignPage() {
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 1: // Definition step
-        return formData.name.trim() !== '' && formData.objective !== '' && formData.category_id !== undefined;
+        return formData.name.trim() !== '' && formData.objective !== undefined && formData.category_id !== undefined;
       case 2: // Audience step
         return selectedSegments.length > 0;
       case 3: // Offers step
         return selectedOffers.length > 0;
       case 4: // Schedule step
-        return formData.scheduling && formData.scheduling.type !== '';
+        return formData.scheduling && formData.scheduling.type !== undefined;
       case 5: // Preview step
         return true; // Preview step doesn't need validation
       default:
@@ -208,7 +215,7 @@ export default function CreateCampaignPage() {
       }
 
       // Auto-assign a random dummy segment if no segments are selected
-      let finalSegments = formData.segments;
+      let finalSegments = formData.segments || [];
       if (finalSegments.length === 0) {
         const dummySegments = [
           'High Value Customers',
@@ -221,8 +228,15 @@ export default function CreateCampaignPage() {
           'Dormant Users'
         ];
 
-        const randomSegment = dummySegments[Math.floor(Math.random() * dummySegments.length)];
-        finalSegments = [randomSegment];
+        const randomSegmentName = dummySegments[Math.floor(Math.random() * dummySegments.length)];
+        finalSegments = [{
+          id: 'dummy-segment-' + Math.random().toString(36).substr(2, 9),
+          name: randomSegmentName,
+          description: `Auto-generated segment: ${randomSegmentName}`,
+          customer_count: Math.floor(Math.random() * 10000) + 1000,
+          criteria: {},
+          created_at: new Date().toISOString()
+        }];
       }
 
       const campaignData: CreateCampaignRequest = {

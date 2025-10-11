@@ -382,7 +382,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
                         name="customerBase"
                         value={option.value}
                         checked={formData.customerBase === option.value}
-                        onChange={(e) => setFormData({ ...formData, customerBase: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, customerBase: e.target.value as 'active_subscribers' | 'all_customers' | 'saved_segments' })}
                         className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                       />
                       <div className="ml-3">
@@ -410,7 +410,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
                         name="sizeMethod"
                         value={option.value}
                         checked={formData.sizeMethod === option.value}
-                        onChange={(e) => setFormData({ ...formData, sizeMethod: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, sizeMethod: e.target.value as 'percentage' | 'fixed_value' | 'advanced_parameters' })}
                         className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                       />
                       <div className="ml-3">
@@ -541,7 +541,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
                         name="recurrence"
                         value={option.value}
                         checked={formData.recurrence === option.value}
-                        onChange={(e) => setFormData({ ...formData, recurrence: e.target.value as any })}
+                        onChange={(e) => setFormData({ ...formData, recurrence: e.target.value as 'once' | 'daily' | 'weekly' | 'monthly' })}
                         className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                       />
                       <div className="ml-3">
