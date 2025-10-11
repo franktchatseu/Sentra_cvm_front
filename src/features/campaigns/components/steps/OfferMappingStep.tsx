@@ -3,7 +3,6 @@ import { Gift, Target, Users, X } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, CampaignOffer, SequentialOfferMapping, ControlGroup } from '../../types/campaign';
 import OfferSelectionModal from './OfferSelectionModal';
 import CreateOfferModalWrapper from './CreateOfferModalWrapper';
-import StepNavigation from '../../../../shared/components/ui/StepNavigation';
 import OfferFlowChart from './OfferFlowChart';
 import ChampionChallengerOfferMapping from '../displays/ChampionChallengerOfferMapping';
 import ABTestOfferMapping from '../displays/ABTestOfferMapping';
@@ -333,12 +332,6 @@ export default function OfferMappingStep({
           </div>
         )}
 
-      {/* Navigation */}
-      <StepNavigation
-        onNext={handleNext}
-        onPrev={onPrev}
-        isNextDisabled={!isFormValid}
-      />
 
       {/* Offer Selection Modal */}
       {

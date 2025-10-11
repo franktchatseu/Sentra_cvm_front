@@ -58,13 +58,17 @@ export default function OfferSelectionModal({
     try {
       setLoading(true);
       setError(null);
+
       const response = await offerService.getOffers({
         pageSize: 100, // Get all offers for selection
-        lifecycleStatus: 'active'
+        skipCache: true
+        //  Re-enable lifecycleStatus filter when offers have proper lifecycle status
+        // lifecycleStatus: 'active' // Only show active offers (currently commented out because offers are in 'draft' status)
       });
 
       // Convert Offer objects to CampaignOffer format
-      const campaignOffers: CampaignOffer[] = response.offers.map((offer: Offer) => ({
+      const offersData = response.data || [];
+      const campaignOffers: CampaignOffer[] = offersData.map((offer: Offer) => ({
         id: offer.id?.toString() || '',
         name: offer.name,
         description: offer.description || '',
@@ -114,7 +118,17 @@ export default function OfferSelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+      style={{
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh'
+      }}
+    >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">

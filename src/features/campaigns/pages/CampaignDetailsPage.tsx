@@ -24,6 +24,8 @@ import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 import { campaignService } from '../services/campaignService';
 import DeleteConfirmModal from '../../../shared/components/ui/DeleteConfirmModal';
 import { Campaign } from '../types/campaign';
+import { ValidateCampaignRequest } from '../types/validateCampaign';
+import { RunCampaignRequest } from '../types/runCampaign';
 
 export default function CampaignDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -36,6 +38,9 @@ export default function CampaignDetailsPage() {
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [rejectComments, setRejectComments] = useState('');
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [isValidateLoading, setIsValidateLoading] = useState(false);
+    const [isApproveLoading, setIsApproveLoading] = useState(false);
+    const [isRunLoading, setIsRunLoading] = useState(false);
     const [categoryName, setCategoryName] = useState<string>('Uncategorized');
 
     useEffect(() => {
@@ -100,7 +105,7 @@ export default function CampaignDetailsPage() {
         if (!id) return;
 
         try {
-            setIsActionLoading(true);
+            setIsApproveLoading(true);
             await campaignService.approveCampaign(parseInt(id), { comments: 'Approved from details page' });
             showToast('success', 'Campaign approved successfully');
             // Refresh campaign data
@@ -111,7 +116,7 @@ export default function CampaignDetailsPage() {
             console.error('Failed to approve campaign:', error);
             showToast('error', 'Failed to approve campaign');
         } finally {
-            setIsActionLoading(false);
+            setIsApproveLoading(false);
         }
     };
 
@@ -218,6 +223,69 @@ export default function CampaignDetailsPage() {
         }
     };
 
+    const handleValidateCampaign = async () => {
+        if (!id) return;
+
+        try {
+            setIsValidateLoading(true);
+            const validationRequest: ValidateCampaignRequest = {
+                campaignId: parseInt(id),
+                includeDetails: true
+            };
+
+            const response = await campaignService.validateCampaign(validationRequest);
+            console.log('Validation response:', response);
+
+            // Show validation results
+            if (response.success) {
+                showToast('success', `Campaign validation successful! ${response.validationResults?.errors?.length === 0 ? 'No issues found.' : ''}`);
+            } else {
+                showToast('warning', `Campaign validation completed with warnings. Check console for details.`);
+            }
+        } catch (error) {
+            console.error('Failed to validate campaign:', error);
+            showToast('error', 'Failed to validate campaign');
+        } finally {
+            setIsValidateLoading(false);
+        }
+    };
+
+    const handleRunCampaign = async () => {
+        if (!id) return;
+
+        try {
+            setIsRunLoading(true);
+            const runRequest: RunCampaignRequest = {
+                campaignId: parseInt(id),
+                offerId: 1, // TODO: Get from campaign data when available
+                controlGroupId: 1, // TODO: Get from campaign data when available
+                blackoutPoliciesId: 1, // TODO: Get from campaign data when available
+                calendarId: 1, // TODO: Get from campaign data when available
+                trackingSourcesId: 1, // TODO: Get from campaign data when available
+                includeDetails: true,
+                validateOnly: false
+            };
+
+            const response = await campaignService.runCampaign(runRequest);
+            console.log('Run campaign response:', response);
+
+            if (response.success) {
+                showToast('success', `Campaign started successfully! ${response.details ? `Targeting ${response.details.totalRecipients} recipients.` : ''}`);
+                // Refresh campaign data to show updated status
+                const refreshResponse = await campaignService.getCampaignById(id!, true) as { data?: Campaign; success?: boolean };
+                const campaignData = refreshResponse.data || refreshResponse as Campaign;
+                setCampaign(campaignData);
+            } else {
+                showToast('error', `Failed to run campaign: ${response.message || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Failed to run campaign:', error);
+            showToast('error', 'Failed to run campaign');
+        } finally {
+            setIsRunLoading(false);
+        }
+    };
+
     const getStatusBadge = (status: string | undefined) => {
         if (!status) return 'bg-gray-100 text-gray-800';
         switch (status.toLowerCase()) {
@@ -310,15 +378,15 @@ export default function CampaignDetailsPage() {
                     {campaign.approval_status === 'pending' && (
                         <button
                             onClick={handleApproveCampaign}
-                            disabled={isActionLoading}
+                            disabled={isApproveLoading}
                             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 bg-white hover:bg-[#3A5A40]/20 text-gray-700 border border-gray-200"
                         >
-                            {isActionLoading ? (
+                            {isApproveLoading ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
                             ) : (
                                 <CheckCircle className="w-4 h-4" />
                             )}
-                            {isActionLoading ? 'Approving...' : 'Approve'}
+                            {isApproveLoading ? 'Approving...' : 'Approve'}
                         </button>
                     )}
 
@@ -339,7 +407,24 @@ export default function CampaignDetailsPage() {
                         </button>
                     )}
 
-                    {campaign.status === 'active' && (
+                    {/* Run Campaign Button - Commented out until required fields are properly connected */}
+                    {/* {campaign.status === 'active' && campaign.status !== 'running' && campaign.status !== 'paused' && (
+                        <button
+                            onClick={handleRunCampaign}
+                            disabled={isRunLoading}
+                            className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
+                            style={{ backgroundColor: '#059669' }}
+                        >
+                            {isRunLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                                <Play className="w-4 h-4" />
+                            )}
+                            {isRunLoading ? 'Running...' : 'Run Campaign'}
+                        </button>
+                    )} */}
+
+                    {(campaign.status === 'running' || campaign.status === 'active') && (
                         <button
                             onClick={handlePauseCampaign}
                             disabled={isActionLoading}
@@ -383,6 +468,20 @@ export default function CampaignDetailsPage() {
                     >
                         <Edit className="w-4 h-4" />
                         Edit
+                    </button>
+
+                    {/* Validate Campaign Button - Always Visible */}
+                    <button
+                        onClick={handleValidateCampaign}
+                        disabled={isValidateLoading}
+                        className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200"
+                    >
+                        {isValidateLoading ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        ) : (
+                            <AlertCircle className="w-4 h-4" />
+                        )}
+                        {isValidateLoading ? 'Validating...' : 'Validate'}
                     </button>
 
                     <div className="relative">

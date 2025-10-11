@@ -7,20 +7,30 @@ interface CreateOfferModalWrapperProps {
   onOfferCreated?: (offerId: string) => void;
 }
 
-export default function CreateOfferModalWrapper({ 
-  isOpen, 
-  onClose 
+export default function CreateOfferModalWrapper({
+  isOpen,
+  onClose
 }: CreateOfferModalWrapperProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed z-[9999] flex items-center justify-center p-4"
+      style={{
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh'
+      }}
+    >
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" 
-        onClick={onClose} 
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
       />
-      
+
       {/* Modal Container */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
@@ -36,7 +46,7 @@ export default function CreateOfferModalWrapper({
             <X className="w-6 h-6 text-gray-500" />
           </button>
         </div>
-        
+
         {/* Modal Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6">

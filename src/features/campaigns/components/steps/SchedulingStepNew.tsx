@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, AlertCircle } from 'lucide-react';
 import { CreateCampaignRequest, CampaignScheduling } from '../../types/campaign';
 import { tw } from '../../../../shared/utils/utils';
 
 interface SchedulingStepProps {
   formData: CreateCampaignRequest;
+  setFormData: (data: CreateCampaignRequest) => void;
 }
 
 const daysOfWeek = [
@@ -18,13 +19,14 @@ const daysOfWeek = [
 ];
 
 export default function SchedulingStep({
-  formData
+  formData,
+  setFormData
 }: SchedulingStepProps) {
   const [scheduling, setScheduling] = useState<CampaignScheduling>(
     formData.scheduling || {
       type: 'scheduled',
       time_zone: '(GMT+02:00) Sudan',
-      start_date: '',
+      start_date: new Date().toISOString().split('T')[0], // Today's date
       end_date: ''
     }
   );
@@ -42,9 +44,24 @@ export default function SchedulingStep({
   const [startBroadcastBefore, setStartBroadcastBefore] = useState('Before');
   const [hoursBeforeBroadcast, setHoursBeforeBroadcast] = useState(0);
 
+  // Initialize formData with default scheduling if not present
+  useEffect(() => {
+    if (!formData.scheduling) {
+      const defaultScheduling = {
+        type: 'scheduled',
+        time_zone: '(GMT+02:00) Sudan',
+        start_date: new Date().toISOString().split('T')[0], // Today's date
+        end_date: ''
+      };
+      setFormData({ ...formData, scheduling: defaultScheduling });
+    }
+  }, []);
 
   const updateScheduling = (updates: Partial<CampaignScheduling>) => {
-    setScheduling((prev: CampaignScheduling) => ({ ...prev, ...updates }));
+    const newScheduling = { ...scheduling, ...updates };
+    setScheduling(newScheduling);
+    // Also update the formData so validation works
+    setFormData({ ...formData, scheduling: newScheduling });
   };
 
   const toggleDayOfWeek = (day: number) => {

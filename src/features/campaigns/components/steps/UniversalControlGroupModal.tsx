@@ -75,7 +75,17 @@ export default function UniversalControlGroupModal({ isOpen, onClose }: Universa
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div
+      className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+      style={{
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh'
+      }}
+    >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -281,7 +291,17 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+    <div
+      className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+      style={{
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh'
+      }}
+    >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -306,25 +326,22 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
               const Icon = step.icon;
               const isActive = currentStep === step.id;
               const isCompleted = currentStep > step.id;
-              
+
               return (
                 <div key={step.id} className="flex items-center">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                    isCompleted ? 'bg-[#588157] border-[#588157] text-white' :
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${isCompleted ? 'bg-[#588157] border-[#588157] text-white' :
                     isActive ? 'border-[#588157] text-[#588157] bg-white' :
-                    'border-gray-300 text-gray-400 bg-white'
-                  }`}>
+                      'border-gray-300 text-gray-400 bg-white'
+                    }`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span className={`ml-2 text-sm font-medium ${
-                    isActive ? 'text-[#588157]' : isCompleted ? 'text-gray-900' : 'text-gray-500'
-                  }`}>
+                  <span className={`ml-2 text-sm font-medium ${isActive ? 'text-[#588157]' : isCompleted ? 'text-gray-900' : 'text-gray-500'
+                    }`}>
                     {step.name}
                   </span>
                   {index < steps.length - 1 && (
-                    <div className={`w-16 h-0.5 mx-4 ${
-                      isCompleted ? 'bg-[#588157]' : 'bg-gray-300'
-                    }`} />
+                    <div className={`w-16 h-0.5 mx-4 ${isCompleted ? 'bg-[#588157]' : 'bg-gray-300'
+                      }`} />
                   )}
                 </div>
               );

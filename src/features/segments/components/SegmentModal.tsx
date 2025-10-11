@@ -157,9 +157,9 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[110] overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
+        <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
 
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}

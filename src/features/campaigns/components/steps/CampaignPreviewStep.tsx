@@ -205,21 +205,29 @@ export default function CampaignPreviewStep({
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <h4 className="font-medium text-gray-900 mb-4">Basic Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="flex justify-between">
+            <div className="flex items-center gap-3">
               <span className="text-gray-600">Name:</span>
               <span className="font-medium text-gray-900">{formData.name}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex items-center gap-3">
               <span className="text-gray-600">Objective:</span>
-              <span className="font-medium text-gray-900">{getObjectiveLabel(formData.primary_objective)}</span>
+              <span className="font-medium text-gray-900">{getObjectiveLabel(formData.objective)}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex items-center gap-3">
               <span className="text-gray-600">Catalog:</span>
-              <span className="font-medium text-gray-900">{formData.category}</span>
+              <span className="font-medium text-gray-900">{formData.category_id ? `Category ${formData.category_id}` : 'No category selected'}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex items-center gap-3">
               <span className="text-gray-600">Type:</span>
               <span className="font-medium text-gray-900">{getSchedulingTypeLabel(formData.scheduling.type)}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-600">Tag:</span>
+              <span className="font-medium text-gray-900">{formData.tag || 'No tag'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-600">Campaign Business:</span>
+              <span className="font-medium text-gray-900">{formData.business || 'Not specified'}</span>
             </div>
           </div>
           {formData.description && (
