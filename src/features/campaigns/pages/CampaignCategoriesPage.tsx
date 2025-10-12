@@ -686,9 +686,18 @@ export default function CampaignCategoriesPage() {
                             </button>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="px-6 pt-4 pb-2 border-b border-gray-200 bg-gray-50">
-                            <div className="flex items-center gap-3">
+                        {/* Search and Action Buttons */}
+                        <div className="px-6 pt-4 pb-2 border-b border-gray-200">
+                            <div className="flex flex-col md:flex-row gap-3">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search campaigns..."
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <div className="flex gap-3">
                                 <div className="relative">
                                     <button
                                         onClick={() => {
@@ -746,6 +755,7 @@ export default function CampaignCategoriesPage() {
                                     <Plus className="w-4 h-4 mr-2" />
                                     Create New Campaign
                                 </button>
+                                </div>
                             </div>
                         </div>
 

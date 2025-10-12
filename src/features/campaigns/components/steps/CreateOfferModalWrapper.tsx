@@ -14,7 +14,7 @@ export default function CreateOfferModalWrapper({
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed z-[9999] flex items-center justify-center p-4"
       style={{
         top: 0,

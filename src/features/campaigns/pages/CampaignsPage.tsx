@@ -352,28 +352,30 @@ export default function CampaignsPage() {
   };
 
   // Action handlers using service layer
-  const handleDuplicateCampaign = async (campaignId: number) => {
+  const handleDuplicateCampaign = async (campaign: CampaignDisplay) => {
     try {
-      const newName = `Copy of Campaign ${campaignId}`;
-      await campaignService.duplicateCampaign(campaignId, { newName });
-      console.log('Campaign duplicated successfully');
+      const newName = `Copy of ${campaign.name}`;
+      await campaignService.duplicateCampaign(campaign.id, { newName });
+      showToast('success', 'Campaign duplicated successfully');
       setShowActionMenu(null);
       fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
       console.error('Failed to duplicate campaign:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to duplicate campaign';
+      showToast('error', errorMessage);
     }
   };
 
-  const handleCloneWithChanges = async (campaignId: number) => {
+  const handleCloneWithChanges = async (campaign: CampaignDisplay) => {
     // TODO: Open a modal to collect modifications
     // For now, navigate to edit page of the cloned campaign
     try {
-      const newName = `Clone of Campaign ${campaignId}`;
-      const response = await campaignService.cloneCampaignWithModifications(campaignId, {
+      const newName = `Clone of ${campaign.name}`;
+      const response = await campaignService.cloneCampaignWithModifications(campaign.id, {
         newName,
         modifications: {} // Empty modifications - user will edit in the edit page
       });
-      console.log('Campaign cloned successfully:', response);
+      showToast('success', 'Campaign cloned successfully');
       setShowActionMenu(null);
 
       // Navigate to edit page of the newly cloned campaign
@@ -384,6 +386,8 @@ export default function CampaignsPage() {
       }
     } catch (error) {
       console.error('Failed to clone campaign with modifications:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clone campaign';
+      showToast('error', errorMessage);
     }
   };
 
@@ -706,7 +710,7 @@ export default function CampaignsPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDuplicateCampaign(campaign.id);
+                                  handleDuplicateCampaign(campaign);
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
@@ -717,7 +721,7 @@ export default function CampaignsPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleCloneWithChanges(campaign.id);
+                                  handleCloneWithChanges(campaign);
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >

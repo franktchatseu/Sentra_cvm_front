@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { Offer, OfferFilters, LifecycleStatus, ApprovalStatus } from '../types/offer';
 import { offerService } from '../services/offerService';
+import { offerCategoryService } from '../services/offerCategoryService';
+import { OfferCategory } from '../types/offerCategory';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 import { color, tw } from '../../../shared/utils/utils';
 import { useToast } from '../../../contexts/ToastContext';
@@ -32,6 +34,7 @@ export default function OffersPage() {
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [categories, setCategories] = useState<OfferCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalOffers, setTotalOffers] = useState(0);
@@ -51,6 +54,9 @@ export default function OffersPage() {
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
+  // Loading states for individual offers
+  const [loadingAction, setLoadingAction] = useState<{ offerId: number; action: string } | null>(null);
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,7 +66,16 @@ export default function OffersPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const loadOffers = async () => {
+  const loadCategories = async () => {
+    try {
+      const response = await offerCategoryService.getOfferCategories();
+      setCategories(response.data);
+    } catch (err) {
+      console.error('Error loading categories:', err);
+    }
+  };
+
+  const loadOffers = async (skipCache = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -69,7 +84,8 @@ export default function OffersPage() {
         ...filters,
         search: debouncedSearchTerm || undefined,
         lifecycleStatus: selectedStatus !== 'all' ? selectedStatus : undefined,
-        approvalStatus: selectedApproval !== 'all' ? selectedApproval : undefined
+        approvalStatus: selectedApproval !== 'all' ? selectedApproval : undefined,
+        skipCache: skipCache
       };
 
       const response = await offerService.getOffers(filterParams);
@@ -83,9 +99,21 @@ export default function OffersPage() {
     }
   };
 
+  // Helper to get category name from category_id
+  const getCategoryName = (categoryId: string | number | undefined): string => {
+    if (!categoryId) return 'Uncategorized';
+    const category = categories.find(cat => String(cat.id) === String(categoryId));
+    return category?.name || 'Uncategorized';
+  };
+
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
   // Load offers on component mount and filter changes
   useEffect(() => {
-    loadOffers();
+    loadOffers(true); // Always skip cache for fresh data
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, selectedStatus, selectedApproval, debouncedSearchTerm]);
 
@@ -181,7 +209,7 @@ export default function OffersPage() {
     try {
       await offerService.deleteOffer(id);
       success('Offer Deleted', `"${name}" has been deleted successfully.`);
-      loadOffers();
+      await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to delete offer');
@@ -191,96 +219,185 @@ export default function OffersPage() {
 
   const handleActivateOffer = async (id: number) => {
     try {
-      await offerService.activateOffer(id);
+      setLoadingAction({ offerId: id, action: 'activate' });
+      const response = await offerService.activateOffer(id);
+
+      // Optimistically update the offer in the list
+      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      if (responseData.success && responseData.data?.lifecycle_status) {
+        const newStatus = responseData.data.lifecycle_status;
+        setOffers(prevOffers =>
+          prevOffers.map(offer =>
+            Number(offer.id) === id
+              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              : offer
+          )
+        );
+      } else {
+        // Fallback: reload if response doesn't include status
+        await loadOffers(true);
+      }
+
       success('Offer Activated', 'Offer has been activated successfully.');
-      loadOffers();
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to activate offer');
       console.error('Activate offer error:', err);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleDeactivateOffer = async (id: number) => {
     try {
-      await offerService.deactivateOffer(id);
+      setLoadingAction({ offerId: id, action: 'deactivate' });
+      const response = await offerService.deactivateOffer(id);
+
+      // Optimistically update the offer in the list
+      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      if (responseData.success && responseData.data?.lifecycle_status) {
+        const newStatus = responseData.data.lifecycle_status;
+        setOffers(prevOffers =>
+          prevOffers.map(offer =>
+            Number(offer.id) === id
+              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              : offer
+          )
+        );
+      } else {
+        // Fallback: reload if response doesn't include status
+        await loadOffers(true);
+      }
+
       success('Offer Deactivated', 'Offer has been deactivated successfully.');
-      loadOffers();
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to deactivate offer');
       console.error('Deactivate offer error:', err);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handlePauseOffer = async (id: number) => {
     try {
-      await offerService.pauseOffer(id);
+      setLoadingAction({ offerId: id, action: 'pause' });
+      const response = await offerService.pauseOffer(id);
+
+      // Optimistically update the offer in the list
+      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      if (responseData.success && responseData.data?.lifecycle_status) {
+        const newStatus = responseData.data.lifecycle_status;
+        setOffers(prevOffers =>
+          prevOffers.map(offer =>
+            Number(offer.id) === id
+              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              : offer
+          )
+        );
+      } else {
+        // Fallback: reload if response doesn't include status
+        await loadOffers(true);
+      }
+
       success('Offer Paused', 'Offer has been paused successfully.');
-      loadOffers();
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to pause offer');
       console.error('Pause offer error:', err);
-    }
-  };
-
-  const handleDuplicateOffer = async () => {
-    try {
-      // TODO: Implement duplicate functionality when endpoint is available
-      success('Coming Soon', 'Duplicate offer functionality will be available soon.');
-      setShowActionMenu(null);
-    } catch (err) {
-      showError('Error', 'Failed to duplicate offer');
-      console.error('Duplicate offer error:', err);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleArchiveOffer = async (id: number) => {
     try {
+      setLoadingAction({ offerId: id, action: 'archive' });
       await offerService.archiveOffer(id);
       success('Offer Archived', 'Offer has been archived successfully.');
-      loadOffers();
+      await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to archive offer');
       console.error('Archive offer error:', err);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleExpireOffer = async (id: number) => {
+    try {
+      setLoadingAction({ offerId: id, action: 'expire' });
+      const response = await offerService.expireOffer(id);
+
+      // Optimistically update the offer in the list
+      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      if (responseData.success && responseData.data?.lifecycle_status) {
+        const newStatus = responseData.data.lifecycle_status;
+        setOffers(prevOffers =>
+          prevOffers.map(offer =>
+            Number(offer.id) === id
+              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              : offer
+          )
+        );
+      } else {
+        // Fallback: reload if response doesn't include status
+        await loadOffers(true);
+      }
+
+      success('Offer Expired', 'Offer has been expired successfully.');
+      setShowActionMenu(null);
+    } catch (err) {
+      showError('Error', 'Failed to expire offer');
+      console.error('Expire offer error:', err);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleRequestApproval = async (id: number) => {
     try {
+      setLoadingAction({ offerId: id, action: 'request_approval' });
       await offerService.requestApproval(id);
       success('Approval Requested', 'Approval request has been sent successfully.');
-      loadOffers();
+      await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to request approval');
       console.error('Request approval error:', err);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleApproveOffer = async (id: number) => {
     try {
+      setLoadingAction({ offerId: id, action: 'approve' });
       await offerService.approveOffer(id);
       success('Offer Approved', 'Offer has been approved successfully.');
-      loadOffers();
+      await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to approve offer');
       console.error('Approve offer error:', err);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleRejectOffer = async (id: number) => {
     try {
+      setLoadingAction({ offerId: id, action: 'reject' });
       await offerService.rejectOffer(id);
       success('Offer Rejected', 'Offer has been rejected.');
-      loadOffers();
+      await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
       showError('Error', 'Failed to reject offer');
       console.error('Reject offer error:', err);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -313,6 +430,8 @@ export default function OffersPage() {
         return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Draft</span>;
       case 'active':
         return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Active</span>;
+      case 'inactive':
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[200]}] text-[${color.ui.gray[700]}]`}>Inactive</span>;
       case 'paused':
         return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Paused</span>;
       case 'expired':
@@ -471,6 +590,7 @@ export default function OffersPage() {
                 { value: 'all', label: 'All Status' },
                 { value: 'draft', label: 'Draft' },
                 { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
                 { value: 'paused', label: 'Paused' },
                 { value: 'expired', label: 'Expired' },
                 { value: 'archived', label: 'Archived' }
@@ -526,7 +646,7 @@ export default function OffersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className={`bg-[${color.ui.surface}]`}>
+              <thead className="bg-gray-50">
                 <tr>
                   <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Offer</th>
                   <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Category</th>
@@ -538,11 +658,11 @@ export default function OffersPage() {
               </thead>
               <tbody className={`bg-white divide-y divide-[${color.ui.border}]`}>
                 {filteredOffers.map((offer) => (
-                  <tr key={offer.id} className={`hover:bg-[${color.ui.surface}]/50 transition-colors duration-150`}>
+                  <tr key={offer.id} className="hover:bg-gray-50 transition-colors duration-150">
                     <td className="px-6 py-5">
                       <div className="flex items-center space-x-4">
                         <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.offers}` }}>
-                          {getCategoryIcon(offer.category || '')}
+                          {getCategoryIcon(getCategoryName(offer.category_id))}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className={`font-semibold text-base ${tw.textPrimary} truncate`}>{offer.name}</div>
@@ -553,14 +673,14 @@ export default function OffersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${offer.category?.name === 'Data Offers' ? `bg-[${color.status.info.light}] text-[${color.status.info.main}]` :
-                        offer.category?.name === 'Voice Offers' ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` :
-                          offer.category?.name === 'Combo Offers' ? `bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]` :
-                            offer.category?.name === 'Loyalty Rewards' ? `bg-[${color.status.warning.light}] text-[${color.status.warning.main}]` :
-                              offer.category?.name === 'Promotional' ? `bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]` :
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryName(offer.category_id) === 'Data Offers' ? `bg-[${color.status.info.light}] text-[${color.status.info.main}]` :
+                        getCategoryName(offer.category_id) === 'Voice Offers' ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` :
+                          getCategoryName(offer.category_id) === 'Combo Offers' ? `bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]` :
+                            getCategoryName(offer.category_id) === 'Loyalty Rewards' ? `bg-[${color.status.warning.light}] text-[${color.status.warning.main}]` :
+                              getCategoryName(offer.category_id) === 'Promotional' ? `bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]` :
                                 `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
                         }`}>
-                        {offer.category?.name || 'Uncategorized'}
+                        {getCategoryName(offer.category_id)}
                       </span>
                     </td>
                     <td className="px-6 py-5">
@@ -574,6 +694,43 @@ export default function OffersPage() {
                     </td>
                     <td className="px-6 py-5 text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
+                        {/* Play/Pause buttons - Only show if approved */}
+                        {offer.approval_status === 'approved' && offer.lifecycle_status !== 'expired' && offer.lifecycle_status !== 'archived' && (
+                          <>
+                            {(offer.lifecycle_status === 'paused' || offer.lifecycle_status === 'inactive' || offer.lifecycle_status === 'draft') ? (
+                              <button
+                                onClick={() => offer.id && handleActivateOffer(Number(offer.id))}
+                                disabled={loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'activate'}
+                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                style={{ backgroundColor: 'transparent' }}
+                                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                                title={offer.lifecycle_status === 'paused' ? 'Resume Offer' : 'Activate Offer'}
+                              >
+                                {loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'activate' ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                ) : (
+                                  <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                )}
+                              </button>
+                            ) : offer.lifecycle_status === 'active' ? (
+                              <button
+                                onClick={() => offer.id && handlePauseOffer(Number(offer.id))}
+                                disabled={loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'pause'}
+                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                style={{ backgroundColor: 'transparent' }}
+                                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                                title="Pause Offer"
+                              >
+                                {loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'pause' ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                ) : (
+                                  <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                )}
+                              </button>
+                            ) : null}
+                          </>
+                        )}
+
                         <button
                           onClick={() => offer.id && handleViewOffer(offer.id)}
                           className={`text-[${color.status.info.main}] hover:text-[${color.status.info.dark}] p-1 rounded`}
@@ -606,7 +763,7 @@ export default function OffersPage() {
 
                           {showActionMenu === offer.id && dropdownPosition && (
                             <div
-                              className="action-dropdown fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-2"
+                              className="action-dropdown fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4"
                               style={{
                                 zIndex: 99999,
                                 top: `${dropdownPosition.top}px`,
@@ -616,6 +773,7 @@ export default function OffersPage() {
                               }}
                             >
                               {/* Duplicate Offer */}
+                              {/* TODO: Re-enable when backend duplicate endpoint is available
                               <button
                                 onClick={handleDuplicateOffer}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -623,59 +781,69 @@ export default function OffersPage() {
                                 <Copy className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
                                 Duplicate Offer
                               </button>
+                              */}
 
-                              {/* Lifecycle Actions - Context Aware */}
-                              {offer.lifecycle_status === 'draft' && (
-                                <button
-                                  onClick={() => offer.id && handleActivateOffer(offer.id)}
-                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <Play className="w-4 h-4 mr-3 text-green-600" />
-                                  Activate Offer
-                                </button>
-                              )}
-
-                              {offer.lifecycle_status === 'active' && (
+                              {/* Lifecycle Actions - Only show if approved */}
+                              {offer.approval_status === 'approved' && (
                                 <>
-                                  <button
-                                    onClick={() => offer.id && handlePauseOffer(offer.id)}
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Pause className="w-4 h-4 mr-3 text-yellow-600" />
-                                    Pause Offer
-                                  </button>
-                                  <button
-                                    onClick={() => offer.id && handleDeactivateOffer(offer.id)}
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-3 text-orange-600" />
-                                    Deactivate Offer
-                                  </button>
+                                  {offer.lifecycle_status === 'draft' && (
+                                    <button
+                                      onClick={() => offer.id && handleActivateOffer(offer.id)}
+                                      className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                      <Play className="w-4 h-4 mr-3 text-green-600" />
+                                      Activate Offer
+                                    </button>
+                                  )}
+
+                                  {offer.lifecycle_status === 'active' && (
+                                    <>
+                                      <button
+                                        onClick={() => offer.id && handlePauseOffer(Number(offer.id))}
+                                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                      >
+                                        <Pause className="w-4 h-4 mr-3 text-yellow-600" />
+                                        Pause Offer
+                                      </button>
+                                      <button
+                                        onClick={() => offer.id && handleDeactivateOffer(Number(offer.id))}
+                                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                      >
+                                        <XCircle className="w-4 h-4 mr-3 text-orange-600" />
+                                        Deactivate Offer
+                                      </button>
+                                      <button
+                                        onClick={() => offer.id && handleExpireOffer(offer.id)}
+                                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                      >
+                                        <Clock className="w-4 h-4 mr-3 text-gray-600" />
+                                        Expire Offer
+                                      </button>
+                                    </>
+                                  )}
+
+                                  {(offer.lifecycle_status === 'paused' || offer.lifecycle_status === 'inactive') && (
+                                    <button
+                                      onClick={() => offer.id && handleActivateOffer(Number(offer.id))}
+                                      className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                      <Play className="w-4 h-4 mr-3 text-green-600" />
+                                      {offer.lifecycle_status === 'paused' ? 'Resume Offer' : 'Activate Offer'}
+                                    </button>
+                                  )}
+
+                                  {/* Archive - Available for any non-archived offer */}
+                                  {offer.lifecycle_status !== 'archived' && (
+                                    <button
+                                      onClick={() => offer.id && handleArchiveOffer(offer.id)}
+                                      className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                      <Archive className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                      Archive Offer
+                                    </button>
+                                  )}
                                 </>
                               )}
-
-                              {(offer.lifecycle_status === 'paused' || offer.lifecycle_status === 'expired') && (
-                                <button
-                                  onClick={() => offer.id && handleActivateOffer(offer.id)}
-                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <Play className="w-4 h-4 mr-3 text-green-600" />
-                                  Activate Offer
-                                </button>
-                              )}
-
-                              {/* Archive */}
-                              {offer.lifecycle_status !== 'archived' && (
-                                <button
-                                  onClick={() => offer.id && handleArchiveOffer(offer.id)}
-                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <Archive className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
-                                  Archive Offer
-                                </button>
-                              )}
-
-                              <div className="border-t border-gray-200 my-2"></div>
 
                               {/* Approval Actions - Context Aware */}
                               {offer.lifecycle_status === 'draft' && offer.approval_status !== 'pending' && (
@@ -708,7 +876,6 @@ export default function OffersPage() {
                               )}
 
                               {/* History Links */}
-                              <div className="border-t border-gray-200 my-2"></div>
                               <button
                                 onClick={() => offer.id && handleViewApprovalHistory(offer.id)}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -726,7 +893,6 @@ export default function OffersPage() {
                               </button>
 
                               {/* Delete - Dangerous Action */}
-                              <div className="border-t border-gray-200 my-2"></div>
                               <button
                                 onClick={() => offer.id && handleDeleteOffer(offer.id, offer.name)}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -759,7 +925,7 @@ export default function OffersPage() {
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
                 disabled={(filters.page || 1) <= 1}
-                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-[${color.ui.surface}] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Previous
               </button>
@@ -769,7 +935,7 @@ export default function OffersPage() {
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                 disabled={(filters.page || 1) >= Math.ceil(totalOffers / (filters.pageSize || 10))}
-                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-[${color.ui.surface}] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Next
               </button>

@@ -9,17 +9,18 @@ import {
   ChevronRight,
   Package,
   Settings,
-  XCircle,
+  Trash2,
   Play,
   Pause
 } from 'lucide-react';
-import { Product, ProductFilters } from '../../../../shared/types/product';
-import { ProductCategory } from '../../../../shared/types/productCategory';
+import { Product, ProductFilters } from '../types/product';
+import { ProductCategory } from '../types/productCategory';
 import { productService } from '../services/productService';
 import { productCategoryService } from '../services/productCategoryService';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
+import { useToast } from '../../../contexts/ToastContext';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -35,11 +36,8 @@ export default function ProductsPage() {
   });
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
   const { confirm } = useConfirm();
+  const { success: showToast, error: showError } = useToast();
 
   const loadCategories = async () => {
     try {
@@ -87,29 +85,15 @@ export default function ProductsPage() {
     try {
       if (product.is_active) {
         await productService.deactivateProduct(Number(product.id));
-        setNotification({
-          type: 'success',
-          message: `Product "${product.name}" has been deactivated successfully.`
-        });
+        showToast('Product Deactivated', `"${product.name}" has been deactivated successfully.`);
       } else {
         await productService.activateProduct(Number(product.id));
-        setNotification({
-          type: 'success',
-          message: `Product "${product.name}" has been activated successfully.`
-        });
+        showToast('Product Activated', `"${product.name}" has been activated successfully.`);
       }
       loadProducts();
-
-      // Auto-hide notification after 3 seconds
-      setTimeout(() => setNotification(null), 3000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update product status';
-      setError(errorMessage);
-      setNotification({
-        type: 'error',
-        message: errorMessage
-      });
-      setTimeout(() => setNotification(null), 5000);
+      showError('Error', errorMessage);
     }
   };
 
@@ -129,17 +113,11 @@ export default function ProductsPage() {
 
     try {
       await productService.deleteProduct(Number(productId));
-      setNotification({
-        type: 'success',
-        message: `Product "${productName}" has been deleted successfully.`
-      });
+      showToast('Product Deleted', `"${productName}" has been deleted successfully.`);
       loadProducts();
     } catch (err) {
       console.error('Failed to delete product:', err);
-      setNotification({
-        type: 'error',
-        message: 'Failed to delete product. Please try again.'
-      });
+      showError('Error', 'Failed to delete product. Please try again.');
     }
   };
 
@@ -249,38 +227,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Notification */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 max-w-md rounded-xl shadow-lg border p-4 transition-all duration-300 ${notification.type === 'success'
-          ? `bg-[${color.status.success.light}] border-[${color.status.success.main}]/20 text-[${color.status.success.dark}]`
-          : `bg-[${color.status.error.light}] border-[${color.status.error.main}]/20 text-[${color.status.error.dark}]`
-          }`}>
-          <div className="flex items-center">
-            <div className={`flex-shrink-0 w-5 h-5 mr-3 ${notification.type === 'success' ? `text-[${color.status.success.main}]` : `text-[${color.status.error.main}]`
-              }`}>
-              {notification.type === 'success' ? (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              )}
-            </div>
-            <p className="text-sm font-medium">{notification.message}</p>
-            <button
-              onClick={() => setNotification(null)}
-              className={`ml-auto flex-shrink-0 ${tw.textMuted} hover:${tw.textSecondary}`}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Error Message */}
       {error && (
         <div className={`bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 rounded-xl p-4 mb-6`}>
@@ -319,7 +265,7 @@ export default function ProductsPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className={`bg-[${color.ui.surface}]`}>
+                <thead className={`bg-gray-50`}>
                   <tr>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                       Product
@@ -351,7 +297,7 @@ export default function ProductsPage() {
                     const statusBadge = product.is_active ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`;
 
                     return (
-                      <tr key={product.id} className={`hover:bg-[${color.ui.surface}]/50 transition-colors`}>
+                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-3">
                             <div
@@ -393,24 +339,21 @@ export default function ProductsPage() {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => navigate(`/dashboard/products/${product.id}`)}
-                              className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => navigate(`/dashboard/products/${product.id}/edit`)}
-                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-200"
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
                               title="Edit Product"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleToggleStatus(product)}
-                              className={`p-2 rounded-lg transition-all duration-200 ${product.is_active
-                                ? `text-orange-600 hover:text-orange-700 hover:bg-orange-50`
-                                : `text-green-600 hover:text-green-700 hover:bg-green-50`
-                                }`}
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
                               title={product.is_active ? 'Deactivate' : 'Activate'}
                             >
                               {product.is_active ? (
@@ -424,7 +367,7 @@ export default function ProductsPage() {
                               className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
                               title="Delete Product"
                             >
-                              <XCircle className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -436,7 +379,7 @@ export default function ProductsPage() {
             </div>
 
             {/* Pagination */}
-            <div className={`bg-[${color.ui.surface}] px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0`}>
+            <div className="bg-white px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
                 Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
                 {Math.min((filters.page || 1) * (filters.pageSize || 10), total)} of {total} results
@@ -445,7 +388,7 @@ export default function ProductsPage() {
                 <button
                   onClick={() => handlePageChange((filters.page || 1) - 1)}
                   disabled={filters.page === 1}
-                  className={`p-2 border border-[${color.ui.border}] rounded-lg hover:bg-[${color.ui.surface}] disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -455,7 +398,7 @@ export default function ProductsPage() {
                 <button
                   onClick={() => handlePageChange((filters.page || 1) + 1)}
                   disabled={(filters.page || 1) >= (totalPages || 1)}
-                  className={`p-2 border border-[${color.ui.border}] rounded-lg hover:bg-[${color.ui.surface}] disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

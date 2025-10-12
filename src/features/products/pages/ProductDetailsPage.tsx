@@ -19,6 +19,7 @@ import { productCategoryService } from '../services/productCategoryService';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
+import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 
 export default function ProductDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -116,10 +117,9 @@ export default function ProductDetailsPage() {
 
     if (loading) {
         return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]"></div>
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
+                <p className={`${tw.textMuted} font-medium text-sm`}>Loading product details...</p>
             </div>
         );
     }

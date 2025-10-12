@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Save,
@@ -14,6 +14,7 @@ import { useToast } from '../../../contexts/ToastContext';
 
 export default function CreateProductPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { success } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,12 +28,24 @@ export default function CreateProductPage() {
     is_active: true
   });
 
+  // Preselect category from URL parameter
+  useEffect(() => {
+    const categoryIdParam = searchParams.get('categoryId');
+    if (categoryIdParam) {
+      setFormData(prev => ({
+        ...prev,
+        category_id: parseInt(categoryIdParam)
+      }));
+    }
+  }, [searchParams]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.product_id.trim() || !formData.name.trim()) {
-      setError('Product ID and Name are required');
+    // Validate required fields
+    if (!formData.product_id.trim() || !formData.name.trim() || !formData.da_id.trim()) {
+      setError('Product ID, Name, and DA ID are required');
       return;
     }
 
@@ -44,7 +57,23 @@ export default function CreateProductPage() {
       success('Product Created', `"${formData.name}" has been created successfully.`);
       navigate('/dashboard/products');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create product');
+      // Extract detailed error message from backend response
+      let errorMessage = 'Failed to create product';
+
+      if (err && typeof err === 'object') {
+        // Check for response.data.error or response.data.message
+        const error = err as any;
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+
+      console.error('Product creation error:', err);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -121,10 +150,11 @@ export default function CreateProductPage() {
             {/* DA ID */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                DA ID
+                DA ID *
               </label>
               <input
                 type="text"
+                required
                 value={formData.da_id}
                 onChange={(e) => handleInputChange('da_id', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "

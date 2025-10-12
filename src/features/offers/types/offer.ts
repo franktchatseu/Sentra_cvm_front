@@ -63,8 +63,10 @@ export interface TrackingSource {
   type?: string;
 }
 
-export type LifecycleStatus = 'draft' | 'active' | 'expired' | 'paused' | 'archived';
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+// Backend lifecycle statuses
+export type LifecycleStatus = 'draft' | 'active' | 'inactive' | 'paused' | 'expired' | 'archived';
+// Backend approval statuses
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'requires_changes';
 
 export interface Offer {
   id?: number;
@@ -101,7 +103,7 @@ export interface OfferFilters {
   pageSize?: number;
   sortBy?: string;
   sortDirection?: 'ASC' | 'DESC';
-  skipCache?: boolean;
+  skipCache?: boolean | string;
 }
 
 export interface OfferResponse {
@@ -120,7 +122,7 @@ export interface CreateOfferRequest {
   description?: string;
   category_id?: number;
   product_id?: number;
-  offer_type?: string;
+  offer_type?: string; // NOTE: This field is not in backend API - kept for UI compatibility, ignored by backend
   eligibility_rules?: EligibilityRules;
   lifecycle_status: LifecycleStatus;
   approval_status: ApprovalStatus;
@@ -128,6 +130,7 @@ export interface CreateOfferRequest {
   multi_language: boolean;
 }
 
+// UpdateOfferRequest - id is passed in URL path, not in body
 export interface UpdateOfferRequest extends Partial<CreateOfferRequest> {
-  id: number;
+  // Note: id is NOT included here as it's passed as URL parameter
 }

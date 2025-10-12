@@ -71,8 +71,8 @@ class OfferService {
   }
 
   // Get offer by ID
-  async getOfferById(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}?searchBy=id`);
+  async getOfferById(id: number, skipCache: boolean = true): Promise<Offer> {
+    return this.request<Offer>(`/${id}?searchBy=id${skipCache ? '&skipCache=true' : ''}`);
   }
 
   // Get offer by name

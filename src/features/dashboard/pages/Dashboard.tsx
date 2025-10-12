@@ -12,6 +12,8 @@ import ProgramsPage from '../../campaigns/pages/ProgramsPage';
 import CommunicationPolicyPage from '../../campaigns/pages/CommunicationPolicyPage';
 import OffersPage from '../../offers/pages/OffersPage';
 import OfferDetailsPage from '../../offers/pages/OfferDetailsPage';
+import OfferLifecycleHistoryPage from '../../offers/pages/OfferLifecycleHistoryPage';
+import OfferApprovalHistoryPage from '../../offers/pages/OfferApprovalHistoryPage';
 import SegmentManagementPage from '../../segments/pages/SegmentManagementPage';
 import SegmentDetailsPage from '../../segments/pages/SegmentDetailsPage';
 import EditSegmentPage from '../../segments/pages/EditSegmentPage';
@@ -47,6 +49,8 @@ export default function Dashboard() {
         <Route path="/offers/create" element={<CreateOfferPage />} />
         <Route path="/offers/:id" element={<OfferDetailsPage />} />
         <Route path="/offers/:id/edit" element={<CreateOfferPage />} />
+        <Route path="/offers/:id/approval-history" element={<OfferApprovalHistoryPage />} />
+        <Route path="/offers/:id/lifecycle-history" element={<OfferLifecycleHistoryPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/create" element={<CreateProductPage />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />

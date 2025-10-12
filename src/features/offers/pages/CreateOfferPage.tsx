@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Target,
   DollarSign,
@@ -14,13 +14,13 @@ import { CreateOfferRequest, Offer } from '../types/offer';
 import { Product } from '../../products/types/product';
 import { offerService } from '../services/offerService';
 import { offerCategoryService } from '../services/offerCategoryService';
+import { productService } from '../../products/services/productService';
 import { OfferCategory } from '../types/offerCategory';
 import ProductSelector from '../../products/components/ProductSelector';
 import OfferCreativeStep from '../components/OfferCreativeStep';
 import OfferTrackingStep from '../components/OfferTrackingStep';
 import OfferRewardStep from '../components/OfferRewardStep';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
-import StepNavigation from '../../../shared/components/ui/StepNavigation';
 import { colors as color } from '../../../shared/utils/tokens';
 import { color as utilColor, tw } from '../../../shared/utils/utils';
 import { useToast } from '../../../contexts/ToastContext';
@@ -162,7 +162,7 @@ function BasicInfoStep({ formData, setFormData, validationErrors, clearValidatio
               }
             }}
             placeholder="e.g., Summer Data Bundle"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none transition-all duration-200 ${validationErrors?.name ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-3 py-1.5 border rounded-md focus:outline-none transition-all duration-200 text-sm placeholder:text-sm ${validationErrors?.name ? 'border-red-500' : 'border-gray-300'
               }`}
             required
           />
@@ -179,8 +179,8 @@ function BasicInfoStep({ formData, setFormData, validationErrors, clearValidatio
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this offer provides to customers..."
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none transition-all duration-200"
+            rows={3}
+            className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none transition-all duration-200 text-sm placeholder:text-sm"
           />
         </div>
 
@@ -244,10 +244,7 @@ function BasicInfoStep({ formData, setFormData, validationErrors, clearValidatio
 }
 
 // Step 2: Offer Products
-function ProductStepWrapper({ formData, setFormData }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext' | 'onPrev' | 'onSubmit' | 'creatives' | 'setCreatives' | 'trackingSources' | 'setTrackingSources' | 'rewards' | 'setRewards' | 'isLoading' | 'validationErrors' | 'clearValidationErrors' | 'offerCategories' | 'categoriesLoading' | 'onSaveDraft' | 'onCancel'>) {
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-
-
+function ProductStepWrapper({ formData, setFormData, selectedProducts, onProductsChange }: Omit<StepProps, 'currentStep' | 'totalSteps' | 'onNext' | 'onPrev' | 'onSubmit' | 'creatives' | 'setCreatives' | 'trackingSources' | 'setTrackingSources' | 'rewards' | 'setRewards' | 'isLoading' | 'validationErrors' | 'clearValidationErrors' | 'offerCategories' | 'categoriesLoading' | 'onSaveDraft' | 'onCancel'> & { selectedProducts: Product[], onProductsChange: (products: Product[]) => void }) {
   return (
     <div className="space-y-6">
       <div className="mt-8 mb-8 flex items-start justify-between">
@@ -260,7 +257,7 @@ function ProductStepWrapper({ formData, setFormData }: Omit<StepProps, 'currentS
         <ProductSelector
           selectedProducts={selectedProducts}
           onProductsChange={(products) => {
-            setSelectedProducts(products);
+            onProductsChange(products);
             const firstProductId = products[0]?.id;
             setFormData({
               ...formData,
@@ -496,9 +493,11 @@ function ReviewStep({ formData, creatives, trackingSources, rewards }: Omit<Step
 export default function CreateOfferPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { success: showToast, error: showError } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
@@ -520,7 +519,33 @@ export default function CreateOfferPage() {
   const [creatives, setCreatives] = useState<OfferCreative[]>([]);
   const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
   const [rewards, setRewards] = useState<OfferReward[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Preselect category from URL parameter
+  useEffect(() => {
+    const categoryIdParam = searchParams.get('categoryId');
+    if (categoryIdParam && !isEditMode) {
+      setFormData(prev => ({
+        ...prev,
+        category_id: parseInt(categoryIdParam)
+      }));
+    }
+  }, [searchParams, isEditMode]);
+
+  // Generate dummy offer type based on offer ID (same logic as OfferDetailsPage)
+  const getDummyOfferType = (offerId: string | number) => {
+    const offerTypes = [
+      'STV',
+      'Short Text (SMS/USSD)',
+      'Email',
+      'Voice Push',
+      'WAP Push',
+      'Rich Media'
+    ];
+    const typeIndex = Number(offerId) % offerTypes.length;
+    return offerTypes[typeIndex];
+  };
 
   // Load offer data for edit mode
   const loadOfferData = useCallback(async () => {
@@ -528,14 +553,28 @@ export default function CreateOfferPage() {
 
     setIsLoadingOffer(true);
     try {
-      const response = await offerService.getOfferById(parseInt(id)) as { data?: Offer; success?: boolean };
+      const [offerResponse, productsData] = await Promise.all([
+        offerService.getOfferById(parseInt(id)),
+        offerService.getOfferProducts(parseInt(id)).catch(() => []) // Load existing products, ignore errors
+      ]);
+
+      const response = offerResponse as { data?: Offer; success?: boolean };
       const offer = response.data || response as Offer;
+
+
+      // Extract products from response.data if wrapped
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const products = (productsData as any)?.data || productsData || [];
+
+      // Generate dummy offer type based on offer ID since backend doesn't store it
+      const dummyOfferType = getDummyOfferType(offer.id!);
+
       const newFormData = {
         name: offer.name || '',
         description: offer.description || '',
         category_id: offer.category_id ? Number(offer.category_id) : undefined,
         product_id: offer.product_id ? Number(offer.product_id) : undefined,
-        offer_type: (offer as Offer & { offer_type?: string }).offer_type || '',
+        offer_type: dummyOfferType, // Use dummy offer type
         eligibility_rules: offer.eligibility_rules || {},
         lifecycle_status: offer.lifecycle_status || 'draft',
         approval_status: offer.approval_status || 'pending',
@@ -543,8 +582,34 @@ export default function CreateOfferPage() {
         multi_language: offer.multi_language || false
       };
       setFormData(newFormData);
-    } catch {
-      console.error('Failed to load offer data');
+
+      // Fetch full product details for each product_id
+      if (Array.isArray(products) && products.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const productDetailsPromises = products.map(async (link: any) => {
+          try {
+            const productResponse = await productService.getProductById(link.product_id);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const productData = (productResponse as any).data || productResponse;
+            return {
+              ...productData,
+              is_primary: link.is_primary
+            };
+          } catch (error) {
+            console.error('Failed to fetch product details for ID:', link.product_id, error);
+            return {
+              id: link.product_id,
+              name: `Product ${link.product_id}`,
+              is_primary: link.is_primary
+            };
+          }
+        });
+
+        const fullProducts = await Promise.all(productDetailsPromises);
+        setSelectedProducts(fullProducts);
+      }
+    } catch (error) {
+      console.error('[Edit Mode] Failed to load offer data:', error);
       navigate('/dashboard/offers');
     } finally {
       setIsLoadingOffer(false);
@@ -692,13 +757,36 @@ export default function CreateOfferPage() {
         return;
       }
 
+      // Remove offer_type as backend doesn't accept it
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { offer_type, ...apiData } = formData;
+
+      let offerId: number;
+
       if (isEditMode && id) {
-        await offerService.updateOffer(parseInt(id), formData);
-        console.log('Offer updated successfully');
+        await offerService.updateOffer(parseInt(id), apiData);
+        offerId = parseInt(id);
       } else {
-        await offerService.createOffer(formData);
-        console.log('Offer created successfully');
+        const createdOffer = await offerService.createOffer(apiData);
+        offerId = createdOffer.id!;
       }
+
+      // Link products to the offer if any were selected
+      if (selectedProducts.length > 0) {
+        try {
+          const productIds = selectedProducts.map(p => parseInt(p.id!));
+          await offerService.linkProducts(offerId, productIds);
+        } catch (productError) {
+          console.error('[Submit] Failed to link products:', productError);
+          showError(`Offer ${isEditMode ? 'updated' : 'created'}, but failed to link products`);
+          navigate('/dashboard/offers');
+          return;
+        }
+      }
+
+      // Show success message
+      showToast(`Offer ${isEditMode ? 'updated' : 'created'} successfully`);
+
       navigate('/dashboard/offers');
     } catch (err: unknown) {
       console.error('Create offer error:', err);
@@ -742,7 +830,7 @@ export default function CreateOfferPage() {
 
   const handleSaveDraft = async () => {
     try {
-      setIsLoading(true);
+      setIsSavingDraft(true);
       if (!formData.name.trim()) {
         showError('Offer name is required to save draft');
         return;
@@ -753,7 +841,6 @@ export default function CreateOfferPage() {
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.product_id && { product_id: formData.product_id }),
-        ...(formData.offer_type && { offer_type: formData.offer_type }),
         ...(formData.eligibility_rules && { eligibility_rules: formData.eligibility_rules }),
         lifecycle_status: formData.lifecycle_status,
         approval_status: formData.approval_status,
@@ -767,7 +854,7 @@ export default function CreateOfferPage() {
     } catch {
       showError('Failed to save draft. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSavingDraft(false);
     }
   };
 
@@ -809,7 +896,7 @@ export default function CreateOfferPage() {
       case 1:
         return <BasicInfoStep {...stepProps} />;
       case 2:
-        return <ProductStepWrapper {...stepProps} />;
+        return <ProductStepWrapper {...stepProps} selectedProducts={selectedProducts} onProductsChange={setSelectedProducts} />;
       case 3:
         return <OfferCreativeStepWrapper {...stepProps} />;
       case 4:
@@ -840,13 +927,13 @@ export default function CreateOfferPage() {
               )}
               <button
                 onClick={handleSaveDraft}
-                disabled={isLoading}
+                disabled={isSavingDraft}
                 className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: utilColor.sentra.main }}
-                onMouseEnter={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
-                onMouseLeave={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
+                onMouseEnter={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
+                onMouseLeave={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
               >
-                {isLoading ? (
+                {isSavingDraft ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Saving...
@@ -960,19 +1047,23 @@ export default function CreateOfferPage() {
               </button>
               <button
                 onClick={currentStep === 6 ? handleSubmit : handleNext}
-                disabled={isLoading || !validateCurrentStep()}
+                disabled={currentStep === 6 ? isLoading || !validateCurrentStep() : !validateCurrentStep()}
                 className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: utilColor.sentra.main }}
-                onMouseEnter={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
-                onMouseLeave={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
+                onMouseEnter={(e) => { if ((currentStep === 6 ? !isLoading && validateCurrentStep() : validateCurrentStep())) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
+                onMouseLeave={(e) => { if ((currentStep === 6 ? !isLoading && validateCurrentStep() : validateCurrentStep())) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
               >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {currentStep === 6 ? (isEditMode ? 'Updating...' : 'Creating...') : 'Loading...'}
-                  </>
+                {currentStep === 6 ? (
+                  isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {isEditMode ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    isEditMode ? 'Update Offer' : 'Create Offer'
+                  )
                 ) : (
-                  currentStep === 6 ? (isEditMode ? 'Update Offer' : 'Create Offer') : 'Next Step'
+                  'Next Step'
                 )}
               </button>
             </div>

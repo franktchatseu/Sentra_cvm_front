@@ -44,7 +44,7 @@ export default function HeadlessSelect({
       <Listbox value={value} onChange={onChange} disabled={disabled}>
         <div className="relative">
           <Listbox.Button className={`
-            relative w-full cursor-default rounded-md bg-white py-2 pl-3 pr-10 text-left shadow-sm border transition-all duration-200
+            relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left shadow-sm border transition-all duration-200
             ${error
               ? 'border-red-300'
               : 'border-gray-300'
@@ -54,8 +54,7 @@ export default function HeadlessSelect({
               : 'hover:border-gray-400'
             }
             focus:outline-none focus:ring-0 focus:border-gray-300
-          `}>
-            <span className={`block ${selectedOption ? 'text-gray-900' : 'text-gray-500'}`}>
+          `}>            <span className={`block text-sm ${selectedOption ? 'text-gray-900' : 'text-gray-500'}`}>
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -87,7 +86,7 @@ export default function HeadlessSelect({
               )}
 
               {filteredOptions.length === 0 ? (
-                <div className="relative cursor-default select-none py-2 pl-10 pr-4 text-gray-500">
+                <div className="relative cursor-default select-none py-2.5 pl-10 pr-4 text-gray-500">
                   No options found.
                 </div>
               ) : (
@@ -97,7 +96,7 @@ export default function HeadlessSelect({
                     value={option.value}
                     disabled={option.disabled}
                     className={({ active, disabled }) =>
-                      `relative cursor-default select-none py-2 pl-10 pr-4 transition-colors duration-150 ${active ? 'bg-gray-100 text-gray-900' : 'text-gray-900'
+                      `relative cursor-default select-none py-2.5 pl-10 pr-4 transition-colors duration-150 ${active ? 'bg-gray-100 text-gray-900' : 'text-gray-900'
                       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                       }`
                     }

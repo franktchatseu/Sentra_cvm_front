@@ -20,6 +20,7 @@ export interface UpdateProductCategoryRequest {
 export interface ProductCategoryFilters {
   search?: string;
   includeProductCount?: boolean;
+  skipCache?: boolean;
 }
 
 export interface ProductCategoryResponse {

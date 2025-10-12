@@ -13,7 +13,9 @@ class ProductCategoryService {
   async getCategories(filters?: ProductCategoryFilters): Promise<ProductCategoryResponse> {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
-    params.append('skipCache', 'true');
+    if (filters?.includeProductCount !== undefined) params.append('includeProductCount', filters.includeProductCount.toString());
+    if (filters?.skipCache !== undefined) params.append('skipCache', filters.skipCache.toString());
+    else params.append('skipCache', 'true'); // Default to skip cache
 
     const response = await fetch(`${this.baseUrl}/all?${params}`, {
       headers: getAuthHeaders()
@@ -29,6 +31,7 @@ class ProductCategoryService {
       id: parseInt(cat.id),
       name: cat.name,
       description: cat.description,
+      productCount: cat.product_count || 0,
       createdAt: cat.created_at,
       updatedAt: cat.updated_at
     })) : [];
