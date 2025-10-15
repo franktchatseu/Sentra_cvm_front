@@ -189,7 +189,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
       // If validation passes, get preview data with sample size
       // Note: For new segments without ID, we use the legacy preview endpoint
       const previewResult = await segmentService.getSegmentPreview(
-        formData.conditions.flatMap(group => group.conditions) as Record<string, unknown>[]
+        formData.conditions.flatMap(group => group.conditions) as unknown as Record<string, unknown>[]
       );
 
       setPreviewCount(previewResult.count || 0);
@@ -329,7 +329,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
             </div>
             <button
               onClick={onClose}
-              className={`p-2 hover:bg-[${color.ui.surface}] rounded-lg transition-colors`}
+              className={`p-2 hover:bg-[${color.ui.background}] rounded-lg transition-colors`}
             >
               <X className={`w-6 h-6 ${tw.textMuted}`} />
             </button>
@@ -505,7 +505,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                   </div>
                 </div>
 
-                <div className={`border border-[${color.ui.border}] rounded-lg p-4 bg-[${color.ui.surface}]`}>
+                <div className={`border border-[${color.ui.border}] rounded-lg p-4 bg-[${color.ui.background}]`}>
                   <SegmentConditionsBuilder
                     conditions={formData.conditions}
                     onChange={(conditions) => setFormData(prev => ({ ...prev, conditions }))}
@@ -520,7 +520,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
             <button
               type="button"
               onClick={onClose}
-              className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${color.ui.border}] rounded-lg hover:bg-[${color.ui.surface}] transition-colors text-sm`}
+              className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${color.ui.border}] rounded-lg hover:bg-[${color.ui.background}] transition-colors text-sm`}
             >
               Cancel
             </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, X, Users, ArrowLeft, Eye, Grid, List } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
@@ -149,25 +149,7 @@ function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalPro
     const [isLoading, setIsLoading] = useState(false);
     const [assigningSegmentId, setAssigningSegmentId] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (isOpen && category) {
-            loadUnassignedSegments();
-        }
-    }, [isOpen, category]);
-
-    useEffect(() => {
-        if (searchTerm.trim()) {
-            const filtered = segments.filter(segment =>
-                segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (segment.description && segment.description.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-            setFilteredSegments(filtered);
-        } else {
-            setFilteredSegments(segments);
-        }
-    }, [searchTerm, segments]);
-
-    const loadUnassignedSegments = async () => {
+    const loadUnassignedSegments = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await segmentService.getSegments({ skipCache: true });
@@ -187,7 +169,26 @@ function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalPro
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [category?.id]);
+
+    useEffect(() => {
+        if (isOpen && category) {
+            loadUnassignedSegments();
+        }
+    }, [isOpen, category, loadUnassignedSegments]);
+
+    useEffect(() => {
+        if (searchTerm.trim()) {
+            const filtered = segments.filter(segment =>
+                segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (segment.description && segment.description.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+            setFilteredSegments(filtered);
+        } else {
+            setFilteredSegments(segments);
+        }
+    }, [searchTerm, segments]);
+
 
     const handleAssign = async (segmentId: string) => {
         setAssigningSegmentId(segmentId);
@@ -324,11 +325,7 @@ export default function SegmentCategoriesPage() {
     const [segmentCounts, setSegmentCounts] = useState<Record<number, number>>({});
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    useEffect(() => {
-        loadCategories();
-    }, []);
-
-    const loadCategories = async () => {
+    const loadCategories = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await segmentService.getSegmentCategories(undefined, true);
@@ -343,7 +340,11 @@ export default function SegmentCategoriesPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [showError]);
+
+    useEffect(() => {
+        loadCategories();
+    }, [loadCategories]);
 
     const loadSegmentCounts = async (cats: SegmentCategory[]) => {
         try {

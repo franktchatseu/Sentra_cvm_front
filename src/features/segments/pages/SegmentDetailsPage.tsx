@@ -147,7 +147,8 @@ export default function SegmentDetailsPage() {
             const countResponse = response as { count?: number; data?: { count?: number } };
             const count = countResponse.count ?? countResponse.data?.count ?? 0;
             setMembersCount(count);
-        } catch (err) {
+        } catch {
+            // Ignore errors for members count
         } finally {
             setIsLoadingMembers(false);
         }
@@ -294,7 +295,7 @@ export default function SegmentDetailsPage() {
             if (response.meta) {
                 setMembersTotalPages(response.meta.totalPages || 1);
             }
-        } catch (err) {
+        } catch {
             setMembers([]);
         } finally {
             setIsLoadingMembersList(false);
