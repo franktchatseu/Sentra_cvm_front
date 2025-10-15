@@ -1,7 +1,11 @@
 // API Configuration
+const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
 export const API_CONFIG = {
-  // BASE_URL: 'http://localhost:8080/api',
-  BASE_URL: 'http://cvm.groupngs.com:8080/api/database-service',
+  // Use proxy in production, direct API in development
+  BASE_URL: isProduction 
+    ? '/api/proxy' 
+    : 'http://cvm.groupngs.com:8080/api/database-service',
   ENDPOINTS: {
     OFFERS: '/offers',
     PRODUCTS: '/products',
