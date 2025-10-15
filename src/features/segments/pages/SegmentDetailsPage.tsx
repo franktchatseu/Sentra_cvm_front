@@ -13,7 +13,10 @@ import {
     PowerOff,
     RefreshCw,
     Eye,
-    MoreVertical
+    MoreVertical,
+    Copy,
+    Plus,
+    X
 } from 'lucide-react';
 import { Segment } from '../types/segment';
 import { segmentService } from '../services/segmentService';
@@ -50,7 +53,7 @@ const MOCK_SEGMENT: Segment = {
     }
 };
 
-const USE_MOCK_DATA = true; // Toggle this to switch between mock and real data
+const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
 
 export default function SegmentDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -63,6 +66,35 @@ export default function SegmentDetailsPage() {
     const [membersCount, setMembersCount] = useState<number>(0);
     const [isLoadingMembers, setIsLoadingMembers] = useState(false);
     const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'xml'>('csv');
+    const [isExporting, setIsExporting] = useState(false);
+    const [categoryName, setCategoryName] = useState<string>('Uncategorized');
+
+    // Members state
+    const [showMembersModal, setShowMembersModal] = useState(false);
+    const [members, setMembers] = useState<Array<{ customer_id: string | number;[key: string]: unknown }>>([]);
+    const [membersPage, setMembersPage] = useState(1);
+    const [membersTotalPages, setMembersTotalPages] = useState(1);
+    const [isLoadingMembersList, setIsLoadingMembersList] = useState(false);
+    const [customerIdsInput, setCustomerIdsInput] = useState('');
+
+    const loadCategoryName = useCallback(async (categoryId: number | string) => {
+        try {
+            const response = await segmentService.getSegmentCategories();
+            const categories = response.data || [];
+
+            // Handle both string and number IDs
+            const category = categories.find((cat: { id: number | string; name: string }) =>
+                String(cat.id) === String(categoryId)
+            );
+
+            const name = category?.name || 'Uncategorized';
+            setCategoryName(name);
+        } catch {
+            setCategoryName('Uncategorized');
+        }
+    }, []);
 
     const loadSegment = useCallback(async () => {
         try {
@@ -77,14 +109,24 @@ export default function SegmentDetailsPage() {
                 return;
             }
 
-            const data = await segmentService.getSegmentById(Number(id));
-            setSegment(data);
+            const response = await segmentService.getSegmentById(Number(id));
+
+            // Extract data from response (backend wraps it in data object)
+            const segmentData = (response as { data?: Segment }).data || response;
+            setSegment(segmentData);
+
+            // Load category name if category exists
+            if (segmentData.category) {
+                loadCategoryName(segmentData.category);
+            } else {
+                setCategoryName('Uncategorized');
+            }
         } catch (err) {
             showError('Error loading segment', (err as Error).message || 'Failed to load segment details');
         } finally {
             setIsLoading(false);
         }
-    }, [id, showError]);
+    }, [id, showError, loadCategoryName]);
 
     const loadMembersCount = useCallback(async () => {
         try {
@@ -99,10 +141,13 @@ export default function SegmentDetailsPage() {
                 return;
             }
 
-            const { count } = await segmentService.getSegmentMembersCount(Number(id));
+            const response = await segmentService.getSegmentMembersCount(Number(id));
+
+            // Extract count from response
+            const countResponse = response as { count?: number; data?: { count?: number } };
+            const count = countResponse.count ?? countResponse.data?.count ?? 0;
             setMembersCount(count);
         } catch (err) {
-            console.error('Failed to load members count:', err);
         } finally {
             setIsLoadingMembers(false);
         }
@@ -192,22 +237,117 @@ export default function SegmentDetailsPage() {
         }
     };
 
-    const handleExport = async () => {
+    const handleCustomExport = async () => {
         if (!segment) return;
 
+        setIsExporting(true);
         try {
-            const blob = await segmentService.exportSegment(Number(id), 'csv');
+            const blob = await segmentService.exportSegment(Number(id), exportFormat);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `segment-${segment.name}-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `segment-${segment.name}-${new Date().toISOString().split('T')[0]}.${exportFormat}`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            success('Export successful', 'Segment data has been exported');
+            success('Export successful', `Segment data has been exported as ${exportFormat.toUpperCase()}`);
+            setShowExportModal(false);
         } catch (err) {
             showError('Export failed', (err as Error).message || 'Failed to export segment');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleDuplicate = async () => {
+        if (!segment) return;
+
+        const confirmed = await confirm({
+            title: 'Duplicate Segment',
+            message: `Create a copy of "${segment.name}"?`,
+            type: 'info',
+            confirmText: 'Duplicate',
+            cancelText: 'Cancel'
+        });
+
+        if (!confirmed) return;
+
+        try {
+            const newName = `${segment.name} (Copy)`;
+            await segmentService.duplicateSegment(Number(id), { newName });
+            success('Segment duplicated', `Segment "${newName}" has been created successfully`);
+            // Navigate to segments list to see the new duplicate
+            navigate('/dashboard/segments');
+        } catch (err) {
+            showError('Duplication failed', (err as Error).message || 'Failed to duplicate segment');
+        }
+    };
+
+    const loadMembers = useCallback(async (page: number = 1) => {
+        if (!id) return;
+
+        setIsLoadingMembersList(true);
+        try {
+            const response = await segmentService.getSegmentMembers(Number(id), page, 10);
+            setMembers(response.data || []);
+            if (response.meta) {
+                setMembersTotalPages(response.meta.totalPages || 1);
+            }
+        } catch (err) {
+            setMembers([]);
+        } finally {
+            setIsLoadingMembersList(false);
+        }
+    }, [id]);
+
+    const handleAddMembers = async () => {
+        if (!customerIdsInput.trim()) {
+            showError('Validation error', 'Please enter at least one customer ID');
+            return;
+        }
+
+        const customerIds = customerIdsInput
+            .split(',')
+            .map(id => id.trim())
+            .filter(id => id);
+
+
+        if (customerIds.length === 0) {
+            showError('Validation error', 'Please enter valid customer IDs');
+            return;
+        }
+
+        try {
+            await segmentService.addSegmentMembers(Number(id), { customer_ids: customerIds });
+            success('Members added', `${customerIds.length} member(s) added successfully`);
+            setCustomerIdsInput('');
+            setShowMembersModal(false);
+            await loadMembersCount();
+            await loadMembers(membersPage);
+        } catch (err) {
+            showError('Error adding members', (err as Error).message || 'Failed to add members');
+        }
+    };
+
+    const handleRemoveMembers = async (customerIds: Array<string | number>) => {
+        const confirmed = await confirm({
+            title: 'Remove Members',
+            message: `Remove ${customerIds.length} member(s) from this segment?`,
+            type: 'warning',
+            confirmText: 'Remove',
+            cancelText: 'Cancel'
+        });
+
+        if (!confirmed) return;
+
+        try {
+            await segmentService.deleteSegmentMembers(Number(id), { customer_ids: customerIds });
+            success('Members removed', `${customerIds.length} member(s) removed successfully`);
+            await loadMembersCount();
+            await loadMembers(membersPage);
+        } catch (err) {
+            showError('Error removing members', (err as Error).message || 'Failed to remove members');
         }
     };
 
@@ -299,13 +439,24 @@ export default function SegmentDetailsPage() {
 
                                     <button
                                         onClick={() => {
-                                            handleExport();
+                                            setShowExportModal(true);
                                             setShowMoreMenu(false);
                                         }}
                                         className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                     >
                                         <Download className="w-4 h-4 mr-3" />
                                         Export Segment
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            handleDuplicate();
+                                            setShowMoreMenu(false);
+                                        }}
+                                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <Copy className="w-4 h-4 mr-3" />
+                                        Duplicate Segment
                                     </button>
 
                                     <div className="border-t border-gray-200 my-1"></div>
@@ -355,7 +506,7 @@ export default function SegmentDetailsPage() {
                         <div>
                             <p className={`text-sm ${tw.textMuted} mb-1`}>Members</p>
                             <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                                {isLoadingMembers ? '...' : membersCount.toLocaleString()}
+                                {isLoadingMembers ? '...' : (membersCount || 0).toLocaleString()}
                             </p>
                         </div>
                         <div className="p-3 rounded-lg" style={{ backgroundColor: `${color.entities.segments}20` }}>
@@ -411,28 +562,34 @@ export default function SegmentDetailsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Basic Information */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Basic Information</h3>
+                    <h3 className={`text-base font-semibold ${tw.textPrimary} mb-4`}>Basic Information</h3>
                     <div className="space-y-4">
                         <div>
-                            <label className={`text-sm ${tw.textMuted} block mb-1`}>Segment Name</label>
-                            <p className={`${tw.textPrimary} font-medium`}>{segment.name}</p>
+                            <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Segment Name</label>
+                            <p className={`text-sm ${tw.textPrimary}`}>{segment.name}</p>
                         </div>
                         <div>
-                            <label className={`text-sm ${tw.textMuted} block mb-1`}>Description</label>
-                            <p className={`${tw.textSecondary}`}>{segment.description || 'No description'}</p>
+                            <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Description</label>
+                            <p className={`text-sm ${tw.textSecondary}`}>{segment.description || 'No description'}</p>
                         </div>
                         <div>
-                            <label className={`text-sm ${tw.textMuted} block mb-1`}>Type</label>
+                            <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Type</label>
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.type === 'dynamic' ? 'bg-purple-100 text-purple-700' :
                                 segment.type === 'static' ? 'bg-blue-100 text-blue-700' :
                                     'bg-orange-100 text-orange-700'
                                 }`}>
-                                {segment.type.charAt(0).toUpperCase() + segment.type.slice(1)}
+                                {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
                             </span>
+                        </div>
+                        <div>
+                            <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Segment Catalog</label>
+                            <p className={`text-sm ${tw.textPrimary}`}>
+                                {categoryName}
+                            </p>
                         </div>
                         {segment.tags && segment.tags.length > 0 && (
                             <div>
-                                <label className={`text-sm ${tw.textMuted} block mb-2`}>Tags</label>
+                                <label className={`text-sm font-medium ${tw.textMuted} block mb-2`}>Tags</label>
                                 <div className="flex flex-wrap gap-2">
                                     {segment.tags.map(tag => (
                                         <span key={tag} className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
@@ -448,48 +605,54 @@ export default function SegmentDetailsPage() {
 
                 {/* Metadata */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Metadata</h3>
+                    <h3 className={`text-base font-semibold ${tw.textPrimary} mb-4`}>Metadata</h3>
                     <div className="space-y-4">
                         <div>
-                            <label className={`text-sm ${tw.textMuted} block mb-1`}>Created</label>
+                            <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Created</label>
                             <div className="flex items-center space-x-2">
                                 <Calendar className="w-4 h-4 text-gray-400" />
-                                <p className={`${tw.textPrimary}`}>
-                                    {new Date(segment.created_on || segment.created_at!).toLocaleDateString('en-US', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                <p className={`text-sm ${tw.textPrimary}`}>
+                                    {(() => {
+                                        const createdDate = segment.created_on || segment.created_at;
+                                        return new Date(createdDate!).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                    })()}
                                 </p>
                             </div>
                         </div>
                         <div>
-                            <label className={`text-sm ${tw.textMuted} block mb-1`}>Last Updated</label>
+                            <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Last Updated</label>
                             <div className="flex items-center space-x-2">
                                 <Calendar className="w-4 h-4 text-gray-400" />
-                                <p className={`${tw.textPrimary}`}>
-                                    {new Date(segment.updated_on || segment.updated_at!).toLocaleDateString('en-US', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                <p className={`text-sm ${tw.textPrimary}`}>
+                                    {(() => {
+                                        const updatedDate = segment.updated_on || segment.updated_at;
+                                        return new Date(updatedDate!).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                    })()}
                                 </p>
                             </div>
                         </div>
                         {segment.refresh_frequency && (
                             <div>
-                                <label className={`text-sm ${tw.textMuted} block mb-1`}>Refresh Frequency</label>
-                                <p className={`${tw.textPrimary} capitalize`}>{segment.refresh_frequency}</p>
+                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Refresh Frequency</label>
+                                <p className={`text-sm ${tw.textPrimary} capitalize`}>{segment.refresh_frequency}</p>
                             </div>
                         )}
                         {segment.version && (
                             <div>
-                                <label className={`text-sm ${tw.textMuted} block mb-1`}>Version</label>
-                                <p className={`${tw.textPrimary}`}>{segment.version}</p>
+                                <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Version</label>
+                                <p className={`text-sm ${tw.textPrimary}`}>{segment.version}</p>
                             </div>
                         )}
                     </div>
@@ -499,7 +662,7 @@ export default function SegmentDetailsPage() {
             {/* Criteria/Definition Section */}
             {(segment.criteria || segment.definition) && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4 flex items-center`}>
+                    <h3 className={`text-base font-semibold ${tw.textPrimary} mb-4 flex items-center`}>
                         <Activity className="w-5 h-5 mr-2" style={{ color: color.entities.segments }} />
                         Segment Criteria
                     </h3>
@@ -561,6 +724,298 @@ export default function SegmentDetailsPage() {
                             </p>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Segment Members Section */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-base font-semibold ${tw.textPrimary} flex items-center`}>
+                        <Users className="w-5 h-5 mr-2" style={{ color: color.entities.segments }} />
+                        Segment Members ({(membersCount || 0).toLocaleString()})
+                    </h3>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => {
+                                setShowMembersModal(true);
+                                loadMembers(1);
+                            }}
+                            className="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg transition-all text-sm flex items-center gap-2 hover:bg-gray-50"
+                        >
+                            <Eye className="w-4 h-4" />
+                            View All Members
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowMembersModal(true);
+                                loadMembers(1);
+                            }}
+                            className="px-4 py-2 text-white rounded-lg transition-all text-sm flex items-center gap-2"
+                            style={{ backgroundColor: color.sentra.main }}
+                            onMouseEnter={(e) => {
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                            }}
+                            onMouseLeave={(e) => {
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            }}
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Members
+                        </button>
+                    </div>
+                </div>
+
+                <p className={`text-sm ${tw.textSecondary}`}>
+                    View and manage members in this segment. {segment?.type === 'static' ? 'Add or remove members manually.' : 'Members are automatically computed based on segment rules.'}
+                </p>
+            </div>
+
+            {/* Members Modal */}
+            {showMembersModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Segment Members</h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    {(membersCount || 0).toLocaleString()} total member{membersCount !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowMembersModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Add Members Form */}
+                        {segment?.type === 'static' && (
+                            <div className="p-6 border-b border-gray-200 bg-gray-50">
+                                <div className="flex items-end gap-3">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Add Customer IDs (comma-separated)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={customerIdsInput}
+                                            onChange={(e) => setCustomerIdsInput(e.target.value)}
+                                            placeholder="e.g., 12345, 67890, 11111"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleAddMembers}
+                                        className="px-4 py-2 text-white rounded-lg transition-all"
+                                        style={{ backgroundColor: color.sentra.main }}
+                                        onMouseEnter={(e) => {
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                        }}
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Members List */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {isLoadingMembersList ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <LoadingSpinner variant="modern" size="lg" color="primary" />
+                                    <p className="text-gray-500 mt-4">Loading members...</p>
+                                </div>
+                            ) : members.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                    <p className="text-gray-500">No members in this segment</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {members.map((member, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                    <Users className="w-5 h-5 text-blue-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-900">
+                                                        Customer ID: {String(member.customer_id)}
+                                                    </p>
+                                                    {member.joined_at ? (
+                                                        <p className="text-sm text-gray-500">
+                                                            Joined: {new Date(String(member.joined_at)).toLocaleDateString()}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                            {segment?.type === 'static' && (
+                                                <button
+                                                    onClick={() => handleRemoveMembers([member.customer_id])}
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Remove member"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {members.length > 0 && membersTotalPages > 1 && (
+                            <div className="p-6 border-t border-gray-200">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm text-gray-500">
+                                        Page {membersPage} of {membersTotalPages}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => {
+                                                const newPage = membersPage - 1;
+                                                setMembersPage(newPage);
+                                                loadMembers(newPage);
+                                            }}
+                                            disabled={membersPage <= 1}
+                                            className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Previous
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const newPage = membersPage + 1;
+                                                setMembersPage(newPage);
+                                                loadMembers(newPage);
+                                            }}
+                                            disabled={membersPage >= membersTotalPages}
+                                            className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Export Modal */}
+            {showExportModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <h2 className="text-xl font-bold text-gray-900">Export Segment</h2>
+                            <button
+                                onClick={() => setShowExportModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                                        Export Format
+                                    </label>
+                                    <div className="space-y-2">
+                                        <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                            <input
+                                                type="radio"
+                                                value="csv"
+                                                checked={exportFormat === 'csv'}
+                                                onChange={(e) => setExportFormat(e.target.value as 'csv' | 'json' | 'xml')}
+                                                className="mr-3"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="font-medium text-gray-900">CSV</div>
+                                                <div className="text-sm text-gray-500">Comma-separated values (Excel compatible)</div>
+                                            </div>
+                                        </label>
+                                        <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                            <input
+                                                type="radio"
+                                                value="json"
+                                                checked={exportFormat === 'json'}
+                                                onChange={(e) => setExportFormat(e.target.value as 'csv' | 'json' | 'xml')}
+                                                className="mr-3"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="font-medium text-gray-900">JSON</div>
+                                                <div className="text-sm text-gray-500">JavaScript Object Notation (API friendly)</div>
+                                            </div>
+                                        </label>
+                                        <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                            <input
+                                                type="radio"
+                                                value="xml"
+                                                checked={exportFormat === 'xml'}
+                                                onChange={(e) => setExportFormat(e.target.value as 'csv' | 'json' | 'xml')}
+                                                className="mr-3"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="font-medium text-gray-900">XML</div>
+                                                <div className="text-sm text-gray-500">Extensible Markup Language (legacy systems)</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-200">
+                                    <p className="text-sm text-gray-500">
+                                        Exporting {(membersCount || 0).toLocaleString()} member{membersCount !== 1 ? 's' : ''} from "{segment?.name}"
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end space-x-3 mt-6">
+                                <button
+                                    onClick={() => setShowExportModal(false)}
+                                    disabled={isExporting}
+                                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleCustomExport}
+                                    disabled={isExporting}
+                                    className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    style={{ backgroundColor: color.sentra.main }}
+                                    onMouseEnter={(e) => {
+                                        if (!isExporting) {
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                    }}
+                                >
+                                    {isExporting ? (
+                                        <>
+                                            <LoadingSpinner size="sm" className="inline" />
+                                            Exporting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download className="w-4 h-4" />
+                                            Export as {exportFormat.toUpperCase()}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

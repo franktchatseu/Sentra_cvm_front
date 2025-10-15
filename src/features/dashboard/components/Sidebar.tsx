@@ -54,7 +54,7 @@ interface NavigationItem {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['campaign management', 'campaign configuration', 'offer configuration', 'product configuration']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const navigation: NavigationItem[] = [
     {
@@ -109,7 +109,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             { name: 'Product Catalogs', href: '/dashboard/products/catalogs', icon: FolderOpen, type: 'single', entity: 'products' },
           ]
         },
-        { name: 'Segments', href: '/dashboard/segments', icon: Users, type: 'single', entity: 'segments' },
+        {
+          name: 'Segment Configuration',
+          href: '/dashboard/segments',
+          icon: Users,
+          type: 'parent',
+          entity: 'segments',
+          children: [
+            { name: 'All Segments', href: '/dashboard/segments', icon: Users, type: 'single', entity: 'segments' },
+            { name: 'Segment Catalogs', href: '/dashboard/segment-catalogs', icon: FolderOpen, type: 'single', entity: 'segments' },
+          ]
+        },
       ]
     },
     {
@@ -138,7 +148,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
     return isActive
-      ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] border-l-[5px] border-[${getEntityColor(entity)}] font-semibold`
+      ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] md:border-l-0 xl:border-l-[5px] border-[${getEntityColor(entity)}] font-semibold`
       : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-gray-50/50 transition-all duration-200 font-normal`;
   };
 
@@ -325,16 +335,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
       )}
 
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col">
-        <div className="flex flex-col h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 px-6 py-6">
-          <div className="flex h-16 items-center flex-shrink-0">
+      {/* Desktop Sidebar - Minimized on md/lg, Full on xl */}
+      <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-32 xl:w-80 md:flex-col">
+        <div className="flex flex-col h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 md:px-3 xl:px-6 py-6">
+          <div className="md:h-0 xl:h-16 md:hidden xl:flex items-center flex-shrink-0 xl:justify-start">
             <div className="w-32 h-32 flex items-center justify-center">
               <img src={logo} alt="Sentra Logo" className="w-full h-full object-contain" />
             </div>
           </div>
 
-          <nav className="flex-1 overflow-y-auto py-4 hide-scrollbar">
-            <ul className="space-y-3">
+          <nav className="flex-1 overflow-y-auto md:py-2 xl:py-4 hide-scrollbar">
+            <ul className="md:space-y-6 xl:space-y-3">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = isItemActive(item);
@@ -342,25 +353,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                 if (item.type === 'parent') {
                   return (
-                    <li key={item.name}>
+                    <li key={item.name} className="relative group">
                       <button
                         onClick={() => toggleExpanded(item.name.toLowerCase())}
-                        className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                        title={item.name}
                       >
                         <div className="flex items-center gap-x-3">
-                          <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
-                          {item.name}
+                          <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                          <span className="hidden xl:block">{item.name}</span>
                         </div>
                         {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                          <ChevronDown className="h-4 w-4 text-gray-400 hidden xl:block" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                          <ChevronRight className="h-4 w-4 text-gray-400 hidden xl:block" />
                         )}
                       </button>
 
+                      {/* Tooltip for minimized sidebar */}
+                      <div className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl" style={{ top: '50%', transform: 'translateY(-50%)', zIndex: 99999 }}>
+                        {item.name}
+                        <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900"></div>
+                      </div>
+
                       <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
                         }`}>
-                        <ul className="mt-2 ml-6 space-y-2">
+                        <ul className="mt-2 md:ml-0 xl:ml-6 md:space-y-4 xl:space-y-2">
                           {item.children?.map((child) => {
                             const ChildIcon = child.icon;
                             const isChildActive = location.pathname === child.href;
@@ -368,40 +386,54 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             if (child.type === 'parent' && child.children) {
                               const isChildExpanded = expandedItems.includes(child.name.toLowerCase());
                               return (
-                                <li key={child.name}>
+                                <li key={child.name} className="relative group">
                                   <button
                                     onClick={() => toggleExpanded(child.name.toLowerCase())}
-                                    className={`group w-full flex items-center justify-between rounded-lg p-2.5 text-sm transition-all duration-200 ${isChildActive
+                                    className={`group w-full flex items-center md:justify-center xl:justify-between rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${isChildActive
                                       ? getItemClasses(isChildActive, child.entity)
                                       : getItemClasses(false, child.entity)
                                       }`}
+                                    title={child.name}
                                   >
                                     <div className="flex items-center gap-x-3">
-                                      <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
-                                      {child.name}
+                                      <ChildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
+                                      <span className="hidden xl:block">{child.name}</span>
                                     </div>
                                     {isChildExpanded ? (
-                                      <ChevronDown className="h-3 w-3 text-gray-400" />
+                                      <ChevronDown className="h-3 w-3 text-gray-400 hidden xl:block" />
                                     ) : (
-                                      <ChevronRight className="h-3 w-3 text-gray-400" />
+                                      <ChevronRight className="h-3 w-3 text-gray-400 hidden xl:block" />
                                     )}
                                   </button>
 
+                                  {/* Tooltip for child */}
+                                  <div className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl" style={{ top: '50%', transform: 'translateY(-50%)', zIndex: 99999 }}>
+                                    {child.name}
+                                    <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900"></div>
+                                  </div>
+
                                   {isChildExpanded && (
-                                    <ul className="mt-2 ml-6 space-y-2">
+                                    <ul className="mt-2 md:ml-0 xl:ml-6 md:space-y-4 xl:space-y-2">
                                       {child.children?.map((grandchild) => {
                                         const GrandchildIcon = grandchild.icon;
                                         const isGrandchildActive = location.pathname === grandchild.href;
                                         return (
-                                          <li key={grandchild.name}>
+                                          <li key={grandchild.name} className="relative group">
                                             <Link
                                               to={grandchild.href}
                                               onClick={handleLinkClick}
-                                              className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${getItemClasses(isGrandchildActive, grandchild.entity)}`}
+                                              className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${getItemClasses(isGrandchildActive, grandchild.entity)}`}
+                                              title={grandchild.name}
                                             >
-                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isGrandchildActive, grandchild.entity)}`} />
-                                              {grandchild.name}
+                                              <GrandchildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isGrandchildActive, grandchild.entity)}`} />
+                                              <span className="hidden xl:block">{grandchild.name}</span>
                                             </Link>
+
+                                            {/* Tooltip for grandchild */}
+                                            <div className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl" style={{ top: '50%', transform: 'translateY(-50%)', zIndex: 99999 }}>
+                                              {grandchild.name}
+                                              <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900"></div>
+                                            </div>
                                           </li>
                                         );
                                       })}
@@ -413,18 +445,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                             // Regular child item (no nested children)
                             return (
-                              <li key={child.name}>
+                              <li key={child.name} className="relative group">
                                 <Link
                                   to={child.href}
                                   onClick={handleLinkClick}
-                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${isChildActive
+                                  className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${isChildActive
                                     ? getItemClasses(isChildActive, child.entity)
                                     : getItemClasses(false, child.entity)
                                     }`}
+                                  title={child.name}
                                 >
-                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
-                                  {child.name}
+                                  <ChildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
+                                  <span className="hidden xl:block">{child.name}</span>
                                 </Link>
+
+                                {/* Tooltip for child */}
+                                <div className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-xl" style={{ top: '50%', transform: 'translateY(-50%)', zIndex: 99999 }}>
+                                  {child.name}
+                                  <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900"></div>
+                                </div>
                               </li>
                             );
                           })}
@@ -435,14 +474,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 }
 
                 return (
-                  <li key={item.name}>
+                  <li key={item.name} className="relative group">
                     <Link
                       to={item.href}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      title={item.name}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
-                      {item.name}
+                      <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                      <span className="hidden xl:block">{item.name}</span>
                     </Link>
+
+                    {/* Tooltip for minimized sidebar */}
+                    <div className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-xl" style={{ top: '50%', transform: 'translateY(-50%)', zIndex: 99999 }}>
+                      {item.name}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900"></div>
+                    </div>
                   </li>
                 );
               })}
@@ -450,19 +496,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </nav>
 
           <div className="pt-6 border-t border-gray-200 flex-shrink-0">
-            <ul className="space-y-1">
+            <ul className="md:space-y-1 xl:space-y-1">
               {secondaryNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
                 return (
-                  <li key={item.name}>
+                  <li key={item.name} className="relative group">
                     <Link
                       to={item.href}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      title={item.name}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
-                      {item.name}
+                      <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                      <span className="hidden xl:block">{item.name}</span>
                     </Link>
+
+                    {/* Tooltip for minimized sidebar */}
+                    <div className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-xl" style={{ top: '50%', transform: 'translateY(-50%)', zIndex: 99999 }}>
+                      {item.name}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900"></div>
+                    </div>
                   </li>
                 );
               })}

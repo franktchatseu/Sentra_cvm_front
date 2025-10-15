@@ -3,6 +3,9 @@ import { X, Search, Plus, Users, Check } from 'lucide-react';
 import { CampaignSegment } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
 import { color } from '../../../../shared/utils/utils';
+import { segmentService } from '../../../segments/services/segmentService';
+import { Segment } from '../../../segments/types/segment';
+import LoadingSpinner from '../../../../shared/components/ui/LoadingSpinner';
 
 interface SegmentSelectionModalProps {
   isOpen: boolean;
@@ -13,97 +16,20 @@ interface SegmentSelectionModalProps {
   onCreateNew?: () => void;
 }
 
-const mockSegments: CampaignSegment[] = [
-  {
-    id: 'seg-001',
-    name: 'High Value Customers',
-    description: 'Customers with monthly spend > $100',
-    customer_count: 15420,
-    created_at: '2024-01-15',
-    criteria: {
-      spending_range: { min: 100, max: 1000 },
-      customer_tier: ['gold', 'platinum'],
-      account_age_days: { min: 90, max: 3650 }
-    }
-  },
-  {
-    id: 'seg-002',
-    name: 'At Risk Customers',
-    description: 'Customers showing churn signals',
-    customer_count: 8934,
-    created_at: '2024-01-10',
-    criteria: {
-      purchase_behavior: ['declining_usage', 'support_tickets'],
-      account_age_days: { min: 30, max: 365 }
-    }
-  },
-  {
-    id: 'seg-003',
-    name: 'New Subscribers',
-    description: 'Customers who joined in the last 30 days',
-    customer_count: 3245,
-    created_at: '2024-01-20',
-    criteria: {
-      account_age_days: { min: 0, max: 30 },
-      customer_tier: ['bronze', 'silver']
-    }
-  },
-  {
-    id: 'seg-004',
-    name: 'Voice Heavy Users',
-    description: 'Customers with high voice usage patterns',
-    customer_count: 12678,
-    created_at: '2024-01-12',
-    criteria: {
-      purchase_behavior: ['high_voice_usage'],
-      spending_range: { min: 50, max: 200 }
-    }
-  },
-  {
-    id: 'seg-005',
-    name: 'Data Bundle Enthusiasts',
-    description: 'Customers who frequently purchase data bundles',
-    customer_count: 18923,
-    created_at: '2024-01-08',
-    criteria: {
-      purchase_behavior: ['frequent_data_purchase'],
-      customer_tier: ['silver', 'gold']
-    }
-  },
-  {
-    id: 'seg-006',
-    name: 'Weekend Warriors',
-    description: 'Customers with high weekend usage',
-    customer_count: 7456,
-    created_at: '2024-01-18',
-    criteria: {
-      purchase_behavior: ['weekend_usage'],
-      age_range: { min: 18, max: 35 }
-    }
-  },
-  {
-    id: 'seg-007',
-    name: 'Business Customers',
-    description: 'B2B customers and corporate accounts',
-    customer_count: 4321,
-    created_at: '2024-01-05',
-    criteria: {
-      customer_tier: ['business', 'enterprise'],
-      spending_range: { min: 200, max: 2000 }
-    }
-  },
-  {
-    id: 'seg-008',
-    name: 'Dormant Users',
-    description: 'Customers with no activity in 60+ days',
-    customer_count: 5678,
-    created_at: '2024-01-14',
-    criteria: {
-      purchase_behavior: ['inactive'],
-      account_age_days: { min: 60, max: 730 }
-    }
-  }
-];
+// Helper function to convert Segment to CampaignSegment
+const convertToCampaignSegment = (segment: Segment): CampaignSegment => {
+  // Generate a random customer count between 1000-20000 for now (hardcoded as requested)
+  const randomCustomerCount = Math.floor(Math.random() * (20000 - 1000 + 1)) + 1000;
+
+  return {
+    id: String(segment.segment_id || segment.id || ''),
+    name: segment.name,
+    description: segment.description || '',
+    customer_count: randomCustomerCount, // Hardcoded random count for now
+    created_at: segment.created_at || segment.created_on || new Date().toISOString(),
+    criteria: segment.criteria || {} // Use existing criteria or empty object
+  };
+};
 
 export default function SegmentSelectionModal({
   isOpen,
@@ -116,6 +42,8 @@ export default function SegmentSelectionModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [tempSelectedSegments, setTempSelectedSegments] = useState<CampaignSegment[]>(selectedSegments);
+  const [segments, setSegments] = useState<CampaignSegment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const filterOptions = [
     { value: 'all', label: 'All Segments' },
@@ -125,6 +53,28 @@ export default function SegmentSelectionModal({
     { value: 'inactive', label: 'Inactive' }
   ];
 
+  // Load segments from backend
+  useEffect(() => {
+    const loadSegments = async () => {
+      if (isOpen) {
+        setIsLoading(true);
+        try {
+          const response = await segmentService.getSegments({ pageSize: 100 });
+          const backendSegments = response.data || [];
+          const campaignSegments = backendSegments.map(convertToCampaignSegment);
+          setSegments(campaignSegments);
+        } catch (error) {
+          console.error('Failed to load segments:', error);
+          setSegments([]);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadSegments();
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       setTempSelectedSegments(selectedSegments);
@@ -133,7 +83,7 @@ export default function SegmentSelectionModal({
 
   if (!isOpen) return null;
 
-  const filteredSegments = mockSegments.filter(segment => {
+  const filteredSegments = segments.filter(segment => {
     const matchesSearch = segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (segment.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
@@ -244,57 +194,64 @@ export default function SegmentSelectionModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredSegments.map((segment) => {
-              const isSelected = tempSelectedSegments.some(s => s.id === segment.id);
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <LoadingSpinner variant="modern" size="lg" color="primary" />
+              <p className="text-gray-500 mt-4">Loading segments...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredSegments.map((segment) => {
+                const isSelected = tempSelectedSegments.some(s => s.id === segment.id);
 
-              return (
-                <div
-                  key={segment.id}
-                  onClick={() => handleSegmentToggle(segment)}
-                  className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isSelected
-                    ? ''
-                    : 'border-gray-100'
-                    }`}
-                  style={isSelected ? {
-                    borderColor: '#10b981', // emerald-500
-                    backgroundColor: 'white'
-                  } : {
-                    backgroundColor: 'white'
-                  }}
-                >
-                  {isSelected && (
-                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center bg-emerald-500">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
+                return (
+                  <div
+                    key={segment.id}
+                    onClick={() => handleSegmentToggle(segment)}
+                    className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isSelected
+                      ? ''
+                      : 'border-gray-100'
+                      }`}
+                    style={isSelected ? {
+                      borderColor: '#10b981', // emerald-500
+                      backgroundColor: 'white'
+                    } : {
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center bg-emerald-500">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
 
-                  <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                      <Users className="w-5 h-5" style={{ color: color.entities.segments }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate text-gray-900">{segment.name}</h4>
-                      <p className="text-sm mt-1 line-clamp-2 text-gray-500">{segment.description}</p>
-                      <div className="flex items-center space-x-4 mt-2">
-                        <div className="flex items-center space-x-1">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {segment.customer_count.toLocaleString()}
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.segments}20` }}>
+                        <Users className="w-5 h-5" style={{ color: color.entities.segments }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate text-gray-900">{segment.name}</h4>
+                        <p className="text-sm mt-1 line-clamp-2 text-gray-500">{segment.description}</p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <div className="flex items-center space-x-1">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              {segment.customer_count.toLocaleString()}
+                            </span>
+                          </div>
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                            {new Date(segment.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                          {segment.created_at}
-                        </span>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
-          {filteredSegments.length === 0 && (
+          {!isLoading && filteredSegments.length === 0 && (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No segments found</h3>

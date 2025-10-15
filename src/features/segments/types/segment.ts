@@ -50,6 +50,7 @@ export interface Segment {
   created_by?: number;
   is_active?: boolean;
   category?: number;
+  category_name?: string;
   business_purpose?: string;
   refresh_frequency?: string;
   version?: string;
@@ -251,12 +252,12 @@ export interface SegmentCategory {
 
 export interface CreateSegmentCategoryRequest {
   name: string;
-  description?: string;
+  // Note: Backend only accepts 'name' field
 }
 
 export interface UpdateSegmentCategoryRequest {
   name?: string;
-  description?: string;
+  // Note: Backend only accepts 'name' field
 }
 
 export interface SegmentCategoriesResponse {

@@ -42,7 +42,7 @@ const MOCK_SEGMENT: Segment = {
     }
 };
 
-const USE_MOCK_DATA = true; // Toggle this to switch between mock and real data
+const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
 
 export default function EditSegmentPage() {
     const { id } = useParams<{ id: string }>();

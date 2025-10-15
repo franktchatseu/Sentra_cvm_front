@@ -916,33 +916,33 @@ export default function CreateOfferPage() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center pb-6 min-h-[48px]">
             <div></div>
-            <div className="flex items-center space-x-3">
-              {currentStep !== 6 && (
+            {currentStep !== 6 && (
+              <div className="flex items-center space-x-3">
                 <button
                   onClick={handleCancel}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200"
                 >
                   Cancel
                 </button>
-              )}
-              <button
-                onClick={handleSaveDraft}
-                disabled={isSavingDraft}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: utilColor.sentra.main }}
-                onMouseEnter={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
-                onMouseLeave={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
-              >
-                {isSavingDraft ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  'Save Draft'
-                )}
-              </button>
-            </div>
+                <button
+                  onClick={handleSaveDraft}
+                  disabled={isSavingDraft}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: utilColor.sentra.main }}
+                  onMouseEnter={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
+                  onMouseLeave={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
+                >
+                  {isSavingDraft ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Draft'
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between h-16">
@@ -962,7 +962,31 @@ export default function CreateOfferPage() {
 
           {/* Sticky Progress Navigation */}
           <nav aria-label="Progress" className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200">
-            <div className="flex items-center justify-between w-full">
+            {/* Mobile - Simple dots */}
+            <div className="md:hidden flex items-center justify-center gap-2">
+              {steps.map((step) => {
+                const status = getStepStatus(step.id);
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => handleStepClick(step.id)}
+                    disabled={!canNavigateToStep(step.id)}
+                    className={`w-2 h-2 rounded-full transition-all duration-200 ${status === 'completed' || status === 'current'
+                        ? 'w-8'
+                        : ''
+                      }`}
+                    style={{
+                      backgroundColor: status === 'completed' || status === 'current'
+                        ? utilColor.sentra.main
+                        : '#d1d5db'
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Desktop - Full stepper */}
+            <div className="hidden md:flex items-center justify-between w-full">
               {steps.map((step, stepIdx) => {
                 const status = getStepStatus(step.id);
                 const Icon = step.icon;
@@ -997,7 +1021,7 @@ export default function CreateOfferPage() {
                           }`}>
                           {step.name}
                         </div>
-                        <div className={`text-xs mt-1 hidden sm:block ${tw.textMuted}`}>
+                        <div className={`text-xs mt-1 hidden lg:block ${tw.textMuted}`}>
                           {step.description}
                         </div>
                       </div>

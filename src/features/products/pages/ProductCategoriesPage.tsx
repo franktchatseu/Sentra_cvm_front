@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit, Trash2, Tag, Search, Save, X, Eye, Package } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Search, Save, X, Eye, Package, Grid, List } from 'lucide-react';
 import { ProductCategory } from '../types/productCategory';
 import { Product } from '../types/product';
 import { productCategoryService } from '../services/productCategoryService';
@@ -19,7 +19,7 @@ interface ProductsModalProps {
 }
 
 function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: ProductsModalProps) {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,11 +69,11 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
     }
   };
 
-  const handleCreateProduct = () => {
-    if (category) {
-      navigate(`/dashboard/products/create?categoryId=${category.id}`);
-    }
-  };
+  // const handleCreateProduct = () => {
+  //   if (category) {
+  //     navigate(`/dashboard/products/create?categoryId=${category.id}`);
+  //   }
+  // };
 
   const loadUnassignedProducts = async () => {
     try {
@@ -195,14 +195,14 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
                   )}
                 </div>
 
-                <button
+                {/* <button
                   onClick={handleCreateProduct}
                   className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
                   style={{ backgroundColor: color.sentra.main }}
                 >
                   <Plus className="w-4 h-4" />
                   Create New Product
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -291,6 +291,7 @@ export default function ProductCatalogsPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isProductsModalOpen, setIsProductsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -457,16 +458,39 @@ export default function ProductCatalogsPage() {
       </div>
 
       {/* Search */}
-      <div className={`bg-white my-5`}>
-        <div className="relative w-full">
-          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+      {/* Search and View Toggle */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+            placeholder="Search catalogs..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
           />
+        </div>
+        <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded transition-colors ${viewMode === 'grid'
+              ? 'bg-gray-200 text-gray-900'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
+            title="Grid View"
+          >
+            <Grid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded transition-colors ${viewMode === 'list'
+              ? 'bg-gray-200 text-gray-900'
+              : 'text-gray-500 hover:text-gray-700'
+              }`}
+            title="List View"
+          >
+            <List className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -477,199 +501,141 @@ export default function ProductCatalogsPage() {
         </div>
       )}
 
-      {/* Catalogs Table */}
-      <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
-        {filteredCatalogs.length === 0 ? (
-          <div className="text-center py-12">
-            <Tag className={`w-16 h-16 text-[${color.entities.products}] mx-auto mb-4`} />
-            <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
-              {searchTerm ? 'No Catalogs Found' : 'No Catalogs'}
-            </h3>
-            <p className={`${tw.textMuted} mb-6`}>
-              {searchTerm ? 'Try adjusting your search terms.' : 'Create your first product category to get started.'}
-            </p>
-            {!searchTerm && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                style={{ backgroundColor: color.sentra.main }}
-              >
-                <Plus className="w-4 h-4" />
-                Create Catalog
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full">
-                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-gray-200`}>
-                  <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Catalog
-                    </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Description
-                    </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Products
-                    </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Status
-                    </th>
-                    <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredCatalogs.map((category) => (
-                    <tr key={category.id} className="hover:bg-[${color.ui.surface}]/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="h-10 w-10 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: color.entities.products }}
-                          >
-                            <Tag className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <div className={`text-base font-semibold ${tw.textPrimary}`}>
-                              {category.name}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className={`text-sm ${tw.textSecondary} max-w-xs truncate`}>
-                          {category.description || 'No description'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm ${tw.textPrimary}`}>
-                            {category.productCount || 0} product{(category.productCount || 0) !== 1 ? 's' : ''}
-                          </span>
-                          {(category.productCount || 0) > 0 && (
-                            <button
-                              onClick={() => handleViewProducts(category)}
-                              className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
-                              title="View products"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>
-                          Active
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handleEditCatalog(category)}
-                            className="p-2 rounded-lg transition-colors"
-                            style={{
-                              color: color.sentra.main,
-                              backgroundColor: 'transparent'
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCatalog(category)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="lg:hidden">
-              {filteredCatalogs.map((category) => (
-                <div key={category.id} className="p-4 border-b border-gray-200 last:border-b-0">
-                  <div className="flex items-start space-x-3">
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: color.entities.products }}
-                    >
-                      <Tag className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
-                        {category.name}
-                      </div>
-                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                        {category.description || 'No description'}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-sm ${tw.textMuted}`}>
-                              {category.productCount || 0} product{(category.productCount || 0) !== 1 ? 's' : ''}
-                            </span>
-                            {(category.productCount || 0) > 0 && (
-                              <button
-                                onClick={() => handleViewProducts(category)}
-                                className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
-                                title="View products"
-                              >
-                                <Eye className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>
-                            Active
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleEditCatalog(category)}
-                            className="p-2 rounded-lg transition-colors"
-                            style={{
-                              color: color.sentra.main,
-                              backgroundColor: 'transparent'
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCatalog(category)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+      {/* Catalogs */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
+          <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
+        </div>
+      ) : filteredCatalogs.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
+          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {searchTerm ? 'No catalogs found' : 'No catalogs yet'}
+          </h3>
+          <p className="text-gray-500 mb-6">
+            {searchTerm
+              ? 'Try adjusting your search terms'
+              : 'Create your first product catalog to organize your products'}
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              style={{ backgroundColor: color.sentra.main }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              }}
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Create Your First Catalog
+            </button>
+          )}
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredCatalogs.map((category) => (
+            <div
+              key={category.id}
+              className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: `${color.entities.products}20` }}
+                >
+                  <Package className="w-6 h-6" style={{ color: color.entities.products }} />
                 </div>
-              ))}
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => handleEditCatalog(category)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Edit"
+                  >
+                    <Edit className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCatalog(category)}
+                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
+              </div>
+
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{category.name}</h3>
+              {category.description && (
+                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{category.description}</p>
+              )}
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <span className="text-sm text-gray-600">
+                  {category.productCount || 0} product{category.productCount !== 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={() => handleViewProducts(category)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="View & Assign Products"
+                >
+                  <Eye className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
             </div>
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredCatalogs.map((category) => (
+            <div
+              key={category.id}
+              className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4 flex-1">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: `${color.entities.products}20` }}
+                >
+                  <Package className="w-6 h-6" style={{ color: color.entities.products }} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {category.productCount || 0} product{category.productCount !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleViewProducts(category)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="View & Assign Products"
+                >
+                  <Eye className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
+                  onClick={() => handleEditCatalog(category)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Edit"
+                >
+                  <Edit className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
+                  onClick={() => handleDeleteCatalog(category)}
+                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4 text-red-600" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+      }
 
       {/* Create Catalog Modal */}
       <CreateCategoryModal

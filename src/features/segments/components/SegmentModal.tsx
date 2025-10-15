@@ -4,6 +4,7 @@ import { Segment, CreateSegmentRequest, SegmentConditionGroup } from '../types/s
 import SegmentConditionsBuilder from './SegmentConditionsBuilder';
 import { segmentService } from '../services/segmentService';
 import { color, tw } from '../../../shared/utils/utils';
+import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 
 interface SegmentModalProps {
   isOpen: boolean;
@@ -18,36 +19,115 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
     description: '',
     tags: [] as string[],
     conditions: [] as SegmentConditionGroup[],
-    type: "dynamic"
+    type: "dynamic",
+    category: undefined as number | undefined
   });
   const [tagInput, setTagInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+
+  // Load categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await segmentService.getSegmentCategories();
+        setCategories(response.data || []);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    };
+
+    if (isOpen) {
+      loadCategories();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen) {
-      if (segment) {
-        setFormData({
-          name: segment.name,
-          description: segment.description || '',
-          tags: segment.tags || [],
-          conditions: segment.conditions || [],
-          type: "dynamic"
-        });
-      } else {
-        setFormData({
-          name: '',
-          description: '',
-          tags: [],
-          type: "dynamic",
-          conditions: []
-        });
+    const loadSegmentData = async () => {
+      if (isOpen) {
+        if (segment) {
+          const segmentId = segment.segment_id || segment.id!;
+
+          try {
+            // Load rules from backend
+            const rules = await segmentService.getSegmentRules(segmentId);
+
+            // Convert rules back to condition groups
+            const conditionGroups: SegmentConditionGroup[] = [];
+
+            if (rules.length > 0) {
+              // Group rules by their order and operator
+              const currentGroup: SegmentConditionGroup = {
+                id: Math.random().toString(36).substr(2, 9),
+                operator: 'AND',
+                conditionType: 'rule',
+                conditions: []
+              };
+
+              for (const rule of rules) {
+                const ruleJson = rule.rule_json as {
+                  field: string;
+                  operator: string;
+                  value: string | number | string[];
+                  type?: string;
+                  group_operator?: string;
+                };
+
+                currentGroup.conditions.push({
+                  id: Math.random().toString(36).substr(2, 9),
+                  field: ruleJson.field,
+                  operator: ruleJson.operator as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in',
+                  value: ruleJson.value,
+                  type: (ruleJson.type as 'string' | 'number' | 'boolean' | 'array') || 'string'
+                });
+
+                if (ruleJson.group_operator) {
+                  currentGroup.operator = ruleJson.group_operator as 'AND' | 'OR';
+                }
+              }
+
+              conditionGroups.push(currentGroup);
+            }
+
+            setFormData({
+              name: segment.name,
+              description: segment.description || '',
+              tags: segment.tags || [],
+              conditions: conditionGroups.length > 0 ? conditionGroups : (segment.conditions || []),
+              type: "dynamic",
+              category: segment.category
+            });
+          } catch (err) {
+            console.error('Failed to load rules:', err);
+            // Fallback to conditions from segment if rules fail to load
+            setFormData({
+              name: segment.name,
+              description: segment.description || '',
+              tags: segment.tags || [],
+              conditions: segment.conditions || [],
+              type: "dynamic",
+              category: segment.category
+            });
+          }
+        } else {
+          setFormData({
+            name: '',
+            description: '',
+            tags: [],
+            type: "dynamic",
+            conditions: [],
+            category: undefined
+          });
+        }
+        setError('');
+        setPreviewCount(null);
       }
-      setError('');
-      setPreviewCount(null);
-    }
+    };
+
+    loadSegmentData();
   }, [isOpen, segment]);
 
   const handleAddTag = (e: React.KeyboardEvent) => {
@@ -55,9 +135,10 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
       e.preventDefault();
       const newTag = tagInput.trim().toLowerCase();
       if (!formData.tags.includes(newTag)) {
+        const updatedTags = [...formData.tags, newTag];
         setFormData(prev => ({
           ...prev,
-          tags: [...prev.tags, newTag]
+          tags: updatedTags
         }));
       }
       setTagInput('');
@@ -65,9 +146,10 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
+    const updatedTags = formData.tags.filter(tag => tag !== tagToRemove);
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: updatedTags
     }));
   };
 
@@ -78,6 +160,8 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
     }
 
     setIsPreviewLoading(true);
+    setError('');
+
     try {
       // Transform conditions to backend criteria format
       const criteria = {
@@ -90,22 +174,29 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
         )
       };
 
-      const result = await segmentService.validateCriteria({
+      // First validate the criteria
+      const validationResult = await segmentService.validateCriteria({
         criteria,
         segment_type: formData.type as 'static' | 'dynamic' | 'trigger'
       });
 
-      if (result.valid) {
-
+      if (!validationResult.valid) {
+        setError(validationResult.errors?.join(', ') || 'Invalid criteria');
         setPreviewCount(null);
-        setError(''); // Clear any previous errors
-      } else {
-        setError(result.errors?.join(', ') || 'Invalid criteria');
-        setPreviewCount(null);
+        return;
       }
+
+      // If validation passes, get preview data with sample size
+      // Note: For new segments without ID, we use the legacy preview endpoint
+      const previewResult = await segmentService.getSegmentPreview(
+        formData.conditions.flatMap(group => group.conditions) as Record<string, unknown>[]
+      );
+
+      setPreviewCount(previewResult.count || 0);
+      setError(''); // Clear any previous errors
     } catch (err) {
       console.error('Preview failed:', err);
-      setError((err as Error).message || 'Failed to validate criteria');
+      setError((err as Error).message || 'Failed to preview segment');
       setPreviewCount(null);
     } finally {
       setIsPreviewLoading(false);
@@ -116,15 +207,12 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
     e.preventDefault();
     setError('');
 
+
     if (!formData.name.trim()) {
       setError('Segment name is required');
       return;
     }
 
-    if (formData.conditions.length === 0) {
-      setError('At least one condition is required');
-      return;
-    }
 
     setIsLoading(true);
     try {
@@ -132,17 +220,84 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
       if (segment) {
         // Update existing segment
-        savedSegment = await segmentService.updateSegment(segment.segment_id || segment.id!, formData);
+        const segmentId = segment.segment_id || segment.id!;
+
+        // Update segment basic info
+        const updateResponse = await segmentService.updateSegment(segmentId, {
+          name: formData.name,
+          description: formData.description,
+          tags: formData.tags,
+          category: formData.category
+        });
+
+        // Extract segment from response (backend returns {success, message, data})
+        savedSegment = (updateResponse as { data?: Segment }).data || updateResponse as Segment;
+
+        // Get existing rules to delete them
+        const existingRulesResponse = await segmentService.getSegmentRules(segmentId);
+
+        // Handle both response formats: array or {data: array}
+        const existingRules = Array.isArray(existingRulesResponse)
+          ? existingRulesResponse
+          : (existingRulesResponse as { data?: unknown[] })?.data || [];
+
+
+        // Delete all existing rules
+        for (const rule of existingRules) {
+          const ruleWithId = rule as { id?: number };
+          if (ruleWithId.id) {
+            await segmentService.deleteSegmentRule(segmentId, ruleWithId.id);
+          }
+        }
+
+        // Create new rules from conditions
+        let ruleOrder = 1;
+        for (const conditionGroup of formData.conditions) {
+          for (const condition of conditionGroup.conditions) {
+            await segmentService.createSegmentRule(segmentId, {
+              rule_json: {
+                field: condition.field,
+                operator: condition.operator,
+                value: condition.value,
+                type: condition.type,
+                group_operator: conditionGroup.operator
+              },
+              rule_order: ruleOrder++
+            });
+          }
+        }
       } else {
-        // Create new segment
+        // Create new segment (without conditions first)
         const createRequest: CreateSegmentRequest = {
           name: formData.name,
           description: formData.description,
           tags: formData.tags,
-          conditions: formData.conditions,
-          type: "dynamic"
+          type: "dynamic",
+          category: formData.category
         };
-        savedSegment = await segmentService.createSegment(createRequest);
+        const createResponse = await segmentService.createSegment(createRequest);
+
+        // Extract segment from response (backend returns {success, message, data})
+        savedSegment = (createResponse as { data?: Segment }).data || createResponse as Segment;
+
+        // Now create rules for the new segment
+        const segmentId = savedSegment.id || savedSegment.segment_id!;
+        let ruleOrder = 1;
+
+        for (const conditionGroup of formData.conditions) {
+          for (const condition of conditionGroup.conditions) {
+            await segmentService.createSegmentRule(segmentId, {
+              rule_json: {
+                field: condition.field,
+                operator: condition.operator,
+                value: condition.value,
+                type: condition.type,
+                group_operator: conditionGroup.operator
+              },
+              rule_order: ruleOrder++
+            });
+          }
+        }
       }
 
       onSave(savedSegment);
@@ -182,7 +337,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
           {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto">
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form id="segment-form" onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Error Message */}
               {error && (
                 <div className={`p-4 bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 rounded-lg`}>
@@ -208,17 +363,74 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
                 <div>
                   <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+                    Segment Catalog
+                  </label>
+                  <HeadlessSelect
+                    options={[
+                      { value: '', label: 'No catalog (Uncategorized)' },
+                      ...categories.map(cat => ({ value: cat.id, label: cat.name }))
+                    ]}
+                    value={formData.category || ''}
+                    onChange={(value) => setFormData(prev => ({ ...prev, category: value ? Number(value) : undefined }))}
+                    placeholder="Select a catalog"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
                     Tags
                   </label>
                   <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={handleAddTag}
-                      placeholder="Type and press Enter to add tags"
-                      className={`w-full px-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setTagInput(value);
+
+                          // Auto-add tag when comma is typed
+                          if (value.includes(',')) {
+                            const tag = value.replace(',', '').trim();
+                            if (tag && !formData.tags.includes(tag.toLowerCase())) {
+                              const updatedTags = [...formData.tags, tag.toLowerCase()];
+                              setFormData(prev => ({ ...prev, tags: updatedTags }));
+                              setTagInput('');
+                            }
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          handleAddTag(e);
+                        }}
+                        placeholder="Type tags separated by commas (e.g., premium, high-value)"
+                        className={`flex-1 px-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (tagInput.trim()) {
+                            const newTag = tagInput.trim().toLowerCase();
+                            if (!formData.tags.includes(newTag)) {
+                              const updatedTags = [...formData.tags, newTag];
+                              setFormData(prev => ({ ...prev, tags: updatedTags }));
+                              setTagInput('');
+                            }
+                          }
+                        }}
+                        className="px-4 py-3 text-white rounded-lg transition-colors text-sm"
+                        style={{ backgroundColor: color.sentra.main }}
+                        onMouseEnter={(e) => {
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
                     {formData.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {formData.tags.map((tag) => (
@@ -304,7 +516,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
           </div>
 
           {/* Footer - Sticky */}
-          <div className={`flex items-center justify-end space-x-4 p-6 border-t border-[${color.ui.border}] bg-[${color.ui.surface}] flex-shrink-0`}>
+          <div className={`flex items-center justify-end space-x-4 p-6 border-t border-[${color.ui.border}]  flex-shrink-0`}>
             <button
               type="button"
               onClick={onClose}
@@ -313,7 +525,8 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
               Cancel
             </button>
             <button
-              onClick={handleSubmit}
+              type="submit"
+              form="segment-form"
               disabled={isLoading}
               className="inline-flex items-center px-6 py-2 text-white rounded-lg transition-colors text-sm"
               style={{ backgroundColor: isLoading ? color.ui.gray[400] : color.sentra.main }}

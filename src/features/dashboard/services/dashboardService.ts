@@ -34,7 +34,7 @@ class DashboardService {
 
       return {
         totalOffers: offersResponse.meta?.total || 0,
-        totalSegments: segmentsResponse.total || segmentsResponse.segments?.length || 0,
+        totalSegments: segmentsResponse.meta?.total || 0,
         activeCampaigns: totalCampaigns, 
         conversionRate
       };

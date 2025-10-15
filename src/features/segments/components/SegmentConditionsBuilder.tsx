@@ -177,6 +177,7 @@ export default function SegmentConditionsBuilder({
       <div className="text-center py-8">
         <p className="text-gray-500 mb-4">No conditions defined yet</p>
         <button
+          type="button"
           onClick={addConditionGroup}
           className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors text-sm"
           style={{ backgroundColor: color.sentra.main }}
@@ -243,6 +244,7 @@ export default function SegmentConditionsBuilder({
               )}
             </div>
             <button
+              type="button"
               onClick={() => removeConditionGroup(group.id)}
               className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
               title="Remove Group"
@@ -304,6 +306,7 @@ export default function SegmentConditionsBuilder({
 
                   {/* Remove Condition */}
                   <button
+                    type="button"
                     onClick={() => removeCondition(group.id, condition.id)}
                     className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
                     title="Remove Condition"
@@ -347,6 +350,7 @@ export default function SegmentConditionsBuilder({
                   <div className="text-center py-4">
                     <p className="text-gray-500 mb-3">No profile conditions defined yet</p>
                     <button
+                      type="button"
                       onClick={() => addProfileCondition(group.id)}
                       className="inline-flex items-center px-3 py-2 text-white rounded-lg transition-colors"
                       style={{ backgroundColor: color.sentra.main }}
@@ -413,6 +417,7 @@ export default function SegmentConditionsBuilder({
 
                         {/* Remove Condition */}
                         <button
+                          type="button"
                           onClick={() => removeProfileCondition(group.id, condition.id)}
                           className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
                           title="Remove Condition"
@@ -425,6 +430,7 @@ export default function SegmentConditionsBuilder({
 
                     {/* Add Profile Condition Button */}
                     <button
+                      type="button"
                       onClick={() => addProfileCondition(group.id)}
                       className="inline-flex items-center px-3 py-1 text-sm rounded transition-colors"
                       style={{
@@ -450,6 +456,7 @@ export default function SegmentConditionsBuilder({
           {/* Add Condition Button - Only show for rule type */}
           {group.conditionType === 'rule' && (
             <button
+              type="button"
               onClick={() => addCondition(group.id)}
               className={`mt-3 inline-flex items-center px-3 py-1 text-sm text-[${color.entities.segments}] hover:text-[${color.entities.segments}]/80 hover:bg-[${color.entities.segments}]/10 rounded transition-colors`}
             >
@@ -462,6 +469,7 @@ export default function SegmentConditionsBuilder({
 
       {/* Add Group Button */}
       <button
+        type="button"
         onClick={addConditionGroup}
         className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors text-sm"
         style={{ backgroundColor: color.sentra.main }}

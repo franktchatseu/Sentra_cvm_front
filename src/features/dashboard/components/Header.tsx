@@ -16,7 +16,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-x-4 flex-1">
           <button
             onClick={onMenuClick}
-            className="lg:hidden rounded-md p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="md:hidden rounded-md p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
           >
             <Menu className="h-5 w-5" />
           </button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, X, Target, ArrowLeft, Eye } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, Target, ArrowLeft, Eye, Grid, List } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -167,6 +167,7 @@ export default function CampaignCategoriesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<CampaignCategory | undefined>();
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
@@ -396,10 +397,10 @@ export default function CampaignCategoriesPage() {
         }
     };
 
-    const handleCreateNewCampaign = () => {
-        if (!selectedCategory) return;
-        navigate(`/dashboard/campaigns/create?categoryId=${selectedCategory.id}`);
-    };
+    // const handleCreateNewCampaign = () => {
+    //     if (!selectedCategory) return;
+    //     navigate(`/dashboard/campaigns/create?categoryId=${selectedCategory.id}`);
+    // };
 
     const filteredCampaignCategories = (campaignCategories || []).filter(category =>
         category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -439,215 +440,189 @@ export default function CampaignCategoriesPage() {
                 </div>
             </div>
 
-            <div className={`bg-white my-5`}>
-                <div className="relative w-full">
-                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+            {/* Search and View Toggle */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search categories by name or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+                        placeholder="Search catalogs..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     />
+                </div>
+                <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-1">
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded transition-colors ${viewMode === 'grid'
+                            ? 'bg-gray-200 text-gray-900'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        title="Grid View"
+                    >
+                        <Grid className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded transition-colors ${viewMode === 'list'
+                            ? 'bg-gray-200 text-gray-900'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        title="List View"
+                    >
+                        <List className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 
-            <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <LoadingSpinner variant="modern" size="lg" color="primary" className="mr-3" />
-                        <span className={`${tw.textSecondary}`}>Loading categories...</span>
+            {/* Categories */}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                    <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
+                    <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
+                </div>
+            ) : error ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+                    <div className={`bg-red-50 border border-red-200 text-red-700 rounded-xl p-6`}>
+                        <p className="font-medium mb-3">{error}</p>
+                        <button
+                            onClick={() => loadCategories()}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                        >
+                            Try Again
+                        </button>
                     </div>
-                ) : error ? (
-                    <div className="p-8 text-center">
-                        <div className={`bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 text-[${color.status.error.main}] rounded-xl p-6`}>
-                            <p className="font-medium mb-3">{error}</p>
-                            <button
-                                onClick={() => loadCategories()}
-                                className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors font-medium"
-                                style={{ backgroundColor: color.status.error.main }}
-                            >
-                                Try Again
-                            </button>
-                        </div>
-                    </div>
-                ) : filteredCampaignCategories.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Target className={`w-16 h-16 text-[${color.entities.campaigns}] mx-auto mb-4`} />
-                        <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
-                            {searchTerm ? 'No Categories Found' : 'No Categories'}
-                        </h3>
-                        <p className={`${tw.textMuted} mb-6`}>
-                            {searchTerm ? 'Try adjusting your search terms.' : 'Create your first category to get started.'}
-                        </p>
-                        {!searchTerm && (
-                            <button
-                                onClick={handleCreateCategory}
-                                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                                style={{ backgroundColor: color.sentra.main }}
-                            >
-                                <Plus className="w-4 h-4" />
-                                Create Campaign Catalog
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <>
-                        <div className="hidden lg:block overflow-x-auto">
-                            <table className="w-full">
-                                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
-                                    <tr>
-                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Category
-                                        </th>
-                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Description
-                                        </th>
-                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Campaigns
-                                        </th>
-                                        <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {filteredCampaignCategories.map((category) => (
-                                        <tr key={category.id} className="hover:bg-gray-50/30 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center space-x-3">
-                                                    <div
-                                                        className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                                        style={{ backgroundColor: color.entities.campaigns }}
-                                                    >
-                                                        <Target className="w-5 h-5 text-white" />
-                                                    </div>
-                                                    <div>
-                                                        <div className={`text-base font-semibold ${tw.textPrimary}`}>
-                                                            {category.name}
-                                                        </div>
-                                                        <div className={`text-sm ${tw.textMuted}`}>ID: {category.id}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className={`text-sm ${tw.textSecondary} max-w-xs truncate`}>
-                                                    {category.description || 'No description'}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center space-x-2">
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
-                                                        {category.campaign_count || 0} campaign{(category.campaign_count || 0) !== 1 ? 's' : ''}
-                                                    </span>
-                                                    {(category.campaign_count || 0) > 0 && (
-                                                        <button
-                                                            onClick={() => handleViewCampaigns(category)}
-                                                            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                                                            title="View campaigns"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end space-x-2">
-                                                    <button
-                                                        onClick={() => handleEditCategory(category)}
-                                                        className="p-2 rounded-lg transition-colors"
-                                                        style={{
-                                                            color: color.sentra.main,
-                                                            backgroundColor: 'transparent'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                                                        }}
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteCategory(category)}
-                                                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div className="lg:hidden">
-                            {filteredCampaignCategories.map((category) => (
-                                <div key={category.id} className="p-4 border-b border-gray-200 last:border-b-0">
-                                    <div className="flex items-start space-x-3">
-                                        <div
-                                            className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                                            style={{ backgroundColor: color.entities.campaigns }}
-                                        >
-                                            <Target className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
-                                                {category.name}
-                                            </div>
-                                            <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                                                {category.description || 'No description'}
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-2">
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
-                                                        {category.campaign_count || 0} campaign{(category.campaign_count || 0) !== 1 ? 's' : ''}
-                                                    </span>
-                                                    {(category.campaign_count || 0) > 0 && (
-                                                        <button
-                                                            onClick={() => handleViewCampaigns(category)}
-                                                            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                                                            title="View campaigns"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <button
-                                                        onClick={() => handleEditCategory(category)}
-                                                        className="p-2 rounded-lg transition-colors"
-                                                        style={{
-                                                            color: color.sentra.main,
-                                                            backgroundColor: 'transparent'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                                                        }}
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteCategory(category)}
-                                                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                </div>
+            ) : filteredCampaignCategories.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
+                    <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {searchTerm ? 'No catalogs found' : 'No catalogs yet'}
+                    </h3>
+                    <p className="text-gray-500 mb-6">
+                        {searchTerm
+                            ? 'Try adjusting your search terms'
+                            : 'Create your first campaign catalog to organize your campaigns'}
+                    </p>
+                    {!searchTerm && (
+                        <button
+                            onClick={handleCreateCategory}
+                            className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+                            style={{ backgroundColor: color.sentra.main }}
+                            onMouseEnter={(e) => {
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                            }}
+                            onMouseLeave={(e) => {
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            }}
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Create Your First Catalog
+                        </button>
+                    )}
+                </div>
+            ) : viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredCampaignCategories.map((category) => (
+                        <div
+                            key={category.id}
+                            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+                        >
+                            <div className="flex items-start justify-between mb-4">
+                                <div
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center"
+                                    style={{ backgroundColor: `${color.entities.campaigns}20` }}
+                                >
+                                    <Target className="w-6 h-6" style={{ color: color.entities.campaigns }} />
                                 </div>
-                            ))}
+                                <div className="flex items-center space-x-1">
+                                    <button
+                                        onClick={() => handleEditCategory(category)}
+                                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                        title="Edit"
+                                    >
+                                        <Edit className="w-4 h-4 text-gray-600" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteCategory(category)}
+                                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">{category.name}</h3>
+                            {category.description && (
+                                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{category.description}</p>
+                            )}
+
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                <span className="text-sm text-gray-600">
+                                    {category.campaign_count || 0} campaign{category.campaign_count !== 1 ? 's' : ''}
+                                </span>
+                                <button
+                                    onClick={() => handleViewCampaigns(category)}
+                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    title="View & Assign Campaigns"
+                                >
+                                    <Eye className="w-4 h-4 text-gray-600" />
+                                </button>
+                            </div>
                         </div>
-                    </>
-                )}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {filteredCampaignCategories.map((category) => (
+                        <div
+                            key={category.id}
+                            className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-4 flex-1">
+                                <div
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                                    style={{ backgroundColor: `${color.entities.campaigns}20` }}
+                                >
+                                    <Target className="w-6 h-6" style={{ color: color.entities.campaigns }} />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
+                                    <p className="text-sm text-gray-600 mt-0.5">
+                                        {category.campaign_count || 0} campaign{category.campaign_count !== 1 ? 's' : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleViewCampaigns(category)}
+                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    title="View & Assign Campaigns"
+                                >
+                                    <Eye className="w-4 h-4 text-gray-600" />
+                                </button>
+                                <button
+                                    onClick={() => handleEditCategory(category)}
+                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    title="Edit"
+                                >
+                                    <Edit className="w-4 h-4 text-gray-600" />
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteCategory(category)}
+                                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )
+            }
 
             <CategoryModal
                 isOpen={isModalOpen}
@@ -698,63 +673,63 @@ export default function CampaignCategoriesPage() {
                                     />
                                 </div>
                                 <div className="flex gap-3">
-                                <div className="relative">
-                                    <button
-                                        onClick={() => {
-                                            if (!showAssignDropdown) {
-                                                loadUnassignedCampaigns();
-                                            }
-                                            setShowAssignDropdown(!showAssignDropdown);
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => {
+                                                if (!showAssignDropdown) {
+                                                    loadUnassignedCampaigns();
+                                                }
+                                                setShowAssignDropdown(!showAssignDropdown);
+                                            }}
+                                            className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                                            disabled={assigningCampaign}
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Assign Campaign
+                                        </button>
+
+                                        {/* Dropdown for available campaigns */}
+                                        {showAssignDropdown && (
+                                            <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
+                                                {unassignedCampaigns.length === 0 ? (
+                                                    <div className="p-4 text-center text-gray-500">
+                                                        No available campaigns to assign
+                                                    </div>
+                                                ) : (
+                                                    <div className="py-2">
+                                                        {unassignedCampaigns.map((campaign) => (
+                                                            <button
+                                                                key={campaign.id}
+                                                                onClick={() => handleAssignCampaign(campaign.id)}
+                                                                disabled={assigningCampaign}
+                                                                className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
+                                                            >
+                                                                <div className="font-medium text-gray-900">{campaign.name}</div>
+                                                                {campaign.description && (
+                                                                    <div className="text-sm text-gray-600 mt-1 line-clamp-2">{campaign.description}</div>
+                                                                )}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* <button
+                                        onClick={handleCreateNewCampaign}
+                                        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+                                        style={{ backgroundColor: color.sentra.main }}
+                                        onMouseEnter={(e) => {
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
                                         }}
-                                        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                                        disabled={assigningCampaign}
+                                        onMouseLeave={(e) => {
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                        }}
                                     >
                                         <Plus className="w-4 h-4 mr-2" />
-                                        Assign Campaign
-                                    </button>
-
-                                    {/* Dropdown for available campaigns */}
-                                    {showAssignDropdown && (
-                                        <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-                                            {unassignedCampaigns.length === 0 ? (
-                                                <div className="p-4 text-center text-gray-500">
-                                                    No available campaigns to assign
-                                                </div>
-                                            ) : (
-                                                <div className="py-2">
-                                                    {unassignedCampaigns.map((campaign) => (
-                                                        <button
-                                                            key={campaign.id}
-                                                            onClick={() => handleAssignCampaign(campaign.id)}
-                                                            disabled={assigningCampaign}
-                                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
-                                                        >
-                                                            <div className="font-medium text-gray-900">{campaign.name}</div>
-                                                            {campaign.description && (
-                                                                <div className="text-sm text-gray-600 mt-1 line-clamp-2">{campaign.description}</div>
-                                                            )}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <button
-                                    onClick={handleCreateNewCampaign}
-                                    className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
-                                    style={{ backgroundColor: color.sentra.main }}
-                                    onMouseEnter={(e) => {
-                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                                    }}
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Create New Campaign
-                                </button>
+                                        Create New Campaign
+                                    </button> */}
                                 </div>
                             </div>
                         </div>

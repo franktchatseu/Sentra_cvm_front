@@ -14,7 +14,8 @@ import {
   X,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Copy
 } from 'lucide-react';
 import { Segment, SegmentFilters, SegmentType, SortDirection } from '../types/segment';
 import { segmentService } from '../services/segmentService';
@@ -180,7 +181,7 @@ const MOCK_SEGMENTS: Segment[] = [
   }
 ];
 
-const USE_MOCK_DATA = true; // Toggle this to switch between mock and real data
+const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
 
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
@@ -302,7 +303,11 @@ export default function SegmentManagementPage() {
   };
 
   const handleEditSegment = (segmentId: number) => {
-    navigate(`/dashboard/segments/${segmentId}/edit`);
+    const segment = segments.find(s => (s.segment_id || s.id) === segmentId);
+    if (segment) {
+      setSelectedSegment(segment);
+      setIsModalOpen(true);
+    }
     setShowActionMenu(null);
   };
 
@@ -325,6 +330,30 @@ export default function SegmentManagementPage() {
       success('Segment deleted', `Segment "${segment.name}" has been deleted successfully`);
     } catch (err: unknown) {
       showError('Error deleting segment', (err as Error).message || 'Failed to delete segment');
+    }
+  };
+
+  const handleDuplicateSegment = async (segment: Segment) => {
+    setShowActionMenu(null);
+    const confirmed = await confirm({
+      title: 'Duplicate Segment',
+      message: `Create a copy of "${segment.name}"?`,
+      type: 'info',
+      confirmText: 'Duplicate',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const segmentId = segment.segment_id || segment.id!;
+      const newName = `${segment.name} (Copy)`;
+
+      await segmentService.duplicateSegment(segmentId, { newName });
+      await loadSegments();
+      success('Segment duplicated', `Segment "${newName}" has been created successfully`);
+    } catch (err: unknown) {
+      showError('Error duplicating segment', (err as Error).message || 'Failed to duplicate segment');
     }
   };
 
@@ -522,153 +551,163 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="min-w-full">
-                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
-                  <tr>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Segment</th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Type</th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Tags</th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Customers</th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Created</th>
-                    <th className={`px-6 py-3 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody className={`bg-white divide-y divide-[${color.ui.border}]/50`}>
-                  {filteredSegments.map((segment) => (
-                    <tr key={segment.segment_id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-4">
-                          <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.segments}` }}>
-                            <Users className={`w-5 h-5 text-white`} />
-                          </div>
-                          <div>
-                            <div className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.entities.segments}] transition-colors`}>
-                              {segment.name}
-                            </div>
-                            <div className={`text-sm ${tw.textSecondary} mt-1`}>{segment.description}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? 'bg-purple-100 text-purple-700' :
-                          segment.type === 'static' ? 'bg-blue-100 text-blue-700' :
-                            'bg-orange-100 text-orange-700'
-                          }`}>
-                          {segment.type.charAt(0).toUpperCase() + segment.type.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {segment.tags?.map(tag => (
-                            <span key={tag} className={`inline-flex items-center px-2 py-1 bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] text-sm font-medium rounded-full`}>
-                              <Tag className="w-3 h-3 mr-1" />
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          <Users className={`w-4 h-4 text-[${color.entities.segments}] flex-shrink-0`} />
-                          <span className={`text-sm ${tw.textPrimary}`}>
-                            {segment.customer_count?.toLocaleString() || '0'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.is_active ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.error.light}] text-[${color.status.error.main}]`
-                          }`}>
-                          {segment.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div className={`text-sm ${tw.textPrimary} font-medium`}>
-                            {new Date(segment.created_on || segment.created_at!).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewSegment(segment.segment_id || segment.id!)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.segments}]/10 transition-all duration-300`}
-                            title="View Details"
-                          >
-                            <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                          </button>
-                          <button
-                            onClick={() => handleEditSegment(segment.segment_id || segment.id!)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`}
-                            style={{ backgroundColor: 'transparent' }}
-                            onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                          </button>
-                          <div className="relative" ref={(el) => { actionMenuRefs.current[String(segment.segment_id || segment.id!)] = el; }}>
-                            <button
-                              onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
-                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.segments}]/10 transition-all duration-300`}
-                            >
-                              <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                            </button>
-
-                            {showActionMenu === (segment.segment_id || segment.id) && (
-                              <div
-                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
-                                style={{
-                                  maxHeight: '80vh',
-                                  overflowY: 'auto'
-                                }}
-                              >
-                                <button
-                                  onClick={() => handleToggleStatus(segment)}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                >
-                                  {segment.is_active ? (
-                                    <>
-                                      <PowerOff className="w-4 h-4 mr-4" style={{ color: color.status.warning.main }} />
-                                      Deactivate Segment
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Power className="w-4 h-4 mr-4" style={{ color: color.status.success.main }} />
-                                      Activate Segment
-                                    </>
-                                  )}
-                                </button>
-
-                                <div className="border-t border-gray-200 my-1"></div>
-
-                                <button
-                                  onClick={() => handleDeleteSegment(segment)}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-4" style={{ color: color.status.error.main }} />
-                                  Delete Segment
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
+            <div className="hidden lg:block">
+              <div className="">
+                <table className="min-w-full">
+                  <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
+                    <tr>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Segment</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Type</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Tags</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Customers</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Created</th>
+                      <th className={`px-6 py-3 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className={`bg-white divide-y divide-[${color.ui.border}]/50`}>
+                    {filteredSegments.map((segment) => (
+                      <tr key={segment.segment_id || segment.id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-4">
+                            <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.segments}` }}>
+                              <Users className={`w-5 h-5 text-white`} />
+                            </div>
+                            <div>
+                              <div className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.entities.segments}] transition-colors`}>
+                                {segment.name}
+                              </div>
+                              <div className={`text-sm ${tw.textSecondary} mt-1`}>{segment.description}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? 'bg-purple-100 text-purple-700' :
+                            segment.type === 'static' ? 'bg-blue-100 text-blue-700' :
+                              'bg-orange-100 text-orange-700'
+                            }`}>
+                            {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {segment.tags?.map(tag => (
+                              <span key={tag} className={`inline-flex items-center px-2 py-1 bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] text-sm font-medium rounded-full`}>
+                                <Tag className="w-3 h-3 mr-1" />
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-2">
+                            <Users className={`w-4 h-4 text-[${color.entities.segments}] flex-shrink-0`} />
+                            <span className={`text-sm ${tw.textPrimary}`}>
+                              {segment.customer_count?.toLocaleString() || '0'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.is_active ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.error.light}] text-[${color.status.error.main}]`
+                            }`}>
+                            {segment.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-3">
+                            <div className={`text-sm ${tw.textPrimary} font-medium`}>
+                              {new Date(segment.created_on || segment.created_at!).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleViewSegment(segment.segment_id || segment.id!)}
+                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.segments}]/10 transition-all duration-300`}
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            </button>
+                            <button
+                              onClick={() => handleEditSegment(segment.segment_id || segment.id!)}
+                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`}
+                              style={{ backgroundColor: 'transparent' }}
+                              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            </button>
+                            <div className="relative" ref={(el) => { actionMenuRefs.current[String(segment.segment_id || segment.id!)] = el; }}>
+                              <button
+                                onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
+                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.segments}]/10 transition-all duration-300`}
+                              >
+                                <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                              </button>
+
+                              {showActionMenu === (segment.segment_id || segment.id) && (
+                                <div
+                                  className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
+                                  style={{
+                                    maxHeight: '80vh',
+                                    overflowY: 'auto'
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => handleToggleStatus(segment)}
+                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                  >
+                                    {segment.is_active ? (
+                                      <>
+                                        <PowerOff className="w-4 h-4 mr-4" style={{ color: color.status.warning.main }} />
+                                        Deactivate Segment
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Power className="w-4 h-4 mr-4" style={{ color: color.status.success.main }} />
+                                        Activate Segment
+                                      </>
+                                    )}
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleDuplicateSegment(segment)}
+                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                    Duplicate Segment
+                                  </button>
+
+                                  <div className="border-t border-gray-200 my-1"></div>
+
+                                  <button
+                                    onClick={() => handleDeleteSegment(segment)}
+                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-4" style={{ color: color.status.error.main }} />
+                                    Delete Segment
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Mobile Cards */}
             <div className="lg:hidden space-y-4 p-4">
               {filteredSegments.map((segment) => (
-                <div key={segment.segment_id} className={`bg-white border border-[${color.ui.border}] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
+                <div key={segment.segment_id || segment.id} className={`bg-white border border-[${color.ui.border}] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="text-base font-semibold text-gray-900 mb-1">
@@ -709,7 +748,7 @@ export default function SegmentManagementPage() {
                       segment.type === 'static' ? 'bg-blue-100 text-blue-700' :
                         'bg-orange-100 text-orange-700'
                       }`}>
-                      {segment.type.charAt(0).toUpperCase() + segment.type.slice(1)}
+                      {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
                     </span>
                     {segment.tags?.map(tag => (
                       <span key={tag} className={`inline-flex items-center px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full`}>

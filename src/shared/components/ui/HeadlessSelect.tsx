@@ -44,7 +44,7 @@ export default function HeadlessSelect({
       <Listbox value={value} onChange={onChange} disabled={disabled}>
         <div className="relative">
           <Listbox.Button className={`
-            relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left shadow-sm border transition-all duration-200
+            relative w-full cursor-default rounded-lg bg-white py-3 pl-3 pr-10 text-left shadow-sm border transition-all duration-200
             ${error
               ? 'border-red-300'
               : 'border-gray-300'
