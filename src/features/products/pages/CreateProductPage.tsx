@@ -44,7 +44,7 @@ export default function CreateProductPage() {
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.product_id.trim() || !formData.name.trim() || !formData.da_id.trim()) {
+    if (!formData.product_id.trim() || !formData.name.trim() || !formData?.da_id?.trim()) {
       setError('Product ID, Name, and DA ID are required');
       return;
     }
@@ -62,6 +62,7 @@ export default function CreateProductPage() {
 
       if (err && typeof err === 'object') {
         // Check for response.data.error or response.data.message
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = err as any;
         if (error.response?.data?.error) {
           errorMessage = error.response.data.error;

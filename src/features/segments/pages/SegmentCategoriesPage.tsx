@@ -139,29 +139,27 @@ interface SegmentsModalProps {
     isOpen: boolean;
     onClose: () => void;
     category: SegmentCategory | null;
-    onAssign: (segmentId: string) => Promise<void>;
 }
 
-function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalProps) {
+function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
     const [segments, setSegments] = useState<Segment[]>([]);
     const [filteredSegments, setFilteredSegments] = useState<Segment[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [assigningSegmentId, setAssigningSegmentId] = useState<string | null>(null);
 
-    const loadUnassignedSegments = useCallback(async () => {
+    const loadCategorySegments = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await segmentService.getSegments({ skipCache: true });
             const segmentsData = (response as { data?: Segment[] }).data || [];
 
-            // Filter out segments that already belong to this category
-            const unassigned = segmentsData.filter(
-                (s: Segment) => !s.category || String(s.category) !== String(category?.id)
+            // Filter segments that belong to this category
+            const categorySegments = segmentsData.filter(
+                (s: Segment) => s.category && String(s.category) === String(category?.id)
             );
 
-            setSegments(unassigned);
-            setFilteredSegments(unassigned);
+            setSegments(categorySegments);
+            setFilteredSegments(categorySegments);
         } catch (err) {
             console.error('Failed to load segments:', err);
             setSegments([]);
@@ -173,9 +171,9 @@ function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalPro
 
     useEffect(() => {
         if (isOpen && category) {
-            loadUnassignedSegments();
+            loadCategorySegments();
         }
-    }, [isOpen, category, loadUnassignedSegments]);
+    }, [isOpen, category, loadCategorySegments]);
 
     useEffect(() => {
         if (searchTerm.trim()) {
@@ -190,19 +188,6 @@ function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalPro
     }, [searchTerm, segments]);
 
 
-    const handleAssign = async (segmentId: string) => {
-        setAssigningSegmentId(segmentId);
-        try {
-            await onAssign(segmentId);
-            // Remove the assigned segment from the list
-            setSegments(prev => prev.filter(s => s.id!.toString() !== segmentId));
-            setFilteredSegments(prev => prev.filter(s => s.id!.toString() !== segmentId));
-        } catch (err) {
-            console.error('Failed to assign segment:', err);
-        } finally {
-            setAssigningSegmentId(null);
-        }
-    };
 
     if (!isOpen) return null;
 
@@ -215,7 +200,7 @@ function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalPro
                             Segments in {category?.name}
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            {segments.length} segment{segments.length !== 1 ? 's' : ''} available to assign
+                            {segments.length} segment{segments.length !== 1 ? 's' : ''} in this catalog
                         </p>
                     </div>
                     <button
@@ -252,7 +237,7 @@ function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalPro
                         <div className="text-center py-12">
                             <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                             <p className="text-gray-500">
-                                {searchTerm ? 'No segments match your search' : 'No segments available to assign'}
+                                {searchTerm ? 'No segments match your search' : 'No segments in this catalog'}
                             </p>
                         </div>
                     ) : (
@@ -278,29 +263,6 @@ function SegmentsModal({ isOpen, onClose, category, onAssign }: SegmentsModalPro
                                             )}
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleAssign(segment.id!.toString())}
-                                        disabled={assigningSegmentId === segment.id!.toString()}
-                                        className="ml-4 px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                        style={{ backgroundColor: color.sentra.main }}
-                                        onMouseEnter={(e) => {
-                                            if (!e.currentTarget.disabled) {
-                                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                                        }}
-                                    >
-                                        {assigningSegmentId === segment.id!.toString() ? (
-                                            <>
-                                                <LoadingSpinner size="sm" className="inline" />
-                                                Assigning...
-                                            </>
-                                        ) : (
-                                            'Assign'
-                                        )}
-                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -418,21 +380,6 @@ export default function SegmentCategoriesPage() {
         }
     };
 
-    const handleAssignSegment = async (segmentId: string) => {
-        if (!selectedCategory) return;
-
-        try {
-            await segmentService.updateSegment(Number(segmentId), {
-                category: selectedCategory.id
-            });
-
-            success('Segment assigned', 'Segment has been assigned to the catalog successfully');
-            await loadCategories();
-        } catch (err) {
-            showError('Error assigning segment', (err as Error).message || 'Failed to assign segment');
-            throw err;
-        }
-    };
 
     const filteredCategories = categories.filter(category =>
         category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -680,7 +627,6 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(null);
                 }}
                 category={selectedCategory}
-                onAssign={handleAssignSegment}
             />
         </div>
     );
