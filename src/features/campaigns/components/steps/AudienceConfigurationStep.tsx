@@ -20,37 +20,19 @@ import UniversalControlGroupModal from './UniversalControlGroupModal';
 import SegmentModal from '../../../segments/components/SegmentModal';
 
 interface AudienceConfigurationStepProps {
-  currentStep: number;
-  totalSteps: number;
-  onNext: () => void;
-  onPrev: () => void;
-  onSubmit: () => void;
   formData: CreateCampaignRequest;
   setFormData: (data: CreateCampaignRequest) => void;
   selectedSegments: CampaignSegment[];
   setSelectedSegments: (segments: CampaignSegment[]) => void;
   controlGroup: ControlGroup;
-  setControlGroup: (group: ControlGroup) => void;
-  isLoading?: boolean;
-  onSaveDraft?: () => void;
-  onCancel?: () => void;
 }
 
 export default function AudienceConfigurationStep({
-  currentStep: _currentStep,
-  totalSteps: _totalSteps,
-  onNext: _onNext,
-  onPrev: _onPrev,
-  onSubmit: _onSubmit,
   formData,
   setFormData,
   selectedSegments,
   setSelectedSegments,
-  controlGroup,
-  setControlGroup: _setControlGroup,
-  isLoading: _isLoading,
-  onSaveDraft: _onSaveDraft,
-  onCancel: _onCancel
+  controlGroup
 }: AudienceConfigurationStepProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCreateSegmentModal, setShowCreateSegmentModal] = useState(false);
@@ -230,15 +212,13 @@ export default function AudienceConfigurationStep({
               setSelectedSegments([]);
             }}
             className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_target_group'
-              ? 'border-[#588157] bg-[#588157]/5'
+              ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'multiple_target_group' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <Users className={`w-6 h-6 ${formData.campaign_type === 'multiple_target_group' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Multiple Target</div>
               <div className="text-xs text-gray-500">Multiple segments with offers</div>
@@ -252,15 +232,13 @@ export default function AudienceConfigurationStep({
               setSelectedSegments([]);
             }}
             className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'champion_challenger'
-              ? 'border-[#588157] bg-[#588157]/5'
+              ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'champion_challenger' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <Award className={`w-6 h-6 ${formData.campaign_type === 'champion_challenger' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+                <Award className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Champion-Challenger</div>
               <div className="text-xs text-gray-500">Main segment + challengers</div>
@@ -274,15 +252,13 @@ export default function AudienceConfigurationStep({
               setSelectedSegments([]);
             }}
             className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'ab_test'
-              ? 'border-[#588157] bg-[#588157]/5'
+              ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'ab_test' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <TestTube className={`w-6 h-6 ${formData.campaign_type === 'ab_test' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+                <TestTube className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">A/B Test</div>
               <div className="text-xs text-gray-500">Two segments: A and B</div>
@@ -296,15 +272,13 @@ export default function AudienceConfigurationStep({
               setSelectedSegments([]);
             }}
             className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'round_robin'
-              ? 'border-[#588157] bg-[#588157]/5'
+              ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'round_robin' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <RotateCw className={`w-6 h-6 ${formData.campaign_type === 'round_robin' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+                <RotateCw className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Round Robin</div>
               <div className="text-xs text-gray-500">Offers with intervals</div>
@@ -318,15 +292,13 @@ export default function AudienceConfigurationStep({
               setSelectedSegments([]);
             }}
             className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_level'
-              ? 'border-[#588157] bg-[#588157]/5'
+              ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'multiple_level' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <Layers className={`w-6 h-6 ${formData.campaign_type === 'multiple_level' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+                <Layers className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Multiple Level</div>
               <div className="text-xs text-gray-500">Offers with conditions</div>
@@ -414,11 +386,22 @@ export default function AudienceConfigurationStep({
                 (formData.campaign_type === 'ab_test' && selectedSegments.length < 2)) && (
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
+                    className="inline-flex items-center px-4 py-2 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
+                    style={{ backgroundColor: color.sentra.main }}
+                    onMouseEnter={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                      }
+                    }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    {formData.campaign_type === 'champion_challenger' && selectedSegments.length === 0 ? 'Add Champion' :
-                      formData.campaign_type === 'champion_challenger' ? 'Add Challenger' :
+                    {formData.campaign_type === 'champion_challenger' && selectedSegments.length === 0 ? 'Champion' :
+                      formData.campaign_type === 'champion_challenger' ? 'Challenger' :
                         'Add Segment'}
                   </button>
                 )}
@@ -482,7 +465,14 @@ export default function AudienceConfigurationStep({
               </p>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center px-5 py-2.5 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-all"
+                className="inline-flex items-center px-5 py-2.5 text-white rounded-md text-sm font-medium transition-all"
+                style={{ backgroundColor: color.sentra.main }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                }}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Select Segments
@@ -509,7 +499,7 @@ export default function AudienceConfigurationStep({
                     {selectedSegments.length > 1 && (
                       <div className="flex items-center space-x-2">
                         <GripVertical className="w-4 h-4 text-gray-400" />
-                        <div className="bg-[#588157] text-white text-xs font-medium px-2 py-1 rounded-full">
+                        <div className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded-full">
                           #{index + 1}
                         </div>
                       </div>
@@ -1053,7 +1043,14 @@ function ControlGroupConfigModal({
           </button>
           <button
             onClick={handleSave}
-            className="px-5 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
+            className="px-5 py-2 text-white rounded-md text-sm font-medium transition-colors"
+            style={{ backgroundColor: color.sentra.main }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+            }}
           >
             Save Configuration
           </button>

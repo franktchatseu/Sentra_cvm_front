@@ -72,7 +72,7 @@ export default function OfferFlowChart({
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Offer Flow Configuration</h3>
           <p className="text-sm text-gray-500 mt-1">
-            {campaignType === 'round_robin' 
+            {campaignType === 'round_robin'
               ? 'Configure offers with time intervals between each delivery'
               : 'Configure offers with conditional logic for delivery'}
           </p>
@@ -90,14 +90,14 @@ export default function OfferFlowChart({
       <div className="space-y-4">
         <div className="flex items-start">
           <div className="flex-shrink-0 w-12 flex flex-col items-center">
-            <div className="w-10 h-10 bg-[#588157] rounded-full flex items-center justify-center">
+            <div className="w-10 h-10  rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">START</span>
             </div>
             {offerMappings.length > 0 && (
-              <div className="w-0.5 h-12 bg-[#588157]"></div>
+              <div className="w-0.5 h-12 "></div>
             )}
           </div>
-          <div className="flex-1 ml-4 bg-[#588157]/5 border border-[#588157]/20 rounded-lg p-4">
+          <div className="flex-1 ml-4 /5 border border-[#588157]/20 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <div className="font-semibold text-gray-900">{segment.name}</div>
               <span className="text-sm text-gray-600">
@@ -126,7 +126,7 @@ export default function OfferFlowChart({
                   <div className="w-0.5 h-12 bg-gray-300"></div>
                 )}
               </div>
-              
+
               <div className="flex-1 ml-4 space-y-3">
                 {/* Interval/Condition Display */}
                 {campaignType === 'round_robin' && mapping.interval_config && (
@@ -220,11 +220,11 @@ export default function OfferFlowChart({
 
                 {isEditing && campaignType === 'multiple_level' && (
                   <ConditionConfigPanel
-                    config={mapping.condition_config || { 
-                      condition_type: 'customer_attribute', 
-                      operator: 'equals', 
-                      field: '', 
-                      value: '' 
+                    config={mapping.condition_config || {
+                      condition_type: 'customer_attribute',
+                      operator: 'equals',
+                      field: '',
+                      value: ''
                     }}
                     onSave={(config) => handleUpdateCondition(index, config)}
                     onCancel={() => setEditingNode(null)}
@@ -272,7 +272,7 @@ function IntervalConfigPanel({ config, onSave, onCancel }: IntervalConfigPanelPr
   return (
     <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 space-y-4">
       <h4 className="font-semibold text-gray-900">Configure Time Interval</h4>
-      
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Interval Value</label>
@@ -284,7 +284,7 @@ function IntervalConfigPanel({ config, onSave, onCancel }: IntervalConfigPanelPr
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Interval Type</label>
           <select
@@ -298,7 +298,7 @@ function IntervalConfigPanel({ config, onSave, onCancel }: IntervalConfigPanelPr
           </select>
         </div>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Description (optional)</label>
         <input
@@ -341,7 +341,7 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
   return (
     <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 space-y-4">
       <h4 className="font-semibold text-gray-900">Configure Condition</h4>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Condition Type</label>
         <select
@@ -366,7 +366,7 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
           placeholder="e.g., purchase_amount, email_opened, tier_level"
         />
       </div>
-      
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Operator</label>
@@ -383,7 +383,7 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
             <option value="not_contains">Not Contains</option>
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Value</label>
           <input
@@ -393,9 +393,9 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
               // Try to parse as number if possible
               const val = e.target.value;
               const numVal = parseFloat(val);
-              setLocalConfig({ 
-                ...localConfig, 
-                value: isNaN(numVal) ? val : numVal 
+              setLocalConfig({
+                ...localConfig,
+                value: isNaN(numVal) ? val : numVal
               });
             }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
@@ -403,7 +403,7 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
           />
         </div>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Description (optional)</label>
         <input

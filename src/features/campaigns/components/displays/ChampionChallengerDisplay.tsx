@@ -1,5 +1,6 @@
 import { Award, Target, Users, Settings, Trash2 } from 'lucide-react';
 import { CampaignSegment } from '../../types/campaign';
+import { color } from '../../../../shared/utils/utils';
 
 interface ChampionChallengerDisplayProps {
   champion: CampaignSegment | null;
@@ -18,8 +19,8 @@ export default function ChampionChallengerDisplay({
   onRemoveSegment,
   onConfigureControlGroup
 }: ChampionChallengerDisplayProps) {
-  
-  const totalAudience = (champion?.customer_count || 0) + 
+
+  const totalAudience = (champion?.customer_count || 0) +
     challengers.reduce((sum, c) => sum + c.customer_count, 0);
 
   return (
@@ -54,7 +55,14 @@ export default function ChampionChallengerDisplay({
           {!champion && (
             <button
               onClick={onAddChampion}
-              className="inline-flex items-center px-4 py-2 bg-[#588157] hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+              style={{ backgroundColor: color.sentra.main }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              }}
             >
               <Award className="w-4 h-4 mr-2" />
               Add Champion
@@ -63,16 +71,16 @@ export default function ChampionChallengerDisplay({
         </div>
 
         {champion ? (
-          <div className="bg-gradient-to-r from-[#588157]/5 to-[#3A5A40]/5 border-2 border-[#588157] rounded-xl p-6">
+          <div className=" border border-[#588157] rounded-xl p-6">
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-4 flex-1">
-                <div className="w-14 h-14 bg-[#588157] rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-                  <Award className="w-7 h-7 text-white" />
+                <div className="w-14 h-14  rounded-xl flex items-center justify-center flex-shrink-0 ">
+                  <Award className="w-7 h-7 text-[#588157]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-3 mb-2">
                     <h4 className="text-lg font-bold text-gray-900">{champion.name}</h4>
-                    <span className="px-3 py-1 bg-[#588157] text-white text-xs font-bold rounded-full shadow-sm">
+                    <span className="px-3 py-1  text-white text-xs font-bold rounded-full shadow-sm">
                       🏆 CHAMPION
                     </span>
                   </div>
@@ -95,7 +103,7 @@ export default function ChampionChallengerDisplay({
               <div className="flex items-center space-x-2 ml-4">
                 <button
                   onClick={() => onConfigureControlGroup(champion.id)}
-                  className="p-2 text-gray-400 hover:text-[#588157] hover:bg-[#588157]/10 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-[#588157] hover:/10 rounded-lg transition-colors"
                   title="Configure Control Group"
                 >
                   <Settings className="w-4 h-4" />
@@ -122,7 +130,14 @@ export default function ChampionChallengerDisplay({
               </p>
               <button
                 onClick={onAddChampion}
-                className="inline-flex items-center px-5 py-2.5 bg-[#588157] hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md"
+                className="inline-flex items-center px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-all"
+                style={{ backgroundColor: color.sentra.main }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                }}
               >
                 <Award className="w-4 h-4 mr-2" />
                 Add Champion Segment
@@ -137,13 +152,20 @@ export default function ChampionChallengerDisplay({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Target className="w-5 h-5 text-[#A3B18A]" />
+              <Target className="w-5 h-5 text-[#588157]" />
               <h3 className="text-lg font-semibold text-gray-900">Challenger Segments</h3>
               <span className="text-sm text-gray-500">({challengers.length})</span>
             </div>
             <button
               onClick={onAddChallenger}
-              className="inline-flex items-center px-4 py-2 bg-[#A3B18A] hover:bg-[#588157] text-[#344E41] hover:text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              style={{ backgroundColor: color.sentra.main }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              }}
             >
               <Target className="w-4 h-4 mr-2" />
               Add Challenger
@@ -155,17 +177,18 @@ export default function ChampionChallengerDisplay({
               {challengers.map((challenger, index) => (
                 <div
                   key={challenger.id}
-                  className="bg-white border-2 border-[#A3B18A] rounded-xl p-5 hover:shadow-md transition-all"
+                  className="bg-white border border-[#A3B18A] rounded-xl p-5 transition-all"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3 flex-1">
-                      <div className="w-10 h-10 bg-[#A3B18A] rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                         <span className="text-[#344E41] font-bold text-sm">C{index + 1}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
                           <h4 className="font-semibold text-gray-900">{challenger.name}</h4>
-                          <span className="px-2 py-0.5 bg-[#A3B18A] text-[#344E41] text-xs font-medium rounded-full">
+                          <span className="px-2 py-0.5  text-white text-xs font-medium rounded-full" style={{ backgroundColor: color.sentra.main }}
+                          >
                             Challenger
                           </span>
                         </div>
@@ -188,7 +211,7 @@ export default function ChampionChallengerDisplay({
                     <div className="flex flex-col space-y-1 ml-2">
                       <button
                         onClick={() => onConfigureControlGroup(challenger.id)}
-                        className="p-1.5 text-gray-400 hover:text-[#588157] hover:bg-[#588157]/10 rounded transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-[#588157] hover:/10 rounded transition-colors"
                         title="Configure Control Group"
                       >
                         <Settings className="w-3.5 h-3.5" />
@@ -206,16 +229,23 @@ export default function ChampionChallengerDisplay({
               ))}
             </div>
           ) : (
-            <div className="bg-[#A3B18A]/10 border-2 border-dashed border-[#A3B18A] rounded-xl p-8">
+            <div className=" border border-gray-300 rounded-xl p-8">
               <div className="flex flex-col items-center justify-center text-center">
-                <Target className="w-12 h-12 text-[#A3B18A] mb-3" />
+                <Target className="w-12 h-12 text-[#588157] mb-3" />
                 <h4 className="font-medium text-gray-900 mb-2">No Challengers Yet</h4>
                 <p className="text-sm text-gray-600 mb-4 max-w-sm">
                   Add challenger segments to test alternative strategies against your champion.
                 </p>
                 <button
                   onClick={onAddChallenger}
-                  className="inline-flex items-center px-4 py-2 bg-[#A3B18A] hover:bg-[#588157] text-[#344E41] hover:text-white rounded-lg text-sm font-medium transition-colors"
+                  className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                  style={{ backgroundColor: color.sentra.main }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                  }}
                 >
                   <Target className="w-4 h-4 mr-2" />
                   Add First Challenger

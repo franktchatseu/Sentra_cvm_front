@@ -255,7 +255,7 @@ export default function UserManagementPage() {
             <Users className="w-4 h-4" />
             <span>Users</span>
             <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'users'
-              ? 'bg-[#588157]/10 text-[#588157]'
+              ? 'bg-blue-50 text-blue-600'
               : 'bg-gray-100 text-gray-600'
               }`}>
               {users.length}
@@ -273,7 +273,7 @@ export default function UserManagementPage() {
             <Clock className="w-4 h-4" />
             <span>Pending Requests</span>
             <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'requests'
-              ? 'bg-[#588157]/10 text-[#588157]'
+              ? 'bg-blue-50 text-blue-600'
               : 'bg-gray-100 text-gray-600'
               }`}>
               {accountRequests.filter(r => r.force_password_reset).length}
@@ -416,7 +416,7 @@ export default function UserManagementPage() {
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${user.role === 'admin'
                             ? `bg-[${color.entities.configuration}]/10 text-[${color.entities.configuration}]`
-                            : `bg-[${color.entities.users}]/10 text-[${color.entities.users}]`
+                            : `bg-gray-100 text-gray-700`
                             }`}>
                             <Shield className="w-3 h-3 mr-1" />
                             {user.role}
@@ -540,7 +540,7 @@ export default function UserManagementPage() {
                         <div className="flex flex-wrap gap-2 mb-2">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${user.role === 'admin'
                             ? `bg-[${color.entities.configuration}]/10 text-[${color.entities.configuration}]`
-                            : `bg-[${color.entities.users}]/10 text-[${color.entities.users}]`
+                            : `bg-gray-100 text-gray-700`
                             }`}>
                             <Shield className="w-3 h-3 mr-1" />
                             {user.role}
@@ -674,7 +674,7 @@ export default function UserManagementPage() {
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${request.role === 'admin'
                             ? `bg-[${color.entities.configuration}]/10 text-[${color.entities.configuration}]`
-                            : `bg-[${color.entities.users}]/10 text-[${color.entities.users}]`
+                            : `bg-gray-100 text-gray-700`
                             }`}>
                             <Shield className="w-3 h-3 mr-1" />
                             {request.role}
@@ -746,7 +746,7 @@ export default function UserManagementPage() {
                         <div className="flex flex-wrap gap-2 mb-3">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${request.role === 'admin'
                             ? `bg-[${color.entities.configuration}]/10 text-[${color.entities.configuration}]`
-                            : `bg-[${color.entities.users}]/10 text-[${color.entities.users}]`
+                            : `bg-gray-100 text-gray-700`
                             }`}>
                             <Shield className="w-3 h-3 mr-1" />
                             {request.role}

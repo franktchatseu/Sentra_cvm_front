@@ -1,5 +1,6 @@
 import { Target, Users, Settings, Trash2, RotateCw, Layers } from 'lucide-react';
 import { CampaignSegment } from '../../types/campaign';
+import { color } from '../../../../shared/utils/utils';
 
 interface SequentialCampaignDisplayProps {
   campaignType: 'round_robin' | 'multiple_level';
@@ -16,19 +17,19 @@ export default function SequentialCampaignDisplay({
   onRemoveSegment,
   onConfigureControlGroup
 }: SequentialCampaignDisplayProps) {
-  
+
   const Icon = campaignType === 'round_robin' ? RotateCw : Layers;
   const title = campaignType === 'round_robin' ? 'Round Robin' : 'Multiple Level';
-  const description = campaignType === 'round_robin' 
+  const description = campaignType === 'round_robin'
     ? 'Sequential offers delivered at timed intervals'
     : 'Sequential offers delivered based on conditions';
 
   return (
     <div className="space-y-6">
       {/* Campaign Type Info */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12  rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: color.sentra.main }}>
             <Icon className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
@@ -37,7 +38,7 @@ export default function SequentialCampaignDisplay({
           </div>
           {segment && (
             <div className="text-right">
-              <div className="text-2xl font-bold text-amber-600">
+              <div className="text-2xl font-bold text-gray-600">
                 {segment.customer_count.toLocaleString()}
               </div>
               <div className="text-xs text-gray-500">Total Audience</div>
@@ -56,7 +57,7 @@ export default function SequentialCampaignDisplay({
           {!segment && (
             <button
               onClick={onAddSegment}
-              className="inline-flex items-center px-4 py-2 bg-[#588157] hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="inline-flex items-center px-4 py-2  text-white rounded-lg text-sm font-medium transition-colors " style={{ backgroundColor: color.sentra.main }}
             >
               <Target className="w-4 h-4 mr-2" />
               Add Segment
@@ -65,7 +66,7 @@ export default function SequentialCampaignDisplay({
         </div>
 
         {segment ? (
-          <div className="bg-white border-2 border-[#588157] rounded-xl p-6 shadow-sm">
+          <div className="bg-white border border-[#588157] rounded-xl p-6 shadow-sm">
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-4 flex-1">
                 <div className="w-14 h-14 bg-gradient-to-br from-[#588157] to-[#3A5A40] rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
@@ -74,7 +75,7 @@ export default function SequentialCampaignDisplay({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-3 mb-2">
                     <h4 className="text-lg font-bold text-gray-900">{segment.name}</h4>
-                    <span className="px-3 py-1 bg-[#588157] text-white text-xs font-bold rounded-full shadow-sm">
+                    <span className="px-3 py-1  text-white text-xs font-bold rounded-full shadow-sm">
                       TARGET
                     </span>
                   </div>
@@ -98,7 +99,7 @@ export default function SequentialCampaignDisplay({
               <div className="flex items-center space-x-2 ml-4">
                 <button
                   onClick={() => onConfigureControlGroup(segment.id)}
-                  className="p-2 text-gray-400 hover:text-[#588157] hover:bg-[#588157]/10 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-[#588157] hover:/10 rounded-lg transition-colors"
                   title="Configure Control Group"
                 >
                   <Settings className="w-4 h-4" />
@@ -116,17 +117,17 @@ export default function SequentialCampaignDisplay({
         ) : (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-12">
             <div className="flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
-                <Target className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: color.sentra.main }}>
+                <Target className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Segment Defined</h3>
               <p className="text-sm text-gray-600 mb-6 max-w-md">
-                Add a target segment for your {title.toLowerCase()} campaign. This segment will receive 
+                Add a target segment for your {title.toLowerCase()} campaign. This segment will receive
                 sequential offers {campaignType === 'round_robin' ? 'at timed intervals' : 'based on conditions'}.
               </p>
               <button
                 onClick={onAddSegment}
-                className="inline-flex items-center px-5 py-2.5 bg-[#588157] hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md"
+                className="inline-flex items-center px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-all" style={{ backgroundColor: color.sentra.main }}
               >
                 <Target className="w-4 h-4 mr-2" />
                 Add Target Segment
@@ -138,15 +139,15 @@ export default function SequentialCampaignDisplay({
 
       {/* Next Step Info */}
       {segment && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <Icon className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h4 className="font-semibold text-blue-900 mb-1">Next: Configure Offer Sequence</h4>
-              <p className="text-sm text-blue-700">
-                In the next step, you'll configure the sequence of offers with 
+              <h4 className="font-semibold  text-amber-900 mb-1">Next: Configure Offer Sequence</h4>
+              <p className="text-sm  text-amber-700">
+                In the next step, you'll configure the sequence of offers with
                 {campaignType === 'round_robin' ? ' time intervals between each delivery' : ' conditional logic for each offer'}.
               </p>
             </div>

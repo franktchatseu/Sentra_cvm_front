@@ -399,7 +399,7 @@ export default function CampaignDefinitionStep({
                 type="button"
                 onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical', priority_rank: 1 })}
                 className={`px-3 md:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-1.5 md:space-x-2 ${formData.priority === priority.value
-                  ? 'bg-[#588157] text-white shadow-sm'
+                  ? ' text-white shadow-sm'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
@@ -423,7 +423,7 @@ export default function CampaignDefinitionStep({
                   type="button"
                   onClick={() => setFormData({ ...formData, priority_rank: rank })}
                   className={`w-12 h-12 md:w-10 md:h-10 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center ${formData.priority_rank === rank
-                    ? 'bg-[#588157] text-white shadow-sm'
+                    ? ' text-white shadow-sm'
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
                     }`}
                 >

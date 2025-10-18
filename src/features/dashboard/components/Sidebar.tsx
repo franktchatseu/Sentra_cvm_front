@@ -145,7 +145,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   const getEntityColor = (entity?: NavigationItem['entity']) => {
-    return entity ? helpers.entityColor(entity) : color.sentra.main;
+    return color.sentra.main;
   };
 
   const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {

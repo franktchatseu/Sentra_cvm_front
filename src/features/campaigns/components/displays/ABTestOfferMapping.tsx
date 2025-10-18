@@ -77,14 +77,14 @@ export default function ABTestOfferMapping({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#588157] rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">A</span>
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Variant A Offers</h3>
             </div>
             <button
               onClick={() => onMapOffers(variantA.id)}
-              className="inline-flex items-center px-3 py-1.5 bg-[#588157] hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="inline-flex items-center px-3 py-1.5  hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4 mr-1.5" />
               {hasOffersA ? 'Add' : 'Map Offers'}
@@ -95,7 +95,7 @@ export default function ABTestOfferMapping({
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <span className="font-bold text-gray-900">{variantA.name}</span>
-                <span className="px-2.5 py-0.5 bg-[#588157] text-white text-xs font-bold rounded-full">
+                <span className="px-2.5 py-0.5  text-white text-xs font-bold rounded-full">
                   VARIANT A
                 </span>
               </div>
@@ -110,7 +110,7 @@ export default function ABTestOfferMapping({
                     className="bg-white border border-[#588157]/30 rounded-lg p-4 flex items-start justify-between hover:shadow-sm transition-shadow"
                   >
                     <div className="flex items-start space-x-3 flex-1 min-w-0">
-                      <div className="w-8 h-8 bg-[#588157]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 /10 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Gift className="w-4 h-4 text-[#588157]" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -133,7 +133,7 @@ export default function ABTestOfferMapping({
                 ))}
               </div>
             ) : (
-              <div className="bg-[#588157]/5 border-2 border-dashed border-[#588157]/30 rounded-lg p-8 text-center h-full flex flex-col items-center justify-center">
+              <div className="/5 border-2 border-dashed border-[#588157]/30 rounded-lg p-8 text-center h-full flex flex-col items-center justify-center">
                 <Gift className="w-12 h-12 mb-2 text-[#588157]/40" />
                 <p className="text-sm text-gray-700 font-medium">No offers mapped</p>
                 <p className="text-xs text-gray-600 mt-1">Click "Map Offers" to add</p>
@@ -222,7 +222,7 @@ export default function ABTestOfferMapping({
               </div>
               <div className="text-sm text-gray-600">Variant A Offers</div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-r from-[#588157] to-[#F97316] rounded-full flex items-center justify-center shadow-lg">
                 <TrendingUp className="w-6 h-6 text-white" />
@@ -232,7 +232,7 @@ export default function ABTestOfferMapping({
                 <div className="text-sm font-medium text-gray-900">A/B Comparison</div>
               </div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-3xl font-bold text-[#F97316] mb-1">
                 {offersCountB}
@@ -245,16 +245,16 @@ export default function ABTestOfferMapping({
 
       {/* Mapping Info */}
       {hasOffersA && hasOffersB && (
-        <div className="bg-[#588157]/5 border border-[#588157]/30 rounded-lg p-4">
+        <div className="/5 border border-[#588157]/30 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-[#588157] rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8  rounded-lg flex items-center justify-center flex-shrink-0">
               <ArrowRight className="w-4 h-4 text-white" />
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">A/B Test Configuration Complete</h4>
               <p className="text-sm text-gray-700">
-                Both variants are mapped with offers. The test will compare the performance of Variant A 
-                ({offersCountA} offer{offersCountA !== 1 ? 's' : ''}) against Variant B 
+                Both variants are mapped with offers. The test will compare the performance of Variant A
+                ({offersCountA} offer{offersCountA !== 1 ? 's' : ''}) against Variant B
                 ({offersCountB} offer{offersCountB !== 1 ? 's' : ''}).
               </p>
             </div>
