@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Trash2, BarChart3, Settings, Edit, X } from 'lucide-react';
 import { color as utilColor } from '../../../shared/utils/utils';
 
@@ -376,7 +377,7 @@ export default function OfferTrackingStep({
       )}
 
       {/* Rule Modal */}
-      {showRuleModal && editingRule && (
+      {showRuleModal && editingRule && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
@@ -504,7 +505,8 @@ export default function OfferTrackingStep({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, Plus, Users, Check } from 'lucide-react';
 import { CampaignSegment } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
@@ -108,7 +109,7 @@ export default function SegmentSelectionModal({
 
   const totalSelectedCustomers = tempSelectedSegments.reduce((total, segment) => total + segment.customer_count, 0);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
       style={{
@@ -285,6 +286,7 @@ export default function SegmentSelectionModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

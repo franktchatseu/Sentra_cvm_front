@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Users, Plus, Edit, Trash2, Settings, GripVertical, AlertCircle, Award, TestTube, RotateCw, Layers } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
 import { Segment } from '../../../segments/types/segment';
@@ -695,8 +696,8 @@ function ControlGroupConfigModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div 
+  return createPortal(
+    <div
       className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       style={{
         top: 0,
@@ -1058,6 +1059,7 @@ function ControlGroupConfigModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

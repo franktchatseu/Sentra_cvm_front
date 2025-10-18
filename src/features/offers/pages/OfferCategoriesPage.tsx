@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, X, MessageSquare, ArrowLeft, Eye, Grid, List } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
@@ -64,8 +65,8 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
@@ -142,7 +143,8 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -253,8 +255,8 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
 
   if (!isOpen || !category) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -417,7 +419,8 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

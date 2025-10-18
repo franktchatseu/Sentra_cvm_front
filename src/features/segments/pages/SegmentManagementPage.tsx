@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -9,13 +10,13 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Power,
-  PowerOff,
   X,
   Eye,
   ChevronLeft,
   ChevronRight,
-  Copy
+  Copy,
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import { Segment, SegmentFilters, SegmentType, SortDirection } from '../types/segment';
 import { segmentService } from '../services/segmentService';
@@ -186,12 +187,13 @@ const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
   const [segments, setSegments] = useState<Segment[]>([]);
+  const [allSegments, setAllSegments] = useState<Segment[]>([]); // Store all segments for tag calculation
   const [isLoading, setIsLoading] = useState(true);
+  const [duplicatingSegment, setDuplicatingSegment] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [typeFilter, setTypeFilter] = useState<SegmentType | 'all'>('all');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -249,8 +251,10 @@ export default function SegmentManagementPage() {
       setIsLoading(true);
       setError('');
 
+
       if (USE_MOCK_DATA) {
         // Use mock data for testing
+        console.log('🚀 LOADING SEGMENTS - Using mock data');
         setSegments(MOCK_SEGMENTS);
         setTotalCount(MOCK_SEGMENTS.length);
         setTotalPages(Math.ceil(MOCK_SEGMENTS.length / pageSize));
@@ -258,31 +262,40 @@ export default function SegmentManagementPage() {
         return;
       }
 
-      // Build filters with all the new options
+      // Use client-side tag filtering (search endpoint has issues)
+
       const filters: SegmentFilters = {
         page,
         pageSize,
         sortBy,
         sortDirection,
+        skipCache: true, // Always skip cache to get fresh data
       };
 
       if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
-      if (selectedTags.length > 0) filters.tags = selectedTags;
-      if (statusFilter !== 'all') filters.is_active = statusFilter === 'active';
       if (typeFilter !== 'all') filters.type = typeFilter;
 
       const response = await segmentService.getSegments(filters);
 
       // Handle both response formats
-      const segmentData = response.data || response.segments || [];
+      let segmentData = response.data || response.segments || [];
+
+      // Apply client-side tag filtering if tags are selected
+      if (selectedTags.length > 0) {
+        segmentData = segmentData.filter(segment =>
+          selectedTags.some(tag => (segment.tags || []).includes(tag))
+        );
+      }
       setSegments(segmentData);
+      // Update allSegments for tag calculation
+      setAllSegments(segmentData);
     } catch (err: unknown) {
       setError((err as Error).message || 'Failed to load segments');
       setSegments([]);
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearchTerm, selectedTags, statusFilter, typeFilter, page, pageSize, sortBy, sortDirection]);
+  }, [debouncedSearchTerm, selectedTags, typeFilter, page, pageSize, sortBy, sortDirection]);
 
   useEffect(() => {
     loadSegments();
@@ -345,43 +358,28 @@ export default function SegmentManagementPage() {
 
     if (!confirmed) return;
 
-    try {
-      const segmentId = segment.segment_id || segment.id!;
-      const newName = `${segment.name} (Copy)`;
+    const segmentId = segment.segment_id || segment.id!;
+    const newName = `${segment.name} (Copy)`;
 
-      await segmentService.duplicateSegment(segmentId, { newName });
+    try {
+      setDuplicatingSegment(segmentId);
+
+      await segmentService.duplicateSegment(segmentId, { new_name: newName });
+      // Small delay to ensure backend has processed the duplicate
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // Force refresh with cache-busting
+      setSegments([]); // Clear current segments first
       await loadSegments();
+
+      // Success: show toast and close modal
       success('Segment duplicated', `Segment "${newName}" has been created successfully`);
     } catch (err: unknown) {
       showError('Error duplicating segment', (err as Error).message || 'Failed to duplicate segment');
+    } finally {
+      setDuplicatingSegment(null);
     }
   };
 
-  const handleToggleStatus = async (segment: Segment) => {
-    setShowActionMenu(null);
-    const action = segment.is_active ? 'deactivate' : 'activate';
-    const confirmed = await confirm({
-      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Segment`,
-      message: `Are you sure you want to ${action} "${segment.name}"?`,
-      type: segment.is_active ? 'warning' : 'success',
-      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
-      cancelText: 'Cancel'
-    });
-
-    if (!confirmed) return;
-
-    try {
-      const segmentId = segment.segment_id || segment.id!;
-      await segmentService.toggleSegmentStatus(segmentId, !segment.is_active);
-      await loadSegments();
-      success(
-        `Segment ${action}d`,
-        `Segment "${segment.name}" has been ${action}d successfully`
-      );
-    } catch (err: unknown) {
-      showError(`Error ${action}ing segment`, (err as Error).message || `Failed to ${action} segment`);
-    }
-  };
 
   const handleSaveSegment = async (segment: Segment) => {
     await loadSegments();
@@ -391,15 +389,49 @@ export default function SegmentManagementPage() {
     );
   };
 
-  // Get all unique tags from segments
-  const allTags = Array.from(new Set(segments?.flatMap(s => s.tags || []) || []));
+  const handleComputeSegment = async (segment: Segment) => {
+    setShowActionMenu(null);
+    const confirmed = await confirm({
+      title: 'Compute Segment',
+      message: `Do you want to compute the segment "${segment.name}"? This will refresh the member list.`,
+      type: 'info',
+      confirmText: 'Compute',
+      cancelText: 'Cancel'
+    });
 
-  // Status filter options
-  const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' }
-  ];
+    if (!confirmed) return;
+
+    try {
+      const segmentId = segment.segment_id || segment.id!;
+      await segmentService.computeSegment(segmentId);
+      success('Segment computed', `Segment "${segment.name}" has been computed successfully`);
+    } catch (err: unknown) {
+      showError('Compute failed', (err as Error).message || 'Failed to compute segment');
+    }
+  };
+
+  const handleExportSegment = async (segment: Segment) => {
+    setShowActionMenu(null);
+    try {
+      const segmentId = segment.segment_id || segment.id!;
+      const blob = await segmentService.exportSegment(segmentId, 'json');
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${segment.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_segment.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      success('Export successful', `Segment data has been exported as JSON`);
+    } catch (err: unknown) {
+      showError('Export failed', (err as Error).message || 'Failed to export segment');
+    }
+  };
+
+  // Get all unique tags from all segments (not just filtered ones)
+  const allTags = Array.from(new Set(allSegments?.flatMap(s => s.tags || []) || []));
+
 
   const filteredSegments = (segments || []).filter(segment => {
     const matchesSearch = !searchTerm ||
@@ -409,11 +441,8 @@ export default function SegmentManagementPage() {
     const matchesTags = selectedTags.length === 0 ||
       selectedTags.some(tag => (segment.tags || []).includes(tag));
 
-    const matchesStatus = statusFilter === 'all' ||
-      (statusFilter === 'active' && segment.is_active) ||
-      (statusFilter === 'inactive' && !segment.is_active);
 
-    return matchesSearch && matchesTags && matchesStatus;
+    return matchesSearch && matchesTags;
   });
 
   return (
@@ -465,20 +494,9 @@ export default function SegmentManagementPage() {
         </div>
 
         {/* Active Filters Display */}
-        {(selectedTags.length > 0 || statusFilter !== 'all' || typeFilter !== 'all') && (
+        {(selectedTags.length > 0 || typeFilter !== 'all') && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
             <span className={`text-sm font-medium ${tw.textPrimary} py-2`}>Active filters:</span>
-            {statusFilter !== 'all' && (
-              <span className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-full border border-blue-200">
-                Status: {statusFilter === 'active' ? 'Active' : 'Inactive'}
-                <button
-                  onClick={() => setStatusFilter('all')}
-                  className="ml-2 hover:text-blue-900"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
             {typeFilter !== 'all' && (
               <span className="inline-flex items-center px-3 py-1.5 text-sm bg-purple-50 text-purple-700 rounded-full border border-purple-200">
                 Type: {typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}
@@ -560,7 +578,7 @@ export default function SegmentManagementPage() {
                       <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Type</th>
                       <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Tags</th>
                       <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Customers</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Visibility</th>
                       <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Created</th>
                       <th className={`px-6 py-3 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
                     </tr>
@@ -608,9 +626,9 @@ export default function SegmentManagementPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.is_active ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.error.light}] text-[${color.status.error.main}]`
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.visibility === 'public' ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.info.light}] text-[${color.status.info.main}]`
                             }`}>
-                            {segment.is_active ? 'Active' : 'Inactive'}
+                            {segment.visibility === 'public' ? 'Public' : 'Private'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -658,29 +676,39 @@ export default function SegmentManagementPage() {
                                     overflowY: 'auto'
                                   }}
                                 >
+
                                   <button
-                                    onClick={() => handleToggleStatus(segment)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                    onClick={() => handleDuplicateSegment(segment)}
+                                    disabled={duplicatingSegment === (segment.segment_id || segment.id)}
+                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    {segment.is_active ? (
+                                    {duplicatingSegment === (segment.segment_id || segment.id) ? (
                                       <>
-                                        <PowerOff className="w-4 h-4 mr-4" style={{ color: color.status.warning.main }} />
-                                        Deactivate Segment
+                                        <div className="w-4 h-4 mr-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                                        Duplicating...
                                       </>
                                     ) : (
                                       <>
-                                        <Power className="w-4 h-4 mr-4" style={{ color: color.status.success.main }} />
-                                        Activate Segment
+                                        <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                        Duplicate Segment
                                       </>
                                     )}
                                   </button>
 
                                   <button
-                                    onClick={() => handleDuplicateSegment(segment)}
+                                    onClick={() => handleComputeSegment(segment)}
                                     className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
                                   >
-                                    <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
-                                    Duplicate Segment
+                                    <RefreshCw className="w-4 h-4 mr-4" />
+                                    Compute Segment
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleExportSegment(segment)}
+                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Download className="w-4 h-4 mr-4" />
+                                    Export Segment
                                   </button>
 
                                   <div className="border-t border-gray-200 my-1"></div>
@@ -756,9 +784,9 @@ export default function SegmentManagementPage() {
                         {tag}
                       </span>
                     ))}
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${segment.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${segment.visibility === 'public' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                       }`}>
-                      {segment.is_active ? 'Active' : 'Inactive'}
+                      {segment.visibility === 'public' ? 'Public' : 'Private'}
                     </span>
                   </div>
 
@@ -825,8 +853,8 @@ export default function SegmentManagementPage() {
       />
 
       {/* Advanced Filters Side Modal */}
-      {showAdvancedFilters && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+      {showAdvancedFilters && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-hidden">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
           <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl">
             <div className="p-6 border-b border-[${color.ui.border}]">
@@ -852,7 +880,11 @@ export default function SegmentManagementPage() {
                       name="type"
                       value="all"
                       checked={typeFilter === 'all'}
-                      onChange={() => setTypeFilter('all')}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setTypeFilter('all');
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="mr-3 text-purple-600 focus:ring-purple-500"
                     />
                     <span className={`text-sm ${tw.textSecondary}`}>All Types</span>
@@ -863,7 +895,11 @@ export default function SegmentManagementPage() {
                       name="type"
                       value="dynamic"
                       checked={typeFilter === 'dynamic'}
-                      onChange={() => setTypeFilter('dynamic')}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setTypeFilter('dynamic');
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="mr-3 text-purple-600 focus:ring-purple-500"
                     />
                     <span className={`text-sm ${tw.textSecondary}`}>Dynamic</span>
@@ -874,7 +910,11 @@ export default function SegmentManagementPage() {
                       name="type"
                       value="static"
                       checked={typeFilter === 'static'}
-                      onChange={() => setTypeFilter('static')}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setTypeFilter('static');
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="mr-3 text-purple-600 focus:ring-purple-500"
                     />
                     <span className={`text-sm ${tw.textSecondary}`}>Static</span>
@@ -885,7 +925,11 @@ export default function SegmentManagementPage() {
                       name="type"
                       value="trigger"
                       checked={typeFilter === 'trigger'}
-                      onChange={() => setTypeFilter('trigger')}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setTypeFilter('trigger');
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="mr-3 text-purple-600 focus:ring-purple-500"
                     />
                     <span className={`text-sm ${tw.textSecondary}`}>Trigger</span>
@@ -893,25 +937,6 @@ export default function SegmentManagementPage() {
                 </div>
               </div>
 
-              {/* Status Filter */}
-              <div>
-                <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Status</label>
-                <div className="space-y-2">
-                  {statusOptions.map((option) => (
-                    <label key={option.value} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="status"
-                        value={option.value}
-                        checked={statusFilter === option.value}
-                        onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                        className="mr-3 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className={`text-sm ${tw.textSecondary}`}>{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
 
               {/* Tags Filter */}
               {allTags.length > 0 && (
@@ -924,12 +949,14 @@ export default function SegmentManagementPage() {
                           type="checkbox"
                           checked={selectedTags.includes(tag)}
                           onChange={(e) => {
+                            e.stopPropagation(); // Prevent event bubbling
                             if (e.target.checked) {
                               setSelectedTags(prev => [...prev, tag]);
                             } else {
                               setSelectedTags(prev => prev.filter(t => t !== tag));
                             }
                           }}
+                          onClick={(e) => e.stopPropagation()} // Prevent event bubbling
                           className="mr-3 text-[${color.sentra.main}] focus:ring-[${color.sentra.main}]"
                         />
                         <span className={`text-sm ${tw.textSecondary}`}>{tag}</span>
@@ -943,7 +970,6 @@ export default function SegmentManagementPage() {
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => {
-                    setStatusFilter('all');
                     setTypeFilter('all');
                     setSelectedTags([]);
                   }}
@@ -966,7 +992,8 @@ export default function SegmentManagementPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

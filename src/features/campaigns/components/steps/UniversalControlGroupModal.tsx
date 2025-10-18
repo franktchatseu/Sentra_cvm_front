@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Edit, Trash2, Settings, Users, Calendar, BarChart3 } from 'lucide-react';
 
 interface UniversalControlGroup {
@@ -74,7 +75,7 @@ export default function UniversalControlGroupModal({ isOpen, onClose }: Universa
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       style={{
@@ -189,7 +190,9 @@ export default function UniversalControlGroupModal({ isOpen, onClose }: Universa
             </div>
           )}
         </div>
-      </div>
+      </div>,
+      document.body
+      );
 
       {/* Create/Edit Modal */}
       {(showCreateModal || editingGroup) && (
@@ -290,7 +293,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
     onSave(newGroup);
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       style={{
@@ -591,6 +594,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

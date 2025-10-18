@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, Plus, Gift, Check, DollarSign, Calendar } from 'lucide-react';
 import { CampaignOffer } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
@@ -117,7 +118,7 @@ export default function OfferSelectionModal({
     onSelect(tempSelectedOffers);
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
       style={{
@@ -329,6 +330,7 @@ export default function OfferSelectionModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -237,7 +237,7 @@ export default function ConfigurationPage() {
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid'
-                ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}]`
+                ? ` text-[${color.sentra.main}]`
                 : `${tw.textMuted} hover:${tw.textSecondary}`
                 }`}
             >
@@ -246,7 +246,7 @@ export default function ConfigurationPage() {
             <button
               onClick={() => setViewMode('list')}
               className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list'
-                ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}]`
+                ? `text-[${color.sentra.main}]`
                 : `${tw.textMuted} hover:${tw.textSecondary}`
                 }`}
             >

@@ -34,9 +34,11 @@ interface ListUploadProps {
     list_headers?: string;
     mode?: 'existing' | 'new';
   };
+  hideExistingLists?: boolean;
+  showCreateButton?: boolean;
 }
 
-export default function ListUpload({ onListDataChange, listData }: ListUploadProps) {
+export default function ListUpload({ onListDataChange, listData, hideExistingLists = false, showCreateButton = false }: ListUploadProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [mode, setMode] = useState<'existing' | 'new'>(listData?.mode || 'existing');
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,54 +162,56 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
       <h4 className={`font-medium ${tw.textPrimary}`}>List Configuration</h4>
 
       {/* Mode Selection */}
-      <div className="flex space-x-2 mb-4">
-        <button
-          onClick={() => handleModeChange('existing')}
-          className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors text-white"
-          style={{
-            backgroundColor: mode === 'existing' ? color.sentra.main : 'transparent',
-            color: mode === 'existing' ? 'white' : color.sentra.main,
-            border: `2px solid ${color.sentra.main}`
-          }}
-          onMouseEnter={(e) => {
-            if (mode !== 'existing') {
-              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (mode !== 'existing') {
-              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-            }
-          }}
-        >
-          <List className="w-4 h-4 mr-2" />
-          Select Existing List
-        </button>
-        <button
-          onClick={() => handleModeChange('new')}
-          className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors text-white"
-          style={{
-            backgroundColor: mode === 'new' ? color.sentra.main : 'transparent',
-            color: mode === 'new' ? 'white' : color.sentra.main,
-            border: `2px solid ${color.sentra.main}`
-          }}
-          onMouseEnter={(e) => {
-            if (mode !== 'new') {
-              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (mode !== 'new') {
-              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-            }
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create New List
-        </button>
-      </div>
+      {!hideExistingLists && (
+        <div className="flex space-x-2 mb-4">
+          <button
+            onClick={() => handleModeChange('existing')}
+            className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors text-white"
+            style={{
+              backgroundColor: mode === 'existing' ? color.sentra.main : 'transparent',
+              color: mode === 'existing' ? 'white' : color.sentra.main,
+              border: `2px solid ${color.sentra.main}`
+            }}
+            onMouseEnter={(e) => {
+              if (mode !== 'existing') {
+                (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (mode !== 'existing') {
+                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+              }
+            }}
+          >
+            <List className="w-4 h-4 mr-2" />
+            Select Existing List
+          </button>
+          <button
+            onClick={() => handleModeChange('new')}
+            className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors text-white"
+            style={{
+              backgroundColor: mode === 'new' ? color.sentra.main : 'transparent',
+              color: mode === 'new' ? 'white' : color.sentra.main,
+              border: `2px solid ${color.sentra.main}`
+            }}
+            onMouseEnter={(e) => {
+              if (mode !== 'new') {
+                (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (mode !== 'new') {
+                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+              }
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create New List
+          </button>
+        </div>
+      )}
 
-      {mode === 'existing' ? (
+      {mode === 'existing' && !hideExistingLists ? (
         <div className="space-y-4">
           {/* Search Bar */}
           <div className="relative">
@@ -410,6 +414,20 @@ export default function ListUpload({ onListDataChange, listData }: ListUploadPro
               <div className="p-2 bg-gray-100 border border-gray-300 rounded text-sm text-gray-700">
                 {listData.list_headers}
               </div>
+            </div>
+          )}
+
+          {/* Create List Button - Only show when showCreateButton is true */}
+          {showCreateButton && (
+            <div className="flex justify-end pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => onListDataChange(listData || {})}
+                className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors"
+                style={{ backgroundColor: color.sentra.main }}
+              >
+                Create List
+              </button>
             </div>
           )}
         </div>

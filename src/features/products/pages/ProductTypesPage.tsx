@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2, Layers, Search } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
@@ -411,8 +412,8 @@ export default function ProductTypesPage() {
       </div>
 
       {/* Create Product Type Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 backdrop-blur-sm">
+      {showCreateModal && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[9999] backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">New Product Type</h2>
@@ -487,12 +488,13 @@ export default function ProductTypesPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Product Type Modal */}
-      {editingType && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 backdrop-blur-sm">
+      {editingType && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[9999] backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Edit Product Type</h2>
@@ -567,7 +569,8 @@ export default function ProductTypesPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

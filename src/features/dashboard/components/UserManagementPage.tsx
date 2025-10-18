@@ -32,6 +32,20 @@ export default function UserManagementPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  // Loading states for individual actions
+  const [loadingActions, setLoadingActions] = useState<{
+    approving: Set<number>;
+    rejecting: Set<number>;
+    deleting: Set<number>;
+    toggling: Set<number>;
+  }>({
+    approving: new Set(),
+    rejecting: new Set(),
+    deleting: new Set(),
+    toggling: new Set()
+  });
+
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
 
@@ -69,12 +83,24 @@ export default function UserManagementPage() {
 
     if (!confirmed) return;
 
+    // Set loading state
+    setLoadingActions(prev => ({
+      ...prev,
+      approving: new Set([...prev.approving, request.user_id])
+    }));
+
     try {
-      await authService.toggleUserStatus(request.user_id, true);
+      await authService.approveAccountRequest(request.user_id);
       await loadData();
       success('Request approved', `Account approved for ${request.first_name} ${request.last_name}`);
     } catch (err) {
       showError('Error approving request', err instanceof Error ? err.message : 'Error approving request');
+    } finally {
+      // Clear loading state
+      setLoadingActions(prev => ({
+        ...prev,
+        approving: new Set([...prev.approving].filter(id => id !== request.user_id))
+      }));
     }
   };
 
@@ -89,22 +115,46 @@ export default function UserManagementPage() {
 
     if (!confirmed) return;
 
+    // Set loading state
+    setLoadingActions(prev => ({
+      ...prev,
+      rejecting: new Set([...prev.rejecting, request.user_id])
+    }));
+
     try {
-      await authService.deleteUser(request.user_id);
+      await authService.rejectAccountRequest(request.user_id);
       await loadData();
       success('Request rejected', `Request from ${request.first_name} ${request.last_name} rejected`);
     } catch (err) {
       showError('Error rejecting request', err instanceof Error ? err.message : 'Error rejecting request');
+    } finally {
+      // Clear loading state
+      setLoadingActions(prev => ({
+        ...prev,
+        rejecting: new Set([...prev.rejecting].filter(id => id !== request.user_id))
+      }));
     }
   };
 
   const handleToggleStatus = async (user: User) => {
+    // Set loading state
+    setLoadingActions(prev => ({
+      ...prev,
+      toggling: new Set([...prev.toggling, user.user_id])
+    }));
+
     try {
-      await authService.toggleUserStatus(user.user_id, !user.is_activated);
+      await authService.toggleUserStatus(user.user_id, !user.is_activated, user.private_email_address);
       await loadData();
       success('User status updated', `User ${user.is_activated ? 'deactivated' : 'activated'} successfully`);
     } catch (err) {
       showError('Error updating status', err instanceof Error ? err.message : 'Error toggling user status');
+    } finally {
+      // Clear loading state
+      setLoadingActions(prev => ({
+        ...prev,
+        toggling: new Set([...prev.toggling].filter(id => id !== user.user_id))
+      }));
     }
   };
 
@@ -119,12 +169,24 @@ export default function UserManagementPage() {
 
     if (!confirmed) return;
 
+    // Set loading state
+    setLoadingActions(prev => ({
+      ...prev,
+      deleting: new Set([...prev.deleting, user.user_id])
+    }));
+
     try {
-      await authService.deleteUser(user.user_id);
+      await authService.deleteUser(user.user_id, user.email);
       await loadData();
       success('User deleted', `${user.first_name} ${user.last_name} deleted successfully`);
     } catch (err) {
       showError('Error deleting user', err instanceof Error ? err.message : 'Error deleting user');
+    } finally {
+      // Clear loading state
+      setLoadingActions(prev => ({
+        ...prev,
+        deleting: new Set([...prev.deleting].filter(id => id !== user.user_id))
+      }));
     }
   };
 
@@ -391,21 +453,26 @@ export default function UserManagementPage() {
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => handleToggleStatus(user)}
-                              className="p-2 rounded-lg transition-colors"
+                              disabled={loadingActions.toggling.has(user.user_id)}
+                              className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               style={{
                                 color: user.is_activated ? color.status.error.main : color.status.success.main,
                                 backgroundColor: 'transparent'
                               }}
                               onMouseEnter={(e) => {
-                                const bgColor = user.is_activated ? color.status.error.main : color.status.success.main;
-                                (e.target as HTMLButtonElement).style.backgroundColor = `${bgColor}10`;
+                                if (!loadingActions.toggling.has(user.user_id)) {
+                                  const bgColor = user.is_activated ? color.status.error.main : color.status.success.main;
+                                  (e.target as HTMLButtonElement).style.backgroundColor = `${bgColor}10`;
+                                }
                               }}
                               onMouseLeave={(e) => {
                                 (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                               }}
-                              title={user.is_activated ? 'Deactivate user' : 'Activate user'}
+                              title={loadingActions.toggling.has(user.user_id) ? "Updating..." : (user.is_activated ? 'Deactivate user' : 'Activate user')}
                             >
-                              {user.is_activated ? (
+                              {loadingActions.toggling.has(user.user_id) ? (
+                                <LoadingSpinner variant="modern" size="sm" color="primary" />
+                              ) : user.is_activated ? (
                                 <Ban className="w-4 h-4" />
                               ) : (
                                 <CheckCircle className="w-4 h-4" />
@@ -432,9 +499,15 @@ export default function UserManagementPage() {
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                              disabled={loadingActions.deleting.has(user.user_id)}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={loadingActions.deleting.has(user.user_id) ? "Deleting..." : "Delete user"}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {loadingActions.deleting.has(user.user_id) ? (
+                                <LoadingSpinner variant="modern" size="sm" color="primary" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </button>
                           </div>
                         </td>
@@ -482,20 +555,26 @@ export default function UserManagementPage() {
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleToggleStatus(user)}
-                            className="p-2 rounded-lg transition-colors"
+                            disabled={loadingActions.toggling.has(user.user_id)}
+                            className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{
                               color: user.is_activated ? color.status.error.main : color.status.success.main,
                               backgroundColor: 'transparent'
                             }}
                             onMouseEnter={(e) => {
-                              const bgColor = user.is_activated ? color.status.error.main : color.status.success.main;
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${bgColor}10`;
+                              if (!loadingActions.toggling.has(user.user_id)) {
+                                const bgColor = user.is_activated ? color.status.error.main : color.status.success.main;
+                                (e.target as HTMLButtonElement).style.backgroundColor = `${bgColor}10`;
+                              }
                             }}
                             onMouseLeave={(e) => {
                               (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                             }}
+                            title={loadingActions.toggling.has(user.user_id) ? "Updating..." : (user.is_activated ? 'Deactivate user' : 'Activate user')}
                           >
-                            {user.is_activated ? (
+                            {loadingActions.toggling.has(user.user_id) ? (
+                              <LoadingSpinner variant="modern" size="sm" color="primary" />
+                            ) : user.is_activated ? (
                               <Ban className="w-4 h-4" />
                             ) : (
                               <CheckCircle className="w-4 h-4" />
@@ -522,9 +601,15 @@ export default function UserManagementPage() {
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            disabled={loadingActions.deleting.has(user.user_id)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={loadingActions.deleting.has(user.user_id) ? "Deleting..." : "Delete user"}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {loadingActions.deleting.has(user.user_id) ? (
+                              <LoadingSpinner variant="modern" size="sm" color="primary" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -608,17 +693,27 @@ export default function UserManagementPage() {
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => handleApproveRequest(request)}
-                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Approve request"
+                              disabled={loadingActions.approving.has(request.user_id)}
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={loadingActions.approving.has(request.user_id) ? "Approving..." : "Approve request"}
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              {loadingActions.approving.has(request.user_id) ? (
+                                <LoadingSpinner variant="modern" size="sm" color="primary" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
                             </button>
                             <button
                               onClick={() => handleRejectRequest(request)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Reject request"
+                              disabled={loadingActions.rejecting.has(request.user_id)}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={loadingActions.rejecting.has(request.user_id) ? "Rejecting..." : "Reject request"}
                             >
-                              <UserX className="w-4 h-4" />
+                              {loadingActions.rejecting.has(request.user_id) ? (
+                                <LoadingSpinner variant="modern" size="sm" color="primary" />
+                              ) : (
+                                <UserX className="w-4 h-4" />
+                              )}
                             </button>
                           </div>
                         </td>
@@ -660,17 +755,37 @@ export default function UserManagementPage() {
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleApproveRequest(request)}
-                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                            disabled={loadingActions.approving.has(request.user_id)}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Approve
+                            {loadingActions.approving.has(request.user_id) ? (
+                              <>
+                                <LoadingSpinner variant="modern" size="sm" color="primary" className="mr-1" />
+                                Approving...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Approve
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => handleRejectRequest(request)}
-                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            disabled={loadingActions.rejecting.has(request.user_id)}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <UserX className="w-3 h-3 mr-1" />
-                            Reject
+                            {loadingActions.rejecting.has(request.user_id) ? (
+                              <>
+                                <LoadingSpinner variant="modern" size="sm" color="primary" className="mr-1" />
+                                Rejecting...
+                              </>
+                            ) : (
+                              <>
+                                <UserX className="w-3 h-3 mr-1" />
+                                Reject
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>

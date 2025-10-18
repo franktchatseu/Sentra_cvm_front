@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Plus, Check, Package, X } from 'lucide-react';
 import { Product } from '../types/product';
 import { ProductCategory } from '../types/productCategory';
@@ -186,7 +187,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
       )}
 
       {/* Product Selection Modal */}
-      {isModalOpen && (
+      {isModalOpen && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
             {/* Modal Header */}
@@ -354,7 +355,8 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

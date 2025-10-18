@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <>
       <FixedBackground variant="subtle" />
-      <div className="w-full relative z-10" style={{ backgroundColor: '#f3f4f6' }}>
+      <div className="w-full relative" style={{ backgroundColor: '#f3f4f6' }}>
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}

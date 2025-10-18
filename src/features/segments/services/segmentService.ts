@@ -99,8 +99,8 @@ class SegmentService {
    * Search segments with advanced filters
    */
   async searchSegments(filters?: SegmentSearchFilters): Promise<SegmentResponse> {
-    const queryString = this.buildQueryParams({
-      q: filters?.q,
+    const queryParams = {
+      q: filters?.q || '', // Ensure q is always present (required by backend)
       category: filters?.category,
       type: filters?.type,
       visibility: filters?.visibility,
@@ -110,9 +110,26 @@ class SegmentService {
       sortBy: filters?.sortBy,
       sortDirection: filters?.sortDirection,
       skipCache: filters?.skipCache
+    };
+    
+    // Build query string manually to ensure q parameter is always included
+    const urlParams = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          urlParams.append(key, value.join(','));
+        } else if (typeof value === 'boolean') {
+          urlParams.append(key, value.toString());
+        } else {
+          urlParams.append(key, String(value));
+        }
+      }
     });
     
-    return this.request<SegmentResponse>(`/search${queryString}`);
+    const queryString = urlParams.toString();
+    const fullUrl = `/search?${queryString}`;
+    
+    return this.request<SegmentResponse>(fullUrl);
   }
 
   /**
@@ -180,14 +197,14 @@ class SegmentService {
    * Get segment rules
    */
   async getSegmentRules(segmentId: number): Promise<SegmentRule[]> {
-    return this.request<SegmentRule[]>(`/${segmentId}/rules`);
+    return this.request<SegmentRule[]>(`/${segmentId}/srules`);
   }
 
   /**
    * Create segment rule
    */
   async createSegmentRule(segmentId: number, request: CreateSegmentRuleRequest): Promise<SegmentRule> {
-    return this.request<SegmentRule>(`/${segmentId}/rules`, {
+    return this.request<SegmentRule>(`/${segmentId}/srules`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -201,7 +218,7 @@ class SegmentService {
     ruleId: number, 
     request: UpdateSegmentRuleRequest
   ): Promise<SegmentRule> {
-    return this.request<SegmentRule>(`/${segmentId}/rules/${ruleId}`, {
+    return this.request<SegmentRule>(`/${segmentId}/srules/${ruleId}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
@@ -211,7 +228,7 @@ class SegmentService {
    * Delete segment rule
    */
   async deleteSegmentRule(segmentId: number, ruleId: number): Promise<void> {
-    return this.request<void>(`/${segmentId}/rules/${ruleId}`, {
+    return this.request<void>(`/${segmentId}/srules/${ruleId}`, {
       method: 'DELETE',
     });
   }

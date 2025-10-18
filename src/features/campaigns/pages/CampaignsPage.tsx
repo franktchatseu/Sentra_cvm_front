@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '../../../contexts/ToastContext';
 import {
   Plus,
@@ -833,7 +834,7 @@ export default function CampaignsPage() {
       </div>
 
       {/* Filters Side Modal */}
-      {showAdvancedFilters && (
+      {showAdvancedFilters && createPortal(
         <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 999999, top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
           <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl" style={{ zIndex: 1000000 }}>
@@ -966,7 +967,8 @@ export default function CampaignsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}

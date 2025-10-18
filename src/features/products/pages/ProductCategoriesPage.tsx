@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2, Search, Save, X, Eye, Package, Grid, List } from 'lucide-react';
 import { ProductCategory } from '../types/productCategory';
@@ -115,8 +116,8 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
 
   if (!isOpen || !category) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -271,7 +272,8 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -645,8 +647,8 @@ export default function ProductCatalogsPage() {
       />
 
       {/* Edit Catalog Modal */}
-      {editingCatalog && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 backdrop-blur-sm">
+      {editingCatalog && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[9999] backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Edit Catalog</h2>
@@ -731,7 +733,8 @@ export default function ProductCatalogsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ProductsModal

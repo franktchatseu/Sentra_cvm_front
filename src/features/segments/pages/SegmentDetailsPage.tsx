@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
@@ -9,12 +10,9 @@ import {
     Download,
     Edit,
     Trash2,
-    Power,
-    PowerOff,
-    RefreshCw,
+    EyeOff,
     Eye,
     MoreVertical,
-    Copy,
     Plus,
     X
 } from 'lucide-react';
@@ -79,6 +77,23 @@ export default function SegmentDetailsPage() {
     const [isLoadingMembersList, setIsLoadingMembersList] = useState(false);
     const [customerIdsInput, setCustomerIdsInput] = useState('');
 
+    // Mock customer data for testing
+    const MOCK_CUSTOMERS = [
+        { id: '1', name: 'John Doe', email: 'john@example.com', phone: '+1234567890', total_spent: 1250, last_purchase: '2024-01-15' },
+        { id: '2', name: 'Jane Smith', email: 'jane@example.com', phone: '+1234567891', total_spent: 890, last_purchase: '2024-01-10' },
+        { id: '3', name: 'Bob Wilson', email: 'bob@example.com', phone: '+1234567892', total_spent: 2100, last_purchase: '2024-01-12' },
+        { id: '4', name: 'Alice Johnson', email: 'alice@example.com', phone: '+1234567893', total_spent: 450, last_purchase: '2024-01-08' },
+        { id: '5', name: 'Charlie Brown', email: 'charlie@example.com', phone: '+1234567894', total_spent: 3200, last_purchase: '2024-01-14' },
+        { id: '6', name: 'Diana Prince', email: 'diana@example.com', phone: '+1234567895', total_spent: 1800, last_purchase: '2024-01-11' },
+        { id: '7', name: 'Eve Adams', email: 'eve@example.com', phone: '+1234567896', total_spent: 750, last_purchase: '2024-01-09' },
+        { id: '8', name: 'Frank Miller', email: 'frank@example.com', phone: '+1234567897', total_spent: 950, last_purchase: '2024-01-13' }
+    ];
+
+    // Customer selection state
+    const [showCustomerSelection, setShowCustomerSelection] = useState(false);
+    const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+
     const loadCategoryName = useCallback(async (categoryId: number | string) => {
         try {
             const response = await segmentService.getSegmentCategories();
@@ -135,7 +150,7 @@ export default function SegmentDetailsPage() {
             if (USE_MOCK_DATA) {
                 // Use mock data for testing
                 setTimeout(() => {
-                    setMembersCount(MOCK_SEGMENT.customer_count || 15420);
+                    setMembersCount(5); // Match the dummy members count
                     setIsLoadingMembers(false);
                 }, 300); // Simulate API delay
                 return;
@@ -187,56 +202,7 @@ export default function SegmentDetailsPage() {
         }
     };
 
-    const handleToggleStatus = async () => {
-        if (!segment) return;
 
-        const action = segment.is_active ? 'deactivate' : 'activate';
-        const confirmed = await confirm({
-            title: `${action.charAt(0).toUpperCase() + action.slice(1)} Segment`,
-            message: `Are you sure you want to ${action} "${segment.name}"?`,
-            type: segment.is_active ? 'warning' : 'success',
-            confirmText: action.charAt(0).toUpperCase() + action.slice(1),
-            cancelText: 'Cancel'
-        });
-
-        if (!confirmed) return;
-
-        try {
-            await segmentService.toggleSegmentStatus(Number(id), !segment.is_active);
-            await loadSegment();
-            success(
-                `Segment ${action}d`,
-                `Segment "${segment.name}" has been ${action}d successfully`
-            );
-        } catch (err) {
-            showError(`Error ${action}ing segment`, (err as Error).message || `Failed to ${action} segment`);
-        }
-    };
-
-    const handleCompute = async () => {
-        if (!segment) return;
-
-        const confirmed = await confirm({
-            title: 'Compute Segment',
-            message: `Do you want to compute the segment "${segment.name}"? This will refresh the member list.`,
-            type: 'info',
-            confirmText: 'Compute',
-            cancelText: 'Cancel'
-        });
-
-        if (!confirmed) return;
-
-        try {
-            await segmentService.computeSegment(Number(id), { force_recompute: true });
-            success('Computation started', 'Segment computation has been initiated');
-            setTimeout(() => {
-                loadSegment();
-                loadMembersCount();
-            }, 2000);
-        } catch (err) {
-            showError('Error computing segment', (err as Error).message || 'Failed to compute segment');
-        }
-    };
 
     const handleCustomExport = async () => {
         if (!segment) return;
@@ -261,43 +227,35 @@ export default function SegmentDetailsPage() {
         }
     };
 
-    const handleDuplicate = async () => {
-        if (!segment) return;
-
-        const confirmed = await confirm({
-            title: 'Duplicate Segment',
-            message: `Create a copy of "${segment.name}"?`,
-            type: 'info',
-            confirmText: 'Duplicate',
-            cancelText: 'Cancel'
-        });
-
-        if (!confirmed) return;
-
-        try {
-            const newName = `${segment.name} (Copy)`;
-            await segmentService.duplicateSegment(Number(id), { newName });
-            success('Segment duplicated', `Segment "${newName}" has been created successfully`);
-            // Navigate to segments list to see the new duplicate
-            navigate('/dashboard/segments');
-        } catch (err) {
-            showError('Duplication failed', (err as Error).message || 'Failed to duplicate segment');
-        }
-    };
 
     const loadMembers = useCallback(async (page: number = 1) => {
         if (!id) return;
 
         setIsLoadingMembersList(true);
         try {
-            const response = await segmentService.getSegmentMembers(Number(id), page, 10);
-            setMembers(response.data || []);
-            if (response.meta) {
-                setMembersTotalPages(response.meta.totalPages || 1);
-            }
+            // Use dummy data for testing
+            setTimeout(() => {
+                const dummyMembers = [
+                    { customer_id: '1', joined_at: '2024-01-15T10:30:00Z', name: 'John Doe', email: 'john@example.com', total_spent: 1250 },
+                    { customer_id: '2', joined_at: '2024-01-14T14:20:00Z', name: 'Jane Smith', email: 'jane@example.com', total_spent: 890 },
+                    { customer_id: '3', joined_at: '2024-01-13T09:15:00Z', name: 'Bob Wilson', email: 'bob@example.com', total_spent: 2100 },
+                    { customer_id: '4', joined_at: '2024-01-12T16:45:00Z', name: 'Alice Johnson', email: 'alice@example.com', total_spent: 450 },
+                    { customer_id: '5', joined_at: '2024-01-11T11:30:00Z', name: 'Charlie Brown', email: 'charlie@example.com', total_spent: 3200 }
+                ];
+
+                setMembers(dummyMembers);
+                setMembersTotalPages(1);
+                setIsLoadingMembersList(false);
+            }, 500); // Simulate API delay
+
+            // Uncomment below to use real API
+            // const response = await segmentService.getSegmentMembers(Number(id), page, 10);
+            // setMembers(response.data || []);
+            // if (response.meta) {
+            //     setMembersTotalPages(response.meta.totalPages || 1);
+            // }
         } catch {
             setMembers([]);
-        } finally {
             setIsLoadingMembersList(false);
         }
     }, [id]);
@@ -427,61 +385,8 @@ export default function SegmentDetailsPage() {
                                     onClick={() => setShowMoreMenu(false)}
                                 />
                                 <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
-                                    <button
-                                        onClick={() => {
-                                            handleCompute();
-                                            setShowMoreMenu(false);
-                                        }}
-                                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                        <RefreshCw className="w-4 h-4 mr-3" />
-                                        Compute Segment
-                                    </button>
 
-                                    <button
-                                        onClick={() => {
-                                            setShowExportModal(true);
-                                            setShowMoreMenu(false);
-                                        }}
-                                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                        <Download className="w-4 h-4 mr-3" />
-                                        Export Segment
-                                    </button>
 
-                                    <button
-                                        onClick={() => {
-                                            handleDuplicate();
-                                            setShowMoreMenu(false);
-                                        }}
-                                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                        <Copy className="w-4 h-4 mr-3" />
-                                        Duplicate Segment
-                                    </button>
-
-                                    <div className="border-t border-gray-200 my-1"></div>
-
-                                    <button
-                                        onClick={() => {
-                                            handleToggleStatus();
-                                            setShowMoreMenu(false);
-                                        }}
-                                        className={`w-full flex items-center px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${segment.is_active ? 'text-orange-600' : 'text-green-600'
-                                            }`}
-                                    >
-                                        {segment.is_active ? (
-                                            <>
-                                                <PowerOff className="w-4 h-4 mr-3" />
-                                                Deactivate
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Power className="w-4 h-4 mr-3" />
-                                                Activate
-                                            </>
-                                        )}
-                                    </button>
 
                                     <button
                                         onClick={() => {
@@ -501,7 +406,7 @@ export default function SegmentDetailsPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <div className="flex items-center justify-between">
                         <div>
@@ -531,32 +436,21 @@ export default function SegmentDetailsPage() {
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className={`text-sm ${tw.textMuted} mb-1`}>Status</p>
-                            <p className={`text-lg font-semibold ${segment.is_active ? 'text-green-600' : 'text-red-600'}`}>
-                                {segment.is_active ? 'Active' : 'Inactive'}
+                            <p className={`text-sm ${tw.textMuted} mb-1`}>Visibility</p>
+                            <p className={`text-lg font-semibold ${segment.visibility === 'public' ? 'text-green-600' : 'text-blue-600'}`}>
+                                {segment.visibility === 'public' ? 'Public' : 'Private'}
                             </p>
                         </div>
-                        <div className={`p-3 rounded-lg ${segment.is_active ? 'bg-green-100' : 'bg-red-100'}`}>
-                            {segment.is_active ? (
-                                <Power className="w-6 h-6 text-green-600" />
+                        <div className={`p-3 rounded-lg ${segment.visibility === 'public' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                            {segment.visibility === 'public' ? (
+                                <Eye className="w-6 h-6 text-green-600" />
                             ) : (
-                                <PowerOff className="w-6 h-6 text-red-600" />
+                                <EyeOff className="w-6 h-6 text-blue-600" />
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className={`text-sm ${tw.textMuted} mb-1`}>Visibility</p>
-                            <p className={`text-lg font-semibold ${tw.textPrimary} capitalize`}>{segment.visibility || 'Private'}</p>
-                        </div>
-                        <div className="p-3 rounded-lg bg-blue-100">
-                            <Eye className="w-6 h-6 text-blue-600" />
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* Details Section */}
@@ -748,8 +642,9 @@ export default function SegmentDetailsPage() {
                         </button>
                         <button
                             onClick={() => {
-                                setShowMembersModal(true);
-                                loadMembers(1);
+                                setShowCustomerSelection(true);
+                                setSelectedCustomers([]);
+                                setCustomerSearchTerm('');
                             }}
                             className="px-4 py-2 text-white rounded-lg transition-all text-sm flex items-center gap-2"
                             style={{ backgroundColor: color.sentra.main }}
@@ -772,8 +667,8 @@ export default function SegmentDetailsPage() {
             </div>
 
             {/* Members Modal */}
-            {showMembersModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            {showMembersModal && createPortal(
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
                         <div className="flex items-center justify-between p-6 border-b border-gray-200">
                             <div>
@@ -848,11 +743,19 @@ export default function SegmentDetailsPage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-gray-900">
-                                                        Customer ID: {String(member.customer_id)}
+                                                        {member.name || `Customer ID: ${String(member.customer_id)}`}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">
+                                                        {member.email || `ID: ${String(member.customer_id)}`}
                                                     </p>
                                                     {member.joined_at ? (
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-xs text-gray-400">
                                                             Joined: {new Date(String(member.joined_at)).toLocaleDateString()}
+                                                        </p>
+                                                    ) : null}
+                                                    {member.total_spent ? (
+                                                        <p className="text-xs text-green-600 font-medium">
+                                                            Total Spent: ${member.total_spent.toLocaleString()}
                                                         </p>
                                                     ) : null}
                                                 </div>
@@ -907,12 +810,142 @@ export default function SegmentDetailsPage() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Customer Selection Modal */}
+            {showCustomerSelection && createPortal(
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Add Members to Segment</h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Select customers to add to "{segment?.name}"
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowCustomerSelection(false)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Search and Selection */}
+                        <div className="p-6 border-b border-gray-200">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="flex-1">
+                                    <input
+                                        type="text"
+                                        value={customerSearchTerm}
+                                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                                        placeholder="Search customers by name or email..."
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    {selectedCustomers.length} selected
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Customer List */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="space-y-3">
+                                {MOCK_CUSTOMERS
+                                    .filter(customer =>
+                                        customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+                                        customer.email.toLowerCase().includes(customerSearchTerm.toLowerCase())
+                                    )
+                                    .map(customer => (
+                                        <div
+                                            key={customer.id}
+                                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedCustomers.includes(customer.id)
+                                                ? 'border-gray-200 bg-gray-50'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                                }`}
+                                            onClick={() => {
+                                                setSelectedCustomers(prev =>
+                                                    prev.includes(customer.id)
+                                                        ? prev.filter(id => id !== customer.id)
+                                                        : [...prev, customer.id]
+                                                );
+                                            }}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedCustomers.includes(customer.id)}
+                                                        onChange={() => { }}
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <div>
+                                                        <h3 className="font-medium text-gray-900">{customer.name}</h3>
+                                                        <p className="text-sm text-gray-500">{customer.email}</p>
+                                                        <p className="text-xs text-gray-400">ID: {customer.id} • Phone: {customer.phone}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-medium text-gray-900">
+                                                        ${customer.total_spent.toLocaleString()}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        Last: {customer.last_purchase}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="p-6 border-t border-gray-200">
+                            <div className="flex items-center justify-between">
+                                <button
+                                    onClick={() => setShowCustomerSelection(false)}
+                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (selectedCustomers.length === 0) {
+                                            showError('No selection', 'Please select at least one customer');
+                                            return;
+                                        }
+
+                                        try {
+                                            await segmentService.addSegmentMembers(Number(id), {
+                                                customer_ids: selectedCustomers
+                                            });
+                                            success('Members added', `${selectedCustomers.length} customer(s) added successfully`);
+                                            setShowCustomerSelection(false);
+                                            setSelectedCustomers([]);
+                                            await loadMembersCount();
+                                        } catch (err) {
+                                            showError('Error adding members', (err as Error).message || 'Failed to add members');
+                                        }
+                                    }}
+                                    disabled={selectedCustomers.length === 0}
+                                    className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{ backgroundColor: color.sentra.main }}
+                                >
+                                    Add {selectedCustomers.length} Customer{selectedCustomers.length !== 1 ? 's' : ''}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
 
             {/* Export Modal */}
-            {showExportModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            {showExportModal && createPortal(
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
                         <div className="flex items-center justify-between p-6 border-b border-gray-200">
                             <h2 className="text-xl font-bold text-gray-900">Export Segment</h2>
@@ -1017,7 +1050,8 @@ export default function SegmentDetailsPage() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

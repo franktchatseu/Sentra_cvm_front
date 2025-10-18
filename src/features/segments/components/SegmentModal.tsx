@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Tag, Save, Eye } from 'lucide-react';
 import { Segment, CreateSegmentRequest, SegmentConditionGroup } from '../types/segment';
 import SegmentConditionsBuilder from './SegmentConditionsBuilder';
@@ -176,8 +177,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
       // First validate the criteria
       const validationResult = await segmentService.validateCriteria({
-        criteria,
-        segment_type: formData.type as 'static' | 'dynamic' | 'trigger'
+        criteria
       });
 
       if (!validationResult.valid) {
@@ -311,8 +311,8 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[110] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
 
@@ -547,6 +547,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

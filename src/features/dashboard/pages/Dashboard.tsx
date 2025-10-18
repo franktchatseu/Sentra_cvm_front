@@ -18,6 +18,7 @@ import SegmentManagementPage from '../../segments/pages/SegmentManagementPage';
 import SegmentDetailsPage from '../../segments/pages/SegmentDetailsPage';
 import EditSegmentPage from '../../segments/pages/EditSegmentPage';
 import SegmentCategoriesPage from '../../segments/pages/SegmentCategoriesPage';
+import SegmentListPage from '../../segments/pages/SegmentListPage';
 import CreateOfferPage from '../../offers/pages/CreateOfferPage';
 import ProductsPage from '../../products/pages/ProductsPage';
 import CreateProductPage from '../../products/pages/CreateProductPage';
@@ -65,6 +66,7 @@ export default function Dashboard() {
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />
         <Route path="/segments/:id/edit" element={<EditSegmentPage />} />
         <Route path="/segment-catalogs" element={<SegmentCategoriesPage />} />
+        <Route path="/segment-list" element={<SegmentListPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
       </Routes>

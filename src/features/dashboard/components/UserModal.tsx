@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, User as UserIcon, Mail, Shield, Save, UserPlus } from 'lucide-react';
+import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 import { User } from '../../../../shared/types/auth';
 import { authService } from '../../auth/services/authService';
 import { useToast } from '../../../contexts/ToastContext';
@@ -94,19 +96,19 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b border-[${color.ui.border}]`}>
           <div className="flex items-center space-x-3">
             <div
               className="p-2 rounded-xl"
-              style={{
-                backgroundColor: color.entities.users
-              }}
+            // style={{
+            //   backgroundColor: color.entities.users
+            // }}
             >
-              {user ? <UserIcon className="w-5 h-5 text-white" /> : <UserPlus className="w-5 h-5 text-white" />}
+              {/* {user ? <UserIcon className="w-5 h-5 text-white" /> : <UserPlus className="w-5 h-5 text-white" />} */}
             </div>
             <h2 className={`text-xl font-bold ${tw.textPrimary}`}>
               {user ? 'Edit User' : 'Add User'}
@@ -223,21 +225,33 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 text-white rounded-lg transition-all duration-200 font-medium text-sm flex items-center justify-center"
+              className="flex-1 text-white rounded-lg transition-all duration-200 font-medium text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.sentra.main }}
               onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                if (!isLoading) {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                }
               }}
               onMouseLeave={(e) => {
                 (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
               }}
             >
-              <Save className="w-4 h-4 mr-2" />
-              {user ? 'Update' : 'Create'}
+              {isLoading ? (
+                <>
+                  <LoadingSpinner variant="modern" size="sm" color="primary" className="mr-2" />
+                  {user ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  {user ? 'Update' : 'Create'}
+                </>
+              )}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

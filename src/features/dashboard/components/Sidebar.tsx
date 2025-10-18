@@ -23,7 +23,8 @@ import {
   Folder,
   Briefcase,
   Flag,
-  Bell
+  Bell,
+  List
 } from 'lucide-react';
 import logo from '../../../assets/logo.png';
 
@@ -118,6 +119,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           children: [
             { name: 'All Segments', href: '/dashboard/segments', icon: Users, type: 'single', entity: 'segments' },
             { name: 'Segment Catalogs', href: '/dashboard/segment-catalogs', icon: FolderOpen, type: 'single', entity: 'segments' },
+            { name: 'Segment List', href: '/dashboard/segment-list', icon: List, type: 'single', entity: 'segments' },
           ]
         },
       ]

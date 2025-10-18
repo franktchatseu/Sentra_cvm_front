@@ -77,52 +77,72 @@ class AuthService {
     }
   }
 
-  // Get pending account requests (users who need password reset)
+  // Get pending account creation requests (NOT users yet - they're requests awaiting approval)
   async getAccountRequests(): Promise<User[]> {
-    // Get users who have force_password_reset = true (pending activation)
-    const response = await fetch(`${this.baseUrl}/list?page=1&pageSize=50`, {
-      headers: getAuthHeaders()
-    });
+    // For now, return empty array since backend doesn't have this endpoint yet
+    // When backend implements GET /auth/users/requests, this will work automatically
+    try {
+      const response = await fetch(`${this.baseUrl}/requests`, {
+        headers: getAuthHeaders()
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to fetch account requests');
+      if (response.ok) {
+        const result = await response.json();
+        return result.data || [];
+      }
+    } catch {
+      // Endpoint doesn't exist yet, return empty array
     }
-
-    const result = await response.json();
-    return result.data || [];
+    
+    return [];
   }
 
   // Approve account request
   async approveAccountRequest(userId: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/${userId}/activate`, {
-      method: 'PUT',
-      headers: getAuthHeaders()
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/requests/${userId}/status`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'approved'
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to approve account request');
+      if (!response.ok) {
+        throw new Error('Failed to approve account request');
+      }
+    } catch (error) {
+      // If endpoint doesn't exist yet, show a helpful message
+      throw new Error('Approve functionality not available yet - backend endpoint not implemented');
     }
   }
 
   // Reject account request
   async rejectAccountRequest(requestId: number): Promise<RejectAccountResponse> {
-    const response = await fetch(`${this.baseUrl}/requests/${requestId}/status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        status: 'rejected',
-        role: 'user'
-      })
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/requests/${requestId}/status`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'rejected'
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to reject account request');
+      if (!response.ok) {
+        throw new Error('Failed to reject account request');
+      }
+
+      return response.json();
+    } catch (error) {
+      // If endpoint doesn't exist yet, show a helpful message
+      throw new Error('Reject functionality not available yet - backend endpoint not implemented');
     }
-
-    return response.json();
   }
 
   // Request password reset
@@ -158,20 +178,6 @@ class AuthService {
 
   // Get all users (admin only)
   async getUsers(): Promise<User[]> {
-    // Get current user ID from localStorage, default to 1 if not available or 0
-    const savedUser = localStorage.getItem('auth_user');
-    let userId = 1; // Default user ID
-    
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        userId = user.id && user.id !== 0 ? user.id : 1;
-      } catch (e) {
-        // If parsing fails, use default userId = 1
-        userId = 1;
-      }
-    }
-    
     const response = await fetch(`${this.baseUrl}/list`, {
       headers: getAuthHeaders()
     });
@@ -201,10 +207,17 @@ class AuthService {
 
 
   // Delete user
-  async deleteUser(userId: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/${userId}`, {
+  async deleteUser(userId: number, userEmail: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/delete`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        userId,
+        email: userEmail
+      })
     });
 
     if (!response.ok) {
@@ -213,18 +226,72 @@ class AuthService {
   }
 
   // Activate/Deactivate user
-  async toggleUserStatus(userId: number, isActive: boolean): Promise<User> {
-    const response = await fetch(`${this.baseUrl}/${userId}/${isActive ? 'activate' : 'deactivate'}`, {
-      method: 'PUT',
-      headers: getAuthHeaders()
+  async toggleUserStatus(userId: number, isActive: boolean, userEmail: string): Promise<User> {
+    const endpoint = isActive ? 'reactivate' : 'deactivate';
+    const response = await fetch(`${this.baseUrl}/${endpoint}`, {
+      method: 'PATCH',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: userEmail
+      })
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to ${isActive ? 'activate' : 'deactivate'} user`);
+      throw new Error(`Failed to ${isActive ? 'reactivate' : 'deactivate'} user`);
     }
 
     const result = await response.json();
     return result.data;
+  }
+
+  // Get user sessions
+  async getUserSessions(userId: number): Promise<Array<{ id: string; device: string; ip: string; lastActivity: string; createdAt: string }>> {
+    const response = await fetch(`${this.baseUrl}/${userId}/sessions`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user sessions');
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  }
+
+  // Update user preferences
+  async updateUserPreferences(userId: number, preferences: Record<string, unknown>): Promise<User> {
+    const response = await fetch(`${this.baseUrl}/${userId}/preferences`, {
+      method: 'PATCH',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(preferences)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update user preferences');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  // Get authentication logs
+  async getAuthenticationLogs(): Promise<Array<{ id: string; userId: number; action: string; timestamp: string; ip: string; success: boolean }>> {
+    const response = await fetch(`${this.baseUrl}/logs`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch authentication logs');
+    }
+
+    const result = await response.json();
+    return result.data || [];
   }
 }
 
