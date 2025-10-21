@@ -128,7 +128,7 @@ export default function ProductDetailsPage() {
         return (
             <div className="space-y-6">
                 <div className="text-center py-12">
-                    <Package className={`w-16 h-16 text-[${color.entities.products}] mx-auto mb-4`} />
+                    <Package className={`w-16 h-16 text-[${color.primary.accent}] mx-auto mb-4`} />
                     <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
                         {error ? 'Error Loading Product' : 'Product Not Found'}
                     </h3>
@@ -138,7 +138,7 @@ export default function ProductDetailsPage() {
                     <button
                         onClick={() => navigate('/dashboard/products')}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
-                        style={{ backgroundColor: color.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Back to Products
@@ -187,12 +187,12 @@ export default function ProductDetailsPage() {
                     <button
                         onClick={() => navigate(`/dashboard/products/${id}/edit`)}
                         className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit"
-                        style={{ backgroundColor: color.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                         onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                         }}
                         onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                         }}
                     >
                         <Edit className="w-4 h-4" />
@@ -212,11 +212,11 @@ export default function ProductDetailsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Product Info */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                    <div className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}>
                         <div className="flex items-start space-x-4">
                             <div
                                 className="h-12 w-12 rounded-xl flex items-center justify-center"
-                                style={{ backgroundColor: color.entities.products }}
+                                style={{ backgroundColor: color.primary.accent }}
                             >
                                 <Package className="w-6 h-6 text-white" />
                             </div>
@@ -228,7 +228,7 @@ export default function ProductDetailsPage() {
                                 <div className="flex items-center space-x-3">
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${product.is_active
                                         ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
-                                        : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
+                                        : `bg-[${color.surface.cards}] text-[${color.text.primary}]`
                                         }`}>
                                         {product.is_active ? (
                                             <>
@@ -243,7 +243,7 @@ export default function ProductDetailsPage() {
                                         )}
                                     </span>
                                     {category && (
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.products}]/10 text-[${color.entities.products}]`}>
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}>
                                             <Tag className="w-4 h-4 mr-1" />
                                             {category.name}
                                         </span>
@@ -254,7 +254,7 @@ export default function ProductDetailsPage() {
                     </div>
 
                     {/* Product Details */}
-                    <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                    <div className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}>
                         <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Product Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -293,7 +293,7 @@ export default function ProductDetailsPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Product Stats */}
-                    <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                    <div className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}>
                         <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Product Statistics</h3>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">

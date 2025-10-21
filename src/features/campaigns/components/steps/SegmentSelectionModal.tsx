@@ -227,8 +227,8 @@ export default function SegmentSelectionModal({
                     )}
 
                     <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                        <Users className="w-5 h-5" style={{ color: color.entities.segments }} />
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                        <Users className="w-5 h-5" style={{ color: color.primary.accent }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate text-gray-900">{segment.name}</h4>

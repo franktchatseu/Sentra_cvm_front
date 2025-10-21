@@ -4,7 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['sans-serif'],
+        mono: ['monospace'],
       },
       colors: {
         primary: {

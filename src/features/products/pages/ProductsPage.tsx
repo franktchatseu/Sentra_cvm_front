@@ -7,7 +7,6 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  Package,
   Settings,
   Trash2,
   Play,
@@ -136,12 +135,12 @@ export default function ProductsPage() {
           <button
             onClick={() => navigate('/dashboard/products/categories')}
             className="px-3 py-2 md:text-sm rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base text-white"
-            style={{ backgroundColor: color.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
           >
             <Settings className="w-5 h-5" />
@@ -150,12 +149,12 @@ export default function ProductsPage() {
           <button
             onClick={() => navigate('/dashboard/products/create')}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
           >
             <Plus className="w-4 h-4" />
@@ -165,17 +164,17 @@ export default function ProductsPage() {
       </div>
 
       {/* Filters */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-[${tw.borderDefault}] p-6`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${tw.textMuted}]`} />
             <input
               type="text"
               placeholder="Search products..."
               value={filters.search || ''}
               onChange={(e) => handleSearch(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 text-sm  border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+              className={`w-full pl-10 pr-4 py-3 text-sm  border border-[${tw.borderDefault}] rounded-lg focus:outline-none`}
             />
           </div>
 
@@ -235,26 +234,26 @@ export default function ProductsPage() {
       )}
 
       {/* Products Table */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] overflow-hidden`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}>
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]`}></div>
+            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}></div>
             <span className={`ml-3 ${tw.textSecondary}`}>Loading products...</span>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">
-            <Package className={`w-16 h-16 text-[${color.entities.products}] mx-auto mb-4`} />
+            {/* Icon removed */}
             <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>No products found</h3>
             <p className={`${tw.textMuted} mb-6`}>Get started by creating your first product.</p>
             <button
               onClick={() => navigate('/dashboard/products/create')}
               className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
-              style={{ backgroundColor: color.sentra.main }}
+              style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
               }}
             >
               <Plus className="w-5 h-5" />
@@ -290,30 +289,20 @@ export default function ProductsPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y divide-[${color.ui.border}]`}>
+                <tbody className={`divide-y divide-[${tw.borderDefault}]`}>
                   {products.map((product) => {
                     const categoryName = categories.find(cat => cat.id === parseInt(product.category_id))?.name || 'Uncategorized';
                     const status = product.is_active ? 'Active' : 'Inactive';
-                    const statusBadge = product.is_active ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`;
+                    const statusBadge = product.is_active ? `bg-[${color.status.success}] text-[${color.status.success}]` : `bg-[${color.surface.cards}] text-[${color.text.primary}]`;
 
                     return (
                       <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className="h-10 w-10 rounded-lg flex items-center justify-center"
-                              style={{ backgroundColor: color.entities.products }}
-                            >
-                              <Package className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                              <div className={`text-base font-semibold ${tw.textPrimary}`}>
-                                {product.name}
-                              </div>
-                              <div className={`text-sm ${tw.textMuted} truncate max-w-xs`}>
-                                {product.description || 'No description'}
-                              </div>
-                            </div>
+                          <div className={`text-base font-semibold ${tw.textPrimary}`}>
+                            {product.name}
+                          </div>
+                          <div className={`text-sm ${tw.textMuted} truncate max-w-xs`}>
+                            {product.description || 'No description'}
                           </div>
                         </td>
                         <td className={`px-6 py-4 text-sm ${tw.textPrimary}`}>
@@ -323,7 +312,7 @@ export default function ProductsPage() {
                           {product.da_id || 'N/A'}
                         </td>
                         <td className="px-6 py-4 text-base">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-[${color.entities.products}]/10 text-[${color.entities.products}]`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}>
                             {categoryName}
                           </span>
                         </td>

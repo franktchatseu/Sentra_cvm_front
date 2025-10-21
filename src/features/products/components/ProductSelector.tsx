@@ -101,7 +101,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
 
   const getCategoryIcon = () => {
 
-    return <Package className="w-6 h-6" style={{ color: color.entities.products }} />;
+    return <Package className="w-6 h-6" style={{ color: color.primary.accent }} />;
   };
 
 
@@ -115,9 +115,9 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200"
-                style={{ backgroundColor: color.sentra.main }}
-                onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                style={{ backgroundColor: color.primary.action }}
+                onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Products
@@ -135,7 +135,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
                     <h5 className="font-medium text-gray-900">{product.name}</h5>
                     <p className="text-sm text-gray-600">{product.description}</p>
                     <div className="flex items-center space-x-2 mt-1">
-                      <span className="text-xs px-2 py-1 text-white rounded-full" style={{ backgroundColor: color.sentra.main }}>
+                      <span className="text-xs px-2 py-1 text-white rounded-full" style={{ backgroundColor: color.primary.action }}>
                         {product.category}
                       </span>
                     </div>
@@ -286,7 +286,7 @@ export default function ProductSelector({ selectedProducts, onProductsChange, mu
 
                             {/* Product Meta */}
                             <div className="flex items-center space-x-2 mb-2">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white" style={{ backgroundColor: color.sentra.main }}>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white" style={{ backgroundColor: color.primary.action }}>
                                 {product.category}
                               </span>
                               {product.sku && (

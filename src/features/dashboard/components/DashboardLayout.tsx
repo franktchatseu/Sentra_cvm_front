@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import FixedBackground from '../../../shared/components/FixedBackground';
+import { tw } from '../../../shared/utils/utils';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -11,21 +11,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <>
-      <FixedBackground variant="subtle" />
-      <div className="w-full relative" style={{ backgroundColor: '#f3f4f6' }}>
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+    <div className={`w-full relative ${tw.primaryBackground}`}>
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-        <div className="md:ml-32 xl:ml-80">
-          <Header onMenuClick={() => setSidebarOpen(true)} />
-          <main className="px-5 lg:px-8 py-6">
-            {children}
-          </main>
-        </div>
+      <div className="md:ml-32 xl:ml-80">
+        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <main className="px-5 lg:px-8 py-6">
+          {children}
+        </main>
       </div>
-    </>
+    </div>
   );
 }

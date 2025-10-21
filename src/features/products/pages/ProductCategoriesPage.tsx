@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit, Trash2, Search, Save, X, Eye, Package, Grid, List } from 'lucide-react';
+// Icons removed for clean design
 import { ProductCategory } from '../types/productCategory';
 import { Product } from '../types/product';
 import { productCategoryService } from '../services/productCategoryService';
@@ -135,7 +135,7 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              Close
             </button>
           </div>
 
@@ -143,7 +143,7 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col md:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                {/* Search icon removed */}
                 <input
                   type="text"
                   placeholder="Search products..."
@@ -164,7 +164,6 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
                     className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                     disabled={assigningProduct}
                   >
-                    <Plus className="w-4 h-4" />
                     Assign Existing Product
                   </button>
 
@@ -199,9 +198,8 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
                 {/* <button
                   onClick={handleCreateProduct}
                   className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
-                  style={{ backgroundColor: color.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                 >
-                  <Plus className="w-4 h-4" />
                   Create New Product
                 </button> */}
               </div>
@@ -226,7 +224,7 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-8">
-                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                {/* Icon removed */}
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {searchTerm ? 'No products found' : 'No products in this category'}
                 </h3>
@@ -243,12 +241,6 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
                   <div key={product.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div
-                          className="h-10 w-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: color.entities.products }}
-                        >
-                          <Package className="w-5 h-5 text-white" />
-                        </div>
                         <div>
                           <h4 className="font-medium text-gray-900">{product.name}</h4>
                           <p className="text-sm text-gray-600">
@@ -434,7 +426,7 @@ export default function ProductCatalogsPage() {
             onClick={() => navigate('/dashboard/products')}
             className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            Back
           </button>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Product Catalogs</h1>
@@ -445,15 +437,14 @@ export default function ProductCatalogsPage() {
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
           >
-            <Plus className="w-4 h-4" />
             Create Catalog
           </button>
         </div>
@@ -463,7 +454,7 @@ export default function ProductCatalogsPage() {
       {/* Search and View Toggle */}
       <div className=" flex items-center gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          {/* Search icon removed */}
           <input
             type="text"
             value={searchTerm}
@@ -481,7 +472,7 @@ export default function ProductCatalogsPage() {
               }`}
             title="Grid View"
           >
-            <Grid className="w-4 h-4" />
+            Grid
           </button>
           <button
             onClick={() => setViewMode('list')}
@@ -491,14 +482,14 @@ export default function ProductCatalogsPage() {
               }`}
             title="List View"
           >
-            <List className="w-4 h-4" />
+            List
           </button>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className={`bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 text-[${color.status.error.main}] rounded-xl p-4`}>
+        <div className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-xl p-4`}>
           <p>{error}</p>
         </div>
       )}
@@ -511,7 +502,7 @@ export default function ProductCatalogsPage() {
         </div>
       ) : filteredCatalogs.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
-          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          {/* Icon removed */}
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             {searchTerm ? 'No catalogs found' : 'No catalogs yet'}
           </h3>
@@ -524,15 +515,14 @@ export default function ProductCatalogsPage() {
             <button
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
-              style={{ backgroundColor: color.sentra.main }}
+              style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
               }}
             >
-              <Plus className="w-5 h-5 mr-2" />
               Create Your First Catalog
             </button>
           )}
@@ -545,26 +535,20 @@ export default function ProductCatalogsPage() {
               className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-4">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${color.entities.products}20` }}
-                >
-                  <Package className="w-6 h-6" style={{ color: color.entities.products }} />
-                </div>
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleEditCatalog(category)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     title="Edit"
                   >
-                    <Edit className="w-4 h-4 text-gray-600" />
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDeleteCatalog(category)}
                     className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                     title="Delete"
                   >
-                    <Trash2 className="w-4 h-4 text-red-600" />
+                    Delete
                   </button>
                 </div>
               </div>
@@ -583,7 +567,7 @@ export default function ProductCatalogsPage() {
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="View & Assign Products"
                 >
-                  <Eye className="w-4 h-4 text-gray-600" />
+                  View
                 </button>
               </div>
             </div>
@@ -597,12 +581,6 @@ export default function ProductCatalogsPage() {
               className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
             >
               <div className="flex items-center gap-4 flex-1">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${color.entities.products}20` }}
-                >
-                  <Package className="w-6 h-6" style={{ color: color.entities.products }} />
-                </div>
                 <div className="flex-1">
                   <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
                   <p className="text-sm text-gray-600 mt-0.5">
@@ -616,21 +594,21 @@ export default function ProductCatalogsPage() {
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="View & Assign Products"
                 >
-                  <Eye className="w-4 h-4 text-gray-600" />
+                  View
                 </button>
                 <button
                   onClick={() => handleEditCatalog(category)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="Edit"
                 >
-                  <Edit className="w-4 h-4 text-gray-600" />
+                  Edit
                 </button>
                 <button
                   onClick={() => handleDeleteCatalog(category)}
                   className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete"
                 >
-                  <Trash2 className="w-4 h-4 text-red-600" />
+                  Delete
                 </button>
               </div>
             </div>
@@ -660,7 +638,7 @@ export default function ProductCatalogsPage() {
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <X className="w-6 h-6" />
+                Close
               </button>
             </div>
 
@@ -708,14 +686,14 @@ export default function ProductCatalogsPage() {
                   onClick={handleUpdateCatalog}
                   disabled={!editName.trim() || isUpdating}
                   className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
-                  style={{ backgroundColor: color.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
                     if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                      (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                     }
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                   }}
                 >
                   {isUpdating ? (
@@ -725,7 +703,6 @@ export default function ProductCatalogsPage() {
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4" />
                       Update Catalog
                     </>
                   )}

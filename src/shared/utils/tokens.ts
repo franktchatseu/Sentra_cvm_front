@@ -1,102 +1,76 @@
+
 export const colors = {
-  brand: {
-    cream: '#DAD7CD',
-    sage: '#A3B18A',
-    medium: '#588157',
-    dark: '#3A5A40',
-    darkest: '#344E41',
+  // Primary defines main brand colors and key UI elements
+  primary: {
+    action: '#252829',        // Main buttons, CTAs
+    accent: '#4FDFF3',        // Interactive elements, highlights
+    background: '#D1DCE1',    // Dashboard pages
   },
-
-  sentra: {
-    light: '#588157',
-    main: '#3A5A40',
-    dark: '#344E41',
-    hover: '#2f4a35',
-  },
-
-  entities: {
-    products: '#DC2626',
-    offers: '#059669',
-    campaigns: '#8B5CF6',
-    segments: '#0D9488',
-    users: '#3B82F6',
-    analytics: '#DB2777',
-    configuration: '#747D8C',
-  },
-
-  status: {
-    success: {
-      light: '#e8f1e8',
-      main: '#588157',
-      dark: '#4a6d4a',
-    },
-    warning: {
-      light: '#f5f1e8',
-      main: '#C4A676',
-      dark: '#a68d5f',
-    },
-    error: {
-      light: '#f0ebe8',
-      main: '#A67B5B',
-      dark: '#8f6a4e',
-    },
-    info: {
-      light: '#eff1ef',
-      main: '#8BA288',       
-      dark: '#798b76',
-    },
-  },
-  ui: {
+  
+  // Surface defines background colors for containers and cards
+  surface: {
+    cards: '#F5FCFF',         // Cards and table headers
     background: '#FFFFFF',    
-   // surface: '#DAD7CD',       
-    border: '#C5C2B7',        
-    divider: '#B8B5AA',       
-    text: {
-      primary: '#344E41',     
-      secondary: '#5A6B5D',   
-      muted: '#8A9B8D',      
-      inverse: '#FFFFFF',     
-    },
-    gray: {
-      50: '#fafafa',
-      100: '#f5f5f5', 
-      200: '#e5e5e5',
-      300: '#d4d4d4',
-      400: '#a3a3a3',
-      500: '#737373',
-      600: '#525252',
-      700: '#404040',
-      800: '#262626',
-      900: '#171717',
-    },
+    tableHeader: '#E4EDF1',  // Table header rows
   },
-
+  
+  // Status defines colors for different message types and states
+  status: {
+    success: '#94DF5A',       // Success messages (Green 500)
+    danger: '#FC9C9C',        // Error messages (Coral 500)
+    warning: '#F7B430',       // Warning messages (Yellow 500)
+    info: '#C38BFB',          // Info messages (Purple 500)
+  },
+  
+  // Configuration status colors
+  configStatus: {
+    active: '#C38BFB',        // Purple 500 - Active
+    inactive: '#FC9C9C',       // Coral 500 - Inactive
+    draft: '#F7B430',         // Yellow 500 - Draft
+    default: '#94DF5A',       // Green 500 - Default
+  },
+  
+  // Text defines all text color variations for different content types
+  text: {
+    primary: '#000000',       // Main headings, important text
+    secondary: '#394247',     // Body text, descriptions
+    muted: '#6B7280',         // Placeholders, disabled text
+    inverse: '#FFFFFF',       // Text on dark buttons/backgrounds
+  },
+  
+  // Interactive defines colors for user interaction states
   interactive: {
-    hover: '#2f4a35',        
-    active: '#253a28',        
-    focus: '#588157',         
-    disabled: '#C5C2B7',     
+    hover: '#F3F4F6',         // Hover states
+    active: '#E5E7EB',        // Active states
+    focus: '#4FDFF3',         // Focus states
+    disabled: '#D1D5DB',       // Disabled states
+  },
+  
+  // Border defines colors for different border types and emphasis
+  border: {
+    default: '#E5E7EB',        // Default borders
+    accent: '#4FDFF3',         // Accent borders
+    muted: '#F3F4F6',          // Subtle borders
   },
 };
 
 export const fonts = {
+  // Primary font for headlines and call-to-actions
   primary: {
-    name: 'Inter',
+    name: 'Satoshi',
     fallback: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   
-  heading: {
-    name: 'Space Grotesk',
-    fallback: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  // Secondary font for body text, captions, and supporting elements
+  secondary: {
+    name: 'PP Supply Mono',
+    fallback: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   },
   
   weights: {
-    light: 300,
-    normal: 400,
-    medium: 500,
-    semibold: 600,
-    bold: 700,
-    extrabold: 800,
+    normal: 400,    // Regular - for body text and normal content
+    medium: 500,   // Medium - for buttons and emphasis
+    bold: 700,     // Bold - for headings and strong emphasis
   },
   
   sizes: {
@@ -116,40 +90,70 @@ export const fonts = {
   },
 
   typography: {
-    pageTitle: {
+    // Headings use Satoshi Bold with tight letter spacing
+    heading: {
       size: '1.875rem',
-      weight: 700,
-      family: 'heading',
+      weight: 400,    // Regular weight
+      family: 'primary',
+      lineHeight: '120%',
+      letterSpacing: '-4%',
     },
-    sectionTitle: {
-      size: '1.5rem',
-      weight: 600,
-      family: 'heading',
+    subtitle: {
+      size: '1.25rem',
+      weight: 500,    // Medium instead of 600
+      family: 'primary',
+      lineHeight: '120%',
+      letterSpacing: '-8%',
     },
     cardTitle: {
       size: '1.25rem',
-      weight: 600,
-      family: 'heading',
+      weight: 500,    // Medium instead of 600
+      family: 'primary',
+      lineHeight: '120%',
+      letterSpacing: '-4%',
     },
+    // Body text uses PP Supply Mono with variable line heights
     body: {
       size: '1rem',
       weight: 400,
-      family: 'primary',
+      family: 'secondary',
+      lineHeight: '130%',
+      letterSpacing: '0%',
+    },
+    bodyShort: {
+      size: '1rem',
+      weight: 400,
+      family: 'secondary',
+      lineHeight: '120%',
+      letterSpacing: '0%',
+    },
+    bodyLong: {
+      size: '1rem',
+      weight: 400,
+      family: 'secondary',
+      lineHeight: '160%',
+      letterSpacing: '0%',
     },
     caption: {
       size: '0.875rem',
       weight: 400,
-      family: 'primary',
+      family: 'secondary',
+      lineHeight: '130%',
+      letterSpacing: '0%',
     },
     button: {
       size: '1rem',
-      weight: 500,
+      weight: 500,    // Medium for buttons
       family: 'primary',
+      lineHeight: '130%',
+      letterSpacing: '0%',
     },
     label: {
       size: '0.875rem',
-      weight: 500,
-      family: 'primary',
+      weight: 400,     // Normal for labels
+      family: 'secondary',
+      lineHeight: '120%',
+      letterSpacing: '0%',
     },
   },
 };
@@ -171,73 +175,44 @@ export const borderRadius = {
   sm: '0.125rem',
   base: '0.25rem',
   md: '0.375rem',
-  lg: '0.5rem',
+  lg: '0.5rem',       
   xl: '0.75rem',
   '2xl': '1rem',
   '3xl': '1.5rem',
   full: '9999px',
 };
 
-export const shadows = {
-  sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-  base: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-  md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-  lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-  xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-  '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
-  inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+// Button defines consistent sizing, padding, and border radius for all buttons
+export const buttons = {
+    action: {
+    background: colors.primary.action,  
+    color: '#FFFFFF',                   // White text on dark buttons
+    border: 'none',                     
+    paddingY: '0.5rem',               
+    paddingX: '1.5rem',               
+    borderRadius: '0.5rem',          
+    fontSize: '0.875rem',               // text-sm (14px)
+  },
+
+   secondaryAction: {
+    background: '#FFFFFF',  
+    color: '#000000',                   // Black text on light buttons
+    border: 'none',                     
+    paddingY: '0.75rem',               
+    paddingX: '1.5rem',               
+    borderRadius: '0.5rem',          
+    fontSize: '0.875rem',               // text-sm (14px)
+  },
+
 };
 
-export const cssVariables = {
-  '--color-brand-cream': colors.brand.cream,
-  '--color-brand-sage': colors.brand.sage,
-  '--color-brand-medium': colors.brand.medium,
-  '--color-brand-dark': colors.brand.dark,
-  '--color-brand-darkest': colors.brand.darkest,
-  
-  '--color-sentra-light': colors.sentra.light,
-  '--color-sentra-main': colors.sentra.main,
-  '--color-sentra-dark': colors.sentra.dark,
-  '--color-sentra-hover': colors.sentra.hover,
-  
-  '--color-ui-background': colors.ui.background,
-  '--color-ui-surface': colors.ui.surface,
-  '--color-ui-border': colors.ui.border,
-  '--color-text-primary': colors.ui.text.primary,
-  '--color-text-secondary': colors.ui.text.secondary,
-  '--color-text-muted': colors.ui.text.muted,
-  
-  '--font-primary': `"${fonts.primary.name}", ${fonts.primary.fallback}`,
-  '--font-heading': `"${fonts.heading.name}", ${fonts.heading.fallback}`,
-};
-
-export const getColor = (colorPath: string): string => {
-  const keys = colorPath.split('.');
-  let value: any = colors;
-  
-  for (const key of keys) {
-    value = value[key];
-    if (value === undefined) {
-      console.warn(`Color path "${colorPath}" not found`);
-      return '#000000';
-    }
-  }
-  
-  return value as string;
-};
-
-export const getFont = (fontName: keyof typeof fonts) => {
-  return fonts[fontName];
-};
-
-export const getEntityColor = (entity: 'products' | 'offers' | 'campaigns' | 'segments' | 'users' | 'analytics' | 'configuration') => {
-  return colors.entities[entity];
-};
-
-export const getStatusColor = (status: 'success' | 'warning' | 'error' | 'info', variant: 'light' | 'main' | 'dark' = 'main') => {
-  return colors.status[status][variant];
-};
-
-export const getTypography = (type: keyof typeof fonts.typography) => {
-  return fonts.typography[type];
+// Cards defines consistent styling for all card components
+export const cards = {
+  default: {
+    background: colors.surface.cards,    // Cards background color
+    border: '1px solid',
+    borderColor: colors.border.default,  // Default border color
+    borderRadius: '1rem',               // Well-rounded cards (2xl)
+    padding: '1.5rem',                  // Consistent padding
+  },
 };

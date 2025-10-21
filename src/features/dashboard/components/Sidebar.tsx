@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import React from 'react';
-import { color, helpers } from '../../../shared/utils/utils';
 import {
   Home,
   Target,
@@ -144,21 +143,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Settings', href: '/dashboard/settings', icon: Settings, type: 'single', entity: 'configuration' as const },
   ];
 
-  const getEntityColor = (entity?: NavigationItem['entity']) => {
-    return color.sentra.main;
-  };
+  // All icons are now black - no entity-specific colors
 
-  const getItemClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
+  const getItemClasses = (isActive: boolean) => {
     return isActive
-      ? `bg-[${getEntityColor(entity)}]/30 text-[${getEntityColor(entity)}] md:border-l-0 xl:border-l-[5px] border-[${getEntityColor(entity)}] font-semibold`
-      : `text-[${color.ui.text.secondary}] hover:text-[${color.ui.text.primary}] hover:bg-gray-50/50 transition-all duration-200 font-normal`;
+      ? `text-black border-l-[5px] border-gray-400 font-bold`
+      : `text-black hover:text-black hover:bg-gray-50/50 transition-all duration-200 font-normal`;
   };
 
-  const getIconClasses = (isActive: boolean, entity?: NavigationItem['entity']) => {
+  const getIconClasses = (isActive: boolean) => {
     if (isActive) {
-      return `text-[${getEntityColor(entity)}] drop-shadow-sm`;
+      return `text-black`;
     }
-    return 'text-[#3A5A40] group-hover:text-[#588157]';
+    return `text-black group-hover:text-black transition-colors duration-200`;
   };
 
   const toggleExpanded = (itemName: string) => {
@@ -231,10 +228,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <div key={item.name}>
                         <button
                           onClick={() => toggleExpanded(item.name.toLowerCase())}
-                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
                         >
                           <div className="flex items-center gap-x-3">
-                            <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                            <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive)}`} />
                             {item.name}
                           </div>
                           {isExpanded ? (
@@ -259,12 +256,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     <button
                                       onClick={() => toggleExpanded(child.name.toLowerCase())}
                                       className={`group w-full flex items-center justify-between rounded-lg p-2.5 text-sm transition-all duration-200 ${isChildActive
-                                        ? getItemClasses(isChildActive, child.entity)
-                                        : getItemClasses(false, child.entity)
+                                        ? getItemClasses(isChildActive)
+                                        : getItemClasses(false)
                                         }`}
                                     >
                                       <div className="flex items-center gap-x-3">
-                                        <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
+                                        <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive)}`} />
                                         {child.name}
                                       </div>
                                       {isChildExpanded ? (
@@ -285,11 +282,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                               to={grandchild.href}
                                               onClick={handleLinkClick}
                                               className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${isGrandchildActive
-                                                ? getItemClasses(isGrandchildActive, grandchild.entity)
-                                                : getItemClasses(false, grandchild.entity)
+                                                ? getItemClasses(isGrandchildActive)
+                                                : getItemClasses(false)
                                                 }`}
                                             >
-                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isGrandchildActive, grandchild.entity)}`} />
+                                              <GrandchildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isGrandchildActive)}`} />
                                               {grandchild.name}
                                             </Link>
                                           );
@@ -306,9 +303,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   key={child.name}
                                   to={child.href}
                                   onClick={handleLinkClick}
-                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${getItemClasses(isChildActive, child.entity)}`}
+                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${getItemClasses(isChildActive)}`}
                                 >
-                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
+                                  <ChildIcon className={`h-4 w-4 shrink-0 ${getIconClasses(isChildActive)}`} />
                                   {child.name}
                                 </Link>
                               );
@@ -324,9 +321,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={item.name}
                       to={item.href}
                       onClick={handleLinkClick}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm  transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                      <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive)}`} />
                       {item.name}
                     </Link>
                   );
@@ -358,11 +355,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <li key={item.name} className="relative group">
                       <button
                         onClick={() => toggleExpanded(item.name.toLowerCase())}
-                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
                         title={item.name}
                       >
                         <div className="flex items-center gap-x-3">
-                          <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                          <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive)}`} />
                           <span className="hidden xl:block">{item.name}</span>
                         </div>
                         {isExpanded ? (
@@ -392,13 +389,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   <button
                                     onClick={() => toggleExpanded(child.name.toLowerCase())}
                                     className={`group w-full flex items-center md:justify-center xl:justify-between rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${isChildActive
-                                      ? getItemClasses(isChildActive, child.entity)
-                                      : getItemClasses(false, child.entity)
+                                      ? getItemClasses(isChildActive)
+                                      : getItemClasses(false)
                                       }`}
                                     title={child.name}
                                   >
                                     <div className="flex items-center gap-x-3">
-                                      <ChildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
+                                      <ChildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isChildActive)}`} />
                                       <span className="hidden xl:block">{child.name}</span>
                                     </div>
                                     {isChildExpanded ? (
@@ -424,10 +421,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                             <Link
                                               to={grandchild.href}
                                               onClick={handleLinkClick}
-                                              className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${getItemClasses(isGrandchildActive, grandchild.entity)}`}
+                                              className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${getItemClasses(isGrandchildActive)}`}
                                               title={grandchild.name}
                                             >
-                                              <GrandchildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isGrandchildActive, grandchild.entity)}`} />
+                                              <GrandchildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isGrandchildActive)}`} />
                                               <span className="hidden xl:block">{grandchild.name}</span>
                                             </Link>
 
@@ -452,12 +449,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   to={child.href}
                                   onClick={handleLinkClick}
                                   className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${isChildActive
-                                    ? getItemClasses(isChildActive, child.entity)
-                                    : getItemClasses(false, child.entity)
+                                    ? getItemClasses(isChildActive)
+                                    : getItemClasses(false)
                                     }`}
                                   title={child.name}
                                 >
-                                  <ChildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isChildActive, child.entity)}`} />
+                                  <ChildIcon className={`md:h-5 md:w-5 xl:h-4 xl:w-4 shrink-0 ${getIconClasses(isChildActive)}`} />
                                   <span className="hidden xl:block">{child.name}</span>
                                 </Link>
 
@@ -479,10 +476,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <li key={item.name} className="relative group">
                     <Link
                       to={item.href}
-                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
                       title={item.name}
                     >
-                      <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                      <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive)}`} />
                       <span className="hidden xl:block">{item.name}</span>
                     </Link>
 
@@ -506,10 +503,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <li key={item.name} className="relative group">
                     <Link
                       to={item.href}
-                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive, item.entity)}`}
+                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
                       title={item.name}
                     >
-                      <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive, item.entity)}`} />
+                      <Icon className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(isActive)}`} />
                       <span className="hidden xl:block">{item.name}</span>
                     </Link>
 

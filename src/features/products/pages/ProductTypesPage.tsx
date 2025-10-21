@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit, Trash2, Layers, Search } from 'lucide-react';
+// Icons removed for clean design
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -178,7 +178,7 @@ export default function ProductTypesPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]"></div>
         </div>
       </div>
     );
@@ -193,7 +193,7 @@ export default function ProductTypesPage() {
             onClick={() => navigate('/dashboard/products')}
             className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            Back
           </button>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Product Types</h1>
@@ -204,15 +204,14 @@ export default function ProductTypesPage() {
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
           >
-            <Plus className="w-4 h-4" />
             Create Product Type
           </button>
         </div>
@@ -221,23 +220,23 @@ export default function ProductTypesPage() {
       {/* Search */}
       <div className={`bg-white my-5`}>
         <div className="relative w-full">
-          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+          {/* Search icon removed */}
           <input
             type="text"
             placeholder="Search product types..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${tw.borderDefault}] rounded-lg focus:outline-none`}
           />
         </div>
       </div>
 
 
       {/* Product Types Table */}
-      <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
+      <div className={`bg-white rounded-xl border border-[${tw.borderDefault}] overflow-hidden`}>
         {filteredProductTypes.length === 0 ? (
           <div className="text-center py-12">
-            <Layers className={`w-16 h-16 text-[${color.entities.products}] mx-auto mb-4`} />
+            {/* Icon removed */}
             <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
               {searchTerm ? 'No Product Types Found' : 'No Product Types'}
             </h3>
@@ -248,9 +247,8 @@ export default function ProductTypesPage() {
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                style={{ backgroundColor: color.sentra.main }}
+                style={{ backgroundColor: color.primary.action }}
               >
-                <Plus className="w-4 h-4" />
                 Create Product Type
               </button>
             )}
@@ -260,7 +258,7 @@ export default function ProductTypesPage() {
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
+                <thead className={`bg-gradient-to-r from-[${color.surface.background}] to-[${color.surface.background}]/80 border-b border-[${tw.borderDefault}]`}>
                   <tr>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                       Product Type
@@ -281,20 +279,10 @@ export default function ProductTypesPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredProductTypes.map((productType) => (
-                    <tr key={productType.id} className="hover:bg-[${color.ui.surface}]/30 transition-colors">
+                    <tr key={productType.id} className="hover:bg-[${color.surface.background}]/30 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="h-10 w-10 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: color.entities.products }}
-                          >
-                            <Layers className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <div className={`text-base font-semibold ${tw.textPrimary}`}>
-                              {productType.name}
-                            </div>
-                          </div>
+                        <div className={`text-base font-semibold ${tw.textPrimary}`}>
+                          {productType.name}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -309,8 +297,8 @@ export default function ProductTypesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${productType.isActive
-                          ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
-                          : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
+                          ? `bg-[${color.status.success}] text-[${color.status.success}]`
+                          : `bg-[${color.surface.cards}] text-[${color.text.primary}]`
                           }`}>
                           {productType.isActive ? 'Active' : 'Inactive'}
                         </span>
@@ -321,23 +309,23 @@ export default function ProductTypesPage() {
                             onClick={() => handleEditProductType(productType)}
                             className="p-2 rounded-lg transition-colors"
                             style={{
-                              color: color.sentra.main,
+                              color: color.primary.action,
                               backgroundColor: 'transparent'
                             }}
                             onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                             }}
                             onMouseLeave={(e) => {
                               (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                             }}
                           >
-                            <Edit className="w-4 h-4" />
+                            Edit
                           </button>
                           <button
                             onClick={() => handleDeleteProductType(productType)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -352,12 +340,6 @@ export default function ProductTypesPage() {
               {filteredProductTypes.map((productType) => (
                 <div key={productType.id} className="p-4 border-b border-gray-200 last:border-b-0">
                   <div className="flex items-start space-x-3">
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: color.entities.products }}
-                    >
-                      <Layers className="w-5 h-5 text-white" />
-                    </div>
                     <div className="flex-1 min-w-0">
                       <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
                         {productType.name}
@@ -371,8 +353,8 @@ export default function ProductTypesPage() {
                             {productType.productCount} products
                           </span>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${productType.isActive
-                            ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
-                            : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
+                            ? `bg-[${color.status.success}] text-[${color.status.success}]`
+                            : `bg-[${color.surface.cards}] text-[${color.text.primary}]`
                             }`}>
                             {productType.isActive ? 'Active' : 'Inactive'}
                           </span>
@@ -382,23 +364,23 @@ export default function ProductTypesPage() {
                             onClick={() => handleEditProductType(productType)}
                             className="p-2 rounded-lg transition-colors"
                             style={{
-                              color: color.sentra.main,
+                              color: color.primary.action,
                               backgroundColor: 'transparent'
                             }}
                             onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                             }}
                             onMouseLeave={(e) => {
                               (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                             }}
                           >
-                            <Edit className="w-4 h-4" />
+                            Edit
                           </button>
                           <button
                             onClick={() => handleDeleteProductType(productType)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            Delete
                           </button>
                         </div>
                       </div>
@@ -473,14 +455,14 @@ export default function ProductTypesPage() {
                   onClick={handleCreateProductType}
                   disabled={!newTypeName.trim() || isCreating}
                   className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ backgroundColor: color.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
                     if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                      (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                     }
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                   }}
                 >
                   {isCreating ? 'Creating...' : 'Create Product Type'}
@@ -554,14 +536,14 @@ export default function ProductTypesPage() {
                   onClick={handleUpdateProductType}
                   disabled={!editName.trim() || isUpdating}
                   className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ backgroundColor: color.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
                     if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                      (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                     }
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                   }}
                 >
                   {isUpdating ? 'Updating...' : 'Update Product Type'}

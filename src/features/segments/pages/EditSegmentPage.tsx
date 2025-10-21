@@ -181,7 +181,7 @@ export default function EditSegmentPage() {
                 <button
                     onClick={() => navigate('/dashboard/segments')}
                     className="inline-flex items-center px-4 py-2 text-white rounded-lg"
-                    style={{ backgroundColor: color.sentra.main }}
+                    style={{ backgroundColor: color.primary.action }}
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Segments
@@ -220,9 +220,9 @@ export default function EditSegmentPage() {
                         onClick={handleSave}
                         disabled={isSaving}
                         className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ backgroundColor: color.sentra.main }}
-                        onMouseEnter={(e) => { if (!isSaving) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                        style={{ backgroundColor: color.primary.action }}
+                        onMouseEnter={(e) => { if (!isSaving) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+                        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
                     >
                         {isSaving ? (
                             <>
@@ -256,7 +256,7 @@ export default function EditSegmentPage() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Enter segment name"
-                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.sentra.main}]/20`}
+                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.primary.action}]/20`}
                                     disabled={isSaving}
                                 />
                             </div>
@@ -271,7 +271,7 @@ export default function EditSegmentPage() {
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Enter segment description"
                                     rows={3}
-                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.sentra.main}]/20 resize-none`}
+                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.primary.action}]/20 resize-none`}
                                     disabled={isSaving}
                                 />
                             </div>
@@ -344,14 +344,14 @@ export default function EditSegmentPage() {
                                             onChange={(e) => setTagInput(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
                                             placeholder="Enter a tag and press Enter"
-                                            className={`flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.sentra.main}]/20`}
+                                            className={`flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.primary.action}]/20`}
                                             disabled={isSaving}
                                         />
                                         <button
                                             onClick={handleAddTag}
                                             disabled={!tagInput.trim() || isSaving}
                                             className="px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{ backgroundColor: color.sentra.main }}
+                                            style={{ backgroundColor: color.primary.action }}
                                         >
                                             <Plus className="w-4 h-4" />
                                         </button>
@@ -386,7 +386,7 @@ export default function EditSegmentPage() {
                                 <select
                                     value={refreshFrequency}
                                     onChange={(e) => setRefreshFrequency(e.target.value)}
-                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.sentra.main}]/20`}
+                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.primary.action}]/20`}
                                     disabled={isSaving}
                                 >
                                     <option value="">Select frequency</option>
@@ -408,7 +408,7 @@ export default function EditSegmentPage() {
                                     onChange={(e) => setBusinessPurpose(e.target.value)}
                                     placeholder="Describe the business purpose of this segment"
                                     rows={3}
-                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.sentra.main}]/20 resize-none`}
+                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.primary.action}]/20 resize-none`}
                                     disabled={isSaving}
                                 />
                             </div>
@@ -421,7 +421,7 @@ export default function EditSegmentPage() {
             {(segment.criteria || segment.definition) && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4 flex items-center`}>
-                        <Activity className="w-5 h-5 mr-2" style={{ color: color.entities.segments }} />
+                        <Activity className="w-5 h-5 mr-2" style={{ color: color.primary.accent }} />
                         Current Segment Criteria
                         <span className={`ml-2 text-sm font-normal ${tw.textMuted}`}>(Read-only)</span>
                     </h3>
@@ -449,8 +449,8 @@ export default function EditSegmentPage() {
                                     <div key={index} className="relative">
                                         <div className="flex items-start space-x-3 p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200">
                                             <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0`}
-                                                style={{ backgroundColor: `${color.entities.segments}20` }}>
-                                                <span className="text-xs font-bold" style={{ color: color.entities.segments }}>
+                                                style={{ backgroundColor: `${color.primary.accent}20` }}>
+                                                <span className="text-xs font-bold" style={{ color: color.primary.accent }}>
                                                     {index + 1}
                                                 </span>
                                             </div>
@@ -460,14 +460,14 @@ export default function EditSegmentPage() {
                                                     {' '}
                                                     <span className={`${tw.textMuted}`}>{operator}</span>
                                                     {' '}
-                                                    <span className="font-semibold" style={{ color: color.sentra.main }}>{value}</span>
+                                                    <span className="font-semibold" style={{ color: color.primary.action }}>{value}</span>
                                                 </p>
                                             </div>
                                         </div>
                                         {index < ((segment.criteria as Record<string, unknown>).conditions as Array<Record<string, unknown>>).length - 1 && (
                                             <div className="flex items-center justify-center py-1">
                                                 <span className={`px-3 py-1 text-xs font-bold rounded-full`}
-                                                    style={{ backgroundColor: `${color.entities.segments}15`, color: color.entities.segments }}>
+                                                    style={{ backgroundColor: `${color.primary.accent}15`, color: color.primary.accent }}>
                                                     AND
                                                 </span>
                                             </div>
@@ -504,7 +504,7 @@ export default function EditSegmentPage() {
                     onClick={handleSave}
                     disabled={isSaving}
                     className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
-                    style={{ backgroundColor: color.sentra.main }}
+                    style={{ backgroundColor: color.primary.action }}
                 >
                     {isSaving ? (
                         <>

@@ -110,7 +110,7 @@ export default function SegmentConditionsBuilder({
             updateFunction(groupId, condition.id, { value: values, type: 'array' });
           }}
           placeholder="Enter values separated by commas"
-          className={`px-3 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
+          className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
         />
       );
     }
@@ -124,7 +124,7 @@ export default function SegmentConditionsBuilder({
           updateFunction(groupId, condition.id, { value, type: fieldType });
         }}
         placeholder="Enter value"
-        className={`px-3 py-2 border border-[${color.ui.border}] rounded-lg focus:outline-none text-sm`}
+        className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
       />
     );
   };
@@ -180,9 +180,9 @@ export default function SegmentConditionsBuilder({
           type="button"
           onClick={addConditionGroup}
           className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors text-sm"
-          style={{ backgroundColor: color.sentra.main }}
-          onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-          onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+          style={{ backgroundColor: color.primary.action }}
+          onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+          onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Condition Group
@@ -259,7 +259,7 @@ export default function SegmentConditionsBuilder({
               {group.conditions.map((condition, conditionIndex) => (
                 <div key={condition.id} className="flex items-center space-x-3 bg-white p-3 rounded border">
                   {conditionIndex > 0 && (
-                    <span className={`px-2 py-1 bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] text-xs font-medium rounded`}>
+                    <span className={`px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-xs font-medium rounded`}>
                       {group.operator}
                     </span>
                   )}
@@ -329,7 +329,7 @@ export default function SegmentConditionsBuilder({
 
           {/* Segments Selection */}
           {group.conditionType === 'segments' && (
-            <div className="p-4 rounded-lg border border-gray-200" style={{ backgroundColor: `${color.entities.segments}10` }}>
+            <div className="p-4 rounded-lg border border-gray-200" style={{ backgroundColor: `${color.primary.accent}10` }}>
               <h4 className={`font-medium ${tw.textPrimary} mb-2`}>Select Segments</h4>
               <p className={`text-sm ${tw.textSecondary} mb-3`}>Choose existing segments to include in this condition group.</p>
               <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
@@ -341,7 +341,7 @@ export default function SegmentConditionsBuilder({
 
           {/* 360 Profile */}
           {group.conditionType === '360' && (
-            <div className="p-4 rounded-lg border border-gray-200" style={{ backgroundColor: `${color.entities.segments}10` }}>
+            <div className="p-4 rounded-lg border border-gray-200" style={{ backgroundColor: `${color.primary.accent}10` }}>
               <h4 className={`font-medium ${tw.textPrimary} mb-2`}>360 Customer Profile</h4>
               <p className={`text-sm ${tw.textSecondary} mb-3`}>Configure conditions based on comprehensive customer profile data.</p>
 
@@ -353,9 +353,9 @@ export default function SegmentConditionsBuilder({
                       type="button"
                       onClick={() => addProfileCondition(group.id)}
                       className="inline-flex items-center px-3 py-2 text-white rounded-lg transition-colors"
-                      style={{ backgroundColor: color.sentra.main }}
-                      onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                      onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                      style={{ backgroundColor: color.primary.action }}
+                      onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+                      onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Profile Condition
@@ -366,7 +366,7 @@ export default function SegmentConditionsBuilder({
                     {group.profileConditions?.map((condition, conditionIndex) => (
                       <div key={condition.id} className="flex items-center space-x-3 bg-white p-3 rounded border">
                         {conditionIndex > 0 && (
-                          <span className="px-2 py-1 text-xs font-medium rounded" style={{ backgroundColor: `${color.entities.segments}20`, color: color.entities.segments }}>
+                          <span className="px-2 py-1 text-xs font-medium rounded" style={{ backgroundColor: `${color.primary.accent}20`, color: color.primary.accent }}>
                             AND
                           </span>
                         )}
@@ -386,7 +386,7 @@ export default function SegmentConditionsBuilder({
                           }}
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none min-w-[200px]"
                           style={{
-                            borderColor: color.ui.border
+                            borderColor: tw.borderDefault
                           }}
                         >
                           {PROFILE_360_FIELDS.map(field => (
@@ -402,7 +402,7 @@ export default function SegmentConditionsBuilder({
                           onChange={(e) => updateProfileCondition(group.id, condition.id, { operator: e.target.value as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in' })}
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                           style={{
-                            borderColor: color.ui.border
+                            borderColor: tw.borderDefault
                           }}
                         >
                           {getAvailableOperators(condition.field, true).map(op => (
@@ -434,14 +434,14 @@ export default function SegmentConditionsBuilder({
                       onClick={() => addProfileCondition(group.id)}
                       className="inline-flex items-center px-3 py-1 text-sm rounded transition-colors"
                       style={{
-                        color: color.sentra.main,
-                        backgroundColor: `${color.sentra.main}10`
+                        color: color.primary.action,
+                        backgroundColor: `${color.primary.action}10`
                       }}
                       onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}20`;
+                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}20`;
                       }}
                       onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                       }}
                     >
                       <Plus className="w-3 h-3 mr-1" />
@@ -458,7 +458,7 @@ export default function SegmentConditionsBuilder({
             <button
               type="button"
               onClick={() => addCondition(group.id)}
-              className={`mt-3 inline-flex items-center px-3 py-1 text-sm text-[${color.entities.segments}] hover:text-[${color.entities.segments}]/80 hover:bg-[${color.entities.segments}]/10 rounded transition-colors`}
+              className={`mt-3 inline-flex items-center px-3 py-1 text-sm text-[${color.primary.accent}] hover:text-[${color.primary.accent}]/80 hover:bg-[${color.primary.accent}]/10 rounded transition-colors`}
             >
               <Plus className="w-3 h-3 mr-1" />
               Add Condition
@@ -472,9 +472,9 @@ export default function SegmentConditionsBuilder({
         type="button"
         onClick={addConditionGroup}
         className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors text-sm"
-        style={{ backgroundColor: color.sentra.main }}
-        onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+        style={{ backgroundColor: color.primary.action }}
+        onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
       >
         <Plus className="w-4 h-4 mr-2" />
         Add Condition Group

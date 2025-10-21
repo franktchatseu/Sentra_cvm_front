@@ -326,8 +326,7 @@ export default function SegmentDetailsPage() {
                 <p className={`${tw.textSecondary} mb-4`}>The segment you're looking for doesn't exist.</p>
                 <button
                     onClick={() => navigate('/dashboard/segments')}
-                    className="inline-flex items-center px-4 py-2 text-white rounded-lg"
-                    style={{ backgroundColor: color.sentra.main }}
+                    className={`${tw.button} inline-flex items-center px-4 py-2`}
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Segments
@@ -357,9 +356,9 @@ export default function SegmentDetailsPage() {
                     <button
                         onClick={handleEdit}
                         className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-                        style={{ backgroundColor: color.sentra.main }}
-                        onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                        style={{ backgroundColor: color.primary.action }}
+                        onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+                        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
                     >
                         <Edit className="w-4 h-4 inline mr-2" />
                         Edit
@@ -370,8 +369,8 @@ export default function SegmentDetailsPage() {
                             onClick={() => setShowMoreMenu(!showMoreMenu)}
                             className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm`}
                             style={{
-                                borderColor: color.ui.border,
-                                color: color.ui.text.primary
+                                borderColor: tw.borderDefault,
+                                color: tw.textPrimary
                             }}
                         >
                             <MoreVertical className="w-4 h-4" />
@@ -415,8 +414,8 @@ export default function SegmentDetailsPage() {
                                 {isLoadingMembers ? '...' : (membersCount || 0).toLocaleString()}
                             </p>
                         </div>
-                        <div className="p-3 rounded-lg" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                            <Users className="w-6 h-6" style={{ color: color.entities.segments }} />
+                        <div className="p-3 rounded-lg" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                            <Users className="w-6 h-6" style={{ color: color.primary.accent }} />
                         </div>
                     </div>
                 </div>
@@ -558,7 +557,7 @@ export default function SegmentDetailsPage() {
             {(segment.criteria || segment.definition) && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <h3 className={`text-base font-semibold ${tw.textPrimary} mb-4 flex items-center`}>
-                        <Activity className="w-5 h-5 mr-2" style={{ color: color.entities.segments }} />
+                        <Activity className="w-5 h-5 mr-2" style={{ color: color.primary.accent }} />
                         Segment Criteria
                     </h3>
 
@@ -585,8 +584,8 @@ export default function SegmentDetailsPage() {
                                     <div key={index} className="relative">
                                         <div className="flex items-start space-x-3 p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200">
                                             <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0`}
-                                                style={{ backgroundColor: `${color.entities.segments}20` }}>
-                                                <span className="text-xs font-bold" style={{ color: color.entities.segments }}>
+                                                style={{ backgroundColor: `${color.primary.accent}20` }}>
+                                                <span className="text-xs font-bold" style={{ color: color.primary.accent }}>
                                                     {index + 1}
                                                 </span>
                                             </div>
@@ -596,14 +595,14 @@ export default function SegmentDetailsPage() {
                                                     {' '}
                                                     <span className={`${tw.textMuted}`}>{operator}</span>
                                                     {' '}
-                                                    <span className="font-semibold" style={{ color: color.sentra.main }}>{value}</span>
+                                                    <span className="font-semibold" style={{ color: color.primary.action }}>{value}</span>
                                                 </p>
                                             </div>
                                         </div>
                                         {index < ((segment.criteria as Record<string, unknown>).conditions as Array<Record<string, unknown>>).length - 1 && (
                                             <div className="flex items-center justify-center py-1">
                                                 <span className={`px-3 py-1 text-xs font-bold rounded-full`}
-                                                    style={{ backgroundColor: `${color.entities.segments}15`, color: color.entities.segments }}>
+                                                    style={{ backgroundColor: `${color.primary.accent}15`, color: color.primary.accent }}>
                                                     AND
                                                 </span>
                                             </div>
@@ -626,7 +625,7 @@ export default function SegmentDetailsPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className={`text-base font-semibold ${tw.textPrimary} flex items-center`}>
-                        <Users className="w-5 h-5 mr-2" style={{ color: color.entities.segments }} />
+                        <Users className="w-5 h-5 mr-2" style={{ color: color.primary.accent }} />
                         Segment Members ({(membersCount || 0).toLocaleString()})
                     </h3>
                     <div className="flex items-center gap-2">
@@ -647,12 +646,12 @@ export default function SegmentDetailsPage() {
                                 setCustomerSearchTerm('');
                             }}
                             className="px-4 py-2 text-white rounded-lg transition-all text-sm flex items-center gap-2"
-                            style={{ backgroundColor: color.sentra.main }}
+                            style={{ backgroundColor: color.primary.action }}
                             onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                             onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                         >
                             <Plus className="w-4 h-4" />
@@ -704,12 +703,12 @@ export default function SegmentDetailsPage() {
                                     <button
                                         onClick={handleAddMembers}
                                         className="px-4 py-2 text-white rounded-lg transition-all"
-                                        style={{ backgroundColor: color.sentra.main }}
+                                        style={{ backgroundColor: color.primary.action }}
                                         onMouseEnter={(e) => {
-                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                         }}
                                         onMouseLeave={(e) => {
-                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                         }}
                                     >
                                         Add
@@ -932,7 +931,7 @@ export default function SegmentDetailsPage() {
                                     }}
                                     disabled={selectedCustomers.length === 0}
                                     className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                    style={{ backgroundColor: color.sentra.main }}
+                                    style={{ backgroundColor: color.primary.action }}
                                 >
                                     Add {selectedCustomers.length} Customer{selectedCustomers.length !== 1 ? 's' : ''}
                                 </button>
@@ -1025,14 +1024,14 @@ export default function SegmentDetailsPage() {
                                     onClick={handleCustomExport}
                                     disabled={isExporting}
                                     className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    style={{ backgroundColor: color.sentra.main }}
+                                    style={{ backgroundColor: color.primary.action }}
                                     onMouseEnter={(e) => {
                                         if (!isExporting) {
-                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                         }
                                     }}
                                     onMouseLeave={(e) => {
-                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                        (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                     }}
                                 >
                                     {isExporting ? (

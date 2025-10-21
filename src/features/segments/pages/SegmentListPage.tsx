@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Grid, List as ListIcon, FileText, X } from 'lucide-react';
+import { Plus, Search, Grid, List as ListIcon, FileText, X, Eye, Edit } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import ListUpload from '../components/ListUpload';
 
@@ -114,6 +114,11 @@ export default function SegmentListPage() {
         setShowCreateModal(false);
     };
 
+    const handleViewList = (list: SegmentList) => {
+        console.log('Viewing list:', list);
+        // TODO: Implement view functionality
+    };
+
     const handleEditList = (list: SegmentList) => {
         setSelectedList(list);
         setShowCreateModal(true);
@@ -157,7 +162,7 @@ export default function SegmentListPage() {
                 <button
                     onClick={() => setShowCreateModal(true)}
                     className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
-                    style={{ backgroundColor: color.sentra.main }}
+                    style={{ backgroundColor: color.primary.action }}
                 >
                     <Plus className="w-4 h-4 mr-2" />
                     Create New List
@@ -275,14 +280,23 @@ export default function SegmentListPage() {
 
                                     <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                                         <button
-                                            onClick={() => handleEditList(list)}
-                                            className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                            onClick={() => handleViewList(list)}
+                                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                            title="View List"
                                         >
-                                            Edit
+                                            <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleEditList(list)}
+                                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                            title="Edit List"
+                                        >
+                                            <Edit className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteList(list.list_id)}
-                                            className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                            title="Delete List"
                                         >
                                             Delete
                                         </button>
@@ -326,14 +340,23 @@ export default function SegmentListPage() {
 
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => handleEditList(list)}
-                                            className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                            onClick={() => handleViewList(list)}
+                                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                            title="View List"
                                         >
-                                            Edit
+                                            <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleEditList(list)}
+                                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                            title="Edit List"
+                                        >
+                                            <Edit className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteList(list.list_id)}
-                                            className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                            title="Delete List"
                                         >
                                             Delete
                                         </button>
