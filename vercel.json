@@ -8,6 +8,10 @@
     {
       "source": "/api/proxy/(.*)",
       "destination": "/api/proxy?path=$1"
+    },
+    {
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
