@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, Plus, Users } from 'lucide-react';
+import { X, Search, Plus, Users, Check } from 'lucide-react';
 import { CampaignSegment } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
+import { color } from '../../../../shared/utils/utils';
 import { segmentService } from '../../../segments/services/segmentService';
 import { Segment } from '../../../segments/types/segment';
 import LoadingSpinner from '../../../../shared/components/ui/LoadingSpinner';
@@ -193,95 +194,69 @@ export default function SegmentSelectionModal({
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <LoadingSpinner variant="modern" size="lg" color="primary" />
               <p className="text-gray-500 mt-4">Loading segments...</p>
             </div>
-          ) : filteredSegments.length === 0 ? (
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredSegments.map((segment) => {
+                const isSelected = tempSelectedSegments.some(s => s.id === segment.id);
+
+                return (
+                  <div
+                    key={segment.id}
+                    onClick={() => handleSegmentToggle(segment)}
+                    className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isSelected
+                      ? ''
+                      : 'border-gray-100'
+                      }`}
+                    style={isSelected ? {
+                      borderColor: '#10b981', // emerald-500
+                      backgroundColor: 'white'
+                    } : {
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center bg-emerald-500">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                        <Users className="w-5 h-5" style={{ color: color.primary.accent }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate text-gray-900">{segment.name}</h4>
+                        <p className="text-sm mt-1 line-clamp-2 text-gray-500">{segment.description}</p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <div className="flex items-center space-x-1">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              {segment.customer_count.toLocaleString()}
+                            </span>
+                          </div>
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                            {new Date(segment.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!isLoading && filteredSegments.length === 0 && (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No segments found</h3>
               <p className="text-gray-500">Try adjusting your search or create a new segment</p>
-            </div>
-          ) : (
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="w-12 px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={tempSelectedSegments.length === filteredSegments.length && filteredSegments.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setTempSelectedSegments(filteredSegments);
-                          } else {
-                            setTempSelectedSegments([]);
-                          }
-                        }}
-                        className="w-4 h-4 text-[#588157] border-gray-300 rounded focus:ring-[#588157]"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Segment
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                      Customers
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                      Created
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredSegments.map((segment) => {
-                    const isSelected = tempSelectedSegments.some(s => s.id === segment.id);
-
-                    return (
-                      <tr
-                        key={segment.id}
-                        onClick={() => handleSegmentToggle(segment)}
-                        className={`cursor-pointer transition-colors ${
-                          isSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleSegmentToggle(segment)}
-                            className="w-4 h-4 text-[#588157] border-gray-300 rounded focus:ring-[#588157]"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
-                              <Users className="w-4 h-4 text-cyan-600" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium text-gray-900">{segment.name}</div>
-                              <div className="text-xs text-gray-500 truncate">{segment.description}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm text-gray-900 font-medium">
-                            {segment.customer_count.toLocaleString()}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-xs text-gray-500">
-                            {new Date(segment.created_at).toLocaleDateString()}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
             </div>
           )}
         </div>
