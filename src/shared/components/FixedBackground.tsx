@@ -26,7 +26,7 @@ import React from 'react';
  * <FixedBackground variant="hexagon" className="opacity-50" />
  */
 interface FixedBackgroundProps {
-  variant?: 'default' | 'subtle' | 'gradient' | 'hexagon' | 'grid' | 'particles';
+  variant?: 'default' | 'subtle' | 'gradient' | 'hexagon' | 'grid' | 'particles' | 'landingpage';
   className?: string;
 }
 
@@ -61,6 +61,15 @@ export default function FixedBackground({
           <div className="fixed-bg-subtle"></div>
         );
 
+      case 'landingpage':
+        return (
+          <>
+            {/* <div className="fixed-bg-gradients"></div> */}
+            <div className="fixed-bg-hex"></div>
+            <div className="fixed-bg-grid"></div>
+          </>
+        );
+
       case 'default':
       default:
         return (
@@ -85,7 +94,8 @@ export default function FixedBackground({
         width: '100vw',
         height: '100vh',
         overflow: 'hidden',
-        backgroundColor: variant === 'subtle' ? '#f3f4f6' : 'var(--primary-color)'
+        backgroundColor: variant === 'subtle' ? '#f3f4f6' : variant === 'landingpage' ? 'transparent' : 'var(--primary-color)',
+        background: variant === 'landingpage' ? 'linear-gradient(to bottom, #0F1214 0%, #1A1F21 15%, #22282A 30%, #394247 50%, #5F6F77 80%, #394247 100%)' : undefined
       }}
     >
       {getBackgroundContent()}

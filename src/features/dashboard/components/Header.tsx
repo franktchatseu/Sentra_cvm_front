@@ -1,6 +1,6 @@
 import { Bell, Search, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import logo from '../../../assets/logo.png';
+import logo from '../../../assets/efforte.png';
 import { User as UserType } from '../../../shared/types/auth';
 import { color } from '../../../shared/utils/utils';
 interface HeaderProps {

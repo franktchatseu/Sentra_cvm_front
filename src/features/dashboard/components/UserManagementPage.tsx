@@ -384,7 +384,7 @@ export default function UserManagementPage() {
                       <th className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                         Created
                       </th>
-                      <th className={`px-6 py-4 text-right text-sm font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      <th className={`px-6 py-4 text-right text-sm font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                         Actions
                       </th>
                     </tr>

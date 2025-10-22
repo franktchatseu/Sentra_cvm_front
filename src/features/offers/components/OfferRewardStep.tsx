@@ -531,12 +531,12 @@ export default function OfferRewardStep({
               <button
                 onClick={() => selectedRewardData && saveRule(selectedRewardData.id, editingRule)}
                 className="px-4 py-2 text-white rounded-lg transition-colors"
-                style={{ backgroundColor: utilColor.sentra.main }}
+                style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                 }}
                 onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                 }}
               >
                 Save Rule
