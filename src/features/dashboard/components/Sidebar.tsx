@@ -25,7 +25,7 @@ import {
   Bell,
   List
 } from 'lucide-react';
-import logo from '../../../assets/effortel.png'
+import logo from '../../../assets/efforte.png'
 import { color } from '../../../shared/utils/utils';
 
 // Hide scrollbar CSS and custom animations

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Trash2, Gift, Edit, X } from 'lucide-react';
-import { color as utilColor } from '../../../shared/utils/utils';
+import { color } from '../../../shared/utils/utils';
 
 interface RewardRule {
   id: string;
@@ -154,12 +154,12 @@ export default function OfferRewardStep({
           <button
             onClick={addReward}
             className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
-            style={{ backgroundColor: utilColor.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -176,12 +176,12 @@ export default function OfferRewardStep({
                 <button
                   onClick={addReward}
                   className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
-                  style={{ backgroundColor: utilColor.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                   }}
                 >
                   <Plus className="w-5 h-5 mr-1.5" />
@@ -279,12 +279,12 @@ export default function OfferRewardStep({
                       <button
                         onClick={() => addRule()}
                         className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
-                        style={{ backgroundColor: utilColor.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                         onMouseEnter={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                         }}
                         onMouseLeave={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                         }}
                       >
                         <Plus className="w-4 h-4 mr-1" />
@@ -298,12 +298,12 @@ export default function OfferRewardStep({
                         <button
                           onClick={() => addRule()}
                           className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
-                          style={{ backgroundColor: utilColor.sentra.main }}
+                          style={{ backgroundColor: color.primary.action }}
                           onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                           }}
                           onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                           }}
                         >
                           <Plus className="w-4 h-4 mr-2" />
