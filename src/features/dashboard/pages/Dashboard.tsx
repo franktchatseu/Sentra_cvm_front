@@ -18,6 +18,7 @@ import SegmentManagementPage from '../../segments/pages/SegmentManagementPage';
 import SegmentDetailsPage from '../../segments/pages/SegmentDetailsPage';
 import EditSegmentPage from '../../segments/pages/EditSegmentPage';
 import SegmentCategoriesPage from '../../segments/pages/SegmentCategoriesPage';
+import SegmentListPage from '../../segments/pages/SegmentListPage';
 import CreateOfferPage from '../../offers/pages/CreateOfferPage';
 import ProductsPage from '../../products/pages/ProductsPage';
 import CreateProductPage from '../../products/pages/CreateProductPage';
@@ -30,6 +31,8 @@ import OfferCategoriesPage from '../../offers/pages/OfferCategoriesPage';
 import UserManagementPage from '../components/UserManagementPage';
 import ConfigurationPage from '../components/ConfigurationPage';
 import ControlGroupsPage from '../../products/pages/ControlGroupsPage';
+import DepartmentPage from '../../campaigns/pages/DepartmentPage';
+import LineOfBusinessPage from '../../campaigns/pages/LineOfBusinessPage';
 
 export default function Dashboard() {
   return (
@@ -44,6 +47,8 @@ export default function Dashboard() {
         <Route path="/campaigns/create" element={<CreateCampaignPage />} />
         <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
         <Route path="/campaign-objectives" element={<CampaignObjectivesPage />} />
+        <Route path="/departments" element={<DepartmentPage />} />
+        <Route path="/line-of-business" element={<LineOfBusinessPage />} />
         <Route path="/programs" element={<ProgramsPage />} />
         <Route path="/campaign-communication-policy" element={<CommunicationPolicyPage />} />
         <Route path="/offers" element={<OffersPage />} />
@@ -65,6 +70,7 @@ export default function Dashboard() {
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />
         <Route path="/segments/:id/edit" element={<EditSegmentPage />} />
         <Route path="/segment-catalogs" element={<SegmentCategoriesPage />} />
+        <Route path="/segment-list" element={<SegmentListPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
       </Routes>

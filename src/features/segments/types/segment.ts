@@ -134,12 +134,11 @@ export interface SegmentResponse {
 }
 
 export interface DuplicateSegmentRequest {
-  newName: string;
+  new_name: string;
 }
 
 export interface ValidateCriteriaRequest {
   criteria: Record<string, unknown>;
-  segment_type: SegmentType;
 }
 
 export interface SegmentRule {

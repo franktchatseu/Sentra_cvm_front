@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { Users, Plus, Edit, Trash2, Settings, GripVertical, AlertCircle, Award, TestTube, RotateCw, Layers } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Users, Plus, Edit, Trash2, Settings, GripVertical, AlertCircle, Award, TestTube, RotateCw, Layers, ChevronDown } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
 import { Segment } from '../../../segments/types/segment';
 import ChampionChallengerDisplay from '../displays/ChampionChallengerDisplay';
 import ABTestDisplay from '../displays/ABTestDisplay';
 import SequentialCampaignDisplay from '../displays/SequentialCampaignDisplay';
-import { color } from '../../../../shared/utils/utils';
+import { tw, components } from '../../../../shared/utils/utils';
+import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 
 interface AvailableControlGroup {
   id: string;
@@ -19,37 +21,19 @@ import UniversalControlGroupModal from './UniversalControlGroupModal';
 import SegmentModal from '../../../segments/components/SegmentModal';
 
 interface AudienceConfigurationStepProps {
-  currentStep: number;
-  totalSteps: number;
-  onNext: () => void;
-  onPrev: () => void;
-  onSubmit: () => void;
   formData: CreateCampaignRequest;
   setFormData: (data: CreateCampaignRequest) => void;
   selectedSegments: CampaignSegment[];
   setSelectedSegments: (segments: CampaignSegment[]) => void;
   controlGroup: ControlGroup;
-  setControlGroup: (group: ControlGroup) => void;
-  isLoading?: boolean;
-  onSaveDraft?: () => void;
-  onCancel?: () => void;
 }
 
 export default function AudienceConfigurationStep({
-  currentStep: _currentStep,
-  totalSteps: _totalSteps,
-  onNext: _onNext,
-  onPrev: _onPrev,
-  onSubmit: _onSubmit,
   formData,
   setFormData,
   selectedSegments,
   setSelectedSegments,
-  controlGroup,
-  setControlGroup: _setControlGroup,
-  isLoading: _isLoading,
-  onSaveDraft: _onSaveDraft,
-  onCancel: _onCancel
+  controlGroup: _controlGroup
 }: AudienceConfigurationStepProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCreateSegmentModal, setShowCreateSegmentModal] = useState(false);
@@ -58,6 +42,20 @@ export default function AudienceConfigurationStep({
   const [showControlGroupModal, setShowControlGroupModal] = useState(false);
   const [mutuallyExclusive, setMutuallyExclusive] = useState(false);
   const [draggedSegment, setDraggedSegment] = useState<string | null>(null);
+  const [isCampaignTypeDropdownOpen, setIsCampaignTypeDropdownOpen] = useState(false);
+  
+  const campaignTypeDropdownRef = useRef<HTMLDivElement>(null);
+  
+  useClickOutside(campaignTypeDropdownRef, () => setIsCampaignTypeDropdownOpen(false));
+
+  // Campaign type options
+  const campaignTypeOptions = [
+    { value: 'multiple_target_group', label: 'Multiple Target', description: 'Multiple segments with offers', icon: Users },
+    { value: 'champion_challenger', label: 'Champion-Challenger', description: 'Main segment + challengers', icon: Award },
+    { value: 'ab_test', label: 'A/B Test', description: 'Two segments: A and B', icon: TestTube },
+    { value: 'round_robin', label: 'Round Robin', description: 'Offers with intervals', icon: RotateCw },
+    { value: 'multiple_level', label: 'Multiple Level', description: 'Offers with conditions', icon: Layers }
+  ];
 
   // Mock data for available control groups
   const [availableControlGroups] = useState<AvailableControlGroup[]>([
@@ -205,155 +203,83 @@ export default function AudienceConfigurationStep({
   };
 
 
-  const totalAudienceSize = selectedSegments.reduce((total, segment) => total + segment.customer_count, 0);
-  const controlGroupSize = controlGroup.enabled ? Math.round(totalAudienceSize * (controlGroup.percentage / 100)) : 0;
-  const targetGroupSize = totalAudienceSize - controlGroupSize;
-
   return (
-    <div className="space-y-8">
-      <div className="mt-8 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Audience Configuration</h2>
-        <p className="text-sm text-gray-600">
-          Select campaign type and configure your target audience segments
-        </p>
-      </div>
+    <div className="space-y-6">
+     
 
       {/* Campaign Type Selection */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaign Type</h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Multiple Target Group */}
+      <div className={`${components.card.surface} space-y-4`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className={`${tw.cardTitle} ${tw.textPrimary}`}>Campaign Type</h3>
+            <p className={`${tw.caption} ${tw.textSecondary} mt-1`}>Select the type of campaign you want to create</p>
+          </div>
+        </div>
+        
+        <div className="relative" ref={campaignTypeDropdownRef}>
           <button
-            onClick={() => {
-              setFormData({ ...formData, campaign_type: 'multiple_target_group' });
-              setSelectedSegments([]);
-            }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_target_group'
-              ? 'border-[#588157] bg-[#588157]/5'
-              : 'border-gray-200 hover:border-[#A3B18A]'
-              }`}
+            type="button"
+            onClick={() => setIsCampaignTypeDropdownOpen(!isCampaignTypeDropdownOpen)}
+            className={`${components.input.default} w-full px-4 py-3 text-left flex items-center justify-between`}
           >
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'multiple_target_group' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <Users className={`w-6 h-6 ${formData.campaign_type === 'multiple_target_group' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
-              </div>
-              <div className="font-semibold text-sm text-gray-900">Multiple Target</div>
-              <div className="text-xs text-gray-500">Multiple segments with offers</div>
+            <div className="flex items-center gap-3">
+              {(() => {
+                const selectedOption = campaignTypeOptions.find(option => option.value === formData.campaign_type);
+                const IconComponent = selectedOption?.icon || Users;
+                return (
+                  <>
+                    <IconComponent className="w-5 h-5 text-gray-600" />
+                    <div>
+                      <div className={`${tw.body} ${tw.textPrimary}`}>
+                        {selectedOption?.label || 'Select Campaign Type'}
+                      </div>
+                      {selectedOption && (
+                        <div className={`${tw.caption} ${tw.textSecondary}`}>
+                          {selectedOption.description}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
+            <ChevronDown className={`w-4 h-4 transition-transform ${isCampaignTypeDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Champion-Challenger */}
-          <button
-            onClick={() => {
-              setFormData({ ...formData, campaign_type: 'champion_challenger' });
-              setSelectedSegments([]);
-            }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'champion_challenger'
-              ? 'border-[#588157] bg-[#588157]/5'
-              : 'border-gray-200 hover:border-[#A3B18A]'
-              }`}
-          >
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'champion_challenger' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <Award className={`w-6 h-6 ${formData.campaign_type === 'champion_challenger' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
-              </div>
-              <div className="font-semibold text-sm text-gray-900">Champion-Challenger</div>
-              <div className="text-xs text-gray-500">Main segment + challengers</div>
+          {isCampaignTypeDropdownOpen && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-hidden">
+              {campaignTypeOptions.map((option) => {
+                const IconComponent = option.icon;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, campaign_type: option.value as any });
+                      setSelectedSegments([]);
+                      setIsCampaignTypeDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-center gap-3 ${
+                      formData.campaign_type === option.value ? 'bg-blue-50' : ''
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 text-gray-600" />
+                    <div>
+                      <div className={`${tw.body} ${tw.textPrimary} font-medium`}>
+                        {option.label}
+                      </div>
+                      <div className={`${tw.caption} ${tw.textSecondary}`}>
+                        {option.description}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          </button>
-
-          {/* A/B Test */}
-          <button
-            onClick={() => {
-              setFormData({ ...formData, campaign_type: 'ab_test' });
-              setSelectedSegments([]);
-            }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'ab_test'
-              ? 'border-[#588157] bg-[#588157]/5'
-              : 'border-gray-200 hover:border-[#A3B18A]'
-              }`}
-          >
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'ab_test' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <TestTube className={`w-6 h-6 ${formData.campaign_type === 'ab_test' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
-              </div>
-              <div className="font-semibold text-sm text-gray-900">A/B Test</div>
-              <div className="text-xs text-gray-500">Two segments: A and B</div>
-            </div>
-          </button>
-
-          {/* Round Robin */}
-          <button
-            onClick={() => {
-              setFormData({ ...formData, campaign_type: 'round_robin' });
-              setSelectedSegments([]);
-            }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'round_robin'
-              ? 'border-[#588157] bg-[#588157]/5'
-              : 'border-gray-200 hover:border-[#A3B18A]'
-              }`}
-          >
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'round_robin' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <RotateCw className={`w-6 h-6 ${formData.campaign_type === 'round_robin' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
-              </div>
-              <div className="font-semibold text-sm text-gray-900">Round Robin</div>
-              <div className="text-xs text-gray-500">Offers with intervals</div>
-            </div>
-          </button>
-
-          {/* Multiple Level */}
-          <button
-            onClick={() => {
-              setFormData({ ...formData, campaign_type: 'multiple_level' });
-              setSelectedSegments([]);
-            }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_level'
-              ? 'border-[#588157] bg-[#588157]/5'
-              : 'border-gray-200 hover:border-[#A3B18A]'
-              }`}
-          >
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${formData.campaign_type === 'multiple_level' ? 'bg-[#588157]' : 'bg-[#DAD7CD]'
-                }`}>
-                <Layers className={`w-6 h-6 ${formData.campaign_type === 'multiple_level' ? 'text-white' : 'text-[#344E41]'
-                  }`} />
-              </div>
-              <div className="font-semibold text-sm text-gray-900">Multiple Level</div>
-              <div className="text-xs text-gray-500">Offers with conditions</div>
-            </div>
-          </button>
+          )}
         </div>
       </div>
 
-      {/* Audience Overview */}
-      {selectedSegments.length > 0 && (
-        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Audience Overview</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="text-2xl font-bold text-emerald-600">{totalAudienceSize.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Total Audience</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-[#3b8169]">{targetGroupSize.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Target Group</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-500">{controlGroupSize.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Control Group</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Mutually Exclusive Segments Checkbox */}
       {selectedSegments.length > 1 && (
@@ -382,47 +308,47 @@ export default function AudienceConfigurationStep({
       )}
 
       {/* Selected Segments - Adapted by Campaign Type */}
-      <div className="space-y-4">
+      <div className={`${components.card.surface} space-y-4`}>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className={`${tw.cardTitle} ${tw.textPrimary}`}>
               {formData.campaign_type === 'champion_challenger' && 'Champion & Challengers'}
               {formData.campaign_type === 'ab_test' && 'A/B Test Segments'}
               {formData.campaign_type === 'round_robin' && 'Target Segment'}
               {formData.campaign_type === 'multiple_level' && 'Target Segment'}
               {formData.campaign_type === 'multiple_target_group' && 'Selected Segments'}
             </h3>
-            {selectedSegments.length > 1 && formData.campaign_type === 'multiple_target_group' && (
-              <p className="text-sm text-gray-500 mt-1">Drag segments to reorder priority (top = highest priority)</p>
-            )}
-            {formData.campaign_type === 'champion_challenger' && (
-              <p className="text-sm text-gray-500 mt-1">Define champion segment and its challengers</p>
-            )}
-            {formData.campaign_type === 'ab_test' && (
-              <p className="text-sm text-gray-500 mt-1">Create exactly two segments for A/B testing</p>
-            )}
-            {(formData.campaign_type === 'round_robin' || formData.campaign_type === 'multiple_level') && (
-              <p className="text-sm text-gray-500 mt-1">Define single target segment for sequential offers</p>
-            )}
+            <p className={`${tw.caption} ${tw.textSecondary} mt-1`}>
+              {selectedSegments.length > 1 && formData.campaign_type === 'multiple_target_group' && 'Drag rows to reorder priority'}
+              {formData.campaign_type === 'champion_challenger' && 'Define champion segment and its challengers'}
+              {formData.campaign_type === 'ab_test' && 'Create exactly two segments for A/B testing'}
+              {(formData.campaign_type === 'round_robin' || formData.campaign_type === 'multiple_level') && 'Define single target segment for sequential offers'}
+            </p>
           </div>
-          {selectedSegments.length > 0 && (
-            <div className="flex items-center space-x-3">
-              {/* Show Add button based on campaign type */}
-              {(formData.campaign_type === 'multiple_target_group' ||
-                (formData.campaign_type === 'champion_challenger' && selectedSegments.length > 0) ||
-                (formData.campaign_type === 'ab_test' && selectedSegments.length < 2)) && (
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {formData.campaign_type === 'champion_challenger' && selectedSegments.length === 0 ? 'Add Champion' :
-                      formData.campaign_type === 'champion_challenger' ? 'Add Challenger' :
-                        'Add Segment'}
-                  </button>
-                )}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {(formData.campaign_type === 'multiple_target_group' ||
+              (formData.campaign_type === 'champion_challenger') ||
+              (formData.campaign_type === 'ab_test' && selectedSegments.length < 2) ||
+              (formData.campaign_type === 'round_robin' && selectedSegments.length === 0) ||
+              (formData.campaign_type === 'multiple_level' && selectedSegments.length === 0)) && (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className={`${tw.button} flex items-center gap-2`}
+                >
+                  <Plus className="w-4 h-4" />
+                  {formData.campaign_type === 'champion_challenger' && selectedSegments.length === 0 ? 'Champion' :
+                    formData.campaign_type === 'champion_challenger' ? 'Challenger' :
+                      'Add Segment'}
+                </button>
+              )}
+            <button
+              onClick={() => setShowCreateSegmentModal(true)}
+              className={`px-3 py-2 text-sm ${tw.textSecondary} border ${tw.borderDefault} rounded-lg ${tw.hover} transition-colors flex items-center gap-2`}
+            >
+              <Plus className="w-4 h-4" />
+              Create New
+            </button>
+          </div>
         </div>
 
         {/* Champion-Challenger Display */}
@@ -470,102 +396,120 @@ export default function AudienceConfigurationStep({
 
         {/* Standard Display for Multiple Target Group */}
         {formData.campaign_type === 'multiple_target_group' && selectedSegments.length === 0 && (
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
-            <div className="flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
-                <Users className="w-8 h-8 text-gray-400" />
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+            <div className="flex items-center justify-center gap-4">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Segments Selected</h3>
-              <p className="text-sm text-gray-600 mb-6 max-w-md text-center">
-                Start building your campaign by selecting target audience segments. You can select multiple segments and configure their priority.
-              </p>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center px-5 py-2.5 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-all"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Select Segments
-              </button>
+              <div className="text-center">
+                <h3 className={`${tw.body} ${tw.textPrimary} font-medium mb-1`}>No Segments Selected</h3>
+                <p className={`${tw.caption} ${tw.textSecondary}`}>
+                  Select target audience segments for your campaign
+                </p>
+              </div>
             </div>
           </div>
         )}
 
         {formData.campaign_type === 'multiple_target_group' && selectedSegments.length > 0 && (
-          <div className="space-y-3">
-            {selectedSegments.map((segment, index) => (
-              <div
-                key={segment.id}
-                draggable={selectedSegments.length > 1}
-                onDragStart={(e) => handleDragStart(e, segment.id)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, segment.id)}
-                onDragEnd={handleDragEnd}
-                className={`bg-white border border-gray-200 rounded-xl p-4 transition-all ${selectedSegments.length > 1 ? 'cursor-move' : ''
-                  } ${draggedSegment === segment.id ? 'opacity-50' : ''}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {selectedSegments.length > 1 && (
-                      <div className="flex items-center space-x-2">
-                        <GripVertical className="w-4 h-4 text-gray-400" />
-                        <div className="bg-[#588157] text-white text-xs font-medium px-2 py-1 rounded-full">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                    Priority
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Segment
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                    Customers
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                    Control Group
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {selectedSegments.map((segment, index) => (
+                  <tr
+                    key={segment.id}
+                    draggable={selectedSegments.length > 1}
+                    onDragStart={(e) => handleDragStart(e, segment.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, segment.id)}
+                    onDragEnd={handleDragEnd}
+                    className={`hover:bg-gray-50 transition-colors ${selectedSegments.length > 1 ? 'cursor-move' : ''} ${draggedSegment === segment.id ? 'opacity-50' : ''}`}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {selectedSegments.length > 1 && (
+                          <GripVertical className="w-4 h-4 text-gray-400" />
+                        )}
+                        <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 text-xs font-semibold rounded">
                           #{index + 1}
-                        </div>
-                      </div>
-                    )}
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                      <Users className="w-5 h-5" style={{ color: color.entities.segments }} />
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h4 className="font-medium text-gray-900">{segment.name}</h4>
-                      </div>
-                      <p className="text-sm text-gray-500">{segment.description}</p>
-                      <div className="flex items-center space-x-4 mt-1">
-                        <span className="text-sm text-gray-600">
-                          {segment.customer_count.toLocaleString()} customers
                         </span>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-gray-500 font-medium">Control Group:</span>
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getControlGroupColor(segment.control_group_config)}`}>
-                            {getControlGroupLabel(segment.control_group_config)}
-                          </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          <Users className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">{segment.name}</div>
+                          <div className="text-xs text-gray-500 truncate">{segment.description}</div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => {
-                        setEditingControlGroup(segment.id);
-                        setShowControlGroupModal(true);
-                      }}
-                      className="p-1 text-gray-400 hover:text-[#588157] transition-colors"
-                      title="Configure Control Group"
-                    >
-                      <Settings className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        // TODO: Implement segment editing functionality
-                        console.log('Edit segment:', segment.name);
-                      }}
-                      className="p-1 text-gray-400 hover:text-[#588157] transition-colors"
-                      title="Edit Segment"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleRemoveSegment(segment.id)}
-                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                      title="Remove Segment"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {segment.customer_count.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">customers</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getControlGroupColor(segment.control_group_config)}`}>
+                        {getControlGroupLabel(segment.control_group_config)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingControlGroup(segment.id);
+                            setShowControlGroupModal(true);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-[#588157] hover:bg-gray-100 rounded transition-colors"
+                          title="Configure Control Group"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            console.log('Edit segment:', segment.name);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-[#588157] hover:bg-gray-100 rounded transition-colors"
+                          title="Edit Segment"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveSegment(segment.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Remove Segment"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -695,8 +639,8 @@ function ControlGroupConfigModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div 
+  return createPortal(
+    <div
       className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       style={{
         top: 0,
@@ -1052,12 +996,13 @@ function ControlGroupConfigModal({
           </button>
           <button
             onClick={handleSave}
-            className="px-5 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
+            className={`${tw.button}`}
           >
             Save Configuration
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

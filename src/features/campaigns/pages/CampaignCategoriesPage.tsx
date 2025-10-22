@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, X, Target, ArrowLeft, Eye, Grid, List } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
@@ -72,8 +73,8 @@ function CategoryModal({ isOpen, onClose, category, onSave, isSaving = false }: 
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    return createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 className="text-xl font-bold text-gray-900">
@@ -137,14 +138,14 @@ function CategoryModal({ isOpen, onClose, category, onSave, isSaving = false }: 
                             type="submit"
                             disabled={isSaving}
                             className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ backgroundColor: color.sentra.main }}
+                            style={{ backgroundColor: color.primary.action }}
                             onMouseEnter={(e) => {
                                 if (!e.currentTarget.disabled) {
-                                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                    (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                                 }
                             }}
                             onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                         >
                             {isSaving ? 'Saving...' : (category ? 'Update Category' : 'Create Category')}
@@ -152,7 +153,8 @@ function CategoryModal({ isOpen, onClose, category, onSave, isSaving = false }: 
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -426,12 +428,12 @@ export default function CampaignCategoriesPage() {
                     <button
                         onClick={handleCreateCategory}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-                        style={{ backgroundColor: color.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                         onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                         }}
                         onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                         }}
                     >
                         <Plus className="w-4 h-4" />
@@ -496,7 +498,6 @@ export default function CampaignCategoriesPage() {
                 </div>
             ) : filteredCampaignCategories.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
-                    <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         {searchTerm ? 'No catalogs found' : 'No catalogs yet'}
                     </h3>
@@ -509,12 +510,12 @@ export default function CampaignCategoriesPage() {
                         <button
                             onClick={handleCreateCategory}
                             className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
-                            style={{ backgroundColor: color.sentra.main }}
+                            style={{ backgroundColor: color.primary.action }}
                             onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                             }}
                             onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                         >
                             <Plus className="w-5 h-5 mr-2" />
@@ -530,12 +531,6 @@ export default function CampaignCategoriesPage() {
                             className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
                         >
                             <div className="flex items-start justify-between mb-4">
-                                <div
-                                    className="w-12 h-12 rounded-lg flex items-center justify-center"
-                                    style={{ backgroundColor: `${color.entities.campaigns}20` }}
-                                >
-                                    <Target className="w-6 h-6" style={{ color: color.entities.campaigns }} />
-                                </div>
                                 <div className="flex items-center space-x-1">
                                     <button
                                         onClick={() => handleEditCategory(category)}
@@ -582,12 +577,6 @@ export default function CampaignCategoriesPage() {
                             className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
                         >
                             <div className="flex items-center gap-4 flex-1">
-                                <div
-                                    className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    style={{ backgroundColor: `${color.entities.campaigns}20` }}
-                                >
-                                    <Target className="w-6 h-6" style={{ color: color.entities.campaigns }} />
-                                </div>
                                 <div className="flex-1">
                                     <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
                                     <p className="text-sm text-gray-600 mt-0.5">
@@ -636,8 +625,8 @@ export default function CampaignCategoriesPage() {
             />
 
             {/* Campaigns Modal */}
-            {isCampaignsModalOpen && selectedCategory && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            {isCampaignsModalOpen && selectedCategory && createPortal(
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
                         <div className="flex items-center justify-between p-6 border-b border-gray-200">
                             <div>
@@ -719,12 +708,12 @@ export default function CampaignCategoriesPage() {
                                     {/* <button
                                         onClick={handleCreateNewCampaign}
                                         className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
-                                        style={{ backgroundColor: color.sentra.main }}
+                                        style={{ backgroundColor: color.primary.action }}
                                         onMouseEnter={(e) => {
-                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                                         }}
                                         onMouseLeave={(e) => {
-                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                         }}
                                     >
                                         <Plus className="w-4 h-4 mr-2" />
@@ -743,7 +732,6 @@ export default function CampaignCategoriesPage() {
                             ) : campaigns.length === 0 ? (
                                 <div className="text-center py-8">
                                     <div className="text-gray-400 mb-2">
-                                        <Target className="w-12 h-12 mx-auto" />
                                     </div>
                                     <p className="text-gray-600">No campaigns found in this category</p>
                                 </div>
@@ -773,12 +761,12 @@ export default function CampaignCategoriesPage() {
                                                             navigate(`/dashboard/campaigns/${campaign.id}`);
                                                         }}
                                                         className="px-3 py-1 text-sm text-white rounded transition-colors"
-                                                        style={{ backgroundColor: color.sentra.main }}
+                                                        style={{ backgroundColor: color.primary.action }}
                                                         onMouseEnter={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                                            (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                                                         }}
                                                         onMouseLeave={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                                         }}
                                                     >
                                                         View Details
@@ -791,7 +779,8 @@ export default function CampaignCategoriesPage() {
                             )}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

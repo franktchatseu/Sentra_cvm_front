@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '../../../contexts/ToastContext';
 import {
   Plus,
   Filter,
   Search,
-  Target,
   Users,
   // Calendar,
   MoreHorizontal,
@@ -343,10 +343,10 @@ export default function CampaignsPage() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      active: `bg-[${color.status.success.light}] text-[${color.status.success.main}]`,
-      scheduled: `bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`,
-      paused: `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`,
-      completed: `bg-[${color.status.info.light}] text-[${color.status.info.main}]`
+      active: `bg-[${color.status.success}]/10 text-[${color.status.success}]`,
+      scheduled: `bg-[${color.status.warning}]/10 text-[${color.status.warning}]`,
+      paused: `bg-[${color.interactive.hover}] text-[${color.text.secondary}]`,
+      completed: `bg-[${color.status.info}]/10 text-[${color.status.info}]`
     };
     return badges[status as keyof typeof badges] || badges.active;
   };
@@ -510,16 +510,14 @@ export default function CampaignsPage() {
         <button
           onClick={() => navigate('/dashboard/campaigns/create')}
           className="inline-flex items-center px-4 py-2 font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-sm whitespace-nowrap text-white"
-          style={{ backgroundColor: color.sentra.main }}
-          onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-          onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+          style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-5 w-5 mr-2" />
           Create Campaign
         </button>
       </div>
 
-      <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+      <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div className="flex flex-wrap gap-3">
             {statusOptions.map((option) => (
@@ -532,19 +530,19 @@ export default function CampaignsPage() {
                   }`}
                 style={{
                   backgroundColor: selectedStatus === option.value ? 'white' : 'white',
-                  borderColor: selectedStatus === option.value ? color.sentra.main : color.ui.border,
-                  color: selectedStatus === option.value ? color.sentra.main : color.ui.text.secondary
+                  borderColor: selectedStatus === option.value ? color.primary.action : color.border.default,
+                  color: selectedStatus === option.value ? color.primary.action : color.text.secondary
                 }}
                 onMouseEnter={(e) => {
                   if (selectedStatus !== option.value) {
-                    (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}20`;
-                    (e.target as HTMLButtonElement).style.color = color.sentra.main;
+                    (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}20`;
+                    (e.target as HTMLButtonElement).style.color = color.primary.action;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (selectedStatus !== option.value) {
                     (e.target as HTMLButtonElement).style.backgroundColor = '#f9fafb';
-                    (e.target as HTMLButtonElement).style.color = color.ui.text.secondary;
+                    (e.target as HTMLButtonElement).style.color = color.text.secondary;
                   }
                 }}
               >
@@ -555,18 +553,18 @@ export default function CampaignsPage() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="relative w-full sm:w-auto">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.text.muted}]`} />
               <input
                 type="text"
                 placeholder="Search campaigns..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 pr-4 py-2.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:ring-0 focus:border-[${color.sentra.main}] w-full sm:w-72 text-sm`}
+                className={`pl-10 pr-4 py-2.5 border border-[${color.border.default}] rounded-lg focus:outline-none focus:ring-0 focus:border-[${color.primary.action}] w-full sm:w-72 text-sm`}
               />
             </div>
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium w-full sm:w-auto`}
+              className={`flex items-center px-4 py-2.5 border border-[${color.border.default}] ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium w-full sm:w-auto`}
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -575,7 +573,7 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      <div className={`bg-white rounded-2xl border border-[${color.ui.border}]`}>
+      <div className={`bg-white rounded-2xl border border-[${color.border.default}]`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
@@ -584,7 +582,7 @@ export default function CampaignsPage() {
         ) : filteredCampaigns.length > 0 ? (
           <div>
             <table className="min-w-full">
-              <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
+              <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.border.default}]`}>
                 <tr>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Campaign</th>
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
@@ -594,14 +592,11 @@ export default function CampaignsPage() {
                   <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
                 </tr>
               </thead>
-              <tbody className={`bg-white divide-y divide-[${color.ui.border}]/50`}>
+              <tbody className={`bg-white divide-y divide-[${color.border.default}]/50`}>
                 {filteredCampaigns.map((campaign) => (
                   <tr key={campaign.id} className={`group hover:bg-gray-50/30 transition-all duration-300 relative`}>
                     <td className="px-6 py-3">
                       <div className="flex items-center space-x-4">
-                        <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.campaigns}` }}>
-                          <Target className={`w-5 h-5 text-white`} />
-                        </div>
                         <div className="min-w-0 flex-1">
                           <div className={`font-semibold text-base ${tw.textPrimary} truncate`}>{campaign.name}</div>
                           <div className="mt-2 flex items-center space-x-2">
@@ -621,7 +616,7 @@ export default function CampaignsPage() {
                     </td>
                     <td className="px-6 py-3 hidden lg:table-cell">
                       <div className="flex items-center space-x-2">
-                        <Users className={`w-4 h-4 text-[${color.entities.segments}] flex-shrink-0`} />
+                        <Users className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`} />
                         <span className={`text-sm ${tw.textPrimary} truncate`}>{campaign.segment}</span>
                       </div>
                     </td>
@@ -636,7 +631,7 @@ export default function CampaignsPage() {
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className={`${tw.textSecondary}`}>Revenue:</span>
-                            <span className={`font-medium text-[${color.sentra.main}]`}>
+                            <span className={`font-medium text-[${color.primary.action}]`}>
                               ${campaign.performance.revenue.toLocaleString()}
                             </span>
                           </div>
@@ -654,7 +649,7 @@ export default function CampaignsPage() {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => navigate(`/dashboard/campaigns/${campaign.id}`)}
-                          className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.campaigns}]/10 transition-all duration-300`}
+                          className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.action}]/10 transition-all duration-300`}
                           title="View Details"
                         >
                           <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
@@ -693,7 +688,7 @@ export default function CampaignsPage() {
                         <div className="relative" ref={(el) => { actionMenuRefs.current[campaign.id] = el; }}>
                           <button
                             onClick={() => handleActionMenuToggle(campaign.id)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.campaigns}]/10 transition-all duration-300`}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.action}]/10 transition-all duration-300`}
                           >
                             <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           </button>
@@ -714,7 +709,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
-                                <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                <Copy className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
                                 Duplicate Campaign
                               </button>
 
@@ -725,7 +720,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
-                                <Copy className="w-4 h-4 mr-4" style={{ color: color.entities.campaigns }} />
+                                <Copy className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
                                 Clone with Changes
                               </button>
 
@@ -736,7 +731,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
-                                <Archive className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                <Archive className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
                                 Archive Campaign
                               </button>
 
@@ -747,7 +742,6 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
-                                <Target className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
                                 View Analytics
                               </button>
 
@@ -758,7 +752,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
-                                <Download className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                <Download className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
                                 Export Data
                               </button>
 
@@ -769,7 +763,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
-                                <CheckCircle className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                <CheckCircle className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
                                 Approval History
                               </button>
 
@@ -780,7 +774,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
-                                <History className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
+                                <History className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
                                 Lifecycle History
                               </button>
 
@@ -807,9 +801,6 @@ export default function CampaignsPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-6">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${color.entities.campaigns}20` }}>
-              <Target className="w-8 h-8" style={{ color: color.entities.campaigns }} />
-            </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No campaigns found</h3>
             <p className="text-sm text-#f9fafb0 text-center max-w-sm">
               {selectedStatus === 'completed'
@@ -821,9 +812,7 @@ export default function CampaignsPage() {
               <button
                 onClick={() => navigate('/dashboard/campaigns/create')}
                 className="mt-4 px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200"
-                style={{ backgroundColor: color.sentra.main }}
-                onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                style={{ backgroundColor: color.primary.action }}
               >
                 Create Your First Campaign
               </button>
@@ -833,7 +822,7 @@ export default function CampaignsPage() {
       </div>
 
       {/* Filters Side Modal */}
-      {showAdvancedFilters && (
+      {showAdvancedFilters && createPortal(
         <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 999999, top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
           <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl" style={{ zIndex: 1000000 }}>
@@ -966,7 +955,8 @@ export default function CampaignsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}

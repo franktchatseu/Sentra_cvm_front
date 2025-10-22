@@ -275,9 +275,9 @@ export default function EditProductPage() {
               type="submit"
               disabled={isLoading}
               className="text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: color.sentra.main }}
-              onMouseEnter={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-              onMouseLeave={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+              style={{ backgroundColor: color.primary.action }}
+              onMouseEnter={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+              onMouseLeave={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
             >
               {isLoading ? (
                 <>

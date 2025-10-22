@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -9,13 +10,13 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Power,
-  PowerOff,
   X,
   Eye,
   ChevronLeft,
   ChevronRight,
-  Copy
+  Copy,
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import { Segment, SegmentFilters, SegmentType, SortDirection } from '../types/segment';
 import { segmentService } from '../services/segmentService';
@@ -186,12 +187,13 @@ const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
   const [segments, setSegments] = useState<Segment[]>([]);
+  const [allSegments, setAllSegments] = useState<Segment[]>([]); // Store all segments for tag calculation
   const [isLoading, setIsLoading] = useState(true);
+  const [duplicatingSegment, setDuplicatingSegment] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [typeFilter, setTypeFilter] = useState<SegmentType | 'all'>('all');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -202,6 +204,7 @@ export default function SegmentManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isClosingModal, setIsClosingModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
   const actionMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -215,6 +218,14 @@ export default function SegmentManagementPage() {
     } else {
       setShowActionMenu(segmentId);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsClosingModal(true);
+    setTimeout(() => {
+      setShowAdvancedFilters(false);
+      setIsClosingModal(false);
+    }, 300); // Match the transition duration
   };
 
   // Close dropdown when clicking outside
@@ -249,8 +260,10 @@ export default function SegmentManagementPage() {
       setIsLoading(true);
       setError('');
 
+
       if (USE_MOCK_DATA) {
         // Use mock data for testing
+        console.log('🚀 LOADING SEGMENTS - Using mock data');
         setSegments(MOCK_SEGMENTS);
         setTotalCount(MOCK_SEGMENTS.length);
         setTotalPages(Math.ceil(MOCK_SEGMENTS.length / pageSize));
@@ -258,31 +271,45 @@ export default function SegmentManagementPage() {
         return;
       }
 
-      // Build filters with all the new options
+      // Use client-side tag filtering (search endpoint has issues)
+
       const filters: SegmentFilters = {
         page,
         pageSize,
         sortBy,
         sortDirection,
+        skipCache: true, // Always skip cache to get fresh data
       };
 
       if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
-      if (selectedTags.length > 0) filters.tags = selectedTags;
-      if (statusFilter !== 'all') filters.is_active = statusFilter === 'active';
       if (typeFilter !== 'all') filters.type = typeFilter;
 
       const response = await segmentService.getSegments(filters);
 
       // Handle both response formats
-      const segmentData = response.data || response.segments || [];
+      let segmentData = response.data || response.segments || [];
+
+      // Apply client-side tag filtering if tags are selected
+      if (selectedTags.length > 0) {
+        segmentData = segmentData.filter(segment =>
+          selectedTags.some(tag => (segment.tags || []).includes(tag))
+        );
+      }
       setSegments(segmentData);
+      // Update allSegments for tag calculation
+      setAllSegments(segmentData);
+      // Update pagination info
+      setTotalCount(segmentData.length);
+      setTotalPages(Math.ceil(segmentData.length / pageSize));
     } catch (err: unknown) {
       setError((err as Error).message || 'Failed to load segments');
       setSegments([]);
+      setTotalCount(0);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearchTerm, selectedTags, statusFilter, typeFilter, page, pageSize, sortBy, sortDirection]);
+  }, [debouncedSearchTerm, selectedTags, typeFilter, page, pageSize, sortBy, sortDirection]);
 
   useEffect(() => {
     loadSegments();
@@ -345,43 +372,28 @@ export default function SegmentManagementPage() {
 
     if (!confirmed) return;
 
-    try {
-      const segmentId = segment.segment_id || segment.id!;
-      const newName = `${segment.name} (Copy)`;
+    const segmentId = segment.segment_id || segment.id!;
+    const newName = `${segment.name} (Copy)`;
 
-      await segmentService.duplicateSegment(segmentId, { newName });
+    try {
+      setDuplicatingSegment(segmentId);
+
+      await segmentService.duplicateSegment(segmentId, { new_name: newName });
+      // Small delay to ensure backend has processed the duplicate
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // Force refresh with cache-busting
+      setSegments([]); // Clear current segments first
       await loadSegments();
+
+      // Success: show toast and close modal
       success('Segment duplicated', `Segment "${newName}" has been created successfully`);
     } catch (err: unknown) {
       showError('Error duplicating segment', (err as Error).message || 'Failed to duplicate segment');
+    } finally {
+      setDuplicatingSegment(null);
     }
   };
 
-  const handleToggleStatus = async (segment: Segment) => {
-    setShowActionMenu(null);
-    const action = segment.is_active ? 'deactivate' : 'activate';
-    const confirmed = await confirm({
-      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Segment`,
-      message: `Are you sure you want to ${action} "${segment.name}"?`,
-      type: segment.is_active ? 'warning' : 'success',
-      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
-      cancelText: 'Cancel'
-    });
-
-    if (!confirmed) return;
-
-    try {
-      const segmentId = segment.segment_id || segment.id!;
-      await segmentService.toggleSegmentStatus(segmentId, !segment.is_active);
-      await loadSegments();
-      success(
-        `Segment ${action}d`,
-        `Segment "${segment.name}" has been ${action}d successfully`
-      );
-    } catch (err: unknown) {
-      showError(`Error ${action}ing segment`, (err as Error).message || `Failed to ${action} segment`);
-    }
-  };
 
   const handleSaveSegment = async (segment: Segment) => {
     await loadSegments();
@@ -391,15 +403,49 @@ export default function SegmentManagementPage() {
     );
   };
 
-  // Get all unique tags from segments
-  const allTags = Array.from(new Set(segments?.flatMap(s => s.tags || []) || []));
+  const handleComputeSegment = async (segment: Segment) => {
+    setShowActionMenu(null);
+    const confirmed = await confirm({
+      title: 'Compute Segment',
+      message: `Do you want to compute the segment "${segment.name}"? This will refresh the member list.`,
+      type: 'info',
+      confirmText: 'Compute',
+      cancelText: 'Cancel'
+    });
 
-  // Status filter options
-  const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' }
-  ];
+    if (!confirmed) return;
+
+    try {
+      const segmentId = segment.segment_id || segment.id!;
+      await segmentService.computeSegment(segmentId);
+      success('Segment computed', `Segment "${segment.name}" has been computed successfully`);
+    } catch (err: unknown) {
+      showError('Compute failed', (err as Error).message || 'Failed to compute segment');
+    }
+  };
+
+  const handleExportSegment = async (segment: Segment) => {
+    setShowActionMenu(null);
+    try {
+      const segmentId = segment.segment_id || segment.id!;
+      const blob = await segmentService.exportSegment(segmentId, 'json');
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${segment.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_segment.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      success('Export successful', `Segment data has been exported as JSON`);
+    } catch (err: unknown) {
+      showError('Export failed', (err as Error).message || 'Failed to export segment');
+    }
+  };
+
+  // Get all unique tags from all segments (not just filtered ones)
+  const allTags = Array.from(new Set(allSegments?.flatMap(s => s.tags || []) || []));
+
 
   const filteredSegments = (segments || []).filter(segment => {
     const matchesSearch = !searchTerm ||
@@ -409,11 +455,8 @@ export default function SegmentManagementPage() {
     const matchesTags = selectedTags.length === 0 ||
       selectedTags.some(tag => (segment.tags || []).includes(tag));
 
-    const matchesStatus = statusFilter === 'all' ||
-      (statusFilter === 'active' && segment.is_active) ||
-      (statusFilter === 'inactive' && !segment.is_active);
 
-    return matchesSearch && matchesTags && matchesStatus;
+    return matchesSearch && matchesTags;
   });
 
   return (
@@ -422,17 +465,14 @@ export default function SegmentManagementPage() {
       <div className={``}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Segment Management</h1>
-            <p className={`${tw.textSecondary} mt-2 text-sm`}>Create and manage customer segments</p>
+            <h1 className={`${tw.heading} ${tw.textPrimary}`}>Segment Management</h1>
+            <p className={`${tw.caption} ${tw.textSecondary} mt-2`}>Create and manage customer segments</p>
           </div>
           <button
             onClick={handleCreateSegment}
-            className="inline-flex items-center px-4 py-2 font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-sm whitespace-nowrap text-white"
-            style={{ backgroundColor: color.sentra.main }}
-            onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-            onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+            className={`${tw.button} flex items-center gap-2`}
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-5 w-5" />
             Create Segment
           </button>
         </div>
@@ -442,21 +482,21 @@ export default function SegmentManagementPage() {
       <div className={``}>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="flex-1 relative">
-            <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-[${color.ui.text.muted}] w-5 h-5`} />
+            <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${tw.textMuted} w-5 h-5`} />
             <input
               type="text"
               placeholder="Search segments..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className={`w-full pl-10 pr-4 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.sentra.main}]/20`}
+              className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
             />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium`}
+              className={`flex items-center px-4 py-2.5  rounded-lg bg-gray-50 transition-colors text-base font-medium`}
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -465,20 +505,9 @@ export default function SegmentManagementPage() {
         </div>
 
         {/* Active Filters Display */}
-        {(selectedTags.length > 0 || statusFilter !== 'all' || typeFilter !== 'all') && (
+        {(selectedTags.length > 0 || typeFilter !== 'all') && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
             <span className={`text-sm font-medium ${tw.textPrimary} py-2`}>Active filters:</span>
-            {statusFilter !== 'all' && (
-              <span className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-full border border-blue-200">
-                Status: {statusFilter === 'active' ? 'Active' : 'Inactive'}
-                <button
-                  onClick={() => setStatusFilter('all')}
-                  className="ml-2 hover:text-blue-900"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
             {typeFilter !== 'all' && (
               <span className="inline-flex items-center px-3 py-1.5 text-sm bg-purple-50 text-purple-700 rounded-full border border-purple-200">
                 Type: {typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}
@@ -506,7 +535,7 @@ export default function SegmentManagementPage() {
       </div>
 
       {/* Content */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}]`}>
+      <div className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
@@ -515,10 +544,10 @@ export default function SegmentManagementPage() {
         ) : error ? (
           <div className="p-8 text-center">
             <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-              <p className={`text-[${color.status.error.main}] font-medium mb-3 text-sm`}>{error}</p>
+              <p className={`text-[${color.status.danger}] font-medium mb-3 text-sm`}>{error}</p>
               <button
                 onClick={loadSegments}
-                className={`bg-[${color.status.error.main}] text-green-700 px-4 py-2 rounded-lg hover:bg-[${color.status.error.dark}] transition-colors font-medium text-sm`}
+                className={`bg-[${color.status.danger}] text-white px-4 py-2 rounded-lg hover:bg-[${color.status.danger}]/80 transition-colors font-medium text-sm`}
               >
                 Try Again
               </button>
@@ -526,10 +555,7 @@ export default function SegmentManagementPage() {
           </div>
         ) : filteredSegments.length === 0 ? (
           <div className="p-8 md:p-16 text-center">
-            <div className={`bg-gradient-to-br from-[${color.entities.segments}]/5 to-[${color.entities.segments}]/10 rounded-xl p-6 md:p-12`}>
-              <div className={`bg-gradient-to-r from-[${color.entities.segments}] to-[${color.entities.segments}]/80 w-12 h-12 md:w-16 md:h-16 rounded-xl flex items-center justify-center mx-auto mb-6`}>
-                <Users className="w-6 h-6 md:w-8 md:h-8 text-white" />
-              </div>
+            <div className={`bg-gradient-to-br from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 rounded-xl p-6 md:p-12`}>
               <h3 className={`text-xl font-bold ${tw.textPrimary} mb-3`}>No segments found</h3>
               <p className={`${tw.textSecondary} mb-8 text-sm max-w-md mx-auto`}>
                 {searchTerm || selectedTags.length > 0 ? 'No segments match your search criteria.' : 'No segments have been created yet.'}
@@ -537,10 +563,7 @@ export default function SegmentManagementPage() {
               {!searchTerm && selectedTags.length === 0 && (
                 <button
                   onClick={handleCreateSegment}
-                  className="inline-flex items-center px-6 py-3 text-white rounded-xl transition-colors font-semibold text-sm"
-                  style={{ backgroundColor: color.sentra.main }}
-                  onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                  onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                  className={`${tw.button} inline-flex items-center px-6 py-3`}
                 >
                   <Plus className="w-5 h-5 mr-2" />
                   Create Your First Segment
@@ -551,163 +574,165 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block">
-              <div className="">
-                <table className="min-w-full">
-                  <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
-                    <tr>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Segment</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Type</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Tags</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Customers</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Created</th>
-                      <th className={`px-6 py-3 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className={`bg-white divide-y divide-[${color.ui.border}]/50`}>
-                    {filteredSegments.map((segment) => (
-                      <tr key={segment.segment_id || segment.id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-4">
-                            <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.segments}` }}>
-                              <Users className={`w-5 h-5 text-white`} />
-                            </div>
-                            <div>
-                              <div className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.entities.segments}] transition-colors`}>
-                                {segment.name}
-                              </div>
-                              <div className={`text-sm ${tw.textSecondary} mt-1`}>{segment.description}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? 'bg-purple-100 text-purple-700' :
-                            segment.type === 'static' ? 'bg-blue-100 text-blue-700' :
-                              'bg-orange-100 text-orange-700'
-                            }`}>
-                            {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {segment.tags?.map(tag => (
-                              <span key={tag} className={`inline-flex items-center px-2 py-1 bg-[${color.entities.segments}]/10 text-[${color.entities.segments}] text-sm font-medium rounded-full`}>
-                                <Tag className="w-3 h-3 mr-1" />
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2">
-                            <Users className={`w-4 h-4 text-[${color.entities.segments}] flex-shrink-0`} />
-                            <span className={`text-sm ${tw.textPrimary}`}>
-                              {segment.customer_count?.toLocaleString() || '0'}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead
+                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  style={{ background: color.surface.tableHeader }}
+                >
+                  <tr>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Segment</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Type</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Tags</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Customers</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Visibility</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Created</th>
+                    <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody className={`bg-white divide-y ${tw.borderDefault}/50`}>
+                  {filteredSegments.map((segment) => (
+                    <tr key={segment.segment_id || segment.id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
+                      <td className="px-6 py-4">
+                        <div className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.primary.accent}] transition-colors`}>
+                          {segment.name}
+                        </div>
+                        <div className={`text-sm ${tw.textSecondary} mt-1`}>{segment.description}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? `bg-[${color.primary.accent}] text-white` :
+                          segment.type === 'static' ? `bg-[${color.primary.action}] text-white` :
+                            `bg-[${color.status.warning}] text-white`
+                          }`}>
+                          {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {segment.tags?.map(tag => (
+                            <span key={tag} className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}>
+                              <Tag className="w-3 h-3 mr-1" />
+                              {tag}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.is_active ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` : `bg-[${color.status.error.light}] text-[${color.status.error.main}]`
-                            }`}>
-                            {segment.is_active ? 'Active' : 'Inactive'}
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <Users className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`} />
+                          <span className={`text-sm ${tw.textPrimary}`}>
+                            {segment.customer_count?.toLocaleString() || '0'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className={`text-sm ${tw.textPrimary} font-medium`}>
-                              {new Date(segment.created_on || segment.created_at!).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.visibility === 'public' ? `bg-[${color.status.success}]/10 text-[${color.status.success}]` : `bg-[${color.status.info}]/10 text-[${color.status.info}]`
+                          }`}>
+                          {segment.visibility === 'public' ? 'Public' : 'Private'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`text-sm ${tw.textPrimary} font-medium`}>
+                            {new Date(segment.created_on || segment.created_at!).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
                           </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center space-x-2">
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleViewSegment(segment.segment_id || segment.id!)}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          </button>
+                          <button
+                            onClick={() => handleEditSegment(segment.segment_id || segment.id!)}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          </button>
+                          <div className="relative" ref={(el) => { actionMenuRefs.current[String(segment.segment_id || segment.id!)] = el; }}>
                             <button
-                              onClick={() => handleViewSegment(segment.segment_id || segment.id!)}
-                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.segments}]/10 transition-all duration-300`}
-                              title="View Details"
+                              onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
+                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             >
-                              <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                              <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                             </button>
-                            <button
-                              onClick={() => handleEditSegment(segment.segment_id || segment.id!)}
-                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`}
-                              style={{ backgroundColor: 'transparent' }}
-                              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-                              title="Edit"
-                            >
-                              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                            </button>
-                            <div className="relative" ref={(el) => { actionMenuRefs.current[String(segment.segment_id || segment.id!)] = el; }}>
-                              <button
-                                onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
-                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.entities.segments}]/10 transition-all duration-300`}
+
+                            {showActionMenu === (segment.segment_id || segment.id) && (
+                              <div
+                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
+                                style={{
+                                  maxHeight: '80vh',
+                                  overflowY: 'auto'
+                                }}
                               >
-                                <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                              </button>
 
-                              {showActionMenu === (segment.segment_id || segment.id) && (
-                                <div
-                                  className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
-                                  style={{
-                                    maxHeight: '80vh',
-                                    overflowY: 'auto'
-                                  }}
+                                <button
+                                  onClick={() => handleDuplicateSegment(segment)}
+                                  disabled={duplicatingSegment === (segment.segment_id || segment.id)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  <button
-                                    onClick={() => handleToggleStatus(segment)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                  >
-                                    {segment.is_active ? (
-                                      <>
-                                        <PowerOff className="w-4 h-4 mr-4" style={{ color: color.status.warning.main }} />
-                                        Deactivate Segment
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Power className="w-4 h-4 mr-4" style={{ color: color.status.success.main }} />
-                                        Activate Segment
-                                      </>
-                                    )}
-                                  </button>
+                                  {duplicatingSegment === (segment.segment_id || segment.id) ? (
+                                    <>
+                                      <div className="w-4 h-4 mr-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                                      Duplicating...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
+                                      Duplicate Segment
+                                    </>
+                                  )}
+                                </button>
 
-                                  <button
-                                    onClick={() => handleDuplicateSegment(segment)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Copy className="w-4 h-4 mr-4" style={{ color: color.sentra.main }} />
-                                    Duplicate Segment
-                                  </button>
+                                <button
+                                  onClick={() => handleComputeSegment(segment)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                >
+                                  <RefreshCw className="w-4 h-4 mr-4" />
+                                  Compute Segment
+                                </button>
 
-                                  <div className="border-t border-gray-200 my-1"></div>
+                                <button
+                                  onClick={() => handleExportSegment(segment)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                >
+                                  <Download className="w-4 h-4 mr-4" />
+                                  Export Segment
+                                </button>
 
-                                  <button
-                                    onClick={() => handleDeleteSegment(segment)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-4" style={{ color: color.status.error.main }} />
-                                    Delete Segment
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                                <div className="border-t border-gray-200 my-1"></div>
+
+                                <button
+                                  onClick={() => handleDeleteSegment(segment)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-4" style={{ color: color.status.danger }} />
+                                  Delete Segment
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             {/* Mobile Cards */}
             <div className="lg:hidden space-y-4 p-4">
               {filteredSegments.map((segment) => (
-                <div key={segment.segment_id || segment.id} className={`bg-white border border-[${color.ui.border}] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
+                <div key={segment.segment_id || segment.id} className={`bg-white border ${tw.borderDefault} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="text-base font-semibold text-gray-900 mb-1">
@@ -756,15 +781,15 @@ export default function SegmentManagementPage() {
                         {tag}
                       </span>
                     ))}
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${segment.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${segment.visibility === 'public' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                       }`}>
-                      {segment.is_active ? 'Active' : 'Inactive'}
+                      {segment.visibility === 'public' ? 'Public' : 'Private'}
                     </span>
                   </div>
 
                   <div className={`flex justify-between items-center text-sm ${tw.textSecondary}`}>
                     <div className="flex items-center">
-                      <Users className={`w-3 h-3 mr-1 text-[${color.entities.segments}]`} />
+                      {/* Icon removed */}
                       {segment.customer_count?.toLocaleString() || '0'} customers
                     </div>
                     <div>
@@ -784,17 +809,23 @@ export default function SegmentManagementPage() {
 
       {/* Pagination */}
       {!isLoading && !error && filteredSegments.length > 0 && (
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] px-4 sm:px-6 py-4`}>
+        <div className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
-              Showing {((page - 1) * pageSize) + 1} to{' '}
-              {Math.min(page * pageSize, totalCount)} of {totalCount} segments
+              {totalCount === 0 ? (
+                'No segments found'
+              ) : (
+                <>
+                  Showing {((page - 1) * pageSize) + 1} to{' '}
+                  {Math.min(page * pageSize, totalCount)} of {totalCount} segments
+                </>
+              )}
             </div>
             <div className="flex items-center justify-center space-x-2">
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
-                className={`p-2 border border-[${color.ui.border}] rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -804,14 +835,15 @@ export default function SegmentManagementPage() {
               <button
                 onClick={() => setPage(page + 1)}
                 disabled={page >= totalPages}
-                className={`p-2 border border-[${color.ui.border}] rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Segment Modal */}
       <SegmentModal
@@ -825,149 +857,146 @@ export default function SegmentManagementPage() {
       />
 
       {/* Advanced Filters Side Modal */}
-      {showAdvancedFilters && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
-          <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl">
-            <div className="p-6 border-b border-[${color.ui.border}]">
-              <div className="flex items-center justify-between">
-                <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Segments</h3>
-                <button
-                  onClick={() => setShowAdvancedFilters(false)}
-                  className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
-              {/* Type Filter */}
-              <div>
-                <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Segment Type</label>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="all"
-                      checked={typeFilter === 'all'}
-                      onChange={() => setTypeFilter('all')}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>All Types</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="dynamic"
-                      checked={typeFilter === 'dynamic'}
-                      onChange={() => setTypeFilter('dynamic')}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>Dynamic</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="static"
-                      checked={typeFilter === 'static'}
-                      onChange={() => setTypeFilter('static')}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>Static</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="trigger"
-                      checked={typeFilter === 'trigger'}
-                      onChange={() => setTypeFilter('trigger')}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>Trigger</span>
-                  </label>
+      {
+        (showAdvancedFilters || isClosingModal) && createPortal(
+          <div className={`fixed inset-0 z-[9999] overflow-hidden ${isClosingModal ? 'animate-out fade-out duration-300' : 'animate-in fade-in duration-300'}`}>
+            <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300" onClick={handleCloseModal}></div>
+            <div className={`absolute right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${isClosingModal ? 'translate-x-full' : 'translate-x-0'}`}>
+              <div className={`p-6 border-b ${tw.borderDefault}`}>
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Segments</h3>
+                  <button
+                    onClick={handleCloseModal}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
 
-              {/* Status Filter */}
-              <div>
-                <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Status</label>
-                <div className="space-y-2">
-                  {statusOptions.map((option) => (
-                    <label key={option.value} className="flex items-center">
+              <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+                {/* Type Filter */}
+                <div>
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Segment Type</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
                       <input
                         type="radio"
-                        name="status"
-                        value={option.value}
-                        checked={statusFilter === option.value}
-                        onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                        className="mr-3 text-blue-600 focus:ring-blue-500"
+                        name="type"
+                        value="all"
+                        checked={typeFilter === 'all'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('all');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
                       />
-                      <span className={`text-sm ${tw.textSecondary}`}>{option.label}</span>
+                      <span className={`text-sm ${tw.textSecondary}`}>All Types</span>
                     </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tags Filter */}
-              {allTags.length > 0 && (
-                <div>
-                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Tags</label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {allTags.map(tag => (
-                      <label key={tag} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedTags.includes(tag)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedTags(prev => [...prev, tag]);
-                            } else {
-                              setSelectedTags(prev => prev.filter(t => t !== tag));
-                            }
-                          }}
-                          className="mr-3 text-[${color.sentra.main}] focus:ring-[${color.sentra.main}]"
-                        />
-                        <span className={`text-sm ${tw.textSecondary}`}>{tag}</span>
-                      </label>
-                    ))}
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="dynamic"
+                        checked={typeFilter === 'dynamic'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('dynamic');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>Dynamic</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="static"
+                        checked={typeFilter === 'static'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('static');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>Static</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="trigger"
+                        checked={typeFilter === 'trigger'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('trigger');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>Trigger</span>
+                    </label>
                   </div>
                 </div>
-              )}
 
-              {/* Action Buttons */}
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setStatusFilter('all');
-                    setTypeFilter('all');
-                    setSelectedTags([]);
-                  }}
-                  className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
-                >
-                  Clear All
-                </button>
-                <button
-                  onClick={() => {
-                    handleSearch();
-                    setShowAdvancedFilters(false);
-                  }}
-                  className={`flex-1 px-4 py-2 text-sm text-white rounded-lg transition-colors`}
-                  style={{ backgroundColor: color.sentra.main }}
-                  onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                  onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
-                >
-                  Apply Filters
-                </button>
+
+                {/* Tags Filter */}
+                {allTags.length > 0 && (
+                  <div>
+                    <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Tags</label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {allTags.map(tag => (
+                        <label key={tag} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedTags.includes(tag)}
+                            onChange={(e) => {
+                              e.stopPropagation(); // Prevent event bubbling
+                              if (e.target.checked) {
+                                setSelectedTags(prev => [...prev, tag]);
+                              } else {
+                                setSelectedTags(prev => prev.filter(t => t !== tag));
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()} // Prevent event bubbling
+                            className={`mr-3 text-[${color.primary.action}] focus:ring-[${color.primary.action}]`}
+                          />
+                          <span className={`text-sm ${tw.textSecondary}`}>{tag}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setTypeFilter('all');
+                      setSelectedTags([]);
+                    }}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleSearch();
+                      handleCloseModal();
+                    }}
+                    className={`${tw.button} flex-1 px-4 py-2 text-sm`}
+                  >
+                    Apply Filters
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

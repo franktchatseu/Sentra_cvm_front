@@ -113,12 +113,12 @@ export default function CategorySelector({
             type="button"
             onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
             className="px-3 py-2 text-white rounded-lg transition-colors flex items-center justify-center text-sm"
-            style={{ backgroundColor: color.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.accent;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
             title="Create new catalog"
           >
@@ -158,7 +158,7 @@ export default function CategorySelector({
                   <button
                     key={category.id}
                     onClick={() => handleSelect(category.id)}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[${color.sentra.main}]/10 flex items-center justify-between ${value === category.id ? `bg-[${color.sentra.main}]/10 text-[${color.sentra.main}]` : 'text-gray-900'
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[${color.primary.accent}]/10 flex items-center justify-between ${value === category.id ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]` : 'text-gray-900'
                       }`}
                   >
                     <div>
@@ -180,7 +180,7 @@ export default function CategorySelector({
                   <div className="border-t border-gray-200">
                     <button
                       onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
-                      className="w-full px-4 py-2 text-left text-sm text-[${color.sentra.main}] hover:bg-[${color.sentra.main}]/10 flex items-center"
+                      className="w-full px-4 py-2 text-left text-sm text-[${color.primary.accent}] hover:bg-[${color.primary.accent}]/10 flex items-center"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Create new catalog

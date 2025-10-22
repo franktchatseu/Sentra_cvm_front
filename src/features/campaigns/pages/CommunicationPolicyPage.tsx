@@ -1,246 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, X, Bell, ArrowLeft } from 'lucide-react';
-import { color, tw } from '../../../shared/utils/utils';
+import { Plus, Search, Edit, Trash2, ArrowLeft, Clock, BarChart3, BellOff, Star } from 'lucide-react';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
-import { CommunicationPolicy } from '../types/communicationPolicy';
-
-interface PolicyModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    policy?: CommunicationPolicy;
-    onSave: (policy: { name: string; description?: string }) => Promise<void>;
-    isSaving?: boolean;
-}
-
-function PolicyModal({ isOpen, onClose, policy, onSave, isSaving = false }: PolicyModalProps) {
-    const [formData, setFormData] = useState({
-        name: '',
-        description: ''
-    });
-    const [error, setError] = useState('');
-
-    React.useEffect(() => {
-        if (policy) {
-            setFormData({
-                name: policy.name,
-                description: policy.description || ''
-            });
-        } else {
-            setFormData({ name: '', description: '' });
-        }
-        setError('');
-    }, [policy, isOpen]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.name.trim()) {
-            setError('Policy name is required');
-            return;
-        }
-
-        if (formData.name.length > 128) {
-            setError('Policy name must be 128 characters or less');
-            return;
-        }
-
-        setError('');
-
-        const policyData = {
-            name: formData.name.trim(),
-            description: formData.description.trim() || undefined
-        };
-
-        await onSave(policyData);
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-900">
-                        {policy ? 'Edit Communication Policy' : 'Create Communication Policy'}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                        <X className="w-5 h-5 text-gray-500" />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-6">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Policy Name *
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="Enter policy name"
-                                maxLength={128}
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Description
-                            </label>
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="Enter policy description"
-                                rows={3}
-                            />
-                        </div>
-                    </div>
-
-                    {error && (
-                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-red-700 text-sm">{error}</p>
-                        </div>
-                    )}
-
-                    <div className="flex items-center justify-end space-x-3 mt-6">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSaving}
-                            className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ backgroundColor: color.sentra.main }}
-                            onMouseEnter={(e) => {
-                                if (!e.currentTarget.disabled) {
-                                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                            }}
-                        >
-                            {isSaving ? 'Saving...' : (policy ? 'Update Policy' : 'Create Policy')}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-}
+import { color, tw, components, helpers } from '../../../shared/utils/utils';
+import { 
+    CommunicationPolicyConfiguration, 
+    CreateCommunicationPolicyRequest, 
+    COMMUNICATION_POLICY_TYPES,
+    TimeWindowConfig,
+    MaximumCommunicationConfig,
+    DNDConfig,
+    VIPListConfig
+} from '../types/communicationPolicyConfig';
+import CommunicationPolicyModal from '../components/CommunicationPolicyModal';
+import { communicationPolicyService } from '../services/communicationPolicyService';
 
 export default function CommunicationPolicyPage() {
     const navigate = useNavigate();
     const { confirm } = useConfirm();
     const { success: showToast, error: showError } = useToast();
 
-    // Hardcoded communication policies (matching existing dummy data patterns)
-    const hardcodedPolicies: CommunicationPolicy[] = [
-        {
-            id: 1,
-            name: 'Standard Customer Policy',
-            description: 'Default communication limits for regular customers',
-            frequency_capping: {
-                max_per_day: 1,
-                max_per_week: 3,
-                max_per_month: 10
-            },
-            throttling: {
-                max_per_hour: 1000,
-                max_per_day: 10000
-            },
-            channels: ['NORMAL_SMS', 'EMAIL', 'PUSH'],
-            blackout_windows: [
-                { start_time: '22:00', end_time: '08:00' }
-            ],
-            created_at: '2024-01-15T10:30:00Z',
-            updated_at: '2024-01-20T14:45:00Z'
-        },
-        {
-            id: 2,
-            name: 'VIP Customer Policy',
-            description: 'Higher frequency limits for VIP customers',
-            frequency_capping: {
-                max_per_day: 3,
-                max_per_week: 7,
-                max_per_month: 20
-            },
-            throttling: {
-                max_per_hour: 2000,
-                max_per_day: 20000
-            },
-            channels: ['NORMAL_SMS', 'FLASH_SMS', 'EMAIL', 'PUSH', 'WHATSAPP'],
-            blackout_windows: [
-                { start_time: '23:00', end_time: '07:00' }
-            ],
-            created_at: '2024-01-10T09:15:00Z',
-            updated_at: '2024-01-18T16:20:00Z'
-        },
-        {
-            id: 3,
-            name: 'Promotional Campaign Policy',
-            description: 'Moderate limits for promotional campaigns',
-            frequency_capping: {
-                max_per_day: 2,
-                max_per_week: 5,
-                max_per_month: 15
-            },
-            throttling: {
-                max_per_hour: 1500,
-                max_per_day: 15000
-            },
-            channels: ['NORMAL_SMS', 'EMAIL', 'PUSH', 'INAPP'],
-            created_at: '2024-01-12T11:00:00Z',
-            updated_at: '2024-01-19T13:30:00Z'
-        },
-        {
-            id: 4,
-            name: 'Urgent Alerts Policy',
-            description: 'Relaxed limits for critical/urgent communications',
-            frequency_capping: {
-                max_per_day: 5,
-                max_per_week: 15,
-                max_per_month: 40
-            },
-            throttling: {
-                max_per_hour: 5000,
-                max_per_day: 50000
-            },
-            channels: ['FLASH_SMS', 'NORMAL_SMS', 'PUSH', 'EMAIL'],
-            created_at: '2024-01-08T08:45:00Z',
-            updated_at: '2024-01-15T12:00:00Z'
-        }
-    ];
-
-    const [policies, setPolicies] = useState<CommunicationPolicy[]>(hardcodedPolicies);
+    const [policies, setPolicies] = useState<CommunicationPolicyConfiguration[]>([]);
     const [loading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingPolicy, setEditingPolicy] = useState<CommunicationPolicy | undefined>();
+    const [editingPolicy, setEditingPolicy] = useState<CommunicationPolicyConfiguration | undefined>();
     const [isSaving, setIsSaving] = useState(false);
+
+    // Load policies from service and subscribe to changes
+    useEffect(() => {
+        // Load initial policies
+        setPolicies(communicationPolicyService.getAllPolicies());
+
+        // Subscribe to policy changes
+        const unsubscribe = communicationPolicyService.subscribe((updatedPolicies) => {
+            setPolicies(updatedPolicies);
+        });
+
+        return unsubscribe;
+    }, []);
 
     const handleCreatePolicy = () => {
         setEditingPolicy(undefined);
         setIsModalOpen(true);
     };
 
-    const handleEditPolicy = (policy: CommunicationPolicy) => {
+    const handleEditPolicy = (policy: CommunicationPolicyConfiguration) => {
         setEditingPolicy(policy);
         setIsModalOpen(true);
     };
 
-    const handleDeletePolicy = async (policy: CommunicationPolicy) => {
+    const handleDeletePolicy = async (policy: CommunicationPolicyConfiguration) => {
         const confirmed = await confirm({
             title: 'Delete Policy',
             message: `Are you sure you want to delete "${policy.name}"? This action cannot be undone.`,
@@ -252,44 +63,33 @@ export default function CommunicationPolicyPage() {
         if (!confirmed) return;
 
         try {
-            setPolicies(prev => prev.filter(p => p.id !== policy.id));
-            showToast('Policy Deleted', `"${policy.name}" has been deleted successfully.`);
+            const success = communicationPolicyService.deletePolicy(policy.id);
+            if (success) {
+                showToast('Policy deleted successfully');
+            } else {
+                showError('Policy not found');
+            }
         } catch (err) {
-            console.error('Error deleting policy:', err);
-            showError('Error', err instanceof Error ? err.message : 'Failed to delete policy');
+            console.error('Failed to delete policy:', err);
+            showError('Failed to delete policy');
         }
     };
 
-    const handlePolicySaved = async (policyData: { name: string; description?: string }) => {
+    const handlePolicySaved = async (policyData: CreateCommunicationPolicyRequest) => {
         try {
             setIsSaving(true);
             if (editingPolicy) {
                 // Update existing policy
-                setPolicies(prev => prev.map(p =>
-                    p.id === editingPolicy.id
-                        ? { ...p, ...policyData, updated_at: new Date().toISOString() }
-                        : p
-                ));
-                showToast('Policy updated successfully');
+                const updatedPolicy = communicationPolicyService.updatePolicy(editingPolicy.id, policyData);
+                if (updatedPolicy) {
+                    showToast('Policy updated successfully');
+                } else {
+                    showError('Policy not found');
+                    return;
+                }
             } else {
                 // Create new policy
-                const newPolicy: CommunicationPolicy = {
-                    id: Math.max(...policies.map(p => Number(p.id))) + 1,
-                    ...policyData,
-                    frequency_capping: {
-                        max_per_day: 1,
-                        max_per_week: 3,
-                        max_per_month: 10
-                    },
-                    throttling: {
-                        max_per_hour: 1000,
-                        max_per_day: 10000
-                    },
-                    channels: ['NORMAL_SMS', 'EMAIL'],
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
-                setPolicies(prev => [...prev, newPolicy]);
+                communicationPolicyService.createPolicy(policyData);
                 showToast('Policy created successfully');
             }
             setIsModalOpen(false);
@@ -299,6 +99,40 @@ export default function CommunicationPolicyPage() {
             showError('Failed to save policy', 'Please try again later.');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const getTypeIcon = (type: string) => {
+        switch (type) {
+            case 'timeWindow': return <Clock className="w-4 h-4 text-blue-600" />;
+            case 'maximumCommunication': return <BarChart3 className="w-4 h-4 text-green-600" />;
+            case 'dnd': return <BellOff className="w-4 h-4 text-red-600" />;
+            case 'vipList': return <Star className="w-4 h-4 text-yellow-600" />;
+            default: return <Clock className="w-4 h-4 text-gray-600" />;
+        }
+    };
+
+    const getTypeLabel = (type: string) => {
+        const policyType = COMMUNICATION_POLICY_TYPES.find(t => t.value === type);
+        return policyType?.label || type;
+    };
+
+    const getConfigSummary = (policy: CommunicationPolicyConfiguration) => {
+        switch (policy.type) {
+            case 'timeWindow':
+                const timeConfig = policy.config as TimeWindowConfig;
+                return `${timeConfig.startTime} - ${timeConfig.endTime}`;
+            case 'maximumCommunication':
+                const maxConfig = policy.config as MaximumCommunicationConfig;
+                return `Max ${maxConfig.maxCount} per ${maxConfig.type}`;
+            case 'dnd':
+                const dndConfig = policy.config as DNDConfig;
+                return `${dndConfig.categories.length} categories`;
+            case 'vipList':
+                const vipConfig = policy.config as VIPListConfig;
+                return `${vipConfig.action} VIP (Priority: ${vipConfig.priority})`;
+            default:
+                return 'No configuration';
         }
     };
 
@@ -313,26 +147,19 @@ export default function CommunicationPolicyPage() {
                 <div className="flex items-center space-x-4">
                     <button
                         onClick={() => navigate('/dashboard/campaigns')}
-                        className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                        className={`p-2 ${tw.textSecondary} ${tw.hover} rounded-lg transition-colors`}
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Communication Policies</h1>
-                        <p className={`${tw.textSecondary} mt-2 text-sm`}>Manage customer communication frequency and fatigue rules</p>
+                        <h1 className={`${tw.heading} ${tw.textPrimary}`}>Communication Policies</h1>
+                        <p className={`${tw.caption} ${tw.textSecondary} mt-2`}>Manage customer communication rules and preferences</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleCreatePolicy}
-                        className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-                        style={{ backgroundColor: color.sentra.main }}
-                        onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                        }}
-                        onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                        }}
+                        className={`${tw.button} flex items-center gap-2`}
                     >
                         <Plus className="w-4 h-4" />
                         Create Policy
@@ -340,34 +167,33 @@ export default function CommunicationPolicyPage() {
                 </div>
             </div>
 
-            <div className={`bg-white my-5`}>
+            <div className={tw.surfaceBackground}>
                 <div className="relative w-full">
-                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${tw.textMuted}`} />
                     <input
                         type="text"
                         placeholder="Search policies by name or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+                        className={`${components.input.default} w-full pl-10 pr-4 py-3 ${tw.caption}`}
                     />
                 </div>
             </div>
 
-            <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
+            <div className={`${components.card.surface} overflow-hidden`}>
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <span className={`${tw.textSecondary}`}>Loading policies...</span>
+                        <span className={tw.textSecondary}>Loading policies...</span>
                     </div>
                 ) : filteredPolicies.length === 0 ? (
                     <div className="text-center py-12">
                         <p className={`${tw.textMuted} mb-6`}>
-                            {searchTerm ? 'Try adjusting your search terms.' : 'Create your first communication policy to get started.'}
+                            {searchTerm ? 'No policies found matching your search.' : 'Create your first communication policy to get started.'}
                         </p>
                         {!searchTerm && (
                             <button
                                 onClick={handleCreatePolicy}
-                                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                                style={{ backgroundColor: color.sentra.main }}
+                                className={`${tw.button} flex items-center gap-2 mx-auto`}
                             >
                                 <Plus className="w-4 h-4" />
                                 Create Policy
@@ -376,102 +202,69 @@ export default function CommunicationPolicyPage() {
                     </div>
                 ) : (
                     <>
+                        {/* Desktop Table View */}
                         <div className="hidden lg:block overflow-x-auto">
                             <table className="w-full">
-                                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
+                                <thead className={`${tw.tableHeader} ${tw.borderDefault} border-b`}>
                                     <tr>
-                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                                        <th className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}>
                                             Policy
                                         </th>
-                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Description
+                                        <th className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}>
+                                            Type
                                         </th>
-                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Frequency Cap
+                                        <th className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}>
+                                            Configuration
                                         </th>
-                                        <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
-                                            Channels
+                                        <th className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}>
+                                            Status
                                         </th>
-                                        <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                                        <th className={`px-6 py-4 text-right ${tw.label} ${tw.textMuted}`}>
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
+                                <tbody className={`divide-y ${tw.borderMuted}`}>
                                     {filteredPolicies.map((policy) => (
-                                        <tr key={policy.id} className="hover:bg-gray-50/30 transition-colors">
+                                        <tr key={policy.id} className={`${tw.hover} transition-colors`}>
                                             <td className="px-6 py-4">
-                                                <div className="flex items-center space-x-3">
-                                                    <div
-                                                        className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                                        style={{ backgroundColor: color.entities.campaigns }}
-                                                    >
-                                                        <Bell className="w-5 h-5 text-white" />
+                                                <div>
+                                                    <div className={`${tw.body} font-semibold ${tw.textPrimary}`}>
+                                                        {policy.name}
                                                     </div>
-                                                    <div>
-                                                        <div className={`text-base font-semibold ${tw.textPrimary}`}>
-                                                            {policy.name}
-                                                        </div>
-                                                        <div className={`text-sm ${tw.textMuted}`}>ID: {policy.id}</div>
-                                                    </div>
+                                                    <div className={`${tw.caption} ${tw.textMuted}`}>{policy.description || 'No description'}</div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className={`text-sm ${tw.textSecondary} max-w-md`}>
-                                                    {policy.description || 'No description'}
+                                                <div className="flex items-center space-x-2">
+                                                    {getTypeIcon(policy.type)}
+                                                    <span className={`${tw.caption} font-medium ${tw.textPrimary}`}>
+                                                        {getTypeLabel(policy.type)}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="text-sm space-y-1">
-                                                    <div className={tw.textSecondary}>
-                                                        <span className="font-medium">Day:</span> {policy.frequency_capping.max_per_day}
-                                                    </div>
-                                                    <div className={tw.textSecondary}>
-                                                        <span className="font-medium">Week:</span> {policy.frequency_capping.max_per_week}
-                                                    </div>
-                                                    <div className={tw.textSecondary}>
-                                                        <span className="font-medium">Month:</span> {policy.frequency_capping.max_per_month}
-                                                    </div>
+                                                <div className={`${tw.caption} ${tw.textSecondary}`}>
+                                                    {getConfigSummary(policy)}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {policy.channels.slice(0, 3).map((channel, idx) => (
-                                                        <span
-                                                            key={idx}
-                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}
-                                                        >
-                                                            {channel.replace('_', ' ')}
-                                                        </span>
-                                                    ))}
-                                                    {policy.channels.length > 3 && (
-                                                        <span className={`text-xs ${tw.textMuted}`}>
-                                                            +{policy.channels.length - 3} more
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                <span className={policy.isActive ? helpers.badge('success') : helpers.badge('info')}>
+                                                    {policy.isActive ? 'Active' : 'Inactive'}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end space-x-2">
                                                     <button
                                                         onClick={() => handleEditPolicy(policy)}
-                                                        className="p-2 rounded-lg transition-colors"
-                                                        style={{
-                                                            color: color.sentra.main,
-                                                            backgroundColor: 'transparent'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                                                        }}
+                                                        className={`p-2 ${color.primary.action} hover:${color.primary.action}/90 ${tw.accent10} rounded-lg transition-colors`}
+                                                        style={{ color: color.primary.action }}
                                                     >
                                                         <Edit className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeletePolicy(policy)}
-                                                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                                        className={`p-2 ${tw.danger} ${tw.statusDanger10} rounded-lg transition-colors`}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -483,67 +276,45 @@ export default function CommunicationPolicyPage() {
                             </table>
                         </div>
 
+                        {/* Mobile Card View */}
                         <div className="lg:hidden">
                             {filteredPolicies.map((policy) => (
                                 <div key={policy.id} className="p-4 border-b border-gray-200 last:border-b-0">
-                                    <div className="flex items-start space-x-3">
-                                        <div
-                                            className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                                            style={{ backgroundColor: color.entities.campaigns }}
-                                        >
-                                            <Bell className="w-5 h-5 text-white" />
-                                        </div>
+                                    <div className="flex items-start justify-between">
                                         <div className="flex-1 min-w-0">
-                                            <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
-                                                {policy.name}
+                                            <div className="flex items-center space-x-2 mb-2">
+                                                {getTypeIcon(policy.type)}
+                                                <div className="text-base font-semibold text-gray-900">
+                                                    {policy.name}
+                                                </div>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    policy.isActive 
+                                                        ? 'bg-green-100 text-green-800' 
+                                                        : 'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                    {policy.isActive ? 'Active' : 'Inactive'}
+                                                </span>
                                             </div>
-                                            <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                                            <div className="text-sm text-gray-600 mb-2">
                                                 {policy.description || 'No description'}
                                             </div>
-                                            <div className="text-xs space-y-1 mb-2">
-                                                <div className={tw.textSecondary}>
-                                                    Limits: {policy.frequency_capping.max_per_day}/day, {policy.frequency_capping.max_per_week}/week, {policy.frequency_capping.max_per_month}/month
-                                                </div>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {policy.channels.slice(0, 3).map((channel, idx) => (
-                                                        <span
-                                                            key={idx}
-                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}
-                                                        >
-                                                            {channel.replace('_', ' ')}
-                                                        </span>
-                                                    ))}
-                                                    {policy.channels.length > 3 && (
-                                                        <span className={`text-xs ${tw.textMuted}`}>
-                                                            +{policy.channels.length - 3} more
-                                                        </span>
-                                                    )}
-                                                </div>
+                                            <div className="text-xs text-gray-500 mb-3">
+                                                <span className="font-medium">{getTypeLabel(policy.type)}:</span> {getConfigSummary(policy)}
                                             </div>
-                                            <div className="flex items-center justify-end space-x-2">
-                                                <button
-                                                    onClick={() => handleEditPolicy(policy)}
-                                                    className="p-2 rounded-lg transition-colors"
-                                                    style={{
-                                                        color: color.sentra.main,
-                                                        backgroundColor: 'transparent'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                                                    }}
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeletePolicy(policy)}
-                                                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-2 ml-4">
+                                            <button
+                                                onClick={() => handleEditPolicy(policy)}
+                                                className="p-2 text-[#588157] hover:text-[#3A5A40] hover:bg-[#588157]/10 rounded-lg transition-colors"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeletePolicy(policy)}
+                                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -553,7 +324,7 @@ export default function CommunicationPolicyPage() {
                 )}
             </div>
 
-            <PolicyModal
+            <CommunicationPolicyModal
                 isOpen={isModalOpen}
                 onClose={() => {
                     setIsModalOpen(false);
@@ -566,4 +337,3 @@ export default function CommunicationPolicyPage() {
         </div>
     );
 }
-

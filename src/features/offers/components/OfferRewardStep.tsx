@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Trash2, Gift, Edit, X } from 'lucide-react';
-import { color as utilColor } from '../../../shared/utils/utils';
+import { color } from '../../../shared/utils/utils';
 
 interface RewardRule {
   id: string;
@@ -147,19 +148,18 @@ export default function OfferRewardStep({
       {rewards.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Gift className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Rewards Added</h3>
           <p className="text-gray-500 text-sm mb-6">Define what customers will receive when they engage with your offer</p>
           <button
             onClick={addReward}
             className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
-            style={{ backgroundColor: utilColor.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -176,12 +176,12 @@ export default function OfferRewardStep({
                 <button
                   onClick={addReward}
                   className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors font-medium"
-                  style={{ backgroundColor: utilColor.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                   }}
                 >
                   <Plus className="w-5 h-5 mr-1.5" />
@@ -202,7 +202,6 @@ export default function OfferRewardStep({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                          <Gift className="w-4 h-4 text-gray-600" />
                         </div>
                         <div>
                           <div className="font-medium text-sm text-gray-900">
@@ -280,12 +279,12 @@ export default function OfferRewardStep({
                       <button
                         onClick={() => addRule()}
                         className="inline-flex items-center px-3 py-1 text-sm text-white rounded-lg transition-colors"
-                        style={{ backgroundColor: utilColor.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                         onMouseEnter={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                         }}
                         onMouseLeave={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                         }}
                       >
                         <Plus className="w-4 h-4 mr-1" />
@@ -295,17 +294,16 @@ export default function OfferRewardStep({
 
                     {selectedRewardData.rules.length === 0 ? (
                       <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                        <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500 text-sm mb-4">No rules configured</p>
                         <button
                           onClick={() => addRule()}
                           className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
-                          style={{ backgroundColor: utilColor.sentra.main }}
+                          style={{ backgroundColor: color.primary.action }}
                           onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                           }}
                           onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                           }}
                         >
                           <Plus className="w-4 h-4 mr-2" />
@@ -362,7 +360,6 @@ export default function OfferRewardStep({
             ) : (
               <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Gift className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No Reward Selected</h3>
                 <p className="text-gray-500 text-sm">Select a reward from the list above to start configuring.</p>
@@ -373,7 +370,7 @@ export default function OfferRewardStep({
       )}
 
       {/* Rule Modal */}
-      {showRuleModal && editingRule && (
+      {showRuleModal && editingRule && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -534,19 +531,20 @@ export default function OfferRewardStep({
               <button
                 onClick={() => selectedRewardData && saveRule(selectedRewardData.id, editingRule)}
                 className="px-4 py-2 text-white rounded-lg transition-colors"
-                style={{ backgroundColor: utilColor.sentra.main }}
+                style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover;
                 }}
                 onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                 }}
               >
                 Save Rule
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

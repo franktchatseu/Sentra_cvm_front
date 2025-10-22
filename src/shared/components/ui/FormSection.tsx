@@ -24,7 +24,7 @@ export default function FormSection({
           <div className="flex-shrink-0">
             <div
               className="flex items-center justify-center w-10 h-10 rounded-lg"
-              style={{ backgroundColor: color.sentra.main }}
+              style={{ backgroundColor: color.primary.action }}
             >
               <Icon className="w-5 h-5 text-white" />
             </div>

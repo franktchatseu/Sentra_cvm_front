@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Edit, Trash2, Settings, Users, Calendar, BarChart3 } from 'lucide-react';
 
 interface UniversalControlGroup {
@@ -74,7 +75,7 @@ export default function UniversalControlGroupModal({ isOpen, onClose }: Universa
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       style={{
@@ -96,7 +97,7 @@ export default function UniversalControlGroupModal({ isOpen, onClose }: Universa
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] transition-colors text-sm font-medium"
+              className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Control Group
@@ -119,7 +120,7 @@ export default function UniversalControlGroupModal({ isOpen, onClose }: Universa
               <p className="text-gray-500 mb-6">Create your first universal control group to get started</p>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Control Group
@@ -189,7 +190,9 @@ export default function UniversalControlGroupModal({ isOpen, onClose }: Universa
             </div>
           )}
         </div>
-      </div>
+      </div>,
+      document.body
+      );
 
       {/* Create/Edit Modal */}
       {(showCreateModal || editingGroup) && (
@@ -290,7 +293,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
     onSave(newGroup);
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       style={{
@@ -329,8 +332,8 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
 
               return (
                 <div key={step.id} className="flex items-center">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${isCompleted ? 'bg-[#588157] border-[#588157] text-white' :
-                    isActive ? 'border-[#588157] text-[#588157] bg-white' :
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${isCompleted ? 'bg-blue-500 border-blue-500 text-white' :
+                    isActive ? 'border-blue-500 text-blue-500 bg-white' :
                       'border-gray-300 text-gray-400 bg-white'
                     }`}>
                     <Icon className="w-4 h-4" />
@@ -340,7 +343,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
                     {step.name}
                   </span>
                   {index < steps.length - 1 && (
-                    <div className={`w-16 h-0.5 mx-4 ${isCompleted ? 'bg-[#588157]' : 'bg-gray-300'
+                    <div className={`w-16 h-0.5 mx-4 ${isCompleted ? '' : 'bg-gray-300'
                       }`} />
                   )}
                 </div>
@@ -575,7 +578,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
             {currentStep === 3 ? (
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40]"
+                className="px-4 py-2  text-white rounded-md hover:bg-[#3A5A40]"
               >
                 {editingGroup ? 'Update' : 'Create'} Control Group
               </button>
@@ -583,7 +586,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
               <button
                 onClick={handleNext}
                 disabled={!canProceedToNextStep()}
-                className="px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
+                className="px-4 py-2  text-white rounded-md hover:bg-[#3A5A40] disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 Next
               </button>
@@ -591,6 +594,7 @@ function CreateControlGroupModal({ isOpen, onClose, editingGroup, onSave }: Crea
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

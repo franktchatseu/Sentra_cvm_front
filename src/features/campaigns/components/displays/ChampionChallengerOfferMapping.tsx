@@ -80,13 +80,13 @@ export default function ChampionChallengerOfferMapping({
         <div className="bg-gradient-to-r from-[#588157]/5 to-[#3A5A40]/5 border-2 border-[#588157] rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-[#588157] rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10  rounded-lg flex items-center justify-center">
                 <Award className="w-5 h-5 text-white" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-gray-900">{champion.name}</span>
-                  <span className="px-2.5 py-0.5 bg-[#588157] text-white text-xs font-bold rounded-full">
+                  <span className="px-2.5 py-0.5  text-white text-xs font-bold rounded-full">
                     🏆 CHAMPION
                   </span>
                 </div>
@@ -95,7 +95,7 @@ export default function ChampionChallengerOfferMapping({
             </div>
             <button
               onClick={() => onMapOffers(champion.id)}
-              className="inline-flex items-center px-4 py-2 bg-[#588157] hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="inline-flex items-center px-4 py-2  hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               {hasOffersForSegment(champion.id) ? 'Add More Offers' : 'Map Offers'}
@@ -111,7 +111,7 @@ export default function ChampionChallengerOfferMapping({
                   className="bg-white border border-[#588157]/30 rounded-lg p-4 flex items-center justify-between hover:shadow-sm transition-shadow"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#588157]/10 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 /10 rounded-lg flex items-center justify-center">
                       <Gift className="w-4 h-4 text-[#588157]" />
                     </div>
                     <div>
@@ -131,7 +131,7 @@ export default function ChampionChallengerOfferMapping({
               ))}
             </div>
           ) : (
-            <div className="bg-[#588157]/5 border-2 border-dashed border-[#588157]/30 rounded-lg p-8 text-center">
+            <div className="/5 border-2 border-dashed border-[#588157]/30 rounded-lg p-8 text-center">
               <Gift className="w-10 h-10 mx-auto mb-2 text-[#588157]/40" />
               <p className="text-sm text-gray-600">No offers mapped yet</p>
             </div>
@@ -171,7 +171,7 @@ export default function ChampionChallengerOfferMapping({
                   </div>
                   <button
                     onClick={() => onMapOffers(challenger.id)}
-                    className="p-2 bg-[#A3B18A] hover:bg-[#588157] text-[#344E41] hover:text-white rounded-lg text-xs font-medium transition-colors"
+                    className="p-2 bg-[#A3B18A] hover: text-[#344E41] hover:text-white rounded-lg text-xs font-medium transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -223,7 +223,7 @@ export default function ChampionChallengerOfferMapping({
             <div>
               <h4 className="font-semibold text-blue-900 mb-1">Mapping Summary</h4>
               <p className="text-sm text-blue-700">
-                {totalMappedSegments} segment{totalMappedSegments !== 1 ? 's' : ''} mapped with {totalOffersMapped} offer assignment{totalOffersMapped !== 1 ? 's' : ''}. 
+                {totalMappedSegments} segment{totalMappedSegments !== 1 ? 's' : ''} mapped with {totalOffersMapped} offer assignment{totalOffersMapped !== 1 ? 's' : ''}.
                 The champion and challengers can have different offers to test various strategies.
               </p>
             </div>

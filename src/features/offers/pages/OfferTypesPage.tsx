@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, Tag, ArrowLeft } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
@@ -76,10 +77,8 @@ export default function OfferTypesPage() {
       }
     ];
 
-    setTimeout(() => {
-      setOfferTypes(mockOfferTypes);
-      setLoading(false);
-    }, 1000);
+    setOfferTypes(mockOfferTypes);
+    setLoading(false);
   }, []);
 
   const filteredOfferTypes = offerTypes.filter(offerType => {
@@ -169,7 +168,7 @@ export default function OfferTypesPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center h-64">
-          <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]`}></div>
+          <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}></div>
         </div>
       </div>
     );
@@ -195,13 +194,7 @@ export default function OfferTypesPage() {
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.sentra.main }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-            }}
+            style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
             Create Offer Type
@@ -212,22 +205,22 @@ export default function OfferTypesPage() {
       {/* Search */}
       <div className={`bg-white my-5`}>
         <div className="relative w-full">
-          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`} />
           <input
             type="text"
             placeholder="Search offer types..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.border.default}] rounded-lg focus:outline-none`}
           />
         </div>
       </div>
 
       {/* Offer Types Table */}
-      <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
+      <div className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}>
         {filteredOfferTypes.length === 0 ? (
           <div className="text-center py-12">
-            <Tag className={`w-16 h-16 text-[${color.entities.offers}] mx-auto mb-4`} />
+            <Tag className={`w-16 h-16 text-[${color.primary.accent}] mx-auto mb-4`} />
             <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
               {searchTerm ? 'No Offer Types Found' : 'No Offer Types'}
             </h3>
@@ -238,7 +231,7 @@ export default function OfferTypesPage() {
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                style={{ backgroundColor: color.sentra.main }}
+                style={{ backgroundColor: color.primary.action }}
               >
                 <Plus className="w-4 h-4" />
                 Create Offer Type
@@ -250,33 +243,30 @@ export default function OfferTypesPage() {
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead className={`bg-gradient-to-r from-[${color.ui.surface}] to-[${color.ui.surface}]/80 border-b border-[${color.ui.border}]`}>
+                <thead
+                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  style={{ background: color.surface.tableHeader }}
+                >
                   <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Offer Type
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Description
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Status
                     </th>
-                    <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredOfferTypes.map((offerType) => (
-                    <tr key={offerType.id} className="hover:bg-[${color.ui.surface}]/30 transition-colors">
+                    <tr key={offerType.id} className="hover:bg-[${color.surface.cards}]/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
-                          <div
-                            className="h-10 w-10 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: color.entities.offers }}
-                          >
-                            <Tag className="w-5 h-5 text-white" />
-                          </div>
                           <div>
                             <div className={`text-base font-semibold ${tw.textPrimary}`}>
                               {offerType.name}
@@ -291,8 +281,8 @@ export default function OfferTypesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium ${offerType.isActive
-                          ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
-                          : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
+                          ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                          : `bg-[${color.interactive.hover[100]}] text-[${color.interactive.hover[800]}]`
                           }`}>
                           {offerType.isActive ? 'Active' : 'Inactive'}
                         </span>
@@ -303,11 +293,11 @@ export default function OfferTypesPage() {
                             onClick={() => handleEditOfferType(offerType)}
                             className="p-2 rounded-lg transition-colors"
                             style={{
-                              color: color.sentra.main,
+                              color: color.primary.action,
                               backgroundColor: 'transparent'
                             }}
                             onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                             }}
                             onMouseLeave={(e) => {
                               (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
@@ -334,12 +324,6 @@ export default function OfferTypesPage() {
               {filteredOfferTypes.map((offerType) => (
                 <div key={offerType.id} className="p-4 border-b border-gray-200 last:border-b-0">
                   <div className="flex items-start space-x-3">
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: color.entities.offers }}
-                    >
-                      <Tag className="w-5 h-5 text-white" />
-                    </div>
                     <div className="flex-1 min-w-0">
                       <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
                         {offerType.name}
@@ -349,8 +333,8 @@ export default function OfferTypesPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-base font-medium ${offerType.isActive
-                          ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
-                          : `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
+                          ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                          : `bg-[${color.interactive.hover[100]}] text-[${color.interactive.hover[800]}]`
                           }`}>
                           {offerType.isActive ? 'Active' : 'Inactive'}
                         </span>
@@ -359,11 +343,11 @@ export default function OfferTypesPage() {
                             onClick={() => handleEditOfferType(offerType)}
                             className="p-2 rounded-lg transition-colors"
                             style={{
-                              color: color.sentra.main,
+                              color: color.primary.action,
                               backgroundColor: 'transparent'
                             }}
                             onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                             }}
                             onMouseLeave={(e) => {
                               (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
@@ -389,8 +373,8 @@ export default function OfferTypesPage() {
       </div>
 
       {/* Create Offer Type Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 backdrop-blur-sm">
+      {showCreateModal && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[9999] backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">New Offer Type</h2>
@@ -450,27 +434,20 @@ export default function OfferTypesPage() {
                   onClick={handleCreateOfferType}
                   disabled={!newTypeName.trim() || isCreating}
                   className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ backgroundColor: color.sentra.main }}
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                  }}
+                  style={{ backgroundColor: color.primary.action }}
                 >
                   {isCreating ? 'Creating...' : 'Create Offer Type'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Offer Type Modal */}
-      {editingType && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 backdrop-blur-sm">
+      {editingType && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[9999] backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Edit Offer Type</h2>
@@ -530,22 +507,15 @@ export default function OfferTypesPage() {
                   onClick={handleUpdateOfferType}
                   disabled={!editName.trim() || isUpdating}
                   className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ backgroundColor: color.sentra.main }}
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                  }}
+                  style={{ backgroundColor: color.primary.action }}
                 >
                   {isUpdating ? 'Updating...' : 'Update Offer Type'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

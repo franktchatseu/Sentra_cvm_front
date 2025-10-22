@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, X, MessageSquare, ArrowLeft, Eye, Grid, List } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
@@ -64,8 +65,8 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
@@ -127,22 +128,15 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
               type="submit"
               disabled={isLoading}
               className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: color.sentra.main }}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.disabled) {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                }
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-              }}
+              style={{ backgroundColor: color.primary.action }}
             >
               {isLoading ? 'Saving...' : (category ? 'Update Category' : 'Create Category')}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -154,7 +148,6 @@ interface OffersModalProps {
 }
 
 function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersModalProps) {
-  const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -253,8 +246,8 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
 
   if (!isOpen || !category) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -336,7 +329,7 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
                 {/* <button
                   onClick={handleCreateOffer}
                   className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
-                  style={{ backgroundColor: color.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                 >
                   <Plus className="w-4 h-4" />
                   Create New Offer
@@ -382,7 +375,7 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
                       <div className="flex items-center gap-3">
                         <div
                           className="h-10 w-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: color.entities.offers }}
+                          style={{ backgroundColor: color.primary.accent }}
                         >
                           <MessageSquare className="w-5 h-5 text-white" />
                         </div>
@@ -417,7 +410,8 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -598,13 +592,7 @@ export default function OfferCategoriesPage() {
           <button
             onClick={handleCreateCategory}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.sentra.main }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-            }}
+            style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
             Create Offer Catalog
@@ -613,7 +601,7 @@ export default function OfferCategoriesPage() {
       </div>
 
       {/* Search and View Toggle */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+      <div className=" flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
@@ -624,7 +612,7 @@ export default function OfferCategoriesPage() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
           />
         </div>
-        <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-1">
+        <div className="flex items-center gap-2  p-1">
           <button
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded transition-colors ${viewMode === 'grid'
@@ -649,66 +637,114 @@ export default function OfferCategoriesPage() {
       </div>
 
       {/* Categories */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
-          <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
-        </div>
-      ) : error ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className={`bg-red-50 border border-red-200 text-red-700 rounded-xl p-6`}>
-            <p className="font-medium mb-3">{error}</p>
-            <button
-              onClick={() => loadCategories()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-            >
-              Try Again
-            </button>
+      {
+        loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
+            <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
           </div>
-        </div>
-      ) : filteredOfferCategories.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
-          <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {searchTerm ? 'No catalogs found' : 'No catalogs yet'}
-          </h3>
-          <p className="text-gray-500 mb-6">
-            {searchTerm
-              ? 'Try adjusting your search terms'
-              : 'Create your first offer catalog to organize your offers'}
-          </p>
-          {!searchTerm && (
-            <button
-              onClick={handleCreateCategory}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
-              style={{ backgroundColor: color.sentra.main }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-              }}
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Your First Catalog
-            </button>
-          )}
-        </div>
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredOfferCategories.map((category) => (
-            <div
-              key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${color.entities.offers}20` }}
-                >
-                  <MessageSquare className="w-6 h-6" style={{ color: color.entities.offers }} />
+        ) : error ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+            <div className={`bg-red-50 border border-red-200 text-red-700 rounded-xl p-6`}>
+              <p className="font-medium mb-3">{error}</p>
+              <button
+                onClick={() => loadCategories()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        ) : filteredOfferCategories.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
+            <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {searchTerm ? 'No catalogs found' : 'No catalogs yet'}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {searchTerm
+                ? 'Try adjusting your search terms'
+                : 'Create your first offer catalog to organize your offers'}
+            </p>
+            {!searchTerm && (
+              <button
+                onClick={handleCreateCategory}
+                className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+                style={{ backgroundColor: color.primary.action }}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Create Your First Catalog
+              </button>
+            )}
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredOfferCategories.map((category) => (
+              <div
+                key={category.id}
+                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex-1">{category.name}</h3>
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => handleEditCategory(category)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCategory(category)}
+                      className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1">
+                {category.description && (
+                  <p className="text-sm text-gray-500 mb-4 line-clamp-2">{category.description}</p>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <span className="text-sm text-gray-600">
+                    {category.offer_count || 0} offer{category.offer_count !== 1 ? 's' : ''}
+                  </span>
+                  <button
+                    onClick={() => handleViewOffers(category)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="View & Assign Offers"
+                  >
+                    <Eye className="w-4 h-4 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredOfferCategories.map((category) => (
+              <div
+                key={category.id}
+                className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
+                    <p className="text-sm text-gray-600 mt-0.5">
+                      {category.offer_count || 0} offer{category.offer_count !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleViewOffers(category)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="View & Assign Offers"
+                  >
+                    <Eye className="w-4 h-4 text-gray-600" />
+                  </button>
                   <button
                     onClick={() => handleEditCategory(category)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -725,75 +761,9 @@ export default function OfferCategoriesPage() {
                   </button>
                 </div>
               </div>
-
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{category.name}</h3>
-              {category.description && (
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{category.description}</p>
-              )}
-
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <span className="text-sm text-gray-600">
-                  {category.offer_count || 0} offer{category.offer_count !== 1 ? 's' : ''}
-                </span>
-                <button
-                  onClick={() => handleViewOffers(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="View & Assign Offers"
-                >
-                  <Eye className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredOfferCategories.map((category) => (
-            <div
-              key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${color.entities.offers}20` }}
-                >
-                  <MessageSquare className="w-6 h-6" style={{ color: color.entities.offers }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
-                  <p className="text-sm text-gray-600 mt-0.5">
-                    {category.offer_count || 0} offer{category.offer_count !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleViewOffers(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="View & Assign Offers"
-                >
-                  <Eye className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleEditCategory(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Edit"
-                >
-                  <Edit className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleDeleteCategory(category)}
-                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )
+            ))}
+          </div>
+        )
       }
 
       <CategoryModal
@@ -815,6 +785,6 @@ export default function OfferCategoriesPage() {
           await loadCategories(true, offers);
         }}
       />
-    </div>
+    </div >
   );
 }

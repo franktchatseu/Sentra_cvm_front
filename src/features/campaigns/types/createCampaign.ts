@@ -9,6 +9,7 @@ export interface CreateCampaignRequest {
   start_date?: string | null; // optional, ISO date format, can be null
   end_date?: string | null; // optional, ISO date format, can be null
   owner_team?: string | null; // optional, max 64 chars, can be null
+  campaign_type?: 'multiple_target_group' | 'champion_challenger' | 'ab_test' | 'round_robin' | 'multiple_level'; // optional, campaign type
 }
 
 export interface CreateCampaignResponse {

@@ -5,7 +5,6 @@ import {
     ArrowLeft,
     Edit,
     Trash2,
-    Gift,
     Clock,
     CheckCircle,
     XCircle,
@@ -377,9 +376,7 @@ export default function OfferDetailsPage() {
                                 onClick={handleApprove}
                                 disabled={isApproveLoading}
                                 className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: color.sentra.main }}
-                                onMouseEnter={(e) => !isApproveLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover)}
-                                onMouseLeave={(e) => !isApproveLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main)}
+                                style={{ backgroundColor: color.primary.action }}
                             >
                                 {isApproveLoading ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -398,9 +395,7 @@ export default function OfferDetailsPage() {
                                 onClick={handleRequestApproval}
                                 disabled={isRequestApprovalLoading}
                                 className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: color.sentra.main }}
-                                onMouseEnter={(e) => !isRequestApprovalLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover)}
-                                onMouseLeave={(e) => !isRequestApprovalLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main)}
+                                style={{ backgroundColor: color.primary.action }}
                             >
                                 {isRequestApprovalLoading ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -421,9 +416,7 @@ export default function OfferDetailsPage() {
                                     onClick={handleActivate}
                                     disabled={isActivateLoading}
                                     className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                    style={{ backgroundColor: color.sentra.main }}
-                                    onMouseEnter={(e) => !isActivateLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover)}
-                                    onMouseLeave={(e) => !isActivateLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main)}
+                                    style={{ backgroundColor: color.primary.action }}
                                 >
                                     {isActivateLoading ? (
                                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -441,9 +434,7 @@ export default function OfferDetailsPage() {
                                         onClick={handlePause}
                                         disabled={isPauseLoading}
                                         className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{ backgroundColor: color.sentra.main }}
-                                        onMouseEnter={(e) => !isPauseLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover)}
-                                        onMouseLeave={(e) => !isPauseLoading && ((e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main)}
+                                        style={{ backgroundColor: color.primary.action }}
                                     >
                                         {isPauseLoading ? (
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -473,9 +464,7 @@ export default function OfferDetailsPage() {
                     <button
                         onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-                        style={{ backgroundColor: color.sentra.main }}
-                        onMouseEnter={(e) => (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover}
-                        onMouseLeave={(e) => (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main}
+                        style={{ backgroundColor: color.primary.action }}
                     >
                         <Edit className="w-4 h-4" />
                         Edit
@@ -553,14 +542,8 @@ export default function OfferDetailsPage() {
             </div>
 
             {/* Main Offer Info */}
-            <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+            <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                 <div className="flex items-start space-x-4">
-                    <div
-                        className="h-12 w-12 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: color.entities.offers }}
-                    >
-                        <Gift className="w-6 h-6 text-white" />
-                    </div>
                     <div className="flex-1">
                         <h2 className={`text-xl font-bold ${tw.textPrimary} mb-2`}>{offer.name}</h2>
                         <p className={`${tw.textSecondary} mb-4`}>
@@ -576,12 +559,12 @@ export default function OfferDetailsPage() {
                                 {offer.approval_status}
                             </span>
                             {offer.reusable && (
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}>
                                     Reusable
                                 </span>
                             )}
                             {offer.multi_language && (
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]`}>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}>
                                     Multi-language
                                 </span>
                             )}
@@ -591,7 +574,7 @@ export default function OfferDetailsPage() {
             </div>
 
             {/* Offer Details */}
-            <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+            <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                 <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Offer Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -629,7 +612,7 @@ export default function OfferDetailsPage() {
             </div>
 
             {/* Linked Products Section */}
-            <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+            <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                 <div className="flex items-center justify-between mb-4">
                     <h3 className={`text-lg font-semibold ${tw.textPrimary} flex items-center gap-2`}>
                         <Package className="w-5 h-5" />
@@ -656,7 +639,7 @@ export default function OfferDetailsPage() {
                             >
                                 <div
                                     className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    style={{ backgroundColor: color.entities.products }}
+                                    style={{ backgroundColor: color.primary.accent }}
                                 >
                                     <Package className="w-5 h-5 text-white" />
                                 </div>

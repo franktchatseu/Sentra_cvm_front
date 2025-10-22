@@ -22,9 +22,9 @@ export default function LoadingSpinner({
   };
 
   const colorClasses = {
-    primary: `text-[${color.sentra.main}]`,
+    primary: `text-[${color.primary.action}]`,
     white: 'text-white',
-    muted: `text-[${color.ui.text.muted}]`
+    muted: `text-[${color.text.muted}]`
   };
 
   // Default spinner (modern sleek rotating circle)
@@ -64,24 +64,24 @@ export default function LoadingSpinner({
         <div
           className={`${sizeClasses[size]} rounded-full animate-bounce`}
           style={{
-            backgroundColor: spinnerColor === 'primary' ? color.sentra.main :
-              spinnerColor === 'white' ? 'white' : color.ui.text.muted,
+            backgroundColor: spinnerColor === 'primary' ? color.primary.action :
+              spinnerColor === 'white' ? 'white' : color.text.muted,
             animationDelay: '0ms'
           }}
         />
         <div
           className={`${sizeClasses[size]} rounded-full animate-bounce`}
           style={{
-            backgroundColor: spinnerColor === 'primary' ? color.sentra.main :
-              spinnerColor === 'white' ? 'white' : color.ui.text.muted,
+            backgroundColor: spinnerColor === 'primary' ? color.primary.action :
+              spinnerColor === 'white' ? 'white' : color.text.muted,
             animationDelay: '150ms'
           }}
         />
         <div
           className={`${sizeClasses[size]} rounded-full animate-bounce`}
           style={{
-            backgroundColor: spinnerColor === 'primary' ? color.sentra.main :
-              spinnerColor === 'white' ? 'white' : color.ui.text.muted,
+            backgroundColor: spinnerColor === 'primary' ? color.primary.action :
+              spinnerColor === 'white' ? 'white' : color.text.muted,
             animationDelay: '300ms'
           }}
         />
@@ -95,8 +95,8 @@ export default function LoadingSpinner({
       <div
         className={`${sizeClasses[size]} rounded-full animate-pulse ${className}`}
         style={{
-          backgroundColor: spinnerColor === 'primary' ? color.sentra.main :
-            spinnerColor === 'white' ? 'white' : color.ui.text.muted
+          backgroundColor: spinnerColor === 'primary' ? color.primary.action :
+            spinnerColor === 'white' ? 'white' : color.text.muted
         }}
       />
     );
@@ -109,8 +109,8 @@ export default function LoadingSpinner({
         <div
           className={`${sizeClasses[size]} rounded-full animate-bounce`}
           style={{
-            backgroundColor: spinnerColor === 'primary' ? color.sentra.main :
-              spinnerColor === 'white' ? 'white' : color.ui.text.muted
+            backgroundColor: spinnerColor === 'primary' ? color.primary.action :
+              spinnerColor === 'white' ? 'white' : color.text.muted
           }}
         />
       </div>
@@ -155,20 +155,20 @@ export default function LoadingSpinner({
           <div
             className="absolute inset-0 rounded-full border-2 border-transparent"
             style={{
-              borderTopColor: spinnerColor === 'primary' ? color.sentra.main :
-                spinnerColor === 'white' ? 'white' : color.ui.text.muted,
-              borderRightColor: spinnerColor === 'primary' ? color.sentra.main :
-                spinnerColor === 'white' ? 'white' : color.ui.text.muted,
+              borderTopColor: spinnerColor === 'primary' ? color.primary.action :
+                spinnerColor === 'white' ? 'white' : color.text.muted,
+              borderRightColor: spinnerColor === 'primary' ? color.primary.action :
+                spinnerColor === 'white' ? 'white' : color.text.muted,
               opacity: 0.3
             }}
           />
           <div
             className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
             style={{
-              borderTopColor: spinnerColor === 'primary' ? color.sentra.main :
-                spinnerColor === 'white' ? 'white' : color.ui.text.muted,
-              borderRightColor: spinnerColor === 'primary' ? color.sentra.main :
-                spinnerColor === 'white' ? 'white' : color.ui.text.muted
+              borderTopColor: spinnerColor === 'primary' ? color.primary.action :
+                spinnerColor === 'white' ? 'white' : color.text.muted,
+              borderRightColor: spinnerColor === 'primary' ? color.primary.action :
+                spinnerColor === 'white' ? 'white' : color.text.muted
             }}
           />
         </div>

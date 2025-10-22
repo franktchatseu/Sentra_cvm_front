@@ -1,6 +1,6 @@
 import { Bell, Search, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import logo from '../../../assets/logo.png';
+import logo from '../../../assets/efforte.png';
 import { User as UserType } from '../../../shared/types/auth';
 import { color } from '../../../shared/utils/utils';
 interface HeaderProps {
@@ -11,20 +11,25 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 ">
+    <header
+      className="sticky top-0 z-40 border-b border-gray-200"
+      style={{
+        background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`
+      }}
+    >
       <div className="flex h-16 items-center justify-between px-5 lg:px-8">
         <div className="flex items-center gap-x-4 flex-1">
           <button
             onClick={onMenuClick}
-            className="md:hidden rounded-md p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="md:hidden rounded-md p-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors"
           >
             <Menu className="h-5 w-5" />
           </button>
 
           <div className="relative flex-1 max-w-xs sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70" />
             <input
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm placeholder-gray-500 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="w-full pl-10 pr-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60"
               placeholder="Search campaigns, products, users..."
               type="search"
               style={{ outline: 'none' }}
@@ -35,33 +40,28 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-x-4">
           <button
             type="button"
-            className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="relative p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center font-medium">
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-600 text-white rounded-full text-xs flex items-center justify-center font-medium">
               3
             </span>
           </button>
 
           <div className="flex items-center gap-x-3">
             <div className="flex items-center gap-x-3">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{
-                  backgroundColor: color.sentra.main
-                }}
-              >
-                <User className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center">
+                <User className="w-6 h-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <div className="text-sm font-medium text-gray-900">{user?.email || 'User'}</div>
-                <div className="text-xs text-gray-500">Administrator</div>
+                <div className="text-sm font-medium text-white">{user?.email || 'User'}</div>
+                <div className="text-xs font-medium leading-[140%] tracking-[0.05em] text-white/70">Administrator</div>
               </div>
             </div>
 
             <button
               onClick={logout}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               title="Sign out"
             >
               <LogOut className="h-4 w-4" />

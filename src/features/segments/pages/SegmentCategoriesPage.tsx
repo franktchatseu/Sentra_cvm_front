@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, X, Users, ArrowLeft, Eye, Grid, List } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
@@ -63,8 +64,8 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    return createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 className="text-xl font-bold text-gray-900">
@@ -116,14 +117,14 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
                             type="submit"
                             disabled={isLoading}
                             className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ backgroundColor: color.sentra.main }}
+                            style={{ backgroundColor: color.primary.action }}
                             onMouseEnter={(e) => {
                                 if (!e.currentTarget.disabled) {
-                                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                 }
                             }}
                             onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                         >
                             {isLoading ? 'Saving...' : (category ? 'Update Catalog' : 'Create Catalog')}
@@ -131,7 +132,8 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -191,8 +193,8 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    return createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
@@ -269,7 +271,8 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -409,12 +412,12 @@ export default function SegmentCategoriesPage() {
                         setIsCategoryModalOpen(true);
                     }}
                     className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
-                    style={{ backgroundColor: color.sentra.main }}
+                    style={{ backgroundColor: color.primary.action }}
                     onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                        (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                     }}
                     onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                        (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                     }}
                 >
                     <Plus className="w-5 h-5 mr-2" />
@@ -423,7 +426,7 @@ export default function SegmentCategoriesPage() {
             </div>
 
             {/* Search and View Toggle */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+            <div className="flex items-center gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -434,7 +437,7 @@ export default function SegmentCategoriesPage() {
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-1">
+                <div className="flex items-center gap-2  p-1">
                     <button
                         onClick={() => setViewMode('grid')}
                         className={`p-2 rounded transition-colors ${viewMode === 'grid'
@@ -482,12 +485,12 @@ export default function SegmentCategoriesPage() {
                                 setIsCategoryModalOpen(true);
                             }}
                             className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
-                            style={{ backgroundColor: color.sentra.main }}
+                            style={{ backgroundColor: color.primary.action }}
                             onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                             onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                         >
                             <Plus className="w-5 h-5 mr-2" />
@@ -502,13 +505,8 @@ export default function SegmentCategoriesPage() {
                             key={category.id}
                             className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
                         >
-                            <div className="flex items-start justify-between mb-4">
-                                <div
-                                    className="w-12 h-12 rounded-lg flex items-center justify-center"
-                                    style={{ backgroundColor: `${color.entities.segments}20` }}
-                                >
-                                    <Users className="w-6 h-6" style={{ color: color.entities.segments }} />
-                                </div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
                                 <div className="flex items-center space-x-1">
                                     <button
                                         onClick={() => {
@@ -529,8 +527,6 @@ export default function SegmentCategoriesPage() {
                                     </button>
                                 </div>
                             </div>
-
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">{category.name}</h3>
                             {category.description && (
                                 <p className="text-sm text-gray-500 mb-4 line-clamp-2">{category.description}</p>
                             )}
@@ -561,12 +557,6 @@ export default function SegmentCategoriesPage() {
                             className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
                         >
                             <div className="flex items-center gap-4 flex-1">
-                                <div
-                                    className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    style={{ backgroundColor: `${color.entities.segments}20` }}
-                                >
-                                    <Users className="w-6 h-6" style={{ color: color.entities.segments }} />
-                                </div>
                                 <div className="flex-1">
                                     <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
                                     <p className="text-sm text-gray-600 mt-0.5">

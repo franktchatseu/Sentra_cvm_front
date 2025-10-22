@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import CreateOfferPage from '../../../offers/pages/CreateOfferPage';
 
 interface CreateOfferModalWrapperProps {
@@ -13,7 +14,7 @@ export default function CreateOfferModalWrapper({
 }: CreateOfferModalWrapperProps) {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed z-[9999] flex items-center justify-center p-4"
       style={{
@@ -54,6 +55,7 @@ export default function CreateOfferModalWrapper({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

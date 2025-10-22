@@ -21,8 +21,7 @@ import OfferCreativeStep from '../components/OfferCreativeStep';
 import OfferTrackingStep from '../components/OfferTrackingStep';
 import OfferRewardStep from '../components/OfferRewardStep';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
-import { colors as color } from '../../../shared/utils/tokens';
-import { color as utilColor, tw } from '../../../shared/utils/utils';
+import { color, tw } from '../../../shared/utils/utils';
 import { useToast } from '../../../contexts/ToastContext';
 
 interface OfferCreative {
@@ -336,7 +335,7 @@ function ReviewStep({ formData, creatives, trackingSources, rewards }: Omit<Step
         {/* Offer Summary */}
         <div
           className="rounded-2xl p-6"
-          style={{ backgroundColor: `${color.sentra.main}10` }}
+          style={{ backgroundColor: `${color.primary.action}10` }}
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Offer Summary</h3>
 
@@ -912,7 +911,7 @@ export default function CreateOfferPage() {
 
   return (
     <div className="min-h-screen">
-      <div className={`bg-white rounded-xl border border-[${utilColor.ui.border}] p-4`}>
+      <div className={`bg-white rounded-xl border border-[${color.border.default}] p-4`}>
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center pb-6 min-h-[48px]">
             <div></div>
@@ -928,9 +927,9 @@ export default function CreateOfferPage() {
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: utilColor.sentra.main }}
-                  onMouseEnter={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
-                  onMouseLeave={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
+                  style={{ backgroundColor: color.primary.action }}
+                  onMouseEnter={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover; }}
+                  onMouseLeave={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
                 >
                   {isSavingDraft ? (
                     <>
@@ -972,12 +971,12 @@ export default function CreateOfferPage() {
                     onClick={() => handleStepClick(step.id)}
                     disabled={!canNavigateToStep(step.id)}
                     className={`w-2 h-2 rounded-full transition-all duration-200 ${status === 'completed' || status === 'current'
-                        ? 'w-8'
-                        : ''
+                      ? 'w-8'
+                      : ''
                       }`}
                     style={{
                       backgroundColor: status === 'completed' || status === 'current'
-                        ? utilColor.sentra.main
+                        ? color.primary.action
                         : '#d1d5db'
                     }}
                   />
@@ -1001,9 +1000,9 @@ export default function CreateOfferPage() {
                       <div className={`
                         flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
                         ${status === 'completed'
-                          ? `bg-[${utilColor.sentra.main}] border-[${utilColor.sentra.main}] text-white`
+                          ? `bg-[${color.primary.action}] border-[${color.primary.action}] text-white`
                           : status === 'current'
-                            ? `bg-white border-[${utilColor.sentra.main}] text-[${utilColor.sentra.main}]`
+                            ? `bg-white border-[${color.primary.action}] text-[${color.primary.action}]`
                             : 'bg-white border-gray-300 text-gray-400'
                         }
                         ${step.id <= currentStep + 2 ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
@@ -1016,7 +1015,7 @@ export default function CreateOfferPage() {
                       </div>
 
                       <div className="mt-2 text-center">
-                        <div className={`text-sm font-medium ${status === 'current' ? `text-[${utilColor.sentra.main}]` :
+                        <div className={`text-sm font-medium ${status === 'current' ? `text-[${color.primary.action}]` :
                           status === 'completed' ? tw.textPrimary : tw.textMuted
                           }`}>
                           {step.name}
@@ -1037,7 +1036,7 @@ export default function CreateOfferPage() {
                       >
                         <div
                           className={`h-full transition-all duration-500 ${step.id < currentStep
-                            ? `bg-[${utilColor.sentra.main}] w-full`
+                            ? `bg-[${color.primary.action}] w-full`
                             : "bg-gray-200 w-0"
                             }`}
                         />
@@ -1073,9 +1072,9 @@ export default function CreateOfferPage() {
                 onClick={currentStep === 6 ? handleSubmit : handleNext}
                 disabled={currentStep === 6 ? isLoading || !validateCurrentStep() : !validateCurrentStep()}
                 className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: utilColor.sentra.main }}
-                onMouseEnter={(e) => { if ((currentStep === 6 ? !isLoading && validateCurrentStep() : validateCurrentStep())) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.hover; }}
-                onMouseLeave={(e) => { if ((currentStep === 6 ? !isLoading && validateCurrentStep() : validateCurrentStep())) (e.target as HTMLButtonElement).style.backgroundColor = utilColor.sentra.main; }}
+                style={{ backgroundColor: color.primary.action }}
+                onMouseEnter={(e) => { if ((currentStep === 6 ? !isLoading && validateCurrentStep() : validateCurrentStep())) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.hover; }}
+                onMouseLeave={(e) => { if ((currentStep === 6 ? !isLoading && validateCurrentStep() : validateCurrentStep())) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
               >
                 {currentStep === 6 ? (
                   isLoading ? (

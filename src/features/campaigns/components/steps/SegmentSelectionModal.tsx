@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, Plus, Users, Check } from 'lucide-react';
 import { CampaignSegment } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
@@ -108,7 +109,7 @@ export default function SegmentSelectionModal({
 
   const totalSelectedCustomers = tempSelectedSegments.reduce((total, segment) => total + segment.customer_count, 0);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
       style={{
@@ -226,8 +227,8 @@ export default function SegmentSelectionModal({
                     )}
 
                     <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                        <Users className="w-5 h-5" style={{ color: color.entities.segments }} />
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                        <Users className="w-5 h-5" style={{ color: color.primary.accent }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate text-gray-900">{segment.name}</h4>
@@ -285,6 +286,7 @@ export default function SegmentSelectionModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

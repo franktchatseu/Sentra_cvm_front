@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
-  MessageSquare,
-  Gift,
-  DollarSign,
   Clock,
   MoreHorizontal,
   Eye,
@@ -14,11 +12,11 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Phone,
   Trash2,
   Play,
   Pause,
-  Archive
+  Archive,
+  Filter
 } from 'lucide-react';
 import { Offer, OfferFilters, LifecycleStatus, ApprovalStatus } from '../types/offer';
 import { offerService } from '../services/offerService';
@@ -48,6 +46,8 @@ export default function OffersPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<LifecycleStatus | 'all'>('all');
   const [selectedApproval, setSelectedApproval] = useState<ApprovalStatus | 'all'>('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isClosingModal, setIsClosingModal] = useState(false);
 
   // Dropdown menu state
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
@@ -127,9 +127,21 @@ export default function OffersPage() {
     setFilters(prev => ({ ...prev, page: 1 }));
   };
 
+  const handleCloseModal = () => {
+    setIsClosingModal(true);
+    setTimeout(() => {
+      setShowAdvancedFilters(false);
+      setIsClosingModal(false);
+    }, 300); // Match the transition duration
+  };
+
   const handleApprovalFilter = (approval: ApprovalStatus | 'all') => {
     setSelectedApproval(approval);
     setFilters(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleFilterChange = (key: keyof OfferFilters, value: string | number | boolean | undefined) => {
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
   };
 
   const handleViewOffer = (id: number) => {
@@ -412,47 +424,36 @@ export default function OffersPage() {
   };
 
   // Helper functions for display
-  const getCategoryIcon = (category: { name?: string } | string) => {
-    const categoryName = typeof category === 'string' ? category : category?.name || '';
-    switch (categoryName) {
-      case 'Data Offers': return <MessageSquare className="h-5 w-5 text-white" />;
-      case 'Voice Offers': return <Phone className="h-5 w-5 text-white" />;
-      case 'Combo Offers': return <Gift className="h-5 w-5 text-white" />;
-      case 'Loyalty Rewards': return <DollarSign className="h-5 w-5 text-white" />;
-      case 'Promotional': return <Copy className="h-5 w-5 text-white" />;
-      default: return <Gift className="h-5 w-5 text-white" />;
-    }
-  };
 
   const getStatusBadge = (status: LifecycleStatus) => {
     switch (status) {
       case 'draft':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Draft</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>Draft</span>;
       case 'active':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Active</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}] text-[${color.status.success}]`}>Active</span>;
       case 'inactive':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[200]}] text-[${color.ui.gray[700]}]`}>Inactive</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>Inactive</span>;
       case 'paused':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Paused</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}] text-[${color.status.warning}]`}>Paused</span>;
       case 'expired':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Expired</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}] text-[${color.status.danger}]`}>Expired</span>;
       case 'archived':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Archived</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>Archived</span>;
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>{status}</span>;
     }
   };
 
   const getApprovalBadge = (status: ApprovalStatus) => {
     switch (status) {
       case 'pending':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Pending</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}]/10 text-[${color.status.warning}]`}>Pending</span>;
       case 'approved':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Approved</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}]/10 text-[${color.status.success}]`}>Approved</span>;
       case 'rejected':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Rejected</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}]/10 text-[${color.status.danger}]`}>Rejected</span>;
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>{status}</span>;
     }
   };
 
@@ -481,162 +482,72 @@ export default function OffersPage() {
         <button
           onClick={() => navigate('/dashboard/offers/create')}
           className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 text-white"
-          style={{ backgroundColor: color.sentra.main }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-          }}
+          style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-4 w-4 mr-2" />
           Create Offer
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.entities.offers }}
-              >
-                <Gift className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Total Offers</p>
-              <p className={`text-2xl font-bold ${tw.textPrimary}`}>{totalOffers}</p>
-            </div>
-          </div>
+
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.text.muted}]`} />
+          <input
+            type="text"
+            placeholder="Search offers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
+            className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
+          />
         </div>
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.status.success.main }}
-              >
-                <CheckCircle className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Active</p>
-              <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {offers.filter(o => o.lifecycle_status === 'active').length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <HeadlessSelect
+          options={[
+            { value: '', label: 'All Categories' },
+            ...categories.map((category) => ({
+              value: category.id.toString(),
+              label: category.name
+            }))
+          ]}
+          value={filters.categoryId?.toString() || ''}
+          onChange={(value) => handleFilterChange('categoryId', value ? Number(value) : undefined)}
+          placeholder="All Categories"
+          className=""
+        />
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.status.warning.main }}
-              >
-                <Clock className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Pending</p>
-              <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {offers.filter(o => o.approval_status === 'pending').length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.status.error.main }}
-              >
-                <XCircle className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Expired</p>
-              <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {offers.filter(o => o.lifecycle_status === 'expired').length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6`}>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
-              <input
-                type="text"
-                placeholder="Search offers..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className={`pl-10 pr-4 py-3.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64`}
-              />
-            </div>
-            <HeadlessSelect
-              options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'draft', label: 'Draft' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-                { value: 'paused', label: 'Paused' },
-                { value: 'expired', label: 'Expired' },
-                { value: 'archived', label: 'Archived' }
-              ]}
-              value={selectedStatus}
-              onChange={(value) => handleStatusFilter(value as LifecycleStatus | 'all')}
-              placeholder="All Status"
-              className="min-w-[140px]"
-            />
-            <HeadlessSelect
-              options={[
-                { value: 'all', label: 'All Approval' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' }
-              ]}
-              value={selectedApproval}
-              onChange={(value) => handleApprovalFilter(value as ApprovalStatus | 'all')}
-              placeholder="All Approval"
-              className="min-w-[140px]"
-            />
-          </div>
-        </div>
+        <button
+          onClick={() => setShowAdvancedFilters(true)}
+          className={`flex items-center px-4 py-2 rounded-lg bg-gray-50 transition-colors text-sm font-medium`}
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          Filters
+        </button>
       </div>
 
       {/* Offers Table */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] overflow-hidden`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] overflow-hidden`}>
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]`}></div>
+            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}></div>
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <AlertCircle className={`h-12 w-12 text-[${color.status.error.main}] mx-auto mb-4`} />
+              <AlertCircle className={`h-12 w-12 text-[${color.status.danger}] mx-auto mb-4`} />
               <p className={`${tw.textSecondary}`}>{error}</p>
             </div>
           </div>
         ) : filteredOffers.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <Gift className={`h-12 w-12 text-[${color.entities.offers}] mx-auto mb-4`} />
               <p className={`${tw.textSecondary}`}>No offers found</p>
               <button
                 onClick={() => navigate('/dashboard/offers/create')}
-                className={`mt-4 inline-flex items-center px-3 py-2 text-base ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200`}
+                className="mt-4 inline-flex items-center px-3 py-2 text-base text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
+                style={{ backgroundColor: color.primary.action }}
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Create Your First Offer
@@ -646,24 +557,24 @@ export default function OffersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead
+                className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                style={{ background: color.surface.tableHeader }}
+              >
                 <tr>
-                  <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Offer</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Category</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Status</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Approval</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Created</th>
-                  <th className={`px-6 py-3 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Offer</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Category</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Status</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Approval</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Created</th>
+                  <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className={`bg-white divide-y divide-[${color.ui.border}]`}>
+              <tbody className={`bg-white divide-y divide-[${color.border.default}]`}>
                 {filteredOffers.map((offer) => (
                   <tr key={offer.id} className="hover:bg-gray-50 transition-colors duration-150">
                     <td className="px-6 py-5">
                       <div className="flex items-center space-x-4">
-                        <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.offers}` }}>
-                          {getCategoryIcon(getCategoryName(offer.category_id))}
-                        </div>
                         <div className="min-w-0 flex-1">
                           <div className={`font-semibold text-base ${tw.textPrimary} truncate`}>{offer.name}</div>
                           <div className={`text-sm ${tw.textSecondary} truncate flex items-center space-x-2 mt-1`}>
@@ -673,12 +584,12 @@ export default function OffersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryName(offer.category_id) === 'Data Offers' ? `bg-[${color.status.info.light}] text-[${color.status.info.main}]` :
-                        getCategoryName(offer.category_id) === 'Voice Offers' ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` :
-                          getCategoryName(offer.category_id) === 'Combo Offers' ? `bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]` :
-                            getCategoryName(offer.category_id) === 'Loyalty Rewards' ? `bg-[${color.status.warning.light}] text-[${color.status.warning.main}]` :
-                              getCategoryName(offer.category_id) === 'Promotional' ? `bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]` :
-                                `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryName(offer.category_id) === 'Data Offers' ? `bg-[${color.status.info}]/10 text-[${color.status.info}]` :
+                        getCategoryName(offer.category_id) === 'Voice Offers' ? `bg-[${color.status.success}]/10 text-[${color.status.success}]` :
+                          getCategoryName(offer.category_id) === 'Combo Offers' ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]` :
+                            getCategoryName(offer.category_id) === 'Loyalty Rewards' ? `bg-[${color.status.warning}]/10 text-[${color.status.warning}]` :
+                              getCategoryName(offer.category_id) === 'Promotional' ? `bg-[${color.primary.action}]/10 text-[${color.primary.action}]` :
+                                `bg-[${color.surface.cards}] text-[${color.text.primary}]`
                         }`}>
                         {getCategoryName(offer.category_id)}
                       </span>
@@ -733,7 +644,7 @@ export default function OffersPage() {
 
                         <button
                           onClick={() => offer.id && handleViewOffer(offer.id)}
-                          className={`text-[${color.status.info.main}] hover:text-[${color.status.info.dark}] p-1 rounded`}
+                          className={`text-[${color.status.info}] hover:text-[${color.status.info}] p-1 rounded`}
                           title="View Details"
                         >
                           <Eye className="h-4 w-4" />
@@ -778,7 +689,7 @@ export default function OffersPage() {
                                 onClick={handleDuplicateOffer}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <Copy className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                <Copy className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                 Duplicate Offer
                               </button>
                               */}
@@ -838,7 +749,7 @@ export default function OffersPage() {
                                       onClick={() => offer.id && handleArchiveOffer(offer.id)}
                                       className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                     >
-                                      <Archive className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                      <Archive className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                       Archive Offer
                                     </button>
                                   )}
@@ -851,7 +762,7 @@ export default function OffersPage() {
                                   onClick={() => offer.id && handleRequestApproval(offer.id)}
                                   className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                 >
-                                  <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.status.info.main }} />
+                                  <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.status.info }} />
                                   Request Approval
                                 </button>
                               )}
@@ -880,7 +791,7 @@ export default function OffersPage() {
                                 onClick={() => offer.id && handleViewApprovalHistory(offer.id)}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                 Approval History
                               </button>
 
@@ -888,7 +799,7 @@ export default function OffersPage() {
                                 onClick={() => offer.id && handleViewLifecycleHistory(offer.id)}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <Clock className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                <Clock className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                 Lifecycle History
                               </button>
 
@@ -915,7 +826,7 @@ export default function OffersPage() {
 
       {/* Pagination */}
       {!loading && !error && filteredOffers.length > 0 && (
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] px-4 sm:px-6 py-4`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] px-4 sm:px-6 py-4`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
               Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
@@ -925,7 +836,7 @@ export default function OffersPage() {
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
                 disabled={(filters.page || 1) <= 1}
-                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+                className={`px-3 py-2 text-base border border-[${color.border.default}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Previous
               </button>
@@ -935,7 +846,7 @@ export default function OffersPage() {
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                 disabled={(filters.page || 1) >= Math.ceil(totalOffers / (filters.pageSize || 10))}
-                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+                className={`px-3 py-2 text-base border border-[${color.border.default}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Next
               </button>
@@ -943,6 +854,106 @@ export default function OffersPage() {
           </div>
         </div>
       )}
+
+      {/* Advanced Filters Side Modal */}
+      {
+        (showAdvancedFilters || isClosingModal) && createPortal(
+          <div className={`fixed inset-0 z-[9999] overflow-hidden ${isClosingModal ? 'animate-out fade-out duration-300' : 'animate-in fade-in duration-300'}`}>
+            <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300" onClick={handleCloseModal}></div>
+            <div className={`absolute right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${isClosingModal ? 'translate-x-full' : 'translate-x-0'}`}>
+              <div className={`p-6 border-b ${tw.borderDefault}`}>
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Offers</h3>
+                  <button
+                    onClick={handleCloseModal}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+                {/* Status Filter */}
+                <div>
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Status</label>
+                  <div className="space-y-2">
+                    {[
+                      { value: 'all', label: 'All Status' },
+                      { value: 'draft', label: 'Draft' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' },
+                      { value: 'paused', label: 'Paused' },
+                      { value: 'expired', label: 'Expired' },
+                      { value: 'archived', label: 'Archived' }
+                    ].map((option) => (
+                      <label key={option.value} className="flex items-center">
+                        <input
+                          type="radio"
+                          name="status"
+                          value={option.value}
+                          checked={selectedStatus === option.value}
+                          onChange={() => handleStatusFilter(option.value as LifecycleStatus | 'all')}
+                          className={`mr-3 text-[${color.primary.action}] focus:ring-[${color.primary.action}]`}
+                        />
+                        <span className={`text-sm ${tw.textSecondary}`}>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Approval Filter */}
+                <div>
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Approval Status</label>
+                  <div className="space-y-2">
+                    {[
+                      { value: 'all', label: 'All Approval' },
+                      { value: 'pending', label: 'Pending' },
+                      { value: 'approved', label: 'Approved' },
+                      { value: 'rejected', label: 'Rejected' }
+                    ].map((option) => (
+                      <label key={option.value} className="flex items-center">
+                        <input
+                          type="radio"
+                          name="approval"
+                          value={option.value}
+                          checked={selectedApproval === option.value}
+                          onChange={() => handleApprovalFilter(option.value as ApprovalStatus | 'all')}
+                          className={`mr-3 text-[${color.primary.action}] focus:ring-[${color.primary.action}]`}
+                        />
+                        <span className={`text-sm ${tw.textSecondary}`}>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setSelectedStatus('all');
+                      setSelectedApproval('all');
+                    }}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleSearch(searchTerm);
+                      handleCloseModal();
+                    }}
+                    className={`${tw.button} flex-1 px-4 py-2 text-sm`}
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -217,6 +217,7 @@ export interface CreateCampaignRequest {
   priority?: 'low' | 'medium' | 'high' | 'critical';
   priority_rank?: number;
   is_definitive?: boolean;
+  campaign_type?: 'multiple_target_group' | 'champion_challenger' | 'ab_test' | 'round_robin' | 'multiple_level'; // frontend-only field
 }
 
 export interface CampaignOfferMapping {

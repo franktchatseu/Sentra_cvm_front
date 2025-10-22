@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
-import { X, User as UserIcon, Mail, Shield, Save, UserPlus } from 'lucide-react';
-import { User } from '../../../../shared/types/auth';
+import { createPortal } from 'react-dom';
+import { X, User as UserIcon, Mail, Shield, Save } from 'lucide-react';
+import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 import { authService } from '../../auth/services/authService';
 import { useToast } from '../../../contexts/ToastContext';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 import { color, tw } from '../../../shared/utils/utils';
+
+interface User {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  private_email_address: string;
+  role: 'admin' | 'user';
+  is_activated: boolean;
+  created_on: string;
+}
 
 interface UserModalProps {
   isOpen: boolean;
@@ -94,27 +105,20 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b border-[${color.ui.border}]`}>
-          <div className="flex items-center space-x-3">
-            <div
-              className="p-2 rounded-xl"
-              style={{
-                backgroundColor: color.entities.users
-              }}
-            >
-              {user ? <UserIcon className="w-5 h-5 text-white" /> : <UserPlus className="w-5 h-5 text-white" />}
-            </div>
+        <div className={`flex items-center justify-between p-6 border-b ${tw.borderDefault}`}>
+          <div className="flex items-center">
+
             <h2 className={`text-xl font-bold ${tw.textPrimary}`}>
               {user ? 'Edit User' : 'Add User'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className={`p-2 hover:bg-[${color.ui.surface}] rounded-lg transition-colors`}
+            className={`p-2 hover:bg-gray-50 rounded-lg transition-colors`}
           >
             <X className={`w-5 h-5 ${tw.textMuted}`} />
           </button>
@@ -136,7 +140,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                   value={formData.first_name}
                   onChange={handleChange}
                   required
-                  className={`block w-full pl-10 pr-3 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                  className={`block w-full pl-10 pr-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
                   placeholder="First Name"
                 />
               </div>
@@ -154,7 +158,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                   value={formData.last_name}
                   onChange={handleChange}
                   required
-                  className={`block w-full pl-10 pr-3 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                  className={`block w-full pl-10 pr-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
                   placeholder="Last Name"
                 />
               </div>
@@ -175,7 +179,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
                 value={formData.private_email_address}
                 onChange={handleChange}
                 required
-                className={`block w-full pl-10 pr-3 py-3 border border-[${color.ui.border}] rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                className={`block w-full pl-10 pr-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
                 placeholder="email@example.com"
               />
             </div>
@@ -204,7 +208,7 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
               name="is_activated"
               checked={formData.is_activated}
               onChange={handleChange}
-              className={`w-4 h-4 text-[${color.sentra.main}] border-[${color.ui.border}] rounded focus:outline-none`}
+              className={`w-4 h-4 text-[${color.primary.action}] border ${tw.borderDefault} rounded focus:outline-none`}
             />
             <label className={`ml-2 text-sm font-medium ${tw.textPrimary}`}>
               Account Activated
@@ -216,28 +220,40 @@ export default function UserModal({ isOpen, onClose, user, onUserSaved }: UserMo
             <button
               type="button"
               onClick={onClose}
-              className={`flex-1 px-4 py-3 border border-[${color.ui.border}] ${tw.textSecondary} rounded-lg hover:bg-[${color.ui.surface}] transition-colors font-medium text-sm`}
+              className={`flex-1 px-4 py-3 border ${tw.borderDefault} ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm`}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 text-white rounded-lg transition-all duration-200 font-medium text-sm flex items-center justify-center"
-              style={{ backgroundColor: color.sentra.main }}
+              className="flex-1 text-white rounded-lg transition-all duration-200 font-medium text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                if (!isLoading) {
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
+                }
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
               }}
             >
-              <Save className="w-4 h-4 mr-2" />
-              {user ? 'Update' : 'Create'}
+              {isLoading ? (
+                <>
+                  <LoadingSpinner variant="modern" size="sm" color="primary" className="mr-2" />
+                  {user ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  {user ? 'Update' : 'Create'}
+                </>
+              )}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

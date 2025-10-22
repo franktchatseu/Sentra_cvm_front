@@ -246,7 +246,7 @@ export default function ObjectiveModal({
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => handleInputChange('name', e.target.value)}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.sentra.main}] focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'
+                                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[${color.primary.action}] focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'
                                         }`}
                                     placeholder="Enter objective name..."
                                 />
@@ -286,8 +286,8 @@ export default function ObjectiveModal({
                                                 type="button"
                                                 onClick={() => handleInputChange('icon', option.value)}
                                                 className={`p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center space-y-2 ${formData.icon === option.value
-                                                        ? `border-[${color.sentra.main}] bg-[${color.sentra.main}]20`
-                                                        : 'border-gray-200 hover:border-gray-300'
+                                                    ? `border-[${color.primary.action}] bg-[${color.primary.action}]20`
+                                                    : 'border-gray-200 hover:border-gray-300'
                                                     }`}
                                             >
                                                 {IconComponent && <IconComponent className="w-5 h-5 text-gray-600" />}
@@ -386,17 +386,17 @@ export default function ObjectiveModal({
                                 disabled={isLoading}
                                 className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center justify-center"
                                 style={{
-                                    backgroundColor: color.sentra.main,
+                                    backgroundColor: color.primary.action,
                                     opacity: isLoading ? 0.7 : 1
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isLoading) {
-                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                        (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                                     }
                                 }}
                                 onMouseLeave={(e) => {
                                     if (!isLoading) {
-                                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                        (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                                     }
                                 }}
                             >

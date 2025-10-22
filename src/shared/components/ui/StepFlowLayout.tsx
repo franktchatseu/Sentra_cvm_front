@@ -85,7 +85,7 @@ export default function StepFlowLayout({
                         disabled={isNextDisabled}
                         className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${isNextDisabled
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-[#588157] text-white hover:bg-[#4a6b3a] hover:shadow-md'
+                            : ' text-white hover:bg-[#4a6b3a] hover:shadow-md'
                             }`}
                     >
                         {nextButtonText}
