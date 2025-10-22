@@ -204,6 +204,7 @@ export default function SegmentManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isClosingModal, setIsClosingModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
   const actionMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -217,6 +218,14 @@ export default function SegmentManagementPage() {
     } else {
       setShowActionMenu(segmentId);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsClosingModal(true);
+    setTimeout(() => {
+      setShowAdvancedFilters(false);
+      setIsClosingModal(false);
+    }, 300); // Match the transition duration
   };
 
   // Close dropdown when clicking outside
@@ -289,9 +298,14 @@ export default function SegmentManagementPage() {
       setSegments(segmentData);
       // Update allSegments for tag calculation
       setAllSegments(segmentData);
+      // Update pagination info
+      setTotalCount(segmentData.length);
+      setTotalPages(Math.ceil(segmentData.length / pageSize));
     } catch (err: unknown) {
       setError((err as Error).message || 'Failed to load segments');
       setSegments([]);
+      setTotalCount(0);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
     }
@@ -482,7 +496,7 @@ export default function SegmentManagementPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5 border ${tw.borderDefault} ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium`}
+              className={`flex items-center px-4 py-2.5  rounded-lg bg-gray-50 transition-colors text-base font-medium`}
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -521,7 +535,7 @@ export default function SegmentManagementPage() {
       </div>
 
       {/* Content */}
-      <div className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault}`}>
+      <div className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
@@ -560,158 +574,159 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block">
-              <div className="">
-                <table className="min-w-full">
-                  <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b ${tw.borderDefault}`}>
-                    <tr>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Segment</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Type</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Tags</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Customers</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Visibility</th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Created</th>
-                      <th className={`px-6 py-3 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className={`bg-white divide-y ${tw.borderDefault}/50`}>
-                    {filteredSegments.map((segment) => (
-                      <tr key={segment.segment_id || segment.id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
-                        <td className="px-6 py-4">
-                          <div className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.primary.accent}] transition-colors`}>
-                            {segment.name}
-                          </div>
-                          <div className={`text-sm ${tw.textSecondary} mt-1`}>{segment.description}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? 'bg-purple-100 text-purple-700' :
-                            segment.type === 'static' ? 'bg-blue-100 text-blue-700' :
-                              'bg-orange-100 text-orange-700'
-                            }`}>
-                            {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {segment.tags?.map(tag => (
-                              <span key={tag} className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}>
-                                <Tag className="w-3 h-3 mr-1" />
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2">
-                            <Users className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`} />
-                            <span className={`text-sm ${tw.textPrimary}`}>
-                              {segment.customer_count?.toLocaleString() || '0'}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead
+                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  style={{ background: color.surface.tableHeader }}
+                >
+                  <tr>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Segment</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Type</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Tags</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Customers</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Visibility</th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Created</th>
+                    <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody className={`bg-white divide-y ${tw.borderDefault}/50`}>
+                  {filteredSegments.map((segment) => (
+                    <tr key={segment.segment_id || segment.id} className={`group hover:bg-gray-50/30 transition-all duration-300`}>
+                      <td className="px-6 py-4">
+                        <div className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.primary.accent}] transition-colors`}>
+                          {segment.name}
+                        </div>
+                        <div className={`text-sm ${tw.textSecondary} mt-1`}>{segment.description}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? `bg-[${color.primary.accent}] text-white` :
+                          segment.type === 'static' ? `bg-[${color.primary.action}] text-white` :
+                            `bg-[${color.status.warning}] text-white`
+                          }`}>
+                          {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {segment.tags?.map(tag => (
+                            <span key={tag} className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}>
+                              <Tag className="w-3 h-3 mr-1" />
+                              {tag}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.visibility === 'public' ? `bg-[${color.status.success}]/10 text-[${color.status.success}]` : `bg-[${color.status.info}]/10 text-[${color.status.info}]`
-                            }`}>
-                            {segment.visibility === 'public' ? 'Public' : 'Private'}
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <Users className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`} />
+                          <span className={`text-sm ${tw.textPrimary}`}>
+                            {segment.customer_count?.toLocaleString() || '0'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className={`text-sm ${tw.textPrimary} font-medium`}>
-                              {new Date(segment.created_on || segment.created_at!).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.visibility === 'public' ? `bg-[${color.status.success}]/10 text-[${color.status.success}]` : `bg-[${color.status.info}]/10 text-[${color.status.info}]`
+                          }`}>
+                          {segment.visibility === 'public' ? 'Public' : 'Private'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`text-sm ${tw.textPrimary} font-medium`}>
+                            {new Date(segment.created_on || segment.created_at!).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
                           </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center space-x-2">
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleViewSegment(segment.segment_id || segment.id!)}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          </button>
+                          <button
+                            onClick={() => handleEditSegment(segment.segment_id || segment.id!)}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          </button>
+                          <div className="relative" ref={(el) => { actionMenuRefs.current[String(segment.segment_id || segment.id!)] = el; }}>
                             <button
-                              onClick={() => handleViewSegment(segment.segment_id || segment.id!)}
+                              onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
                               className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
-                              title="View Details"
                             >
-                              <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                              <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                             </button>
-                            <button
-                              onClick={() => handleEditSegment(segment.segment_id || segment.id!)}
-                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
-                              title="Edit"
-                            >
-                              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                            </button>
-                            <div className="relative" ref={(el) => { actionMenuRefs.current[String(segment.segment_id || segment.id!)] = el; }}>
-                              <button
-                                onClick={() => handleActionMenuToggle(segment.segment_id || segment.id!)}
-                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+
+                            {showActionMenu === (segment.segment_id || segment.id) && (
+                              <div
+                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
+                                style={{
+                                  maxHeight: '80vh',
+                                  overflowY: 'auto'
+                                }}
                               >
-                                <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                              </button>
 
-                              {showActionMenu === (segment.segment_id || segment.id) && (
-                                <div
-                                  className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
-                                  style={{
-                                    maxHeight: '80vh',
-                                    overflowY: 'auto'
-                                  }}
+                                <button
+                                  onClick={() => handleDuplicateSegment(segment)}
+                                  disabled={duplicatingSegment === (segment.segment_id || segment.id)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
+                                  {duplicatingSegment === (segment.segment_id || segment.id) ? (
+                                    <>
+                                      <div className="w-4 h-4 mr-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                                      Duplicating...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
+                                      Duplicate Segment
+                                    </>
+                                  )}
+                                </button>
 
-                                  <button
-                                    onClick={() => handleDuplicateSegment(segment)}
-                                    disabled={duplicatingSegment === (segment.segment_id || segment.id)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {duplicatingSegment === (segment.segment_id || segment.id) ? (
-                                      <>
-                                        <div className="w-4 h-4 mr-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-                                        Duplicating...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="w-4 h-4 mr-4" style={{ color: color.primary.action }} />
-                                        Duplicate Segment
-                                      </>
-                                    )}
-                                  </button>
+                                <button
+                                  onClick={() => handleComputeSegment(segment)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                >
+                                  <RefreshCw className="w-4 h-4 mr-4" />
+                                  Compute Segment
+                                </button>
 
-                                  <button
-                                    onClick={() => handleComputeSegment(segment)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                  >
-                                    <RefreshCw className="w-4 h-4 mr-4" />
-                                    Compute Segment
-                                  </button>
+                                <button
+                                  onClick={() => handleExportSegment(segment)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                >
+                                  <Download className="w-4 h-4 mr-4" />
+                                  Export Segment
+                                </button>
 
-                                  <button
-                                    onClick={() => handleExportSegment(segment)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Download className="w-4 h-4 mr-4" />
-                                    Export Segment
-                                  </button>
+                                <div className="border-t border-gray-200 my-1"></div>
 
-                                  <div className="border-t border-gray-200 my-1"></div>
-
-                                  <button
-                                    onClick={() => handleDeleteSegment(segment)}
-                                    className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-4" style={{ color: color.status.danger }} />
-                                    Delete Segment
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                                <button
+                                  onClick={() => handleDeleteSegment(segment)}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-4" style={{ color: color.status.danger }} />
+                                  Delete Segment
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             {/* Mobile Cards */}
@@ -797,8 +812,14 @@ export default function SegmentManagementPage() {
         <div className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
-              Showing {((page - 1) * pageSize) + 1} to{' '}
-              {Math.min(page * pageSize, totalCount)} of {totalCount} segments
+              {totalCount === 0 ? (
+                'No segments found'
+              ) : (
+                <>
+                  Showing {((page - 1) * pageSize) + 1} to{' '}
+                  {Math.min(page * pageSize, totalCount)} of {totalCount} segments
+                </>
+              )}
             </div>
             <div className="flex items-center justify-center space-x-2">
               <button
@@ -821,7 +842,8 @@ export default function SegmentManagementPage() {
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Segment Modal */}
       <SegmentModal
@@ -835,145 +857,146 @@ export default function SegmentManagementPage() {
       />
 
       {/* Advanced Filters Side Modal */}
-      {showAdvancedFilters && createPortal(
-        <div className="fixed inset-0 z-[9999] overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAdvancedFilters(false)}></div>
-          <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl">
-            <div className={`p-6 border-b ${tw.borderDefault}`}>
-              <div className="flex items-center justify-between">
-                <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Segments</h3>
-                <button
-                  onClick={() => setShowAdvancedFilters(false)}
-                  className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
-              {/* Type Filter */}
-              <div>
-                <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Segment Type</label>
-                <div className="space-y-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="all"
-                      checked={typeFilter === 'all'}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        setTypeFilter('all');
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>All Types</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="dynamic"
-                      checked={typeFilter === 'dynamic'}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        setTypeFilter('dynamic');
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>Dynamic</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="static"
-                      checked={typeFilter === 'static'}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        setTypeFilter('static');
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>Static</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="trigger"
-                      checked={typeFilter === 'trigger'}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        setTypeFilter('trigger');
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className={`text-sm ${tw.textSecondary}`}>Trigger</span>
-                  </label>
+      {
+        (showAdvancedFilters || isClosingModal) && createPortal(
+          <div className={`fixed inset-0 z-[9999] overflow-hidden ${isClosingModal ? 'animate-out fade-out duration-300' : 'animate-in fade-in duration-300'}`}>
+            <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300" onClick={handleCloseModal}></div>
+            <div className={`absolute right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${isClosingModal ? 'translate-x-full' : 'translate-x-0'}`}>
+              <div className={`p-6 border-b ${tw.borderDefault}`}>
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Segments</h3>
+                  <button
+                    onClick={handleCloseModal}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
 
-
-              {/* Tags Filter */}
-              {allTags.length > 0 && (
+              <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+                {/* Type Filter */}
                 <div>
-                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Tags</label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {allTags.map(tag => (
-                      <label key={tag} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedTags.includes(tag)}
-                          onChange={(e) => {
-                            e.stopPropagation(); // Prevent event bubbling
-                            if (e.target.checked) {
-                              setSelectedTags(prev => [...prev, tag]);
-                            } else {
-                              setSelectedTags(prev => prev.filter(t => t !== tag));
-                            }
-                          }}
-                          onClick={(e) => e.stopPropagation()} // Prevent event bubbling
-                          className={`mr-3 text-[${color.primary.action}] focus:ring-[${color.primary.action}]`}
-                        />
-                        <span className={`text-sm ${tw.textSecondary}`}>{tag}</span>
-                      </label>
-                    ))}
+                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Segment Type</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="all"
+                        checked={typeFilter === 'all'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('all');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>All Types</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="dynamic"
+                        checked={typeFilter === 'dynamic'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('dynamic');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>Dynamic</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="static"
+                        checked={typeFilter === 'static'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('static');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>Static</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="trigger"
+                        checked={typeFilter === 'trigger'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setTypeFilter('trigger');
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mr-3 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className={`text-sm ${tw.textSecondary}`}>Trigger</span>
+                    </label>
                   </div>
                 </div>
-              )}
 
-              {/* Action Buttons */}
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setTypeFilter('all');
-                    setSelectedTags([]);
-                  }}
-                  className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
-                >
-                  Clear All
-                </button>
-                <button
-                  onClick={() => {
-                    handleSearch();
-                    setShowAdvancedFilters(false);
-                  }}
-                  className={`${tw.button} flex-1 px-4 py-2 text-sm`}
-                >
-                  Apply Filters
-                </button>
+
+                {/* Tags Filter */}
+                {allTags.length > 0 && (
+                  <div>
+                    <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Tags</label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {allTags.map(tag => (
+                        <label key={tag} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedTags.includes(tag)}
+                            onChange={(e) => {
+                              e.stopPropagation(); // Prevent event bubbling
+                              if (e.target.checked) {
+                                setSelectedTags(prev => [...prev, tag]);
+                              } else {
+                                setSelectedTags(prev => prev.filter(t => t !== tag));
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()} // Prevent event bubbling
+                            className={`mr-3 text-[${color.primary.action}] focus:ring-[${color.primary.action}]`}
+                          />
+                          <span className={`text-sm ${tw.textSecondary}`}>{tag}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setTypeFilter('all');
+                      setSelectedTags([]);
+                    }}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleSearch();
+                      handleCloseModal();
+                    }}
+                    className={`${tw.button} flex-1 px-4 py-2 text-sm`}
+                  >
+                    Apply Filters
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -74,7 +74,7 @@ export default function CampaignApprovalHistoryPage() {
             <div className="flex items-center space-x-4">
                 <button
                     onClick={() => navigate('/dashboard/campaigns')}
-                    className={`p-2 rounded-lg hover:bg-[${color.surface.background}] transition-colors`}
+                    className={`p-2 rounded-lg hover:bg-[${color.surface.cards}] transition-colors`}
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>

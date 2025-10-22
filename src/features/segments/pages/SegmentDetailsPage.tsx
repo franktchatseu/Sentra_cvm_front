@@ -4,15 +4,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
     Users,
-    Calendar,
     Tag,
     Activity,
     Download,
     Edit,
     Trash2,
-    EyeOff,
     Eye,
-    MoreVertical,
+    EyeOff,
     Plus,
     X
 } from 'lucide-react';
@@ -63,7 +61,6 @@ export default function SegmentDetailsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [membersCount, setMembersCount] = useState<number>(0);
     const [isLoadingMembers, setIsLoadingMembers] = useState(false);
-    const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'xml'>('csv');
     const [isExporting, setIsExporting] = useState(false);
@@ -228,7 +225,7 @@ export default function SegmentDetailsPage() {
     };
 
 
-    const loadMembers = useCallback(async (page: number = 1) => {
+    const loadMembers = useCallback(async () => {
         if (!id) return;
 
         setIsLoadingMembersList(true);
@@ -283,7 +280,7 @@ export default function SegmentDetailsPage() {
             setCustomerIdsInput('');
             setShowMembersModal(false);
             await loadMembersCount();
-            await loadMembers(membersPage);
+            await loadMembers();
         } catch (err) {
             showError('Error adding members', (err as Error).message || 'Failed to add members');
         }
@@ -304,7 +301,7 @@ export default function SegmentDetailsPage() {
             await segmentService.deleteSegmentMembers(Number(id), { customer_ids: customerIds });
             success('Members removed', `${customerIds.length} member(s) removed successfully`);
             await loadMembersCount();
-            await loadMembers(membersPage);
+            await loadMembers();
         } catch (err) {
             showError('Error removing members', (err as Error).message || 'Failed to remove members');
         }
@@ -364,43 +361,13 @@ export default function SegmentDetailsPage() {
                         Edit
                     </button>
 
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowMoreMenu(!showMoreMenu)}
-                            className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm`}
-                            style={{
-                                borderColor: tw.borderDefault,
-                                color: tw.textPrimary
-                            }}
-                        >
-                            <MoreVertical className="w-4 h-4" />
-                            More
-                        </button>
-
-                        {showMoreMenu && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-40"
-                                    onClick={() => setShowMoreMenu(false)}
-                                />
-                                <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
-
-
-
-                                    <button
-                                        onClick={() => {
-                                            handleDelete();
-                                            setShowMoreMenu(false);
-                                        }}
-                                        className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4 mr-3" />
-                                        Delete Segment
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    <button
+                        onClick={handleDelete}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm hover:bg-red-700"
+                    >
+                        {/* <Trash2 className="w-4 h-4" /> */}
+                        Delete Segment
+                    </button>
                 </div>
             </div>
 
@@ -426,8 +393,8 @@ export default function SegmentDetailsPage() {
                             <p className={`text-sm ${tw.textMuted} mb-1`}>Type</p>
                             <p className={`text-lg font-semibold ${tw.textPrimary} capitalize`}>{segment.type}</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-purple-100">
-                            <Activity className="w-6 h-6 text-purple-600" />
+                        <div className="p-3 rounded-lg" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                            <Activity className="w-6 h-6" style={{ color: color.primary.accent }} />
                         </div>
                     </div>
                 </div>
@@ -436,15 +403,15 @@ export default function SegmentDetailsPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className={`text-sm ${tw.textMuted} mb-1`}>Visibility</p>
-                            <p className={`text-lg font-semibold ${segment.visibility === 'public' ? 'text-green-600' : 'text-blue-600'}`}>
+                            <p className={`text-lg font-semibold ${segment.visibility === 'public' ? `text-[${color.status.success}]` : `text-[${color.primary.action}]`}`}>
                                 {segment.visibility === 'public' ? 'Public' : 'Private'}
                             </p>
                         </div>
-                        <div className={`p-3 rounded-lg ${segment.visibility === 'public' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                        <div className={`p-3 rounded-lg ${segment.visibility === 'public' ? `bg-[${color.status.success}]/10` : `bg-[${color.primary.action}]/10`}`}>
                             {segment.visibility === 'public' ? (
-                                <Eye className="w-6 h-6 text-green-600" />
+                                <Eye className={`w-6 h-6 text-[${color.status.success}]`} />
                             ) : (
-                                <EyeOff className="w-6 h-6 text-blue-600" />
+                                <EyeOff className={`w-6 h-6 text-[${color.primary.action}]`} />
                             )}
                         </div>
                     </div>
@@ -468,9 +435,9 @@ export default function SegmentDetailsPage() {
                         </div>
                         <div>
                             <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Type</label>
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.type === 'dynamic' ? 'bg-purple-100 text-purple-700' :
-                                segment.type === 'static' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-orange-100 text-orange-700'
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${segment.type === 'dynamic' ? `bg-[${color.primary.accent}] text-white` :
+                                segment.type === 'static' ? `bg-[${color.primary.action}] text-white` :
+                                    `bg-[${color.status.warning}] text-white`
                                 }`}>
                                 {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
                             </span>
@@ -486,7 +453,7 @@ export default function SegmentDetailsPage() {
                                 <label className={`text-sm font-medium ${tw.textMuted} block mb-2`}>Tags</label>
                                 <div className="flex flex-wrap gap-2">
                                     {segment.tags.map(tag => (
-                                        <span key={tag} className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                                        <span key={tag} className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700`}>
                                             <Tag className="w-3 h-3 mr-1" />
                                             {tag}
                                         </span>
@@ -503,39 +470,33 @@ export default function SegmentDetailsPage() {
                     <div className="space-y-4">
                         <div>
                             <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Created</label>
-                            <div className="flex items-center space-x-2">
-                                <Calendar className="w-4 h-4 text-gray-400" />
-                                <p className={`text-sm ${tw.textPrimary}`}>
-                                    {(() => {
-                                        const createdDate = segment.created_on || segment.created_at;
-                                        return new Date(createdDate!).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                    })()}
-                                </p>
-                            </div>
+                            <p className={`text-sm ${tw.textPrimary}`}>
+                                {(() => {
+                                    const createdDate = segment.created_on || segment.created_at;
+                                    return new Date(createdDate!).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                })()}
+                            </p>
                         </div>
                         <div>
                             <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>Last Updated</label>
-                            <div className="flex items-center space-x-2">
-                                <Calendar className="w-4 h-4 text-gray-400" />
-                                <p className={`text-sm ${tw.textPrimary}`}>
-                                    {(() => {
-                                        const updatedDate = segment.updated_on || segment.updated_at;
-                                        return new Date(updatedDate!).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                    })()}
-                                </p>
-                            </div>
+                            <p className={`text-sm ${tw.textPrimary}`}>
+                                {(() => {
+                                    const updatedDate = segment.updated_on || segment.updated_at;
+                                    return new Date(updatedDate!).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                })()}
+                            </p>
                         </div>
                         {segment.refresh_frequency && (
                             <div>
@@ -624,15 +585,14 @@ export default function SegmentDetailsPage() {
             {/* Segment Members Section */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className={`text-base font-semibold ${tw.textPrimary} flex items-center`}>
-                        <Users className="w-5 h-5 mr-2" style={{ color: color.primary.accent }} />
+                    <h3 className={`text-base font-semibold ${tw.textPrimary}`}>
                         Segment Members ({(membersCount || 0).toLocaleString()})
                     </h3>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => {
                                 setShowMembersModal(true);
-                                loadMembers(1);
+                                loadMembers();
                             }}
                             className="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg transition-all text-sm flex items-center gap-2 hover:bg-gray-50"
                         >
@@ -742,10 +702,10 @@ export default function SegmentDetailsPage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-gray-900">
-                                                        {member.name || `Customer ID: ${String(member.customer_id)}`}
+                                                        {String(member.name || `Customer ID: ${String(member.customer_id || '')}` || 'Unknown Customer')}
                                                     </p>
                                                     <p className="text-sm text-gray-500">
-                                                        {member.email || `ID: ${String(member.customer_id)}`}
+                                                        {String(member.email || `ID: ${String(member.customer_id || '')}` || 'No email')}
                                                     </p>
                                                     {member.joined_at ? (
                                                         <p className="text-xs text-gray-400">
@@ -786,7 +746,7 @@ export default function SegmentDetailsPage() {
                                             onClick={() => {
                                                 const newPage = membersPage - 1;
                                                 setMembersPage(newPage);
-                                                loadMembers(newPage);
+                                                loadMembers();
                                             }}
                                             disabled={membersPage <= 1}
                                             className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -797,7 +757,7 @@ export default function SegmentDetailsPage() {
                                             onClick={() => {
                                                 const newPage = membersPage + 1;
                                                 setMembersPage(newPage);
-                                                loadMembers(newPage);
+                                                loadMembers();
                                             }}
                                             disabled={membersPage >= membersTotalPages}
                                             className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"

@@ -13,7 +13,8 @@ import {
   Heart,
   Send
 } from 'lucide-react';
-import LandingPageBackground from '../../../shared/components/LandingPageBackground';
+import FixedBackground from '../../../shared/components/FixedBackground';
+
 import { GuestHeader } from './Header';
 
 export default function AuthenticatedLandingPage() {
@@ -339,13 +340,15 @@ export default function AuthenticatedLandingPage() {
           
         `}
       </style>
-      <LandingPageBackground />
+      <FixedBackground variant="landingpage" />
+
       <div className="min-h-screen relative overflow-hidden">
         {/* Glossy Header */}
         <GuestHeader
           isLoaded={isLoaded}
           onLogout={handleLogout}
-        // variant="transparent"
+
+          variant="transparent"
         />
 
         {/* Main Content */}

@@ -53,7 +53,7 @@ export default function ProductsPage() {
       setError(null);
       const response = await productService.getProducts(filters);
       setProducts(response.data || []);
-      const totalCount = response.total || 0;
+      const totalCount = response.total || (response.data?.length || 0);
       setTotal(totalCount);
       setTotalPages(Math.ceil(totalCount / (filters.pageSize || 10)) || 1);
     } catch (err) {
@@ -264,27 +264,30 @@ export default function ProductsPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className={`${tw.tableHeader}`}>
+                <thead
+                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  style={{ background: color.surface.tableHeader }}
+                >
                   <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Product
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Product ID
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       DA ID
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Category
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Status
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Created
                     </th>
-                    <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Actions
                     </th>
                   </tr>
@@ -367,35 +370,46 @@ export default function ProductsPage() {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="bg-white px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-              <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
-                Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
-                {Math.min((filters.page || 1) * (filters.pageSize || 10), total)} of {total} results
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => handlePageChange((filters.page || 1) - 1)}
-                  disabled={filters.page === 1}
-                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className={`px-4 py-2 text-base ${tw.textSecondary} whitespace-nowrap`}>
-                  Page {filters.page || 1} of {totalPages || 1}
-                </span>
-                <button
-                  onClick={() => handlePageChange((filters.page || 1) + 1)}
-                  disabled={(filters.page || 1) >= (totalPages || 1)}
-                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
           </>
         )}
       </div>
+
+      {/* Pagination */}
+      {!loading && !error && (products.length > 0 || total > 0) && (
+        <div className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
+              {products.length === 0 ? (
+                'No products on this page'
+              ) : (
+                <>
+                  Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
+                  {Math.min((filters.page || 1) * (filters.pageSize || 10), total)} of {total} products
+                </>
+              )}
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <button
+                onClick={() => handlePageChange((filters.page || 1) - 1)}
+                disabled={filters.page === 1}
+                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className={`text-base ${tw.textSecondary} px-2`}>
+                Page {filters.page || 1} of {totalPages || 1}
+              </span>
+              <button
+                onClick={() => handlePageChange((filters.page || 1) + 1)}
+                disabled={(filters.page || 1) >= (totalPages || 1)}
+                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

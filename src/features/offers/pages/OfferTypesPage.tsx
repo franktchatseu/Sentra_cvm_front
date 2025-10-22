@@ -77,10 +77,8 @@ export default function OfferTypesPage() {
       }
     ];
 
-    setTimeout(() => {
-      setOfferTypes(mockOfferTypes);
-      setLoading(false);
-    }, 1000);
+    setOfferTypes(mockOfferTypes);
+    setLoading(false);
   }, []);
 
   const filteredOfferTypes = offerTypes.filter(offerType => {
@@ -245,25 +243,28 @@ export default function OfferTypesPage() {
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead className={`bg-gradient-to-r from-[${color.surface.background}] to-[${color.surface.background}]/80 border-b border-[${color.border.default}]`}>
+                <thead
+                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  style={{ background: color.surface.tableHeader }}
+                >
                   <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Offer Type
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Description
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Status
                     </th>
-                    <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredOfferTypes.map((offerType) => (
-                    <tr key={offerType.id} className="hover:bg-[${color.surface.background}]/30 transition-colors">
+                    <tr key={offerType.id} className="hover:bg-[${color.surface.cards}]/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
                           <div>

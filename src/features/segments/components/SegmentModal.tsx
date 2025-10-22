@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-// Icons removed for clean design
+import { X } from 'lucide-react';
 import { Segment, CreateSegmentRequest, SegmentConditionGroup } from '../types/segment';
 import SegmentConditionsBuilder from './SegmentConditionsBuilder';
 import { segmentService } from '../services/segmentService';
-import { color, tw } from '../../../shared/utils/utils';
+import { color, tw, button } from '../../../shared/utils/utils';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 
 interface SegmentModalProps {
@@ -329,9 +329,9 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
             </div>
             <button
               onClick={onClose}
-              className={`p-2 hover:bg-[${color.surface.background}] rounded-lg transition-colors`}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Close
+              <X className="w-5 h-5 text-black" />
             </button>
           </div>
 
@@ -419,13 +419,16 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                             }
                           }
                         }}
-                        className="px-4 py-3 text-white rounded-lg transition-colors text-sm"
-                        style={{ backgroundColor: color.primary.action }}
-                        onMouseEnter={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
+                        className="transition-colors text-sm"
+                        style={{
+                          backgroundColor: button.secondaryAction.background,
+                          color: button.secondaryAction.color,
+                          border: button.secondaryAction.border,
+                          borderRadius: button.secondaryAction.borderRadius,
+                          paddingTop: button.secondaryAction.paddingY,
+                          paddingBottom: button.secondaryAction.paddingY,
+                          paddingLeft: button.secondaryAction.paddingX,
+                          paddingRight: button.secondaryAction.paddingX
                         }}
                       >
                         Add
@@ -483,19 +486,16 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                       type="button"
                       onClick={handlePreview}
                       disabled={isPreviewLoading || formData.conditions.length === 0}
-                      className={`inline-flex items-center px-3 py-1 text-white text-sm rounded-lg transition-colors`}
+                      className={`inline-flex items-center text-sm transition-colors`}
                       style={{
-                        backgroundColor: isPreviewLoading || formData.conditions.length === 0 ? color.text.muted : color.primary.action
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isPreviewLoading && formData.conditions.length > 0) {
-                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isPreviewLoading && formData.conditions.length > 0) {
-                          (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                        }
+                        backgroundColor: button.secondaryAction.background,
+                        color: button.secondaryAction.color,
+                        border: button.secondaryAction.border,
+                        borderRadius: button.secondaryAction.borderRadius,
+                        paddingTop: button.secondaryAction.paddingY,
+                        paddingBottom: button.secondaryAction.paddingY,
+                        paddingLeft: button.secondaryAction.paddingX,
+                        paddingRight: button.secondaryAction.paddingX
                       }}
                     >
                       {isPreviewLoading ? 'Loading...' : 'Preview'}
@@ -503,7 +503,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                   </div>
                 </div>
 
-                <div className={`border border-[${tw.borderDefault}] rounded-lg p-4 bg-[${color.surface.background}]`}>
+                <div className={`border border-[${tw.borderDefault}] rounded-lg p-4 bg-[${color.surface.cards}]`}>
                   <SegmentConditionsBuilder
                     conditions={formData.conditions}
                     onChange={(conditions) => setFormData(prev => ({ ...prev, conditions }))}
@@ -518,7 +518,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
             <button
               type="button"
               onClick={onClose}
-              className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${tw.borderDefault}] rounded-lg hover:bg-[${color.surface.background}] transition-colors text-sm`}
+              className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${tw.borderDefault}] rounded-lg hover:bg-[${color.surface.cards}] transition-colors text-sm`}
             >
               Cancel
             </button>
