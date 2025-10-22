@@ -1,17 +1,81 @@
 import React from 'react';
-import { color } from '../utils/utils';
 
 /**
- * LandingPageBackground Component
+ * FixedBackground Component
  * 
- * A fixed background component specifically for the authenticated landing page.
- * Uses the same gradient colors as the sidebar with the original pattern overlay.
- * Copies the exact same patterns from FixedBackground but with our gradient colors.
+ * A fixed background component that doesn't scroll and maintains its pattern.
+ * The background stays in place while content scrolls over it.
+ * 
+ * @param variant - The background pattern variant:
+ *   - 'default': Combines gradients, hexagons, and grid patterns
+ *   - 'subtle': Subtle, cute pattern for all pages
+ *   - 'gradient': Only gradient patterns
+ *   - 'hexagon': Only animated hexagon patterns
+ *   - 'grid': Only grid patterns
+ *   - 'particles': Only particle/dot patterns
+ * @param className - Additional CSS classes to apply
+ * 
+ * @example
+ * // Use default background (recommended)
+ * <FixedBackground />
+ * 
+ * // Use only gradient background
+ * <FixedBackground variant="gradient" />
+ * 
+ * // Use custom styling
+ * <FixedBackground variant="hexagon" className="opacity-50" />
  */
-export default function LandingPageBackground() {
+interface LandingPageBackgroundProps {
+    variant?: 'default' | 'subtle' | 'gradient' | 'hexagon' | 'grid' | 'particles' | 'landingpage';
+    className?: string;
+}
+
+export default function LandingPageBackground({
+    variant = 'landingpage',
+    className = ''
+}: LandingPageBackgroundProps) {
+    const getBackgroundContent = () => {
+        switch (variant) {
+            case 'gradient':
+                return (
+                    <div className="fixed-bg-gradients-landing"></div>
+                );
+
+            case 'hexagon':
+                return (
+                    <div className="fixed-bg-hex"></div>
+                );
+
+            case 'grid':
+                return (
+                    <div className="fixed-bg-grid"></div>
+                );
+
+            case 'particles':
+                return (
+                    <div className="fixed-bg-particles"></div>
+                );
+
+            case 'subtle':
+                return (
+                    <div className="fixed-bg-subtle"></div>
+                );
+
+            case 'default':
+            default:
+                return (
+                    <>
+                        <div className="fixed-bg-gradients-landing"></div>
+                        <div className="fixed-bg-hex"></div>
+                        <div className="fixed-bg-grid"></div>
+                    </>
+                );
+        }
+    };
+
     return (
         <div
-            className="fixed inset-0 w-full h-full pointer-events-none z-0"
+            className={`fixed inset-0 w-full h-full pointer-events-none z-0 ${className}`}
             style={{
                 position: 'fixed',
                 top: 0,
@@ -21,11 +85,9 @@ export default function LandingPageBackground() {
                 width: '100vw',
                 height: '100vh',
                 overflow: 'hidden',
-                background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`
             }}
         >
-            <div className="fixed-bg-hex" style={{ backgroundColor: 'transparent' }}></div>
-            <div className="fixed-bg-grid" style={{ backgroundColor: 'transparent' }}></div>
+            {getBackgroundContent()}
         </div>
     );
 }

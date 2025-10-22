@@ -535,6 +535,7 @@ export default function ProductCatalogsPage() {
               className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex-1">{category.name}</h3>
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleEditCatalog(category)}
@@ -548,12 +549,10 @@ export default function ProductCatalogsPage() {
                     className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                     title="Delete"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 text-red-600" />
                   </button>
                 </div>
               </div>
-
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{category.name}</h3>
               {category.description && (
                 <p className="text-sm text-gray-500 mb-4 line-clamp-2">{category.description}</p>
               )}
@@ -608,7 +607,7 @@ export default function ProductCatalogsPage() {
                   className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4 text-red-600" />
                 </button>
               </div>
             </div>

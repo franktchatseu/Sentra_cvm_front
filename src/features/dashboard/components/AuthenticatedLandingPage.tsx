@@ -345,7 +345,8 @@ export default function AuthenticatedLandingPage() {
         <GuestHeader
           isLoaded={isLoaded}
           onLogout={handleLogout}
-        // variant="transparent"
+
+          variant="transparent"
         />
 
         {/* Main Content */}

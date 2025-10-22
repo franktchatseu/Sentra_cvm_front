@@ -11,15 +11,16 @@ export const colors = {
   surface: {
     cards: '#F5FCFF',         // Cards and table headers
     background: '#FFFFFF',    
-    tableHeader: '#E4EDF1',  // Table header rows
+    tableHeader: 'linear-gradient(to bottom, #394247 0%, #1F2223 70%, #2A2F31 100%)',
+    tableHeaderText: '#FFFFFF',
   },
   
   // Gradient colors for sidebar and header
         gradients: {
           sidebar: {
-            top: '#22282A',        // Dark gray (top)
-            middle: '#394247',     // New darker gray (middle)
-            bottom: '#22282A',     // Dark gray (bottom)
+            top: '#2A2F31',        // Custom blend - Dark with subtle light hint (top)
+            middle: '#1F2223',     // NEUTRAL 900 - Deep charcoal (middle)
+            bottom: '#2A2F31',     // Custom blend - Dark with subtle light hint (bottom)
           },
           landing: {
             top: '#22282A',        // NEUTRAL 800 - Dark blue-gray (top)
@@ -211,8 +212,9 @@ export const buttons = {
   },
 
    secondaryAction: {
-    background: '#FFFFFF',  
-    color: '#000000',                   // Black text on light buttons
+    background: '#00BBCC',  
+    // color: '#000000',                   
+    color: '#FFFFFF',                   
     border: 'none',                     
     paddingY: '0.75rem',               
     paddingX: '1.5rem',               

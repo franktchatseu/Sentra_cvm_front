@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Grid, List as ListIcon, FileText, X, Eye, Edit } from 'lucide-react';
+import { Plus, Search, Grid, List as ListIcon, FileText, X, Eye, Edit, Trash2 } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import ListUpload from '../components/ListUpload';
 
@@ -20,7 +20,6 @@ export default function SegmentListPage() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [selectedList, setSelectedList] = useState<SegmentList | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
 
     // Mock data - in real app, this would come from API
     const mockLists: SegmentList[] = [
@@ -80,17 +79,8 @@ export default function SegmentListPage() {
     }, [searchQuery, lists]);
 
     const loadLists = async () => {
-        setIsLoading(true);
-        try {
-            // Simulate API call
-            setTimeout(() => {
-                setLists(mockLists);
-                setIsLoading(false);
-            }, 500);
-        } catch (error) {
-            console.error('Error loading lists:', error);
-            setIsLoading(false);
-        }
+        // Since we're using dummy data, no need for loading state
+        setLists(mockLists);
     };
 
     const filterLists = () => {
@@ -131,11 +121,11 @@ export default function SegmentListPage() {
     const getListTypeColor = (type: string) => {
         switch (type) {
             case 'seed':
-                return 'bg-yellow-100 text-yellow-800';
+                return `bg-[${color.status.warning}]/10 text-[${color.status.warning}]`;
             case 'and':
-                return 'bg-blue-100 text-blue-800';
+                return `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`;
             case 'standard':
-                return 'bg-green-100 text-green-800';
+                return `bg-[${color.status.success}]/10 text-[${color.status.success}]`;
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -178,15 +168,15 @@ export default function SegmentListPage() {
                         placeholder="Search lists by name, description, or tags..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${color.primary.accent}] focus:border-[${color.primary.accent}]"
                     />
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setViewMode('grid')}
                         className={`p-2 rounded-lg transition-colors ${viewMode === 'grid'
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
+                            : `bg-gray-100 text-gray-600 hover:bg-gray-200`
                             }`}
                     >
                         <Grid className="w-4 h-4" />
@@ -194,8 +184,8 @@ export default function SegmentListPage() {
                     <button
                         onClick={() => setViewMode('list')}
                         className={`p-2 rounded-lg transition-colors ${viewMode === 'list'
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
+                            : `bg-gray-100 text-gray-600 hover:bg-gray-200`
                             }`}
                     >
                         <ListIcon className="w-4 h-4" />
@@ -204,11 +194,7 @@ export default function SegmentListPage() {
             </div>
 
             {/* Lists Display */}
-            {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-            ) : filteredLists.length === 0 ? (
+            {filteredLists.length === 0 ? (
                 <div className="text-center py-12">
                     <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>No lists found</h3>
@@ -218,7 +204,8 @@ export default function SegmentListPage() {
                     {!searchQuery && (
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
+                            style={{ backgroundColor: color.primary.action }}
                         >
                             <Plus className="w-4 h-4 mr-2" />
                             Create Your First List
@@ -298,7 +285,7 @@ export default function SegmentListPage() {
                                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
                                             title="Delete List"
                                         >
-                                            Delete
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </>
@@ -358,7 +345,7 @@ export default function SegmentListPage() {
                                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
                                             title="Delete List"
                                         >
-                                            Delete
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </>

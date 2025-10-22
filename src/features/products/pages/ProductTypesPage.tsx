@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Search, Edit, Trash2, Layers } from 'lucide-react';
+import { ArrowLeft, Search, Edit, Trash2 } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -82,10 +82,8 @@ export default function ProductTypesPage() {
       }
     ];
 
-    setTimeout(() => {
-      setProductTypes(mockProductTypes);
-      setLoading(false);
-    }, 1000);
+    setProductTypes(mockProductTypes);
+    setLoading(false);
   }, []);
 
   const filteredProductTypes = productTypes.filter(productType => {
@@ -250,28 +248,31 @@ export default function ProductTypesPage() {
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead className={`${tw.tableHeader}`}>
+                <thead
+                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  style={{ background: color.surface.tableHeader }}
+                >
                   <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Product Type
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Description
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Products
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Status
                     </th>
-                    <th className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                    <th className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredProductTypes.map((productType) => (
-                    <tr key={productType.id} className="hover:bg-[${color.surface.background}]/30 transition-colors">
+                    <tr key={productType.id} className="hover:bg-[${color.surface.cards}]/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className={`text-base font-semibold ${tw.textPrimary}`}>
                           {productType.name}

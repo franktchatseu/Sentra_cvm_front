@@ -100,6 +100,17 @@
   pointer-events: none;
 }
 
+.fixed-bg-gradients-landing {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #394247;
+  z-index: -1;
+  pointer-events: none;
+}
+
 .fixed-bg-hex {
   position: fixed;
   bottom: -100px;

@@ -236,34 +236,40 @@ export default function UserManagementPage() {
       <div className="flex gap-6 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-6 py-3 text-base font-medium border-b-2 transition-colors ${activeTab === 'users'
-            ? 'border-[#4FDFF3] text-black'
-            : 'border-[#5F6F77] text-black'
-            }`}
+          className={`px-6 py-3 text-base font-medium border-b-2 transition-colors text-black`}
+          style={{
+            borderBottomColor: activeTab === 'users' ? color.primary.accent : '#92A6B0'
+          }}
         >
           <div className="flex items-center gap-2">
             <span>Users</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'users'
-              ? 'bg-[#4FDFF3] text-white'
-              : 'bg-[#5F6F77] text-white'
-              }`}>
+            <span
+              className="px-2 py-0.5 rounded-full text-xs"
+              style={{
+                backgroundColor: activeTab === 'users' ? color.primary.accent : color.text.muted,
+                color: activeTab === 'users' ? 'white' : 'black'
+              }}
+            >
               {users.length}
             </span>
           </div>
         </button>
         <button
           onClick={() => setActiveTab('requests')}
-          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'requests'
-            ? 'border-[#4FDFF3] text-black'
-            : 'border-[#5F6F77] text-black'
-            }`}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors text-black`}
+          style={{
+            borderBottomColor: activeTab === 'requests' ? color.primary.accent : '#92A6B0'
+          }}
         >
           <div className="flex items-center gap-2">
             <span>Pending Requests</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'requests'
-              ? 'bg-[#4FDFF3] text-white'
-              : 'bg-[#5F6F77] text-white'
-              }`}>
+            <span
+              className="px-2 py-0.5 rounded-full text-xs"
+              style={{
+                backgroundColor: activeTab === 'requests' ? color.primary.accent : color.text.muted,
+                color: activeTab === 'requests' ? 'white' : 'black'
+              }}
+            >
               {accountRequests.filter(r => r.force_password_reset).length}
             </span>
           </div>
@@ -360,19 +366,22 @@ export default function UserManagementPage() {
               {/* Desktop Table */}
               <div className="max-md:hidden overflow-x-auto -mx-6 -mt-6">
                 <table className="w-full">
-                  <thead className={`bg-[#E4EDF1] border-b ${tw.borderDefault} rounded-t-2xl`}>
+                  <thead
+                    className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                    style={{ background: color.surface.tableHeader }}
+                  >
 
                     <tr>
-                      <th className={`px-6 py-4 text-left text-sm font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      <th className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                         User
                       </th>
-                      <th className={`px-6 py-4 text-left text-sm font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      <th className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                         Role
                       </th>
-                      <th className={`px-6 py-4 text-left text-sm font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      <th className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                         Status
                       </th>
-                      <th className={`px-6 py-4 text-left text-sm font-medium ${tw.textMuted} uppercase tracking-wider`}>
+                      <th className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>
                         Created
                       </th>
                       <th className={`px-6 py-4 text-right text-sm font-medium ${tw.textMuted} uppercase tracking-wider`}>
@@ -431,15 +440,6 @@ export default function UserManagementPage() {
                                 color: user.is_activated ? color.status.danger : color.status.success,
                                 backgroundColor: 'transparent'
                               }}
-                              onMouseEnter={(e) => {
-                                if (!loadingActions.toggling.has(user.user_id)) {
-                                  const bgColor = user.is_activated ? color.status.danger : color.status.success;
-                                  (e.target as HTMLButtonElement).style.backgroundColor = `${bgColor}10`;
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                              }}
                               title={loadingActions.toggling.has(user.user_id) ? "Updating..." : (user.is_activated ? 'Deactivate user' : 'Activate user')}
                             >
                               {loadingActions.toggling.has(user.user_id) ? (
@@ -459,12 +459,6 @@ export default function UserManagementPage() {
                               style={{
                                 color: color.primary.action,
                                 backgroundColor: 'transparent'
-                              }}
-                              onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                               }}
                             >
                               <Edit className="w-4 h-4 text-black" />
@@ -520,15 +514,6 @@ export default function UserManagementPage() {
                             color: user.is_activated ? color.status.danger : color.status.success,
                             backgroundColor: 'transparent'
                           }}
-                          onMouseEnter={(e) => {
-                            if (!loadingActions.toggling.has(user.user_id)) {
-                              const bgColor = user.is_activated ? color.status.danger : color.status.success;
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${bgColor}10`;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                          }}
                           title={loadingActions.toggling.has(user.user_id) ? "Updating..." : (user.is_activated ? 'Deactivate user' : 'Activate user')}
                         >
                           {loadingActions.toggling.has(user.user_id) ? (
@@ -548,12 +533,6 @@ export default function UserManagementPage() {
                           style={{
                             color: color.text.muted,
                             backgroundColor: 'transparent'
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.accent}10`;
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                           }}
                         >
                           <Edit className="w-4 h-4 text-black" />
@@ -591,7 +570,10 @@ export default function UserManagementPage() {
               {/* Desktop Table */}
               <div className="hidden lg:block overflow-x-auto -mx-6 -mt-6">
                 <table className="w-full">
-                  <thead className={`bg-[#E4EDF1] border-b ${tw.borderDefault} rounded-t-2xl`}>
+                  <thead
+                    className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                    style={{ background: color.surface.tableHeader }}
+                  >
                     <tr>
                       <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                         Applicant

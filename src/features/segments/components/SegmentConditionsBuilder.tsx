@@ -7,7 +7,7 @@ import {
   OPERATOR_LABELS
 } from '../types/segment';
 import ListUpload from './ListUpload';
-import { color, tw } from '../../../shared/utils/utils';
+import { color, tw, button } from '../../../shared/utils/utils';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
 
 interface SegmentConditionsBuilderProps {
@@ -179,10 +179,17 @@ export default function SegmentConditionsBuilder({
         <button
           type="button"
           onClick={addConditionGroup}
-          className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors text-sm"
-          style={{ backgroundColor: color.primary.action }}
-          onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
-          onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+          className="inline-flex items-center transition-colors text-sm"
+          style={{
+            backgroundColor: button.secondaryAction.background,
+            color: button.secondaryAction.color,
+            border: button.secondaryAction.border,
+            borderRadius: button.secondaryAction.borderRadius,
+            paddingTop: button.secondaryAction.paddingY,
+            paddingBottom: button.secondaryAction.paddingY,
+            paddingLeft: button.secondaryAction.paddingX,
+            paddingRight: button.secondaryAction.paddingX
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Condition Group
