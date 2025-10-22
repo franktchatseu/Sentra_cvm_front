@@ -164,7 +164,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Filters */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${tw.borderDefault}] p-6`}>
+      <div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
@@ -228,8 +228,8 @@ export default function ProductsPage() {
 
       {/* Error Message */}
       {error && (
-        <div className={`bg-[${color.status.error.light}] border border-[${color.status.error.main}]/20 rounded-xl p-4 mb-6`}>
-          <p className={`text-[${color.status.error.dark}]`}>{error}</p>
+        <div className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 mb-6`}>
+          <p className={`text-[${color.status.danger}]`}>{error}</p>
         </div>
       )}
 
@@ -264,7 +264,7 @@ export default function ProductsPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className={`bg-gray-50`}>
+                <thead className={`${tw.tableHeader}`}>
                   <tr>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                       Product

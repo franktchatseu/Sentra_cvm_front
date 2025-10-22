@@ -122,15 +122,7 @@ function PolicyModal({ isOpen, onClose, policy, onSave, isSaving = false }: Poli
                             type="submit"
                             disabled={isSaving}
                             className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ backgroundColor: color.sentra.main }}
-                            onMouseEnter={(e) => {
-                                if (!e.currentTarget.disabled) {
-                                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                            }}
+                            style={{ backgroundColor: color.primary.action }}
                         >
                             {isSaving ? 'Saving...' : (policy ? 'Update Policy' : 'Create Policy')}
                         </button>
@@ -328,13 +320,7 @@ export default function CommunicationPolicyPage() {
                     <button
                         onClick={handleCreatePolicy}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-                        style={{ backgroundColor: color.sentra.main }}
-                        onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                        }}
-                        onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                        }}
+                        style={{ backgroundColor: color.primary.action }}
                     >
                         <Plus className="w-4 h-4" />
                         Create Policy
@@ -344,18 +330,18 @@ export default function CommunicationPolicyPage() {
 
             <div className={`bg-white my-5`}>
                 <div className="relative w-full">
-                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`} />
                     <input
                         type="text"
                         placeholder="Search policies by name or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+                        className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.border.default}] rounded-lg focus:outline-none`}
                     />
                 </div>
             </div>
 
-            <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
+            <div className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}>
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <span className={`${tw.textSecondary}`}>Loading policies...</span>
@@ -369,7 +355,7 @@ export default function CommunicationPolicyPage() {
                             <button
                                 onClick={handleCreatePolicy}
                                 className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                                style={{ backgroundColor: color.sentra.main }}
+                                style={{ backgroundColor: color.primary.action }}
                             >
                                 <Plus className="w-4 h-4" />
                                 Create Policy
@@ -380,7 +366,7 @@ export default function CommunicationPolicyPage() {
                     <>
                         <div className="hidden lg:block overflow-x-auto">
                             <table className="w-full">
-                                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
+                                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.border.default}]`}>
                                     <tr>
                                         <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                                             Policy
@@ -404,12 +390,6 @@ export default function CommunicationPolicyPage() {
                                         <tr key={policy.id} className="hover:bg-gray-50/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-3">
-                                                    <div
-                                                        className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                                        style={{ backgroundColor: color.entities.campaigns }}
-                                                    >
-                                                        <Bell className="w-5 h-5 text-white" />
-                                                    </div>
                                                     <div>
                                                         <div className={`text-base font-semibold ${tw.textPrimary}`}>
                                                             {policy.name}
@@ -441,7 +421,7 @@ export default function CommunicationPolicyPage() {
                                                     {policy.channels.slice(0, 3).map((channel, idx) => (
                                                         <span
                                                             key={idx}
-                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}
+                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.primary.action}]/10 text-[${color.primary.action}]`}
                                                         >
                                                             {channel.replace('_', ' ')}
                                                         </span>
@@ -459,11 +439,11 @@ export default function CommunicationPolicyPage() {
                                                         onClick={() => handleEditPolicy(policy)}
                                                         className="p-2 rounded-lg transition-colors"
                                                         style={{
-                                                            color: color.sentra.main,
+                                                            color: color.primary.action,
                                                             backgroundColor: 'transparent'
                                                         }}
                                                         onMouseEnter={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                                                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                                                         }}
                                                         onMouseLeave={(e) => {
                                                             (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
@@ -489,12 +469,6 @@ export default function CommunicationPolicyPage() {
                             {filteredPolicies.map((policy) => (
                                 <div key={policy.id} className="p-4 border-b border-gray-200 last:border-b-0">
                                     <div className="flex items-start space-x-3">
-                                        <div
-                                            className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                                            style={{ backgroundColor: color.entities.campaigns }}
-                                        >
-                                            <Bell className="w-5 h-5 text-white" />
-                                        </div>
                                         <div className="flex-1 min-w-0">
                                             <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
                                                 {policy.name}
@@ -510,7 +484,7 @@ export default function CommunicationPolicyPage() {
                                                     {policy.channels.slice(0, 3).map((channel, idx) => (
                                                         <span
                                                             key={idx}
-                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}
+                                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[${color.primary.action}]/10 text-[${color.primary.action}]`}
                                                         >
                                                             {channel.replace('_', ' ')}
                                                         </span>
@@ -527,11 +501,11 @@ export default function CommunicationPolicyPage() {
                                                     onClick={() => handleEditPolicy(policy)}
                                                     className="p-2 rounded-lg transition-colors"
                                                     style={{
-                                                        color: color.sentra.main,
+                                                        color: color.primary.action,
                                                         backgroundColor: 'transparent'
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                                                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                                                     }}
                                                     onMouseLeave={(e) => {
                                                         (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';

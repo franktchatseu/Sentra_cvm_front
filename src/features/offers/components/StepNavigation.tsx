@@ -39,17 +39,7 @@ export default function StepNavigation({
                     onClick={onNext}
                     disabled={isNextDisabled || isLoading}
                     className="text-white px-6 py-3 rounded-md font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                    style={{ backgroundColor: color.sentra.main }}
-                    onMouseEnter={(e) => {
-                        if (!e.currentTarget.disabled) {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!e.currentTarget.disabled) {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                        }
-                    }}
+                    style={{ backgroundColor: color.primary.action }}
                 >
                     {isLoading ? (
                         <>

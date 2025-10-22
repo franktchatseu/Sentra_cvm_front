@@ -26,8 +26,9 @@ import {
   List
 } from 'lucide-react';
 import logo from '../../../assets/logo.png';
+import { color } from '../../../shared/utils/utils';
 
-// Hide scrollbar CSS
+// Hide scrollbar CSS and custom animations
 const hideScrollbarStyle = `
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -35,6 +36,26 @@ const hideScrollbarStyle = `
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  
+  @keyframes slideInFromLeft {
+    0% {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 `;
 
@@ -54,7 +75,7 @@ interface NavigationItem {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['campaign management']);
 
   const navigation: NavigationItem[] = [
     {
@@ -147,15 +168,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const getItemClasses = (isActive: boolean) => {
     return isActive
-      ? `text-black border-l-[5px] border-gray-400 font-bold`
-      : `text-black hover:text-black hover:bg-gray-50/50 transition-all duration-200 font-normal`;
+      ? `text-white border-l-[5px] border-white/60 font-bold`
+      : `text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200 font-normal`;
   };
 
   const getIconClasses = (isActive: boolean) => {
     if (isActive) {
-      return `text-black`;
+      return `text-white`;
     }
-    return `text-black group-hover:text-black transition-colors duration-200`;
+    return `text-white/90 group-hover:text-white transition-colors duration-200`;
   };
 
   const toggleExpanded = (itemName: string) => {
@@ -201,7 +222,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && (
         <div className="fixed inset-0 z-[9999] lg:hidden">
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={onClose} />
-          <div className="fixed inset-y-0 left-0 flex w-72 sm:w-80 flex-col bg-gradient-to-b from-gray-50 to-white shadow-xl">
+          <div
+            className="fixed inset-y-0 left-0 flex w-72 sm:w-80 flex-col shadow-xl transform transition-all duration-300 ease-out animate-in slide-in-from-left-4 fade-in"
+            style={{
+              background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`
+            }}
+          >
             <div className="flex h-16 shrink-0 items-center justify-between px-6">
               <div className="flex items-center space-x-3">
                 <div className="w-20 h-20 flex items-center justify-center">
@@ -228,7 +254,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <div key={item.name}>
                         <button
                           onClick={() => toggleExpanded(item.name.toLowerCase())}
-                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
+                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(isActive)}`}
                         >
                           <div className="flex items-center gap-x-3">
                             <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive)}`} />
@@ -321,7 +347,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={item.name}
                       to={item.href}
                       onClick={handleLinkClick}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
+                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(isActive)}`}
                     >
                       <Icon className={`h-5 w-5 shrink-0 ${getIconClasses(isActive)}`} />
                       {item.name}
@@ -336,7 +362,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Desktop Sidebar - Minimized on md/lg, Full on xl */}
       <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-32 xl:w-80 md:flex-col">
-        <div className="flex flex-col h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 md:px-3 xl:px-6 py-6">
+        <div
+          className="flex flex-col h-screen border-r border-gray-200 md:px-3 xl:px-6 py-6"
+          style={{
+            background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`
+          }}
+        >
           <div className="md:h-0 xl:h-16 md:hidden xl:flex items-center flex-shrink-0 xl:justify-start">
             <div className="w-32 h-32 flex items-center justify-center">
               <img src={logo} alt="Sentra Logo" className="w-full h-full object-contain" />
@@ -345,17 +376,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           <nav className="flex-1 overflow-y-auto md:py-2 xl:py-4 hide-scrollbar">
             <ul className="md:space-y-6 xl:space-y-3">
-              {navigation.map((item) => {
+              {navigation.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = isItemActive(item);
                 const isExpanded = expandedItems.includes(item.name.toLowerCase());
 
                 if (item.type === 'parent') {
                   return (
-                    <li key={item.name} className="relative group">
+                    <li key={item.name} className="relative group" style={{
+                      animation: `slideInFromLeft 0.8s ease-out ${index * 0.1}s both, fadeIn 1s ease-out ${index * 0.1}s both`
+                    }}>
                       <button
                         onClick={() => toggleExpanded(item.name.toLowerCase())}
-                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
+                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(isActive)}`}
                         title={item.name}
                       >
                         <div className="flex items-center gap-x-3">
@@ -473,7 +506,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 }
 
                 return (
-                  <li key={item.name} className="relative group">
+                  <li key={item.name} className="relative group" style={{
+                    animation: `slideInFromLeft 0.6s ease-out ${index * 0.1}s both`
+                  }}>
                     <Link
                       to={item.href}
                       className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}
@@ -496,11 +531,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           <div className="pt-6 border-t border-gray-200 flex-shrink-0">
             <ul className="md:space-y-1 xl:space-y-1">
-              {secondaryNavigation.map((item) => {
+              {secondaryNavigation.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
                 return (
-                  <li key={item.name} className="relative group">
+                  <li key={item.name} className="relative group" style={{
+                    animation: `slideInFromLeft 0.6s ease-out ${index * 0.1}s both`
+                  }}>
                     <Link
                       to={item.href}
                       className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(isActive)}`}

@@ -57,7 +57,7 @@ export default function ABTestDisplay({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8  rounded-lg flex items-center justify-center" style={{ backgroundColor: color.sentra.main }}>
+              <div className="w-8 h-8  rounded-lg flex items-center justify-center" style={{ backgroundColor: color.primary.action }}>
                 <span className="text-white font-bold text-sm">A</span>
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Variant A</h3>
@@ -66,12 +66,12 @@ export default function ABTestDisplay({
               <button
                 onClick={() => onAddVariant('A')}
                 className="inline-flex items-center px-3 py-1.5  text-white rounded-lg text-sm font-medium transition-colors "
-                style={{ backgroundColor: color.sentra.main }}
+                style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                 }}
                 onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -149,7 +149,7 @@ export default function ABTestDisplay({
                 </p>
                 <button
                   onClick={() => onAddVariant('A')}
-                  className="inline-flex items-center px-4 py-2  hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm" style={{ backgroundColor: color.sentra.main }}
+                  className="inline-flex items-center px-4 py-2  hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm" style={{ backgroundColor: color.primary.action }}
                 >
                   Add Variant A
                 </button>

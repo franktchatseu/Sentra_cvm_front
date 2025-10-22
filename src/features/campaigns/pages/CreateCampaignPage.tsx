@@ -384,7 +384,7 @@ export default function CreateCampaignPage() {
 
   return (
     <div className="min-h-screen">
-      <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-4`}>
+      <div className={`bg-white rounded-xl border border-[${color.border.default}] p-4`}>
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center pb-6">
             <div></div>
@@ -400,9 +400,7 @@ export default function CreateCampaignPage() {
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: color.sentra.main }}
-                  onMouseEnter={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                  onMouseLeave={(e) => { if (!isSavingDraft) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                  style={{ backgroundColor: color.primary.action }}
                 >
                   {isSavingDraft ? (
                     <>
@@ -451,7 +449,7 @@ export default function CreateCampaignPage() {
                       }`}
                     style={{
                       backgroundColor: status === 'completed' || status === 'current'
-                        ? color.sentra.main
+                        ? color.primary.action
                         : '#d1d5db'
                     }}
                   />
@@ -475,9 +473,9 @@ export default function CreateCampaignPage() {
                       <div className={`
                       flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
                       ${status === 'completed'
-                          ? `bg-[${color.sentra.main}] border-[${color.sentra.main}] text-white`
+                          ? `bg-[${color.primary.action}] border-[${color.primary.action}] text-white`
                           : status === 'current'
-                            ? `bg-white border-[${color.sentra.main}] text-[${color.sentra.main}]`
+                            ? `bg-white border-[${color.primary.action}] text-[${color.primary.action}]`
                             : 'bg-white border-gray-300 text-gray-400'
                         }
                       ${step.id <= currentStep + 2 ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
@@ -490,7 +488,7 @@ export default function CreateCampaignPage() {
                       </div>
 
                       <div className="mt-2 text-center">
-                        <div className={`text-sm font-medium ${status === 'current' ? `text-[${color.sentra.main}]` :
+                        <div className={`text-sm font-medium ${status === 'current' ? `text-[${color.primary.action}]` :
                           status === 'completed' ? tw.textPrimary : tw.textMuted
                           }`}>
                           {step.name}
@@ -511,7 +509,7 @@ export default function CreateCampaignPage() {
                       >
                         <div
                           className={`h-full transition-all duration-500 ${step.id < currentStep
-                            ? `bg-[${color.sentra.main}] w-full`
+                            ? `bg-[${color.primary.action}] w-full`
                             : "bg-gray-200 w-0"
                             }`}
                         />
@@ -541,9 +539,7 @@ export default function CreateCampaignPage() {
                 onClick={currentStep === 5 ? handleSubmit : handleNext}
                 disabled={isLoading || !validateCurrentStep()}
                 className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: color.sentra.main }}
-                onMouseEnter={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover; }}
-                onMouseLeave={(e) => { if (!isLoading && validateCurrentStep()) (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main; }}
+                style={{ backgroundColor: color.primary.action }}
               >
                 {isLoading ? (
                   <>

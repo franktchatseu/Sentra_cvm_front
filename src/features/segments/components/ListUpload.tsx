@@ -261,8 +261,8 @@ export default function ListUpload({ onListDataChange, listData, hideExistingLis
           </div>
 
           {selectedList && (
-            <div className="p-3 rounded-lg border" style={{ backgroundColor: `${color.status.success.light}`, borderColor: color.status.success.main }}>
-              <p className="text-sm" style={{ color: color.status.success.dark }}>
+            <div className="p-3 rounded-lg border" style={{ backgroundColor: `${color.status.success}/10`, borderColor: color.status.success }}>
+              <p className="text-sm" style={{ color: color.status.success }}>
                 <strong>Selected:</strong> {selectedList.name} ({selectedList.subscriber_count.toLocaleString()} subscribers)
               </p>
             </div>

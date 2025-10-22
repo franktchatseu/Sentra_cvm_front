@@ -3,9 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
     Calendar,
-    Target,
-    MousePointer,
-    DollarSign,
     AlertCircle,
     Play,
     Pause,
@@ -25,7 +22,6 @@ import { campaignService } from '../services/campaignService';
 import DeleteConfirmModal from '../../../shared/components/ui/DeleteConfirmModal';
 import { Campaign } from '../types/campaign';
 import { ValidateCampaignRequest } from '../types/validateCampaign';
-import { RunCampaignRequest } from '../types/runCampaign';
 
 export default function CampaignDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -40,7 +36,6 @@ export default function CampaignDetailsPage() {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isValidateLoading, setIsValidateLoading] = useState(false);
     const [isApproveLoading, setIsApproveLoading] = useState(false);
-    const [isRunLoading, setIsRunLoading] = useState(false);
     const [categoryName, setCategoryName] = useState<string>('Uncategorized');
 
     useEffect(() => {
@@ -250,41 +245,6 @@ export default function CampaignDetailsPage() {
         }
     };
 
-    const handleRunCampaign = async () => {
-        if (!id) return;
-
-        try {
-            setIsRunLoading(true);
-            const runRequest: RunCampaignRequest = {
-                campaignId: parseInt(id),
-                offerId: 1, // TODO: Get from campaign data when available
-                controlGroupId: 1, // TODO: Get from campaign data when available
-                blackoutPoliciesId: 1, // TODO: Get from campaign data when available
-                calendarId: 1, // TODO: Get from campaign data when available
-                trackingSourcesId: 1, // TODO: Get from campaign data when available
-                includeDetails: true,
-                validateOnly: false
-            };
-
-            const response = await campaignService.runCampaign(runRequest);
-            console.log('Run campaign response:', response);
-
-            if (response.success) {
-                showToast('success', `Campaign started successfully! ${response.details ? `Targeting ${response.details.totalRecipients} recipients.` : ''}`);
-                // Refresh campaign data to show updated status
-                const refreshResponse = await campaignService.getCampaignById(id!, true) as { data?: Campaign; success?: boolean };
-                const campaignData = refreshResponse.data || refreshResponse as Campaign;
-                setCampaign(campaignData);
-            } else {
-                showToast('error', `Failed to run campaign: ${response.message || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Failed to run campaign:', error);
-            showToast('error', 'Failed to run campaign');
-        } finally {
-            setIsRunLoading(false);
-        }
-    };
 
     const getStatusBadge = (status: string | undefined) => {
         if (!status) return 'bg-gray-100 text-gray-800';
@@ -337,7 +297,7 @@ export default function CampaignDetailsPage() {
         return (
             <div className="space-y-6">
                 <div className="text-center py-12">
-                    <AlertCircle className={`w-16 h-16 text-[${color.entities.campaigns}] mx-auto mb-4`} />
+                    <AlertCircle className={`w-16 h-16 text-[${color.primary.action}] mx-auto mb-4`} />
                     <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
                         Campaign Not Found
                     </h3>
@@ -347,7 +307,7 @@ export default function CampaignDetailsPage() {
                     <button
                         onClick={() => navigate('/dashboard/campaigns')}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
-                        style={{ backgroundColor: color.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Back to Campaigns
@@ -396,7 +356,7 @@ export default function CampaignDetailsPage() {
                             onClick={handleActivateCampaign}
                             disabled={isActionLoading}
                             className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50"
-                            style={{ backgroundColor: color.entities.campaigns }}
+                            style={{ backgroundColor: color.primary.action }}
                         >
                             {isActionLoading ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -424,7 +384,7 @@ export default function CampaignDetailsPage() {
                         </button>
                     )} */}
 
-                    {(campaign.status === 'running' || campaign.status === 'active') && (
+                    {campaign.status === 'active' && (
                         <button
                             onClick={handlePauseCampaign}
                             disabled={isActionLoading}
@@ -458,12 +418,12 @@ export default function CampaignDetailsPage() {
                     <button
                         onClick={() => navigate(`/dashboard/campaigns/${id}/edit`)}
                         className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm"
-                        style={{ backgroundColor: color.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                         onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                         }}
                         onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                         }}
                     >
                         <Edit className="w-4 h-4" />
@@ -527,13 +487,8 @@ export default function CampaignDetailsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                     <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.campaigns}20` }}>
-                                <Target className="w-6 h-6" style={{ color: color.entities.campaigns }} />
-                            </div>
-                        </div>
                         <div className="ml-4">
                             <p className={`text-sm font-medium ${tw.textMuted}`}>Delivered</p>
                             <p className={`text-2xl font-bold ${tw.textPrimary}`}>12,450</p>
@@ -541,13 +496,8 @@ export default function CampaignDetailsPage() {
                     </div>
                 </div>
 
-                <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                     <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                                <MousePointer className="w-6 h-6" style={{ color: color.entities.segments }} />
-                            </div>
-                        </div>
                         <div className="ml-4">
                             <p className={`text-sm font-medium ${tw.textMuted}`}>Response</p>
                             <p className={`text-2xl font-bold ${tw.textPrimary}`}>1,234</p>
@@ -555,13 +505,8 @@ export default function CampaignDetailsPage() {
                     </div>
                 </div>
 
-                <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                     <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.offers}20` }}>
-                                <CheckCircle className="w-6 h-6" style={{ color: color.entities.offers }} />
-                            </div>
-                        </div>
                         <div className="ml-4">
                             <p className={`text-sm font-medium ${tw.textMuted}`}>Converted</p>
                             <p className={`text-2xl font-bold ${tw.textPrimary}`}>456</p>
@@ -569,13 +514,8 @@ export default function CampaignDetailsPage() {
                     </div>
                 </div>
 
-                <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                     <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.sentra.main}20` }}>
-                                <DollarSign className="w-6 h-6" style={{ color: color.sentra.main }} />
-                            </div>
-                        </div>
                         <div className="ml-4">
                             <p className={`text-sm font-medium ${tw.textMuted}`}>Revenue</p>
                             <p className={`text-2xl font-bold ${tw.textPrimary}`}>$12,345</p>
@@ -588,14 +528,8 @@ export default function CampaignDetailsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Campaign Info */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                    <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                         <div className="flex items-start space-x-4">
-                            <div
-                                className="h-12 w-12 rounded-xl flex items-center justify-center"
-                                style={{ backgroundColor: color.entities.campaigns }}
-                            >
-                                <Target className="w-6 h-6 text-white" />
-                            </div>
                             <div className="flex-1">
                                 <h2 className={`text-xl font-bold ${tw.textPrimary} mb-2`}>{campaign.name}</h2>
                                 <p className={`${tw.textSecondary} mb-4`}>
@@ -613,7 +547,7 @@ export default function CampaignDetailsPage() {
                                             {campaign.approval_status?.charAt(0).toUpperCase() + campaign.approval_status?.slice(1)}
                                         </span>
                                     )}
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]`}>
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.action}]/10 text-[${color.primary.action}]`}>
                                         <Tag className="w-4 h-4 mr-1" />
                                         {categoryName}
                                     </span>
@@ -623,7 +557,7 @@ export default function CampaignDetailsPage() {
                     </div>
 
                     {/* Campaign Details */}
-                    <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                    <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                         <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Campaign Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -670,7 +604,7 @@ export default function CampaignDetailsPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Campaign Stats */}
-                    <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                    <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                         <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Campaign Statistics</h3>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
@@ -702,7 +636,7 @@ export default function CampaignDetailsPage() {
                     </div>
 
                     {/* Performance Summary */}
-                    <div className={`bg-white rounded-xl border border-[${color.ui.border}] p-6`}>
+                    <div className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}>
                         <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>Performance Summary</h3>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
@@ -725,7 +659,7 @@ export default function CampaignDetailsPage() {
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className={`text-sm ${tw.textMuted}`}>Revenue</span>
-                                <span className={`text-sm font-medium text-[${color.sentra.main}]`}>
+                                <span className={`text-sm font-medium text-[${color.primary.action}]`}>
                                     $12,345
                                 </span>
                             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, X, Briefcase, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, ArrowLeft } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -124,14 +124,14 @@ function ProgramModal({ isOpen, onClose, program, onSave, isSaving = false }: Pr
                             type="submit"
                             disabled={isSaving}
                             className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ backgroundColor: color.sentra.main }}
+                            style={{ backgroundColor: color.primary.action }}
                             onMouseEnter={(e) => {
                                 if (!e.currentTarget.disabled) {
-                                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                                    (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                                 }
                             }}
                             onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                             }}
                         >
                             {isSaving ? 'Saving...' : (program ? 'Update Program' : 'Create Program')}
@@ -257,12 +257,12 @@ export default function ProgramsPage() {
                     <button
                         onClick={handleCreateProgram}
                         className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-                        style={{ backgroundColor: color.sentra.main }}
+                        style={{ backgroundColor: color.primary.action }}
                         onMouseEnter={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                         }}
                         onMouseLeave={(e) => {
-                            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                         }}
                     >
                         <Plus className="w-4 h-4" />
@@ -273,18 +273,18 @@ export default function ProgramsPage() {
 
             <div className={`bg-white my-5`}>
                 <div className="relative w-full">
-                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.ui.text.muted}]`} />
+                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`} />
                     <input
                         type="text"
                         placeholder="Search programs by name or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.ui.border}] rounded-lg focus:outline-none`}
+                        className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.border.default}] rounded-lg focus:outline-none`}
                     />
                 </div>
             </div>
 
-            <div className={`bg-white rounded-xl border border-[${color.ui.border}] overflow-hidden`}>
+            <div className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}>
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <LoadingSpinner variant="modern" size="lg" color="primary" className="mr-3" />
@@ -299,7 +299,7 @@ export default function ProgramsPage() {
                             <button
                                 onClick={handleCreateProgram}
                                 className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                                style={{ backgroundColor: color.sentra.main }}
+                                style={{ backgroundColor: color.primary.action }}
                             >
                                 <Plus className="w-4 h-4" />
                                 Create Program
@@ -310,7 +310,7 @@ export default function ProgramsPage() {
                     <>
                         <div className="hidden lg:block overflow-x-auto">
                             <table className="w-full">
-                                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.ui.border}]`}>
+                                <thead className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.border.default}]`}>
                                     <tr>
                                         <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                                             Program
@@ -328,12 +328,6 @@ export default function ProgramsPage() {
                                         <tr key={program.id} className="hover:bg-gray-50/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-3">
-                                                    <div
-                                                        className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                                        style={{ backgroundColor: color.entities.campaigns }}
-                                                    >
-                                                        <Briefcase className="w-5 h-5 text-white" />
-                                                    </div>
                                                     <div>
                                                         <div className={`text-base font-semibold ${tw.textPrimary}`}>
                                                             {program.name}
@@ -353,11 +347,11 @@ export default function ProgramsPage() {
                                                         onClick={() => handleEditProgram(program)}
                                                         className="p-2 rounded-lg transition-colors"
                                                         style={{
-                                                            color: color.sentra.main,
+                                                            color: color.primary.action,
                                                             backgroundColor: 'transparent'
                                                         }}
                                                         onMouseEnter={(e) => {
-                                                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                                                            (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                                                         }}
                                                         onMouseLeave={(e) => {
                                                             (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
@@ -383,12 +377,6 @@ export default function ProgramsPage() {
                             {filteredPrograms.map((program) => (
                                 <div key={program.id} className="p-4 border-b border-gray-200 last:border-b-0">
                                     <div className="flex items-start space-x-3">
-                                        <div
-                                            className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                                            style={{ backgroundColor: color.entities.campaigns }}
-                                        >
-                                            <Briefcase className="w-5 h-5 text-white" />
-                                        </div>
                                         <div className="flex-1 min-w-0">
                                             <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
                                                 {program.name}
@@ -401,11 +389,11 @@ export default function ProgramsPage() {
                                                     onClick={() => handleEditProgram(program)}
                                                     className="p-2 rounded-lg transition-colors"
                                                     style={{
-                                                        color: color.sentra.main,
+                                                        color: color.primary.action,
                                                         backgroundColor: 'transparent'
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.sentra.main}10`;
+                                                        (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
                                                     }}
                                                     onMouseLeave={(e) => {
                                                         (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';

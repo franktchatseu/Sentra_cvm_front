@@ -387,15 +387,15 @@ export default function AudienceConfigurationStep({
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="inline-flex items-center px-4 py-2 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors"
-                    style={{ backgroundColor: color.sentra.main }}
+                    style={{ backgroundColor: color.primary.action }}
                     onMouseEnter={(e) => {
                       if (!e.currentTarget.disabled) {
-                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                        (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!e.currentTarget.disabled) {
-                        (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                        (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                       }
                     }}
                   >
@@ -466,12 +466,12 @@ export default function AudienceConfigurationStep({
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center px-5 py-2.5 text-white rounded-md text-sm font-medium transition-all"
-                style={{ backgroundColor: color.sentra.main }}
+                style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                 }}
                 onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -504,8 +504,8 @@ export default function AudienceConfigurationStep({
                         </div>
                       </div>
                     )}
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.entities.segments}20` }}>
-                      <Users className="w-5 h-5" style={{ color: color.entities.segments }} />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                      <Users className="w-5 h-5" style={{ color: color.primary.accent }} />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
@@ -1044,12 +1044,12 @@ function ControlGroupConfigModal({
           <button
             onClick={handleSave}
             className="px-5 py-2 text-white rounded-md text-sm font-medium transition-colors"
-            style={{ backgroundColor: color.sentra.main }}
+            style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
             }}
           >
             Save Configuration

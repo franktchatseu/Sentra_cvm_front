@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-// Icons removed for clean design
+import { ArrowLeft, Search, Edit, Trash2, Grid, List } from 'lucide-react';
 import { ProductCategory } from '../types/productCategory';
 import { Product } from '../types/product';
 import { productCategoryService } from '../services/productCategoryService';
@@ -125,7 +125,7 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                Products in "{category.name}"
+                Products in {category.name}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {products.length} product{products.length !== 1 ? 's' : ''} found
@@ -143,7 +143,7 @@ function ProductsModal({ isOpen, onClose, category, onRefreshCategories }: Produ
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col md:flex-row gap-3">
               <div className="relative flex-1">
-                {/* Search icon removed */}
+                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${tw.textMuted}]`} />
                 <input
                   type="text"
                   placeholder="Search products..."
@@ -424,9 +424,9 @@ export default function ProductCatalogsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate('/dashboard/products')}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
           >
-            Back
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Product Catalogs</h1>
@@ -454,7 +454,7 @@ export default function ProductCatalogsPage() {
       {/* Search and View Toggle */}
       <div className=" flex items-center gap-4">
         <div className="relative flex-1">
-          {/* Search icon removed */}
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${tw.textMuted}]`} />
           <input
             type="text"
             value={searchTerm}
@@ -472,7 +472,7 @@ export default function ProductCatalogsPage() {
               }`}
             title="Grid View"
           >
-            Grid
+            <Grid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('list')}
@@ -482,7 +482,7 @@ export default function ProductCatalogsPage() {
               }`}
             title="List View"
           >
-            List
+            <List className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -541,14 +541,14 @@ export default function ProductCatalogsPage() {
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     title="Edit"
                   >
-                    Edit
+                    <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCatalog(category)}
                     className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                     title="Delete"
                   >
-                    Delete
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -601,14 +601,14 @@ export default function ProductCatalogsPage() {
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="Edit"
                 >
-                  Edit
+                  <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDeleteCatalog(category)}
                   className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete"
                 >
-                  Delete
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>

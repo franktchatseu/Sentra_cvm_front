@@ -46,7 +46,7 @@ export default function AnimatedButton({
     // ALL BUTTONS use your logo green - consistent branding!
     primary: `
       ${tw.primaryButton}
-      shadow-lg hover:shadow-xl hover:shadow-[${color.sentra.main}]/25
+      shadow-lg hover:shadow-xl hover:shadow-[${color.primary.action}]/25
       ${glowEffect ? 'hover:shadow-glow' : ''}
     `,
     secondary: `
@@ -58,19 +58,19 @@ export default function AnimatedButton({
     `,
     // Status buttons use our harmonious status colors
     success: `
-      bg-[${color.status.success.main}] hover:bg-[${color.status.success.dark}] 
+      bg-[${color.status.success}] hover:bg-[${color.status.success}] 
       text-white font-medium transition-colors
-      shadow-lg hover:shadow-xl hover:shadow-[${color.status.success.main}]/25
+      shadow-lg hover:shadow-xl hover:shadow-[${color.status.success}]/25
     `,
     warning: `
-      bg-[${color.status.warning.main}] hover:bg-[${color.status.warning.dark}] 
+      bg-[${color.status.warning}] hover:bg-[${color.status.warning}] 
       text-white font-medium transition-colors
-      shadow-lg hover:shadow-xl hover:shadow-[${color.status.warning.main}]/25
+      shadow-lg hover:shadow-xl hover:shadow-[${color.status.warning}]/25
     `,
     error: `
-      bg-[${color.status.error.main}] hover:bg-[${color.status.error.dark}] 
+      bg-[${color.status.danger}] hover:bg-[${color.status.danger}] 
       text-white font-medium transition-colors
-      shadow-lg hover:shadow-xl hover:shadow-[${color.status.error.main}]/25
+      shadow-lg hover:shadow-xl hover:shadow-[${color.status.danger}]/25
     `,
   };
 

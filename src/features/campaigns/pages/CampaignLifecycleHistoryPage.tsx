@@ -103,7 +103,7 @@ export default function CampaignLifecycleHistoryPage() {
                                     {/* Timeline Dot */}
                                     <div
                                         className="absolute left-4 w-4 h-4 rounded-full border-4 border-white"
-                                        style={{ backgroundColor: color.sentra.main }}
+                                        style={{ backgroundColor: color.primary.action }}
                                     />
 
                                     {/* Content */}
@@ -126,7 +126,7 @@ export default function CampaignLifecycleHistoryPage() {
                                         {entry.comments && (
                                             <div className="mb-3">
                                                 <div className="flex items-start space-x-2">
-                                                    <FileText className={`w-4 h-4 mt-0.5 text-[${color.ui.text.muted}]`} />
+                                                    <FileText className={`w-4 h-4 mt-0.5 text-[${color.text.muted}]`} />
                                                     <p className={`text-sm ${tw.textSecondary}`}>{entry.comments}</p>
                                                 </div>
                                             </div>

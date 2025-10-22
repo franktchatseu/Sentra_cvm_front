@@ -16,6 +16,7 @@ export const color = {
   text: colors.text,
   interactive: colors.interactive,
   border: colors.border,
+  gradients: colors.gradients,
 };
 
 // Font system with Satoshi and PP Supply Mono - includes weights, sizes, and pre-defined typography styles

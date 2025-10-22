@@ -29,7 +29,7 @@ export default function SequentialCampaignDisplay({
       {/* Campaign Type Info */}
       <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12  rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: color.sentra.main }}>
+          <div className="w-12 h-12  rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: color.primary.action }}>
             <Icon className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
@@ -57,7 +57,7 @@ export default function SequentialCampaignDisplay({
           {!segment && (
             <button
               onClick={onAddSegment}
-              className="inline-flex items-center px-4 py-2  text-white rounded-lg text-sm font-medium transition-colors " style={{ backgroundColor: color.sentra.main }}
+              className="inline-flex items-center px-4 py-2  text-white rounded-lg text-sm font-medium transition-colors " style={{ backgroundColor: color.primary.action }}
             >
               <Target className="w-4 h-4 mr-2" />
               Add Segment
@@ -117,7 +117,7 @@ export default function SequentialCampaignDisplay({
         ) : (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-12">
             <div className="flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: color.sentra.main }}>
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: color.primary.action }}>
                 <Target className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Segment Defined</h3>
@@ -127,7 +127,7 @@ export default function SequentialCampaignDisplay({
               </p>
               <button
                 onClick={onAddSegment}
-                className="inline-flex items-center px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-all" style={{ backgroundColor: color.sentra.main }}
+                className="inline-flex items-center px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-all" style={{ backgroundColor: color.primary.action }}
               >
                 <Target className="w-4 h-4 mr-2" />
                 Add Target Segment

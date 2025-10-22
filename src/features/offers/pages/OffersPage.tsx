@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
-  MessageSquare,
-  Gift,
-  DollarSign,
   Clock,
   MoreHorizontal,
   Eye,
@@ -14,7 +11,6 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Phone,
   Trash2,
   Play,
   Pause,
@@ -412,47 +408,36 @@ export default function OffersPage() {
   };
 
   // Helper functions for display
-  const getCategoryIcon = (category: { name?: string } | string) => {
-    const categoryName = typeof category === 'string' ? category : category?.name || '';
-    switch (categoryName) {
-      case 'Data Offers': return <MessageSquare className="h-5 w-5 text-white" />;
-      case 'Voice Offers': return <Phone className="h-5 w-5 text-white" />;
-      case 'Combo Offers': return <Gift className="h-5 w-5 text-white" />;
-      case 'Loyalty Rewards': return <DollarSign className="h-5 w-5 text-white" />;
-      case 'Promotional': return <Copy className="h-5 w-5 text-white" />;
-      default: return <Gift className="h-5 w-5 text-white" />;
-    }
-  };
 
   const getStatusBadge = (status: LifecycleStatus) => {
     switch (status) {
       case 'draft':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Draft</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.background}] text-[${color.text.primary}]`}>Draft</span>;
       case 'active':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Active</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}] text-[${color.status.success}]`}>Active</span>;
       case 'inactive':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[200]}] text-[${color.ui.gray[700]}]`}>Inactive</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.background}] text-[${color.text.primary}]`}>Inactive</span>;
       case 'paused':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Paused</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}] text-[${color.status.warning}]`}>Paused</span>;
       case 'expired':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Expired</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}] text-[${color.status.danger}]`}>Expired</span>;
       case 'archived':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>Archived</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.background}] text-[${color.text.primary}]`}>Archived</span>;
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.background}] text-[${color.text.primary}]`}>{status}</span>;
     }
   };
 
   const getApprovalBadge = (status: ApprovalStatus) => {
     switch (status) {
       case 'pending':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning.light}] text-[${color.status.warning.main}]`}>Pending</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}]/10 text-[${color.status.warning}]`}>Pending</span>;
       case 'approved':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success.light}] text-[${color.status.success.main}]`}>Approved</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}]/10 text-[${color.status.success}]`}>Approved</span>;
       case 'rejected':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.error.light}] text-[${color.status.error.main}]`}>Rejected</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}]/10 text-[${color.status.danger}]`}>Rejected</span>;
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`}>{status}</span>;
+        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.background}] text-[${color.text.primary}]`}>{status}</span>;
     }
   };
 
@@ -481,13 +466,7 @@ export default function OffersPage() {
         <button
           onClick={() => navigate('/dashboard/offers/create')}
           className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 text-white"
-          style={{ backgroundColor: color.sentra.main }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-          }}
+          style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-4 w-4 mr-2" />
           Create Offer
@@ -496,15 +475,9 @@ export default function OffersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.entities.offers }}
-              >
-                <Gift className="h-6 w-6 text-white" />
-              </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Total Offers</p>
@@ -513,15 +486,9 @@ export default function OffersPage() {
           </div>
         </div>
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.status.success.main }}
-              >
-                <CheckCircle className="h-6 w-6 text-white" />
-              </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Active</p>
@@ -532,15 +499,9 @@ export default function OffersPage() {
           </div>
         </div>
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.status.warning.main }}
-              >
-                <Clock className="h-6 w-6 text-white" />
-              </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Pending</p>
@@ -551,15 +512,9 @@ export default function OffersPage() {
           </div>
         </div>
 
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6 hover:shadow-md transition-shadow duration-200`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] p-6 hover:shadow-md transition-shadow duration-200`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: color.status.error.main }}
-              >
-                <XCircle className="h-6 w-6 text-white" />
-              </div>
             </div>
             <div className="ml-4">
               <p className={`text-sm font-medium ${tw.textMuted}`}>Expired</p>
@@ -572,17 +527,17 @@ export default function OffersPage() {
       </div>
 
       {/* Filters */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] p-6`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] p-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.ui.text.muted}]`} />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.text.muted}]`} />
               <input
                 type="text"
                 placeholder="Search offers..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className={`pl-10 pr-4 py-3.5 border border-[${color.ui.border}] rounded-lg focus:outline-none focus:border-[${color.sentra.main}] focus:ring-1 focus:ring-[${color.sentra.main}]/20 w-full sm:w-64`}
+                className={`pl-10 pr-4 py-3.5 border border-[${color.border.default}] rounded-lg focus:outline-none focus:border-[${color.primary.action}] focus:ring-1 focus:ring-[${color.primary.action}]/20 w-full sm:w-64`}
               />
             </div>
             <HeadlessSelect
@@ -617,26 +572,26 @@ export default function OffersPage() {
       </div>
 
       {/* Offers Table */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] overflow-hidden`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] overflow-hidden`}>
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.sentra.main}]`}></div>
+            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}></div>
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <AlertCircle className={`h-12 w-12 text-[${color.status.error.main}] mx-auto mb-4`} />
+              <AlertCircle className={`h-12 w-12 text-[${color.status.danger}] mx-auto mb-4`} />
               <p className={`${tw.textSecondary}`}>{error}</p>
             </div>
           </div>
         ) : filteredOffers.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <Gift className={`h-12 w-12 text-[${color.entities.offers}] mx-auto mb-4`} />
               <p className={`${tw.textSecondary}`}>No offers found</p>
               <button
                 onClick={() => navigate('/dashboard/offers/create')}
-                className={`mt-4 inline-flex items-center px-3 py-2 text-base ${tw.primaryButton} font-semibold rounded-lg shadow-sm transition-all duration-200`}
+                className="mt-4 inline-flex items-center px-3 py-2 text-base text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
+                style={{ backgroundColor: color.primary.action }}
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Create Your First Offer
@@ -656,14 +611,11 @@ export default function OffersPage() {
                   <th className={`px-6 py-3 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>Actions</th>
                 </tr>
               </thead>
-              <tbody className={`bg-white divide-y divide-[${color.ui.border}]`}>
+              <tbody className={`bg-white divide-y divide-[${color.border.default}]`}>
                 {filteredOffers.map((offer) => (
                   <tr key={offer.id} className="hover:bg-gray-50 transition-colors duration-150">
                     <td className="px-6 py-5">
                       <div className="flex items-center space-x-4">
-                        <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0`} style={{ background: `${color.entities.offers}` }}>
-                          {getCategoryIcon(getCategoryName(offer.category_id))}
-                        </div>
                         <div className="min-w-0 flex-1">
                           <div className={`font-semibold text-base ${tw.textPrimary} truncate`}>{offer.name}</div>
                           <div className={`text-sm ${tw.textSecondary} truncate flex items-center space-x-2 mt-1`}>
@@ -673,12 +625,12 @@ export default function OffersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryName(offer.category_id) === 'Data Offers' ? `bg-[${color.status.info.light}] text-[${color.status.info.main}]` :
-                        getCategoryName(offer.category_id) === 'Voice Offers' ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]` :
-                          getCategoryName(offer.category_id) === 'Combo Offers' ? `bg-[${color.entities.offers}]/10 text-[${color.entities.offers}]` :
-                            getCategoryName(offer.category_id) === 'Loyalty Rewards' ? `bg-[${color.status.warning.light}] text-[${color.status.warning.main}]` :
-                              getCategoryName(offer.category_id) === 'Promotional' ? `bg-[${color.entities.campaigns}]/10 text-[${color.entities.campaigns}]` :
-                                `bg-[${color.ui.gray[100]}] text-[${color.ui.gray[800]}]`
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryName(offer.category_id) === 'Data Offers' ? `bg-[${color.status.info}]/10 text-[${color.status.info}]` :
+                        getCategoryName(offer.category_id) === 'Voice Offers' ? `bg-[${color.status.success}]/10 text-[${color.status.success}]` :
+                          getCategoryName(offer.category_id) === 'Combo Offers' ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]` :
+                            getCategoryName(offer.category_id) === 'Loyalty Rewards' ? `bg-[${color.status.warning}]/10 text-[${color.status.warning}]` :
+                              getCategoryName(offer.category_id) === 'Promotional' ? `bg-[${color.primary.action}]/10 text-[${color.primary.action}]` :
+                                `bg-[${color.surface.background}] text-[${color.text.primary}]`
                         }`}>
                         {getCategoryName(offer.category_id)}
                       </span>
@@ -733,7 +685,7 @@ export default function OffersPage() {
 
                         <button
                           onClick={() => offer.id && handleViewOffer(offer.id)}
-                          className={`text-[${color.status.info.main}] hover:text-[${color.status.info.dark}] p-1 rounded`}
+                          className={`text-[${color.status.info}] hover:text-[${color.status.info}] p-1 rounded`}
                           title="View Details"
                         >
                           <Eye className="h-4 w-4" />
@@ -778,7 +730,7 @@ export default function OffersPage() {
                                 onClick={handleDuplicateOffer}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <Copy className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                <Copy className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                 Duplicate Offer
                               </button>
                               */}
@@ -838,7 +790,7 @@ export default function OffersPage() {
                                       onClick={() => offer.id && handleArchiveOffer(offer.id)}
                                       className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                     >
-                                      <Archive className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                      <Archive className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                       Archive Offer
                                     </button>
                                   )}
@@ -851,7 +803,7 @@ export default function OffersPage() {
                                   onClick={() => offer.id && handleRequestApproval(offer.id)}
                                   className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                 >
-                                  <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.status.info.main }} />
+                                  <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.status.info }} />
                                   Request Approval
                                 </button>
                               )}
@@ -880,7 +832,7 @@ export default function OffersPage() {
                                 onClick={() => offer.id && handleViewApprovalHistory(offer.id)}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                 Approval History
                               </button>
 
@@ -888,7 +840,7 @@ export default function OffersPage() {
                                 onClick={() => offer.id && handleViewLifecycleHistory(offer.id)}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <Clock className="w-4 h-4 mr-3" style={{ color: color.sentra.main }} />
+                                <Clock className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
                                 Lifecycle History
                               </button>
 
@@ -915,7 +867,7 @@ export default function OffersPage() {
 
       {/* Pagination */}
       {!loading && !error && filteredOffers.length > 0 && (
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.ui.border}] px-4 sm:px-6 py-4`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] px-4 sm:px-6 py-4`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
               Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
@@ -925,7 +877,7 @@ export default function OffersPage() {
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
                 disabled={(filters.page || 1) <= 1}
-                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+                className={`px-3 py-2 text-base border border-[${color.border.default}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Previous
               </button>
@@ -935,7 +887,7 @@ export default function OffersPage() {
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                 disabled={(filters.page || 1) >= Math.ceil(totalOffers / (filters.pageSize || 10))}
-                className={`px-3 py-2 text-base border border-[${color.ui.border}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+                className={`px-3 py-2 text-base border border-[${color.border.default}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Next
               </button>

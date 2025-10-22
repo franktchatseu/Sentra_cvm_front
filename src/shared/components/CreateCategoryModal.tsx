@@ -103,15 +103,7 @@ export default function CreateCategoryModal({
                             onClick={handleCreateCategory}
                             disabled={!newCategoryName.trim() || isCreating}
                             className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                            style={{ backgroundColor: color.sentra.main }}
-                            onMouseEnter={(e) => {
-                                if (!e.currentTarget.disabled) {
-                                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                            }}
+                            style={{ backgroundColor: color.primary.action }}
                         >
                             {isCreating ? 'Creating...' : 'Create Catalog'}
                         </button>

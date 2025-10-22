@@ -105,7 +105,7 @@ export default function ConfigurationPage() {
         description: 'Configure and manage universal control groups for campaigns',
         type: 'control-group',
         category: 'Configuration',
-        subConfigs: ['Control Group Templates', 'Customer Base Rules', 'Scheduling Settings', 'Variance Calculations'],
+        subConfigs: ['Control Group Templates', 'Customer Base Rules', 'Scheduling Settings'],
         lastModified: '2025-01-22',
         status: 'active',
         color: 'campaigns',
@@ -152,33 +152,14 @@ export default function ConfigurationPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'active':
-        return {
-          backgroundColor: `${color.configStatus.active}20`,
-          color: color.configStatus.active,
-          borderColor: `${color.configStatus.active}40`
-        };
-      case 'inactive':
-        return {
-          backgroundColor: `${color.configStatus.inactive}20`,
-          color: color.configStatus.inactive,
-          borderColor: `${color.configStatus.inactive}40`
-        };
-      case 'draft':
-        return {
-          backgroundColor: `${color.configStatus.draft}20`,
-          color: color.configStatus.draft,
-          borderColor: `${color.configStatus.draft}40`
-        };
-      default:
-        return {
-          backgroundColor: `${color.configStatus.default}20`,
-          color: color.configStatus.default,
-          borderColor: `${color.configStatus.default}40`
-        };
-    }
+  const getStatusStyle = () => {
+    // Return black text with black border for all statuses
+    return {
+      color: '#000000',
+      backgroundColor: 'transparent',
+      borderColor: '#000000',
+      border: '1px solid'
+    };
   };
 
   const handleConfigurationClick = (config: ConfigurationItem) => {
@@ -249,7 +230,7 @@ export default function ConfigurationPage() {
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${selectedCategory === category.id
+                className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${selectedCategory === category.id
                   ? `bg-[#5F6F77] text-white`
                   : `bg-white ${tw.textSecondary} hover:bg-gray-50 border border-gray-300`
                   }`}
@@ -282,74 +263,89 @@ export default function ConfigurationPage() {
               <div
                 key={config.id}
                 onClick={() => handleConfigurationClick(config)}
-                className={`group ${components.card.default} hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 cursor-pointer`}
+                className={`group ${components.card.default} hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 cursor-pointer flex flex-col h-full`}
                 style={{
                   animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                   opacity: 0,
                   transform: 'translateY(20px)'
                 }}
               >
-
-                <div className="relative z-10">
+                <div className="flex flex-col h-full">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-2`}>
+                    <div className="flex-1 pr-3">
+                      <h3 className={`text-lg font-bold ${tw.textPrimary} mb-2 leading-tight`}>
                         {config.name}
                       </h3>
-                      <p className={`text-sm ${tw.textSecondary} mb-3`}>
+                      <p className={`text-sm ${tw.textSecondary} leading-relaxed`}>
                         {config.description}
                       </p>
                     </div>
                     <span
-                      className="px-3 py-1 rounded-full text-sm font-semibold border"
-                      style={getStatusStyle(config.status)}
+                      className="px-3 py-1 rounded-full text-sm font-semibold border flex-shrink-0"
+                      style={getStatusStyle()}
                     >
                       {config.status}
                     </span>
                   </div>
 
-                  {/* Content */}
+                  {/* Category */}
                   <div className="mb-4">
-                    <div className={`flex items-center text-xs sm:text-sm ${tw.textMuted}`}>
-                      <span className={`bg-neutral-100 px-2 py-1 rounded-full`}>
-                        {config.category}
-                      </span>
+                    <span className={`bg-neutral-100 px-3 py-1 rounded-full text-sm font-medium ${tw.textSecondary}`}>
+                      {config.category}
+                    </span>
+                  </div>
+
+                  {/* Sub-configurations */}
+                  <div className="mb-6">
+                    <p className={`text-sm font-semibold ${tw.textPrimary} mb-3`}>Sub-configurations:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {config.subConfigs && config.subConfigs.length > 0 ? (
+                        <>
+                          {config.subConfigs.slice(0, 2).map((subConfig, idx) => (
+                            <span key={idx} className={`text-sm bg-neutral-100 ${tw.textSecondary} px-3 py-1 rounded-full`}>
+                              {subConfig}
+                            </span>
+                          ))}
+                          {config.subConfigs.length > 2 && (
+                            <span className={`text-sm ${tw.textMuted} px-3 py-1 bg-gray-50 rounded-full`}>
+                              +{config.subConfigs.length - 2} more
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className={`text-sm ${tw.textMuted} px-3 py-1 bg-gray-50 rounded-full`}>
+                          No sub-configurations
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Sub-configs */}
-                  {config.subConfigs && config.subConfigs.length > 0 && (
-                    <div className="mb-4">
-                      <p className={`text-xs sm:text-sm font-semibold ${tw.textMuted} mb-2`}>Sub-configurations:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {config.subConfigs.slice(0, 3).map((subConfig, idx) => (
-                          <span key={idx} className={`text-xs sm:text-sm bg-neutral-100 ${tw.textSecondary} px-2 py-1 rounded-full`}>
-                            {subConfig}
-                          </span>
-                        ))}
-                        {config.subConfigs.length > 3 && (
-                          <span className={`text-xs sm:text-sm ${tw.textMuted} px-2 py-1`}>
-                            +{config.subConfigs.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Footer */}
                   <div className={`flex items-center justify-between pt-4 border-t ${tw.borderDefault}`}>
-                    <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                    <span className={`text-sm ${tw.textMuted}`}>
                       Modified: {config.lastModified}
                     </span>
-                    <div className="flex items-center space-x-2">
-                      <button className={`p-2 ${tw.textMuted} hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200`}>
-                        <Eye className="h-4 w-4" />
+                    <div className="flex items-center space-x-1">
+                      <button
+                        className={`p-2 ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 rounded-lg transition-all duration-200`}
+                        style={{
+                          '&:hover': { color: color.primary.accent }
+                        }}
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4 hover:text-[${color.primary.accent}]" />
                       </button>
-                      <button className={`p-2 ${tw.textMuted} hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-all duration-200`}>
-                        <Edit className="h-4 w-4" />
+                      <button
+                        className={`p-2 ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 rounded-lg transition-all duration-200`}
+                        style={{
+                          '&:hover': { color: color.primary.accent }
+                        }}
+                        title="Edit Configuration"
+                      >
+                        <Edit className="h-4 w-4 hover:text-[${color.primary.accent}]" />
                       </button>
-                      <span className={`text-sm ${tw.textMuted} group-hover:${tw.textSecondary} transition-colors duration-200`}>
+                      <span className={`text-sm ${tw.textMuted} group-hover:text-[${color.primary.accent}] transition-colors duration-200 ml-1`}>
                         →
                       </span>
                     </div>
@@ -390,7 +386,7 @@ export default function ConfigurationPage() {
                       <p className={`${tw.textSecondary} text-sm sm:text-base mb-2`}>
                         {config.description}
                       </p>
-                      <div className={`flex items-center space-x-4 text-xs sm:text-sm ${tw.textMuted}`}>
+                      <div className={`flex items-center space-x-4 text-sm sm:text-base ${tw.textMuted}`}>
                         <span className={`bg-neutral-100 px-2 py-1 rounded-full`}>
                           {config.category}
                         </span>
@@ -403,10 +399,10 @@ export default function ConfigurationPage() {
 
                     <div className="flex items-center space-x-2">
                       <button className={`p-2 ${tw.textMuted} hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200`}>
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-5 w-5" />
                       </button>
                       <button className={`p-2 ${tw.textMuted} hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-all duration-200`}>
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-5 w-5" />
                       </button>
                       <span className={`text-sm ${tw.textMuted} group-hover:${tw.textSecondary} transition-colors duration-200`}>
                         →

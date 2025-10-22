@@ -128,15 +128,7 @@ function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps
               type="submit"
               disabled={isLoading}
               className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: color.sentra.main }}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.disabled) {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                }
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-              }}
+              style={{ backgroundColor: color.primary.action }}
             >
               {isLoading ? 'Saving...' : (category ? 'Update Category' : 'Create Category')}
             </button>
@@ -337,7 +329,7 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
                 {/* <button
                   onClick={handleCreateOffer}
                   className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
-                  style={{ backgroundColor: color.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                 >
                   <Plus className="w-4 h-4" />
                   Create New Offer
@@ -383,7 +375,7 @@ function OffersModal({ isOpen, onClose, category, onRefreshCategories }: OffersM
                       <div className="flex items-center gap-3">
                         <div
                           className="h-10 w-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: color.entities.offers }}
+                          style={{ backgroundColor: color.primary.accent }}
                         >
                           <MessageSquare className="w-5 h-5 text-white" />
                         </div>
@@ -600,13 +592,7 @@ export default function OfferCategoriesPage() {
           <button
             onClick={handleCreateCategory}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.sentra.main }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-            }}
+            style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
             Create Offer Catalog
@@ -684,13 +670,7 @@ export default function OfferCategoriesPage() {
               <button
                 onClick={handleCreateCategory}
                 className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
-                style={{ backgroundColor: color.sentra.main }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
-                }}
+                style={{ backgroundColor: color.primary.action }}
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Create Your First Catalog
@@ -705,12 +685,6 @@ export default function OfferCategoriesPage() {
                 className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${color.entities.offers}20` }}
-                  >
-                    <MessageSquare className="w-6 h-6" style={{ color: color.entities.offers }} />
-                  </div>
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={() => handleEditCategory(category)}
@@ -757,12 +731,6 @@ export default function OfferCategoriesPage() {
                 className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
               >
                 <div className="flex items-center gap-4 flex-1">
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${color.entities.offers}20` }}
-                  >
-                    <MessageSquare className="w-6 h-6" style={{ color: color.entities.offers }} />
-                  </div>
                   <div className="flex-1">
                     <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
                     <p className="text-sm text-gray-600 mt-0.5">

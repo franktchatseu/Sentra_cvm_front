@@ -336,7 +336,7 @@ function ReviewStep({ formData, creatives, trackingSources, rewards }: Omit<Step
         {/* Offer Summary */}
         <div
           className="rounded-2xl p-6"
-          style={{ backgroundColor: `${color.sentra.main}10` }}
+          style={{ backgroundColor: `${color.primary.action}10` }}
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Offer Summary</h3>
 
@@ -972,8 +972,8 @@ export default function CreateOfferPage() {
                     onClick={() => handleStepClick(step.id)}
                     disabled={!canNavigateToStep(step.id)}
                     className={`w-2 h-2 rounded-full transition-all duration-200 ${status === 'completed' || status === 'current'
-                        ? 'w-8'
-                        : ''
+                      ? 'w-8'
+                      : ''
                       }`}
                     style={{
                       backgroundColor: status === 'completed' || status === 'current'

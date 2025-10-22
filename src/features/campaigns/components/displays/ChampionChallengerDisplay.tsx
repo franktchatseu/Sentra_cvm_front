@@ -56,12 +56,12 @@ export default function ChampionChallengerDisplay({
             <button
               onClick={onAddChampion}
               className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
-              style={{ backgroundColor: color.sentra.main }}
+              style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
               }}
             >
               <Award className="w-4 h-4 mr-2" />
@@ -131,12 +131,12 @@ export default function ChampionChallengerDisplay({
               <button
                 onClick={onAddChampion}
                 className="inline-flex items-center px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-all"
-                style={{ backgroundColor: color.sentra.main }}
+                style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                 }}
                 onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                 }}
               >
                 <Award className="w-4 h-4 mr-2" />
@@ -159,12 +159,12 @@ export default function ChampionChallengerDisplay({
             <button
               onClick={onAddChallenger}
               className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-              style={{ backgroundColor: color.sentra.main }}
+              style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
               }}
             >
               <Target className="w-4 h-4 mr-2" />
@@ -187,7 +187,7 @@ export default function ChampionChallengerDisplay({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
                           <h4 className="font-semibold text-gray-900">{challenger.name}</h4>
-                          <span className="px-2 py-0.5  text-white text-xs font-medium rounded-full" style={{ backgroundColor: color.sentra.main }}
+                          <span className="px-2 py-0.5  text-white text-xs font-medium rounded-full" style={{ backgroundColor: color.primary.action }}
                           >
                             Challenger
                           </span>
@@ -239,12 +239,12 @@ export default function ChampionChallengerDisplay({
                 <button
                   onClick={onAddChallenger}
                   className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
-                  style={{ backgroundColor: color.sentra.main }}
+                  style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.hover;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.sentra.main;
+                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
                   }}
                 >
                   <Target className="w-4 h-4 mr-2" />

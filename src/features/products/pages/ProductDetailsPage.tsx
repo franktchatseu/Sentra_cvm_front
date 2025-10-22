@@ -227,7 +227,7 @@ export default function ProductDetailsPage() {
                                 </p>
                                 <div className="flex items-center space-x-3">
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${product.is_active
-                                        ? `bg-[${color.status.success.light}] text-[${color.status.success.main}]`
+                                        ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
                                         : `bg-[${color.surface.cards}] text-[${color.text.primary}]`
                                         }`}>
                                         {product.is_active ? (

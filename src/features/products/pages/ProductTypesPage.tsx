@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-// Icons removed for clean design
+import { ArrowLeft, Plus, Search, Edit, Trash2, Layers } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -191,9 +191,9 @@ export default function ProductTypesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate('/dashboard/products')}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
           >
-            Back
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>Product Types</h1>
@@ -203,14 +203,7 @@ export default function ProductTypesPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-            }}
+            className={`${tw.button} flex items-center gap-2`}
           >
             Create Product Type
           </button>
@@ -218,9 +211,9 @@ export default function ProductTypesPage() {
       </div>
 
       {/* Search */}
-      <div className={`bg-white my-5`}>
+      <div>
         <div className="relative w-full">
-          {/* Search icon removed */}
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${tw.textMuted}]`} />
           <input
             type="text"
             placeholder="Search product types..."
@@ -246,8 +239,7 @@ export default function ProductTypesPage() {
             {!searchTerm && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
-                style={{ backgroundColor: color.primary.action }}
+                className={`${tw.button} flex items-center gap-2 mx-auto`}
               >
                 Create Product Type
               </button>
@@ -258,7 +250,7 @@ export default function ProductTypesPage() {
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead className={`bg-gradient-to-r from-[${color.surface.background}] to-[${color.surface.background}]/80 border-b border-[${tw.borderDefault}]`}>
+                <thead className={`${tw.tableHeader}`}>
                   <tr>
                     <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                       Product Type
@@ -307,25 +299,17 @@ export default function ProductTypesPage() {
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleEditProductType(productType)}
-                            className="p-2 rounded-lg transition-colors"
-                            style={{
-                              color: color.primary.action,
-                              backgroundColor: 'transparent'
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                            }}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                            title="Edit Product Type"
                           >
-                            Edit
+                            <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteProductType(productType)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            title="Delete Product Type"
                           >
-                            Delete
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -362,23 +346,13 @@ export default function ProductTypesPage() {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => handleEditProductType(productType)}
-                            className="p-2 rounded-lg transition-colors"
-                            style={{
-                              color: color.primary.action,
-                              backgroundColor: 'transparent'
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = `${color.primary.action}10`;
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                            }}
+                            className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDeleteProductType(productType)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
                           >
                             Delete
                           </button>
@@ -447,23 +421,14 @@ export default function ProductTypesPage() {
                     setNewTypeName('');
                     setNewTypeDescription('');
                   }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateProductType}
                   disabled={!newTypeName.trim() || isCreating}
-                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ backgroundColor: color.primary.action }}
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                  }}
+                  className={`${tw.button} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isCreating ? 'Creating...' : 'Create Product Type'}
                 </button>
@@ -528,23 +493,14 @@ export default function ProductTypesPage() {
                     setEditName('');
                     setEditDescription('');
                   }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleUpdateProductType}
                   disabled={!editName.trim() || isUpdating}
-                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ backgroundColor: color.primary.action }}
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                  }}
+                  className={`${tw.button} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isUpdating ? 'Updating...' : 'Update Product Type'}
                 </button>

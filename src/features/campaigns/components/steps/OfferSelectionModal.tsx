@@ -183,17 +183,17 @@ export default function OfferSelectionModal({
 
           {/* Selection Summary */}
           {tempSelectedOffers.length > 0 && (
-            <div className="rounded-lg p-4 border" style={{ backgroundColor: `${color.entities.offers}15`, borderColor: `${color.entities.offers}40` }}>
+            <div className="rounded-lg p-4 border" style={{ backgroundColor: `${color.primary.accent}15`, borderColor: `${color.primary.accent}40` }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-sm font-medium" style={{ color: color.entities.offers }}>
+                  <span className="text-sm font-medium" style={{ color: color.primary.accent }}>
                     {tempSelectedOffers.length} offer{tempSelectedOffers.length !== 1 ? 's' : ''} selected
                   </span>
                 </div>
                 <button
                   onClick={() => setTempSelectedOffers([])}
                   className="text-sm font-medium hover:opacity-80 transition-opacity"
-                  style={{ color: color.entities.offers }}
+                  style={{ color: color.primary.accent }}
                 >
                   Clear All
                 </button>
@@ -247,21 +247,21 @@ export default function OfferSelectionModal({
                       : 'border-gray-100'
                       }`}
                     style={isSelected ? {
-                      borderColor: color.entities.offers,
+                      borderColor: color.primary.accent,
                       backgroundColor: 'white'
                     } : {
                       backgroundColor: 'white'
                     }}
                   >
                     {isSelected && (
-                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: color.entities.offers }}>
+                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: color.primary.accent }}>
                         <Check className="w-3 h-3 text-white" />
                       </div>
                     )}
 
                     <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.entities.offers}20` }}>
-                        <Gift className="w-5 h-5" style={{ color: color.entities.offers }} />
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                        <Gift className="w-5 h-5" style={{ color: color.primary.accent }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-gray-900 truncate">{offer.name}</h4>

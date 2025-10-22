@@ -14,6 +14,22 @@ export const colors = {
     tableHeader: '#E4EDF1',  // Table header rows
   },
   
+  // Gradient colors for sidebar and header
+        gradients: {
+          sidebar: {
+            top: '#22282A',        // Dark gray (top)
+            middle: '#394247',     // New darker gray (middle)
+            bottom: '#22282A',     // Dark gray (bottom)
+          },
+          landing: {
+            top: '#22282A',        // NEUTRAL 800 - Dark blue-gray (top)
+            middleLight: '#394247', // NEUTRAL 700 - Dark blue-gray
+            middle: '#5F6F77',     // NEUTRAL 600 - Medium-dark blue-gray
+            middleDark: '#394247', // NEUTRAL 700 - Back to dark blue-gray
+            bottom: '#22282A',     // NEUTRAL 800 - Dark blue-gray (bottom)
+          },
+        },
+  
   // Status defines colors for different message types and states
   status: {
     success: '#94DF5A',       // Success messages (Green 500)
@@ -68,9 +84,9 @@ export const fonts = {
   },
   
   weights: {
-    normal: 400,    // Regular - for body text and normal content
-    medium: 500,   // Medium - for buttons and emphasis
-    bold: 700,     // Bold - for headings and strong emphasis
+    normal: 400,    
+    medium: 500,  
+    bold: 700,     
   },
   
   sizes: {
@@ -209,10 +225,10 @@ export const buttons = {
 // Cards defines consistent styling for all card components
 export const cards = {
   default: {
-    background: colors.surface.cards,    // Cards background color
+    background: colors.surface.cards,    
     border: '1px solid',
-    borderColor: colors.border.default,  // Default border color
-    borderRadius: '1rem',               // Well-rounded cards (2xl)
-    padding: '1.5rem',                  // Consistent padding
+    borderColor: '#374151',              
+    borderRadius: '1rem',              
+    padding: '1.5rem',            
   },
 };

@@ -358,9 +358,9 @@ export default function UserManagementPage() {
           ) : (
             <>
               {/* Desktop Table */}
-              <div className="max-md:hidden overflow-x-auto">
+              <div className="max-md:hidden overflow-x-auto -mx-6 -mt-6">
                 <table className="w-full">
-                  <thead className={`bg-[#E4EDF1] border-b ${tw.borderDefault}`}>
+                  <thead className={`bg-[#E4EDF1] border-b ${tw.borderDefault} rounded-t-2xl`}>
 
                     <tr>
                       <th className={`px-6 py-4 text-left text-sm font-medium ${tw.textMuted} uppercase tracking-wider`}>
@@ -589,9 +589,9 @@ export default function UserManagementPage() {
           ) : (
             <>
               {/* Desktop Table */}
-              <div className="hidden lg:block overflow-x-auto">
+              <div className="hidden lg:block overflow-x-auto -mx-6 -mt-6">
                 <table className="w-full">
-                  <thead className={`bg-[#E4EDF1] border-b ${tw.borderDefault}`}>
+                  <thead className={`bg-[#E4EDF1] border-b ${tw.borderDefault} rounded-t-2xl`}>
                     <tr>
                       <th className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}>
                         Applicant
