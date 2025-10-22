@@ -138,21 +138,17 @@ export default function ABTestDisplay({
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-8 h-[280px] flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 /10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-[#588157] font-bold text-2xl">A</span>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-blue-600 font-bold text-sm">A</span>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Variant A Not Set</h4>
-                <p className="text-sm text-gray-600 mb-4 max-w-xs">
-                  Add your first test variant to start your A/B test campaign.
-                </p>
-                <button
-                  onClick={() => onAddVariant('A')}
-                  className="inline-flex items-center px-4 py-2  hover:bg-[#3A5A40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm" style={{ backgroundColor: color.primary.action }}
-                >
-                  Add Variant A
-                </button>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">Variant A Not Set</h4>
+                  <p className="text-xs text-gray-600">
+                    Add your first test variant
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -243,33 +239,17 @@ export default function ABTestDisplay({
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-8 h-[280px] flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: '#D97706' }}>
-                  <span className="text-white font-bold text-2xl">B</span>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <span className="text-orange-600 font-bold text-sm">B</span>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Variant B Not Set</h4>
-                <p className="text-sm text-gray-600 mb-4 max-w-xs">
-                  {variantA
-                    ? 'Add the second variant to complete your A/B test setup.'
-                    : 'Add Variant A first before adding Variant B.'}
-                </p>
-                {variantA && (
-                  <button
-                    onClick={() => onAddVariant('B')}
-                    className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
-                    style={{ backgroundColor: '#D97706' }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#B45309';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor = '#D97706';
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Variant B
-                  </button>
-                )}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">Variant B Not Set</h4>
+                  <p className="text-xs text-gray-600">
+                    {variantA ? 'Add Variant A first before adding Variant B' : 'Add second variant to complete A/B test'}
+                  </p>
+                </div>
               </div>
             </div>
           )}

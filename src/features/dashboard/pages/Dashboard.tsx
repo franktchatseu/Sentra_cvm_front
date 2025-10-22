@@ -31,6 +31,8 @@ import OfferCategoriesPage from '../../offers/pages/OfferCategoriesPage';
 import UserManagementPage from '../components/UserManagementPage';
 import ConfigurationPage from '../components/ConfigurationPage';
 import ControlGroupsPage from '../../products/pages/ControlGroupsPage';
+import DepartmentPage from '../../campaigns/pages/DepartmentPage';
+import LineOfBusinessPage from '../../campaigns/pages/LineOfBusinessPage';
 
 export default function Dashboard() {
   return (
@@ -45,6 +47,8 @@ export default function Dashboard() {
         <Route path="/campaigns/create" element={<CreateCampaignPage />} />
         <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
         <Route path="/campaign-objectives" element={<CampaignObjectivesPage />} />
+        <Route path="/departments" element={<DepartmentPage />} />
+        <Route path="/line-of-business" element={<LineOfBusinessPage />} />
         <Route path="/programs" element={<ProgramsPage />} />
         <Route path="/campaign-communication-policy" element={<CommunicationPolicyPage />} />
         <Route path="/offers" element={<OffersPage />} />

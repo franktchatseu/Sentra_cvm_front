@@ -1,10 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search, Plus, Settings } from 'lucide-react';
 import { CreateCampaignRequest } from '../../types/campaign';
 import { campaignService } from '../../services/campaignService';
 import { programService } from '../../services/programService';
 import { Program } from '../../types/program';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
+import { lineOfBusinessConfig, departmentsConfig } from '../../../../shared/configs/configurationPageConfigs';
+import { configurationDataService } from '../../../../shared/services/configurationDataService';
+import { 
+    CommunicationPolicyConfiguration, 
+    COMMUNICATION_POLICY_TYPES,
+    TimeWindowConfig,
+    MaximumCommunicationConfig,
+    DNDConfig,
+    VIPListConfig,
+    DND_CATEGORIES,
+    DAYS_OF_WEEK
+} from '../../types/communicationPolicyConfig';
+import { color, tw, components } from '../../../../shared/utils/utils';
+import { communicationPolicyService } from '../../services/communicationPolicyService';
+import CommunicationPolicyModal from '../CommunicationPolicyModal';
+import PolicyNameModal from '../PolicyNameModal';
+import { useToast } from '../../../../contexts/ToastContext';
 
 interface CampaignDefinitionStepProps {
   formData: CreateCampaignRequest;
@@ -16,28 +33,28 @@ const objectiveOptions = [
     value: 'acquisition',
     label: 'New Customer Acquisition',
     description: 'Attract and convert new customers to your service',
-    icon: '🎯',
+    icon: '',
     color: 'border-green-300 hover:border-green-400 hover:bg-green-50'
   },
   {
     value: 'retention',
     label: 'Customer Retention',
     description: 'Keep existing customers engaged and loyal',
-    icon: '🤝',
+    icon: '',
     color: 'border-green-200 hover:border-green-300 hover:bg-green-50'
   },
   {
     value: 'churn_prevention',
     label: 'Churn Prevention',
     description: 'Prevent at-risk customers from leaving',
-    icon: '🛡️',
+    icon: '',
     color: 'border-red-200 hover:border-red-300 hover:bg-red-50'
   },
   {
     value: 'upsell_cross_sell',
     label: 'Upsell/Cross-sell',
     description: 'Increase revenue from existing customers',
-    icon: '📈',
+    icon: '',
     color: 'border-purple-200 hover:border-purple-300 hover:bg-purple-50'
   },
   {
@@ -59,24 +76,48 @@ export default function CampaignDefinitionStep({
   formData,
   setFormData
 }: CampaignDefinitionStepProps) {
+  const { success: showToast, error: showError } = useToast();
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [programSearchTerm, setProgramSearchTerm] = useState('');
   const [isProgramDropdownOpen, setIsProgramDropdownOpen] = useState(false);
   const [objectiveSearchTerm, setObjectiveSearchTerm] = useState('');
   const [isObjectiveDropdownOpen, setIsObjectiveDropdownOpen] = useState(false);
+  const [lineOfBusinessSearchTerm, setLineOfBusinessSearchTerm] = useState('');
+  const [isLineOfBusinessDropdownOpen, setIsLineOfBusinessDropdownOpen] = useState(false);
+  const [departmentSearchTerm, setDepartmentSearchTerm] = useState('');
+  const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
   const [categories, setCategories] = useState<CampaignCategory[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
+  const [lineOfBusinessData, setLineOfBusinessData] = useState(lineOfBusinessConfig.initialData);
+  const [departmentsData, setDepartmentsData] = useState(departmentsConfig.initialData);
+  
+  // Communication Policy states
+  const [communicationPolicies, setCommunicationPolicies] = useState<CommunicationPolicyConfiguration[]>([]);
+  const [selectedPolicy, setSelectedPolicy] = useState<CommunicationPolicyConfiguration | null>(null);
+  const [isPolicyDropdownOpen, setIsPolicyDropdownOpen] = useState(false);
+  const [policySearchTerm, setPolicySearchTerm] = useState('');
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+  const [policyToCustomize, setPolicyToCustomize] = useState<CommunicationPolicyConfiguration | null>(null);
+  const [isSavingCustomPolicy, setIsSavingCustomPolicy] = useState(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [pendingPolicyData, setPendingPolicyData] = useState<any>(null);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const programDropdownRef = useRef<HTMLDivElement>(null);
   const objectiveDropdownRef = useRef<HTMLDivElement>(null);
+  const lineOfBusinessDropdownRef = useRef<HTMLDivElement>(null);
+  const departmentDropdownRef = useRef<HTMLDivElement>(null);
+  const policyDropdownRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(categoryDropdownRef, () => setIsCategoryDropdownOpen(false));
   useClickOutside(programDropdownRef, () => setIsProgramDropdownOpen(false));
   useClickOutside(objectiveDropdownRef, () => setIsObjectiveDropdownOpen(false));
+  useClickOutside(lineOfBusinessDropdownRef, () => setIsLineOfBusinessDropdownOpen(false));
+  useClickOutside(departmentDropdownRef, () => setIsDepartmentDropdownOpen(false));
+  useClickOutside(policyDropdownRef, () => setIsPolicyDropdownOpen(false));
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -115,6 +156,89 @@ export default function CampaignDefinitionStep({
 
     fetchPrograms();
   }, []);
+
+  // S'abonner aux changements des données Line of Business
+  useEffect(() => {
+    const unsubscribe = configurationDataService.subscribe('lineOfBusiness', setLineOfBusinessData);
+    return unsubscribe;
+  }, []);
+
+  // S'abonner aux changements des données Departments
+  useEffect(() => {
+    const unsubscribe = configurationDataService.subscribe('departments', setDepartmentsData);
+    return unsubscribe;
+  }, []);
+
+  // Charger les Communication Policies depuis le service
+  useEffect(() => {
+    // Load initial policies
+    setCommunicationPolicies(communicationPolicyService.getAllPolicies());
+
+    // Subscribe to policy changes
+    const unsubscribe = communicationPolicyService.subscribe((updatedPolicies) => {
+      setCommunicationPolicies(updatedPolicies);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Handle opening customization modal
+  const handleCustomizePolicy = (policy: CommunicationPolicyConfiguration) => {
+    // Create a copy of the policy with a temporary name for the modal
+    const policyWithTempName = {
+      ...policy,
+      name: `${policy.name} - Customizing...`
+    };
+    setPolicyToCustomize(policyWithTempName);
+    setIsCustomizationModalOpen(true);
+  };
+
+  // Handle saving customized policy
+  const handleSaveCustomizedPolicy = async (policyData: any) => {
+    // Store the policy data and open name modal
+    // First close the customization modal
+    setIsCustomizationModalOpen(false);
+    
+    // Then store data and open name modal
+    setPendingPolicyData(policyData);
+    setIsNameModalOpen(true);
+  };
+
+  // Handle confirming policy name
+  const handleConfirmPolicyName = async (policyName: string) => {
+    if (!pendingPolicyData || !policyToCustomize) return;
+
+    try {
+      setIsSavingCustomPolicy(true);
+      
+      // Get the original policy name (remove the temporary suffix)
+      const originalPolicyName = policyToCustomize.name.replace(' - Customizing...', '');
+      
+      // Create new policy with customized configuration
+      const newPolicy = communicationPolicyService.createPolicy({
+        name: policyName,
+        description: pendingPolicyData.description || `Custom policy based on ${originalPolicyName}`,
+        type: pendingPolicyData.type,
+        config: pendingPolicyData.config,
+        isActive: pendingPolicyData.isActive ?? true
+      });
+
+      // Apply the new policy to the campaign
+      setSelectedPolicy(newPolicy);
+      
+      // Close modals and cleanup
+      setIsCustomizationModalOpen(false);
+      setPolicyToCustomize(null);
+      setPendingPolicyData(null);
+      
+      showToast('Custom policy created and applied to campaign!');
+    } catch (error) {
+      console.error('Failed to save custom policy:', error);
+      showError('Failed to save custom policy. Please try again.');
+    } finally {
+      setIsSavingCustomPolicy(false);
+    }
+  };
 
   return (
     <div className=" space-y-6">
@@ -206,6 +330,135 @@ export default function CampaignDefinitionStep({
           </div>
         </div>
 
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Line of Business
+            </label>
+            <div className="relative" ref={lineOfBusinessDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsLineOfBusinessDropdownOpen(!isLineOfBusinessDropdownOpen)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
+              >
+                <span className={(formData as { line_of_business_id?: number }).line_of_business_id ? 'text-gray-900' : 'text-gray-500'}>
+                  {(formData as { line_of_business_id?: number }).line_of_business_id ? 
+                    lineOfBusinessData.find(lob => Number(lob.id) === Number((formData as { line_of_business_id?: number }).line_of_business_id))?.name : 
+                    'Select line of business (optional)'}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isLineOfBusinessDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isLineOfBusinessDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={lineOfBusinessSearchTerm}
+                        onChange={(e) => setLineOfBusinessSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                        placeholder="Search line of business..."
+                      />
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    {lineOfBusinessData.length === 0 ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">No line of business available</div>
+                    ) : (
+                      lineOfBusinessData
+                        .filter(lob =>
+                          lob.name.toLowerCase().includes(lineOfBusinessSearchTerm.toLowerCase()) ||
+                          (lob.description && lob.description.toLowerCase().includes(lineOfBusinessSearchTerm.toLowerCase()))
+                        )
+                        .map((lob) => (
+                          <button
+                            key={lob.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, line_of_business_id: Number(lob.id) } as CreateCampaignRequest);
+                              setIsLineOfBusinessDropdownOpen(false);
+                              setLineOfBusinessSearchTerm('');
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                          >
+                            <div className="font-medium">{lob.name}</div>
+                            {lob.description && <div className="text-gray-500 text-xs">{lob.description}</div>}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Department
+            </label>
+            <div className="relative" ref={departmentDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
+              >
+                <span className={(formData as { department_id?: number }).department_id ? 'text-gray-900' : 'text-gray-500'}>
+                  {(formData as { department_id?: number }).department_id ? 
+                    departmentsData.find(dept => Number(dept.id) === Number((formData as { department_id?: number }).department_id))?.name : 
+                    'Select department (optional)'}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isDepartmentDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isDepartmentDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={departmentSearchTerm}
+                        onChange={(e) => setDepartmentSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                        placeholder="Search departments..."
+                      />
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    {departmentsData.length === 0 ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">No departments available</div>
+                    ) : (
+                      departmentsData
+                        .filter(dept =>
+                          dept.name.toLowerCase().includes(departmentSearchTerm.toLowerCase()) ||
+                          (dept.description && dept.description.toLowerCase().includes(departmentSearchTerm.toLowerCase()))
+                        )
+                        .map((dept) => (
+                          <button
+                            key={dept.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, department_id: Number(dept.id) } as CreateCampaignRequest);
+                              setIsDepartmentDropdownOpen(false);
+                              setDepartmentSearchTerm('');
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                          >
+                            <div className="font-medium">{dept.name}</div>
+                            {dept.description && <div className="text-gray-500 text-xs">{dept.description}</div>}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -281,21 +534,6 @@ export default function CampaignDefinitionStep({
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Campaign Business
-            </label>
-            <input
-              type="text"
-              value={formData.business || ''}
-              onChange={(e) => setFormData({ ...formData, business: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
-              placeholder="Enter campaign business"
-            />
           </div>
         </div>
 
@@ -437,7 +675,96 @@ export default function CampaignDefinitionStep({
           </div>
         )}
 
-        <div>
+        {/* Communication Policy Section */}
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <label className={`${tw.label} ${tw.textSecondary}`}>
+              Communication Policy
+            </label>
+            <span className={`${tw.caption} ${tw.textMuted} uppercase tracking-wide`}>
+              (Optional)
+            </span>
+          </div>
+          <div className="space-y-3">
+            {/* Policy Selection */}
+            <div className="relative" ref={policyDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsPolicyDropdownOpen(!isPolicyDropdownOpen)}
+                className={`${components.input.default} w-full px-3 py-2 text-left flex items-center justify-between ${selectedPolicy ? '' : 'text-gray-500'}`}
+              >
+                <div className="flex items-center gap-2">
+                  {selectedPolicy && (
+                    <div className={`w-2 h-2 rounded-full ${selectedPolicy.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                  )}
+                  <span>
+                    {selectedPolicy ? selectedPolicy.name : 'Choose a communication policy'}
+                  </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isPolicyDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isPolicyDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-hidden">
+                  {/* No Policy Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPolicy(null);
+                      setIsPolicyDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-200"
+                  >
+                    <div className="text-sm font-medium text-gray-700">No Policy</div>
+                    <div className="text-xs text-gray-500">Campaign will use default communication settings</div>
+                  </button>
+                  
+                  {/* Policy List */}
+                  <div className="max-h-48 overflow-y-auto">
+                    {communicationPolicies.map((policy) => (
+                      <button
+                        key={policy.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPolicy(policy);
+                          setIsPolicyDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none ${selectedPolicy?.id === policy.id ? 'bg-blue-50' : ''}`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2 h-2 rounded-full ${policy.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                          <div className="text-sm font-medium text-gray-900">{policy.name}</div>
+                        </div>
+                        {policy.description && <div className="text-xs text-gray-500 ml-4">{policy.description}</div>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Customization Toggle */}
+            {selectedPolicy && (
+              <div className={`flex items-center justify-between px-3 py-2 ${tw.surfaceCards} rounded-md border ${tw.borderMuted}`}>
+                <span className={`${tw.caption} ${tw.textSecondary} flex items-center gap-2`}>
+                  <Settings className="w-3 h-3" />
+                  Want to modify this policy?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCustomizePolicy(selectedPolicy)}
+                  className={`${tw.button} px-3 py-1 text-xs flex items-center gap-1`}
+                >
+                  <Settings className="w-3 h-3" />
+                  Customize
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        <div className="mt-8">
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Campaign Policy
           </label>
@@ -461,6 +788,31 @@ export default function CampaignDefinitionStep({
           </div>
         </div>
       </div>
+
+      {/* Customization Modal */}
+      <CommunicationPolicyModal
+        isOpen={isCustomizationModalOpen}
+        onClose={() => {
+          setIsCustomizationModalOpen(false);
+          setPolicyToCustomize(null);
+          setPendingPolicyData(null);
+        }}
+        policy={policyToCustomize || undefined}
+        onSave={handleSaveCustomizedPolicy}
+        isSaving={false}
+      />
+
+      {/* Policy Name Modal */}
+      <PolicyNameModal
+        isOpen={isNameModalOpen}
+        onClose={() => {
+          setIsNameModalOpen(false);
+          setPendingPolicyData(null);
+        }}
+        onConfirm={handleConfirmPolicyName}
+        defaultName={policyToCustomize ? `${policyToCustomize.name.replace(' - Customizing...', '')} - Custom` : ''}
+        title="Save Custom Policy"
+      />
     </div>
   );
 }
