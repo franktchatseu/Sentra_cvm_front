@@ -115,23 +115,17 @@ export default function SequentialCampaignDisplay({
             </div>
           </div>
         ) : (
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-12">
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: color.primary.action }}>
-                <Target className="w-8 h-8 text-white" />
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Target className="w-5 h-5 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Segment Defined</h3>
-              <p className="text-sm text-gray-600 mb-6 max-w-md">
-                Add a target segment for your {title.toLowerCase()} campaign. This segment will receive
-                sequential offers {campaignType === 'round_robin' ? 'at timed intervals' : 'based on conditions'}.
-              </p>
-              <button
-                onClick={onAddSegment}
-                className="inline-flex items-center px-5 py-2.5 text-white rounded-lg text-sm font-medium transition-all" style={{ backgroundColor: color.primary.action }}
-              >
-                <Target className="w-4 h-4 mr-2" />
-                Add Target Segment
-              </button>
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 mb-1">No Segment Defined</h3>
+                <p className="text-xs text-gray-600">
+                  Add a target segment for {campaignType === 'round_robin' ? 'timed intervals' : 'conditional offers'}
+                </p>
+              </div>
             </div>
           </div>
         )}

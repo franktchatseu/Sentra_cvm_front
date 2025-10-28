@@ -23,7 +23,8 @@ import {
   Briefcase,
   Flag,
   Bell,
-  List
+  List,
+  Building2
 } from 'lucide-react';
 import logo from '../../../assets/efforte.png'
 import { color } from '../../../shared/utils/utils';
@@ -102,6 +103,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             { name: 'All Campaigns', href: '/dashboard/campaigns', icon: Target, type: 'single', entity: 'campaigns' },
             { name: 'Campaign Catalogs', href: '/dashboard/campaign-catalogs', icon: Folder, type: 'single', entity: 'campaigns' },
             { name: 'Campaign Objective', href: '/dashboard/campaign-objectives', icon: Flag, type: 'single', entity: 'campaigns' },
+            { name: 'Departments', href: '/dashboard/departments', icon: Building2, type: 'single', entity: 'campaigns' },
+            { name: 'Line of Business', href: '/dashboard/line-of-business', icon: Briefcase, type: 'single', entity: 'campaigns' },
             { name: 'Programs', href: '/dashboard/programs', icon: Briefcase, type: 'single', entity: 'campaigns' },
             { name: 'Campaign Communication Policy', href: '/dashboard/campaign-communication-policy', icon: Bell, type: 'single', entity: 'campaigns' },
           ]
