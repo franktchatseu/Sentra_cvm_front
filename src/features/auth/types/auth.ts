@@ -1,3 +1,4 @@
+// Legacy User interface - keeping for backward compatibility
 export interface User {
   user_id: number;
   first_name: string;
@@ -17,6 +18,133 @@ export interface User {
   req_id?: number;
 }
 
+// Simple user info for auth responses
+export interface AuthUser {
+  id: number;
+  uuid: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  display_name?: string;
+}
+
+// Core auth types for the 8 backend endpoints
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  user?: AuthUser;
+  session?: { 
+    id: string; 
+    token: string; 
+    expires_at: string 
+  };
+  error?: { 
+    code: string; 
+    message: string 
+  };
+}
+
+export interface LogoutRequest {
+  sessionId?: string; // Optional, will logout current session if not provided
+}
+
+export interface LogoutResponse {
+  success: boolean;
+  message?: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  success: boolean;
+  token?: string;
+  expires_at?: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface MeResponse {
+  success: boolean;
+  user?: AuthUser;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface PermissionsResponse {
+  success: boolean;
+  permissions?: string[]; // Simple permission codes for now
+  roles?: string[]; // Simple role names for now
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface PasswordChangeRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface PasswordChangeResponse {
+  success: boolean;
+  message?: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetResponse {
+  success: boolean;
+  message?: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface PasswordResetCompleteRequest {
+  token: string;
+  email: string;
+  newPassword: string;
+}
+
+export interface PasswordResetCompleteResponse {
+  success: boolean;
+  message?: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface ValidateRequest {
+  token: string;
+}
+
+export interface ValidateResponse {
+  valid: boolean;
+  userId?: number;
+  username?: string;
+  reason?: string;
+}
+
+// Legacy types - keeping for backward compatibility
 export interface CreateUserRequest {
   firstName: string;
   lastName: string;
@@ -34,25 +162,6 @@ export interface CreateUserResponse {
     defaultPassword: string;
   };
   message: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  mustResetPassword: boolean;
-  session_id: number;
-}
-
-export interface LogoutRequest {
-  sessionId: number;
-}
-
-export interface LogoutResponse {
-  success: boolean;
 }
 
 export interface AccountRequest {
@@ -83,29 +192,51 @@ export interface RejectAccountResponse {
   requestId: number;
 }
 
-export interface PasswordResetRequest {
+// Legacy password reset types - keeping for backward compatibility
+export interface LegacyPasswordResetRequest {
   email: string;
 }
 
-export interface PasswordResetResponse {
+export interface LegacyPasswordResetResponse {
   message: string;
 }
 
-export interface PasswordResetConfirmRequest {
+export interface LegacyPasswordResetConfirmRequest {
   token: string;
   email: string;
   newPassword: string;
+}
+
+// Legacy logout types - keeping for backward compatibility
+export interface LegacyLogoutRequest {
+  sessionId: number;
+}
+
+export interface LegacyLogoutResponse {
+  success: boolean;
 }
 
 export interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
+  
+  // Core auth methods (updated for new backend)
   login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
+  refreshToken: () => Promise<RefreshTokenResponse>;
+  getMe: () => Promise<MeResponse>;
+  getPermissions: () => Promise<PermissionsResponse>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<PasswordChangeResponse>;
+  validateToken: (token: string) => Promise<ValidateResponse>;
+  
+  // Password reset methods (updated for new backend)
+  requestPasswordReset: (email: string) => Promise<PasswordResetResponse>;
+  completePasswordReset: (token: string, email: string, newPassword: string) => Promise<PasswordResetCompleteResponse>;
+  
+  // Legacy user management methods (keeping unchanged)
   createUser: (userData: CreateUserRequest) => Promise<CreateUserResponse>;
   approveAccount: (requestId: number, role: 'admin' | 'user') => Promise<ApproveAccountResponse>;
   rejectAccount: (requestId: number) => Promise<RejectAccountResponse>;
-  requestPasswordReset: (email: string, requestedBy: string) => Promise<PasswordResetResponse>;
-  resetPassword: (userId: number, newPassword: string, token: string) => Promise<PasswordResetResponse>;
 }

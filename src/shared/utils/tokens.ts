@@ -54,6 +54,13 @@ export const colors = {
     muted: '#6B7280',         // Placeholders, disabled text
     inverse: '#FFFFFF',       // Text on dark buttons/backgrounds
   },
+
+  // Icon sizes for consistent iconography
+  iconSizes: {
+    xs: 'w-3 h-3',            // Extra small icons (12px)
+    sm: 'w-4 h-4',            // Small icons (16px)
+    lg: 'w-6 h-6',            // Large icons (24px)
+  },
   
   // Interactive defines colors for user interaction states
   interactive: {
