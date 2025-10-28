@@ -1,38 +1,39 @@
-import { Routes, Route } from 'react-router-dom';
-import DashboardLayout from '../components/DashboardLayout';
-import DashboardHome from '../components/DashboardHome';
-import CampaignsPage from '../../campaigns/pages/CampaignsPage';
-import CampaignDetailsPage from '../../campaigns/pages/CampaignDetailsPage';
-import CreateCampaignPage from '../../campaigns/pages/CreateCampaignPage';
-import CampaignApprovalHistoryPage from '../../campaigns/pages/CampaignApprovalHistoryPage';
-import CampaignLifecycleHistoryPage from '../../campaigns/pages/CampaignLifecycleHistoryPage';
-import CampaignCategoriesPage from '../../campaigns/pages/CampaignCategoriesPage';
-import CampaignObjectivesPage from '../../campaigns/pages/CampaignObjectivesPage';
-import ProgramsPage from '../../campaigns/pages/ProgramsPage';
-import CommunicationPolicyPage from '../../campaigns/pages/CommunicationPolicyPage';
-import OffersPage from '../../offers/pages/OffersPage';
-import OfferDetailsPage from '../../offers/pages/OfferDetailsPage';
-import OfferLifecycleHistoryPage from '../../offers/pages/OfferLifecycleHistoryPage';
-import OfferApprovalHistoryPage from '../../offers/pages/OfferApprovalHistoryPage';
-import SegmentManagementPage from '../../segments/pages/SegmentManagementPage';
-import SegmentDetailsPage from '../../segments/pages/SegmentDetailsPage';
-import EditSegmentPage from '../../segments/pages/EditSegmentPage';
-import SegmentCategoriesPage from '../../segments/pages/SegmentCategoriesPage';
-import SegmentListPage from '../../segments/pages/SegmentListPage';
-import CreateOfferPage from '../../offers/pages/CreateOfferPage';
-import ProductsPage from '../../products/pages/ProductsPage';
-import CreateProductPage from '../../products/pages/CreateProductPage';
-import EditProductPage from '../../products/pages/EditProductPage';
-import ProductDetailsPage from '../../products/pages/ProductDetailsPage';
-import ProductCategoriesPage from '../../products/pages/ProductCategoriesPage';
-import ProductTypesPage from '../../products/pages/ProductTypesPage';
-import OfferTypesPage from '../../offers/pages/OfferTypesPage';
-import OfferCategoriesPage from '../../offers/pages/OfferCategoriesPage';
-import UserManagementPage from '../components/UserManagementPage';
-import ConfigurationPage from '../components/ConfigurationPage';
-import ControlGroupsPage from '../../products/pages/ControlGroupsPage';
-import DepartmentPage from '../../campaigns/pages/DepartmentPage';
-import LineOfBusinessPage from '../../campaigns/pages/LineOfBusinessPage';
+import { Routes, Route } from "react-router-dom";
+import DashboardLayout from "../components/DashboardLayout";
+import DashboardHome from "../components/DashboardHome";
+import CampaignsPage from "../../campaigns/pages/CampaignsPage";
+import CampaignDetailsPage from "../../campaigns/pages/CampaignDetailsPage";
+import CreateCampaignPage from "../../campaigns/pages/CreateCampaignPage";
+import CampaignApprovalHistoryPage from "../../campaigns/pages/CampaignApprovalHistoryPage";
+import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycleHistoryPage";
+import CampaignCategoriesPage from "../../campaigns/pages/CampaignCategoriesPage";
+import CampaignObjectivesPage from "../../campaigns/pages/CampaignObjectivesPage";
+import ProgramsPage from "../../campaigns/pages/ProgramsPage";
+import CommunicationPolicyPage from "../../campaigns/pages/CommunicationPolicyPage";
+import OffersPage from "../../offers/pages/OffersPage";
+import OfferDetailsPage from "../../offers/pages/OfferDetailsPage";
+import OfferLifecycleHistoryPage from "../../offers/pages/OfferLifecycleHistoryPage";
+import OfferApprovalHistoryPage from "../../offers/pages/OfferApprovalHistoryPage";
+import SegmentManagementPage from "../../segments/pages/SegmentManagementPage";
+import SegmentDetailsPage from "../../segments/pages/SegmentDetailsPage";
+import EditSegmentPage from "../../segments/pages/EditSegmentPage";
+import SegmentCategoriesPage from "../../segments/pages/SegmentCategoriesPage";
+import SegmentListPage from "../../segments/pages/SegmentListPage";
+import CreateOfferPage from "../../offers/pages/CreateOfferPage";
+import ProductsPage from "../../products/pages/ProductsPage";
+import CreateProductPage from "../../products/pages/CreateProductPage";
+import EditProductPage from "../../products/pages/EditProductPage";
+import ProductDetailsPage from "../../products/pages/ProductDetailsPage";
+import ProductCategoriesPage from "../../products/pages/ProductCategoriesPage";
+import ProductTypesPage from "../../products/pages/ProductTypesPage";
+import OfferTypesPage from "../../offers/pages/OfferTypesPage";
+import OfferCategoriesPage from "../../offers/pages/OfferCategoriesPage";
+import CategoryDetailsPage from "../../offers/pages/CategoryDetailsPage";
+import UserManagementPage from "../components/UserManagementPage";
+import ConfigurationPage from "../components/ConfigurationPage";
+import ControlGroupsPage from "../../products/pages/ControlGroupsPage";
+import DepartmentPage from "../../campaigns/pages/DepartmentPage";
+import LineOfBusinessPage from "../../campaigns/pages/LineOfBusinessPage";
 
 export default function Dashboard() {
   return (
@@ -42,21 +43,39 @@ export default function Dashboard() {
         <Route path="/campaigns" element={<CampaignsPage />} />
         <Route path="/campaigns/:id" element={<CampaignDetailsPage />} />
         <Route path="/campaigns/:id/edit" element={<CreateCampaignPage />} />
-        <Route path="/campaigns/:id/approval-history" element={<CampaignApprovalHistoryPage />} />
-        <Route path="/campaigns/:id/lifecycle-history" element={<CampaignLifecycleHistoryPage />} />
+        <Route
+          path="/campaigns/:id/approval-history"
+          element={<CampaignApprovalHistoryPage />}
+        />
+        <Route
+          path="/campaigns/:id/lifecycle-history"
+          element={<CampaignLifecycleHistoryPage />}
+        />
         <Route path="/campaigns/create" element={<CreateCampaignPage />} />
         <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
-        <Route path="/campaign-objectives" element={<CampaignObjectivesPage />} />
+        <Route
+          path="/campaign-objectives"
+          element={<CampaignObjectivesPage />}
+        />
         <Route path="/departments" element={<DepartmentPage />} />
         <Route path="/line-of-business" element={<LineOfBusinessPage />} />
         <Route path="/programs" element={<ProgramsPage />} />
-        <Route path="/campaign-communication-policy" element={<CommunicationPolicyPage />} />
+        <Route
+          path="/campaign-communication-policy"
+          element={<CommunicationPolicyPage />}
+        />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/offers/create" element={<CreateOfferPage />} />
         <Route path="/offers/:id" element={<OfferDetailsPage />} />
         <Route path="/offers/:id/edit" element={<CreateOfferPage />} />
-        <Route path="/offers/:id/approval-history" element={<OfferApprovalHistoryPage />} />
-        <Route path="/offers/:id/lifecycle-history" element={<OfferLifecycleHistoryPage />} />
+        <Route
+          path="/offers/:id/approval-history"
+          element={<OfferApprovalHistoryPage />}
+        />
+        <Route
+          path="/offers/:id/lifecycle-history"
+          element={<OfferLifecycleHistoryPage />}
+        />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/create" element={<CreateProductPage />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />
@@ -65,6 +84,7 @@ export default function Dashboard() {
         <Route path="/product-types" element={<ProductTypesPage />} />
         <Route path="/offer-types" element={<OfferTypesPage />} />
         <Route path="/offer-catalogs" element={<OfferCategoriesPage />} />
+        <Route path="/offer-catalogs/:id" element={<CategoryDetailsPage />} />
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/segments" element={<SegmentManagementPage />} />
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />

@@ -1,0 +1,749 @@
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Eye,
+  Users,
+  Package,
+  CheckCircle,
+  XCircle,
+  Plus,
+  X,
+} from "lucide-react";
+import { color, tw } from "../../../shared/utils/utils";
+import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useToast } from "../../../contexts/ToastContext";
+import { offerCategoryService } from "../services/offerCategoryService";
+import { OfferCategoryType } from "../types/offerCategory";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+
+export default function CategoryDetailsPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { confirm } = useConfirm();
+  const { success: showToast, error: showError } = useToast();
+
+  const [category, setCategory] = useState<OfferCategoryType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [offerCount, setOfferCount] = useState<number>(0);
+  const [activeOfferCount, setActiveOfferCount] = useState<number>(0);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] =
+    useState<OfferCategoryType | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+  });
+  const [analytics, setAnalytics] = useState<{
+    usageTrends: any;
+    performanceByType: any;
+    relatedCategories: any[];
+  }>({
+    usageTrends: null,
+    performanceByType: null,
+    relatedCategories: [],
+  });
+
+  useEffect(() => {
+    if (id) {
+      loadCategoryDetails();
+    }
+  }, [id]);
+
+  const loadCategoryDetails = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load category details
+      const categoryResponse = await offerCategoryService.getCategoryById(
+        parseInt(id),
+        true
+      );
+      if (categoryResponse.success && categoryResponse.data) {
+        setCategory(categoryResponse.data);
+      } else {
+        setError("Category not found");
+        return;
+      }
+
+      // Load offer counts
+      const offerCountResponse =
+        await offerCategoryService.getCategoryOfferCount(parseInt(id), true);
+      if (offerCountResponse.success && offerCountResponse.data) {
+        setOfferCount(offerCountResponse.data.totalOffers || 0);
+      }
+
+      const activeOfferCountResponse =
+        await offerCategoryService.getCategoryActiveOfferCount(
+          parseInt(id),
+          true
+        );
+      if (activeOfferCountResponse.success && activeOfferCountResponse.data) {
+        setActiveOfferCount(
+          activeOfferCountResponse.data.activeOfferCount || 0
+        );
+      }
+
+      // Load offers in this category
+      const offersResponse = await offerCategoryService.getCategoryOffers(
+        parseInt(id),
+        { limit: 50, skipCache: true }
+      );
+      if (offersResponse.success && offersResponse.data) {
+        setOffers(offersResponse.data || []);
+      }
+
+      // Load analytics data
+      await loadAnalytics();
+    } catch (err) {
+      console.error("Failed to load category details:", err);
+      setError("Failed to load category details");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  const loadAnalytics = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      // Load usage trends (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const usageTrendsResponse = await offerCategoryService.getUsageTrends({
+        days: 30,
+        skipCache: true,
+      });
+
+      // Load performance by type
+      const performanceResponse =
+        await offerCategoryService.getPerformanceByType(true);
+
+      // Load related active categories
+      const relatedResponse = await offerCategoryService.getActiveCategories({
+        limit: 5,
+        skipCache: true,
+      });
+
+      setAnalytics({
+        usageTrends: usageTrendsResponse.success
+          ? usageTrendsResponse.data
+          : null,
+        performanceByType: performanceResponse.success
+          ? performanceResponse.data
+          : null,
+        relatedCategories: relatedResponse.success
+          ? relatedResponse.data || []
+          : [],
+      });
+    } catch (err) {
+      console.error("Failed to load analytics:", err);
+      // Don't show error for analytics, just log it
+    }
+  }, [id]);
+
+  const handleEditCategory = () => {
+    if (!category) return;
+    setEditingCategory(category);
+    setFormData({
+      name: category.name,
+      description: category.description || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleCategorySaved = async (categoryData: {
+    name: string;
+    description?: string;
+  }) => {
+    if (!editingCategory) return;
+
+    try {
+      await offerCategoryService.updateCategory(
+        editingCategory.id,
+        categoryData
+      );
+      showToast("Category updated successfully");
+      await loadCategoryDetails(); // Reload category details
+      setIsEditModalOpen(false);
+      setEditingCategory(null);
+    } catch (err) {
+      console.error("Failed to update category:", err);
+      showError("Failed to update category");
+    }
+  };
+
+  const handleViewOffers = () => {
+    setIsOffersModalOpen(true);
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!category) return;
+
+    const confirmed = await confirm({
+      title: "Delete Category",
+      message: `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
+      type: "danger",
+    });
+
+    if (confirmed) {
+      try {
+        const response = await offerCategoryService.deleteCategory(category.id);
+        if (response.success) {
+          showToast("Category deleted successfully");
+          navigate("/dashboard/offer-catalogs");
+        } else {
+          showError("Failed to delete category");
+        }
+      } catch (err) {
+        console.error("Failed to delete category:", err);
+        showError("Failed to delete category");
+      }
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    if (!category) return;
+
+    try {
+      if (category.is_active) {
+        await offerCategoryService.deactivateCategory(category.id);
+        showToast("Category deactivated");
+      } else {
+        await offerCategoryService.activateCategory(category.id);
+        showToast("Category activated");
+      }
+      // Reload category details
+      await loadCategoryDetails();
+    } catch (err) {
+      console.error("Failed to toggle category status:", err);
+      showError("Failed to update category status");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <LoadingSpinner variant="modern" size="xl" className="mb-4" />
+        <p className={`${tw.textMuted} font-medium`}>
+          Loading category details...
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !category) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <XCircle className="w-16 h-16 text-red-500 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          {error || "Category not found"}
+        </h3>
+        <button
+          onClick={() => navigate("/dashboard/offer-catalogs")}
+          className="px-4 py-2 rounded-lg font-medium transition-colors"
+          style={{
+            backgroundColor: color.primary.action,
+            color: color.text.inverse,
+          }}
+        >
+          Back to Categories
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/dashboard/offer-catalogs")}
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {category.name}
+            </h1>
+            {category.description && (
+              <p className="text-gray-600 mt-1">{category.description}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleViewOffers}
+            className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: color.primary.action,
+              color: color.text.inverse,
+            }}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            View Offers
+          </button>
+          <button
+            onClick={handleEditCategory}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Edit Category"
+          >
+            <Edit className="w-4 h-4 text-gray-600" />
+          </button>
+          <button
+            onClick={handleToggleStatus}
+            className={`p-2 rounded-lg transition-colors ${
+              category.is_active ? "hover:bg-red-50" : "hover:bg-green-50"
+            }`}
+            title={category.is_active ? "Deactivate" : "Activate"}
+          >
+            {category.is_active ? (
+              <XCircle className="w-4 h-4 text-red-600" />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            )}
+          </button>
+          <button
+            onClick={handleDeleteCategory}
+            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete Category"
+          >
+            <Trash2 className="w-4 h-4 text-red-600" />
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          className="rounded-xl border border-gray-200 p-4"
+          style={{ backgroundColor: color.surface.cards }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Offers</p>
+              <p className="text-2xl font-bold text-gray-900">{offerCount}</p>
+            </div>
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="rounded-xl border border-gray-200 p-4"
+          style={{ backgroundColor: color.surface.cards }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Active Offers</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {activeOfferCount}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="rounded-xl border border-gray-200 p-4"
+          style={{ backgroundColor: color.surface.cards }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Inactive Offers
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {offerCount - activeOfferCount}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <XCircle className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="rounded-xl border border-gray-200 p-4"
+          style={{ backgroundColor: color.surface.cards }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Status</p>
+              <p className="text-lg font-bold text-gray-900">
+                {category.is_active ? "Active" : "Inactive"}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              {category.is_active ? (
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              ) : (
+                <XCircle className="w-6 h-6 text-red-600" />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Usage Trends */}
+        <div
+          className="rounded-xl border border-gray-200 p-6"
+          style={{ backgroundColor: color.surface.cards }}
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Usage Trends (30 days)
+          </h3>
+          {analytics.usageTrends ? (
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Total Usage</span>
+                <span className="font-medium">
+                  {analytics.usageTrends.totalUsage || 0}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Peak Usage</span>
+                <span className="font-medium">
+                  {analytics.usageTrends.peakUsage || 0}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Average Daily</span>
+                <span className="font-medium">
+                  {analytics.usageTrends.averageDaily || 0}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <Package className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No usage data available</p>
+            </div>
+          )}
+        </div>
+
+        {/* Performance by Type */}
+        <div
+          className="rounded-xl border border-gray-200 p-6"
+          style={{ backgroundColor: color.surface.cards }}
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Performance by Type
+          </h3>
+          {analytics.performanceByType ? (
+            <div className="space-y-2">
+              {analytics.performanceByType.performance?.map(
+                (item: any, index: number) => (
+                  <div key={index} className="flex justify-between">
+                    <span className="text-sm text-gray-600 capitalize">
+                      {item.type || "Unknown"}
+                    </span>
+                    <span className="font-medium">{item.count || 0}</span>
+                  </div>
+                )
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <Package className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">
+                No performance data available
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Related Categories */}
+      {analytics.relatedCategories.length > 0 && (
+        <div
+          className="rounded-xl border border-gray-200 p-6"
+          style={{ backgroundColor: color.surface.cards }}
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Related Categories
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {analytics.relatedCategories
+              .filter((cat) => cat.id !== category?.id) // Exclude current category
+              .slice(0, 6)
+              .map((relatedCategory) => (
+                <button
+                  key={relatedCategory.id}
+                  onClick={() =>
+                    navigate(`/dashboard/offer-catalogs/${relatedCategory.id}`)
+                  }
+                  className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <h4 className="font-medium text-gray-900 truncate">
+                    {relatedCategory.name}
+                  </h4>
+                  {relatedCategory.description && (
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                      {relatedCategory.description}
+                    </p>
+                  )}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Offers List */}
+      <div
+        className="rounded-xl border border-gray-200 p-6"
+        style={{ backgroundColor: color.surface.cards }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Offers in Category
+          </h2>
+          <button
+            onClick={handleViewOffers}
+            className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: color.primary.action,
+              color: color.text.inverse,
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Offers
+          </button>
+        </div>
+
+        {offers.length === 0 ? (
+          <div className="text-center py-8">
+            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No offers in this category
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Add offers to this category to get started
+            </p>
+            <button
+              onClick={handleViewOffers}
+              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Your First Offer
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {offers.map((offer, index) => (
+              <div
+                key={offer.id || index}
+                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">
+                    {offer.name || "Unnamed Offer"}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {offer.description || "No description"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      offer.is_active
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {offer.is_active ? "Active" : "Inactive"}
+                  </span>
+                  <button
+                    onClick={() => {
+                      // TODO: Navigate to offer details
+                      showToast("Offer details coming soon");
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Edit Category Modal */}
+      {isEditModalOpen && editingCategory && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50"
+              onClick={() => setIsEditModalOpen(false)}
+            ></div>
+            <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Edit Category
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleCategorySaved(formData)}
+                  className="px-4 py-2 text-white rounded-lg transition-colors"
+                  style={{ backgroundColor: color.primary.action }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Offers Modal */}
+      {isOffersModalOpen && category && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50"
+              onClick={() => setIsOffersModalOpen(false)}
+            ></div>
+            <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Offers in "{category.name}"
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {offers.length} offer{offers.length !== 1 ? "s" : ""}{" "}
+                      found
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsOffersModalOpen(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {offers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No offers in this category
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      This category doesn't have any offers assigned yet.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setIsOffersModalOpen(false);
+                        // TODO: Open assign offers modal
+                        showToast("Assign offers functionality coming soon");
+                      }}
+                      className="px-4 py-2 text-white rounded-lg transition-colors"
+                      style={{ backgroundColor: color.primary.action }}
+                    >
+                      Assign Offers
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {offers.map((offer, index) => (
+                      <div
+                        key={offer.id || index}
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">
+                            {offer.name || "Unnamed Offer"}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {offer.description || "No description"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              offer.is_active
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {offer.is_active ? "Active" : "Inactive"}
+                          </span>
+                          <button
+                            onClick={() => {
+                              // TODO: Navigate to offer details
+                              showToast("Offer details coming soon");
+                            }}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <Eye className="w-4 h-4 text-gray-600" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
