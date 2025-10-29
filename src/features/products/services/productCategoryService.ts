@@ -181,7 +181,7 @@ class ProductCategoryService {
         "parent_category_id",
         params.parent_category_id.toString()
       );
-    if (params.is_active !== undefined)
+    if (params.is_active !== undefined && params.is_active !== null)
       queryParams.append("is_active", params.is_active.toString());
     if (params.created_by)
       queryParams.append("created_by", params.created_by.toString());

@@ -1,7 +1,5 @@
 import {
   Product,
-  ProductFilters,
-  ProductResponse,
   CreateProductRequest,
   UpdateProductRequest,
   ApiResponse,
@@ -480,42 +478,6 @@ class ProductService {
         method: "DELETE",
       }
     );
-  }
-
-  // Legacy methods for backward compatibility
-  async getProducts(filters?: ProductFilters): Promise<ProductResponse> {
-    // Convert old filters to new API
-    const params = {
-      limit: filters?.pageSize || 50,
-      offset: ((filters?.page || 1) - 1) * (filters?.pageSize || 50),
-      skipCache: true,
-    };
-
-    let response: PaginatedResponse<Product>;
-
-    if (filters?.search) {
-      response = await this.searchProducts({ q: filters.search, ...params });
-    } else if (filters?.categoryId) {
-      response = await this.getProductsByCategory(filters.categoryId, params);
-    } else if (filters?.isActive !== undefined) {
-      response = filters.isActive
-        ? await this.getActiveProducts(params)
-        : await this.getAllProducts(params);
-    } else {
-      response = await this.getAllProducts(params);
-    }
-
-    // Convert PaginatedResponse to ProductResponse
-    return {
-      data: response.data || [],
-      total: response.pagination?.total || 0,
-      page:
-        Math.floor(
-          (response.pagination?.offset || 0) /
-            (response.pagination?.limit || 50)
-        ) + 1,
-      pageSize: response.pagination?.limit || 50,
-    };
   }
 }
 

@@ -1,5 +1,3 @@
-// Updated Product Category types to match API documentation
-
 export interface ProductCategory {
   id: number;
   name: string;
@@ -28,18 +26,6 @@ export interface UpdateProductCategoryRequest {
   updated_by?: number;
 }
 
-export interface ProductCategoryFilters {
-  search?: string;
-  includeProductCount?: boolean;
-  skipCache?: boolean;
-}
-
-export interface ProductCategoryResponse {
-  categories: ProductCategory[];
-  total: number;
-}
-
-// API Response types
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

@@ -12,7 +12,7 @@ import {
   Play,
   Pause,
 } from "lucide-react";
-import { Product, ProductFilters } from "../types/product";
+import { Product } from "../types/product";
 import { ProductCategory } from "../types/productCategory";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
@@ -20,6 +20,16 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
+
+interface ProductFilters {
+  search?: string;
+  categoryId?: number;
+  isActive?: boolean;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: "ASC" | "DESC";
+}
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -54,11 +64,52 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await productService.getProducts(filters);
+
+      const limit = filters.pageSize || 10;
+      const offset = ((filters.page || 1) - 1) * limit;
+
+      let response;
+
+      if (filters.search) {
+        response = await productService.searchProducts({
+          q: filters.search,
+          limit,
+          offset,
+          skipCache: true,
+        });
+      } else if (filters.categoryId) {
+        response = await productService.getProductsByCategory(
+          filters.categoryId,
+          {
+            limit,
+            offset,
+            skipCache: true,
+          }
+        );
+      } else if (filters.isActive !== undefined) {
+        response = filters.isActive
+          ? await productService.getActiveProducts({
+              limit,
+              offset,
+              skipCache: true,
+            })
+          : await productService.getAllProducts({
+              limit,
+              offset,
+              skipCache: true,
+            });
+      } else {
+        response = await productService.getAllProducts({
+          limit,
+          offset,
+          skipCache: true,
+        });
+      }
+
       setProducts(response.data || []);
-      const totalCount = response.total || response.data?.length || 0;
+      const totalCount = response.pagination?.total || 0;
       setTotal(totalCount);
-      setTotalPages(Math.ceil(totalCount / (filters.pageSize || 10)) || 1);
+      setTotalPages(Math.ceil(totalCount / limit) || 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load products");
     } finally {

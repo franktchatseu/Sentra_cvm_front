@@ -1,5 +1,3 @@
-// Updated Product types to match API documentation
-
 export interface Product {
   id: number;
   product_uuid: string;
@@ -22,17 +20,7 @@ export interface Product {
   updated_at: string;
   created_by?: number;
   updated_by?: number;
-  metadata?: Record<string, any>;
-}
-
-export interface ProductFilters {
-  search?: string;
-  categoryId?: number;
-  isActive?: boolean;
-  page?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortDirection?: "ASC" | "DESC";
+  metadata?: Record<string, unknown>;
 }
 
 export interface CreateProductRequest {
@@ -50,7 +38,7 @@ export interface CreateProductRequest {
   effective_from?: string;
   effective_to?: string;
   da_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_by?: number;
 }
 
@@ -69,15 +57,8 @@ export interface UpdateProductRequest {
   effective_from?: string;
   effective_to?: string;
   da_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   updated_by?: number;
-}
-
-export interface ProductResponse {
-  data: Product[];
-  total: number;
-  page: number;
-  pageSize: number;
 }
 
 // API Response types
