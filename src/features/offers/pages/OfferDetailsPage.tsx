@@ -87,7 +87,7 @@ export default function OfferDetailsPage() {
         }
       }
     } catch (err) {
-      console.error("❌ OFFER DETAILS - Failed to load offer:", err);
+      console.error("Failed to load offer:", err);
       setError(err instanceof Error ? err.message : "Failed to load offer");
     } finally {
       setLoading(false);
@@ -141,7 +141,7 @@ export default function OfferDetailsPage() {
         setLinkedProducts([]);
       }
     } catch (err) {
-      console.error("❌ OFFER DETAILS - Failed to load products:", err);
+      console.error("Failed to load products:", err);
       setLinkedProducts([]);
     } finally {
       setProductsLoading(false);

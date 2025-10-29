@@ -9,7 +9,6 @@ import {
   X,
   MessageSquare,
   ArrowLeft,
-  Eye,
   Grid,
   List,
   FolderOpen,
@@ -691,13 +690,9 @@ export default function OfferCategoriesPage() {
   // Load offer counts for all categories at once
   const loadAllOfferCounts = async () => {
     try {
-      console.log("🔍 Loading offer counts for ALL categories...");
       const response = await offerCategoryService.getOfferCounts(true);
-      console.log("📊 All Categories Offer Counts Response:", response);
 
       if (response.success && response.data) {
-        console.log("📈 All Categories Offer Counts Data:", response.data);
-
         // Convert array to object keyed by categoryId
         const countsMap: Record<
           number,
@@ -706,69 +701,53 @@ export default function OfferCategoriesPage() {
             activeOffers: number;
             expiredOffers: number;
             draftOffers: number;
+            pendingOffers: number;
           }
         > = {};
 
-        response.data.forEach((item: any) => {
-          countsMap[item.categoryId] = {
-            totalOffers: item.totalOffers || 0,
-            activeOffers: item.activeOffers || 0,
-            expiredOffers: item.expiredOffers || 0,
-            draftOffers: item.draftOffers || 0,
-          };
-        });
+        response.data.forEach(
+          (item: {
+            categoryId: number;
+            totalOffers: number;
+            activeOffers: number;
+            expiredOffers: number;
+            draftOffers: number;
+          }) => {
+            countsMap[item.categoryId] = {
+              totalOffers: item.totalOffers || 0,
+              activeOffers: item.activeOffers || 0,
+              expiredOffers: item.expiredOffers || 0,
+              draftOffers: item.draftOffers || 0,
+              pendingOffers: 0, // Add missing field
+            };
+          }
+        );
 
-        console.log("🗂️ Processed counts map:", countsMap);
         setCategoryOfferCounts(countsMap);
       }
     } catch (err) {
-      console.error("❌ Failed to load all offer counts:", err);
+      console.error("Failed to load all offer counts:", err);
     }
   };
 
   // Test getCategoryActiveOfferCount for a specific category
   const testCategoryActiveOfferCount = async () => {
     try {
-      console.log("🔍 Testing getCategoryActiveOfferCount for category ID: 1");
-      const response = await offerCategoryService.getCategoryActiveOfferCount(
-        1,
-        true
-      );
-      console.log(
-        "📊 Category Active Offer Count Response for ID 1:",
-        response
-      );
-
-      if (response.success && response.data) {
-        console.log(
-          "📈 Category Active Offer Count Data for ID 1:",
-          response.data
-        );
-      }
+      await offerCategoryService.getCategoryActiveOfferCount(1, true);
+      // Response received successfully - no action needed
     } catch (err) {
-      console.error(
-        "❌ Failed to load active offer count for category 1:",
-        err
-      );
+      console.error("Failed to load active offer count for category 1:", err);
     }
   };
 
   // Test getActiveOfferCounts for all categories
   const testActiveOfferCounts = async () => {
     try {
-      console.log("🔍 Testing getActiveOfferCounts for ALL categories...");
-      const response = await offerCategoryService.getActiveOfferCounts(true);
-      console.log("📊 All Categories Active Offer Counts Response:", response);
-
-      if (response.success && response.data) {
-        console.log(
-          "📈 All Categories Active Offer Counts Data:",
-          response.data
-        );
-      }
+      await offerCategoryService.getActiveOfferCounts(true);
+      // Response received successfully - no action needed
     } catch (err) {
       console.error(
-        "❌ Failed to load active offer counts for all categories:",
+        "Failed to load active offer counts for all categories:",
         err
       );
     }
@@ -785,7 +764,7 @@ export default function OfferCategoriesPage() {
         // Use advanced search when advanced filters are set
         response = await offerCategoryService.advancedSearch({
           name: advancedSearch.exactName.trim() || undefined,
-          is_active: advancedSearch.isActive,
+          is_active: advancedSearch.isActive ?? undefined,
           created_after: advancedSearch.createdAfter || undefined,
           created_before: advancedSearch.createdBefore || undefined,
           limit: 50,
@@ -915,10 +894,6 @@ export default function OfferCategoriesPage() {
   const handleViewOffers = (category: OfferCategoryType) => {
     setSelectedCategory(category);
     setIsOffersModalOpen(true);
-  };
-
-  const handleViewDetails = (category: OfferCategoryType) => {
-    navigate(`/dashboard/offer-catalogs/${category.id}`);
   };
 
   const handleCategorySaved = async (categoryData: {

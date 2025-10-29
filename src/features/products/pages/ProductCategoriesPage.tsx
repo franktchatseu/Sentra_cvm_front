@@ -434,31 +434,11 @@ export default function ProductCatalogsPage() {
       setLoading(true);
       setError(null);
 
-      let response;
-
-      // Choose endpoint based on filter type and advanced search
-      if (hasAdvancedFilters()) {
-        // Use advanced search when advanced filters are set
-        response = await productCategoryService.superSearch({
-          name: advancedSearch.exactName.trim() || undefined,
-          is_active: advancedSearch.isActive ?? undefined,
-          created_from: advancedSearch.createdAfter || undefined,
-          created_to: advancedSearch.createdBefore || undefined,
-          limit: 100,
-          skipCache: skipCache,
-        });
-      } else if (filterType === "active") {
-        response = await productCategoryService.getActiveCategories({
-          limit: 100,
-          skipCache: skipCache,
-        });
-      } else {
-        // Default: get all categories
-        response = await productCategoryService.getAllCategories({
-          limit: 100,
-          skipCache: skipCache,
-        });
-      }
+      // Always load all categories for client-side filtering
+      const response = await productCategoryService.getAllCategories({
+        limit: 100,
+        skipCache: skipCache,
+      });
 
       setCategories(response.data || []);
 
@@ -573,10 +553,37 @@ export default function ProductCatalogsPage() {
   const filteredCatalogs = categories.filter((category) => {
     // Apply search term filter
     const matchesSearch =
-      searchTerm === "" ||
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      debouncedSearchTerm === "" ||
+      category.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
       (category.description &&
-        category.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        category.description
+          .toLowerCase()
+          .includes(debouncedSearchTerm.toLowerCase()));
+
+    // Apply advanced search filters
+    let matchesAdvancedSearch = true;
+    if (advancedSearch.exactName.trim() !== "") {
+      matchesAdvancedSearch =
+        matchesAdvancedSearch &&
+        category.name
+          .toLowerCase()
+          .includes(advancedSearch.exactName.toLowerCase());
+    }
+    if (advancedSearch.isActive !== null) {
+      matchesAdvancedSearch =
+        matchesAdvancedSearch && category.is_active === advancedSearch.isActive;
+    }
+    if (advancedSearch.createdAfter !== "") {
+      const createdDate = new Date(category.created_at);
+      const afterDate = new Date(advancedSearch.createdAfter);
+      matchesAdvancedSearch = matchesAdvancedSearch && createdDate >= afterDate;
+    }
+    if (advancedSearch.createdBefore !== "") {
+      const createdDate = new Date(category.created_at);
+      const beforeDate = new Date(advancedSearch.createdBefore);
+      matchesAdvancedSearch =
+        matchesAdvancedSearch && createdDate <= beforeDate;
+    }
 
     // Apply product count filters (client-side since API doesn't support it)
     let matchesProductCount = true;
@@ -595,7 +602,11 @@ export default function ProductCatalogsPage() {
 
     // Apply filter type
     let matchesFilterType = true;
-    if (filterType === "with_products") {
+    if (filterType === "active") {
+      matchesFilterType = category.is_active === true;
+    } else if (filterType === "inactive") {
+      matchesFilterType = category.is_active === false;
+    } else if (filterType === "with_products") {
       const categoryCount =
         categoryProductCounts[category.id]?.total_products || 0;
       matchesFilterType = categoryCount > 0;
@@ -605,7 +616,12 @@ export default function ProductCatalogsPage() {
       matchesFilterType = categoryCount === 0;
     }
 
-    return matchesSearch && matchesProductCount && matchesFilterType;
+    return (
+      matchesSearch &&
+      matchesAdvancedSearch &&
+      matchesProductCount &&
+      matchesFilterType
+    );
   });
 
   if (loading) {
@@ -657,8 +673,70 @@ export default function ProductCatalogsPage() {
         </div>
       </div>
 
-      {/* Active Filters - COMMENTED OUT */}
-      {/* {hasAdvancedFilters() && (
+      {/* Search and Filters */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search
+            className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${tw.textMuted}]`}
+          />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search catalogs..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+          />
+        </div>
+
+        <button
+          onClick={() => setShowAdvancedFilters(true)}
+          className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm border"
+          style={{
+            borderColor: color.border.default,
+            color: color.text.primary,
+            backgroundColor: "transparent",
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor =
+              color.interactive.hover;
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLButtonElement).style.backgroundColor =
+              "transparent";
+          }}
+        >
+          <Filter className="w-4 h-4" />
+          Filters
+        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`p-2 rounded transition-colors ${
+              viewMode === "grid"
+                ? "bg-gray-200 text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            title="Grid View"
+          >
+            <Grid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded transition-colors ${
+              viewMode === "list"
+                ? "bg-gray-200 text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            title="List View"
+          >
+            <List className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Active Filters - Below Search Bar */}
+      {hasAdvancedFilters() && (
         <div className="flex flex-wrap gap-2">
           {advancedSearch.exactName.trim() && (
             <span
@@ -758,72 +836,7 @@ export default function ProductCatalogsPage() {
             Clear All
           </button>
         </div>
-      )} */}
-
-      {/* Search and Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search
-            className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${tw.textMuted}]`}
-          />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
-          />
-        </div>
-
-        {/* <button
-          onClick={() => setShowAdvancedFilters(true)}
-          className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm border"
-          style={{
-            borderColor: color.border.default,
-            color: color.text.primary,
-            backgroundColor: "transparent",
-          }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor =
-              color.interactive.hover;
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor =
-              "transparent";
-          }}
-        >
-          <Filter className="w-4 h-4" />
-          Filters
-          {hasAdvancedFilters() && (
-            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-          )}
-        </button> */}
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`p-2 rounded transition-colors ${
-              viewMode === "grid"
-                ? "bg-gray-200 text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="Grid View"
-          >
-            <Grid className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 rounded transition-colors ${
-              viewMode === "list"
-                ? "bg-gray-200 text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="List View"
-          >
-            <List className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Error Message */}
       {error && (
