@@ -1,20 +1,595 @@
+// Core Entity Types
+
+export type SegmentType = {
+  id: number;
+  name: string;
+  code: string | null;
+  type:
+    | "static"
+    | "dynamic"
+    | "predictive"
+    | "behavioral"
+    | "demographic"
+    | "geographic"
+    | "transactional";
+  category: number | null;
+  parent_segment: number | null;
+  description: string | null;
+  definition: Record<string, any> | null;
+  query: string | null;
+  count_query: string | null;
+  size_estimate: number | null;
+  last_computed_at: string | null;
+  tags: string[] | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+  visibility: string;
+  created_by_user_id: number | null;
+};
+
+export type SegmentCategoryType = {
+  id: number;
+  name: string;
+  description: string | null;
+  parent_category_id: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SegmentRuleType = {
+  id: number;
+  segment_id: number;
+  rule_json: object;
+  rule_order: number;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+};
+
+export type SegmentMemberType = {
+  id: number;
+  segment_id: number;
+  customer_id: number;
+  created_at: string;
+  created_by?: string;
+};
+
+// Segment Criteria Types (for Dynamic Segments)
+
+export type SegmentCriteriaType = {
+  from: string; // Base table
+  join?: JoinClauseType[]; // Optional joins
+  select?: SelectFieldType[]; // Fields to select
+  where?: ConditionGroupType[]; // Conditions
+  group_by?: string[]; // GROUP BY fields
+  having?: HavingConditionType[]; // HAVING conditions
+  order_by?: OrderByClauseType[]; // ORDER BY clauses
+  limit?: number; // LIMIT clause
+};
+
+export type JoinClauseType = {
+  type: "LEFT" | "INNER" | "RIGHT";
+  table: string;
+  on: [string, string]; // [left_field, right_field]
+};
+
+export type SelectFieldType = {
+  table: string;
+  field: string;
+  function?: "COUNT" | "SUM" | "AVG" | "MAX" | "MIN";
+  alias?: string;
+};
+
+export type ConditionGroupType = {
+  operator: "AND" | "OR";
+  conditions: [
+    {
+      field: string;
+      operator: "=" | "!=" | ">" | "<" | ">=" | "<=" | "IN" | "NOT IN" | "LIKE";
+      value: any;
+    }
+  ];
+};
+
+export type HavingConditionType = {
+  field: string;
+  operator: string;
+  value: any;
+};
+
+export type OrderByClauseType = {
+  field: string;
+  direction: "ASC" | "DESC";
+};
+
+// API Response Types
+
+export type ApiSuccessResponse<T> = {
+  success: true;
+  message: string;
+  data: T;
+  meta?: {
+    total?: number;
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+    sortBy?: string;
+    sortDirection?: string;
+    isCachedResponse?: boolean;
+    cacheDurationSec?: number;
+  };
+};
+
+export type ApiErrorResponse = {
+  success: false;
+  error: string;
+  details?: string;
+};
+
+export type PaginatedResponse<T> = {
+  success: true;
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    sortBy: string;
+    sortDirection: string;
+    isCachedResponse: boolean;
+    cacheDurationSec: number;
+  };
+};
+
+// Request Types
+
+export type CreateSegmentRequest = {
+  name: string; // Required
+  code?: string; // Optional (unique segment code)
+  type:
+    | "static"
+    | "dynamic"
+    | "predictive"
+    | "behavioral"
+    | "demographic"
+    | "geographic"
+    | "transactional"; // Required
+  category?: number; // Optional
+  parent_segment?: number; // Optional
+  description?: string; // Optional
+  definition?: Record<string, any>; // Optional
+  query?: string; // Optional
+  count_query?: string; // Optional
+  size_estimate?: number; // Optional
+  tags?: string[]; // Optional
+  is_active?: boolean; // Optional (defaults to true)
+  visibility?: string; // Optional
+  created_by_user_id?: number; // Optional
+};
+
+export type UpdateSegmentRequest = {
+  name?: string; // Optional
+  code?: string; // Optional
+  category?: number; // Optional
+  parent_segment?: number; // Optional
+  description?: string; // Optional
+  definition?: Record<string, any>; // Optional
+  query?: string; // Optional
+  count_query?: string; // Optional
+  size_estimate?: number; // Optional
+  tags?: string[]; // Optional
+  is_active?: boolean; // Optional
+  visibility?: string; // Optional
+  updated_by?: string; // Optional
+};
+
+export type CreateSegmentCategoryRequest = {
+  name: string; // Required
+  description?: string; // Optional
+  parent_category_id?: number; // Optional (for hierarchical categories)
+  is_active?: boolean; // Optional (defaults to true)
+};
+
+export type UpdateSegmentCategoryRequest = {
+  name?: string; // Optional
+  description?: string; // Optional
+  parent_category_id?: number; // Optional
+  is_active?: boolean; // Optional
+};
+
+export type AddSegmentMembersRequest = {
+  customer_ids: number[]; // Required, array of customer IDs
+};
+
+export type DeleteSegmentMembersRequest = {
+  customer_ids?: number[]; // Optional, specific customer IDs
+  remove_all?: boolean; // Optional, default false
+};
+
+export type CreateSegmentRuleRequest = {
+  rule_json: object; // Required, rule definition
+  rule_order?: number; // Optional, default 1
+};
+
+export type UpdateSegmentRuleRequest = {
+  rule_json?: object; // Optional, rule definition
+  rule_order?: number; // Optional
+};
+
+export type DuplicateSegmentRequest = {
+  new_name: string; // Required, 1-128 chars
+  copy_members?: boolean; // Optional, default false
+  copy_rules?: boolean; // Optional, default true
+};
+
+export type ValidateCriteriaRequest = {
+  criteria: SegmentCriteriaType; // Required, criteria to validate
+};
+
+export type ValidateRulesRequest = {
+  rules: object[]; // Required, array of rules to validate
+};
+
+export type ComputeSegmentRequest = {
+  force_recompute?: boolean; // Optional, default false
+  incremental?: boolean; // Optional, default true
+};
+
+export type BatchComputeRequest = {
+  segment_ids: number[]; // Required, array of segment IDs
+  force_recompute?: boolean; // Optional, default false
+};
+
+export type PreviewSegmentRequest = {
+  sample_size?: number; // Optional, default 10, max 1000
+  criteria_override?: SegmentCriteriaType; // Optional, override criteria
+};
+
+export type SearchSegmentMembersRequest = {
+  query?: string; // Optional, search term
+  filters?: Record<string, any>; // Optional, additional filters
+  page?: number; // Optional, default 1
+  pageSize?: number; // Optional, default 10
+};
+
+export type ExportSegmentQuery = {
+  format?: "csv" | "json"; // Optional, default "json"
+};
+
+export type CustomExportRequest = {
+  format: "csv" | "json"; // Required
+  fields?: string[]; // Optional, specific fields to export
+  filters?: Record<string, any>; // Optional, additional filters
+};
+
+// Query Parameter Types
+
+export type SearchSegmentsQuery = {
+  q: string; // Required, search term
+  category?: number; // Optional, category ID
+  type?: "static" | "dynamic" | "trigger"; // Optional
+  visibility?: "private" | "public"; // Optional
+  tags?: string; // Optional, comma-separated
+  page?: number; // Optional, default 1
+  pageSize?: number; // Optional, default 10
+  sortBy?: string; // Optional
+  sortDirection?: "ASC" | "DESC"; // Optional
+  skipCache?: "true" | "false"; // Optional, default "false"
+};
+
+export type GetSegmentsQuery = {
+  search?: string; // Optional
+  categoryId?: number; // Optional
+  type?: "static" | "dynamic" | "trigger"; // Optional
+  page?: number; // Optional, default 1
+  pageSize?: number; // Optional, default 10
+  sortBy?: string; // Optional
+  sortDirection?: "ASC" | "DESC"; // Optional
+  skipCache?: "true" | "false"; // Optional, default "false"
+};
+
+export type GetSegmentMembersQuery = {
+  page?: number; // Optional, default 1
+  pageSize?: number; // Optional, default 10
+  sortBy?: string; // Optional
+  sortDirection?: "ASC" | "DESC"; // Optional
+};
+
+// Status Response Types
+
+export type ComputationStatusResponse = {
+  segment_id: number;
+  job_id: string;
+  status: "processing" | "completed" | "failed";
+  started_at: string;
+  completed_at?: string;
+  processed_count: number;
+  total_count: number;
+  message: string;
+  error?: string;
+};
+
+// Analytics Response Types
+
+export type HealthSummaryResponse = {
+  total_segments: number;
+  active_segments: number;
+  inactive_segments: number;
+  dynamic_segments: number;
+  static_segments: number;
+  trigger_segments: number;
+  last_24h_created: number;
+  last_7d_created: number;
+  last_30d_created: number;
+  health_score: number;
+  issues: string[];
+};
+
+export type CreationTrendResponse = {
+  period: string;
+  data: Array<{
+    date: string;
+    count: number;
+    type: string;
+  }>;
+};
+
+export type TypeDistributionResponse = {
+  dynamic: number;
+  static: number;
+  trigger: number;
+  total: number;
+};
+
+export type CategoryDistributionResponse = {
+  category_id: number;
+  category_name: string;
+  segment_count: number;
+  percentage: number;
+};
+
+export type LargestSegmentsResponse = {
+  segment_id: number;
+  name: string;
+  member_count: number;
+  type: string;
+  last_computed: string;
+};
+
+export type StaleSegmentsResponse = {
+  segment_id: number;
+  name: string;
+  last_computed: string;
+  days_since_computed: number;
+  refresh_frequency: string;
+};
+
+// Advanced Query Types
+
+export type SegmentHierarchyResponse = {
+  segment: SegmentType;
+  children: SegmentType[];
+  parent?: SegmentType;
+  depth: number;
+};
+
+export type GrowthTrendResponse = {
+  period: string;
+  data: Array<{
+    date: string;
+    member_count: number;
+    growth_rate: number;
+  }>;
+};
+
+export type PerformanceMetricsResponse = {
+  segment_id: number;
+  computation_time: number;
+  last_computed: string;
+  member_count: number;
+  growth_rate: number;
+  churn_rate: number;
+  engagement_score: number;
+};
+
+export type UsageInCampaignsResponse = {
+  campaign_id: number;
+  campaign_name: string;
+  usage_count: number;
+  last_used: string;
+};
+
+export type SegmentOverlapResponse = {
+  segment1_id: number;
+  segment2_id: number;
+  overlap_count: number;
+  overlap_percentage: number;
+  union_count: number;
+  intersection_count: number;
+};
+
+// Activation Types
+
+export type BatchActivationRequest = {
+  segment_ids: number[];
+  activate: boolean;
+};
+
+export type BatchActivationResponse = {
+  success_count: number;
+  failed_count: number;
+  results: Array<{
+    segment_id: number;
+    success: boolean;
+    error?: string;
+  }>;
+};
+
+// Advanced Search Types
+
+export type AdvancedSearchQuery = {
+  name?: string;
+  type?: "static" | "dynamic" | "trigger";
+  category?: number;
+  visibility?: "private" | "public";
+  creator?: number;
+  tags?: string[];
+  created_after?: string;
+  created_before?: string;
+  last_computed_after?: string;
+  last_computed_before?: string;
+  member_count_min?: number;
+  member_count_max?: number;
+  is_active?: boolean;
+  has_parent?: boolean;
+  is_empty?: boolean;
+  needs_refresh?: boolean;
+  sort_by?: string;
+  sort_direction?: "ASC" | "DESC";
+  page?: number;
+  page_size?: number;
+};
+
+// Tag Management Types
+
+export type TagManagementRequest = {
+  tags: string[];
+};
+
+export type TagManagementResponse = {
+  segment_id: number;
+  added_tags: string[];
+  removed_tags: string[];
+  current_tags: string[];
+};
+
+// Query Management Types
+
+export type QueryUpdateRequest = {
+  query: string;
+  validate?: boolean;
+};
+
+export type QueryValidationResponse = {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  estimated_member_count?: number;
+};
+
+// Size Estimation Types
+
+export type SizeEstimateRequest = {
+  force_recompute?: boolean;
+};
+
+export type SizeEstimateResponse = {
+  segment_id: number;
+  estimated_size: number;
+  confidence: number;
+  last_estimated: string;
+  method: string;
+};
+
+export type ExportStatusResponse = {
+  job_id: string;
+  segment_id: number;
+  format: "csv" | "json";
+  status: "processing" | "completed" | "failed";
+  progress: number;
+  total_items: number;
+  completed_at?: string;
+  download_url?: string;
+  error?: string;
+};
+
+export type PreviewResponse = {
+  preview_id: string;
+  sample_size: number;
+  total_records: number;
+  execution_time: string;
+  sample_data: any[];
+  view_full_preview: string;
+};
+
+export type PreviewSampleResponse = {
+  preview_id: string;
+  sample_size: number;
+  results: any[];
+};
+
+// Enums
+
+export enum HttpStatus {
+  OK = 200,
+  CREATED = 201,
+  ACCEPTED = 202,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  CONFLICT = 409,
+  INTERNAL_SERVER_ERROR = 500,
+}
+
+export enum SegmentTypeEnum {
+  STATIC = "static",
+  DYNAMIC = "dynamic",
+  TRIGGER = "trigger",
+}
+
+export enum VisibilityEnum {
+  PRIVATE = "private",
+  PUBLIC = "public",
+}
+
+export enum SortDirectionEnum {
+  ASC = "ASC",
+  DESC = "DESC",
+}
+
+export enum ExportFormatEnum {
+  CSV = "csv",
+  JSON = "json",
+}
+
+export enum ComputationStatusEnum {
+  PROCESSING = "processing",
+  COMPLETED = "completed",
+  FAILED = "failed",
+}
+
+// Legacy/Compatibility Types (for existing frontend components)
+
 export interface SegmentCondition {
   id: string;
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
+  operator:
+    | "equals"
+    | "not_equals"
+    | "contains"
+    | "not_contains"
+    | "greater_than"
+    | "less_than"
+    | "in"
+    | "not_in";
   value: string | number | string[];
-  type: 'string' | 'number' | 'boolean' | 'array';
+  type: "string" | "number" | "boolean" | "array";
 }
 
 export interface SegmentConditionGroup {
   id: string;
-  operator: 'AND' | 'OR';
-  conditionType: 'rule' | 'list' | 'segments' | '360';
+  operator: "AND" | "OR";
+  conditionType: "rule" | "list" | "segments" | "360";
   conditions: SegmentCondition[];
   listData?: {
     list_id?: number;
     list_description?: string;
-    list_type?: 'seed' | 'and' | 'standard';
+    list_type?: "seed" | "and" | "standard";
     subscriber_id_col_name?: string;
     subscriber_count?: number;
     file_delimiter?: string;
@@ -26,98 +601,21 @@ export interface SegmentConditionGroup {
   profileConditions?: SegmentCondition[]; // For 360 profile conditions
 }
 
-export type SegmentType = 'static' | 'dynamic' | 'trigger';
-export type SegmentVisibility = 'private' | 'public';
-export type SortDirection = 'ASC' | 'DESC';
-export type ExportFormat = 'csv' | 'json' | 'xml';
+// Legacy aliases for backward compatibility
+export type Segment = SegmentType;
+export type SegmentCategory = SegmentCategoryType;
+export type SegmentRule = SegmentRuleType;
+export type SegmentMember = SegmentMemberType;
+export type SegmentVisibility = "private" | "public";
+export type SortDirection = "ASC" | "DESC";
+export type ExportFormat = "csv" | "json";
 
-export interface Segment {
-  id?: number;
-  segment_id?: number;
-  name: string;
-  description?: string;
-  type: SegmentType;
-  tags?: string[];
-  conditions?: SegmentConditionGroup[];
-  criteria?: Record<string, unknown>; // Backend segment criteria definition
-  definition?: Record<string, unknown>;
-  customer_count?: number;
-  size_estimate?: number;
-  created_on?: string;
-  created_at?: string;
-  updated_on?: string;
-  updated_at?: string;
-  created_by?: number;
-  is_active?: boolean;
-  category?: number;
-  category_name?: string;
-  business_purpose?: string;
-  refresh_frequency?: string;
-  version?: string;
-  visibility?: SegmentVisibility;
-}
-
-export interface CreateSegmentRequest {
-  name: string;
-  type: SegmentType;
-  description?: string;
-  definition?: Record<string, unknown>;
-  size_estimate?: number;
-  category?: number;
-  refresh_frequency?: string;
-  version?: string;
-  tags?: string[];
-  visibility?: SegmentVisibility;
-  criteria?: Record<string, unknown>;
-  conditions?: SegmentConditionGroup[];
-}
-
-export interface UpdateSegmentRequest {
-  name?: string;
-  description?: string;
-  definition?: Record<string, unknown>;
-  size_estimate?: number;
-  category?: number;
-  business_purpose?: string;
-  refresh_frequency?: string;
-  version?: string;
-  tags?: string[];
-  visibility?: SegmentVisibility;
-  conditions?: SegmentConditionGroup[];
-  is_active?: boolean;
-}
-
-export interface SegmentFilters {
-  search?: string;
-  categoryId?: number;
-  type?: SegmentType;
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'id' | 'name' | 'type' | 'category' | 'created_at' | 'updated_at';
-  sortDirection?: SortDirection;
-  skipCache?: boolean;
-  tags?: string[];
-  is_active?: boolean;
-}
-
-export interface SegmentSearchFilters {
-  q?: string;
-  category?: number;
-  type?: SegmentType;
-  visibility?: SegmentVisibility;
-  tags?: string;
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'id' | 'name' | 'type' | 'created_at' | 'updated_at';
-  sortDirection?: SortDirection;
-  skipCache?: boolean;
-}
-
+// Legacy Response Types
 export interface SegmentResponse {
   success: boolean;
   message?: string;
-  data: Segment[];
-  segments?: Segment[];
+  data: SegmentType[];
+  segments?: SegmentType[];
   meta?: {
     total: number;
     page: number;
@@ -133,77 +631,35 @@ export interface SegmentResponse {
   limit?: number;
 }
 
-export interface DuplicateSegmentRequest {
-  new_name: string;
+export interface SegmentFilters {
+  search?: string;
+  categoryId?: number;
+  type?: "static" | "dynamic" | "trigger";
+  page?: number;
+  pageSize?: number;
+  sortBy?: "id" | "name" | "type" | "category" | "created_at" | "updated_at";
+  sortDirection?: SortDirection;
+  skipCache?: boolean;
+  tags?: string[];
+  is_active?: boolean;
 }
 
-export interface ValidateCriteriaRequest {
-  criteria: Record<string, unknown>;
-}
-
-export interface SegmentRule {
-  id?: number;
-  segment_id?: number;
-  rule_json: Record<string, unknown>;
-  rule_order?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface CreateSegmentRuleRequest {
-  rule_json: Record<string, unknown>;
-  rule_order?: number;
-}
-
-export interface UpdateSegmentRuleRequest {
-  rule_json?: Record<string, unknown>;
-  rule_order?: number;
-}
-
-export interface ValidateRulesRequest {
-  rules: Array<{
-    rule_json: Record<string, unknown>;
-    rule_order: number;
-  }>;
-  segment_type: SegmentType;
-}
-
-export interface ComputeSegmentRequest {
-  force_recompute?: boolean;
-}
-
-export interface BatchComputeRequest {
-  segment_ids: number[];
-  force_recompute?: boolean;
-}
-
-export interface ComputationStatus {
-  job_id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress?: number;
-  started_at?: string;
-  completed_at?: string;
-  error?: string;
-}
-
-export interface PreviewSegmentRequest {
-  criteria_override?: Record<string, unknown>;
-  limit?: number;
-}
-
-export interface PreviewCountRequest {
-  criteria_override?: Record<string, unknown>;
-}
-
-export interface SegmentMember {
-  customer_id: string | number;
-  joined_at?: string;
-  [key: string]: unknown;
+export interface SegmentSearchFilters {
+  q?: string;
+  category?: number;
+  type?: "static" | "dynamic" | "trigger";
+  visibility?: "private" | "public";
+  tags?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: "id" | "name" | "type" | "created_at" | "updated_at";
+  sortDirection?: SortDirection;
+  skipCache?: boolean;
 }
 
 export interface SegmentMembersResponse {
   success: boolean;
-  data: SegmentMember[];
+  data: SegmentMemberType[];
   meta?: {
     total: number;
     page: number;
@@ -212,56 +668,9 @@ export interface SegmentMembersResponse {
   };
 }
 
-export interface AddSegmentMembersRequest {
-  customer_ids: Array<string | number>;
-}
-
-export interface DeleteSegmentMembersRequest {
-  customer_ids: Array<string | number>;
-}
-
-export interface SearchSegmentMembersRequest {
-  search?: string;
-  page?: number;
-  pageSize?: number;
-}
-
-export interface ExportSegmentRequest {
-  format?: ExportFormat;
-  fields?: string[];
-  filters?: Record<string, unknown>;
-  include_metadata?: boolean;
-}
-
-export interface ExportStatus {
-  job_id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  download_url?: string;
-  expires_at?: string;
-  error?: string;
-}
-
-export interface SegmentCategory {
-  id: number;
-  name: string;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface CreateSegmentCategoryRequest {
-  name: string;
-  // Note: Backend only accepts 'name' field
-}
-
-export interface UpdateSegmentCategoryRequest {
-  name?: string;
-  // Note: Backend only accepts 'name' field
-}
-
 export interface SegmentCategoriesResponse {
   success: boolean;
-  data: SegmentCategory[];
+  data: SegmentCategoryType[];
   message?: string;
 }
 
@@ -269,114 +678,114 @@ export interface SegmentCategoriesResponse {
 export interface SegmentField {
   key: string;
   label: string;
-  type: 'string' | 'number' | 'boolean' | 'array';
+  type: "string" | "number" | "boolean" | "array";
   operators: string[];
 }
 
 export const SEGMENT_FIELDS: SegmentField[] = [
   {
-    key: 'customer_profile.device_category',
-    label: 'Device Category',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'in', 'not_in']
+    key: "customer_profile.device_category",
+    label: "Device Category",
+    type: "string",
+    operators: ["equals", "not_equals", "in", "not_in"],
   },
   {
-    key: 'customer_profile.age',
-    label: 'Age',
-    type: 'number',
-    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+    key: "customer_profile.age",
+    label: "Age",
+    type: "number",
+    operators: ["equals", "not_equals", "greater_than", "less_than"],
   },
   {
-    key: 'customer_profile.gender',
-    label: 'Gender',
-    type: 'string',
-    operators: ['equals', 'not_equals']
+    key: "customer_profile.gender",
+    label: "Gender",
+    type: "string",
+    operators: ["equals", "not_equals"],
   },
   {
-    key: 'customer_profile.location',
-    label: 'Location',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'contains', 'not_contains']
+    key: "customer_profile.location",
+    label: "Location",
+    type: "string",
+    operators: ["equals", "not_equals", "contains", "not_contains"],
   },
   {
-    key: 'customer_profile.subscription_status',
-    label: 'Subscription Status',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'in', 'not_in']
+    key: "customer_profile.subscription_status",
+    label: "Subscription Status",
+    type: "string",
+    operators: ["equals", "not_equals", "in", "not_in"],
   },
   {
-    key: 'customer_profile.total_spent',
-    label: 'Total Spent',
-    type: 'number',
-    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+    key: "customer_profile.total_spent",
+    label: "Total Spent",
+    type: "number",
+    operators: ["equals", "not_equals", "greater_than", "less_than"],
   },
   {
-    key: 'customer_profile.last_activity',
-    label: 'Last Activity',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
-  }
+    key: "customer_profile.last_activity",
+    label: "Last Activity",
+    type: "string",
+    operators: ["equals", "not_equals", "greater_than", "less_than"],
+  },
 ];
 
 // 360 Profile specific fields
 export const PROFILE_360_FIELDS: SegmentField[] = [
   {
-    key: 'engagement_score',
-    label: 'Engagement Score',
-    type: 'number',
-    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+    key: "engagement_score",
+    label: "Engagement Score",
+    type: "number",
+    operators: ["equals", "not_equals", "greater_than", "less_than"],
   },
   {
-    key: 'lifetime_value',
-    label: 'Lifetime Value',
-    type: 'number',
-    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+    key: "lifetime_value",
+    label: "Lifetime Value",
+    type: "number",
+    operators: ["equals", "not_equals", "greater_than", "less_than"],
   },
   {
-    key: 'churn_risk',
-    label: 'Churn Risk',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'in', 'not_in']
+    key: "churn_risk",
+    label: "Churn Risk",
+    type: "string",
+    operators: ["equals", "not_equals", "in", "not_in"],
   },
   {
-    key: 'purchase_frequency',
-    label: 'Purchase Frequency',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'in', 'not_in']
+    key: "purchase_frequency",
+    label: "Purchase Frequency",
+    type: "string",
+    operators: ["equals", "not_equals", "in", "not_in"],
   },
   {
-    key: 'preferred_channel',
-    label: 'Preferred Channel',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'in', 'not_in']
+    key: "preferred_channel",
+    label: "Preferred Channel",
+    type: "string",
+    operators: ["equals", "not_equals", "in", "not_in"],
   },
   {
-    key: 'customer_segment',
-    label: 'Customer Segment',
-    type: 'string',
-    operators: ['equals', 'not_equals', 'in', 'not_in']
+    key: "customer_segment",
+    label: "Customer Segment",
+    type: "string",
+    operators: ["equals", "not_equals", "in", "not_in"],
   },
   {
-    key: 'satisfaction_score',
-    label: 'Satisfaction Score',
-    type: 'number',
-    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
+    key: "satisfaction_score",
+    label: "Satisfaction Score",
+    type: "number",
+    operators: ["equals", "not_equals", "greater_than", "less_than"],
   },
   {
-    key: 'recency_score',
-    label: 'Recency Score',
-    type: 'number',
-    operators: ['equals', 'not_equals', 'greater_than', 'less_than']
-  }
+    key: "recency_score",
+    label: "Recency Score",
+    type: "number",
+    operators: ["equals", "not_equals", "greater_than", "less_than"],
+  },
 ];
 
 export const OPERATOR_LABELS: Record<string, string> = {
-  equals: 'Equals',
-  not_equals: 'Not Equals',
-  contains: 'Contains',
-  not_contains: 'Does Not Contain',
-  greater_than: 'Greater Than',
-  less_than: 'Less Than',
-  in: 'In',
-  not_in: 'Not In'
+  equals: "Equals",
+  not_equals: "Not Equals",
+  contains: "Contains",
+  not_contains: "Does Not Contain",
+  greater_than: "Greater Than",
+  less_than: "Less Than",
+  in: "In",
+  not_in: "Not In",
 };
