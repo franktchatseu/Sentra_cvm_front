@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,7 +9,6 @@ import {
   X,
   Users,
   ArrowLeft,
-  Eye,
   Grid,
   List,
 } from "lucide-react";
@@ -191,6 +190,10 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
   const [filteredSegments, setFilteredSegments] = useState<Segment[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showAssignDropdown, setShowAssignDropdown] = useState(false);
+  const [allSegmentsList, setAllSegmentsList] = useState<Segment[]>([]);
+  const [assigningSegment, setAssigningSegment] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadCategorySegments = useCallback(async () => {
     setIsLoading(true);
@@ -237,6 +240,73 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
     }
   }, [searchTerm, segments]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowAssignDropdown(false);
+      }
+    };
+
+    if (showAssignDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showAssignDropdown]);
+
+  const loadUnassignedSegments = async () => {
+    try {
+      console.log("Loading unassigned segments...");
+      const response = await segmentService.getSegments({ skipCache: true });
+      const allSegments = response.data || [];
+      console.log("All segments:", allSegments);
+
+      // Filter out segments that are already in the current category
+      const unassignedSegments = allSegments.filter((segment) => {
+        const segmentCategory =
+          typeof segment.category === "string"
+            ? parseInt(segment.category, 10)
+            : segment.category;
+        return segmentCategory !== category?.id;
+      });
+
+      console.log("Unassigned segments:", unassignedSegments);
+      setAllSegmentsList(unassignedSegments);
+    } catch (err) {
+      console.error("Failed to load unassigned segments:", err);
+      setAllSegmentsList([]);
+    }
+  };
+
+  const handleAssignSegment = async (segmentId: number) => {
+    if (!category) return;
+
+    try {
+      setAssigningSegment(true);
+      console.log(`Assigning segment ${segmentId} to category ${category.id}`);
+
+      // TODO: Implement segment assignment API call
+      // await segmentService.updateSegment(segmentId, { category: category.id });
+
+      // For now, just show success message
+      console.log("Segment assignment would happen here");
+
+      setShowAssignDropdown(false);
+      // Refresh the segments in the modal
+      loadCategorySegments();
+    } catch (err) {
+      console.error("Failed to assign segment:", err);
+    } finally {
+      setAssigningSegment(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return createPortal(
@@ -272,6 +342,50 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
                 placeholder="Search segments..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
               />
+            </div>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => {
+                  if (!showAssignDropdown) {
+                    loadUnassignedSegments();
+                  }
+                  setShowAssignDropdown(!showAssignDropdown);
+                }}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
+                disabled={assigningSegment}
+              >
+                <Plus className="w-4 h-4" />
+                Assign Existing Segments
+              </button>
+
+              {/* Dropdown for available segments */}
+              {showAssignDropdown && (
+                <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
+                  {allSegmentsList.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                      No available segments to assign
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {allSegmentsList.map((segment) => (
+                        <button
+                          key={segment.id}
+                          onClick={() => handleAssignSegment(segment.id)}
+                          disabled={assigningSegment}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
+                        >
+                          <div className="font-medium text-gray-900 text-sm">
+                            {segment.name}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {segment.description || "No description"}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -677,10 +791,11 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsSegmentsModalOpen(true);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="View & Assign Segments"
+                  className="text-sm font-medium transition-colors"
+                  style={{ color: color.primary.accent }}
+                  title="View Segments"
                 >
-                  <Eye className="w-4 h-4 text-gray-600" />
+                  View Segments
                 </button>
               </div>
             </div>
@@ -710,10 +825,11 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsSegmentsModalOpen(true);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="View & Assign Segments"
+                  className="text-sm font-medium transition-colors"
+                  style={{ color: color.primary.accent }}
+                  title="View Segments"
                 >
-                  <Eye className="w-4 h-4 text-gray-600" />
+                  View Segments
                 </button>
                 <button
                   onClick={() => {
