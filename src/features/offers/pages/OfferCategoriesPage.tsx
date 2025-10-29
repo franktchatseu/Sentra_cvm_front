@@ -476,6 +476,18 @@ export default function OfferCategoriesPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [categoryOfferCounts, setCategoryOfferCounts] = useState<
+    Record<
+      number,
+      {
+        totalOffers: number;
+        activeOffers: number;
+        expiredOffers: number;
+        draftOffers: number;
+        pendingOffers: number;
+      }
+    >
+  >({});
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<
@@ -507,6 +519,14 @@ export default function OfferCategoriesPage() {
     "all" | "unused" | "popular" | "active" | "inactive"
   >("all");
 
+  // Advanced search states
+  const [advancedSearch, setAdvancedSearch] = useState({
+    exactName: "",
+    isActive: null as boolean | null,
+    createdAfter: "",
+    createdBefore: "",
+  });
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -531,6 +551,26 @@ export default function OfferCategoriesPage() {
     setFilterType(type);
   };
 
+  // Check if advanced search has any active filters
+  const hasAdvancedFilters = () => {
+    return (
+      advancedSearch.exactName.trim() !== "" ||
+      advancedSearch.isActive !== null ||
+      advancedSearch.createdAfter !== "" ||
+      advancedSearch.createdBefore !== ""
+    );
+  };
+
+  // Clear all advanced search filters
+  const clearAdvancedSearch = () => {
+    setAdvancedSearch({
+      exactName: "",
+      isActive: null,
+      createdAfter: "",
+      createdBefore: "",
+    });
+  };
+
   useEffect(() => {
     const loadData = async () => {
       // Load stats first
@@ -548,7 +588,7 @@ export default function OfferCategoriesPage() {
       await loadCategories(true); // Always skip cache for fresh data
     };
     loadData();
-  }, [debouncedSearchTerm, filterType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, filterType, advancedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAllOffers = async () => {
     try {
@@ -628,11 +668,7 @@ export default function OfferCategoriesPage() {
   const testCategoryById = async () => {
     try {
       // Test with ID 1 (Free shipping)
-      const response = await offerCategoryService.getCategoryById(1, true);
-      console.log("🔍 Category By ID (1) Response:", response);
-      if (response.success && response.data) {
-        console.log("📊 Category By ID Data:", response.data);
-      }
+      await offerCategoryService.getCategoryById(1, true);
     } catch (err) {
       console.error("Failed to load category by ID:", err);
     }
@@ -641,14 +677,7 @@ export default function OfferCategoriesPage() {
   const testCategoryByName = async () => {
     try {
       // Test with "Free shipping" name
-      const response = await offerCategoryService.getCategoryByName(
-        "Free shipping",
-        true
-      );
-      console.log("🏷️ Category By Name (Free shipping) Response:", response);
-      if (response.success && response.data) {
-        console.log("📊 Category By Name Data:", response.data);
-      }
+      await offerCategoryService.getCategoryByName("Free shipping", true);
     } catch (err) {
       console.error("Failed to load category by name:", err);
     }
@@ -659,14 +688,110 @@ export default function OfferCategoriesPage() {
     return 0;
   };
 
+  // Load offer counts for all categories at once
+  const loadAllOfferCounts = async () => {
+    try {
+      console.log("🔍 Loading offer counts for ALL categories...");
+      const response = await offerCategoryService.getOfferCounts(true);
+      console.log("📊 All Categories Offer Counts Response:", response);
+
+      if (response.success && response.data) {
+        console.log("📈 All Categories Offer Counts Data:", response.data);
+
+        // Convert array to object keyed by categoryId
+        const countsMap: Record<
+          number,
+          {
+            totalOffers: number;
+            activeOffers: number;
+            expiredOffers: number;
+            draftOffers: number;
+          }
+        > = {};
+
+        response.data.forEach((item: any) => {
+          countsMap[item.categoryId] = {
+            totalOffers: item.totalOffers || 0,
+            activeOffers: item.activeOffers || 0,
+            expiredOffers: item.expiredOffers || 0,
+            draftOffers: item.draftOffers || 0,
+          };
+        });
+
+        console.log("🗂️ Processed counts map:", countsMap);
+        setCategoryOfferCounts(countsMap);
+      }
+    } catch (err) {
+      console.error("❌ Failed to load all offer counts:", err);
+    }
+  };
+
+  // Test getCategoryActiveOfferCount for a specific category
+  const testCategoryActiveOfferCount = async () => {
+    try {
+      console.log("🔍 Testing getCategoryActiveOfferCount for category ID: 1");
+      const response = await offerCategoryService.getCategoryActiveOfferCount(
+        1,
+        true
+      );
+      console.log(
+        "📊 Category Active Offer Count Response for ID 1:",
+        response
+      );
+
+      if (response.success && response.data) {
+        console.log(
+          "📈 Category Active Offer Count Data for ID 1:",
+          response.data
+        );
+      }
+    } catch (err) {
+      console.error(
+        "❌ Failed to load active offer count for category 1:",
+        err
+      );
+    }
+  };
+
+  // Test getActiveOfferCounts for all categories
+  const testActiveOfferCounts = async () => {
+    try {
+      console.log("🔍 Testing getActiveOfferCounts for ALL categories...");
+      const response = await offerCategoryService.getActiveOfferCounts(true);
+      console.log("📊 All Categories Active Offer Counts Response:", response);
+
+      if (response.success && response.data) {
+        console.log(
+          "📈 All Categories Active Offer Counts Data:",
+          response.data
+        );
+      }
+    } catch (err) {
+      console.error(
+        "❌ Failed to load active offer counts for all categories:",
+        err
+      );
+    }
+  };
+
   const loadCategories = async (skipCache = false) => {
     try {
       setLoading(true);
 
       let response;
 
-      // Choose endpoint based on filter type
-      if (debouncedSearchTerm) {
+      // Choose endpoint based on filter type and advanced search
+      if (hasAdvancedFilters()) {
+        // Use advanced search when advanced filters are set
+        response = await offerCategoryService.advancedSearch({
+          name: advancedSearch.exactName.trim() || undefined,
+          is_active: advancedSearch.isActive,
+          created_after: advancedSearch.createdAfter || undefined,
+          created_before: advancedSearch.createdBefore || undefined,
+          limit: 50,
+          skipCache: skipCache,
+        });
+      } else if (debouncedSearchTerm) {
         // Use search endpoint when there's a search term
         response = await offerCategoryService.searchCategories({
           q: debouncedSearchTerm,
@@ -726,6 +851,15 @@ export default function OfferCategoriesPage() {
 
       setOfferCategories(categoriesWithCounts);
       setError("");
+
+      // Load offer counts for all categories at once
+      await loadAllOfferCounts();
+
+      // Test getCategoryActiveOfferCount
+      await testCategoryActiveOfferCount();
+
+      // Test getActiveOfferCounts
+      await testActiveOfferCounts();
     } catch (err) {
       console.error("Failed to load categories:", err);
       setError(err instanceof Error ? err.message : "Error loading categories");
@@ -1031,30 +1165,108 @@ export default function OfferCategoriesPage() {
       </div>
 
       {/* Active Filters Display */}
-      {filterType !== "all" && (
+      {(filterType !== "all" || hasAdvancedFilters()) && (
         <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
           <span className={`text-sm font-medium ${tw.textPrimary} py-2`}>
             Active filters:
           </span>
-          <span
-            className="inline-flex items-center px-3 py-1.5 text-sm rounded-full border"
-            style={{
-              backgroundColor: `${color.primary.accent}20`, // 20% opacity
-              color: color.text.primary, // Black text
-              borderColor: color.primary.accent,
-            }}
-          >
-            {filterType === "unused" && "Unused Categories"}
-            {filterType === "popular" && "Popular Categories"}
-            {filterType === "active" && "Active Categories"}
-            {filterType === "inactive" && "Inactive Categories"}
-            <button
-              onClick={() => setFilterType("all")}
-              className="ml-2 hover:opacity-70 transition-opacity"
+
+          {/* Basic filter type */}
+          {filterType !== "all" && (
+            <span
+              className="inline-flex items-center px-3 py-1.5 text-sm rounded-full border"
+              style={{
+                backgroundColor: `${color.primary.accent}20`, // 20% opacity
+                color: color.text.primary, // Black text
+                borderColor: color.primary.accent,
+              }}
             >
-              ×
-            </button>
-          </span>
+              {filterType === "unused" && "Unused Categories"}
+              {filterType === "popular" && "Popular Categories"}
+              {filterType === "active" && "Active Categories"}
+              {filterType === "inactive" && "Inactive Categories"}
+              <button
+                onClick={() => setFilterType("all")}
+                className="ml-2 hover:opacity-70 transition-opacity"
+              >
+                ×
+              </button>
+            </span>
+          )}
+
+          {/* Advanced search filters */}
+          {hasAdvancedFilters() && (
+            <>
+              {advancedSearch.exactName.trim() && (
+                <span
+                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-full border"
+                  style={{
+                    backgroundColor: `${color.primary.accent}20`,
+                    color: color.text.primary,
+                    borderColor: color.primary.accent,
+                  }}
+                >
+                  Name: "{advancedSearch.exactName}"
+                  <button
+                    onClick={() =>
+                      setAdvancedSearch((prev) => ({ ...prev, exactName: "" }))
+                    }
+                    className="ml-2 hover:opacity-70 transition-opacity"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {advancedSearch.isActive !== null && (
+                <span
+                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-full border"
+                  style={{
+                    backgroundColor: `${color.primary.accent}20`,
+                    color: color.text.primary,
+                    borderColor: color.primary.accent,
+                  }}
+                >
+                  Status: {advancedSearch.isActive ? "Active" : "Inactive"}
+                  <button
+                    onClick={() =>
+                      setAdvancedSearch((prev) => ({ ...prev, isActive: null }))
+                    }
+                    className="ml-2 hover:opacity-70 transition-opacity"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {(advancedSearch.createdAfter ||
+                advancedSearch.createdBefore) && (
+                <span
+                  className="inline-flex items-center px-3 py-1.5 text-sm rounded-full border"
+                  style={{
+                    backgroundColor: `${color.primary.accent}20`,
+                    color: color.text.primary,
+                    borderColor: color.primary.accent,
+                  }}
+                >
+                  Date: {advancedSearch.createdAfter || "Any"} to{" "}
+                  {advancedSearch.createdBefore || "Any"}
+                  <button
+                    onClick={() =>
+                      setAdvancedSearch((prev) => ({
+                        ...prev,
+                        createdAfter: "",
+                        createdBefore: "",
+                      }))
+                    }
+                    className="ml-2 hover:opacity-70 transition-opacity"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -1124,13 +1336,13 @@ export default function OfferCategoriesPage() {
                   {category.name}
                 </h3>
                 <div className="flex items-center space-x-1">
-                  <button
+                  {/* <button
                     onClick={() => handleViewDetails(category)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     title="View Details"
                   >
                     <Eye className="w-4 h-4 text-gray-600" />
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => handleEditCategory(category)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1155,8 +1367,25 @@ export default function OfferCategoriesPage() {
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                 <span className="text-sm text-gray-600">
-                  {category.offer_count || 0} offer
-                  {category.offer_count !== 1 ? "s" : ""}
+                  {categoryOfferCounts[category.id] ? (
+                    <>
+                      {categoryOfferCounts[category.id].totalOffers} offer
+                      {categoryOfferCounts[category.id].totalOffers !== 1
+                        ? "s"
+                        : ""}
+                      {categoryOfferCounts[category.id].activeOffers > 0 && (
+                        <span className="text-green-600 ml-1">
+                          ({categoryOfferCounts[category.id].activeOffers}{" "}
+                          active)
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {category.offer_count || 0} offer
+                      {category.offer_count !== 1 ? "s" : ""}
+                    </>
+                  )}
                 </span>
                 <button
                   onClick={() => handleViewOffers(category)}
@@ -1184,8 +1413,25 @@ export default function OfferCategoriesPage() {
                     {category.name}
                   </h3>
                   <p className="text-sm text-gray-600 mt-0.5">
-                    {category.offer_count || 0} offer
-                    {category.offer_count !== 1 ? "s" : ""}
+                    {categoryOfferCounts[category.id] ? (
+                      <>
+                        {categoryOfferCounts[category.id].totalOffers} offer
+                        {categoryOfferCounts[category.id].totalOffers !== 1
+                          ? "s"
+                          : ""}
+                        {categoryOfferCounts[category.id].activeOffers > 0 && (
+                          <span className="text-green-600 ml-1">
+                            ({categoryOfferCounts[category.id].activeOffers}{" "}
+                            active)
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {category.offer_count || 0} offer
+                        {category.offer_count !== 1 ? "s" : ""}
+                      </>
+                    )}
                   </p>
                 </div>
                 <button
@@ -1198,13 +1444,13 @@ export default function OfferCategoriesPage() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <button
+                {/* <button
                   onClick={() => handleViewDetails(category)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="View Details"
                 >
                   <Eye className="w-4 h-4 text-gray-600" />
-                </button>
+                </button> */}
                 <button
                   onClick={() => handleEditCategory(category)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1320,11 +1566,113 @@ export default function OfferCategoriesPage() {
                   </div>
                 </div>
 
+                {/* Advanced Search Section */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className={`text-sm font-medium ${tw.textPrimary} mb-4`}>
+                    Advanced Search
+                  </h3>
+
+                  <div className="space-y-4">
+                    {/* Exact Name Search */}
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${tw.textSecondary} mb-2`}
+                      >
+                        Exact Name Match
+                      </label>
+                      <input
+                        type="text"
+                        value={advancedSearch.exactName}
+                        onChange={(e) =>
+                          setAdvancedSearch((prev) => ({
+                            ...prev,
+                            exactName: e.target.value,
+                          }))
+                        }
+                        placeholder="Enter exact category name..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Status Filter */}
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${tw.textSecondary} mb-2`}
+                      >
+                        Status
+                      </label>
+                      <select
+                        value={
+                          advancedSearch.isActive === null
+                            ? ""
+                            : advancedSearch.isActive.toString()
+                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? null
+                              : e.target.value === "true";
+                          setAdvancedSearch((prev) => ({
+                            ...prev,
+                            isActive: value,
+                          }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">All Status</option>
+                        <option value="true">Active Only</option>
+                        <option value="false">Inactive Only</option>
+                      </select>
+                    </div>
+
+                    {/* Date Range */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          className={`block text-sm font-medium ${tw.textSecondary} mb-2`}
+                        >
+                          Created After
+                        </label>
+                        <input
+                          type="date"
+                          value={advancedSearch.createdAfter}
+                          onChange={(e) =>
+                            setAdvancedSearch((prev) => ({
+                              ...prev,
+                              createdAfter: e.target.value,
+                            }))
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          className={`block text-sm font-medium ${tw.textSecondary} mb-2`}
+                        >
+                          Created Before
+                        </label>
+                        <input
+                          type="date"
+                          value={advancedSearch.createdBefore}
+                          onChange={(e) =>
+                            setAdvancedSearch((prev) => ({
+                              ...prev,
+                              createdBefore: e.target.value,
+                            }))
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex space-x-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
                       setFilterType("all");
+                      clearAdvancedSearch();
                     }}
                     className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
                   >

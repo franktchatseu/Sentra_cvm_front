@@ -103,10 +103,11 @@ class OfferCategoryService {
   }
 
   async getUsageTrends(
-    params: DateRangeParams = {}
+    params: FilterParams = {}
   ): Promise<UsageTrendsResponse> {
     const queryParams = new URLSearchParams();
-    if (params.days) queryParams.append("days", params.days.toString());
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
     if (params.skipCache) queryParams.append("skipCache", "true");
 
     const query = queryParams.toString();
@@ -116,11 +117,16 @@ class OfferCategoryService {
   }
 
   async getPerformanceByType(
-    skipCache: boolean = false
+    params: FilterParams = {}
   ): Promise<PerformanceByTypeResponse> {
-    const params = skipCache ? "?skipCache=true" : "";
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
     return this.request<PerformanceByTypeResponse>(
-      `/performance-by-type${params}`
+      `/performance-by-type${query ? `?${query}` : ""}`
     );
   }
 
@@ -144,7 +150,7 @@ class OfferCategoryService {
   ): Promise<OfferCategoryListResponse> {
     const queryParams = new URLSearchParams();
     if (params.name) queryParams.append("name", params.name);
-    if (params.is_active !== undefined)
+    if (params.is_active !== undefined && params.is_active !== null)
       queryParams.append("is_active", params.is_active.toString());
     if (params.created_by)
       queryParams.append("created_by", params.created_by.toString());

@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search, Plus } from 'lucide-react';
-import { ProductCategory } from '../../features/products/types/productCategory';
-import { productCategoryService } from '../../features/products/services/productCategoryService';
-import { color } from '../utils/utils';
+import { useState, useEffect, useRef } from "react";
+import { ChevronDown, Search, Plus } from "lucide-react";
+import { ProductCategory } from "../../features/products/types/productCategory";
+import { productCategoryService } from "../../features/products/services/productCategoryService";
+import { color } from "../utils/utils";
 
 interface CategorySelectorProps {
   value?: number;
@@ -21,11 +21,11 @@ export default function CategorySelector({
   disabled = false,
   allowCreate = false,
   onCreateCategory,
-  className = ""
+  className = "",
 }: CategorySelectorProps) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,14 +38,17 @@ export default function CategorySelector({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
-        setSearchTerm('');
+        setSearchTerm("");
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -58,27 +61,34 @@ export default function CategorySelector({
     try {
       setIsLoading(true);
       setError(null);
-      const response = await productCategoryService.getCategories();
-      setCategories(response.categories);
+      const response = await productCategoryService.getAllCategories({
+        limit: 100,
+        skipCache: true,
+      });
+      setCategories(response.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load categories');
-      console.error('Failed to load categories:', err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load categories"
+      );
+      console.error("Failed to load categories:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredCategories = categories.filter(
+    (category) =>
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (category.description &&
+        category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const selectedCategory = categories.find(cat => cat.id === value);
+  const selectedCategory = categories.find((cat) => cat.id === value);
 
   const handleSelect = (categoryId: number | undefined) => {
     onChange(categoryId);
     setIsOpen(false);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const handleCreateNew = () => {
@@ -86,7 +96,7 @@ export default function CategorySelector({
       onCreateCategory();
     }
     setIsOpen(false);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   return (
@@ -96,14 +106,23 @@ export default function CategorySelector({
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`flex-1 px-3 py-2 text-left border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-400'
-            }`}
+          className={`flex-1 px-3 py-2 text-left border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            disabled
+              ? "bg-gray-100 cursor-not-allowed"
+              : "bg-white hover:border-gray-400"
+          }`}
         >
           <div className="flex items-center justify-between">
-            <span className={selectedCategory ? 'text-gray-900' : 'text-gray-500'}>
+            <span
+              className={selectedCategory ? "text-gray-900" : "text-gray-500"}
+            >
               {selectedCategory ? selectedCategory.name : placeholder}
             </span>
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 transition-transform ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
           </div>
         </button>
 
@@ -115,10 +134,12 @@ export default function CategorySelector({
             className="px-3 py-2 text-white rounded-lg transition-colors flex items-center justify-center text-sm"
             style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.accent;
+              (e.target as HTMLButtonElement).style.backgroundColor =
+                color.primary.accent;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
+              (e.target as HTMLButtonElement).style.backgroundColor =
+                color.primary.action;
             }}
             title="Create new catalog"
           >
@@ -145,12 +166,16 @@ export default function CategorySelector({
 
           <div className="max-h-48 overflow-y-auto">
             {isLoading ? (
-              <div className="px-4 py-3 text-sm text-gray-500 text-center">Loading...</div>
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                Loading...
+              </div>
             ) : error ? (
-              <div className="px-4 py-3 text-sm text-red-500 text-center">{error}</div>
+              <div className="px-4 py-3 text-sm text-red-500 text-center">
+                {error}
+              </div>
             ) : filteredCategories.length === 0 ? (
               <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                {searchTerm ? 'No categories found' : 'No categories available'}
+                {searchTerm ? "No categories found" : "No categories available"}
               </div>
             ) : (
               <>
@@ -158,13 +183,20 @@ export default function CategorySelector({
                   <button
                     key={category.id}
                     onClick={() => handleSelect(category.id)}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[${color.primary.accent}]/10 flex items-center justify-between ${value === category.id ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]` : 'text-gray-900'
-                      }`}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-[${
+                      color.primary.accent
+                    }]/10 flex items-center justify-between ${
+                      value === category.id
+                        ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
+                        : "text-gray-900"
+                    }`}
                   >
                     <div>
                       <div className="font-medium">{category.name}</div>
                       {category.description && (
-                        <div className="text-xs text-gray-500 mt-0.5">{category.description}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {category.description}
+                        </div>
                       )}
                     </div>
                     {category.productCount !== undefined && (
@@ -179,7 +211,9 @@ export default function CategorySelector({
                 {allowCreate && (
                   <div className="border-t border-gray-200">
                     <button
-                      onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
+                      onClick={
+                        onCreateCategory ? onCreateCategory : handleCreateNew
+                      }
                       className="w-full px-4 py-2 text-left text-sm text-[${color.primary.accent}] hover:bg-[${color.primary.accent}]/10 flex items-center"
                     >
                       <Plus className="w-4 h-4 mr-2" />

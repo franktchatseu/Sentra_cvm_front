@@ -1,6 +1,6 @@
-import { Fragment, useState } from 'react';
-import { Listbox, Transition } from '@headlessui/react';
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
+import { Fragment, useState } from "react";
+import { Listbox, Transition } from "@headlessui/react";
+import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 
 interface SelectOption {
   value: string | number;
@@ -27,34 +27,40 @@ export default function HeadlessSelect({
   disabled = false,
   error = false,
   className = "",
-  searchable = false
+  searchable = false,
 }: HeadlessSelectProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find((option) => option.value === value);
 
   const filteredOptions = searchable
-    ? options.filter(option =>
-      option.label.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    ? options.filter((option) =>
+        option.label.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     : options;
 
   return (
     <div className={`relative ${className}`}>
       <Listbox value={value} onChange={onChange} disabled={disabled}>
         <div className="relative">
-          <Listbox.Button className={`
+          <Listbox.Button
+            className={`
             relative w-full cursor-default rounded-lg bg-white py-3 pl-3 pr-10 text-left shadow-sm border transition-all duration-200
-            ${error
-              ? 'border-red-300'
-              : 'border-gray-300'
-            }
-            ${disabled
-              ? 'bg-gray-50 text-gray-500 cursor-not-allowed'
-              : 'hover:border-gray-400'
+            ${error ? "border-red-300" : "border-gray-300"}
+            ${
+              disabled
+                ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                : "hover:border-gray-400"
             }
             focus:outline-none focus:ring-0 focus:border-gray-300
-          `}>            <span className={`block text-sm ${selectedOption ? 'text-gray-900' : 'text-gray-500'}`}>
+          `}
+          >
+            {" "}
+            <span
+              className={`block text-sm ${
+                selectedOption ? "text-gray-900" : "text-gray-500"
+              }`}
+            >
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -96,16 +102,21 @@ export default function HeadlessSelect({
                     value={option.value}
                     disabled={option.disabled}
                     className={({ active, disabled }) =>
-                      `relative cursor-default select-none py-2.5 pl-10 pr-4 transition-colors duration-150 ${active ? 'bg-gray-100 text-gray-900' : 'text-gray-900'
-                      } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      `relative cursor-default select-none py-2.5 pl-10 pr-4 transition-colors duration-150 ${
+                        active ? "bg-gray-100 text-gray-900" : "text-gray-900"
+                      } ${
+                        disabled
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer"
                       }`
                     }
                   >
                     {({ selected }) => (
                       <>
                         <span
-                          className={`block ${selected ? 'font-medium' : 'font-normal'
-                            }`}
+                          className={`block ${
+                            selected ? "font-medium" : "font-normal"
+                          }`}
                         >
                           {option.label}
                         </span>

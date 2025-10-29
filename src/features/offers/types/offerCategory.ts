@@ -142,35 +142,35 @@ export interface ActiveOfferCountsResponse {
 export interface UsageTrendsResponse {
   success: boolean;
   data: Array<{
-    categoryId: number;
-    categoryName: string;
-    trends: Array<{
-      date: string;
-      offerCount: number;
-      activeOfferCount: number;
-    }>;
+    category_name: string;
+    year: number;
+    month: number;
+    offers_created: number;
   }>;
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
   source: "cache" | "database" | "database-forced";
 }
 
 export interface PerformanceByTypeResponse {
   success: boolean;
   data: Array<{
-    categoryId: number;
-    categoryName: string;
-    offerTypes: {
-      data: number;
-      voice: number;
-      sms: number;
-      combo: number;
-      voucher: number;
-      loyalty: number;
-      discount: number;
-      bundle: number;
-      bonus: number;
-      other: number;
-    };
+    category_name: string;
+    offer_type: string;
+    offer_count: number;
+    avg_discount_percentage: number;
+    avg_discount_amount: number;
   }>;
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
   source: "cache" | "database" | "database-forced";
 }
 

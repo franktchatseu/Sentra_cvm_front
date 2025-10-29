@@ -10,12 +10,13 @@ import {
   BarChart,
   Eye,
 } from "lucide-react";
-import { CreateOfferRequest, Offer } from "../types/offer";
+import { CreateOfferRequest, Offer, OfferTypeEnum } from "../types/offer";
 import { Product } from "../../products/types/product";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
-import { OfferCategory } from "../types/offerCategory";
+import { productCategoryService } from "../../products/services/productCategoryService";
+import { OfferCategoryType } from "../types/offerCategory";
 import ProductSelector from "../../products/components/ProductSelector";
 import OfferCreativeStep from "../components/OfferCreativeStep";
 import OfferTrackingStep from "../components/OfferTrackingStep";
@@ -93,7 +94,7 @@ interface StepProps {
   isLoading?: boolean;
   validationErrors?: Record<string, string>;
   clearValidationErrors?: () => void;
-  offerCategories?: OfferCategory[];
+  offerCategories?: OfferCategoryType[];
   categoriesLoading?: boolean;
   onSaveDraft?: () => void;
   onCancel?: () => void;
@@ -200,6 +201,34 @@ function BasicInfoStep({
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Offer Code *
+          </label>
+          <input
+            type="text"
+            value={formData.code || ""}
+            onChange={(e) => {
+              setFormData({ ...formData, code: e.target.value });
+              if (validationErrors?.code && clearValidationErrors) {
+                clearValidationErrors();
+              }
+            }}
+            placeholder="e.g., SUMMER_DATA_2024"
+            className={`w-full px-3 py-1.5 border rounded-md focus:outline-none transition-all duration-200 text-sm placeholder:text-sm ${
+              validationErrors?.code ? "border-red-500" : "border-gray-300"
+            }`}
+            required
+          />
+          {validationErrors?.code && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.code}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            A unique, descriptive code to identify this offer in your business
+            operations
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Description
           </label>
           <textarea
@@ -220,21 +249,22 @@ function BasicInfoStep({
           <HeadlessSelect
             options={[
               { value: "", label: "Select offer type" },
-              { value: "STV", label: "STV" },
-              {
-                value: "Short Text (SMS/USSD)",
-                label: "Short Text (SMS/USSD)",
-              },
-              { value: "Email", label: "Email" },
-              { value: "Voice Push", label: "Voice Push" },
-              { value: "WAP Push", label: "WAP Push" },
-              { value: "Rich Media", label: "Rich Media" },
+              { value: "data", label: "Data" },
+              { value: "voice", label: "Voice" },
+              { value: "sms", label: "SMS" },
+              { value: "combo", label: "Combo" },
+              { value: "voucher", label: "Voucher" },
+              { value: "loyalty", label: "Loyalty" },
+              { value: "discount", label: "Discount" },
+              { value: "bundle", label: "Bundle" },
+              { value: "bonus", label: "Bonus" },
+              { value: "other", label: "Other" },
             ]}
             value={formData.offer_type || ""}
             onChange={(value) => {
               setFormData({
                 ...formData,
-                offer_type: value ? String(value) : undefined,
+                offer_type: (value as OfferTypeEnum) || "data",
               });
               if (validationErrors?.offer_type && clearValidationErrors) {
                 clearValidationErrors();
@@ -253,37 +283,80 @@ function BasicInfoStep({
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Catalog *
           </label>
-          <HeadlessSelect
-            options={[
-              {
-                value: "",
-                label: categoriesLoading
-                  ? "Loading catalogs..."
-                  : "Select catalog",
-              },
-              ...(offerCategories || []).map((category) => ({
-                value: category.id,
-                label: category.name,
-              })),
-            ]}
-            value={formData.category_id?.toString() || ""}
-            onChange={(value) => {
-              setFormData({
-                ...formData,
-                category_id: value ? Number(value) : undefined,
-              });
-              if (validationErrors?.category_id && clearValidationErrors) {
-                clearValidationErrors();
-              }
-            }}
-            placeholder="Select catalog"
-            disabled={categoriesLoading}
-          />
+          <div className="relative">
+            <HeadlessSelect
+              options={[
+                {
+                  value: "",
+                  label: categoriesLoading
+                    ? "Loading catalogs..."
+                    : "Select catalog",
+                },
+                ...(offerCategories || []).map((category) => ({
+                  value: category.id.toString(),
+                  label: category.name,
+                })),
+              ]}
+              value={formData.category_id?.toString() || ""}
+              onChange={(value) => {
+                setFormData({
+                  ...formData,
+                  category_id: value ? Number(value) : undefined,
+                });
+                if (validationErrors?.category_id && clearValidationErrors) {
+                  clearValidationErrors();
+                }
+              }}
+              placeholder="Select catalog"
+              disabled={categoriesLoading}
+              className="[&_[role='listbox']]:!bottom-full [&_[role='listbox']]:!top-auto [&_[role='listbox']]:!mb-1 [&_[role='listbox']]:!mt-0"
+            />
+          </div>
           {validationErrors?.category_id && (
             <p className="mt-1 text-sm text-red-600">
               {validationErrors.category_id}
             </p>
           )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Max Usage Per Customer *
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={formData.max_usage_per_customer || ""}
+            onChange={(e) => {
+              setFormData({
+                ...formData,
+                max_usage_per_customer: e.target.value
+                  ? Number(e.target.value)
+                  : 0,
+              });
+              if (
+                validationErrors?.max_usage_per_customer &&
+                clearValidationErrors
+              ) {
+                clearValidationErrors();
+              }
+            }}
+            placeholder="e.g., 1, 5, 10"
+            className={`w-full px-3 py-1.5 border rounded-md focus:outline-none transition-all duration-200 text-sm placeholder:text-sm ${
+              validationErrors?.max_usage_per_customer
+                ? "border-red-500"
+                : "border-gray-300"
+            }`}
+            required
+          />
+          {validationErrors?.max_usage_per_customer && (
+            <p className="mt-1 text-sm text-red-600">
+              {validationErrors.max_usage_per_customer}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Maximum times a customer can use this offer (minimum: 0)
+          </p>
         </div>
       </div>
     </div>
@@ -340,7 +413,9 @@ function ProductStepWrapper({
             const firstProductId = products[0]?.id;
             setFormData({
               ...formData,
-              product_id: firstProductId ? Number(firstProductId) : undefined,
+              primary_product_id: firstProductId
+                ? Number(firstProductId)
+                : undefined,
             });
           }}
           multiSelect={true}
@@ -485,6 +560,7 @@ function ReviewStep({
   creatives,
   trackingSources,
   rewards,
+  offerCategories,
 }: Omit<
   StepProps,
   | "currentStep"
@@ -499,7 +575,6 @@ function ReviewStep({
   | "isLoading"
   | "validationErrors"
   | "clearValidationErrors"
-  | "offerCategories"
   | "categoriesLoading"
   | "onSaveDraft"
   | "onCancel"
@@ -538,15 +613,27 @@ function ReviewStep({
               <div className="flex justify-between">
                 <span className="text-gray-600">Offer Type:</span>
                 <span className="font-medium">
-                  {formData.offer_type || "Not selected"}
+                  {formData.offer_type
+                    ? formData.offer_type.charAt(0).toUpperCase() +
+                      formData.offer_type.slice(1)
+                    : "Not selected"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Catalog:</span>
                 <span className="font-medium">
                   {formData.category_id
-                    ? `Catalog ${formData.category_id}`
+                    ? offerCategories?.find(
+                        (cat: OfferCategoryType) =>
+                          cat.id === formData.category_id
+                      )?.name || `Catalog ${formData.category_id}`
                     : "Not selected"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Max Usage Per Customer:</span>
+                <span className="font-medium">
+                  {formData.max_usage_per_customer || "Not set"}
                 </span>
               </div>
               <div className="flex justify-between col-span-2">
@@ -657,10 +744,10 @@ function ReviewStep({
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Selected Product
               </h3>
-              {formData.product_id ? (
+              {formData.primary_product_id ? (
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <span className="text-sm text-gray-700">
-                    Product ID: {formData.product_id}
+                    Product ID: {formData.primary_product_id}
                   </span>
                 </div>
               ) : (
@@ -677,26 +764,22 @@ function ReviewStep({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Status:</span>
-                <span className="font-medium capitalize">
-                  {formData.lifecycle_status}
-                </span>
+                <span className="font-medium capitalize">Draft</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Approval:</span>
-                <span className="font-medium capitalize">
-                  {formData.approval_status}
-                </span>
+                <span className="font-medium capitalize">Pending</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Reusable:</span>
                 <span className="font-medium">
-                  {formData.reusable ? "Yes" : "No"}
+                  {formData.is_reusable ? "Yes" : "No"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Multi-language:</span>
                 <span className="font-medium">
-                  {formData.multi_language ? "Yes" : "No"}
+                  {formData.supports_multi_language ? "Yes" : "No"}
                 </span>
               </div>
             </div>
@@ -722,15 +805,12 @@ export default function CreateOfferPage() {
 
   const [formData, setFormData] = useState<CreateOfferRequest>({
     name: "",
+    code: "",
     description: "",
+    offer_type: "data" as OfferTypeEnum,
     category_id: undefined,
-    product_id: undefined,
-    offer_type: "",
+    max_usage_per_customer: 1,
     eligibility_rules: {},
-    lifecycle_status: "draft",
-    approval_status: "pending",
-    reusable: false,
-    multi_language: false,
   });
 
   const [creatives, setCreatives] = useState<OfferCreative[]>([]);
@@ -787,17 +867,19 @@ export default function CreateOfferPage() {
       // Generate dummy offer type based on offer ID since backend doesn't store it
       const dummyOfferType = getDummyOfferType(offer.id!);
 
-      const newFormData = {
+      const newFormData: CreateOfferRequest = {
         name: offer.name || "",
+        code: offer.code || "",
         description: offer.description || "",
+        offer_type: dummyOfferType as OfferTypeEnum, // Use dummy offer type
         category_id: offer.category_id ? Number(offer.category_id) : undefined,
-        product_id: offer.product_id ? Number(offer.product_id) : undefined,
-        offer_type: dummyOfferType, // Use dummy offer type
+        primary_product_id: offer.primary_product_id
+          ? Number(offer.primary_product_id)
+          : undefined,
+        max_usage_per_customer: offer.max_usage_per_customer || 1,
         eligibility_rules: offer.eligibility_rules || {},
-        lifecycle_status: offer.lifecycle_status || "draft",
-        approval_status: offer.approval_status || "pending",
-        reusable: offer.reusable || false,
-        multi_language: offer.multi_language || false,
+        is_reusable: offer.is_reusable || false,
+        supports_multi_language: offer.supports_multi_language || false,
       };
       setFormData(newFormData);
 
@@ -809,9 +891,7 @@ export default function CreateOfferPage() {
             const productResponse = await productService.getProductById(
               link.product_id
             );
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const productData =
-              (productResponse as any).data || productResponse;
+            const productData = productResponse.data || productResponse;
             return {
               ...productData,
               is_primary: link.is_primary,
@@ -842,7 +922,9 @@ export default function CreateOfferPage() {
   }, [id, navigate]);
 
   // Offer categories state
-  const [offerCategories, setOfferCategories] = useState<OfferCategory[]>([]);
+  const [offerCategories, setOfferCategories] = useState<OfferCategoryType[]>(
+    []
+  );
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // Load offer categories on component mount
@@ -851,7 +933,7 @@ export default function CreateOfferPage() {
       try {
         setCategoriesLoading(true);
         const response = await offerCategoryService.getAllCategories({
-          limit: 100, // Get all categories
+          limit: 50, // Get all categories
           skipCache: true,
         });
         setOfferCategories(response.data || []);
@@ -895,7 +977,11 @@ export default function CreateOfferPage() {
       errors.name = "Offer name is required";
     }
 
-    if (!formData.offer_type?.trim()) {
+    if (!formData.code?.trim()) {
+      errors.code = "Offer code is required";
+    }
+
+    if (!formData.offer_type) {
       errors.offer_type = "Offer type is required";
     }
 
@@ -903,9 +989,10 @@ export default function CreateOfferPage() {
       errors.category_id = "Catalog is required";
     }
 
-    if (!formData.product_id) {
-      errors.product_id = "Product selection is required";
-    }
+    // Product selection is optional; remove validation
+    // if (!formData.product_id) {
+    //   errors.product_id = "Product selection is required";
+    // }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -921,11 +1008,11 @@ export default function CreateOfferPage() {
       case 1: // Basic Info step
         return (
           formData.name.trim() !== "" &&
-          formData.offer_type !== "" &&
+          formData.offer_type &&
           formData.category_id !== undefined
         );
       case 2: // Products step
-        return formData.product_id !== undefined;
+        return true; // Products are optional; allow proceeding
       case 3: // Creative step
         return creatives.length > 0;
       case 4: // Tracking step
@@ -985,9 +1072,8 @@ export default function CreateOfferPage() {
         return;
       }
 
-      // Remove offer_type as backend doesn't accept it
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { offer_type, ...apiData } = formData;
+      // Send all form data including offer_type
+      const apiData = formData;
 
       let offerId: number;
 
@@ -1074,16 +1160,23 @@ export default function CreateOfferPage() {
 
       const draftData: CreateOfferRequest = {
         name: formData.name,
+        code: formData.code,
+        offer_type: formData.offer_type,
+        max_usage_per_customer: formData.max_usage_per_customer,
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
-        ...(formData.product_id && { product_id: formData.product_id }),
+        ...(formData.primary_product_id && {
+          primary_product_id: formData.primary_product_id,
+        }),
         ...(formData.eligibility_rules && {
           eligibility_rules: formData.eligibility_rules,
         }),
-        lifecycle_status: formData.lifecycle_status,
-        approval_status: formData.approval_status,
-        reusable: formData.reusable,
-        multi_language: formData.multi_language,
+        ...(formData.is_reusable !== undefined && {
+          is_reusable: formData.is_reusable,
+        }),
+        ...(formData.supports_multi_language !== undefined && {
+          supports_multi_language: formData.supports_multi_language,
+        }),
       };
 
       await offerService.createOffer(draftData);

@@ -84,7 +84,7 @@ export default function Dashboard() {
         <Route path="/product-types" element={<ProductTypesPage />} />
         <Route path="/offer-types" element={<OfferTypesPage />} />
         <Route path="/offer-catalogs" element={<OfferCategoriesPage />} />
-        <Route path="/offer-catalogs/:id" element={<CategoryDetailsPage />} />
+        {/* <Route path="/offer-catalogs/:id" element={<CategoryDetailsPage />} /> */}
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/segments" element={<SegmentManagementPage />} />
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />

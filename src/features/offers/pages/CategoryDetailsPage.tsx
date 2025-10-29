@@ -1,16 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  Edit,
   Trash2,
   Eye,
-  Users,
   Package,
   CheckCircle,
   XCircle,
   Plus,
   X,
+  MoreVertical,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
@@ -18,6 +17,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 
 export default function CategoryDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,12 +42,15 @@ export default function CategoryDetailsPage() {
   const [analytics, setAnalytics] = useState<{
     usageTrends: any;
     performanceByType: any;
-    relatedCategories: any[];
   }>({
     usageTrends: null,
     performanceByType: null,
-    relatedCategories: [],
   });
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close More menu when clicking outside
+  useClickOutside(moreMenuRef, () => setShowMoreMenu(false));
 
   useEffect(() => {
     if (id) {
@@ -120,19 +123,16 @@ export default function CategoryDetailsPage() {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const usageTrendsResponse = await offerCategoryService.getUsageTrends({
-        days: 30,
+        limit: 50,
         skipCache: true,
       });
 
       // Load performance by type
       const performanceResponse =
-        await offerCategoryService.getPerformanceByType(true);
-
-      // Load related active categories
-      const relatedResponse = await offerCategoryService.getActiveCategories({
-        limit: 5,
-        skipCache: true,
-      });
+        await offerCategoryService.getPerformanceByType({
+          limit: 50,
+          skipCache: true,
+        });
 
       setAnalytics({
         usageTrends: usageTrendsResponse.success
@@ -141,9 +141,6 @@ export default function CategoryDetailsPage() {
         performanceByType: performanceResponse.success
           ? performanceResponse.data
           : null,
-        relatedCategories: relatedResponse.success
-          ? relatedResponse.data || []
-          : [],
       });
     } catch (err) {
       console.error("Failed to load analytics:", err);
@@ -282,45 +279,68 @@ export default function CategoryDetailsPage() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
-            onClick={handleViewOffers}
-            className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors"
+            onClick={handleEditCategory}
+            className="px-4 py-2 rounded-lg transition-colors font-medium"
             style={{
               backgroundColor: color.primary.action,
               color: color.text.inverse,
             }}
           >
-            <Users className="w-4 h-4 mr-2" />
-            View Offers
-          </button>
-          <button
-            onClick={handleEditCategory}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Edit Category"
-          >
-            <Edit className="w-4 h-4 text-gray-600" />
+            Edit
           </button>
           <button
             onClick={handleToggleStatus}
-            className={`p-2 rounded-lg transition-colors ${
-              category.is_active ? "hover:bg-red-50" : "hover:bg-green-50"
+            className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+              category.is_active
+                ? "text-white border"
+                : "text-green-700 bg-green-100 border border-green-300 hover:bg-green-200"
             }`}
-            title={category.is_active ? "Deactivate" : "Activate"}
+            style={
+              category.is_active
+                ? {
+                    backgroundColor: "#6B7280", // gray-500
+                    borderColor: "#6B7280",
+                  }
+                : {}
+            }
           >
-            {category.is_active ? (
-              <XCircle className="w-4 h-4 text-red-600" />
-            ) : (
-              <CheckCircle className="w-4 h-4 text-green-600" />
+            {category.is_active ? "Deactivate" : "Activate"}
+          </button>
+          {/* More Menu */}
+          <div className="relative" ref={moreMenuRef}>
+            <button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <MoreVertical className="w-5 h-5" />
+            </button>
+            {showMoreMenu && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                <button
+                  onClick={() => {
+                    handleViewOffers();
+                    setShowMoreMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Offers
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeleteCategory();
+                    setShowMoreMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Category
+                </button>
+              </div>
             )}
-          </button>
-          <button
-            onClick={handleDeleteCategory}
-            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete Category"
-          >
-            <Trash2 className="w-4 h-4 text-red-600" />
-          </button>
+          </div>
         </div>
       </div>
 
@@ -407,33 +427,44 @@ export default function CategoryDetailsPage() {
           style={{ backgroundColor: color.surface.cards }}
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Usage Trends (30 days)
+            Usage Trends (Last 12 months)
           </h3>
-          {analytics.usageTrends ? (
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Total Usage</span>
-                <span className="font-medium">
-                  {analytics.usageTrends.totalUsage || 0}
-                </span>
+          {analytics.usageTrends && analytics.usageTrends.length > 0 ? (
+            <div className="space-y-3">
+              <div className="text-sm text-gray-600 mb-3">
+                Monthly breakdown of offers created
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Peak Usage</span>
-                <span className="font-medium">
-                  {analytics.usageTrends.peakUsage || 0}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Average Daily</span>
-                <span className="font-medium">
-                  {analytics.usageTrends.averageDaily || 0}
-                </span>
-              </div>
+              {analytics.usageTrends
+                .slice(0, 6)
+                .map((trend: any, index: number) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center"
+                  >
+                    <span className="text-sm text-gray-600">
+                      {new Date(trend.year, trend.month - 1).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )}
+                    </span>
+                    <span className="font-medium text-gray-900">
+                      {trend.offers_created} offers
+                    </span>
+                  </div>
+                ))}
+              {analytics.usageTrends.length > 6 && (
+                <div className="text-xs text-gray-500 text-center pt-2">
+                  +{analytics.usageTrends.length - 6} more months
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-4">
               <Package className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">No usage data available</p>
+              <p className="text-sm text-gray-500">No usage trends available</p>
             </div>
           )}
         </div>
@@ -446,18 +477,35 @@ export default function CategoryDetailsPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Performance by Type
           </h3>
-          {analytics.performanceByType ? (
-            <div className="space-y-2">
-              {analytics.performanceByType.performance?.map(
-                (item: any, index: number) => (
-                  <div key={index} className="flex justify-between">
-                    <span className="text-sm text-gray-600 capitalize">
-                      {item.type || "Unknown"}
+          {analytics.performanceByType &&
+          analytics.performanceByType.length > 0 ? (
+            <div className="space-y-3">
+              <div className="text-sm text-gray-600 mb-3">
+                Performance metrics by offer type
+              </div>
+              {analytics.performanceByType.map((item: any, index: number) => (
+                <div
+                  key={index}
+                  className="space-y-2 p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-900 capitalize">
+                      {item.offer_type.replace("_", " ")}
                     </span>
-                    <span className="font-medium">{item.count || 0}</span>
+                    <span className="text-sm text-gray-600">
+                      {item.offer_count} offers
+                    </span>
                   </div>
-                )
-              )}
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>
+                      Avg Discount:{" "}
+                      {item.avg_discount_percentage > 0
+                        ? `${item.avg_discount_percentage}%`
+                        : `$${item.avg_discount_amount}`}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-4">
@@ -469,41 +517,6 @@ export default function CategoryDetailsPage() {
           )}
         </div>
       </div>
-
-      {/* Related Categories */}
-      {analytics.relatedCategories.length > 0 && (
-        <div
-          className="rounded-xl border border-gray-200 p-6"
-          style={{ backgroundColor: color.surface.cards }}
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Related Categories
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {analytics.relatedCategories
-              .filter((cat) => cat.id !== category?.id) // Exclude current category
-              .slice(0, 6)
-              .map((relatedCategory) => (
-                <button
-                  key={relatedCategory.id}
-                  onClick={() =>
-                    navigate(`/dashboard/offer-catalogs/${relatedCategory.id}`)
-                  }
-                  className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <h4 className="font-medium text-gray-900 truncate">
-                    {relatedCategory.name}
-                  </h4>
-                  {relatedCategory.description && (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                      {relatedCategory.description}
-                    </p>
-                  )}
-                </button>
-              ))}
-          </div>
-        </div>
-      )}
 
       {/* Offers List */}
       <div

@@ -1,16 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Save,
-  AlertCircle
-} from 'lucide-react';
-import { CreateProductRequest } from '../types/product';
-import { productService } from '../services/productService';
-import CategorySelector from '../../../shared/components/CategorySelector';
-import CreateCategoryModal from '../../../shared/components/CreateCategoryModal';
-import { tw } from '../../../shared/utils/utils';
-import { useToast } from '../../../contexts/ToastContext';
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Save, AlertCircle } from "lucide-react";
+import { CreateProductRequest } from "../types/product";
+import { productService } from "../services/productService";
+import CategorySelector from "../../../shared/components/CategorySelector";
+import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
+import { tw, color } from "../../../shared/utils/utils";
+import { useToast } from "../../../contexts/ToastContext";
 
 export default function CreateProductPage() {
   const navigate = useNavigate();
@@ -20,32 +16,35 @@ export default function CreateProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState<CreateProductRequest>({
-    product_id: '',
-    name: '',
-    da_id: '',
-    description: '',
+    product_id: "",
+    name: "",
+    da_id: "",
+    description: "",
     category_id: undefined,
-    is_active: true
+    is_active: true,
   });
 
   // Preselect category from URL parameter
   useEffect(() => {
-    const categoryIdParam = searchParams.get('categoryId');
+    const categoryIdParam = searchParams.get("categoryId");
     if (categoryIdParam) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        category_id: parseInt(categoryIdParam)
+        category_id: parseInt(categoryIdParam),
       }));
     }
   }, [searchParams]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.product_id.trim() || !formData.name.trim() || !formData?.da_id?.trim()) {
-      setError('Product ID, Name, and DA ID are required');
+    if (
+      !formData.product_id.trim() ||
+      !formData.name.trim() ||
+      !formData?.da_id?.trim()
+    ) {
+      setError("Product ID, Name, and DA ID are required");
       return;
     }
 
@@ -54,13 +53,16 @@ export default function CreateProductPage() {
       setError(null);
 
       await productService.createProduct(formData);
-      success('Product Created', `"${formData.name}" has been created successfully.`);
-      navigate('/dashboard/products');
+      success(
+        "Product Created",
+        `"${formData.name}" has been created successfully.`
+      );
+      navigate("/dashboard/products");
     } catch (err) {
       // Extract detailed error message from backend response
-      let errorMessage = 'Failed to create product';
+      let errorMessage = "Failed to create product";
 
-      if (err && typeof err === 'object') {
+      if (err && typeof err === "object") {
         // Check for response.data.error or response.data.message
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = err as any;
@@ -73,24 +75,26 @@ export default function CreateProductPage() {
         }
       }
 
-      console.error('Product creation error:', err);
+      console.error("Product creation error:", err);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (field: keyof CreateProductRequest, value: string | number | boolean | undefined) => {
+  const handleInputChange = (
+    field: keyof CreateProductRequest,
+    value: string | number | boolean | undefined
+  ) => {
     setFormData({ ...formData, [field]: value });
   };
-
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <button
-          onClick={() => navigate('/dashboard/products')}
+          onClick={() => navigate("/dashboard/products")}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -101,7 +105,9 @@ export default function CreateProductPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Create New Product
           </h1>
-          <p className="text-gray-600 text-sm">Add a new product to your catalog</p>
+          <p className="text-gray-600 text-sm">
+            Add a new product to your catalog
+          </p>
         </div>
       </div>
 
@@ -126,11 +132,15 @@ export default function CreateProductPage() {
                 type="text"
                 required
                 value={formData.product_id}
-                onChange={(e) => handleInputChange('product_id', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("product_id", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="e.g., VOICE_BUNDLE_001"
               />
-              <p className="text-sm text-gray-500 mt-1">Unique identifier for the product</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Unique identifier for the product
+              </p>
             </div>
 
             {/* Product Name */}
@@ -142,7 +152,7 @@ export default function CreateProductPage() {
                 type="text"
                 required
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="e.g., Premium Voice Bundle"
               />
@@ -157,11 +167,13 @@ export default function CreateProductPage() {
                 type="text"
                 required
                 value={formData.da_id}
-                onChange={(e) => handleInputChange('da_id', e.target.value)}
+                onChange={(e) => handleInputChange("da_id", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="e.g., DA_001"
               />
-              <p className="text-sm text-gray-500 mt-1">Data Analytics identifier</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Data Analytics identifier
+              </p>
             </div>
 
             {/* Category */}
@@ -171,7 +183,9 @@ export default function CreateProductPage() {
               </label>
               <CategorySelector
                 value={formData.category_id}
-                onChange={(categoryId) => handleInputChange('category_id', categoryId)}
+                onChange={(categoryId) =>
+                  handleInputChange("category_id", categoryId)
+                }
                 placeholder="Select Catalog"
                 allowCreate={true}
                 onCreateCategory={() => setShowCreateModal(true)}
@@ -186,7 +200,9 @@ export default function CreateProductPage() {
               <textarea
                 rows={4}
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
                 placeholder="Describe the product features and benefits..."
               />
@@ -203,7 +219,7 @@ export default function CreateProductPage() {
                     type="radio"
                     name="is_active"
                     checked={formData.is_active === true}
-                    onChange={() => handleInputChange('is_active', true)}
+                    onChange={() => handleInputChange("is_active", true)}
                     className="w-4 h-4 text-blue-600 border-gray-300 "
                   />
                   <span className="ml-2 text-sm text-gray-700">Active</span>
@@ -213,7 +229,7 @@ export default function CreateProductPage() {
                     type="radio"
                     name="is_active"
                     checked={formData.is_active === false}
-                    onChange={() => handleInputChange('is_active', false)}
+                    onChange={() => handleInputChange("is_active", false)}
                     className="w-4 h-4 text-blue-600 border-gray-300 "
                   />
                   <span className="ml-2 text-sm text-gray-700">Inactive</span>
@@ -226,15 +242,38 @@ export default function CreateProductPage() {
           <div className="flex justify-between pt-6">
             <button
               type="button"
-              onClick={() => navigate('/dashboard/products')}
-              className={`${tw.ghostButton} px-3 py-2 text-sm rounded-lg flex items-center gap-2`}
+              onClick={() => navigate("/dashboard/products")}
+              className="px-3 py-2 text-sm rounded-lg flex items-center gap-2 border transition-colors"
+              style={{
+                borderColor: color.border.default,
+                color: color.text.secondary,
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  color.interactive.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  "transparent";
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className={`${tw.primaryButton} px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className="px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
+              style={{ backgroundColor: color.primary.action }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  (e.target as HTMLButtonElement).style.backgroundColor =
+                    color.primary.action;
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  color.primary.action;
+              }}
             >
               {isLoading ? (
                 <>
@@ -257,7 +296,6 @@ export default function CreateProductPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
       />
-
     </div>
   );
 }
