@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search, Plus, Settings } from 'lucide-react';
+import { ChevronDown, Search, Settings } from 'lucide-react';
 import { CreateCampaignRequest } from '../../types/campaign';
 import { campaignService } from '../../services/campaignService';
 import { programService } from '../../services/programService';
@@ -8,16 +8,9 @@ import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 import { lineOfBusinessConfig, departmentsConfig } from '../../../../shared/configs/configurationPageConfigs';
 import { configurationDataService } from '../../../../shared/services/configurationDataService';
 import { 
-    CommunicationPolicyConfiguration, 
-    COMMUNICATION_POLICY_TYPES,
-    TimeWindowConfig,
-    MaximumCommunicationConfig,
-    DNDConfig,
-    VIPListConfig,
-    DND_CATEGORIES,
-    DAYS_OF_WEEK
+    CommunicationPolicyConfiguration
 } from '../../types/communicationPolicyConfig';
-import { color, tw, components } from '../../../../shared/utils/utils';
+import { tw, components } from '../../../../shared/utils/utils';
 import { communicationPolicyService } from '../../services/communicationPolicyService';
 import CommunicationPolicyModal from '../CommunicationPolicyModal';
 import PolicyNameModal from '../PolicyNameModal';
@@ -98,10 +91,8 @@ export default function CampaignDefinitionStep({
   const [communicationPolicies, setCommunicationPolicies] = useState<CommunicationPolicyConfiguration[]>([]);
   const [selectedPolicy, setSelectedPolicy] = useState<CommunicationPolicyConfiguration | null>(null);
   const [isPolicyDropdownOpen, setIsPolicyDropdownOpen] = useState(false);
-  const [policySearchTerm, setPolicySearchTerm] = useState('');
   const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
   const [policyToCustomize, setPolicyToCustomize] = useState<CommunicationPolicyConfiguration | null>(null);
-  const [isSavingCustomPolicy, setIsSavingCustomPolicy] = useState(false);
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [pendingPolicyData, setPendingPolicyData] = useState<any>(null);
 
@@ -209,8 +200,6 @@ export default function CampaignDefinitionStep({
     if (!pendingPolicyData || !policyToCustomize) return;
 
     try {
-      setIsSavingCustomPolicy(true);
-      
       // Get the original policy name (remove the temporary suffix)
       const originalPolicyName = policyToCustomize.name.replace(' - Customizing...', '');
       
@@ -218,6 +207,7 @@ export default function CampaignDefinitionStep({
       const newPolicy = communicationPolicyService.createPolicy({
         name: policyName,
         description: pendingPolicyData.description || `Custom policy based on ${originalPolicyName}`,
+        channels: pendingPolicyData.channels || ['EMAIL'],
         type: pendingPolicyData.type,
         config: pendingPolicyData.config,
         isActive: pendingPolicyData.isActive ?? true
@@ -235,8 +225,6 @@ export default function CampaignDefinitionStep({
     } catch (error) {
       console.error('Failed to save custom policy:', error);
       showError('Failed to save custom policy. Please try again.');
-    } finally {
-      setIsSavingCustomPolicy(false);
     }
   };
 
@@ -537,6 +525,199 @@ export default function CampaignDefinitionStep({
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Primary Objective *
+            </label>
+            <div className="relative" ref={objectiveDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsObjectiveDropdownOpen(!isObjectiveDropdownOpen)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
+              >
+                <span className={formData.objective ? 'text-gray-900' : 'text-gray-500'}>
+                  {formData.objective ? objectiveOptions.find(o => o.value === formData.objective)?.label : 'Select objective'}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isObjectiveDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isObjectiveDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={objectiveSearchTerm}
+                        onChange={(e) => setObjectiveSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                        placeholder="Search objectives..."
+                      />
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    {objectiveOptions
+                      .filter(objective =>
+                        objective.label.toLowerCase().includes(objectiveSearchTerm.toLowerCase()) ||
+                        objective.description.toLowerCase().includes(objectiveSearchTerm.toLowerCase())
+                      )
+                      .map((objective) => (
+                        <button
+                          key={objective.value}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, objective: objective.value as 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation' });
+                            setIsObjectiveDropdownOpen(false);
+                            setObjectiveSearchTerm('');
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <span className="text-lg">{objective.icon}</span>
+                            <div>
+                              <div className="font-medium">{objective.label}</div>
+                              <div className="text-gray-500 text-xs">{objective.description}</div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Campaign Priority
+            </label>
+            <div className="flex items-center gap-2">
+              {[{ value: 'low', label: 'Low', icon: '⬇️' },
+              { value: 'medium', label: 'Medium', icon: '➡️' },
+              { value: 'high', label: 'High', icon: '⬆️' },
+              { value: 'critical', label: 'Critical', icon: '🚨' }
+              ].map((priority) => (
+                <button
+                  key={priority.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical', priority_rank: 1 })}
+                  className={`flex-1 px-2 py-2.5 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1 min-h-[42px] ${formData.priority === priority.value
+                    ? 'bg-[#588157] text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                  <span className="text-xs">{priority.icon}</span>
+                  <span className="hidden sm:inline">{priority.label}</span>
+                </button>
+              ))}
+            </div>
+            {/* Priority Rank - Only shows when priority is selected */}
+            {formData.priority && (
+              <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rank within {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)} Priority
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((rank) => (
+                    <button
+                      key={rank}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, priority_rank: rank })}
+                      className={`w-8 h-8 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center ${formData.priority_rank === rank
+                        ? 'bg-[#588157] text-white shadow-sm'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                        }`}
+                    >
+                      {rank}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Rank 1 is highest priority within {formData.priority} level
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Communication Policy */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Communication Policy
+          </label>
+          <div className="relative" ref={policyDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsPolicyDropdownOpen(!isPolicyDropdownOpen)}
+              className={`${components.input.default} w-full px-3 py-2 text-left flex items-center justify-between ${selectedPolicy ? '' : 'text-gray-500'}`}
+            >
+              <div className="flex items-center gap-2">
+                {selectedPolicy && (
+                  <div className={`w-2 h-2 rounded-full ${selectedPolicy.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                )}
+                <span>
+                  {selectedPolicy ? selectedPolicy.name : 'Choose a communication policy (optional)'}
+                </span>
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform ${isPolicyDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isPolicyDropdownOpen && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPolicy(null);
+                    setIsPolicyDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-200"
+                >
+                  <div className="text-sm font-medium text-gray-700">No Policy</div>
+                  <div className="text-xs text-gray-500">Campaign will use default communication settings</div>
+                </button>
+
+                <div className="max-h-48 overflow-y-auto">
+                  {communicationPolicies.map((policy) => (
+                    <button
+                      key={policy.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPolicy(policy);
+                        setIsPolicyDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none ${selectedPolicy?.id === policy.id ? 'bg-blue-50' : ''}`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`w-2 h-2 rounded-full ${policy.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <div className="text-sm font-medium text-gray-900">{policy.name}</div>
+                      </div>
+                      {policy.description && <div className="text-xs text-gray-500 ml-4">{policy.description}</div>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Customization Toggle */}
+          {selectedPolicy && (
+            <div className={`flex items-center justify-between px-3 py-2 mt-2 ${tw.surfaceCards} rounded-md border ${tw.borderMuted}`}>
+              <span className={`${tw.caption} ${tw.textSecondary} flex items-center gap-2`}>
+                <Settings className="w-3 h-3" />
+                Want to modify this policy?
+              </span>
+              <button
+                type="button"
+                onClick={() => handleCustomizePolicy(selectedPolicy)}
+                className={`${tw.button} px-3 py-1 text-xs flex items-center gap-1`}
+              >
+                <Settings className="w-3 h-3" />
+                Customize
+              </button>
+            </div>
+          )}
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Campaign Description
@@ -548,244 +729,6 @@ export default function CampaignDefinitionStep({
             placeholder="Describe your campaign goals and objectives"
             rows={3}
           />
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
-        <h3 className="text-base font-medium text-gray-900 mb-4 md:mb-6 px-0">Campaign Objectives</h3>
-
-        <div className="relative px-0">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Primary Objective *
-          </label>
-          <div className="relative" ref={objectiveDropdownRef}>
-            <button
-              type="button"
-              onClick={() => setIsObjectiveDropdownOpen(!isObjectiveDropdownOpen)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
-            >
-              <span className={formData.objective ? 'text-gray-900' : 'text-gray-500'}>
-                {formData.objective ? objectiveOptions.find(o => o.value === formData.objective)?.label : 'Select objective'}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isObjectiveDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isObjectiveDropdownOpen && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                <div className="p-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={objectiveSearchTerm}
-                      onChange={(e) => setObjectiveSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
-                      placeholder="Search objectives..."
-                    />
-                  </div>
-                </div>
-                <div className="py-1">
-                  {objectiveOptions
-                    .filter(objective =>
-                      objective.label.toLowerCase().includes(objectiveSearchTerm.toLowerCase()) ||
-                      objective.description.toLowerCase().includes(objectiveSearchTerm.toLowerCase())
-                    )
-                    .map((objective) => (
-                      <button
-                        key={objective.value}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, objective: objective.value as 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation' });
-                          setIsObjectiveDropdownOpen(false);
-                          setObjectiveSearchTerm('');
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <span className="text-lg">{objective.icon}</span>
-                          <div>
-                            <div className="font-medium">{objective.label}</div>
-                            <div className="text-gray-500 text-xs">{objective.description}</div>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Campaign Priority */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
-        <h3 className="text-base font-medium text-gray-900 mb-4 md:mb-6 px-0">Campaign Priority</h3>
-
-        <div className="px-0">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Priority Level
-          </label>
-          <div className="grid grid-cols-2 md:flex md:items-center gap-2 md:space-x-2">
-            {[
-              { value: 'low', label: 'Low', icon: '⬇️' },
-              { value: 'medium', label: 'Medium', icon: '➡️' },
-              { value: 'high', label: 'High', icon: '⬆️' },
-              { value: 'critical', label: 'Critical', icon: '🚨' }
-            ].map((priority) => (
-              <button
-                key={priority.value}
-                type="button"
-                onClick={() => setFormData({ ...formData, priority: priority.value as 'low' | 'medium' | 'high' | 'critical', priority_rank: 1 })}
-                className={`px-3 md:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-1.5 md:space-x-2 ${formData.priority === priority.value
-                  ? ' text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                <span className="text-sm">{priority.icon}</span>
-                <span className="text-xs md:text-sm">{priority.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Priority Rank - Only shows when priority is selected */}
-        {formData.priority && (
-          <div className="mt-4 p-3 md:p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Rank within {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)} Priority
-            </label>
-            <div className="flex items-center justify-center md:justify-start gap-2 md:space-x-2 flex-wrap">
-              {[1, 2, 3, 4, 5].map((rank) => (
-                <button
-                  key={rank}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, priority_rank: rank })}
-                  className={`w-12 h-12 md:w-10 md:h-10 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center ${formData.priority_rank === rank
-                    ? ' text-white shadow-sm'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                    }`}
-                >
-                  {rank}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-2 text-center md:text-left">
-              Rank 1 is highest priority within {formData.priority} level
-            </p>
-          </div>
-        )}
-
-        {/* Communication Policy Section */}
-        <div className="mt-6">
-          <div className="flex items-center gap-2 mb-3">
-            <label className={`${tw.label} ${tw.textSecondary}`}>
-              Communication Policy
-            </label>
-            <span className={`${tw.caption} ${tw.textMuted} uppercase tracking-wide`}>
-              (Optional)
-            </span>
-          </div>
-          <div className="space-y-3">
-            {/* Policy Selection */}
-            <div className="relative" ref={policyDropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIsPolicyDropdownOpen(!isPolicyDropdownOpen)}
-                className={`${components.input.default} w-full px-3 py-2 text-left flex items-center justify-between ${selectedPolicy ? '' : 'text-gray-500'}`}
-              >
-                <div className="flex items-center gap-2">
-                  {selectedPolicy && (
-                    <div className={`w-2 h-2 rounded-full ${selectedPolicy.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                  )}
-                  <span>
-                    {selectedPolicy ? selectedPolicy.name : 'Choose a communication policy'}
-                  </span>
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isPolicyDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isPolicyDropdownOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-hidden">
-                  {/* No Policy Option */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPolicy(null);
-                      setIsPolicyDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-200"
-                  >
-                    <div className="text-sm font-medium text-gray-700">No Policy</div>
-                    <div className="text-xs text-gray-500">Campaign will use default communication settings</div>
-                  </button>
-                  
-                  {/* Policy List */}
-                  <div className="max-h-48 overflow-y-auto">
-                    {communicationPolicies.map((policy) => (
-                      <button
-                        key={policy.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedPolicy(policy);
-                          setIsPolicyDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none ${selectedPolicy?.id === policy.id ? 'bg-blue-50' : ''}`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={`w-2 h-2 rounded-full ${policy.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                          <div className="text-sm font-medium text-gray-900">{policy.name}</div>
-                        </div>
-                        {policy.description && <div className="text-xs text-gray-500 ml-4">{policy.description}</div>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Customization Toggle */}
-            {selectedPolicy && (
-              <div className={`flex items-center justify-between px-3 py-2 ${tw.surfaceCards} rounded-md border ${tw.borderMuted}`}>
-                <span className={`${tw.caption} ${tw.textSecondary} flex items-center gap-2`}>
-                  <Settings className="w-3 h-3" />
-                  Want to modify this policy?
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleCustomizePolicy(selectedPolicy)}
-                  className={`${tw.button} px-3 py-1 text-xs flex items-center gap-1`}
-                >
-                  <Settings className="w-3 h-3" />
-                  Customize
-                </button>
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        <div className="mt-8">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Campaign Policy
-          </label>
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
-            <label className="flex items-start space-x-3 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={formData.is_definitive || false}
-                onChange={(e) => setFormData({ ...formData, is_definitive: e.target.checked })}
-                className="mt-0.5 w-5 h-5 text-[#588157] border-gray-300 focus:ring-[#588157] rounded cursor-pointer"
-              />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-[#588157] transition-colors">
-                  Definitive Campaign
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Once launched, this campaign cannot be modified. Only pause, resume, or termination actions will be available.
-                </div>
-              </div>
-            </label>
-          </div>
         </div>
       </div>
 

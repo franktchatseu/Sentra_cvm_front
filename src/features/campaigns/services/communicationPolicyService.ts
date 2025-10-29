@@ -11,6 +11,7 @@ class CommunicationPolicyService {
                 id: 1,
                 name: 'Business Hours Time Window',
                 description: 'Allow communications only during business hours',
+                channels: ['EMAIL', 'SMS'],
                 type: 'timeWindow',
                 config: {
                     startTime: '09:00',
@@ -26,6 +27,7 @@ class CommunicationPolicyService {
                 id: 2,
                 name: 'Daily Communication Limit',
                 description: 'Maximum 3 communications per customer per day',
+                channels: ['SMS', 'USSD'],
                 type: 'maximumCommunication',
                 config: {
                     type: 'daily',
@@ -40,6 +42,7 @@ class CommunicationPolicyService {
                 id: 3,
                 name: 'Marketing DND Policy',
                 description: 'Do not disturb policy for marketing communications',
+                channels: ['APP', 'EMAIL'],
                 type: 'dnd',
                 config: {
                     categories: [
@@ -59,6 +62,7 @@ class CommunicationPolicyService {
                 id: 4,
                 name: 'VIP Customer Priority',
                 description: 'Priority handling for VIP customers',
+                channels: ['EMAIL', 'SMS', 'APP', 'USSD'],
                 type: 'vipList',
                 config: {
                     action: 'include',

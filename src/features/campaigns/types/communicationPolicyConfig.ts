@@ -2,6 +2,8 @@
 
 export type CommunicationPolicyType = 'timeWindow' | 'maximumCommunication' | 'dnd' | 'vipList';
 
+export type CommunicationChannel = 'SMS' | 'EMAIL' | 'USSD' | 'APP';
+
 // Configuration Time Window
 export interface TimeWindowConfig {
     startTime: string; // Format HH:MM
@@ -51,6 +53,7 @@ export interface CommunicationPolicyConfiguration {
     id: number;
     name: string;
     description?: string;
+    channels: CommunicationChannel[]; // Changé en array pour multi-sélection
     type: CommunicationPolicyType;
     config: TimeWindowConfig | MaximumCommunicationConfig | DNDConfig | VIPListConfig;
     isActive: boolean;
@@ -62,6 +65,7 @@ export interface CommunicationPolicyConfiguration {
 export interface CreateCommunicationPolicyRequest {
     name: string;
     description?: string;
+    channels: CommunicationChannel[]; // Changé en array pour multi-sélection
     type: CommunicationPolicyType;
     config: TimeWindowConfig | MaximumCommunicationConfig | DNDConfig | VIPListConfig;
     isActive?: boolean;
@@ -113,4 +117,12 @@ export const DAYS_OF_WEEK = [
     { value: 'friday', label: 'Friday' },
     { value: 'saturday', label: 'Saturday' },
     { value: 'sunday', label: 'Sunday' }
+] as const;
+
+// Canaux de communication
+export const COMMUNICATION_CHANNELS = [
+    { value: 'SMS' as const, label: 'SMS', description: 'Short Message Service' },
+    { value: 'EMAIL' as const, label: 'Email', description: 'Email Communication' },
+    { value: 'USSD' as const, label: 'USSD', description: 'Unstructured Supplementary Service Data' },
+    { value: 'APP' as const, label: 'App Notification', description: 'In-App Push Notification' }
 ] as const;

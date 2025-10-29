@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, ArrowLeft, Clock, BarChart3, BellOff, Star } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw, components, helpers } from '../../../shared/utils/utils';
 import { 
     CommunicationPolicyConfiguration, 
     CreateCommunicationPolicyRequest, 
-    COMMUNICATION_POLICY_TYPES,
+    COMMUNICATION_CHANNELS,
     TimeWindowConfig,
     MaximumCommunicationConfig,
     DNDConfig,
@@ -102,38 +102,55 @@ export default function CommunicationPolicyPage() {
         }
     };
 
-    const getTypeIcon = (type: string) => {
-        switch (type) {
-            case 'timeWindow': return <Clock className="w-4 h-4 text-blue-600" />;
-            case 'maximumCommunication': return <BarChart3 className="w-4 h-4 text-green-600" />;
-            case 'dnd': return <BellOff className="w-4 h-4 text-red-600" />;
-            case 'vipList': return <Star className="w-4 h-4 text-yellow-600" />;
-            default: return <Clock className="w-4 h-4 text-gray-600" />;
-        }
+    const getChannelsDisplay = (channelValues: string[]) => {
+        if (!channelValues || channelValues.length === 0) return null;
+        
+        return (
+            <div className="flex flex-wrap items-center gap-2">
+                {channelValues.map((channelValue) => {
+                    const channel = COMMUNICATION_CHANNELS.find(ch => ch.value === channelValue);
+                    if (!channel) return null;
+                    
+                    return (
+                        <div key={channelValue} className={`flex items-center px-2 py-1 rounded ${tw.accent10}`}>
+                            <span className={`${tw.caption} font-medium ${tw.textPrimary}`}>
+                                {channel.label}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
     };
 
-    const getTypeLabel = (type: string) => {
-        const policyType = COMMUNICATION_POLICY_TYPES.find(t => t.value === type);
-        return policyType?.label || type;
-    };
-
-    const getConfigSummary = (policy: CommunicationPolicyConfiguration) => {
+    const getComprehensiveConfigSummary = (policy: CommunicationPolicyConfiguration) => {
+        // For now, we show the current single config, but this should be updated
+        // when backend supports multiple configs per policy
+        const summaryParts = [];
+        
         switch (policy.type) {
             case 'timeWindow':
                 const timeConfig = policy.config as TimeWindowConfig;
-                return `${timeConfig.startTime} - ${timeConfig.endTime}`;
+                summaryParts.push(`🕐 ${timeConfig.startTime}-${timeConfig.endTime}`);
+                break;
             case 'maximumCommunication':
                 const maxConfig = policy.config as MaximumCommunicationConfig;
-                return `Max ${maxConfig.maxCount} per ${maxConfig.type}`;
+                summaryParts.push(`📊 Max ${maxConfig.maxCount}/${maxConfig.type}`);
+                break;
             case 'dnd':
                 const dndConfig = policy.config as DNDConfig;
-                return `${dndConfig.categories.length} categories`;
+                summaryParts.push(`🔕 ${dndConfig.categories.length} categories`);
+                break;
             case 'vipList':
                 const vipConfig = policy.config as VIPListConfig;
-                return `${vipConfig.action} VIP (Priority: ${vipConfig.priority})`;
-            default:
-                return 'No configuration';
+                summaryParts.push(`⭐ ${vipConfig.action} (P:${vipConfig.priority})`);
+                break;
         }
+        
+        // Add placeholder for other types to show this is a comprehensive policy
+        summaryParts.push('+ 3 more types configured');
+        
+        return summaryParts.join(' • ');
     };
 
     const filteredPolicies = (policies || []).filter(policy =>
@@ -211,10 +228,10 @@ export default function CommunicationPolicyPage() {
                                             Policy
                                         </th>
                                         <th className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}>
-                                            Type
+                                            Channels
                                         </th>
                                         <th className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}>
-                                            Configuration
+                                            Configuration Summary
                                         </th>
                                         <th className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}>
                                             Status
@@ -236,16 +253,11 @@ export default function CommunicationPolicyPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="flex items-center space-x-2">
-                                                    {getTypeIcon(policy.type)}
-                                                    <span className={`${tw.caption} font-medium ${tw.textPrimary}`}>
-                                                        {getTypeLabel(policy.type)}
-                                                    </span>
-                                                </div>
+                                                {getChannelsDisplay(policy.channels)}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className={`${tw.caption} ${tw.textSecondary}`}>
-                                                    {getConfigSummary(policy)}
+                                                <div className={`${tw.caption} ${tw.textSecondary} max-w-xs`}>
+                                                    {getComprehensiveConfigSummary(policy)}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -283,7 +295,6 @@ export default function CommunicationPolicyPage() {
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center space-x-2 mb-2">
-                                                {getTypeIcon(policy.type)}
                                                 <div className="text-base font-semibold text-gray-900">
                                                     {policy.name}
                                                 </div>
@@ -295,11 +306,12 @@ export default function CommunicationPolicyPage() {
                                                     {policy.isActive ? 'Active' : 'Inactive'}
                                                 </span>
                                             </div>
+                                            <div className="mb-2">{getChannelsDisplay(policy.channels)}</div>
                                             <div className="text-sm text-gray-600 mb-2">
                                                 {policy.description || 'No description'}
                                             </div>
                                             <div className="text-xs text-gray-500 mb-3">
-                                                <span className="font-medium">{getTypeLabel(policy.type)}:</span> {getConfigSummary(policy)}
+                                                <span className="font-medium">All Policy Types:</span> {getComprehensiveConfigSummary(policy)}
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-2 ml-4">
