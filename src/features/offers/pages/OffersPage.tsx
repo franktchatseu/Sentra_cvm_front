@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -16,46 +16,62 @@ import {
   Play,
   Pause,
   Archive,
-  Filter
-} from 'lucide-react';
-import { Offer, OfferFilters, LifecycleStatus, ApprovalStatus } from '../types/offer';
-import { offerService } from '../services/offerService';
-import { offerCategoryService } from '../services/offerCategoryService';
-import { OfferCategory } from '../types/offerCategory';
-import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
-import { color, tw } from '../../../shared/utils/utils';
-import { useToast } from '../../../contexts/ToastContext';
-import { useConfirm } from '../../../contexts/ConfirmContext';
+  Filter,
+} from "lucide-react";
+import {
+  Offer,
+  SearchParams,
+  FilterParams,
+  OfferStatusEnum,
+  OfferTypeEnum,
+} from "../types/offer";
+import { offerService } from "../services/offerService";
+import { offerCategoryService } from "../services/offerCategoryService";
+import { OfferCategoryType } from "../types/offerCategory";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import { color, tw } from "../../../shared/utils/utils";
+import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 
 export default function OffersPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
-  const [categories, setCategories] = useState<OfferCategory[]>([]);
+  const [categories, setCategories] = useState<OfferCategoryType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalOffers, setTotalOffers] = useState(0);
-  const [filters, setFilters] = useState<OfferFilters>({
+  const [filters, setFilters] = useState<SearchParams>({
     page: 1,
-    pageSize: 10,
-    sortBy: 'created_at',
-    sortDirection: 'DESC'
+    limit: 10,
+    sortBy: "created_at",
+    sortDirection: "DESC",
   });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<LifecycleStatus | 'all'>('all');
-  const [selectedApproval, setSelectedApproval] = useState<ApprovalStatus | 'all'>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<OfferStatusEnum | "all">(
+    "all"
+  );
+  const [selectedApproval, setSelectedApproval] = useState<string | "all">(
+    "all"
+  );
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isClosingModal, setIsClosingModal] = useState(false);
 
   // Dropdown menu state
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Loading states for individual offers
-  const [loadingAction, setLoadingAction] = useState<{ offerId: number; action: string } | null>(null);
+  const [loadingAction, setLoadingAction] = useState<{
+    offerId: number;
+    action: string;
+  } | null>(null);
 
   // Debounce search term
   useEffect(() => {
@@ -68,10 +84,15 @@ export default function OffersPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await offerCategoryService.getOfferCategories();
-      setCategories(response.data);
+      const response = await offerCategoryService.getAllCategories({
+        limit: 100,
+        skipCache: true,
+      });
+      if (response.success && response.data) {
+        setCategories(response.data);
+      }
     } catch (err) {
-      console.error('Error loading categories:', err);
+      console.error("Error loading categories:", err);
     }
   };
 
@@ -80,20 +101,23 @@ export default function OffersPage() {
       setLoading(true);
       setError(null);
 
-      const filterParams: OfferFilters = {
+      const searchParams: SearchParams = {
         ...filters,
         search: debouncedSearchTerm || undefined,
-        lifecycleStatus: selectedStatus !== 'all' ? selectedStatus : undefined,
-        approvalStatus: selectedApproval !== 'all' ? selectedApproval : undefined,
-        skipCache: skipCache
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        skipCache: skipCache,
       };
 
-      const response = await offerService.getOffers(filterParams);
-      setOffers(response.data);
-      setTotalOffers(response.meta.total);
+      const response = await offerService.searchOffers(searchParams);
+      if (response.success && response.data) {
+        setOffers(response.data);
+        setTotalOffers(response.total || response.data.length);
+      } else {
+        setError("Failed to load offers");
+      }
     } catch (err) {
-      setError('Failed to load offers');
-      console.error('Error loading offers:', err);
+      setError("Failed to load offers");
+      console.error("Error loading offers:", err);
     } finally {
       setLoading(false);
     }
@@ -101,9 +125,11 @@ export default function OffersPage() {
 
   // Helper to get category name from category_id
   const getCategoryName = (categoryId: string | number | undefined): string => {
-    if (!categoryId) return 'Uncategorized';
-    const category = categories.find(cat => String(cat.id) === String(categoryId));
-    return category?.name || 'Uncategorized';
+    if (!categoryId) return "Uncategorized";
+    const category = categories.find(
+      (cat) => String(cat.id) === String(categoryId)
+    );
+    return category?.name || "Uncategorized";
   };
 
   // Load categories on mount
@@ -119,12 +145,12 @@ export default function OffersPage() {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    setFilters(prev => ({ ...prev, page: 1 }));
+    setFilters((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handleStatusFilter = (status: LifecycleStatus | 'all') => {
+  const handleStatusFilter = (status: OfferStatusEnum | "all") => {
     setSelectedStatus(status);
-    setFilters(prev => ({ ...prev, page: 1 }));
+    setFilters((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleCloseModal = () => {
@@ -135,13 +161,16 @@ export default function OffersPage() {
     }, 300); // Match the transition duration
   };
 
-  const handleApprovalFilter = (approval: ApprovalStatus | 'all') => {
+  const handleApprovalFilter = (approval: string | "all") => {
     setSelectedApproval(approval);
-    setFilters(prev => ({ ...prev, page: 1 }));
+    setFilters((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handleFilterChange = (key: keyof OfferFilters, value: string | number | boolean | undefined) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  const handleFilterChange = (
+    key: keyof SearchParams,
+    value: string | number | boolean | undefined
+  ) => {
+    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
   const handleViewOffer = (id: number) => {
@@ -154,7 +183,7 @@ export default function OffersPage() {
 
   const handleCopyOfferId = (id: number) => {
     navigator.clipboard.writeText(id.toString());
-    success('Copied', 'Offer ID copied to clipboard');
+    success("Copied", "Offer ID copied to clipboard");
   };
 
   // Calculate dropdown position
@@ -177,7 +206,10 @@ export default function OffersPage() {
     return { top, left };
   };
 
-  const handleActionMenuToggle = (offerId: number, buttonElement: HTMLElement) => {
+  const handleActionMenuToggle = (
+    offerId: number,
+    buttonElement: HTMLElement
+  ) => {
     if (showActionMenu === offerId) {
       setShowActionMenu(null);
       setDropdownPosition(null);
@@ -193,8 +225,8 @@ export default function OffersPage() {
     const handleClickOutside = (event: MouseEvent) => {
       if (showActionMenu !== null) {
         const target = event.target as HTMLElement;
-        const isInsideDropdown = target.closest('.action-dropdown');
-        const isInsideButton = target.closest('.action-button');
+        const isInsideDropdown = target.closest(".action-dropdown");
+        const isInsideButton = target.closest(".action-button");
 
         if (!isInsideDropdown && !isInsideButton) {
           setShowActionMenu(null);
@@ -203,43 +235,46 @@ export default function OffersPage() {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showActionMenu]);
 
   const handleDeleteOffer = async (id: number, name: string) => {
     const confirmed = await confirm({
-      title: 'Delete Offer',
+      title: "Delete Offer",
       message: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-      type: 'danger',
-      confirmText: 'Delete',
-      cancelText: 'Cancel'
+      type: "danger",
+      confirmText: "Delete",
+      cancelText: "Cancel",
     });
 
     if (!confirmed) return;
 
     try {
       await offerService.deleteOffer(id);
-      success('Offer Deleted', `"${name}" has been deleted successfully.`);
+      success("Offer Deleted", `"${name}" has been deleted successfully.`);
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to delete offer');
-      console.error('Delete offer error:', err);
+      showError("Error", "Failed to delete offer");
+      console.error("Delete offer error:", err);
     }
   };
 
   const handleActivateOffer = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'activate' });
+      setLoadingAction({ offerId: id, action: "activate" });
       const response = await offerService.activateOffer(id);
 
       // Optimistically update the offer in the list
-      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      const responseData = response as unknown as {
+        success: boolean;
+        data?: { lifecycle_status?: string };
+      };
       if (responseData.success && responseData.data?.lifecycle_status) {
         const newStatus = responseData.data.lifecycle_status;
-        setOffers(prevOffers =>
-          prevOffers.map(offer =>
+        setOffers((prevOffers) =>
+          prevOffers.map((offer) =>
             Number(offer.id) === id
               ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
               : offer
@@ -250,11 +285,11 @@ export default function OffersPage() {
         await loadOffers(true);
       }
 
-      success('Offer Activated', 'Offer has been activated successfully.');
+      success("Offer Activated", "Offer has been activated successfully.");
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to activate offer');
-      console.error('Activate offer error:', err);
+      showError("Error", "Failed to activate offer");
+      console.error("Activate offer error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -262,15 +297,18 @@ export default function OffersPage() {
 
   const handleDeactivateOffer = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'deactivate' });
+      setLoadingAction({ offerId: id, action: "deactivate" });
       const response = await offerService.deactivateOffer(id);
 
       // Optimistically update the offer in the list
-      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      const responseData = response as unknown as {
+        success: boolean;
+        data?: { lifecycle_status?: string };
+      };
       if (responseData.success && responseData.data?.lifecycle_status) {
         const newStatus = responseData.data.lifecycle_status;
-        setOffers(prevOffers =>
-          prevOffers.map(offer =>
+        setOffers((prevOffers) =>
+          prevOffers.map((offer) =>
             Number(offer.id) === id
               ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
               : offer
@@ -281,11 +319,11 @@ export default function OffersPage() {
         await loadOffers(true);
       }
 
-      success('Offer Deactivated', 'Offer has been deactivated successfully.');
+      success("Offer Deactivated", "Offer has been deactivated successfully.");
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to deactivate offer');
-      console.error('Deactivate offer error:', err);
+      showError("Error", "Failed to deactivate offer");
+      console.error("Deactivate offer error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -293,15 +331,18 @@ export default function OffersPage() {
 
   const handlePauseOffer = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'pause' });
+      setLoadingAction({ offerId: id, action: "pause" });
       const response = await offerService.pauseOffer(id);
 
       // Optimistically update the offer in the list
-      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      const responseData = response as unknown as {
+        success: boolean;
+        data?: { lifecycle_status?: string };
+      };
       if (responseData.success && responseData.data?.lifecycle_status) {
         const newStatus = responseData.data.lifecycle_status;
-        setOffers(prevOffers =>
-          prevOffers.map(offer =>
+        setOffers((prevOffers) =>
+          prevOffers.map((offer) =>
             Number(offer.id) === id
               ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
               : offer
@@ -312,11 +353,11 @@ export default function OffersPage() {
         await loadOffers(true);
       }
 
-      success('Offer Paused', 'Offer has been paused successfully.');
+      success("Offer Paused", "Offer has been paused successfully.");
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to pause offer');
-      console.error('Pause offer error:', err);
+      showError("Error", "Failed to pause offer");
+      console.error("Pause offer error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -324,14 +365,14 @@ export default function OffersPage() {
 
   const handleArchiveOffer = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'archive' });
+      setLoadingAction({ offerId: id, action: "archive" });
       await offerService.archiveOffer(id);
-      success('Offer Archived', 'Offer has been archived successfully.');
+      success("Offer Archived", "Offer has been archived successfully.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to archive offer');
-      console.error('Archive offer error:', err);
+      showError("Error", "Failed to archive offer");
+      console.error("Archive offer error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -339,15 +380,18 @@ export default function OffersPage() {
 
   const handleExpireOffer = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'expire' });
+      setLoadingAction({ offerId: id, action: "expire" });
       const response = await offerService.expireOffer(id);
 
       // Optimistically update the offer in the list
-      const responseData = response as unknown as { success: boolean; data?: { lifecycle_status?: string } };
+      const responseData = response as unknown as {
+        success: boolean;
+        data?: { lifecycle_status?: string };
+      };
       if (responseData.success && responseData.data?.lifecycle_status) {
         const newStatus = responseData.data.lifecycle_status;
-        setOffers(prevOffers =>
-          prevOffers.map(offer =>
+        setOffers((prevOffers) =>
+          prevOffers.map((offer) =>
             Number(offer.id) === id
               ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
               : offer
@@ -358,11 +402,11 @@ export default function OffersPage() {
         await loadOffers(true);
       }
 
-      success('Offer Expired', 'Offer has been expired successfully.');
+      success("Offer Expired", "Offer has been expired successfully.");
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to expire offer');
-      console.error('Expire offer error:', err);
+      showError("Error", "Failed to expire offer");
+      console.error("Expire offer error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -370,14 +414,17 @@ export default function OffersPage() {
 
   const handleRequestApproval = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'request_approval' });
+      setLoadingAction({ offerId: id, action: "request_approval" });
       await offerService.requestApproval(id);
-      success('Approval Requested', 'Approval request has been sent successfully.');
+      success(
+        "Approval Requested",
+        "Approval request has been sent successfully."
+      );
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to request approval');
-      console.error('Request approval error:', err);
+      showError("Error", "Failed to request approval");
+      console.error("Request approval error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -385,14 +432,14 @@ export default function OffersPage() {
 
   const handleApproveOffer = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'approve' });
+      setLoadingAction({ offerId: id, action: "approve" });
       await offerService.approveOffer(id);
-      success('Offer Approved', 'Offer has been approved successfully.');
+      success("Offer Approved", "Offer has been approved successfully.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to approve offer');
-      console.error('Approve offer error:', err);
+      showError("Error", "Failed to approve offer");
+      console.error("Approve offer error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -400,14 +447,14 @@ export default function OffersPage() {
 
   const handleRejectOffer = async (id: number) => {
     try {
-      setLoadingAction({ offerId: id, action: 'reject' });
+      setLoadingAction({ offerId: id, action: "reject" });
       await offerService.rejectOffer(id);
-      success('Offer Rejected', 'Offer has been rejected.');
+      success("Offer Rejected", "Offer has been rejected.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
     } catch (err) {
-      showError('Error', 'Failed to reject offer');
-      console.error('Reject offer error:', err);
+      showError("Error", "Failed to reject offer");
+      console.error("Reject offer error:", err);
     } finally {
       setLoadingAction(null);
     }
@@ -425,46 +472,120 @@ export default function OffersPage() {
 
   // Helper functions for display
 
-  const getStatusBadge = (status: LifecycleStatus) => {
+  const getStatusBadge = (status: OfferStatusEnum) => {
     switch (status) {
-      case 'draft':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>Draft</span>;
-      case 'active':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}] text-[${color.status.success}]`}>Active</span>;
-      case 'inactive':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>Inactive</span>;
-      case 'paused':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}] text-[${color.status.warning}]`}>Paused</span>;
-      case 'expired':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}] text-[${color.status.danger}]`}>Expired</span>;
-      case 'archived':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>Archived</span>;
+      case OfferStatusEnum.DRAFT:
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}
+          >
+            Draft
+          </span>
+        );
+      case OfferStatusEnum.ACTIVE:
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}] text-[${color.status.success}]`}
+          >
+            Active
+          </span>
+        );
+      case OfferStatusEnum.INACTIVE:
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}
+          >
+            Inactive
+          </span>
+        );
+      case OfferStatusEnum.PAUSED:
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}] text-[${color.status.warning}]`}
+          >
+            Paused
+          </span>
+        );
+      case OfferStatusEnum.EXPIRED:
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}] text-[${color.status.danger}]`}
+          >
+            Expired
+          </span>
+        );
+      case OfferStatusEnum.ARCHIVED:
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}
+          >
+            Archived
+          </span>
+        );
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>{status}</span>;
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}
+          >
+            {status}
+          </span>
+        );
     }
   };
 
-  const getApprovalBadge = (status: ApprovalStatus) => {
+  const getApprovalBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}]/10 text-[${color.status.warning}]`}>Pending</span>;
-      case 'approved':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}]/10 text-[${color.status.success}]`}>Approved</span>;
-      case 'rejected':
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}]/10 text-[${color.status.danger}]`}>Rejected</span>;
+      case "pending":
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.warning}]/10 text-[${color.status.warning}]`}
+          >
+            Pending
+          </span>
+        );
+      case "approved":
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}]/10 text-[${color.status.success}]`}
+          >
+            Approved
+          </span>
+        );
+      case "rejected":
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.danger}]/10 text-[${color.status.danger}]`}
+          >
+            Rejected
+          </span>
+        );
       default:
-        return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}>{status}</span>;
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}
+          >
+            {status}
+          </span>
+        );
     }
   };
 
   // Filter offers based on search term
-  const filteredOffers = offers.filter(offer => {
-    const matchesSearch = !searchTerm ||
+  const filteredOffers = offers.filter((offer) => {
+    const matchesSearch =
+      !searchTerm ||
       offer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       offer.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = selectedStatus === 'all' || offer.lifecycle_status === selectedStatus;
-    const matchesApproval = selectedApproval === 'all' || offer.approval_status === selectedApproval;
+    const matchesStatus =
+      selectedStatus === "all" || offer.status === selectedStatus;
+    const matchesApproval =
+      selectedApproval === "all" ||
+      (offer.status === "approved"
+        ? "approved"
+        : offer.status === "rejected"
+        ? "rejected"
+        : "pending") === selectedApproval;
 
     return matchesSearch && matchesStatus && matchesApproval;
   });
@@ -477,10 +598,13 @@ export default function OffersPage() {
           <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
             Offers Management
           </h1>
-          <p className={`${tw.textSecondary} mt-2 text-sm`}>Create and manage customer offers with dynamic pricing and eligibility</p>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>
+            Create and manage customer offers with dynamic pricing and
+            eligibility
+          </p>
         </div>
         <button
-          onClick={() => navigate('/dashboard/offers/create')}
+          onClick={() => navigate("/dashboard/offers/create")}
           className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 text-white"
           style={{ backgroundColor: color.primary.action }}
         >
@@ -489,31 +613,34 @@ export default function OffersPage() {
         </button>
       </div>
 
-
       {/* Search and Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.text.muted}]`} />
+          <Search
+            className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.text.muted}]`}
+          />
           <input
             type="text"
             placeholder="Search offers..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch(searchTerm)}
             className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
           />
         </div>
 
         <HeadlessSelect
           options={[
-            { value: '', label: 'All Categories' },
+            { value: "", label: "All Categories" },
             ...categories.map((category) => ({
               value: category.id.toString(),
-              label: category.name
-            }))
+              label: category.name,
+            })),
           ]}
-          value={filters.categoryId?.toString() || ''}
-          onChange={(value) => handleFilterChange('categoryId', value ? Number(value) : undefined)}
+          value={filters.categoryId?.toString() || ""}
+          onChange={(value) =>
+            handleFilterChange("categoryId", value ? Number(value) : undefined)
+          }
           placeholder="All Categories"
           className=""
         />
@@ -528,15 +655,21 @@ export default function OffersPage() {
       </div>
 
       {/* Offers Table */}
-      <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] overflow-hidden`}>
+      <div
+        className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] overflow-hidden`}
+      >
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}></div>
+            <div
+              className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}
+            ></div>
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <AlertCircle className={`h-12 w-12 text-[${color.status.danger}] mx-auto mb-4`} />
+              <AlertCircle
+                className={`h-12 w-12 text-[${color.status.danger}] mx-auto mb-4`}
+              />
               <p className={`${tw.textSecondary}`}>{error}</p>
             </div>
           </div>
@@ -545,7 +678,7 @@ export default function OffersPage() {
             <div className="text-center">
               <p className={`${tw.textSecondary}`}>No offers found</p>
               <button
-                onClick={() => navigate('/dashboard/offers/create')}
+                onClick={() => navigate("/dashboard/offers/create")}
                 className="mt-4 inline-flex items-center px-3 py-2 text-base text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
                 style={{ backgroundColor: color.primary.action }}
               >
@@ -562,85 +695,182 @@ export default function OffersPage() {
                 style={{ background: color.surface.tableHeader }}
               >
                 <tr>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Offer</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Category</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Status</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Approval</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Created</th>
-                  <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`} style={{ color: color.surface.tableHeaderText }}>Actions</th>
+                  <th
+                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Offer
+                  </th>
+                  <th
+                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Category
+                  </th>
+                  <th
+                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Approval
+                  </th>
+                  <th
+                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Created
+                  </th>
+                  <th
+                    className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className={`bg-white divide-y divide-[${color.border.default}]`}>
+              <tbody
+                className={`bg-white divide-y divide-[${color.border.default}]`}
+              >
                 {filteredOffers.map((offer) => (
-                  <tr key={offer.id} className="hover:bg-gray-50 transition-colors duration-150">
+                  <tr
+                    key={offer.id}
+                    className="hover:bg-gray-50 transition-colors duration-150"
+                  >
                     <td className="px-6 py-5">
                       <div className="flex items-center space-x-4">
                         <div className="min-w-0 flex-1">
-                          <div className={`font-semibold text-base ${tw.textPrimary} truncate`}>{offer.name}</div>
-                          <div className={`text-sm ${tw.textSecondary} truncate flex items-center space-x-2 mt-1`}>
-                            <span className="truncate">{offer.description}</span>
+                          <div
+                            className={`font-semibold text-base ${tw.textPrimary} truncate`}
+                          >
+                            {offer.name}
+                          </div>
+                          <div
+                            className={`text-sm ${tw.textSecondary} truncate flex items-center space-x-2 mt-1`}
+                          >
+                            <span className="truncate">
+                              {offer.description}
+                            </span>
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryName(offer.category_id) === 'Data Offers' ? `bg-[${color.status.info}]/10 text-[${color.status.info}]` :
-                        getCategoryName(offer.category_id) === 'Voice Offers' ? `bg-[${color.status.success}]/10 text-[${color.status.success}]` :
-                          getCategoryName(offer.category_id) === 'Combo Offers' ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]` :
-                            getCategoryName(offer.category_id) === 'Loyalty Rewards' ? `bg-[${color.status.warning}]/10 text-[${color.status.warning}]` :
-                              getCategoryName(offer.category_id) === 'Promotional' ? `bg-[${color.primary.action}]/10 text-[${color.primary.action}]` :
-                                `bg-[${color.surface.cards}] text-[${color.text.primary}]`
-                        }`}>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          getCategoryName(offer.category_id) === "Data Offers"
+                            ? `bg-[${color.status.info}]/10 text-[${color.status.info}]`
+                            : getCategoryName(offer.category_id) ===
+                              "Voice Offers"
+                            ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                            : getCategoryName(offer.category_id) ===
+                              "Combo Offers"
+                            ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
+                            : getCategoryName(offer.category_id) ===
+                              "Loyalty Rewards"
+                            ? `bg-[${color.status.warning}]/10 text-[${color.status.warning}]`
+                            : getCategoryName(offer.category_id) ===
+                              "Promotional"
+                            ? `bg-[${color.primary.action}]/10 text-[${color.primary.action}]`
+                            : `bg-[${color.surface.cards}] text-[${color.text.primary}]`
+                        }`}
+                      >
                         {getCategoryName(offer.category_id)}
                       </span>
                     </td>
                     <td className="px-6 py-5">
-                      {getStatusBadge(offer.lifecycle_status)}
+                      {getStatusBadge(offer.status)}
                     </td>
                     <td className="px-6 py-5">
-                      {getApprovalBadge(offer.approval_status)}
+                      {getApprovalBadge(
+                        offer.status === "approved"
+                          ? "approved"
+                          : offer.status === "rejected"
+                          ? "rejected"
+                          : "pending"
+                      )}
                     </td>
                     <td className={`px-6 py-5 text-sm ${tw.textMuted}`}>
-                      {offer.created_at ? new Date(offer.created_at).toLocaleDateString() : 'N/A'}
+                      {offer.created_at
+                        ? new Date(offer.created_at).toLocaleDateString()
+                        : "N/A"}
                     </td>
                     <td className="px-6 py-5 text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         {/* Play/Pause buttons - Only show if approved */}
-                        {offer.approval_status === 'approved' && offer.lifecycle_status !== 'expired' && offer.lifecycle_status !== 'archived' && (
-                          <>
-                            {(offer.lifecycle_status === 'paused' || offer.lifecycle_status === 'inactive' || offer.lifecycle_status === 'draft') ? (
-                              <button
-                                onClick={() => offer.id && handleActivateOffer(Number(offer.id))}
-                                disabled={loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'activate'}
-                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
-                                style={{ backgroundColor: 'transparent' }}
-                                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-                                title={offer.lifecycle_status === 'paused' ? 'Resume Offer' : 'Activate Offer'}
-                              >
-                                {loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'activate' ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                ) : (
-                                  <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                                )}
-                              </button>
-                            ) : offer.lifecycle_status === 'active' ? (
-                              <button
-                                onClick={() => offer.id && handlePauseOffer(Number(offer.id))}
-                                disabled={loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'pause'}
-                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
-                                style={{ backgroundColor: 'transparent' }}
-                                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-                                title="Pause Offer"
-                              >
-                                {loadingAction?.offerId === Number(offer.id) && loadingAction?.action === 'pause' ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                ) : (
-                                  <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                                )}
-                              </button>
-                            ) : null}
-                          </>
-                        )}
+                        {offer.status === "approved" &&
+                          offer.status !== "expired" &&
+                          offer.status !== "archived" && (
+                            <>
+                              {offer.status === "paused" ||
+                              offer.status === "inactive" ||
+                              offer.status === "draft" ? (
+                                <button
+                                  onClick={() =>
+                                    offer.id &&
+                                    handleActivateOffer(Number(offer.id))
+                                  }
+                                  disabled={
+                                    loadingAction?.offerId ===
+                                      Number(offer.id) &&
+                                    loadingAction?.action === "activate"
+                                  }
+                                  className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  style={{ backgroundColor: "transparent" }}
+                                  onMouseLeave={(e) => {
+                                    (
+                                      e.target as HTMLButtonElement
+                                    ).style.backgroundColor = "transparent";
+                                  }}
+                                  title={
+                                    offer.status === "paused"
+                                      ? "Resume Offer"
+                                      : "Activate Offer"
+                                  }
+                                >
+                                  {loadingAction?.offerId ===
+                                    Number(offer.id) &&
+                                  loadingAction?.action === "activate" ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                  ) : (
+                                    <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                  )}
+                                </button>
+                              ) : offer.status === "active" ? (
+                                <button
+                                  onClick={() =>
+                                    offer.id &&
+                                    handlePauseOffer(Number(offer.id))
+                                  }
+                                  disabled={
+                                    loadingAction?.offerId ===
+                                      Number(offer.id) &&
+                                    loadingAction?.action === "pause"
+                                  }
+                                  className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  style={{ backgroundColor: "transparent" }}
+                                  onMouseLeave={(e) => {
+                                    (
+                                      e.target as HTMLButtonElement
+                                    ).style.backgroundColor = "transparent";
+                                  }}
+                                  title="Pause Offer"
+                                >
+                                  {loadingAction?.offerId ===
+                                    Number(offer.id) &&
+                                  loadingAction?.action === "pause" ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                  ) : (
+                                    <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                  )}
+                                </button>
+                              ) : null}
+                            </>
+                          )}
 
                         <button
                           onClick={() => offer.id && handleViewOffer(offer.id)}
@@ -657,15 +887,25 @@ export default function OffersPage() {
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => offer.id && handleCopyOfferId(offer.id)}
+                          onClick={() =>
+                            offer.id && handleCopyOfferId(offer.id)
+                          }
                           className={`${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
                           title="Copy ID"
                         >
                           <Copy className="h-4 w-4" />
                         </button>
-                        <div className="relative" ref={(el) => { actionMenuRefs.current[offer.id!] = el; }}>
+                        <div
+                          className="relative"
+                          ref={(el) => {
+                            actionMenuRefs.current[offer.id!] = el;
+                          }}
+                        >
                           <button
-                            onClick={(e) => offer.id && handleActionMenuToggle(offer.id, e.currentTarget)}
+                            onClick={(e) =>
+                              offer.id &&
+                              handleActionMenuToggle(offer.id, e.currentTarget)
+                            }
                             className={`action-button ${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
                             title="More Actions"
                           >
@@ -679,8 +919,8 @@ export default function OffersPage() {
                                 zIndex: 99999,
                                 top: `${dropdownPosition.top}px`,
                                 left: `${dropdownPosition.left}px`,
-                                maxHeight: '80vh',
-                                overflowY: 'auto'
+                                maxHeight: "80vh",
+                                overflowY: "auto",
                               }}
                             >
                               {/* Duplicate Offer */}
@@ -695,11 +935,14 @@ export default function OffersPage() {
                               */}
 
                               {/* Lifecycle Actions - Only show if approved */}
-                              {offer.approval_status === 'approved' && (
+                              {offer.approval_status === "approved" && (
                                 <>
-                                  {offer.lifecycle_status === 'draft' && (
+                                  {offer.lifecycle_status === "draft" && (
                                     <button
-                                      onClick={() => offer.id && handleActivateOffer(offer.id)}
+                                      onClick={() =>
+                                        offer.id &&
+                                        handleActivateOffer(offer.id)
+                                      }
                                       className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                     >
                                       <Play className="w-4 h-4 mr-3 text-green-600" />
@@ -707,24 +950,35 @@ export default function OffersPage() {
                                     </button>
                                   )}
 
-                                  {offer.lifecycle_status === 'active' && (
+                                  {offer.lifecycle_status === "active" && (
                                     <>
                                       <button
-                                        onClick={() => offer.id && handlePauseOffer(Number(offer.id))}
+                                        onClick={() =>
+                                          offer.id &&
+                                          handlePauseOffer(Number(offer.id))
+                                        }
                                         className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                       >
                                         <Pause className="w-4 h-4 mr-3 text-yellow-600" />
                                         Pause Offer
                                       </button>
                                       <button
-                                        onClick={() => offer.id && handleDeactivateOffer(Number(offer.id))}
+                                        onClick={() =>
+                                          offer.id &&
+                                          handleDeactivateOffer(
+                                            Number(offer.id)
+                                          )
+                                        }
                                         className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                       >
                                         <XCircle className="w-4 h-4 mr-3 text-orange-600" />
                                         Deactivate Offer
                                       </button>
                                       <button
-                                        onClick={() => offer.id && handleExpireOffer(offer.id)}
+                                        onClick={() =>
+                                          offer.id &&
+                                          handleExpireOffer(offer.id)
+                                        }
                                         className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                       >
                                         <Clock className="w-4 h-4 mr-3 text-gray-600" />
@@ -733,23 +987,34 @@ export default function OffersPage() {
                                     </>
                                   )}
 
-                                  {(offer.lifecycle_status === 'paused' || offer.lifecycle_status === 'inactive') && (
+                                  {(offer.lifecycle_status === "paused" ||
+                                    offer.lifecycle_status === "inactive") && (
                                     <button
-                                      onClick={() => offer.id && handleActivateOffer(Number(offer.id))}
+                                      onClick={() =>
+                                        offer.id &&
+                                        handleActivateOffer(Number(offer.id))
+                                      }
                                       className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                     >
                                       <Play className="w-4 h-4 mr-3 text-green-600" />
-                                      {offer.lifecycle_status === 'paused' ? 'Resume Offer' : 'Activate Offer'}
+                                      {offer.lifecycle_status === "paused"
+                                        ? "Resume Offer"
+                                        : "Activate Offer"}
                                     </button>
                                   )}
 
                                   {/* Archive - Available for any non-archived offer */}
-                                  {offer.lifecycle_status !== 'archived' && (
+                                  {offer.lifecycle_status !== "archived" && (
                                     <button
-                                      onClick={() => offer.id && handleArchiveOffer(offer.id)}
+                                      onClick={() =>
+                                        offer.id && handleArchiveOffer(offer.id)
+                                      }
                                       className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                     >
-                                      <Archive className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
+                                      <Archive
+                                        className="w-4 h-4 mr-3"
+                                        style={{ color: color.primary.action }}
+                                      />
                                       Archive Offer
                                     </button>
                                   )}
@@ -757,27 +1022,38 @@ export default function OffersPage() {
                               )}
 
                               {/* Approval Actions - Context Aware */}
-                              {offer.lifecycle_status === 'draft' && offer.approval_status !== 'pending' && (
-                                <button
-                                  onClick={() => offer.id && handleRequestApproval(offer.id)}
-                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.status.info }} />
-                                  Request Approval
-                                </button>
-                              )}
+                              {offer.lifecycle_status === "draft" &&
+                                offer.approval_status !== "pending" && (
+                                  <button
+                                    onClick={() =>
+                                      offer.id &&
+                                      handleRequestApproval(offer.id)
+                                    }
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <CheckCircle
+                                      className="w-4 h-4 mr-3"
+                                      style={{ color: color.status.info }}
+                                    />
+                                    Request Approval
+                                  </button>
+                                )}
 
-                              {offer.approval_status === 'pending' && (
+                              {offer.approval_status === "pending" && (
                                 <>
                                   <button
-                                    onClick={() => offer.id && handleApproveOffer(offer.id)}
+                                    onClick={() =>
+                                      offer.id && handleApproveOffer(offer.id)
+                                    }
                                     className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                   >
                                     <CheckCircle className="w-4 h-4 mr-3 text-green-600" />
                                     Approve Offer
                                   </button>
                                   <button
-                                    onClick={() => offer.id && handleRejectOffer(offer.id)}
+                                    onClick={() =>
+                                      offer.id && handleRejectOffer(offer.id)
+                                    }
                                     className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                   >
                                     <XCircle className="w-4 h-4 mr-3 text-red-600" />
@@ -788,24 +1064,39 @@ export default function OffersPage() {
 
                               {/* History Links */}
                               <button
-                                onClick={() => offer.id && handleViewApprovalHistory(offer.id)}
+                                onClick={() =>
+                                  offer.id &&
+                                  handleViewApprovalHistory(offer.id)
+                                }
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <CheckCircle className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
+                                <CheckCircle
+                                  className="w-4 h-4 mr-3"
+                                  style={{ color: color.primary.action }}
+                                />
                                 Approval History
                               </button>
 
                               <button
-                                onClick={() => offer.id && handleViewLifecycleHistory(offer.id)}
+                                onClick={() =>
+                                  offer.id &&
+                                  handleViewLifecycleHistory(offer.id)
+                                }
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <Clock className="w-4 h-4 mr-3" style={{ color: color.primary.action }} />
+                                <Clock
+                                  className="w-4 h-4 mr-3"
+                                  style={{ color: color.primary.action }}
+                                />
                                 Lifecycle History
                               </button>
 
                               {/* Delete - Dangerous Action */}
                               <button
-                                onClick={() => offer.id && handleDeleteOffer(offer.id, offer.name)}
+                                onClick={() =>
+                                  offer.id &&
+                                  handleDeleteOffer(offer.id, offer.name)
+                                }
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4 mr-3" />
@@ -826,26 +1117,49 @@ export default function OffersPage() {
 
       {/* Pagination */}
       {!loading && !error && filteredOffers.length > 0 && (
-        <div className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] px-4 sm:px-6 py-4`}>
+        <div
+          className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] px-4 sm:px-6 py-4`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-            <div className={`text-base ${tw.textSecondary} text-center sm:text-left`}>
-              Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1} to{' '}
-              {Math.min((filters.page || 1) * (filters.pageSize || 10), totalOffers)} of {totalOffers} offers
+            <div
+              className={`text-base ${tw.textSecondary} text-center sm:text-left`}
+            >
+              Showing {((filters.page || 1) - 1) * (filters.pageSize || 10) + 1}{" "}
+              to{" "}
+              {Math.min(
+                (filters.page || 1) * (filters.pageSize || 10),
+                totalOffers
+              )}{" "}
+              of {totalOffers} offers
             </div>
             <div className="flex items-center justify-center space-x-2">
               <button
-                onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    page: Math.max(1, (prev.page || 1) - 1),
+                  }))
+                }
                 disabled={(filters.page || 1) <= 1}
                 className={`px-3 py-2 text-base border border-[${color.border.default}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Previous
               </button>
               <span className={`text-base ${tw.textSecondary} px-2`}>
-                Page {filters.page || 1} of {Math.ceil(totalOffers / (filters.pageSize || 10))}
+                Page {filters.page || 1} of{" "}
+                {Math.ceil(totalOffers / (filters.pageSize || 10))}
               </span>
               <button
-                onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
-                disabled={(filters.page || 1) >= Math.ceil(totalOffers / (filters.pageSize || 10))}
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    page: (prev.page || 1) + 1,
+                  }))
+                }
+                disabled={
+                  (filters.page || 1) >=
+                  Math.ceil(totalOffers / (filters.pageSize || 10))
+                }
                 className={`px-3 py-2 text-base border border-[${color.border.default}] rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
               >
                 Next
@@ -856,14 +1170,29 @@ export default function OffersPage() {
       )}
 
       {/* Advanced Filters Side Modal */}
-      {
-        (showAdvancedFilters || isClosingModal) && createPortal(
-          <div className={`fixed inset-0 z-[9999] overflow-hidden ${isClosingModal ? 'animate-out fade-out duration-300' : 'animate-in fade-in duration-300'}`}>
-            <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300" onClick={handleCloseModal}></div>
-            <div className={`absolute right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${isClosingModal ? 'translate-x-full' : 'translate-x-0'}`}>
+      {(showAdvancedFilters || isClosingModal) &&
+        createPortal(
+          <div
+            className={`fixed inset-0 z-[9999] overflow-hidden ${
+              isClosingModal
+                ? "animate-out fade-out duration-300"
+                : "animate-in fade-in duration-300"
+            }`}
+          >
+            <div
+              className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+              onClick={handleCloseModal}
+            ></div>
+            <div
+              className={`absolute right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+                isClosingModal ? "translate-x-full" : "translate-x-0"
+              }`}
+            >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>Filter Offers</h3>
+                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>
+                    Filter Offers
+                  </h3>
                   <button
                     onClick={handleCloseModal}
                     className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
@@ -876,16 +1205,20 @@ export default function OffersPage() {
               <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
                 {/* Status Filter */}
                 <div>
-                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Status</label>
+                  <label
+                    className={`block text-sm font-medium ${tw.textPrimary} mb-3`}
+                  >
+                    Status
+                  </label>
                   <div className="space-y-2">
                     {[
-                      { value: 'all', label: 'All Status' },
-                      { value: 'draft', label: 'Draft' },
-                      { value: 'active', label: 'Active' },
-                      { value: 'inactive', label: 'Inactive' },
-                      { value: 'paused', label: 'Paused' },
-                      { value: 'expired', label: 'Expired' },
-                      { value: 'archived', label: 'Archived' }
+                      { value: "all", label: "All Status" },
+                      { value: OfferStatusEnum.DRAFT, label: "Draft" },
+                      { value: OfferStatusEnum.ACTIVE, label: "Active" },
+                      { value: OfferStatusEnum.INACTIVE, label: "Inactive" },
+                      { value: OfferStatusEnum.PAUSED, label: "Paused" },
+                      { value: OfferStatusEnum.EXPIRED, label: "Expired" },
+                      { value: OfferStatusEnum.ARCHIVED, label: "Archived" },
                     ].map((option) => (
                       <label key={option.value} className="flex items-center">
                         <input
@@ -893,10 +1226,16 @@ export default function OffersPage() {
                           name="status"
                           value={option.value}
                           checked={selectedStatus === option.value}
-                          onChange={() => handleStatusFilter(option.value as LifecycleStatus | 'all')}
+                          onChange={() =>
+                            handleStatusFilter(
+                              option.value as OfferStatusEnum | "all"
+                            )
+                          }
                           className={`mr-3 text-[${color.primary.action}] focus:ring-[${color.primary.action}]`}
                         />
-                        <span className={`text-sm ${tw.textSecondary}`}>{option.label}</span>
+                        <span className={`text-sm ${tw.textSecondary}`}>
+                          {option.label}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -904,13 +1243,17 @@ export default function OffersPage() {
 
                 {/* Approval Filter */}
                 <div>
-                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>Approval Status</label>
+                  <label
+                    className={`block text-sm font-medium ${tw.textPrimary} mb-3`}
+                  >
+                    Approval Status
+                  </label>
                   <div className="space-y-2">
                     {[
-                      { value: 'all', label: 'All Approval' },
-                      { value: 'pending', label: 'Pending' },
-                      { value: 'approved', label: 'Approved' },
-                      { value: 'rejected', label: 'Rejected' }
+                      { value: "all", label: "All Approval" },
+                      { value: "pending", label: "Pending" },
+                      { value: "approved", label: "Approved" },
+                      { value: "rejected", label: "Rejected" },
                     ].map((option) => (
                       <label key={option.value} className="flex items-center">
                         <input
@@ -918,22 +1261,25 @@ export default function OffersPage() {
                           name="approval"
                           value={option.value}
                           checked={selectedApproval === option.value}
-                          onChange={() => handleApprovalFilter(option.value as ApprovalStatus | 'all')}
+                          onChange={() =>
+                            handleApprovalFilter(option.value as string | "all")
+                          }
                           className={`mr-3 text-[${color.primary.action}] focus:ring-[${color.primary.action}]`}
                         />
-                        <span className={`text-sm ${tw.textSecondary}`}>{option.label}</span>
+                        <span className={`text-sm ${tw.textSecondary}`}>
+                          {option.label}
+                        </span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-
                 {/* Action Buttons */}
                 <div className="flex space-x-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
-                      setSelectedStatus('all');
-                      setSelectedApproval('all');
+                      setSelectedStatus("all");
+                      setSelectedApproval("all");
                     }}
                     className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
                   >

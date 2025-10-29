@@ -1,16 +1,32 @@
-import { 
-  OfferCategory,
-  GetOfferCategoriesQuery,
-  GetOfferCategoryByIdentifierQuery,
+import {
   CreateOfferCategoryRequest,
   UpdateOfferCategoryRequest,
-  GetCategoryOffersQuery,
-  OfferCategoriesResponse,
-  CategoryOffersResponse
-} from '../types/offerCategory';
-import { buildApiUrl, getAuthHeaders } from '../../../shared/services/api';
+  ActivateCategoryRequest,
+  DeactivateCategoryRequest,
+  SearchParams,
+  AdvancedSearchParams,
+  FilterParams,
+  DateRangeParams,
+  OfferCategoryResponse,
+  OfferCategoryListResponse,
+  OfferCategoryStatsResponse,
+  PopularCategoriesResponse,
+  OfferCountsResponse,
+  ActiveOfferCountsResponse,
+  UsageTrendsResponse,
+  PerformanceByTypeResponse,
+  CategoryOfferCountResponse,
+  CategoryActiveOfferCountResponse,
+  CategoryOffersResponse,
+  DeleteCategoryResponse,
+} from "../types/offerCategory";
+import {
+  API_CONFIG,
+  buildApiUrl,
+  getAuthHeaders,
+} from "../../../shared/services/api";
 
-const BASE_URL = buildApiUrl('/offers/categories');
+const BASE_URL = buildApiUrl(API_CONFIG.ENDPOINTS.OFFER_CATEGORIES);
 
 class OfferCategoryService {
   private async request<T>(
@@ -18,101 +34,270 @@ class OfferCategoryService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    
     const response = await fetch(url, {
       headers: {
         ...getAuthHeaders(),
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     return response.json();
   }
 
-  // GET /offers/categories/all - Get all offer categories
-  async getOfferCategories(query?: GetOfferCategoriesQuery): Promise<OfferCategoriesResponse> {
-    const params = new URLSearchParams();
-    
-    if (query?.search) params.append('search', query.search);
-    if (query?.page) params.append('page', query.page.toString());
-    if (query?.pageSize) params.append('pageSize', query.pageSize.toString());
-    if (query?.sortBy) params.append('sortBy', query.sortBy);
-    if (query?.sortDirection) params.append('sortDirection', query.sortDirection);
-    if (query?.skipCache) params.append('skipCache', query.skipCache);
+  //  Analytics & Stats
 
-    const queryString = params.toString();
-    const endpoint = queryString ? `/all?${queryString}` : '/all';
-    
-    return this.request<OfferCategoriesResponse>(endpoint);
+  async getStats(
+    skipCache: boolean = false
+  ): Promise<OfferCategoryStatsResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferCategoryStatsResponse>(`/stats${params}`);
   }
 
-  // GET /offers/categories/:identifier - Get offer category by ID or name
-  async getOfferCategoryByIdentifier(
-    identifier: string | number,
-    query: GetOfferCategoryByIdentifierQuery
-  ): Promise<OfferCategory> {
-    const params = new URLSearchParams();
-    params.append('searchBy', query.searchBy);
-    if (query.includeOfferCount !== undefined) {
-      params.append('includeOfferCount', query.includeOfferCount.toString());
-    }
-    if (query.skipCache) params.append('skipCache', query.skipCache);
+  async getUnusedCategories(
+    params: FilterParams = {}
+  ): Promise<OfferCategoryListResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
 
-    const queryString = params.toString();
-    const endpoint = `/${identifier}?${queryString}`;
-    
-    return this.request<OfferCategory>(endpoint);
+    const query = queryParams.toString();
+    return this.request<OfferCategoryListResponse>(
+      `/unused${query ? `?${query}` : ""}`
+    );
   }
 
-  // POST /offers/categories/create - Create new offer category
-  async createOfferCategory(category: CreateOfferCategoryRequest): Promise<OfferCategory> {
-    return this.request<OfferCategory>('/create', {
-      method: 'POST',
-      body: JSON.stringify(category),
+  async getPopularCategories(
+    params: FilterParams = {}
+  ): Promise<PopularCategoriesResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<PopularCategoriesResponse>(
+      `/popular${query ? `?${query}` : ""}`
+    );
+  }
+
+  async getOfferCounts(
+    skipCache: boolean = false
+  ): Promise<OfferCountsResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferCountsResponse>(`/offer-counts${params}`);
+  }
+
+  async getActiveOfferCounts(
+    skipCache: boolean = false
+  ): Promise<ActiveOfferCountsResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<ActiveOfferCountsResponse>(
+      `/active-offer-counts${params}`
+    );
+  }
+
+  async getUsageTrends(
+    params: FilterParams = {}
+  ): Promise<UsageTrendsResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<UsageTrendsResponse>(
+      `/usage-trends${query ? `?${query}` : ""}`
+    );
+  }
+
+  async getPerformanceByType(
+    params: FilterParams = {}
+  ): Promise<PerformanceByTypeResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<PerformanceByTypeResponse>(
+      `/performance-by-type${query ? `?${query}` : ""}`
+    );
+  }
+
+  //  Search & Filter
+
+  async searchCategories(
+    params: SearchParams
+  ): Promise<OfferCategoryListResponse> {
+    const queryParams = new URLSearchParams();
+    queryParams.append("q", params.q);
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<OfferCategoryListResponse>(`/search?${query}`);
+  }
+
+  async advancedSearch(
+    params: AdvancedSearchParams
+  ): Promise<OfferCategoryListResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.name) queryParams.append("name", params.name);
+    if (params.is_active !== undefined && params.is_active !== null)
+      queryParams.append("is_active", params.is_active.toString());
+    if (params.created_by)
+      queryParams.append("created_by", params.created_by.toString());
+    if (params.created_after)
+      queryParams.append("created_after", params.created_after);
+    if (params.created_before)
+      queryParams.append("created_before", params.created_before);
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<OfferCategoryListResponse>(`/advanced-search?${query}`);
+  }
+
+  async getActiveCategories(
+    params: FilterParams = {}
+  ): Promise<OfferCategoryListResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<OfferCategoryListResponse>(
+      `/active${query ? `?${query}` : ""}`
+    );
+  }
+
+  //  Specific Lookups
+
+  async getCategoryByName(
+    name: string,
+    skipCache: boolean = false
+  ): Promise<OfferCategoryResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferCategoryResponse>(
+      `/by-name/${encodeURIComponent(name)}${params}`
+    );
+  }
+
+  async getCategoryById(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<OfferCategoryResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferCategoryResponse>(`/${id}${params}`);
+  }
+
+  // Category-Offer Relationships
+
+  async getCategoryOffers(
+    id: number,
+    params: FilterParams = {}
+  ): Promise<CategoryOffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<CategoryOffersResponse>(
+      `/${id}/offers${query ? `?${query}` : ""}`
+    );
+  }
+
+  async getCategoryOfferCount(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<CategoryOfferCountResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<CategoryOfferCountResponse>(
+      `/${id}/offer-count${params}`
+    );
+  }
+
+  async getCategoryActiveOfferCount(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<CategoryActiveOfferCountResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<CategoryActiveOfferCountResponse>(
+      `/${id}/active-offer-count${params}`
+    );
+  }
+
+  // CRUD Operations
+
+  async getAllCategories(
+    params: FilterParams = {}
+  ): Promise<OfferCategoryListResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    const query = queryParams.toString();
+    return this.request<OfferCategoryListResponse>(
+      `/${query ? `?${query}` : ""}`
+    );
+  }
+
+  async createCategory(
+    request: CreateOfferCategoryRequest
+  ): Promise<OfferCategoryResponse> {
+    return this.request<OfferCategoryResponse>("/", {
+      method: "POST",
+      body: JSON.stringify(request),
     });
   }
 
-  // PUT /offers/categories/update/:id - Update offer category
-  async updateOfferCategory(id: number, category: UpdateOfferCategoryRequest): Promise<OfferCategory> {
-    return this.request<OfferCategory>(`/update/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(category),
+  async updateCategory(
+    id: number,
+    request: UpdateOfferCategoryRequest
+  ): Promise<OfferCategoryResponse> {
+    return this.request<OfferCategoryResponse>(`/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(request),
     });
   }
 
-  // DELETE /offers/categories/delete/:id - Delete offer category
-  async deleteOfferCategory(id: number): Promise<void> {
-    return this.request<void>(`/delete/${id}`, {
-      method: 'DELETE',
+  async deleteCategory(id: number): Promise<DeleteCategoryResponse> {
+    return this.request<DeleteCategoryResponse>(`/${id}`, {
+      method: "DELETE",
     });
   }
 
-  // GET /offers/categories/:id/offers - Get offers in a category
-  async getCategoryOffers(id: number, query?: GetCategoryOffersQuery): Promise<CategoryOffersResponse> {
-    const params = new URLSearchParams();
-    
-    if (query?.search) params.append('search', query.search);
-    if (query?.page) params.append('page', query.page.toString());
-    if (query?.pageSize) params.append('pageSize', query.pageSize.toString());
-    if (query?.sortBy) params.append('sortBy', query.sortBy);
-    if (query?.sortDirection) params.append('sortDirection', query.sortDirection);
-    if (query?.lifecycleStatus) params.append('lifecycleStatus', query.lifecycleStatus);
-    if (query?.approvalStatus) params.append('approvalStatus', query.approvalStatus);
-    if (query?.reusable !== undefined) params.append('reusable', query.reusable.toString());
-    if (query?.multiLanguage !== undefined) params.append('multiLanguage', query.multiLanguage.toString());
-    if (query?.skipCache) params.append('skipCache', query.skipCache);
+  async activateCategory(
+    id: number,
+    request: ActivateCategoryRequest = {}
+  ): Promise<OfferCategoryResponse> {
+    return this.request<OfferCategoryResponse>(`/${id}/activate`, {
+      method: "PATCH",
+      body: JSON.stringify(request),
+    });
+  }
 
-    const queryString = params.toString();
-    const endpoint = queryString ? `/${id}/offers?${queryString}` : `/${id}/offers`;
-    
-    return this.request<CategoryOffersResponse>(endpoint);
+  async deactivateCategory(
+    id: number,
+    request: DeactivateCategoryRequest = {}
+  ): Promise<OfferCategoryResponse> {
+    return this.request<OfferCategoryResponse>(`/${id}/deactivate`, {
+      method: "PATCH",
+      body: JSON.stringify(request),
+    });
   }
 }
 
 export const offerCategoryService = new OfferCategoryService();
+export default offerCategoryService;

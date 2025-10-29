@@ -1,136 +1,212 @@
-export interface EligibilityRules {
+
+// Available offer statuses
+export enum OfferStatusEnum {
+  DRAFT = "draft",
+  PENDING_APPROVAL = "pending_approval",
+  APPROVED = "approved",
+  ACTIVE = "active",
+  EXPIRED = "expired",
+  PAUSED = "paused",
+  ARCHIVED = "archived",
+  REJECTED = "rejected"
+}
+
+// Available offer types
+export enum OfferTypeEnum {
+  DATA = "data",
+  VOICE = "voice",
+  SMS = "sms",
+  COMBO = "combo",
+  VOUCHER = "voucher",
+  LOYALTY = "loyalty",
+  DISCOUNT = "discount",
+  BUNDLE = "bundle",
+  BONUS = "bonus",
+  OTHER = "other"
+}
+
+// Main offer data structure
+export interface Offer {
+  id: number;
+  name: string;
+  code: string;
+  description?: string;
+  offer_type: OfferTypeEnum;
+  category_id?: number;
+  primary_product_id?: number;
+  discount_percentage?: number;
+  discount_amount?: number;
+  bonus_value?: number;
+  eligibility_rules?: object;
   min_spend?: number;
-  customer_segment?: string[];
-  valid_days?: string[];
-  customer_tier?: string;
-  min_account_age_days?: number;
-  min_purchase_count?: number;
-  excluded_products?: number[];
+  max_usage_per_customer: number;
   valid_from?: string;
   valid_to?: string;
-  max_usage_per_customer?: number;
-  combinable_with_other_offers?: boolean;
-  conditions?: {
-    all?: Array<{
-      fact: string;
-      operator: string;
-      value: any;
-    }>;
-  };
-  priority_boost?: number;
+  is_reusable: boolean;
+  supports_multi_language: boolean;
+  metadata?: object;
+  tags?: string[];
+  status: OfferStatusEnum;
+  created_at: string;
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
 }
 
-export interface PersonalizationRule {
-  name: string;
-  definition: Record<string, any>;
-  priority: number;
-  isActive: boolean;
-}
-
-export interface ABTestVariant {
-  variant_name: string;
-  variant_data: Record<string, any>;
-  traffic_percentage: number;
-  is_control: boolean;
-}
-
-export interface ABTest {
-  id?: number;
-  test_name: string;
-  variants: ABTestVariant[];
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  price?: number;
-  category?: string;
-}
-
-export interface Category {
-  id: number;
-  name: string;
-  description?: string;
-  color?: string;
-}
-
-export interface TrackingSource {
-  id: number;
-  name: string;
-  type?: string;
-}
-
-// Backend lifecycle statuses
-export type LifecycleStatus = 'draft' | 'active' | 'inactive' | 'paused' | 'expired' | 'archived';
-// Backend approval statuses
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'requires_changes';
-
-export interface Offer {
-  id?: number;
-  name: string;
-  description?: string;
-  category_id?: number;
-  product_id?: number;
-  eligibility_rules?: EligibilityRules;
-  lifecycle_status: LifecycleStatus;
-  approval_status: ApprovalStatus;
-  reusable: boolean;
-  multi_language: boolean;
-  created_at?: string;
-  updated_at?: string;
-  
-  // Expanded fields for UI
-  category?: Category;
-  product?: Product;
-  products?: Product[];
-  personalization_rules?: PersonalizationRule[];
-  ab_tests?: ABTest[];
-  tracking_sources?: TrackingSource[];
-}
-
-export interface OfferFilters {
-  search?: string;
-  categoryId?: number;
-  productId?: number;
-  lifecycleStatus?: LifecycleStatus | LifecycleStatus[];
-  approvalStatus?: ApprovalStatus | ApprovalStatus[];
-  reusable?: boolean;
-  multiLanguage?: boolean;
-  page?: number;
-  pageSize?: number;
-  sortBy?: string;
-  sortDirection?: 'ASC' | 'DESC';
-  skipCache?: boolean | string;
-}
-
-export interface OfferResponse {
-  success: boolean;
-  data: Offer[];
-  meta: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  };
-}
-
+// creating a new offer
 export interface CreateOfferRequest {
   name: string;
+  code: string;
   description?: string;
+  offer_type: OfferTypeEnum;
   category_id?: number;
-  product_id?: number;
-  offer_type?: string; // NOTE: This field is not in backend API - kept for UI compatibility, ignored by backend
-  eligibility_rules?: EligibilityRules;
-  lifecycle_status: LifecycleStatus;
-  approval_status: ApprovalStatus;
-  reusable: boolean;
-  multi_language: boolean;
+  primary_product_id?: number;
+  discount_percentage?: number;
+  discount_amount?: number;
+  bonus_value?: number;
+  eligibility_rules?: object;
+  min_spend?: number;
+  max_usage_per_customer: number;
+  valid_from?: string;
+  valid_to?: string;
+  is_reusable?: boolean;
+  supports_multi_language?: boolean;
+  metadata?: object;
+  tags?: string[];
+  created_by?: number;
 }
 
-// UpdateOfferRequest - id is passed in URL path, not in body
-export interface UpdateOfferRequest extends Partial<CreateOfferRequest> {
-  // Note: id is NOT included here as it's passed as URL parameter
+//  updating an existing offer
+export interface UpdateOfferRequest {
+  name?: string;
+  code?: string;
+  description?: string;
+  offer_type?: OfferTypeEnum;
+  category_id?: number;
+  primary_product_id?: number;
+  discount_percentage?: number;
+  discount_amount?: number;
+  bonus_value?: number;
+  eligibility_rules?: object;
+  min_spend?: number;
+  max_usage_per_customer?: number;
+  valid_from?: string;
+  valid_to?: string;
+  is_reusable?: boolean;
+  supports_multi_language?: boolean;
+  metadata?: object;
+  tags?: string[];
+  updated_by?: number;
 }
+
+// updating offer status
+export interface UpdateStatusRequest {
+  status: OfferStatusEnum;
+  updated_by?: number;
+}
+
+// submitting offer for approval
+export interface SubmitApprovalRequest {
+  updated_by?: number;
+}
+
+// approving an offer
+export interface ApproveOfferRequest {
+  approved_by: number;
+  approved_at?: string;
+}
+
+// Base response structure from backend
+export interface BaseResponse<T> {
+  success: boolean;
+  data: T;
+  source?: "cache" | "database" | "database-forced";
+}
+
+// Response structure for paginated data
+export interface PaginatedResponse<T> extends BaseResponse<T[]> {
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+// Response for single offer
+export type OfferResponse = BaseResponse<Offer>;
+
+// Response for multiple offers
+export type OffersResponse = PaginatedResponse<Offer>;
+
+// Response when creating an offer
+export interface CreateOfferResponse extends BaseResponse<Offer> {
+  insertId: number;
+}
+
+// Response for offer statistics
+export type OfferStatsResponse = BaseResponse<{
+  totalOffers: number;
+  activeOffers: number;
+  expiredOffers: number;
+  pendingApproval: number;
+  approvedOffers: number;
+  rejectedOffers: number;
+}>;
+
+// Response for offer type distribution
+export type TypeDistributionResponse = BaseResponse<{
+  data: number;
+  voice: number;
+  sms: number;
+  combo: number;
+  voucher: number;
+  loyalty: number;
+  discount: number;
+  bundle: number;
+  bonus: number;
+  other: number;
+}>;
+
+// Response for category performance metrics
+export type CategoryPerformanceResponse = BaseResponse<Array<{
+  categoryId: number;
+  categoryName: string;
+  offerCount: number;
+  totalRevenue: number;
+  conversionRate: number;
+}>>;
+
+// Parameters for searching offers
+export interface SearchParams {
+  searchTerm: string;
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+// Parameters for filtering offers
+export interface FilterParams {
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+// Parameters for date range queries
+export interface DateRangeParams {
+  startDate: string;
+  endDate: string;
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+// Response for offer products
+export type OfferProductsResponse = BaseResponse<Array<{
+  id: number;
+  offer_id: number;
+  product_id: number;
+  is_primary: boolean;
+  created_at: string;
+  created_by: string;
+}>>;

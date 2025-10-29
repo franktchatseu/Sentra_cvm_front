@@ -600,10 +600,14 @@ export default function SegmentManagementPage() {
                         <div className={`text-sm ${tw.textSecondary} mt-1`}>{segment.description}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? `bg-[${color.primary.accent}] text-white` :
-                          segment.type === 'static' ? `bg-[${color.primary.action}] text-white` :
-                            `bg-[${color.status.warning}] text-white`
-                          }`}>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${segment.type === 'dynamic' ? `bg-[${color.primary.accent}]` :
+                          segment.type === 'static' ? `bg-[${color.primary.action}]` :
+                            `bg-[${color.status.warning}]`
+                          }`} style={{
+                            color: segment.type === 'dynamic' ? '#1F2223' :  // Dark text on light accent background
+                              segment.type === 'static' ? 'white' :  // White text on dark action background
+                                'white'  // White text on warning background
+                          }}>
                           {segment.type ? segment.type.charAt(0).toUpperCase() + segment.type.slice(1) : 'N/A'}
                         </span>
                       </td>

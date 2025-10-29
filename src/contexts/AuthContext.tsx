@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { authService } from '../features/auth/services/authService';
-import { User, LoginResponse, CreateUserRequest, CreateUserResponse } from '../features/auth/types/auth';
+import { User, LoginResponse, CreateUserRequest } from '../features/auth/types/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -8,7 +8,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => Promise<void>;
-  createUser: (userData: CreateUserRequest) => Promise<CreateUserResponse>;
+  createUser: (userData: CreateUserRequest) => Promise<User>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (token: string, email: string, newPassword: string) => Promise<void>;
   loading: boolean;
@@ -25,65 +25,76 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sessionId, setSessionId] = useState<number | null>(null);
 
   useEffect(() => {
     // Check for existing token on app load
     const savedToken = localStorage.getItem('auth_token');
     const savedUser = localStorage.getItem('auth_user');
-    const savedSessionId = localStorage.getItem('session_id');
 
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
       setIsAuthenticated(true);
-      if (savedSessionId) {
-        setSessionId(parseInt(savedSessionId));
-      }
     }
     setLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<LoginResponse> => {
-    try {
-      const response = await authService.login({ email, password });
+    const response = await authService.login({ email, password });
 
-      // Store auth data
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('session_id', response.session_id.toString());
+    if (!response.success || !response.session) {
+      throw new Error(response.error?.message || 'Login failed');
+    }
 
-      setToken(response.token);
-      setSessionId(response.session_id);
-      setIsAuthenticated(true);
+    // Store auth data
+    localStorage.setItem('auth_token', response.session.token);
+    localStorage.setItem('session_id', response.session.id);
 
-      // Note: We don't have user data from login response, 
-      // you might need to fetch user profile separately
-      // For now, we'll create a basic user object
-      const basicUser: User = {
-        id: 0, // Will be updated when we fetch full profile
-        email,
-        firstName: '',
-        lastName: '',
-        role: 'user',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+    setToken(response.session.token);
+    setIsAuthenticated(true);
+
+    // Use user data from response if available, otherwise create basic user
+    if (response.user) {
+      const user: User = {
+        user_id: response.user.id,
+        first_name: response.user.first_name,
+        last_name: response.user.last_name,
+        private_email_address: response.user.email,
+        email: response.user.email,
+        role: 'user', // Default role, should come from backend
+        is_activated: true,
+        is_deleted: false,
+        force_password_reset: false,
+        created_on: new Date().toISOString(),
+        updated_on: new Date().toISOString()
       };
-
+      setUser(user);
+      localStorage.setItem('auth_user', JSON.stringify(user));
+    } else {
+      // Fallback basic user if no user data in response
+      const basicUser: User = {
+        user_id: 0,
+        first_name: '',
+        last_name: '',
+        private_email_address: email,
+        email,
+        role: 'user',
+        is_activated: true,
+        is_deleted: false,
+        force_password_reset: false,
+        created_on: new Date().toISOString(),
+        updated_on: new Date().toISOString()
+      };
       setUser(basicUser);
       localStorage.setItem('auth_user', JSON.stringify(basicUser));
-
-      return response;
-    } catch (error) {
-      throw error;
     }
+
+    return response;
   };
 
   const logout = async (): Promise<void> => {
     try {
-      if (sessionId) {
-        await authService.logout({ sessionId });
-      }
+      await authService.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -91,7 +102,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsAuthenticated(false);
       setUser(null);
       setToken(null);
-      setSessionId(null);
 
       // Clear localStorage
       localStorage.removeItem('auth_token');
@@ -100,29 +110,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const createUser = async (userData: CreateUserRequest): Promise<CreateUserResponse> => {
-    try {
-      const response = await authService.createUser(userData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+  const createUser = async (userData: CreateUserRequest): Promise<User> => {
+    return await authService.createUser(userData);
   };
 
   const requestPasswordReset = async (email: string): Promise<void> => {
-    try {
-      await authService.requestPasswordReset({ email });
-    } catch (error) {
-      throw error;
-    }
+    await authService.requestPasswordReset({ email });
   };
 
   const resetPassword = async (token: string, email: string, newPassword: string): Promise<void> => {
-    try {
-      await authService.resetPassword({ token, email, newPassword });
-    } catch (error) {
-      throw error;
-    }
+    await authService.completePasswordReset({ token, email, newPassword });
   };
 
   return (

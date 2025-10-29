@@ -1,234 +1,341 @@
-import { 
-  Offer, 
-  OfferFilters, 
-  OfferResponse, 
-  CreateOfferRequest, 
+import {
+  CreateOfferRequest,
   UpdateOfferRequest,
-  Product,
-  PersonalizationRule,
-  ABTest,
-  TrackingSource
-} from '../../../shared/types/offer';
-import { API_CONFIG, buildApiUrl, getAuthHeaders } from '../../../shared/services/api';
+  UpdateStatusRequest,
+  SubmitApprovalRequest,
+  ApproveOfferRequest,
+  OfferResponse,
+  OffersResponse,
+  CreateOfferResponse,
+  OfferStatsResponse,
+  TypeDistributionResponse,
+  CategoryPerformanceResponse,
+  SearchParams,
+  FilterParams,
+  DateRangeParams,
+  OfferProductsResponse,
+  OfferStatusEnum,
+  OfferTypeEnum,
+} from "../types/offer";
+import {
+  API_CONFIG,
+  buildApiUrl,
+  getAuthHeaders,
+} from "../../../shared/services/api";
 
 const BASE_URL = buildApiUrl(API_CONFIG.ENDPOINTS.OFFERS);
 
 class OfferService {
   private async request<T>(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    
     const response = await fetch(url, {
       headers: {
         ...getAuthHeaders(),
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Try to parse error message from response
+      try {
+        const errorData = await response.json();
+
+        if (errorData.error) {
+          throw new Error(errorData.error);
+        }
+        if (errorData.message) {
+          throw new Error(errorData.message);
+        }
+        if (errorData.details) {
+          throw new Error(errorData.details);
+        }
+        // If we have data but no specific error message, show generic error
+        throw new Error("An error occurred. Please try again.");
+      } catch (parseError) {
+        // If parsing fails, show generic error
+        throw new Error("An error occurred. Please try again.");
+      }
     }
 
     return response.json();
   }
 
-  // Get all offers with filtering and pagination
-  async getOffers(filters: OfferFilters = {}): Promise<OfferResponse> {
-    const params = new URLSearchParams();
-    
-    if (filters.search) params.append('search', filters.search);
-    if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
-    if (filters.productId) params.append('productId', filters.productId.toString());
-    if (filters.lifecycleStatus) {
-      if (Array.isArray(filters.lifecycleStatus)) {
-        params.append('lifecycleStatus', filters.lifecycleStatus.join(','));
-      } else {
-        params.append('lifecycleStatus', filters.lifecycleStatus);
-      }
-    }
-    if (filters.approvalStatus) {
-      if (Array.isArray(filters.approvalStatus)) {
-        params.append('approvalStatus', filters.approvalStatus.join(','));
-      } else {
-        params.append('approvalStatus', filters.approvalStatus);
-      }
-    }
-    if (filters.reusable !== undefined) params.append('reusable', filters.reusable.toString());
-    if (filters.multiLanguage !== undefined) params.append('multiLanguage', filters.multiLanguage.toString());
-    if (filters.page) params.append('page', filters.page.toString());
-    if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
-    if (filters.sortBy) params.append('sortBy', filters.sortBy);
-    if (filters.sortDirection) params.append('sortDirection', filters.sortDirection);
-    if (filters.skipCache !== undefined) params.append('skipCache', filters.skipCache.toString());
-
-    const queryString = params.toString();
-    const endpoint = `/all${queryString ? `?${queryString}` : ''}`;
-    
-    return this.request<OfferResponse>(endpoint);
+  // Analytics & Stats
+  async getStats(skipCache: boolean = false): Promise<OfferStatsResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferStatsResponse>(`/stats${params}`);
   }
 
-  // Get offer by ID
-  async getOfferById(id: number, skipCache: boolean = true): Promise<Offer> {
-    return this.request<Offer>(`/${id}?searchBy=id${skipCache ? '&skipCache=true' : ''}`);
+  async getTypeDistribution(
+    skipCache: boolean = false
+  ): Promise<TypeDistributionResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<TypeDistributionResponse>(
+      `/type-distribution${params}`
+    );
   }
 
-  // Get offer by name
-  async getOfferByName(name: string): Promise<Offer> {
-    return this.request<Offer>(`/${encodeURIComponent(name)}?searchBy=name`);
+  async getCategoryPerformance(
+    skipCache: boolean = false
+  ): Promise<CategoryPerformanceResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<CategoryPerformanceResponse>(
+      `/category-performance${params}`
+    );
   }
 
-  // Create new offer
-  async createOffer(offer: CreateOfferRequest): Promise<Offer> {
-    // Set default category_id to 1 if not provided
-    const offerWithDefaults = {
-      ...offer,
-      category_id: offer.category_id || 1
-    };
+  // Search & Filter
+  async searchOffers(params: SearchParams): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    queryParams.append("searchTerm", params.searchTerm);
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
 
-    return this.request<Offer>('/create', {
-      method: 'POST',
-      body: JSON.stringify(offerWithDefaults),
-    });
+    return this.request<OffersResponse>(`/search?${queryParams.toString()}`);
   }
 
-  // Update existing offer
-  async updateOffer(id: number, offer: Partial<UpdateOfferRequest>): Promise<Offer> {
-    return this.request<Offer>(`/update/${id}`, {
-      method: 'PUT',
+  async getActiveOffers(params: FilterParams = {}): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(`/active?${queryParams.toString()}`);
+  }
+
+  async getCurrentOffers(params: FilterParams = {}): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(`/current?${queryParams.toString()}`);
+  }
+
+  async getExpiredOffers(params: FilterParams = {}): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(`/expired?${queryParams.toString()}`);
+  }
+
+  async getUpcomingOffers(params: FilterParams = {}): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(`/upcoming?${queryParams.toString()}`);
+  }
+
+  async getPendingApprovalOffers(
+    params: FilterParams = {}
+  ): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(
+      `/pending-approval?${queryParams.toString()}`
+    );
+  }
+
+  async getApprovedOffers(params: FilterParams = {}): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(`/approved?${queryParams.toString()}`);
+  }
+
+  async getRejectedOffers(params: FilterParams = {}): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(`/rejected?${queryParams.toString()}`);
+  }
+
+  // Date & Range
+  async getOffersByDateRange(params: DateRangeParams): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    queryParams.append("startDate", params.startDate);
+    queryParams.append("endDate", params.endDate);
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(
+      `/date-range?${queryParams.toString()}`
+    );
+  }
+
+  // Specific Lookups
+  async getOffersByStatus(
+    status: OfferStatusEnum,
+    params: FilterParams = {}
+  ): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(
+      `/status/${status}?${queryParams.toString()}`
+    );
+  }
+
+  async getOffersByType(
+    type: OfferTypeEnum,
+    params: FilterParams = {}
+  ): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(
+      `/type/${type}?${queryParams.toString()}`
+    );
+  }
+
+  async getOffersByCategory(
+    categoryId: number,
+    params: FilterParams = {}
+  ): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(
+      `/category/${categoryId}?${queryParams.toString()}`
+    );
+  }
+
+  async getOffersByProduct(
+    productId: number,
+    params: FilterParams = {}
+  ): Promise<OffersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.skipCache) queryParams.append("skipCache", "true");
+
+    return this.request<OffersResponse>(
+      `/product/${productId}?${queryParams.toString()}`
+    );
+  }
+
+  async getOfferByUuid(
+    uuid: string,
+    skipCache: boolean = false
+  ): Promise<OfferResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferResponse>(`/uuid/${uuid}${params}`);
+  }
+
+  async getOfferByName(
+    name: string,
+    skipCache: boolean = false
+  ): Promise<OfferResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferResponse>(
+      `/name/${encodeURIComponent(name)}${params}`
+    );
+  }
+
+  async getOfferByCode(
+    code: string,
+    skipCache: boolean = false
+  ): Promise<OfferResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferResponse>(`/code/${code}${params}`);
+  }
+
+  // Write Operations
+  async createOffer(offer: CreateOfferRequest): Promise<CreateOfferResponse> {
+    return this.request<CreateOfferResponse>("/", {
+      method: "POST",
       body: JSON.stringify(offer),
     });
   }
 
-  // Delete offer
-  async deleteOffer(id: number): Promise<void> {
-    return this.request<void>(`/delete/${id}`, {
-      method: 'DELETE',
+  async updateOfferStatus(
+    id: number,
+    request: UpdateStatusRequest
+  ): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(request),
     });
   }
 
-  // Approval actions
-  async approveOffer(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}/approve`, {
-      method: 'PUT',
+  async submitForApproval(
+    id: number,
+    request: SubmitApprovalRequest
+  ): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}/submit-approval`, {
+      method: "PATCH",
+      body: JSON.stringify(request),
     });
   }
 
-  async rejectOffer(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}/reject`, {
-      method: 'PUT',
+  async approveOffer(
+    id: number,
+    request: ApproveOfferRequest
+  ): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}/approve`, {
+      method: "PATCH",
+      body: JSON.stringify(request),
     });
   }
 
-  async requestApproval(id: number, comments?: string): Promise<void> {
-    return this.request<void>(`/${id}/request-approval`, {
-      method: 'POST',
-      body: JSON.stringify({ comments }),
+  // Nested Resources
+  async getOfferProducts(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<OfferProductsResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferProductsResponse>(`/${id}/products${params}`);
+  }
+
+  // Basic CRUD
+  async getOfferById(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<OfferResponse> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<OfferResponse>(`/${id}${params}`);
+  }
+
+  async updateOffer(
+    id: number,
+    offer: UpdateOfferRequest
+  ): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(offer),
     });
   }
 
-  // Lifecycle actions
-  async activateOffer(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}/activate`, {
-      method: 'PUT',
+  async deleteOffer(
+    id: number
+  ): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(`/${id}`, {
+      method: "DELETE",
     });
-  }
-
-  async deactivateOffer(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}/deactivate`, {
-      method: 'PUT',
-    });
-  }
-
-  async expireOffer(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}/expire`, {
-      method: 'PUT',
-    });
-  }
-
-  async pauseOffer(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}/pause`, {
-      method: 'PUT',
-    });
-  }
-
-  async archiveOffer(id: number): Promise<Offer> {
-    return this.request<Offer>(`/${id}/archive`, {
-      method: 'PUT',
-    });
-  }
-
-  // Product management
-  async getOfferProducts(id: number): Promise<Product[]> {
-    return this.request<Product[]>(`/${id}/products?skipCache=true`);
-  }
-
-  async linkProducts(id: number, productIds: number[]): Promise<void> {
-    return this.request<void>(`/${id}/products`, {
-      method: 'POST',
-      body: JSON.stringify({ product_ids: productIds }),
-    });
-  }
-
-  // Personalization
-  async getPersonalizationRules(id: number): Promise<PersonalizationRule[]> {
-    return this.request<PersonalizationRule[]>(`/${id}/personalization?skipCache=true`);
-  }
-
-  async setPersonalizationRules(id: number, rules: PersonalizationRule[]): Promise<void> {
-    return this.request<void>(`/${id}/personalization`, {
-      method: 'POST',
-      body: JSON.stringify({ rules }),
-    });
-  }
-
-  async getPersonalizedOffers(customerId: string): Promise<Offer[]> {
-    return this.request<Offer[]>(`/personalized/${customerId}?skipCache=true`);
-  }
-
-  // A/B Testing
-  async getABTests(id: number): Promise<ABTest[]> {
-    return this.request<ABTest[]>(`/${id}/ab-tests?skipCache=true`);
-  }
-
-  async createABTest(id: number, test: Omit<ABTest, 'id' | 'created_at' | 'updated_at'>): Promise<ABTest> {
-    return this.request<ABTest>(`/${id}/ab-tests`, {
-      method: 'POST',
-      body: JSON.stringify(test),
-    });
-  }
-
-  async getABTestResults(offerId: number, testId: number): Promise<any> {
-    return this.request<any>(`/${offerId}/ab-tests/${testId}/results?skipCache=true`);
-  }
-
-  // Tracking Sources
-  async getTrackingSources(id: number): Promise<TrackingSource[]> {
-    return this.request<TrackingSource[]>(`/${id}/tracking-sources?skipCache=true`);
-  }
-
-  async addTrackingSource(id: number, trackingSourceId: number): Promise<void> {
-    return this.request<void>(`/${id}/tracking-sources`, {
-      method: 'POST',
-      body: JSON.stringify({ tracking_source_id: trackingSourceId }),
-    });
-  }
-
-  // History
-  async getApprovalHistory(id: number): Promise<any[]> {
-    return this.request<any[]>(`/${id}/approval-history?skipCache=true`);
-  }
-
-  async getLifecycleHistory(id: number): Promise<any[]> {
-    return this.request<any[]>(`/${id}/lifecycle-history?skipCache=true`);
-  }
-
-  // Get total count of offers for dashboard stats
-  async getTotalOffers(): Promise<number> {
-    const response = await this.getOffers({ pageSize: 1 });
-    return response.meta.total;
   }
 }
 

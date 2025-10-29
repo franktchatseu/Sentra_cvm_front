@@ -1,85 +1,217 @@
-// Offer Category Types
-
-export interface OfferCategory {
-  id: string; // Backend returns string IDs
+// Core offer category data structure
+export interface OfferCategoryType {
+  id: number;
   name: string;
-  description: string | null;
+  description?: string;
+  is_active: boolean;
   created_at: string;
-  created_by: string;
-  updated_at?: string;
-  offer_count?: number; // Optional, included when requested
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
 }
 
-// Query Parameters for GET /offers/categories/all
-export interface GetOfferCategoriesQuery {
-  search?: string;
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'id' | 'name' | 'description' | 'created_at' | 'updated_at';
-  sortDirection?: 'ASC' | 'DESC';
-  skipCache?: 'true' | 'false';
-}
-
-// Query Parameters for GET /offers/categories/:identifier
-export interface GetOfferCategoryByIdentifierQuery {
-  searchBy: 'id' | 'name';
-  includeOfferCount?: boolean;
-  skipCache?: 'true' | 'false';
-}
-
-// Request body for POST /offers/categories/create
 export interface CreateOfferCategoryRequest {
-  name: string; // 1-64 chars
-  description?: string; // max 1000 chars, can be null
+  name: string;
+  description?: string;
+  created_by?: number;
 }
 
-// Request body for PUT /offers/categories/update/:id
 export interface UpdateOfferCategoryRequest {
-  name?: string; // 1-64 chars
-  description?: string; // max 1000 chars, can be null
+  name?: string;
+  description?: string;
+  updated_by?: number;
 }
 
-// Query Parameters for GET /offers/categories/:id/offers
-export interface GetCategoryOffersQuery {
-  search?: string;
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'id' | 'name' | 'description' | 'lifecycle_status' | 'approval_status' | 'reusable' | 'multi_language' | 'created_at' | 'updated_at';
-  sortDirection?: 'ASC' | 'DESC';
-  lifecycleStatus?: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'EXPIRED' | 'SUSPENDED';
-  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
-  reusable?: boolean;
-  multiLanguage?: boolean;
-  skipCache?: 'true' | 'false';
+export interface ActivateCategoryRequest {
+  updated_by?: number;
 }
 
-// Response types
-export interface OfferCategoriesResponse {
+export interface DeactivateCategoryRequest {
+  updated_by?: number;
+}
+
+export interface SearchParams {
+  q: string;
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+export interface AdvancedSearchParams {
+  name?: string;
+  is_active?: boolean;
+  created_by?: number;
+  created_after?: string;
+  created_before?: string;
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+export interface FilterParams {
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+export interface DateRangeParams {
+  days?: number;
+  skipCache?: boolean;
+}
+
+export interface OfferCategoryResponse {
   success: boolean;
-  data: OfferCategory[];
-  meta: {
+  data: OfferCategoryType;
+  source: "cache" | "database" | "database-forced";
+}
+
+export interface OfferCategoryListResponse {
+  success: boolean;
+  data: OfferCategoryType[];
+  pagination: {
+    limit: number;
+    offset: number;
     total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    sortBy: string;
-    sortDirection: string;
+    hasMore: boolean;
   };
-  cacheDurationSec: number;
-  isCachedResponse: boolean;
+  source: "cache" | "database" | "database-forced";
+}
+
+// Analytics response types
+export interface OfferCategoryStatsResponse {
+  success: boolean;
+  data: {
+    totalCategories: number;
+    activeCategories: number;
+    inactiveCategories: number;
+    categoriesWithOffers: number;
+    categoriesWithoutOffers: number;
+    averageOffersPerCategory: number;
+    mostUsedCategory: {
+      id: number;
+      name: string;
+      offerCount: number;
+    };
+    leastUsedCategory: {
+      id: number;
+      name: string;
+      offerCount: number;
+    };
+  };
+  source: "cache" | "database" | "database-forced";
+}
+
+export interface PopularCategoriesResponse {
+  success: boolean;
+  data: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    is_active: boolean;
+    offerCount: number;
+    activeOfferCount: number;
+    created_at: string;
+    updated_at: string;
+  }>;
+  source: "cache" | "database" | "database-forced";
+}
+
+export interface OfferCountsResponse {
+  success: boolean;
+  data: Array<{
+    categoryId: number;
+    categoryName: string;
+    totalOffers: number;
+    activeOffers: number;
+    expiredOffers: number;
+    draftOffers: number;
+  }>;
+  source: "cache" | "database" | "database-forced";
+}
+
+export interface ActiveOfferCountsResponse {
+  success: boolean;
+  data: Array<{
+    categoryId: number;
+    categoryName: string;
+    activeOfferCount: number;
+  }>;
+  source: "cache" | "database" | "database-forced";
+}
+
+export interface UsageTrendsResponse {
+  success: boolean;
+  data: Array<{
+    category_name: string;
+    year: number;
+    month: number;
+    offers_created: number;
+  }>;
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+  source: "cache" | "database" | "database-forced";
+}
+
+export interface PerformanceByTypeResponse {
+  success: boolean;
+  data: Array<{
+    category_name: string;
+    offer_type: string;
+    offer_count: number;
+    avg_discount_percentage: number;
+    avg_discount_amount: number;
+  }>;
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+  source: "cache" | "database" | "database-forced";
+}
+
+// Category-offer relationship responses
+export interface CategoryOfferCountResponse {
+  success: boolean;
+  data: {
+    categoryId: number;
+    categoryName: string;
+    totalOffers: number;
+    activeOffers: number;
+    expiredOffers: number;
+    draftOffers: number;
+    pendingOffers: number;
+  };
+  source: "cache" | "database" | "database-forced";
+}
+
+export interface CategoryActiveOfferCountResponse {
+  success: boolean;
+  data: {
+    categoryId: number;
+    categoryName: string;
+    activeOfferCount: number;
+  };
+  source: "cache" | "database" | "database-forced";
 }
 
 export interface CategoryOffersResponse {
-  offers: any[]; // You can define a proper Offer type if needed
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  success: boolean;
+  data: Array<unknown>;
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+  source: "cache" | "database" | "database-forced";
 }
 
-// Error response
-export interface OfferCategoryError {
-  error: string;
-  message?: string;
-  details?: Record<string, unknown>;
+export interface DeleteCategoryResponse {
+  success: boolean;
+  message: string;
 }
