@@ -77,11 +77,11 @@ export const tw = {
   fontPrimary: "font-sans",
   fontSecondary: "font-mono",
 
-  // Typography classes using Satoshi Variable and Et Mono fonts
-  // Main headings - Satoshi Variable, weight 800, 87.552px
-  mainHeading: `font-['Satoshi_Variable',sans-serif] text-[5.472rem] font-[800] leading-[120%]`,
-  // Sub-headings - Impact, weight 400, 17.5104px
-  subHeading: `font-['Impact',sans-serif] text-[1.0944rem] font-normal leading-normal`,
+  // Typography classes using Satoshi Variable and Impact fonts
+  // Main headings - Satoshi Variable, weight 800, 87.552px, line-height 110%, letter-spacing -4%
+  mainHeading: `font-['Satoshi_Variable',sans-serif] text-[2rem] font-[800] leading-[110%] tracking-[-0.04em]`,
+  // Sub-headings - Impact, weight 400, 17.5104px, letter-spacing -8%
+  subHeading: `font-['Impact',sans-serif] text-[1.09rem] font-normal leading-normal tracking-[-0.08em]`,
 
   // Legacy typography classes (for backward compatibility)
   heading: "text-3xl font-bold leading-[120%] tracking-[-0.04em]",

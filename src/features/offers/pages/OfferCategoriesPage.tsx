@@ -100,7 +100,7 @@ function CategoryModal({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className={`${tw.subHeading} text-gray-900`}>
                 {category ? "Edit Offer Catalog" : "Create New Offer Catalog"}
               </h2>
               <button
@@ -292,7 +292,7 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className={`${tw.subHeading} text-gray-900`}>
                     Offers in "{category.name}"
                   </h2>
                   <p className="text-sm text-gray-600 mt-1">
@@ -397,7 +397,7 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
                 ) : filteredOffers.length === 0 ? (
                   <div className="text-center py-8">
                     <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
                       {searchTerm
                         ? "No offers found"
                         : "No offers in this category"}
@@ -947,7 +947,7 @@ export default function OfferCategoriesPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
               Offer Catalogs
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
@@ -1279,7 +1279,7 @@ export default function OfferCategoriesPage() {
           style={{ backgroundColor: color.surface.cards }}
         >
           <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
           </h3>
           <p className="text-gray-500 mb-6">
@@ -1307,7 +1307,9 @@ export default function OfferCategoriesPage() {
               style={{ backgroundColor: color.surface.cards }}
             >
               <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex-1 truncate">
+                <h3
+                  className={`${tw.subHeading} text-gray-900 flex-1 truncate`}
+                >
                   {category.name}
                 </h3>
                 <div className="flex items-center space-x-1">
@@ -1384,7 +1386,7 @@ export default function OfferCategoriesPage() {
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
-                  <h3 className="text-base font-semibold text-gray-900 truncate">
+                  <h3 className={`${tw.subHeading} text-gray-900 truncate`}>
                     {category.name}
                   </h3>
                   <p className="text-sm text-gray-600 mt-0.5">
@@ -1487,7 +1489,7 @@ export default function OfferCategoriesPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>
+                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
                     Filter Categories
                   </h3>
                   <button
@@ -1543,7 +1545,7 @@ export default function OfferCategoriesPage() {
 
                 {/* Advanced Search Section */}
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className={`text-sm font-medium ${tw.textPrimary} mb-4`}>
+                  <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-4`}>
                     Advanced Search
                   </h3>
 

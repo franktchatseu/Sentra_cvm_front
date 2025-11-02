@@ -581,7 +581,7 @@ export default function OffersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
             Offers Management
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
@@ -1168,7 +1168,7 @@ export default function OffersPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>
+                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
                     Filter Offers
                   </h3>
                   <button

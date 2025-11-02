@@ -192,7 +192,7 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
             Products Management
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
@@ -341,7 +341,7 @@ export default function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-12">
             {/* Icon removed */}
-            <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
+            <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
               No products found
             </h3>
             <p className={`${tw.textMuted} mb-6`}>

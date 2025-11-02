@@ -508,10 +508,10 @@ export default function SegmentManagementPage() {
       <div className={``}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
-            <h1 className={`${tw.heading} ${tw.textPrimary}`}>
+            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
               Segment Management
             </h1>
-            <p className={`${tw.caption} ${tw.textSecondary} mt-2`}>
+            <p className={`${tw.subHeading} ${tw.textSecondary} mt-2`}>
               Create and manage customer segments
             </p>
           </div>
@@ -623,7 +623,7 @@ export default function SegmentManagementPage() {
             <div
               className={`bg-gradient-to-br from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 rounded-xl p-6 md:p-12`}
             >
-              <h3 className={`text-xl font-bold ${tw.textPrimary} mb-3`}>
+              <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-3`}>
                 No segments found
               </h3>
               <p
@@ -1101,7 +1101,7 @@ export default function SegmentManagementPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>
+                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
                     Filter Segments
                   </h3>
                   <button

@@ -115,30 +115,29 @@ export const fonts = {
     displayMd: "3.75rem",
     displayLg: "4.5rem",
     // New sizes for typography system
-    mainHeading: "5.472rem", // 87.552px (87.552 / 16 = 5.472rem)
-    subHeading: "1.0944rem", // 17.5104px (17.5104 / 16 = 1.0944rem)
+    mainHeading: "2.2rem", 
+    subHeading: "1.0944rem", 
   },
 
   typography: {
     // Main Headings use Satoshi Variable with weight 800
     mainHeading: {
-      size: "5.472rem", // 87.552px
+      size: "2.5rem", 
       weight: 800, // Extra bold
       family: "primary",
-      lineHeight: "120%",
-      letterSpacing: "normal",
+      lineHeight: "110%",
+      letterSpacing: "-4%",
       fontKerning: "normal",
     },
-    // Sub-headings use Et Mono with weight 400
+    // Sub-headings use Impact with weight 400
     subHeading: {
       size: "1.0944rem", // 17.5104px
       weight: 400, // Normal weight
       family: "secondary",
       lineHeight: "normal",
-      letterSpacing: "normal",
+      letterSpacing: "-8%", // -3px equivalent but percentage-based for responsiveness
       fontKerning: "normal",
     },
-    // Legacy heading styles (keeping for backward compatibility)
     heading: {
       size: "1.875rem",
       weight: 800, // Updated to extra bold to match main headings

@@ -86,7 +86,7 @@ function CategoryModal({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className={`${tw.subHeading} text-gray-900`}>
                 {category
                   ? "Edit Segment Catalog"
                   : "Create New Segment Catalog"}
@@ -315,7 +315,7 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className={`${tw.subHeading} text-gray-900`}>
                   Segments in {category?.name}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
@@ -414,7 +414,7 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
                       className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">
+                        <h3 className={`${tw.subHeading} text-gray-900`}>
                           {segment.name}
                         </h3>
                         {segment.description && (
@@ -641,10 +641,10 @@ export default function SegmentCategoriesPage() {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
               Segment Catalogs
             </h1>
-            <p className={`${tw.textSecondary} mt-1`}>
+            <p className={`${tw.subHeading} ${tw.textSecondary} mt-1`}>
               Organize your segments into catalogs
             </p>
           </div>
@@ -723,7 +723,7 @@ export default function SegmentCategoriesPage() {
       ) : filteredCategories.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
           <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
           </h3>
           <p className="text-gray-500 mb-6">
@@ -761,7 +761,7 @@ export default function SegmentCategoriesPage() {
               className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className={`${tw.subHeading} text-gray-900`}>
                   {category.name}
                 </h3>
                 <div className="flex items-center space-x-1">
@@ -819,7 +819,7 @@ export default function SegmentCategoriesPage() {
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
-                  <h3 className="text-base font-semibold text-gray-900">
+                  <h3 className={`${tw.subHeading} text-gray-900`}>
                     {category.name}
                   </h3>
                   <p className="text-sm text-gray-600 mt-0.5">
