@@ -592,7 +592,7 @@ export default function SegmentManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}
+        className={`bg-white rounded-xl border border-[${color.border.default}] overflow-x-auto`}
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -647,7 +647,7 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="hidden lg:block overflow-x-auto overflow-y-visible">
               <table className="w-full">
                 <thead
                   className={`border-b ${tw.borderDefault} rounded-t-2xl`}
@@ -835,7 +835,7 @@ export default function SegmentManagementPage() {
                             {showActionMenu ===
                               (segment.segment_id || segment.id) && (
                               <div
-                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-50"
+                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-[100]"
                                 style={{
                                   maxHeight: "80vh",
                                   overflowY: "auto",

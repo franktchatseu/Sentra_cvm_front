@@ -95,92 +95,92 @@ function CategoryModal({
     }
   };
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
-            {category ? "Edit Offer Catalog" : "Create New Offer Catalog"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Offer Catalog Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                placeholder="Enter offer catalog name"
-                required
-              />
+  return isOpen
+    ? createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                {category ? "Edit Offer Catalog" : "Create New Offer Catalog"}
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                placeholder="Enter offer catalog description"
-                rows={3}
-              />
-            </div>
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Offer Catalog Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    placeholder="Enter offer catalog name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    placeholder="Enter offer catalog description"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: color.primary.action }}
+                >
+                  {isLoading
+                    ? "Saving..."
+                    : category
+                    ? "Update Category"
+                    : "Create Category"}
+                </button>
+              </div>
+            </form>
           </div>
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: color.primary.action }}
-            >
-              {isLoading
-                ? "Saving..."
-                : category
-                ? "Update Category"
-                : "Create Category"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>,
-    document.body
-  );
+        </div>,
+        document.body
+      )
+    : null;
 }
 
 interface OffersModalProps {
@@ -280,94 +280,93 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
     }
   };
 
-  if (!isOpen || !category) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] overflow-y-auto">
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
-      ></div>
-      <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                Offers in "{category.name}"
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {offers.length} offer{offers.length !== 1 ? "s" : ""} found
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-
-          {/* Search and Actions */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search offers..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+  return isOpen && category
+    ? createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={onClose}
+          ></div>
+          <div className="relative min-h-screen flex items-center justify-center p-4">
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Offers in "{category.name}"
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {offers.length} offer{offers.length !== 1 ? "s" : ""} found
+                  </p>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
               </div>
-              <div className="flex gap-2">
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      if (!showAssignDropdown) {
-                        loadUnassignedOffers();
-                      }
-                      setShowAssignDropdown(!showAssignDropdown);
-                    }}
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                    disabled={assigningOffer}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Assign Existing Offer
-                  </button>
 
-                  {/* Dropdown for available offers */}
-                  {showAssignDropdown && (
-                    <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-                      {allOffersList.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500 text-sm">
-                          No available offers to assign
-                        </div>
-                      ) : (
-                        <div className="py-2">
-                          {allOffersList.map((offer: BasicOffer, index) => (
-                            <button
-                              key={offer?.id || index}
-                              onClick={() => handleAssignOffer()}
-                              disabled={assigningOffer}
-                              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
-                            >
-                              <div className="font-medium text-gray-900 text-sm">
-                                {offer?.name || "Unknown Offer"}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {offer?.description || "No description"}
-                              </div>
-                            </button>
-                          ))}
+              {/* Search and Actions */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search offers..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          if (!showAssignDropdown) {
+                            loadUnassignedOffers();
+                          }
+                          setShowAssignDropdown(!showAssignDropdown);
+                        }}
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
+                        disabled={assigningOffer}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Assign Existing Offer
+                      </button>
+
+                      {/* Dropdown for available offers */}
+                      {showAssignDropdown && (
+                        <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
+                          {allOffersList.length === 0 ? (
+                            <div className="p-4 text-center text-gray-500 text-sm">
+                              No available offers to assign
+                            </div>
+                          ) : (
+                            <div className="py-2">
+                              {allOffersList.map((offer: BasicOffer, index) => (
+                                <button
+                                  key={offer?.id || index}
+                                  onClick={() => handleAssignOffer()}
+                                  disabled={assigningOffer}
+                                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
+                                >
+                                  <div className="font-medium text-gray-900 text-sm">
+                                    {offer?.name || "Unknown Offer"}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {offer?.description || "No description"}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                {/* <button
+                    {/* <button
                   onClick={handleCreateOffer}
                   className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
                   style={{ backgroundColor: color.primary.action }}
@@ -375,94 +374,95 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
                   <Plus className="w-4 h-4" />
                   Create New Offer
                 </button> */}
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 max-h-96 overflow-y-auto">
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8">
+                    <p className="text-red-600 mb-4">{error}</p>
+                    <button
+                      onClick={loadOffers}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : filteredOffers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {searchTerm
+                        ? "No offers found"
+                        : "No offers in this category"}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      {searchTerm
+                        ? "Try adjusting your search terms"
+                        : "Create a new offer or assign an existing one to this category"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredOffers.map((offer: BasicOffer, index) => (
+                      <div
+                        key={offer?.id || index}
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="h-10 w-10 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: color.primary.accent }}
+                            >
+                              <MessageSquare className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {offer?.name || "Unknown Offer"}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {offer?.description || "No description"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              offer?.status === "active"
+                                ? "bg-green-100 text-green-800"
+                                : offer?.status === "draft"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {offer?.status || "unknown"}
+                          </span>
+                          <button
+                            onClick={() => handleAssignOffer()}
+                            className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                          >
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Content */}
-          <div className="p-6 max-h-96 overflow-y-auto">
-            {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <LoadingSpinner />
-              </div>
-            ) : error ? (
-              <div className="text-center py-8">
-                <p className="text-red-600 mb-4">{error}</p>
-                <button
-                  onClick={loadOffers}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Try Again
-                </button>
-              </div>
-            ) : filteredOffers.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchTerm
-                    ? "No offers found"
-                    : "No offers in this category"}
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm
-                    ? "Try adjusting your search terms"
-                    : "Create a new offer or assign an existing one to this category"}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredOffers.map((offer: BasicOffer, index) => (
-                  <div
-                    key={offer?.id || index}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-10 w-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: color.primary.accent }}
-                        >
-                          <MessageSquare className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {offer?.name || "Unknown Offer"}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {offer?.description || "No description"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          offer?.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : offer?.status === "draft"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {offer?.status || "unknown"}
-                      </span>
-                      <button
-                        onClick={() => handleAssignOffer()}
-                        className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                      >
-                        View
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
+        </div>,
+        document.body
+      )
+    : null;
 }
 
 export default function OfferCategoriesPage() {

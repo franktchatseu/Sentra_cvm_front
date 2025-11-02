@@ -294,7 +294,7 @@ class OfferService {
 
   async approveOffer(
     id: number,
-    request: ApproveOfferRequest
+    request: ApproveOfferRequest = {}
   ): Promise<OfferResponse> {
     return this.request<OfferResponse>(`/${id}/approve`, {
       method: "PATCH",
@@ -336,6 +336,96 @@ class OfferService {
     return this.request<{ success: boolean; message: string }>(`/${id}`, {
       method: "DELETE",
     });
+  }
+
+  // Additional Status Operations
+  async activateOffer(id: number): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}/activate`, {
+      method: "PATCH",
+    });
+  }
+
+  async deactivateOffer(id: number): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}/deactivate`, {
+      method: "PATCH",
+    });
+  }
+
+  async pauseOffer(id: number): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}/pause`, {
+      method: "PATCH",
+    });
+  }
+
+  async archiveOffer(
+    id: number
+  ): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(
+      `/${id}/archive`,
+      {
+        method: "PATCH",
+      }
+    );
+  }
+
+  async expireOffer(id: number): Promise<OfferResponse> {
+    return this.request<OfferResponse>(`/${id}/expire`, {
+      method: "PATCH",
+    });
+  }
+
+  async requestApproval(id: number): Promise<OfferResponse> {
+    // Uses the official endpoint: PATCH /offers/:id/submit-approval
+    return this.request<OfferResponse>(`/${id}/submit-approval`, {
+      method: "PATCH",
+      body: JSON.stringify({}),
+    });
+  }
+
+  async rejectOffer(
+    id: number
+  ): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(
+      `/${id}/reject`,
+      {
+        method: "PATCH",
+      }
+    );
+  }
+
+  // Product Linking
+  async linkProducts(
+    id: number,
+    productIds: number[]
+  ): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(
+      `/${id}/products`,
+      {
+        method: "POST",
+        body: JSON.stringify({ product_ids: productIds }),
+      }
+    );
+  }
+
+  // History & Audit
+  async getLifecycleHistory(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<{ success: boolean; data: unknown[] }> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<{ success: boolean; data: unknown[] }>(
+      `/${id}/lifecycle-history${params}`
+    );
+  }
+
+  async getApprovalHistory(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<{ success: boolean; data: unknown[] }> {
+    const params = skipCache ? "?skipCache=true" : "";
+    return this.request<{ success: boolean; data: unknown[] }>(
+      `/${id}/approval-history${params}`
+    );
   }
 }
 

@@ -81,102 +81,104 @@ function CategoryModal({
     }
   };
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
-            {category ? "Edit Segment Catalog" : "Create New Segment Catalog"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Segment Catalog Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
-                placeholder="e.g., Marketing Segments, Retention Campaigns"
-                required
-              />
+  return isOpen
+    ? createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                {category
+                  ? "Edit Segment Catalog"
+                  : "Create New Segment Catalog"}
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                rows={3}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
-                placeholder="Optional description for this segment catalog"
-              />
-            </div>
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Segment Catalog Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
+                    placeholder="e.g., Marketing Segments, Retention Campaigns"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
+                    placeholder="Optional description for this segment catalog"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: color.primary.action }}
+                  onMouseEnter={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      (e.target as HTMLButtonElement).style.backgroundColor =
+                        color.primary.action;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor =
+                      color.primary.action;
+                  }}
+                >
+                  {isLoading
+                    ? "Saving..."
+                    : category
+                    ? "Update Catalog"
+                    : "Create Catalog"}
+                </button>
+              </div>
+            </form>
           </div>
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: color.primary.action }}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.disabled) {
-                  (e.target as HTMLButtonElement).style.backgroundColor =
-                    color.primary.action;
-                }
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  color.primary.action;
-              }}
-            >
-              {isLoading
-                ? "Saving..."
-                : category
-                ? "Update Catalog"
-                : "Create Catalog"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>,
-    document.body
-  );
+        </div>,
+        document.body
+      )
+    : null;
 }
 
 interface SegmentsModalProps {
@@ -307,146 +309,151 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
     }
   };
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              Segments in {category?.name}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {segments.length} segment{segments.length !== 1 ? "s" : ""} in
-              this catalog
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        {/* Search and Assign Button */}
-        <div className="px-6 pt-4 pb-2 border-b border-gray-200">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search segments..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
-              />
-            </div>
-            <div className="relative" ref={dropdownRef}>
+  return isOpen && category
+    ? createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Segments in {category?.name}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {segments.length} segment{segments.length !== 1 ? "s" : ""} in
+                  this catalog
+                </p>
+              </div>
               <button
-                onClick={() => {
-                  if (!showAssignDropdown) {
-                    loadUnassignedSegments();
-                  }
-                  setShowAssignDropdown(!showAssignDropdown);
-                }}
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                disabled={assigningSegment}
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                Assign Existing Segments
+                <X className="w-5 h-5 text-gray-500" />
               </button>
+            </div>
 
-              {/* Dropdown for available segments */}
-              {showAssignDropdown && (
-                <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-                  {allSegmentsList.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500 text-sm">
-                      No available segments to assign
-                    </div>
-                  ) : (
-                    <div className="py-2">
-                      {allSegmentsList.map((segment) => (
-                        <button
-                          key={segment.id}
-                          onClick={() => handleAssignSegment(segment.id)}
-                          disabled={assigningSegment}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
-                        >
-                          <div className="font-medium text-gray-900 text-sm">
-                            {segment.name}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {segment.description || "No description"}
-                          </div>
-                        </button>
-                      ))}
+            {/* Search and Assign Button */}
+            <div className="px-6 pt-4 pb-2 border-b border-gray-200">
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search segments..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  />
+                </div>
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => {
+                      if (!showAssignDropdown) {
+                        loadUnassignedSegments();
+                      }
+                      setShowAssignDropdown(!showAssignDropdown);
+                    }}
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
+                    disabled={assigningSegment}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Assign Existing Segments
+                  </button>
+
+                  {/* Dropdown for available segments */}
+                  {showAssignDropdown && (
+                    <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
+                      {allSegmentsList.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 text-sm">
+                          No available segments to assign
+                        </div>
+                      ) : (
+                        <div className="py-2">
+                          {allSegmentsList.map((segment) => (
+                            <button
+                              key={segment.id}
+                              onClick={() => handleAssignSegment(segment.id)}
+                              disabled={assigningSegment}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
+                            >
+                              <div className="font-medium text-gray-900 text-sm">
+                                {segment.name}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {segment.description || "No description"}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <LoadingSpinner variant="modern" size="lg" color="primary" />
+                  <p className="text-gray-500 mt-4">Loading segments...</p>
+                </div>
+              ) : filteredSegments.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">
+                    {searchTerm
+                      ? "No segments match your search"
+                      : "No segments in this catalog"}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredSegments.map((segment) => (
+                    <div
+                      key={segment.id}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          {segment.name}
+                        </h3>
+                        {segment.description && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {segment.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-xs text-gray-500">
+                            Type:{" "}
+                            <span className="font-medium capitalize">
+                              {segment.type}
+                            </span>
+                          </span>
+                          {"customer_count" in segment &&
+                            segment.customer_count !== undefined && (
+                              <span className="text-xs text-gray-500">
+                                Members:{" "}
+                                <span className="font-medium">
+                                  {(
+                                    segment as Segment & {
+                                      customer_count?: number;
+                                    }
+                                  ).customer_count?.toLocaleString() || "0"}
+                                </span>
+                              </span>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <LoadingSpinner variant="modern" size="lg" color="primary" />
-              <p className="text-gray-500 mt-4">Loading segments...</p>
-            </div>
-          ) : filteredSegments.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">
-                {searchTerm
-                  ? "No segments match your search"
-                  : "No segments in this catalog"}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredSegments.map((segment) => (
-                <div
-                  key={segment.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">
-                      {segment.name}
-                    </h3>
-                    {segment.description && (
-                      <p className="text-sm text-gray-500 mt-1">
-                        {segment.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="text-xs text-gray-500">
-                        Type:{" "}
-                        <span className="font-medium capitalize">
-                          {segment.type}
-                        </span>
-                      </span>
-                      {segment.customer_count !== undefined && (
-                        <span className="text-xs text-gray-500">
-                          Members:{" "}
-                          <span className="font-medium">
-                            {segment.customer_count.toLocaleString()}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
+        </div>,
+        document.body
+      )
+    : null;
 }
 
 export default function SegmentCategoriesPage() {
@@ -478,10 +485,12 @@ export default function SegmentCategoriesPage() {
       console.log("Categories data:", categoriesData);
 
       // Ensure all category IDs are numbers
-      const validCategoriesData = categoriesData.map((cat: any) => ({
-        ...cat,
-        id: typeof cat.id === "string" ? parseInt(cat.id, 10) : cat.id,
-      }));
+      const validCategoriesData = categoriesData.map(
+        (cat: SegmentCategory & { id: number | string }) => ({
+          ...cat,
+          id: typeof cat.id === "string" ? parseInt(cat.id, 10) : cat.id,
+        })
+      );
 
       console.log(
         "Valid categories data (after ID conversion):",

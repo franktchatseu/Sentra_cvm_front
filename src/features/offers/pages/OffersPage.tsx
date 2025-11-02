@@ -18,13 +18,7 @@ import {
   Archive,
   Filter,
 } from "lucide-react";
-import {
-  Offer,
-  SearchParams,
-  FilterParams,
-  OfferStatusEnum,
-  OfferTypeEnum,
-} from "../types/offer";
+import { Offer, SearchParams, OfferStatusEnum } from "../types/offer";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
@@ -111,7 +105,7 @@ export default function OffersPage() {
       const response = await offerService.searchOffers(searchParams);
       if (response.success && response.data) {
         setOffers(response.data);
-        setTotalOffers(response.total || response.data.length);
+        setTotalOffers(response.pagination?.total || response.data.length);
       } else {
         setError("Failed to load offers");
       }
@@ -276,7 +270,7 @@ export default function OffersPage() {
         setOffers((prevOffers) =>
           prevOffers.map((offer) =>
             Number(offer.id) === id
-              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              ? { ...offer, lifecycle_status: newStatus as string }
               : offer
           )
         );
@@ -310,7 +304,7 @@ export default function OffersPage() {
         setOffers((prevOffers) =>
           prevOffers.map((offer) =>
             Number(offer.id) === id
-              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              ? { ...offer, lifecycle_status: newStatus as string }
               : offer
           )
         );
@@ -344,7 +338,7 @@ export default function OffersPage() {
         setOffers((prevOffers) =>
           prevOffers.map((offer) =>
             Number(offer.id) === id
-              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              ? { ...offer, lifecycle_status: newStatus as string }
               : offer
           )
         );
@@ -393,7 +387,7 @@ export default function OffersPage() {
         setOffers((prevOffers) =>
           prevOffers.map((offer) =>
             Number(offer.id) === id
-              ? { ...offer, lifecycle_status: newStatus as LifecycleStatus }
+              ? { ...offer, lifecycle_status: newStatus as string }
               : offer
           )
         );
@@ -488,14 +482,6 @@ export default function OffersPage() {
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.status.success}] text-[${color.status.success}]`}
           >
             Active
-          </span>
-        );
-      case OfferStatusEnum.INACTIVE:
-        return (
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium bg-[${color.surface.cards}] text-[${color.text.primary}]`}
-          >
-            Inactive
           </span>
         );
       case OfferStatusEnum.PAUSED:
@@ -801,76 +787,69 @@ export default function OffersPage() {
                     </td>
                     <td className="px-6 py-5 text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        {/* Play/Pause buttons - Only show if approved */}
-                        {offer.status === "approved" &&
-                          offer.status !== "expired" &&
-                          offer.status !== "archived" && (
-                            <>
-                              {offer.status === "paused" ||
-                              offer.status === "inactive" ||
-                              offer.status === "draft" ? (
-                                <button
-                                  onClick={() =>
-                                    offer.id &&
-                                    handleActivateOffer(Number(offer.id))
-                                  }
-                                  disabled={
-                                    loadingAction?.offerId ===
-                                      Number(offer.id) &&
-                                    loadingAction?.action === "activate"
-                                  }
-                                  className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
-                                  style={{ backgroundColor: "transparent" }}
-                                  onMouseLeave={(e) => {
-                                    (
-                                      e.target as HTMLButtonElement
-                                    ).style.backgroundColor = "transparent";
-                                  }}
-                                  title={
-                                    offer.status === "paused"
-                                      ? "Resume Offer"
-                                      : "Activate Offer"
-                                  }
-                                >
-                                  {loadingAction?.offerId ===
-                                    Number(offer.id) &&
-                                  loadingAction?.action === "activate" ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                  ) : (
-                                    <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                                  )}
-                                </button>
-                              ) : offer.status === "active" ? (
-                                <button
-                                  onClick={() =>
-                                    offer.id &&
-                                    handlePauseOffer(Number(offer.id))
-                                  }
-                                  disabled={
-                                    loadingAction?.offerId ===
-                                      Number(offer.id) &&
-                                    loadingAction?.action === "pause"
-                                  }
-                                  className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
-                                  style={{ backgroundColor: "transparent" }}
-                                  onMouseLeave={(e) => {
-                                    (
-                                      e.target as HTMLButtonElement
-                                    ).style.backgroundColor = "transparent";
-                                  }}
-                                  title="Pause Offer"
-                                >
-                                  {loadingAction?.offerId ===
-                                    Number(offer.id) &&
-                                  loadingAction?.action === "pause" ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                  ) : (
-                                    <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                                  )}
-                                </button>
-                              ) : null}
-                            </>
-                          )}
+                        {/* Play/Pause buttons - Only show if approved or draft (not expired/archived) */}
+                        {(offer.status === OfferStatusEnum.APPROVED ||
+                          offer.status === OfferStatusEnum.DRAFT) && (
+                          <>
+                            {offer.lifecycle_status === "paused" ||
+                            offer.status === OfferStatusEnum.DRAFT ? (
+                              <button
+                                onClick={() =>
+                                  offer.id &&
+                                  handleActivateOffer(Number(offer.id))
+                                }
+                                disabled={
+                                  loadingAction?.offerId === Number(offer.id) &&
+                                  loadingAction?.action === "activate"
+                                }
+                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                style={{ backgroundColor: "transparent" }}
+                                onMouseLeave={(e) => {
+                                  (
+                                    e.target as HTMLButtonElement
+                                  ).style.backgroundColor = "transparent";
+                                }}
+                                title={
+                                  offer.lifecycle_status === "paused"
+                                    ? "Resume Offer"
+                                    : "Activate Offer"
+                                }
+                              >
+                                {loadingAction?.offerId === Number(offer.id) &&
+                                loadingAction?.action === "activate" ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                ) : (
+                                  <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                )}
+                              </button>
+                            ) : offer.lifecycle_status === "active" ? (
+                              <button
+                                onClick={() =>
+                                  offer.id && handlePauseOffer(Number(offer.id))
+                                }
+                                disabled={
+                                  loadingAction?.offerId === Number(offer.id) &&
+                                  loadingAction?.action === "pause"
+                                }
+                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                style={{ backgroundColor: "transparent" }}
+                                onMouseLeave={(e) => {
+                                  (
+                                    e.target as HTMLButtonElement
+                                  ).style.backgroundColor = "transparent";
+                                }}
+                                title="Pause Offer"
+                              >
+                                {loadingAction?.offerId === Number(offer.id) &&
+                                loadingAction?.action === "pause" ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                ) : (
+                                  <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                )}
+                              </button>
+                            ) : null}
+                          </>
+                        )}
 
                         <button
                           onClick={() => offer.id && handleViewOffer(offer.id)}
@@ -987,8 +966,7 @@ export default function OffersPage() {
                                     </>
                                   )}
 
-                                  {(offer.lifecycle_status === "paused" ||
-                                    offer.lifecycle_status === "inactive") && (
+                                  {offer.lifecycle_status === "paused" && (
                                     <button
                                       onClick={() =>
                                         offer.id &&
@@ -1215,7 +1193,6 @@ export default function OffersPage() {
                       { value: "all", label: "All Status" },
                       { value: OfferStatusEnum.DRAFT, label: "Draft" },
                       { value: OfferStatusEnum.ACTIVE, label: "Active" },
-                      { value: OfferStatusEnum.INACTIVE, label: "Inactive" },
                       { value: OfferStatusEnum.PAUSED, label: "Paused" },
                       { value: OfferStatusEnum.EXPIRED, label: "Expired" },
                       { value: OfferStatusEnum.ARCHIVED, label: "Archived" },

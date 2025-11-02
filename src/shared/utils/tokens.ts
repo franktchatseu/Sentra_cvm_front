@@ -79,24 +79,25 @@ export const colors = {
 };
 
 export const fonts = {
-  // Primary font for headlines and call-to-actions
+  // Primary font for main headings - Satoshi Variable
   primary: {
-    name: "Satoshi",
+    name: "Satoshi Variable",
     fallback:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
-  // Secondary font for body text, captions, and supporting elements
+  // Secondary font for sub-headings - Using Impact as primary (Et Mono fallback not available)
   secondary: {
-    name: "PP Supply Mono",
+    name: "Impact",
     fallback:
-      'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
   },
 
   weights: {
     normal: 400,
     medium: 500,
     bold: 700,
+    extraBold: 800, // For main headings
   },
 
   sizes: {
@@ -113,32 +114,53 @@ export const fonts = {
     displaySm: "3rem",
     displayMd: "3.75rem",
     displayLg: "4.5rem",
+    // New sizes for typography system
+    mainHeading: "5.472rem", // 87.552px (87.552 / 16 = 5.472rem)
+    subHeading: "1.0944rem", // 17.5104px (17.5104 / 16 = 1.0944rem)
   },
 
   typography: {
-    // Headings use Satoshi Bold with tight letter spacing
+    // Main Headings use Satoshi Variable with weight 800
+    mainHeading: {
+      size: "5.472rem", // 87.552px
+      weight: 800, // Extra bold
+      family: "primary",
+      lineHeight: "120%",
+      letterSpacing: "normal",
+      fontKerning: "normal",
+    },
+    // Sub-headings use Et Mono with weight 400
+    subHeading: {
+      size: "1.0944rem", // 17.5104px
+      weight: 400, // Normal weight
+      family: "secondary",
+      lineHeight: "normal",
+      letterSpacing: "normal",
+      fontKerning: "normal",
+    },
+    // Legacy heading styles (keeping for backward compatibility)
     heading: {
       size: "1.875rem",
-      weight: 400, // Regular weight
+      weight: 800, // Updated to extra bold to match main headings
       family: "primary",
       lineHeight: "120%",
       letterSpacing: "-4%",
     },
     subtitle: {
       size: "1.25rem",
-      weight: 500, // Medium instead of 600
-      family: "primary",
+      weight: 400, // Updated to match sub-headings
+      family: "secondary",
       lineHeight: "120%",
       letterSpacing: "-8%",
     },
     cardTitle: {
       size: "1.25rem",
-      weight: 500, // Medium instead of 600
+      weight: 500,
       family: "primary",
       lineHeight: "120%",
       letterSpacing: "-4%",
     },
-    // Body text uses PP Supply Mono with variable line heights
+    // Body text uses secondary font with variable line heights
     body: {
       size: "1rem",
       weight: 400,

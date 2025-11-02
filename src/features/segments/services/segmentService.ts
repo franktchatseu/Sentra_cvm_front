@@ -383,7 +383,7 @@ class SegmentService {
     });
   }
 
-  // ==================== ANALYTICS ENDPOINTS (6 endpoints) ====================
+  // ==================== ANALYTICS ENDPOINTS (7 endpoints) ====================
 
   /**
    * GET /segments/stats/health-summary - Get health summary
@@ -453,6 +453,126 @@ class SegmentService {
     return this.request<ApiSuccessResponse<StaleSegmentsResponse[]>>(
       `/stats/stale${queryString}`
     );
+  }
+
+  /**
+   * GET /segments/stats - Get general segment statistics
+   */
+  async getSegmentStats(
+    skipCache: boolean = false
+  ): Promise<ApiSuccessResponse<any>> {
+    const queryString = this.buildQueryParams({ skipCache });
+    return this.request<ApiSuccessResponse<any>>(`/stats${queryString}`);
+  }
+
+  // ==================== QUERY GENERATION ENDPOINTS (2 endpoints) ====================
+
+  /**
+   * POST /segments/generate-query/preview - Generate segment query preview
+   */
+  async generateQueryPreview(request: {
+    criteria: any;
+  }): Promise<ApiSuccessResponse<{ query: string; preview: any }>> {
+    return this.request<ApiSuccessResponse<{ query: string; preview: any }>>(
+      "/generate-query/preview",
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      }
+    );
+  }
+
+  /**
+   * POST /segments/recompute-segment-members - Recompute segment members
+   */
+  async recomputeSegmentMembers(request: {
+    segment_ids?: number[];
+    force?: boolean;
+  }): Promise<ApiSuccessResponse<{ recomputed: number; message: string }>> {
+    return this.request<
+      ApiSuccessResponse<{ recomputed: number; message: string }>
+    >("/recompute-segment-members", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  }
+
+  // ==================== CATEGORIES (NESTED UNDER /segments) (6 endpoints) ====================
+
+  /**
+   * GET /segments/categories/name/:name - Get category by name
+   */
+  async getSegmentCategoryByNameNested(
+    name: string,
+    skipCache: boolean = false
+  ): Promise<ApiSuccessResponse<SegmentCategoryType>> {
+    const queryString = this.buildQueryParams({ skipCache });
+    return this.request<ApiSuccessResponse<SegmentCategoryType>>(
+      `/categories/name/${encodeURIComponent(name)}${queryString}`
+    );
+  }
+
+  /**
+   * GET /segments/categories/:id - Get category by ID
+   */
+  async getSegmentCategoryByIdNested(
+    id: number,
+    skipCache: boolean = false
+  ): Promise<ApiSuccessResponse<SegmentCategoryType>> {
+    const queryString = this.buildQueryParams({ skipCache });
+    return this.request<ApiSuccessResponse<SegmentCategoryType>>(
+      `/categories/${id}${queryString}`
+    );
+  }
+
+  /**
+   * GET /segments/categories - Get all categories
+   */
+  async getSegmentCategoriesNested(
+    skipCache: boolean = false
+  ): Promise<SegmentCategoriesResponse> {
+    const queryString = this.buildQueryParams({ skipCache });
+    return this.request<SegmentCategoriesResponse>(`/categories${queryString}`);
+  }
+
+  /**
+   * POST /segments/categories - Create category
+   */
+  async createSegmentCategoryNested(
+    request: CreateSegmentCategoryRequest
+  ): Promise<ApiSuccessResponse<SegmentCategoryType>> {
+    return this.request<ApiSuccessResponse<SegmentCategoryType>>(
+      "/categories",
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      }
+    );
+  }
+
+  /**
+   * PUT /segments/categories/:id - Update category
+   */
+  async updateSegmentCategoryNested(
+    id: number,
+    request: UpdateSegmentCategoryRequest
+  ): Promise<ApiSuccessResponse<SegmentCategoryType>> {
+    return this.request<ApiSuccessResponse<SegmentCategoryType>>(
+      `/categories/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(request),
+      }
+    );
+  }
+
+  /**
+   * DELETE /segments/categories/:id - Delete category
+   */
+  async deleteSegmentCategoryNested(id: number): Promise<void> {
+    return this.request<void>(`/categories/${id}`, {
+      method: "DELETE",
+    });
   }
 
   // ==================== ACTIVATION ENDPOINTS (4 endpoints) ====================

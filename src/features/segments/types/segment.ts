@@ -278,7 +278,7 @@ export type SearchSegmentsQuery = {
   pageSize?: number; // Optional, default 10
   sortBy?: string; // Optional
   sortDirection?: "ASC" | "DESC"; // Optional
-  skipCache?: "true" | "false"; // Optional, default "false"
+  skipCache?: boolean | "true" | "false"; // Optional, can be boolean or string
 };
 
 export type GetSegmentsQuery = {
@@ -289,7 +289,7 @@ export type GetSegmentsQuery = {
   pageSize?: number; // Optional, default 10
   sortBy?: string; // Optional
   sortDirection?: "ASC" | "DESC"; // Optional
-  skipCache?: "true" | "false"; // Optional, default "false"
+  skipCache?: boolean | "true" | "false"; // Optional, can be boolean or string
 };
 
 export type GetSegmentMembersQuery = {

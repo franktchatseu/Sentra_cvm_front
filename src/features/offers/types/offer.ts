@@ -1,4 +1,3 @@
-
 // Available offer statuses
 export enum OfferStatusEnum {
   DRAFT = "draft",
@@ -8,7 +7,7 @@ export enum OfferStatusEnum {
   EXPIRED = "expired",
   PAUSED = "paused",
   ARCHIVED = "archived",
-  REJECTED = "rejected"
+  REJECTED = "rejected",
 }
 
 // Available offer types
@@ -22,7 +21,7 @@ export enum OfferTypeEnum {
   DISCOUNT = "discount",
   BUNDLE = "bundle",
   BONUS = "bonus",
-  OTHER = "other"
+  OTHER = "other",
 }
 
 // Main offer data structure
@@ -47,6 +46,8 @@ export interface Offer {
   metadata?: object;
   tags?: string[];
   status: OfferStatusEnum;
+  lifecycle_status?: string; // Additional status field from backend
+  approval_status?: string; // Approval status field from backend
   created_at: string;
   updated_at: string;
   created_by?: number;
@@ -169,19 +170,28 @@ export type TypeDistributionResponse = BaseResponse<{
 }>;
 
 // Response for category performance metrics
-export type CategoryPerformanceResponse = BaseResponse<Array<{
-  categoryId: number;
-  categoryName: string;
-  offerCount: number;
-  totalRevenue: number;
-  conversionRate: number;
-}>>;
+export type CategoryPerformanceResponse = BaseResponse<
+  Array<{
+    categoryId: number;
+    categoryName: string;
+    offerCount: number;
+    totalRevenue: number;
+    conversionRate: number;
+  }>
+>;
 
 // Parameters for searching offers
 export interface SearchParams {
-  searchTerm: string;
+  searchTerm?: string;
+  search?: string;
   limit?: number;
   offset?: number;
+  page?: number;
+  pageSize?: number;
+  status?: OfferStatusEnum;
+  categoryId?: number;
+  sortBy?: string;
+  sortDirection?: "ASC" | "DESC";
   skipCache?: boolean;
 }
 
@@ -202,11 +212,13 @@ export interface DateRangeParams {
 }
 
 // Response for offer products
-export type OfferProductsResponse = BaseResponse<Array<{
-  id: number;
-  offer_id: number;
-  product_id: number;
-  is_primary: boolean;
-  created_at: string;
-  created_by: string;
-}>>;
+export type OfferProductsResponse = BaseResponse<
+  Array<{
+    id: number;
+    offer_id: number;
+    product_id: number;
+    is_primary: boolean;
+    created_at: string;
+    created_by: string;
+  }>
+>;
