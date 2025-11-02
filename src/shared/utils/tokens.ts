@@ -93,6 +93,12 @@ export const fonts = {
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
   },
 
+  // Tertiary font for card headings - PP Supply Mono
+  tertiary: {
+    name: "PP Supply Mono",
+    fallback: 'monospace, "Courier New", Courier, monospace',
+  },
+
   weights: {
     normal: 400,
     medium: 500,
@@ -115,14 +121,14 @@ export const fonts = {
     displayMd: "3.75rem",
     displayLg: "4.5rem",
     // New sizes for typography system
-    mainHeading: "2.2rem", 
-    subHeading: "1.0944rem", 
+    mainHeading: "5.472rem", // 87.552px
+    subHeading: "1.0944rem", // 17.5104px
   },
 
   typography: {
     // Main Headings use Satoshi Variable with weight 800
     mainHeading: {
-      size: "2.5rem", 
+      size: "5.472rem", // 87.552px
       weight: 800, // Extra bold
       family: "primary",
       lineHeight: "110%",
@@ -158,6 +164,24 @@ export const fonts = {
       family: "primary",
       lineHeight: "120%",
       letterSpacing: "-4%",
+    },
+    // Card headings use Satoshi Variable (different weight from main headings)
+    cardHeading: {
+      size: "1.125rem", // 18px
+      weight: 600, // Semi-bold weight from Satoshi Variable
+      family: "primary",
+      lineHeight: "normal",
+      letterSpacing: "0%",
+      fontKerning: "normal",
+    },
+    // Card sub-headings use sans-serif only
+    cardSubHeading: {
+      size: "0.875rem", // 14px
+      weight: 400, // Normal weight
+      family: "sans-serif", // System sans-serif font
+      lineHeight: "normal",
+      letterSpacing: "0%",
+      fontKerning: "normal",
     },
     // Body text uses secondary font with variable line heights
     body: {

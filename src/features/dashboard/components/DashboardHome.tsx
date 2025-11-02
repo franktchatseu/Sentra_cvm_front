@@ -8,13 +8,14 @@ import {
   MessageSquare,
   TrendingUp,
   Target,
+  Plus,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { dashboardService, DashboardStats } from "../services/dashboardService";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { tw, color } from "../../../shared/utils/utils";
-import { campaignService } from "../../campaigns/services/campaignService";
+// import { campaignService } from "../../campaigns/services/campaignService";
 import { Campaign } from "../../campaigns/types/campaign";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 
@@ -37,7 +38,7 @@ export default function DashboardHome() {
         setLoading(true);
         const stats = await dashboardService.getDashboardStats();
         setDashboardStats(stats);
-      } catch {
+      } catch (error) {
         setDashboardStats({
           totalOffers: 0,
           totalSegments: 0,
@@ -56,17 +57,19 @@ export default function DashboardHome() {
     const fetchCampaigns = async () => {
       try {
         setCampaignsLoading(true);
-        const response = await campaignService.getAllCampaigns({
-          pageSize: 10,
-          sortBy: "created_at",
-          sortDirection: "DESC",
-        });
-        const filteredCampaigns = (response.data as Campaign[])
-          .filter(
-            (campaign) => (campaign as { status: string }).status !== "archived"
-          )
-          .slice(0, 3);
-        setCampaigns(filteredCampaigns);
+        // TODO: Campaign endpoints not yet connected - temporarily disabled
+        // const response = await campaignService.getAllCampaigns({
+        //   pageSize: 10,
+        //   sortBy: "created_at",
+        //   sortDirection: "DESC",
+        // });
+        // const filteredCampaigns = (response.data as Campaign[])
+        //   .filter(
+        //     (campaign) => (campaign as { status: string }).status !== "archived"
+        //   )
+        //   .slice(0, 3);
+        // setCampaigns(filteredCampaigns);
+        setCampaigns([]); // Empty for now until endpoints are connected
       } catch {
         setCampaigns([]);
       } finally {
@@ -168,7 +171,7 @@ export default function DashboardHome() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 relative overflow-hidden"
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden"
             >
               <div className="space-y-6">
                 {/* Header with Change Badge */}
@@ -177,9 +180,7 @@ export default function DashboardHome() {
                     <p className={`text-4xl font-bold ${tw.textPrimary}`}>
                       {stat.value}
                     </p>
-                    <p
-                      className={`${tw.caption} font-medium ${tw.textSecondary}`}
-                    >
+                    <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
                       {stat.name}
                     </p>
                   </div>
@@ -220,14 +221,14 @@ export default function DashboardHome() {
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className={tw.subHeading}>Recent Campaigns</h2>
-                <p className="text-sm text-black mt-1">
+                <h2 className={tw.cardHeading}>Recent Campaigns</h2>
+                <p className={`${tw.cardSubHeading} text-black mt-1`}>
                   Monitor your active and scheduled campaigns
                 </p>
               </div>
               <button
                 onClick={() => navigate("/dashboard/campaigns")}
-                className={`${tw.button} flex items-center gap-2 hover:scale-105`}
+                className={`${tw.button} flex items-center gap-2`}
               >
                 View All
                 <ArrowRight className="h-4 w-4" />
@@ -241,8 +242,22 @@ export default function DashboardHome() {
                   <LoadingSpinner size="md" />
                 </div>
               ) : campaigns.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className={tw.textSecondary}>No campaigns found</p>
+                <div className="flex items-center justify-center min-h-[400px]">
+                  <div className="text-center">
+                    <p className={`${tw.cardHeading} ${tw.textSecondary} mb-2`}>
+                      No campaigns found
+                    </p>
+                    <p className={`${tw.cardSubHeading} ${tw.textMuted} mb-4`}>
+                      Create your first campaign to get started
+                    </p>
+                    <button
+                      onClick={() => navigate("/dashboard/campaigns/create")}
+                      className={`${tw.button} flex items-center gap-2 mx-auto`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create Campaign
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -371,8 +386,8 @@ export default function DashboardHome() {
           {/* Quick Actions */}
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className={tw.subHeading}>Quick Actions</h2>
-              <p className="text-sm text-black mt-1">
+              <h2 className={tw.cardHeading}>Quick Actions</h2>
+              <p className={`${tw.cardSubHeading} text-black mt-1`}>
                 Common tasks and shortcuts
               </p>
             </div>
@@ -381,7 +396,7 @@ export default function DashboardHome() {
                 <button
                   key={action.name}
                   onClick={() => navigate(action.href)}
-                  className="w-full flex items-center p-4 bg-gray-50 rounded-xl border border-gray-200"
+                  className="w-full flex items-center p-4 bg-gray-50 rounded-xl border border-gray-200 cursor-pointer"
                 >
                   <span className="font-semibold text-sm text-gray-700">
                     {action.name}
@@ -394,17 +409,17 @@ export default function DashboardHome() {
           {/* Upcoming Events */}
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className={tw.subHeading}>Upcoming</h2>
-              <p className="text-sm text-black mt-1">
+              <h2 className={tw.cardHeading}>Upcoming</h2>
+              <p className={`${tw.cardSubHeading} text-black mt-1`}>
                 Scheduled events and meetings
               </p>
             </div>
             <div className="p-6 space-y-4">
               <div className="rounded-xl p-4 border border-gray-200 bg-gray-50">
-                <p className="font-bold text-sm text-gray-900 mb-1">
+                <p className={`${tw.cardHeading} text-gray-900 mb-1`}>
                   Campaign Launch
                 </p>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className={`${tw.cardSubHeading} text-gray-600 mb-3`}>
                   Churn Prevention - Q1
                 </p>
                 <div className="inline-block px-3 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
@@ -413,10 +428,10 @@ export default function DashboardHome() {
               </div>
 
               <div className="rounded-xl p-4 border border-gray-200 bg-gray-50">
-                <p className="font-bold text-sm text-gray-900 mb-1">
+                <p className={`${tw.cardHeading} text-gray-900 mb-1`}>
                   Review Meeting
                 </p>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className={`${tw.cardSubHeading} text-gray-600 mb-3`}>
                   Q1 Campaign Performance
                 </p>
                 <div className="inline-block px-3 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">

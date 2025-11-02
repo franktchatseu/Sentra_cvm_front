@@ -105,7 +105,15 @@ class CampaignService {
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          queryParams.append(key, String(value));
+          // Convert boolean to string "true"/"false"
+          if (typeof value === 'boolean') {
+            queryParams.append(key, value ? 'true' : 'false');
+          } 
+          // Keep numbers as strings (backend will parse)
+          // Keep strings as strings
+          else {
+            queryParams.append(key, String(value));
+          }
         }
       });
     }
