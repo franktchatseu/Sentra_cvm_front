@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Target,
@@ -15,6 +15,7 @@ import { Product } from "../../products/types/product";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
+import { offerCreativeService } from "../services/offerCreativeService";
 import { productCategoryService } from "../../products/services/productCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
 import ProductSelector from "../../products/components/ProductSelector";
@@ -24,11 +25,20 @@ import OfferRewardStep from "../components/OfferRewardStep";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
+// Import the types from offerCreative instead of defining locally
+import {
+  OfferCreative as OfferCreativeType,
+  CreativeChannel,
+  Locale,
+} from "../types/offerCreative";
+
+// Local creative for form (uses string ID until saved)
 interface OfferCreative {
   id: string;
-  channel: "sms" | "email" | "push" | "web" | "whatsapp";
-  locale: string;
+  channel: CreativeChannel;
+  locale: Locale;
   title: string;
   text_body: string;
   html_body: string;
@@ -264,7 +274,7 @@ function BasicInfoStep({
             onChange={(value) => {
               setFormData({
                 ...formData,
-                offer_type: (value as OfferTypeEnum) || "data",
+                offer_type: value ? (value as OfferTypeEnum) : undefined,
               });
               if (validationErrors?.offer_type && clearValidationErrors) {
                 clearValidationErrors();
@@ -393,6 +403,49 @@ function ProductStepWrapper({
   selectedProducts: Product[];
   onProductsChange: (products: Product[]) => void;
 }) {
+  // Track previous products to prevent unnecessary updates
+  const prevProductsRef = useRef<Product[]>(selectedProducts);
+
+  const handleProductsChange = useCallback(
+    (products: Product[]) => {
+      // Check if products actually changed (by reference and length)
+      const productsChanged =
+        prevProductsRef.current.length !== products.length ||
+        prevProductsRef.current.some((p, i) => p.id !== products[i]?.id);
+
+      if (!productsChanged) {
+        // Products haven't changed, don't update anything
+        return;
+      }
+
+      prevProductsRef.current = products;
+
+      // Update selected products
+      onProductsChange(products);
+
+      // Update primary product ID only if it changed
+      const firstProductId = products[0]?.id;
+      const newPrimaryId = firstProductId ? Number(firstProductId) : undefined;
+
+      setFormData((prev) => {
+        // Only update if primary_product_id actually changed
+        if (prev.primary_product_id === newPrimaryId) {
+          return prev; // Return same object reference to prevent unnecessary re-render
+        }
+        return {
+          ...prev,
+          primary_product_id: newPrimaryId,
+        };
+      });
+    },
+    [onProductsChange, setFormData]
+  );
+
+  // Update ref when selectedProducts prop changes
+  useEffect(() => {
+    prevProductsRef.current = selectedProducts;
+  }, [selectedProducts]);
+
   return (
     <div className="space-y-6">
       <div className="mt-8 mb-8 flex items-start justify-between">
@@ -408,16 +461,7 @@ function ProductStepWrapper({
       <div className="space-y-6">
         <ProductSelector
           selectedProducts={selectedProducts}
-          onProductsChange={(products) => {
-            onProductsChange(products);
-            const firstProductId = products[0]?.id;
-            setFormData({
-              ...formData,
-              primary_product_id: firstProductId
-                ? Number(firstProductId)
-                : undefined,
-            });
-          }}
+          onProductsChange={handleProductsChange}
           multiSelect={true}
           showAddButtonInline={true}
         />
@@ -430,6 +474,7 @@ function ProductStepWrapper({
 function OfferCreativeStepWrapper({
   creatives,
   setCreatives,
+  validationErrors,
 }: Omit<
   StepProps,
   | "currentStep"
@@ -444,7 +489,6 @@ function OfferCreativeStepWrapper({
   | "rewards"
   | "setRewards"
   | "isLoading"
-  | "validationErrors"
   | "clearValidationErrors"
   | "offerCategories"
   | "categoriesLoading"
@@ -464,6 +508,7 @@ function OfferCreativeStepWrapper({
       <OfferCreativeStep
         creatives={creatives}
         onCreativesChange={setCreatives}
+        validationError={validationErrors?.creatives}
       />
     </div>
   );
@@ -803,11 +848,13 @@ export default function CreateOfferPage() {
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
   const totalSteps = 6;
 
-  const [formData, setFormData] = useState<CreateOfferRequest>({
+  const [formData, setFormData] = useState<
+    Omit<CreateOfferRequest, "offer_type"> & { offer_type?: OfferTypeEnum }
+  >({
     name: "",
     code: "",
     description: "",
-    offer_type: "data" as OfferTypeEnum,
+    offer_type: undefined, // Start undefined like category_id
     category_id: undefined,
     max_usage_per_customer: 1,
     eligibility_rules: {},
@@ -820,6 +867,9 @@ export default function CreateOfferPage() {
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1])); // Track visited steps
+
+  const { user } = useAuth();
 
   // Preselect category from URL parameter
   useEffect(() => {
@@ -831,20 +881,6 @@ export default function CreateOfferPage() {
       }));
     }
   }, [searchParams, isEditMode]);
-
-  // Generate dummy offer type based on offer ID (same logic as OfferDetailsPage)
-  const getDummyOfferType = (offerId: string | number) => {
-    const offerTypes = [
-      "STV",
-      "Short Text (SMS/USSD)",
-      "Email",
-      "Voice Push",
-      "WAP Push",
-      "Rich Media",
-    ];
-    const typeIndex = Number(offerId) % offerTypes.length;
-    return offerTypes[typeIndex];
-  };
 
   // Load offer data for edit mode
   const loadOfferData = useCallback(async () => {
@@ -864,14 +900,11 @@ export default function CreateOfferPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const products = (productsData as any)?.data || productsData || [];
 
-      // Generate dummy offer type based on offer ID since backend doesn't store it
-      const dummyOfferType = getDummyOfferType(offer.id!);
-
       const newFormData: CreateOfferRequest = {
         name: offer.name || "",
         code: offer.code || "",
         description: offer.description || "",
-        offer_type: dummyOfferType as OfferTypeEnum, // Use dummy offer type
+        offer_type: offer.offer_type || OfferTypeEnum.DATA, // Use actual offer_type from backend
         category_id: offer.category_id ? Number(offer.category_id) : undefined,
         primary_product_id: offer.primary_product_id
           ? Number(offer.primary_product_id)
@@ -954,22 +987,11 @@ export default function CreateOfferPage() {
       setIsEditMode(true);
       loadOfferData();
     }
-  }, [id, loadOfferData]);
-
-  // Show loading state while loading offer data
-  if (isLoadingOffer) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#588157] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading offer...</p>
-        </div>
-      </div>
-    );
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Validation functions
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const errors: Record<string, string> = {};
 
     // Required fields validation
@@ -996,14 +1018,14 @@ export default function CreateOfferPage() {
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+  }, [formData, creatives, trackingSources, rewards]);
 
-  const clearValidationErrors = () => {
+  const clearValidationErrors = useCallback(() => {
     setValidationErrors({});
-  };
+  }, []);
 
   // Validation function for each step
-  const validateCurrentStep = () => {
+  const validateCurrentStep = useCallback(() => {
     switch (currentStep) {
       case 1: // Basic Info step
         return (
@@ -1014,7 +1036,7 @@ export default function CreateOfferPage() {
       case 2: // Products step
         return true; // Products are optional; allow proceeding
       case 3: // Creative step
-        return creatives.length > 0;
+        return true; // Creatives are optional; allow proceeding
       case 4: // Tracking step
         return trackingSources.length > 0;
       case 5: // Rewards step
@@ -1024,43 +1046,58 @@ export default function CreateOfferPage() {
       default:
         return false;
     }
-  };
+  }, [
+    currentStep,
+    formData,
+    creatives,
+    trackingSources,
+    rewards,
+    // Removed validationErrors and clearValidationErrors to break circular dependency
+  ]);
 
-  const canNavigateToStep = (targetStep: number) => {
-    // Can always go to previous steps
-    if (targetStep < currentStep) return true;
+  const canNavigateToStep = useCallback(
+    (targetStep: number) => {
+      // Can always go to previously visited steps
+      if (visitedSteps.has(targetStep)) return true;
 
-    // Can't go to future steps beyond current + 1
-    if (targetStep > currentStep + 1) return false;
+      // Can go to next step only if current step is valid
+      if (targetStep === currentStep + 1) return validateCurrentStep();
 
-    // Can go to next step only if current step is valid
-    if (targetStep === currentStep + 1) return validateCurrentStep();
+      // Can stay on current step
+      if (targetStep === currentStep) return true;
 
-    // Can stay on current step
-    if (targetStep === currentStep) return true;
+      // Can't go to future steps beyond current + 1
+      return false;
+    },
+    [visitedSteps, currentStep, validateCurrentStep]
+  );
 
-    return false;
-  };
-
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (validateCurrentStep() && currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      setVisitedSteps((prev) => new Set(prev).add(nextStep));
     }
-  };
+  }, [currentStep, totalSteps, validateCurrentStep]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
-  };
+  }, [currentStep]);
 
-  const handleStepClick = (stepId: number) => {
-    if (canNavigateToStep(stepId)) {
-      setCurrentStep(stepId);
-    }
-  };
+  const handleStepClick = useCallback(
+    (stepId: number) => {
+      if (canNavigateToStep(stepId)) {
+        setCurrentStep(stepId);
+        // Mark the clicked step as visited
+        setVisitedSteps((prev) => new Set(prev).add(stepId));
+      }
+    },
+    [canNavigateToStep]
+  );
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -1072,8 +1109,14 @@ export default function CreateOfferPage() {
         return;
       }
 
-      // Send all form data including offer_type
-      const apiData = formData;
+      // Prepare API data - remove empty description if not provided
+      // Backend doesn't accept empty strings for description
+      const { description, ...formDataWithoutDescription } = formData;
+      const apiData: CreateOfferRequest = {
+        ...formDataWithoutDescription,
+        offer_type: formData.offer_type!, // Required by validation, so safe to assert
+        ...(description?.trim() ? { description: description.trim() } : {}),
+      };
 
       let offerId: number;
 
@@ -1081,21 +1124,115 @@ export default function CreateOfferPage() {
         await offerService.updateOffer(parseInt(id), apiData);
         offerId = parseInt(id);
       } else {
-        const createdOffer = await offerService.createOffer(apiData);
-        offerId = createdOffer.id!;
+        const createdOfferResponse = await offerService.createOffer(apiData);
+
+        // Extract offer ID from response - BaseResponse wraps the Offer in .data
+        // Try data.id first, then insertId as fallback
+        offerId =
+          createdOfferResponse.data?.id || createdOfferResponse.insertId;
+
+        if (!offerId) {
+          console.error(
+            "[Submit] Could not extract offer ID from response:",
+            createdOfferResponse
+          );
+          console.error(
+            "[Submit] Response keys:",
+            Object.keys(createdOfferResponse)
+          );
+          throw new Error("Failed to get offer ID from creation response");
+        }
       }
 
       // Link products to the offer if any were selected
       if (selectedProducts.length > 0) {
         try {
-          const productIds = selectedProducts.map((p) => parseInt(p.id!));
-          await offerService.linkProducts(offerId, productIds);
+          if (!user?.user_id) {
+            throw new Error("User ID not available for linking products");
+          }
+
+          if (!offerId) {
+            throw new Error("Offer ID is not available for linking products");
+          }
+
+          // Determine which product is primary (if primary_product_id is set in formData)
+          const primaryProductId = formData.primary_product_id;
+
+          // Create links with primary product flag and quantity
+          // Note: Batch endpoint has created_by at ROOT level, NOT in each link
+          const links = selectedProducts.map((p) => {
+            const productId = parseInt(p.id!);
+            const link = {
+              offer_id: Number(offerId), // Ensure it's a number
+              product_id: productId,
+              is_primary: primaryProductId === productId,
+              quantity: 1, // Default quantity, can be customized later
+            };
+
+            // Validate link has all required fields
+            if (!link.offer_id) {
+              throw new Error(
+                `Link for product ${productId} is missing offer_id`
+              );
+            }
+            if (!link.product_id) {
+              throw new Error(
+                `Link for product ${productId} is missing product_id`
+              );
+            }
+
+            return link;
+          });
+
+          // Batch request structure: created_by at root, not in links
+          const batchRequest = {
+            links: links,
+            created_by: user.user_id, // Required at root level for batch
+          };
+
+          await offerService.linkProductsBatch(batchRequest);
         } catch (productError) {
           console.error("[Submit] Failed to link products:", productError);
+          // Don't return here - continue to save creatives even if products failed
+          // Show error but allow creatives to be saved
           showError(
             `Offer ${
               isEditMode ? "updated" : "created"
-            }, but failed to link products`
+            }, but failed to link products. Creatives will still be saved.`
+          );
+        }
+      }
+
+      // Save creatives to the offer if any were created
+      // Note: This runs regardless of product linking success/failure
+      if (creatives.length > 0) {
+        try {
+          if (!user?.user_id) {
+            throw new Error("User ID not available for saving creatives");
+          }
+
+          // Create creatives for each channel/locale combination
+          const creativePromises = creatives.map(async (creative) => {
+            const creativePayload = {
+              offer_id: offerId,
+              channel: creative.channel,
+              locale: creative.locale,
+              title: creative.title || undefined,
+              text_body: creative.text_body || undefined,
+              html_body: creative.html_body || undefined,
+              variables: creative.variables || undefined,
+              created_by: user.user_id,
+            };
+
+            return await offerCreativeService.create(creativePayload);
+          });
+
+          await Promise.all(creativePromises);
+        } catch (creativeError) {
+          showError(
+            `Offer ${
+              isEditMode ? "updated" : "created"
+            }, but failed to save creatives`
           );
           navigate("/dashboard/offers");
           return;
@@ -1148,9 +1285,21 @@ export default function CreateOfferPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    isEditMode,
+    id,
+    validateForm,
+    clearValidationErrors,
+    formData,
+    selectedProducts,
+    user,
+    creatives,
+    navigate,
+    showError,
+    showToast,
+  ]);
 
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = useCallback(async () => {
     try {
       setIsSavingDraft(true);
       if (!formData.name.trim()) {
@@ -1161,7 +1310,7 @@ export default function CreateOfferPage() {
       const draftData: CreateOfferRequest = {
         name: formData.name,
         code: formData.code,
-        offer_type: formData.offer_type,
+        offer_type: formData.offer_type || OfferTypeEnum.DATA, // Default to DATA if not set for draft
         max_usage_per_customer: formData.max_usage_per_customer,
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
@@ -1186,34 +1335,55 @@ export default function CreateOfferPage() {
     } finally {
       setIsSavingDraft(false);
     }
-  };
+  }, [formData, navigate, showError, showToast]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     navigate("/dashboard/offers");
-  };
+  }, [navigate]);
 
-  const stepProps = {
-    currentStep,
-    totalSteps,
-    onNext: handleNext,
-    onPrev: handlePrev,
-    onSubmit: handleSubmit,
-    formData,
-    setFormData,
-    creatives,
-    setCreatives,
-    trackingSources,
-    setTrackingSources,
-    rewards,
-    setRewards,
-    isLoading,
-    validationErrors,
-    clearValidationErrors,
-    offerCategories,
-    categoriesLoading,
-    onSaveDraft: handleSaveDraft,
-    onCancel: handleCancel,
-  };
+  const stepProps = useMemo(
+    () => ({
+      currentStep,
+      totalSteps,
+      onNext: handleNext,
+      onPrev: handlePrev,
+      onSubmit: handleSubmit,
+      formData,
+      setFormData,
+      creatives,
+      setCreatives,
+      trackingSources,
+      setTrackingSources,
+      rewards,
+      setRewards,
+      isLoading,
+      validationErrors,
+      clearValidationErrors,
+      offerCategories,
+      categoriesLoading,
+      onSaveDraft: handleSaveDraft,
+      onCancel: handleCancel,
+    }),
+    [
+      currentStep,
+      totalSteps,
+      handleNext,
+      handlePrev,
+      handleSubmit,
+      formData,
+      // setFormData, setCreatives, etc. are stable - don't need in deps
+      creatives,
+      trackingSources,
+      rewards,
+      isLoading,
+      validationErrors,
+      clearValidationErrors,
+      offerCategories,
+      categoriesLoading,
+      handleSaveDraft,
+      handleCancel,
+    ]
+  );
 
   const getStepStatus = (stepId: number) => {
     if (stepId < currentStep) return "completed";
@@ -1221,30 +1391,19 @@ export default function CreateOfferPage() {
     return "upcoming";
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <BasicInfoStep {...stepProps} />;
-      case 2:
-        return (
-          <ProductStepWrapper
-            {...stepProps}
-            selectedProducts={selectedProducts}
-            onProductsChange={setSelectedProducts}
-          />
-        );
-      case 3:
-        return <OfferCreativeStepWrapper {...stepProps} />;
-      case 4:
-        return <OfferTrackingStepWrapper {...stepProps} />;
-      case 5:
-        return <OfferRewardStepWrapper {...stepProps} />;
-      case 6:
-        return <ReviewStep {...stepProps} />;
-      default:
-        return <BasicInfoStep {...stepProps} />;
-    }
-  };
+  // Render step directly in JSX instead of memoizing to avoid dependency issues
+
+  // Show loading state while loading offer data (after all hooks)
+  if (isLoadingOffer) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#588157] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading offer...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -1426,7 +1585,22 @@ export default function CreateOfferPage() {
             </div>
           )}
 
-          <div className="pb-10">{renderStep()}</div>
+          <div className="pb-10">
+            {currentStep === 1 && <BasicInfoStep {...stepProps} />}
+            {currentStep === 2 && (
+              <ProductStepWrapper
+                {...stepProps}
+                selectedProducts={selectedProducts}
+                onProductsChange={setSelectedProducts}
+                formData={formData}
+                setFormData={setFormData}
+              />
+            )}
+            {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
+            {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
+            {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
+            {currentStep === 6 && <ReviewStep {...stepProps} />}
+          </div>
 
           {/* Sticky Bottom Navigation */}
           <div className="sticky bottom-0 z-50 bg-white py-4">

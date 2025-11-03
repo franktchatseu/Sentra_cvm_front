@@ -102,8 +102,11 @@ export interface UpdateOfferRequest {
 
 // updating offer status
 export interface UpdateStatusRequest {
-  status: OfferStatusEnum;
+  status?: OfferStatusEnum;
+  approval_status?: "pending" | "approved" | "rejected" | "cancelled";
   updated_by?: number;
+  approved_by?: number;
+  approved_at?: string;
 }
 
 // submitting offer for approval
@@ -211,14 +214,70 @@ export interface DateRangeParams {
   skipCache?: boolean;
 }
 
-// Response for offer products
-export type OfferProductsResponse = BaseResponse<
-  Array<{
-    id: number;
+// Offer-Product Link types - matches backend structure exactly
+export interface OfferProductLink {
+  id: number; // Auto-generated link ID
+  offer_id: number; // Offer ID
+  product_id: number; // Product ID
+  is_primary: boolean; // Primary flag
+  quantity: number; // Quantity (defaults to 1, must be >= 1)
+  created_at: string; // ISO timestamp (auto-generated)
+  updated_at?: string; // ISO timestamp (auto-generated)
+  created_by?: number; // User ID
+  updated_by?: number; // User ID (set on updates)
+}
+
+// Request body for linking product to offer - matches backend requirements
+export interface CreateOfferProductLinkRequest {
+  // Required fields
+  offer_id: number; // Must be positive integer, offer must exist
+  product_id: number; // Must be positive integer, product must exist
+  created_by: number; // Must be positive integer (user ID)
+
+  // Optional fields
+  is_primary?: boolean; // Defaults to false. Only one primary per offer allowed
+  quantity?: number; // Defaults to 1, must be >= 1
+}
+
+// Response from POST /offer-products/
+export interface LinkProductToOfferResponse {
+  success: boolean;
+  data: {
+    id: number; // Link ID (auto-generated)
     offer_id: number;
     product_id: number;
     is_primary: boolean;
-    created_at: string;
-    created_by: string;
-  }>
->;
+    quantity: number;
+  };
+}
+
+// Batch request structure - created_by is at root level, NOT in each link
+export interface BatchOfferProductLinkRequest {
+  links: Array<{
+    offer_id: number; // Required: positive integer
+    product_id: number; // Required: positive integer
+    is_primary?: boolean; // Optional: defaults to false
+    quantity?: number; // Optional: defaults to 1, min 1
+  }>; // Required: min 1, max 50 links
+  created_by: number; // Required: positive integer (applies to all links)
+}
+
+export interface BatchDeleteRequest {
+  ids: number[];
+}
+
+export interface OfferProductSearchParams {
+  id?: number;
+  offer_id?: number;
+  product_id?: number;
+  is_primary?: boolean;
+  quantity?: number;
+  created_by?: number;
+  updated_by?: number;
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+// Response for offer products
+export type OfferProductsResponse = BaseResponse<OfferProductLink[]>;

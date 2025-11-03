@@ -11,12 +11,12 @@ import {
   Copy,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Trash2,
   Play,
   Pause,
   Archive,
   Filter,
+  AlertCircle,
 } from "lucide-react";
 import { Offer, SearchParams, OfferStatusEnum } from "../types/offer";
 import { offerService } from "../services/offerService";
@@ -26,15 +26,16 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 export default function OffersPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
+  const { user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [categories, setCategories] = useState<OfferCategoryType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [totalOffers, setTotalOffers] = useState(0);
   const [filters, setFilters] = useState<SearchParams>({
     page: 1,
@@ -93,7 +94,6 @@ export default function OffersPage() {
   const loadOffers = async (skipCache = false) => {
     try {
       setLoading(true);
-      setError(null);
 
       const searchParams: SearchParams = {
         ...filters,
@@ -102,15 +102,28 @@ export default function OffersPage() {
         skipCache: skipCache,
       };
 
+      console.log("Loading offers with params:", searchParams);
       const response = await offerService.searchOffers(searchParams);
+      console.log("Offers response:", response);
+      console.log("Offers response.data:", response.data);
+      console.log("Offers response.pagination:", response.pagination);
+      console.log("Offers response keys:", Object.keys(response));
+
       if (response.success && response.data) {
         setOffers(response.data);
-        setTotalOffers(response.pagination?.total || response.data.length);
+        const total = response.pagination?.total || response.data.length;
+        console.log("Total offers:", total);
+        setTotalOffers(total);
       } else {
-        setError("Failed to load offers");
+        console.error("Response not successful:", response);
+        showError(
+          "Failed to load offers",
+          "Unable to retrieve offers. Please try again."
+        );
       }
     } catch (err) {
-      setError("Failed to load offers");
+      const errorMessage = (err as Error).message || "Failed to load offers";
+      showError("Failed to load offers", errorMessage);
       console.error("Error loading offers:", err);
     } finally {
       setLoading(false);
@@ -289,39 +302,39 @@ export default function OffersPage() {
     }
   };
 
-  const handleDeactivateOffer = async (id: number) => {
-    try {
-      setLoadingAction({ offerId: id, action: "deactivate" });
-      const response = await offerService.deactivateOffer(id);
+  // const handleDeactivateOffer = async (id: number) => {
+  //   try {
+  //     setLoadingAction({ offerId: id, action: "deactivate" });
+  //     const response = await offerService.deactivateOffer(id);
 
-      // Optimistically update the offer in the list
-      const responseData = response as unknown as {
-        success: boolean;
-        data?: { lifecycle_status?: string };
-      };
-      if (responseData.success && responseData.data?.lifecycle_status) {
-        const newStatus = responseData.data.lifecycle_status;
-        setOffers((prevOffers) =>
-          prevOffers.map((offer) =>
-            Number(offer.id) === id
-              ? { ...offer, lifecycle_status: newStatus as string }
-              : offer
-          )
-        );
-      } else {
-        // Fallback: reload if response doesn't include status
-        await loadOffers(true);
-      }
+  //     // Optimistically update the offer in the list
+  //     const responseData = response as unknown as {
+  //       success: boolean;
+  //       data?: { lifecycle_status?: string };
+  //     };
+  //     if (responseData.success && responseData.data?.lifecycle_status) {
+  //       const newStatus = responseData.data.lifecycle_status;
+  //       setOffers((prevOffers) =>
+  //         prevOffers.map((offer) =>
+  //           Number(offer.id) === id
+  //             ? { ...offer, lifecycle_status: newStatus as string }
+  //             : offer
+  //         )
+  //       );
+  //     } else {
+  //       // Fallback: reload if response doesn't include status
+  //       await loadOffers(true);
+  //     }
 
-      success("Offer Deactivated", "Offer has been deactivated successfully.");
-      setShowActionMenu(null);
-    } catch (err) {
-      showError("Error", "Failed to deactivate offer");
-      console.error("Deactivate offer error:", err);
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+  //     success("Offer Deactivated", "Offer has been deactivated successfully.");
+  //     setShowActionMenu(null);
+  //   } catch (err) {
+  //     showError("Error", "Failed to deactivate offer");
+  //     console.error("Deactivate offer error:", err);
+  //   } finally {
+  //     setLoadingAction(null);
+  //   }
+  // };
 
   const handlePauseOffer = async (id: number) => {
     try {
@@ -425,9 +438,13 @@ export default function OffersPage() {
   };
 
   const handleApproveOffer = async (id: number) => {
+    if (!user?.user_id) {
+      showError("Error", "User ID not available. Please log in again.");
+      return;
+    }
     try {
       setLoadingAction({ offerId: id, action: "approve" });
-      await offerService.approveOffer(id);
+      await offerService.approveOffer(id, { approved_by: user.user_id });
       success("Offer Approved", "Offer has been approved successfully.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
@@ -440,9 +457,13 @@ export default function OffersPage() {
   };
 
   const handleRejectOffer = async (id: number) => {
+    if (!user?.user_id) {
+      showError("Error", "User ID not available. Please log in again.");
+      return;
+    }
     try {
       setLoadingAction({ offerId: id, action: "reject" });
-      await offerService.rejectOffer(id);
+      await offerService.rejectOffer(id, { rejected_by: user.user_id });
       success("Offer Rejected", "Offer has been rejected.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
@@ -454,15 +475,16 @@ export default function OffersPage() {
     }
   };
 
-  const handleViewApprovalHistory = (id: number) => {
-    navigate(`/dashboard/offers/${id}/approval-history`);
-    setShowActionMenu(null);
-  };
+  // TODO: Backend doesn't support these endpoints yet (404 Not Found)
+  // const handleViewApprovalHistory = (id: number) => {
+  //   navigate(`/dashboard/offers/${id}/approval-history`);
+  //   setShowActionMenu(null);
+  // };
 
-  const handleViewLifecycleHistory = (id: number) => {
-    navigate(`/dashboard/offers/${id}/lifecycle-history`);
-    setShowActionMenu(null);
-  };
+  // const handleViewLifecycleHistory = (id: number) => {
+  //   navigate(`/dashboard/offers/${id}/lifecycle-history`);
+  //   setShowActionMenu(null);
+  // };
 
   // Helper functions for display
 
@@ -650,15 +672,6 @@ export default function OffersPage() {
               className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}
             ></div>
           </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <AlertCircle
-                className={`h-12 w-12 text-[${color.status.danger}] mx-auto mb-4`}
-              />
-              <p className={`${tw.textSecondary}`}>{error}</p>
-            </div>
-          </div>
         ) : filteredOffers.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -787,12 +800,10 @@ export default function OffersPage() {
                     </td>
                     <td className="px-6 py-5 text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        {/* Play/Pause buttons - Only show if approved or draft (not expired/archived) */}
-                        {(offer.status === OfferStatusEnum.APPROVED ||
-                          offer.status === OfferStatusEnum.DRAFT) && (
+                        {/* Play/Pause buttons - Only show if approved (not draft, not expired/archived) */}
+                        {offer.status === OfferStatusEnum.APPROVED && (
                           <>
-                            {offer.lifecycle_status === "paused" ||
-                            offer.status === OfferStatusEnum.DRAFT ? (
+                            {offer.lifecycle_status === "paused" ? (
                               <button
                                 onClick={() =>
                                   offer.id &&
@@ -809,11 +820,7 @@ export default function OffersPage() {
                                     e.target as HTMLButtonElement
                                   ).style.backgroundColor = "transparent";
                                 }}
-                                title={
-                                  offer.lifecycle_status === "paused"
-                                    ? "Resume Offer"
-                                    : "Activate Offer"
-                                }
+                                title="Resume Offer"
                               >
                                 {loadingAction?.offerId === Number(offer.id) &&
                                 loadingAction?.action === "activate" ? (
@@ -913,111 +920,129 @@ export default function OffersPage() {
                               </button>
                               */}
 
-                              {/* Lifecycle Actions - Only show if approved */}
-                              {offer.approval_status === "approved" && (
+                              {/* Approved: Activate or Archive only */}
+                              {offer.status === OfferStatusEnum.APPROVED && (
                                 <>
-                                  {offer.lifecycle_status === "draft" && (
-                                    <button
-                                      onClick={() =>
-                                        offer.id &&
-                                        handleActivateOffer(offer.id)
-                                      }
-                                      className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                      <Play className="w-4 h-4 mr-3 text-green-600" />
-                                      Activate Offer
-                                    </button>
-                                  )}
-
-                                  {offer.lifecycle_status === "active" && (
-                                    <>
-                                      <button
-                                        onClick={() =>
-                                          offer.id &&
-                                          handlePauseOffer(Number(offer.id))
-                                        }
-                                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                      >
-                                        <Pause className="w-4 h-4 mr-3 text-yellow-600" />
-                                        Pause Offer
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          offer.id &&
-                                          handleDeactivateOffer(
-                                            Number(offer.id)
-                                          )
-                                        }
-                                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                      >
-                                        <XCircle className="w-4 h-4 mr-3 text-orange-600" />
-                                        Deactivate Offer
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          offer.id &&
-                                          handleExpireOffer(offer.id)
-                                        }
-                                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                      >
-                                        <Clock className="w-4 h-4 mr-3 text-gray-600" />
-                                        Expire Offer
-                                      </button>
-                                    </>
-                                  )}
-
-                                  {offer.lifecycle_status === "paused" && (
-                                    <button
-                                      onClick={() =>
-                                        offer.id &&
-                                        handleActivateOffer(Number(offer.id))
-                                      }
-                                      className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                      <Play className="w-4 h-4 mr-3 text-green-600" />
-                                      {offer.lifecycle_status === "paused"
-                                        ? "Resume Offer"
-                                        : "Activate Offer"}
-                                    </button>
-                                  )}
-
-                                  {/* Archive - Available for any non-archived offer */}
-                                  {offer.lifecycle_status !== "archived" && (
-                                    <button
-                                      onClick={() =>
-                                        offer.id && handleArchiveOffer(offer.id)
-                                      }
-                                      className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                      <Archive
-                                        className="w-4 h-4 mr-3"
-                                        style={{ color: color.primary.action }}
-                                      />
-                                      Archive Offer
-                                    </button>
-                                  )}
-                                </>
-                              )}
-
-                              {/* Approval Actions - Context Aware */}
-                              {offer.lifecycle_status === "draft" &&
-                                offer.approval_status !== "pending" && (
                                   <button
                                     onClick={() =>
                                       offer.id &&
-                                      handleRequestApproval(offer.id)
+                                      handleActivateOffer(Number(offer.id))
+                                    }
+                                    disabled={
+                                      loadingAction?.offerId ===
+                                        Number(offer.id) &&
+                                      loadingAction?.action === "activate"
+                                    }
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <Play className="w-4 h-4 mr-3 text-green-600" />
+                                    Activate Offer
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      offer.id && handleArchiveOffer(offer.id)
                                     }
                                     className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                   >
-                                    <CheckCircle
+                                    <Archive
                                       className="w-4 h-4 mr-3"
-                                      style={{ color: color.status.info }}
+                                      style={{ color: color.primary.action }}
                                     />
-                                    Request Approval
+                                    Archive Offer
                                   </button>
-                                )}
+                                </>
+                              )}
 
-                              {offer.approval_status === "pending" && (
+                              {/* Active: Pause, Expire, Archive */}
+                              {/* Note: Deactivate (to draft) is not allowed from active status */}
+                              {offer.status === OfferStatusEnum.ACTIVE && (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      offer.id &&
+                                      handlePauseOffer(Number(offer.id))
+                                    }
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Pause className="w-4 h-4 mr-3 text-yellow-600" />
+                                    Pause Offer
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      offer.id && handleExpireOffer(offer.id)
+                                    }
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Clock className="w-4 h-4 mr-3 text-gray-600" />
+                                    Expire Offer
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      offer.id && handleArchiveOffer(offer.id)
+                                    }
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Archive
+                                      className="w-4 h-4 mr-3"
+                                      style={{ color: color.primary.action }}
+                                    />
+                                    Archive Offer
+                                  </button>
+                                </>
+                              )}
+
+                              {/* Paused: Resume, Archive */}
+                              {offer.status === OfferStatusEnum.PAUSED && (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      offer.id &&
+                                      handleActivateOffer(Number(offer.id))
+                                    }
+                                    disabled={
+                                      loadingAction?.offerId ===
+                                        Number(offer.id) &&
+                                      loadingAction?.action === "activate"
+                                    }
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <Play className="w-4 h-4 mr-3 text-green-600" />
+                                    Resume Offer
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      offer.id && handleArchiveOffer(offer.id)
+                                    }
+                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Archive
+                                      className="w-4 h-4 mr-3"
+                                      style={{ color: color.primary.action }}
+                                    />
+                                    Archive Offer
+                                  </button>
+                                </>
+                              )}
+
+                              {/* Draft: Submit for Approval */}
+                              {offer.status === OfferStatusEnum.DRAFT && (
+                                <button
+                                  onClick={() =>
+                                    offer.id && handleRequestApproval(offer.id)
+                                  }
+                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <AlertCircle
+                                    className="w-4 h-4 mr-3"
+                                    style={{ color: color.status.info }}
+                                  />
+                                  Submit for Approval
+                                </button>
+                              )}
+
+                              {/* Pending Approval: Approve/Reject */}
+                              {offer.status ===
+                                OfferStatusEnum.PENDING_APPROVAL && (
                                 <>
                                   <button
                                     onClick={() =>
@@ -1040,8 +1065,25 @@ export default function OffersPage() {
                                 </>
                               )}
 
+                              {/* Rejected: Request Approval (to resubmit) */}
+                              {offer.status === OfferStatusEnum.REJECTED && (
+                                <button
+                                  onClick={() =>
+                                    offer.id && handleRequestApproval(offer.id)
+                                  }
+                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <AlertCircle
+                                    className="w-4 h-4 mr-3"
+                                    style={{ color: color.status.info }}
+                                  />
+                                  Request Approval
+                                </button>
+                              )}
+
                               {/* History Links */}
-                              <button
+                              {/* TODO: Backend doesn't support these endpoints yet (404 Not Found) */}
+                              {/* <button
                                 onClick={() =>
                                   offer.id &&
                                   handleViewApprovalHistory(offer.id)
@@ -1067,7 +1109,7 @@ export default function OffersPage() {
                                   style={{ color: color.primary.action }}
                                 />
                                 Lifecycle History
-                              </button>
+                              </button> */}
 
                               {/* Delete - Dangerous Action */}
                               <button
@@ -1094,7 +1136,7 @@ export default function OffersPage() {
       </div>
 
       {/* Pagination */}
-      {!loading && !error && filteredOffers.length > 0 && (
+      {!loading && filteredOffers.length > 0 && (
         <div
           className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] px-4 sm:px-6 py-4`}
         >

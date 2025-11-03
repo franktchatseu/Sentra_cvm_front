@@ -14,6 +14,9 @@ import {
   Archive,
   MoreVertical,
   Package,
+  X,
+  Star,
+  StarOff,
 } from "lucide-react";
 import { Offer, OfferStatusEnum } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
@@ -23,6 +26,7 @@ import { productService } from "../../products/services/productService";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 
 export default function OfferDetailsPage() {
@@ -30,6 +34,7 @@ export default function OfferDetailsPage() {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
+  const { user } = useAuth();
 
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,113 +52,212 @@ export default function OfferDetailsPage() {
   const [linkedProducts, setLinkedProducts] = useState<any[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [categoryName, setCategoryName] = useState<string>("Uncategorized");
+  const [primaryProductId, setPrimaryProductId] = useState<number | null>(null);
+  const [hasPrimaryProduct, setHasPrimaryProduct] = useState<boolean>(false);
+  const [unlinkingProductId, setUnlinkingProductId] = useState<number | null>(
+    null
+  );
+  const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
   // Close More menu when clicking outside
   useClickOutside(moreMenuRef, () => setShowMoreMenu(false));
 
-  const loadOffer = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadOffer = useCallback(
+    async (skipCache: boolean = true) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const response = await offerService.getOfferById(Number(id));
+        const response = await offerService.getOfferById(Number(id), skipCache);
 
-      // Extract offer from response.data if wrapped, otherwise use response directly
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const offerData = (response as any).data || response;
-      setOffer(offerData);
-
-      // Fetch category name if category_id exists
-      if (offerData.category_id) {
-        try {
-          const categoriesResponse =
-            await offerCategoryService.getAllCategories({
-              limit: 100,
-              skipCache: true,
-            });
-          const categories =
-            (categoriesResponse as { data?: OfferCategoryType[] }).data ||
-            (categoriesResponse as unknown as OfferCategoryType[]);
-          const category = categories.find(
-            (cat: OfferCategoryType) =>
-              String(cat.id) === String(offerData.category_id)
-          );
-          if (category) {
-            setCategoryName(category.name);
-          }
-        } catch (error) {
-          console.error("Failed to fetch category name:", error);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load offer:", err);
-      setError(err instanceof Error ? err.message : "Failed to load offer");
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  const loadProducts = useCallback(async () => {
-    if (!id) return;
-
-    try {
-      setProductsLoading(true);
-      const response = await offerService.getOfferProducts(Number(id));
-
-      // Extract products from response.data if wrapped, otherwise use response directly
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const productsData = (response as any).data || response;
-
-      if (Array.isArray(productsData) && productsData.length > 0) {
-        // Backend returns product links with only product_id, so we need to fetch full product details
+        // Extract offer from response.data if wrapped, otherwise use response directly
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const productDetailsPromises = productsData.map(async (link: any) => {
-          try {
-            const productResponse = await productService.getProductById(
-              link.product_id
-            );
-            const productData =
-              (productResponse as { data?: unknown }).data || productResponse;
-            return {
-              ...productData,
-              is_primary: link.is_primary,
-              link_id: link.id,
-            };
-          } catch (error) {
-            console.error(
-              "Failed to fetch product details for ID:",
-              link.product_id,
-              error
-            );
-            return {
-              id: link.product_id,
-              name: `Product ${link.product_id}`,
-              is_primary: link.is_primary,
-              link_id: link.id,
-            };
-          }
-        });
+        const offerData = (response as any).data || response;
+        setOffer(offerData);
 
-        const fullProducts = await Promise.all(productDetailsPromises);
-        setLinkedProducts(fullProducts);
-      } else {
-        setLinkedProducts([]);
+        // Fetch category name if category_id exists
+        if (offerData.category_id) {
+          try {
+            const categoriesResponse =
+              await offerCategoryService.getAllCategories({
+                limit: 100,
+                skipCache: true,
+              });
+            const categories =
+              (categoriesResponse as { data?: OfferCategoryType[] }).data ||
+              (categoriesResponse as unknown as OfferCategoryType[]);
+            const category = categories.find(
+              (cat: OfferCategoryType) =>
+                String(cat.id) === String(offerData.category_id)
+            );
+            if (category) {
+              setCategoryName(category.name);
+            }
+          } catch (error) {
+            console.error("Failed to fetch category name:", error);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load offer:", err);
+        setError(err instanceof Error ? err.message : "Failed to load offer");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to load products:", err);
-      setLinkedProducts([]);
-    } finally {
-      setProductsLoading(false);
-    }
-  }, [id]);
+    },
+    [id]
+  );
+
+  const loadProducts = useCallback(
+    async (skipCache: boolean = false) => {
+      if (!id) return;
+
+      try {
+        setProductsLoading(true);
+
+        // Test multiple endpoints for product linking
+        console.log("[OfferDetails] Testing offer-product endpoints...");
+
+        // 1. Get products using new endpoint (direct test)
+        console.log("[OfferDetails] 1. Testing getProductsByOffer...");
+        const productsResponse = await offerService.getProductsByOffer(
+          Number(id),
+          { skipCache }
+        );
+        console.log(
+          "[OfferDetails] getProductsByOffer response:",
+          productsResponse
+        );
+
+        // 2. Check if offer has primary product
+        console.log("[OfferDetails] 2. Testing checkOfferHasPrimaryProduct...");
+        try {
+          const hasPrimaryResponse =
+            await offerService.checkOfferHasPrimaryProduct(
+              Number(id),
+              skipCache
+            );
+          console.log(
+            "[OfferDetails] checkOfferHasPrimaryProduct response:",
+            hasPrimaryResponse
+          );
+          setHasPrimaryProduct(hasPrimaryResponse.data?.hasPrimary || false);
+        } catch (err) {
+          console.error("[OfferDetails] Failed to check primary product:", err);
+        }
+
+        // 3. Get primary product if it exists
+        console.log("[OfferDetails] 3. Testing getPrimaryProductByOffer...");
+        try {
+          const primaryResponse = await offerService.getPrimaryProductByOffer(
+            Number(id),
+            skipCache
+          );
+          console.log(
+            "[OfferDetails] getPrimaryProductByOffer response:",
+            primaryResponse
+          );
+          if (primaryResponse.data) {
+            setPrimaryProductId(primaryResponse.data.product_id);
+          }
+        } catch (err) {
+          console.log(
+            "[OfferDetails] No primary product found (expected if none set)"
+          );
+        }
+
+        // Use legacy method for compatibility
+        const response = await offerService.getOfferProducts(
+          Number(id),
+          skipCache
+        );
+
+        // Extract products from response.data if wrapped, otherwise use response directly
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const productsData =
+          (response as any).data || productsResponse.data || response;
+
+        if (Array.isArray(productsData) && productsData.length > 0) {
+          // Backend returns product links with only product_id, so we need to fetch full product details
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const productDetailsPromises = productsData.map(async (link: any) => {
+            try {
+              const productResponse = await productService.getProductById(
+                link.product_id
+              );
+              const productData =
+                (productResponse as { data?: unknown }).data || productResponse;
+
+              // Test getOffersByProductId for each product
+              console.log(
+                `[OfferDetails] Testing getOffersByProductId for product ${link.product_id}...`
+              );
+              try {
+                const offersForProduct =
+                  await offerService.getOffersByProductId(link.product_id, {
+                    skipCache,
+                  });
+                console.log(
+                  `[OfferDetails] getOffersByProductId(${link.product_id}) response:`,
+                  offersForProduct
+                );
+              } catch (err) {
+                console.error(
+                  `[OfferDetails] Failed to get offers for product ${link.product_id}:`,
+                  err
+                );
+              }
+
+              return {
+                ...productData,
+                is_primary: link.is_primary,
+                link_id: link.id,
+                product_id: link.product_id,
+              };
+            } catch (error) {
+              console.error(
+                "Failed to fetch product details for ID:",
+                link.product_id,
+                error
+              );
+              return {
+                id: link.product_id,
+                name: `Product ${link.product_id}`,
+                is_primary: link.is_primary,
+                link_id: link.id,
+                product_id: link.product_id,
+              };
+            }
+          });
+
+          const fullProducts = await Promise.all(productDetailsPromises);
+          setLinkedProducts(fullProducts);
+
+          // Find primary product from loaded products
+          const primary = fullProducts.find((p: any) => p.is_primary);
+          if (primary && !primaryProductId) {
+            setPrimaryProductId(primary.product_id || primary.id);
+          }
+        } else {
+          setLinkedProducts([]);
+        }
+      } catch (err) {
+        console.error("Failed to load products:", err);
+        setLinkedProducts([]);
+      } finally {
+        setProductsLoading(false);
+      }
+    },
+    [id]
+  );
 
   useEffect(() => {
     if (id) {
       loadOffer();
       loadProducts();
     }
-  }, [id, loadOffer, loadProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleDelete = async () => {
     if (!offer) return;
@@ -181,9 +285,15 @@ export default function OfferDetailsPage() {
   };
 
   const handleApprove = async () => {
+    if (!user?.user_id) {
+      showError("Error", "User ID not available. Please log in again.");
+      return;
+    }
     try {
       setIsApproveLoading(true);
-      await offerService.approveOffer(Number(id), { approved_by: 1 }); // TODO: Use actual user ID
+      await offerService.approveOffer(Number(id), {
+        approved_by: user.user_id,
+      });
       success(
         "Offer Approved",
         `"${offer?.name}" has been approved successfully.`
@@ -197,11 +307,13 @@ export default function OfferDetailsPage() {
   };
 
   const handleReject = async () => {
+    if (!user?.user_id) {
+      showError("Error", "User ID not available. Please log in again.");
+      return;
+    }
     try {
       setIsRejectLoading(true);
-      await offerService.updateOfferStatus(Number(id), {
-        status: OfferStatusEnum.REJECTED,
-      });
+      await offerService.rejectOffer(Number(id), { rejected_by: user.user_id });
       success("Offer Rejected", `"${offer?.name}" has been rejected.`);
       loadOffer();
     } catch {
@@ -311,6 +423,95 @@ export default function OfferDetailsPage() {
     }
   };
 
+  const handleUnlinkProduct = async (linkId: number, productName: string) => {
+    const confirmed = await confirm({
+      title: "Unlink Product",
+      message: `Are you sure you want to unlink "${productName}" from this offer? This action cannot be undone.`,
+      type: "danger",
+      confirmText: "Unlink",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
+
+    try {
+      setUnlinkingProductId(linkId);
+      console.log("[OfferDetails] Testing unlinkProductById...");
+      const result = await offerService.unlinkProductById(linkId);
+      console.log("[OfferDetails] unlinkProductById response:", result);
+      success(
+        "Product Unlinked",
+        `"${productName}" has been unlinked from this offer.`
+      );
+      // Reload products with cache bypassed to get fresh data
+      loadProducts(true);
+    } catch (err) {
+      console.error("[OfferDetails] Failed to unlink product:", err);
+      showError("Failed to unlink product");
+    } finally {
+      setUnlinkingProductId(null);
+    }
+  };
+
+  const handleSetPrimaryProduct = async (
+    productId: number,
+    linkId: number,
+    productName: string
+  ) => {
+    if (!user?.user_id) {
+      showError("Error", "User ID not available. Please log in again.");
+      return;
+    }
+
+    // Check if there's already a primary product
+    const existingPrimary = linkedProducts.find((p: any) => p.is_primary);
+    let confirmed = true;
+
+    if (existingPrimary && existingPrimary.product_id !== productId) {
+      confirmed = await confirm({
+        title: "Set Primary Product",
+        message: `Setting "${productName}" as the primary product will replace the current primary product (${
+          existingPrimary.name || `Product ${existingPrimary.product_id}`
+        }). Do you want to continue?`,
+        confirmText: "Set as Primary",
+        cancelText: "Cancel",
+      });
+    }
+
+    if (!confirmed) return;
+
+    try {
+      setSettingPrimaryId(productId);
+      console.log("[OfferDetails] Testing linkProductToOffer (set primary)...");
+
+      // Use linkProductToOffer to set as primary
+      // Note: This will replace the existing primary if one exists
+      const result = await offerService.linkProductToOffer({
+        offer_id: Number(id),
+        product_id: productId,
+        is_primary: true,
+        quantity: 1,
+        created_by: user.user_id,
+      });
+
+      console.log(
+        "[OfferDetails] linkProductToOffer (primary) response:",
+        result
+      );
+      success(
+        "Primary Product Set",
+        `"${productName}" is now the primary product for this offer.`
+      );
+      setPrimaryProductId(productId);
+      // Reload products with cache bypassed to get fresh data
+      loadProducts(true);
+    } catch (err) {
+      console.error("[OfferDetails] Failed to set primary product:", err);
+      showError("Failed to set primary product");
+    } finally {
+      setSettingPrimaryId(null);
+    }
+  };
+
   // Generate dummy offer type based on offer characteristics
   // Using the same types as in CreateOfferPage dropdown
   const getOfferType = (offer: Offer) => {
@@ -402,16 +603,33 @@ export default function OfferDetailsPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
-              Offer Details
-            </h1>
+            <h1 className={tw.mainHeading}>Offer Details</h1>
             <p className={`${tw.textSecondary} mt-1`}>
               View and manage offer information
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-3">
-          {/* Approval Actions - Only Approve button visible */}
+          {/* Draft: Submit for Approval */}
+          {isDraft && (
+            <button
+              onClick={handleRequestApproval}
+              disabled={isRequestApprovalLoading}
+              className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isRequestApprovalLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              {isRequestApprovalLoading
+                ? "Submitting..."
+                : "Submit for Approval"}
+            </button>
+          )}
+
+          {/* Pending Approval: Approve/Reject */}
           {isPending && (
             <>
               <button
@@ -430,32 +648,47 @@ export default function OfferDetailsPage() {
             </>
           )}
 
-          {/* Request Approval - For rejected offers */}
-          {isRejected && (
-            <>
+          {/* Approved: Activate */}
+          {offer.status === OfferStatusEnum.APPROVED &&
+            !isExpired &&
+            !isArchived && (
               <button
-                onClick={handleRequestApproval}
-                disabled={isRequestApprovalLoading}
+                onClick={handleActivate}
+                disabled={isActivateLoading}
                 className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
               >
-                {isRequestApprovalLoading ? (
+                {isActivateLoading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 ) : (
-                  <AlertCircle className="w-4 h-4" />
+                  <Play className="w-4 h-4" />
                 )}
-                {isRequestApprovalLoading
-                  ? "Requesting..."
-                  : "Request Approval"}
+                {isActivateLoading ? "Activating..." : "Activate"}
               </button>
-            </>
+            )}
+
+          {/* Rejected: Request Approval (to resubmit) */}
+          {isRejected && (
+            <button
+              onClick={handleRequestApproval}
+              disabled={isRequestApprovalLoading}
+              className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isRequestApprovalLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              {isRequestApprovalLoading ? "Requesting..." : "Request Approval"}
+            </button>
           )}
 
-          {/* Lifecycle Actions - Only show if approved AND not expired/archived */}
-          {isApproved && !isExpired && !isArchived && (
+          {/* Lifecycle Actions - Only show if active/paused AND not expired/archived */}
+          {(isActive || isPaused) && !isExpired && !isArchived && (
             <>
-              {/* Activate/Resume for paused/draft offers */}
-              {(isPaused || isDraft) && (
+              {/* Activate/Resume for paused offers */}
+              {isPaused && (
                 <button
                   onClick={handleActivate}
                   disabled={isActivateLoading}
@@ -467,15 +700,12 @@ export default function OfferDetailsPage() {
                   ) : (
                     <Play className="w-4 h-4" />
                   )}
-                  {isActivateLoading
-                    ? "Activating..."
-                    : isPaused
-                    ? "Resume"
-                    : "Activate"}
+                  {isActivateLoading ? "Resuming..." : "Resume"}
                 </button>
               )}
 
-              {/* Pause and Deactivate for active offers */}
+              {/* Pause, Expire, Archive for active offers */}
+              {/* Note: Deactivate (to draft) is not allowed from active status */}
               {isActive && (
                 <>
                   <button
@@ -490,18 +720,6 @@ export default function OfferDetailsPage() {
                       <Pause className="w-4 h-4" />
                     )}
                     {isPauseLoading ? "Pausing..." : "Pause"}
-                  </button>
-                  <button
-                    onClick={handleDeactivate}
-                    disabled={isDeactivateLoading}
-                    className="px-4 py-2 bg-white border-2 border-gray-200 text-gray-900 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isDeactivateLoading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                    ) : (
-                      <XCircle className="w-4 h-4" />
-                    )}
-                    {isDeactivateLoading ? "Deactivating..." : "Deactivate"}
                   </button>
                 </>
               )}
@@ -595,9 +813,7 @@ export default function OfferDetailsPage() {
       >
         <div className="flex items-start space-x-4">
           <div className="flex-1">
-            <h2 className={`text-xl font-bold ${tw.textPrimary} mb-2`}>
-              {offer.name}
-            </h2>
+            <h2 className={`${tw.cardHeading} mb-2`}>{offer.name}</h2>
             <p className={`${tw.textSecondary} mb-4`}>
               {offer.description || "No description available"}
             </p>
@@ -610,7 +826,8 @@ export default function OfferDetailsPage() {
               </span>
               {offer.is_reusable && (
                 <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                  style={{ backgroundColor: color.primary.accent }}
                 >
                   Reusable
                 </span>
@@ -631,9 +848,7 @@ export default function OfferDetailsPage() {
       <div
         className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
       >
-        <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
-          Offer Information
-        </h3>
+        <h3 className={`${tw.cardHeading} mb-4`}>Offer Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={`text-sm font-medium ${tw.textMuted} block mb-1`}>
@@ -686,9 +901,7 @@ export default function OfferDetailsPage() {
         className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3
-            className={`text-lg font-semibold ${tw.textPrimary} flex items-center gap-2`}
-          >
+          <h3 className={`${tw.cardHeading} flex items-center gap-2`}>
             <Package className="w-5 h-5" />
             Linked Products
           </h3>
@@ -707,36 +920,137 @@ export default function OfferDetailsPage() {
         ) : linkedProducts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {linkedProducts.map((product: any, index: number) => (
-              <div
-                key={product.id || index}
-                className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
+            {linkedProducts.map((product: any, index: number) => {
+              // Debug logging
+              if (index === 0) {
+                console.log("[OfferDetails] Product data for buttons:", {
+                  product,
+                  hasLinkId: !!product.link_id,
+                  isPrimary: product.is_primary,
+                  primaryProductId,
+                });
+              }
+
+              const isPrimary =
+                product.is_primary ||
+                (product.product_id && product.product_id === primaryProductId);
+              const isUnlinking =
+                product.link_id && unlinkingProductId === product.link_id;
+              const isSettingPrimary =
+                product.product_id && settingPrimaryId === product.product_id;
+
+              return (
                 <div
-                  className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: color.primary.accent }}
+                  key={product.id || index}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Package className="w-5 h-5 text-white" />
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div
+                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: color.primary.accent }}
+                    >
+                      <Package className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`font-medium ${tw.textPrimary} truncate`}>
+                          {product.name ||
+                            product.product_name ||
+                            `Product ${product.product_id || product.id}`}
+                        </p>
+                        {isPrimary && (
+                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        )}
+                      </div>
+                      {product.description && (
+                        <p className={`text-sm ${tw.textMuted} truncate`}>
+                          {product.description}
+                        </p>
+                      )}
+                      {isPrimary && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                          Primary
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                    {/* Set as Primary button - Show if not primary and has link_id or product_id */}
+                    {!isPrimary &&
+                      (product.link_id || product.product_id || product.id) && (
+                        <button
+                          onClick={() =>
+                            handleSetPrimaryProduct(
+                              product.product_id || product.id,
+                              product.link_id || 0, // Use 0 as fallback if link_id doesn't exist
+                              product.name ||
+                                `Product ${product.product_id || product.id}`
+                            )
+                          }
+                          disabled={isSettingPrimary || isUnlinking}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg border border-gray-300 hover:border-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Set as primary product"
+                        >
+                          {isSettingPrimary ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-yellow-600"></div>
+                              <span>Setting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <StarOff className="w-4 h-4" />
+                              <span>Set Primary</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    {/* Unlink button - Always show if we have products */}
+                    {(product.link_id || product.product_id || product.id) && (
+                      <button
+                        onClick={() => {
+                          if (!product.link_id) {
+                            console.warn(
+                              "[OfferDetails] No link_id found for product, cannot unlink:",
+                              product
+                            );
+                            showError(
+                              "Cannot unlink: Link ID not available. Product may need to be re-linked."
+                            );
+                            return;
+                          }
+                          handleUnlinkProduct(
+                            product.link_id,
+                            product.name ||
+                              `Product ${product.product_id || product.id}`
+                          );
+                        }}
+                        disabled={
+                          isUnlinking || isSettingPrimary || !product.link_id
+                        }
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-300 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={
+                          product.link_id
+                            ? "Unlink product"
+                            : "Link ID not available"
+                        }
+                      >
+                        {isUnlinking ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-red-600"></div>
+                            <span>Unlinking...</span>
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-4 h-4" />
+                            <span>Unlink</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-medium ${tw.textPrimary} truncate`}>
-                    {product.name ||
-                      product.product_name ||
-                      `Product ${product.product_id || product.id}`}
-                  </p>
-                  {product.description && (
-                    <p className={`text-sm ${tw.textMuted} truncate`}>
-                      {product.description}
-                    </p>
-                  )}
-                  {product.is_primary && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                      Primary
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8">
