@@ -89,7 +89,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     "offer management",
     "product management",
     "segment management",
-    "configuration",
   ]);
 
   const navigation: NavigationItem[] = [
@@ -135,6 +134,27 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "campaigns",
         },
+        {
+          name: "Campaign Catalogs",
+          href: "/dashboard/campaign-catalogs",
+          icon: Folder,
+          type: "single",
+          entity: "campaigns",
+        },
+        {
+          name: "Line of Business",
+          href: "/dashboard/line-of-business",
+          icon: Briefcase,
+          type: "single",
+          entity: "campaigns",
+        },
+        {
+          name: "Campaign Communication Policy",
+          href: "/dashboard/campaign-communication-policy",
+          icon: Bell,
+          type: "single",
+          entity: "campaigns",
+        },
       ],
     },
     {
@@ -155,6 +175,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           name: "Offer Types",
           href: "/dashboard/offer-types",
           icon: Tag,
+          type: "single",
+          entity: "offers",
+        },
+        {
+          name: "Offer Catalogs",
+          href: "/dashboard/offer-catalogs",
+          icon: FolderOpen,
           type: "single",
           entity: "offers",
         },
@@ -181,6 +208,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "products",
         },
+        {
+          name: "Product Catalogs",
+          href: "/dashboard/products/catalogs",
+          icon: FolderOpen,
+          type: "single",
+          entity: "products",
+        },
       ],
     },
     {
@@ -204,6 +238,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "segments",
         },
+        {
+          name: "Segment Catalogs",
+          href: "/dashboard/segment-catalogs",
+          icon: FolderOpen,
+          type: "single",
+          entity: "segments",
+        },
       ],
     },
     {
@@ -217,59 +258,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       name: "Configuration",
       href: "/dashboard/configuration",
       icon: Cog,
-      type: "parent",
+      type: "single",
       entity: "configuration",
-      children: [
-        {
-          name: "All Configurations",
-          href: "/dashboard/configuration",
-          icon: Grid3X3,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Campaign Catalogs",
-          href: "/dashboard/campaign-catalogs",
-          icon: Folder,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Offer Catalogs",
-          href: "/dashboard/offer-catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Product Catalogs",
-          href: "/dashboard/products/catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Segment Catalogs",
-          href: "/dashboard/segment-catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Line of Business",
-          href: "/dashboard/line-of-business",
-          icon: Briefcase,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Campaign Communication Policy",
-          href: "/dashboard/campaign-communication-policy",
-          icon: Bell,
-          type: "single",
-          entity: "configuration",
-        },
-      ],
     },
   ];
 
@@ -813,7 +803,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </ul>
           </nav>
 
-          <div className="pt-6 border-t border-gray-200 flex-shrink-0">
+          <div className="pt-6 flex-shrink-0">
             <ul className="md:space-y-1 xl:space-y-1">
               {secondaryNavigation.map((item, index) => {
                 const Icon = item.icon;
@@ -829,7 +819,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }}
                   >
                     <Link
-                      to={item.href}
+                      to="#"
+                      onClick={(e) => e.preventDefault()}
                       className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(
                         isActive
                       )}`}

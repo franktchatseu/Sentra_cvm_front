@@ -21,7 +21,6 @@ import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { offerService } from "../services/offerService";
-import AssignItemsModal from "../../../shared/components/AssignItemsModal";
 import { Offer } from "../types/offer";
 import {
   OfferCategoryType,
@@ -208,9 +207,6 @@ function OffersModal({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredOffers, setFilteredOffers] = useState<BasicOffer[]>([]);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [allOffers, setAllOffers] = useState<Offer[]>([]);
-  const [loadingAllOffers, setLoadingAllOffers] = useState(false);
 
   useEffect(() => {
     if (isOpen && category) {
@@ -272,92 +268,6 @@ function OffersModal({
   //   }
   // };
 
-  // Load all offers for assignment modal
-  const loadAllOffers = async () => {
-    try {
-      setLoadingAllOffers(true);
-      console.log(
-        "[OfferCategories] Loading all offers for assignment modal..."
-      );
-      const response = await offerService.searchOffers({
-        limit: 1000,
-        skipCache: true,
-      });
-      console.log("[OfferCategories] searchOffers response:", response);
-      console.log("[OfferCategories] Response structure:", {
-        hasData: !!response.data,
-        dataType: Array.isArray(response.data) ? "array" : typeof response.data,
-        dataLength: Array.isArray(response.data) ? response.data.length : "N/A",
-        fullResponse: response,
-      });
-
-      // Check if response is paginated or direct array
-      let offersData: Offer[] = [];
-      if (Array.isArray(response.data)) {
-        offersData = response.data as Offer[];
-      } else if (response.data && Array.isArray((response.data as any).data)) {
-        offersData = (response.data as any).data as Offer[];
-      } else if (
-        (response as any).data &&
-        Array.isArray((response as any).data)
-      ) {
-        offersData = (response as any).data as Offer[];
-      }
-
-      console.log(
-        `[OfferCategories] Extracted ${offersData.length} offers for assignment modal`
-      );
-      setAllOffers(offersData);
-    } catch (err) {
-      console.error("[OfferCategories] Failed to load all offers:", err);
-      setAllOffers([]);
-    } finally {
-      setLoadingAllOffers(false);
-    }
-  };
-
-  // Get assigned offer IDs (offers in this category)
-  const assignedOfferIds = offers
-    .map((offer) => offer.id)
-    .filter((id): id is number | string => id !== undefined);
-
-  // Handle assignment
-  const handleAssignOffers = async (
-    offerIds: (number | string)[]
-  ): Promise<{ success: number; failed: number; errors?: string[] }> => {
-    if (!category) {
-      return { success: 0, failed: 0 };
-    }
-
-    let success = 0;
-    let failed = 0;
-    const errors: string[] = [];
-
-    // Assign each offer individually
-    for (const offerId of offerIds) {
-      try {
-        await offerService.updateOffer(Number(offerId), {
-          category_id: category.id,
-        });
-        success++;
-      } catch (err) {
-        failed++;
-        const errorMsg =
-          err instanceof Error
-            ? err.message
-            : `Failed to assign offer ${offerId}`;
-        errors.push(errorMsg);
-        console.error(`Failed to assign offer ${offerId}:`, err);
-      }
-    }
-
-    // Refresh offers list and counts
-    loadOffers();
-    onRefreshCounts();
-
-    return { success, failed, errors };
-  };
-
   return (
     <>
       {isOpen && category && (
@@ -405,10 +315,9 @@ function OffersModal({
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          if (!showAssignModal) {
-                            loadAllOffers();
-                          }
-                          setShowAssignModal(true);
+                          navigate(
+                            `/dashboard/offer-catalogs/${category.id}/assign`
+                          );
                         }}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >
@@ -507,30 +416,13 @@ function OffersModal({
               </div>
             </div>
           </div>
-
-          {/* Assign Offers Modal */}
-          <AssignItemsModal<Offer>
-            isOpen={showAssignModal}
-            onClose={() => setShowAssignModal(false)}
-            title={`Assign Offers to "${category.name}"`}
-            itemName="offer"
-            allItems={allOffers}
-            assignedItemIds={assignedOfferIds}
-            onAssign={handleAssignOffers}
-            onRefresh={() => {
-              loadOffers();
-              onRefreshCounts();
-            }}
-            loading={loadingAllOffers}
-            searchPlaceholder="Search offers..."
-          />
         </>
       )}
     </>
   );
 }
 
-export default function OfferCategoriesPage() {
+function OfferCategoriesPage() {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
@@ -1829,3 +1721,5 @@ export default function OfferCategoriesPage() {
     </div>
   );
 }
+
+export default OfferCategoriesPage;

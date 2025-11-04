@@ -23,7 +23,6 @@ import {
 } from "../types/segment";
 import { Segment } from "../types/segment";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-import AssignItemsModal from "../../../shared/components/AssignItemsModal";
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -350,10 +349,9 @@ function SegmentsModal({
                   </div>
                   <button
                     onClick={() => {
-                      if (!showAssignModal) {
-                        loadAllSegments();
-                      }
-                      setShowAssignModal(true);
+                      navigate(
+                        `/dashboard/segment-catalogs/${category.id}/assign`
+                      );
                     }}
                     className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                   >
@@ -435,21 +433,6 @@ function SegmentsModal({
           </div>
 
           {/* Assign Segments Modal */}
-          <AssignItemsModal<Segment>
-            isOpen={showAssignModal}
-            onClose={() => setShowAssignModal(false)}
-            title={`Assign Segments to "${category.name}"`}
-            itemName="segment"
-            allItems={allSegments}
-            assignedItemIds={assignedSegmentIds}
-            onAssign={handleAssignSegments}
-            onRefresh={() => {
-              loadCategorySegments();
-              onRefreshCounts();
-            }}
-            loading={loadingAllSegments}
-            searchPlaceholder="Search segments..."
-          />
         </>
       )}
     </>

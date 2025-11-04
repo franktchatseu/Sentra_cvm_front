@@ -1,8 +1,4 @@
-import {
-  API_CONFIG,
-  buildApiUrl,
-  getAuthHeaders,
-} from "../../../shared/services/api";
+import { buildApiUrl, getAuthHeaders } from "../../../shared/services/api";
 import {
   ProductCategory as ProductCategoryType,
   ApiResponse,
@@ -16,7 +12,7 @@ import {
 } from "../types/productCategory";
 
 class ProductCategoryService {
-  private baseUrl = buildApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES);
+  private baseUrl = buildApiUrl("/product-categories");
 
   private async request<T>(
     endpoint: string,

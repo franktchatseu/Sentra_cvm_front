@@ -8,7 +8,10 @@ import {
   Trash2,
   UserX,
   UserCheck,
+  Users,
+  Eye,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { userService } from "../../users/services/userService";
 import { accountService } from "../../account/services/accountService";
 import { UserType } from "../../users/types/user";
@@ -20,6 +23,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, components } from "../../../shared/utils/utils";
 
 export default function UserManagementPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserType[]>([]);
   const [accountRequests, setAccountRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,6 +82,37 @@ export default function UserManagementPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      loadData();
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const searchResponse = await userService.searchUsers({
+        q: searchTerm,
+        page: 1,
+        pageSize: 100,
+      });
+
+      if (searchResponse.success) {
+        setUsers(searchResponse.data);
+      }
+    } catch (err) {
+      showError(
+        "Search Error",
+        err instanceof Error ? err.message : "Failed to search users"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewUser = (user: UserType) => {
+    navigate(`/dashboard/user-management/${user.id}`);
   };
 
   const handleApproveRequest = async (request: any) => {
@@ -320,6 +355,7 @@ export default function UserManagementPage() {
           }}
         >
           <div className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
             <span>Users</span>
             <span
               className="px-2 py-0.5 rounded-full text-xs"
@@ -372,6 +408,11 @@ export default function UserManagementPage() {
             placeholder={`Search ${activeTab}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && activeTab === "users") {
+                handleSearch();
+              }
+            }}
             className={`w-full pl-10 pr-4 py-3 text-sm ${components.input.default}`}
           />
         </div>
@@ -593,6 +634,17 @@ export default function UserManagementPage() {
                               )}
                             </button>
                             <button
+                              onClick={() => handleViewUser(user)}
+                              className="p-2 rounded-lg transition-colors"
+                              style={{
+                                color: color.primary.action,
+                                backgroundColor: "transparent",
+                              }}
+                              title="View user details"
+                            >
+                              <Eye className="w-4 h-4 text-black" />
+                            </button>
+                            <button
                               onClick={() => {
                                 setSelectedUser(user);
                                 setIsModalOpen(true);
@@ -602,6 +654,7 @@ export default function UserManagementPage() {
                                 color: color.primary.action,
                                 backgroundColor: "transparent",
                               }}
+                              title="Edit user"
                             >
                               <Edit className="w-4 h-4 text-black" />
                             </button>
@@ -698,17 +751,43 @@ export default function UserManagementPage() {
                           )}
                         </button>
                         <button
+                          onClick={() => handleViewUser(user)}
+                          className="p-2 rounded-lg transition-colors flex flex-col items-center gap-1"
+                          style={{
+                            color: color.primary.action,
+                            backgroundColor: "transparent",
+                          }}
+                        >
+                          <Eye className="w-4 h-4 text-black" />
+                          <span className="text-xs">View</span>
+                        </button>
+                        <button
                           onClick={() => {
                             setSelectedUser(user);
                             setIsModalOpen(true);
                           }}
-                          className="p-2 rounded-lg transition-colors"
+                          className="p-2 rounded-lg transition-colors flex flex-col items-center gap-1"
                           style={{
                             color: color.text.muted,
                             backgroundColor: "transparent",
                           }}
                         >
                           <Edit className="w-4 h-4 text-black" />
+                          <span className="text-xs">Edit</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-2 rounded-lg transition-colors"
+                          style={{
+                            color: color.primary.action,
+                            backgroundColor: "transparent",
+                          }}
+                        >
+                          <Edit className="w-4 h-4 text-black" />
+                          <span className="text-xs">Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user)}
@@ -729,6 +808,7 @@ export default function UserManagementPage() {
                           ) : (
                             <Trash2 className="w-4 h-4 text-black" />
                           )}
+                          <span className="text-xs">Delete</span>
                         </button>
                       </div>
                     </div>

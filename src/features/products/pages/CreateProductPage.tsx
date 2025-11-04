@@ -64,8 +64,11 @@ export default function CreateProductPage() {
       // Extract detailed error message from backend response
       let errorMessage = "Failed to create product";
 
-      if (err && typeof err === "object") {
-        // Check for response.data.error or response.data.message
+      if (err instanceof Error) {
+        // Error from service (already extracted and translated to user-friendly message)
+        errorMessage = err.message;
+      } else if (err && typeof err === "object") {
+        // Fallback for axios-style errors or other error formats
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = err as any;
         if (error.response?.data?.error) {
@@ -122,7 +125,7 @@ export default function CreateProductPage() {
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 transition-shadow hover:shadow-md">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Product Code */}
@@ -137,7 +140,7 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("product_code", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="e.g., VOICE_BUNDLE_001"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -155,7 +158,7 @@ export default function CreateProductPage() {
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
                 placeholder="e.g., Premium Voice Bundle"
               />
             </div>
@@ -172,7 +175,7 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("price", parseFloat(e.target.value) || 0)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="0.00"
               />
               <p className="text-sm text-gray-500 mt-1">Product price</p>
@@ -188,7 +191,7 @@ export default function CreateProductPage() {
                 required
                 value={formData.da_id}
                 onChange={(e) => handleInputChange("da_id", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="Enter DA ID"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -223,7 +226,7 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
                 placeholder="Describe the product features and benefits..."
               />
             </div>
@@ -236,7 +239,7 @@ export default function CreateProductPage() {
               <select
                 value={formData.currency || "USD"}
                 onChange={(e) => handleInputChange("currency", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
               >
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -289,7 +292,7 @@ export default function CreateProductPage() {
                   type="text"
                   value={formData.da_id || ""}
                   onChange={(e) => handleInputChange("da_id", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                   placeholder="e.g., DA_001"
                 />
                 <p className="text-sm text-gray-500 mt-1">
@@ -311,7 +314,7 @@ export default function CreateProductPage() {
                       parseInt(e.target.value) || undefined
                     )
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                   placeholder="e.g., 30"
                 />
                 <p className="text-sm text-gray-500 mt-1">
@@ -333,7 +336,7 @@ export default function CreateProductPage() {
                       parseInt(e.target.value) || undefined
                     )
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                   placeholder="e.g., 24"
                 />
                 <p className="text-sm text-gray-500 mt-1">
@@ -355,7 +358,7 @@ export default function CreateProductPage() {
                       parseInt(e.target.value) || undefined
                     )
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                   placeholder="e.g., 100"
                 />
                 <p className="text-sm text-gray-500 mt-1">
@@ -392,7 +395,7 @@ export default function CreateProductPage() {
                   onChange={(e) =>
                     handleInputChange("effective_from", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   When the product becomes available
@@ -409,7 +412,7 @@ export default function CreateProductPage() {
                   onChange={(e) =>
                     handleInputChange("effective_to", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   When the product expires

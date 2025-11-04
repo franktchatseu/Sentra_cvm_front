@@ -3,6 +3,7 @@ import {
   SegmentCategoryType,
   SegmentRuleType,
   SegmentMemberType,
+  SegmentCriteriaType,
   CreateSegmentRequest,
   UpdateSegmentRequest,
   CreateSegmentCategoryRequest,
@@ -24,15 +25,15 @@ import {
   GetSegmentMembersQuery,
   ApiSuccessResponse,
   PaginatedResponse,
-  SegmentResponse,
+  // SegmentResponse,
   SegmentCategoriesResponse,
-  SegmentMembersResponse,
+  // SegmentMembersResponse,
   ComputationStatusResponse,
   ExportStatusResponse,
   PreviewResponse,
   PreviewSampleResponse,
   ExportSegmentQuery,
-  ExportFormatEnum,
+  // ExportFormatEnum,
   // New Analytics Types
   HealthSummaryResponse,
   CreationTrendResponse,
@@ -76,7 +77,7 @@ class SegmentService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    console.log("Making request to:", url);
+    console.log("[SegmentService] Making request to:", url);
 
     const response = await fetch(url, {
       headers: {
@@ -89,26 +90,81 @@ class SegmentService {
 
     if (!response.ok) {
       try {
-        const errorData = await response.json();
-        if (errorData.error) {
-          throw new Error(errorData.error);
-        }
-        if (errorData.message) {
-          throw new Error(errorData.message);
-        }
-        if (errorData.details) {
-          throw new Error(errorData.details);
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          if (errorData.error) {
+            throw new Error(errorData.error);
+          }
+          if (errorData.message) {
+            throw new Error(errorData.message);
+          }
+          if (errorData.details) {
+            throw new Error(errorData.details);
+          }
+        } else {
+          // Non-JSON error response
+          const errorText = await response.text();
+          console.error(`[SegmentService] Non-JSON error response:`, errorText);
+          throw new Error(
+            `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
+          );
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       } catch (err) {
-        if (err instanceof Error) {
+        if (err instanceof Error && !err.message.includes("HTTP error")) {
           throw err;
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
+        );
       }
     }
 
-    return response.json();
+    // Clone response to read it multiple times if needed
+    const responseClone = response.clone();
+
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text();
+      console.error(
+        `[SegmentService] Non-JSON response received (status: ${response.status}):`,
+        text.substring(0, 200)
+      );
+      throw new Error(
+        `Expected JSON response but received ${
+          contentType || "unknown type"
+        }. Status: ${response.status}`
+      );
+    }
+
+    try {
+      const jsonData = await response.json();
+      console.log("[SegmentService] Response parsed successfully");
+      return jsonData;
+    } catch (parseError) {
+      console.error(`[SegmentService] JSON parse error:`, parseError);
+      // Use cloned response to read text
+      try {
+        const text = await responseClone.text();
+        console.error(
+          `[SegmentService] Response text (first 500 chars):`,
+          text.substring(0, 500)
+        );
+        throw new Error(
+          `Failed to parse JSON response: ${
+            parseError instanceof Error ? parseError.message : "Unknown error"
+          }. Response: ${text.substring(0, 100)}`
+        );
+      } catch {
+        throw new Error(
+          `Failed to parse JSON response: ${
+            parseError instanceof Error ? parseError.message : "Unknown error"
+          }`
+        );
+      }
+    }
   }
 
   private async requestCategories<T>(
@@ -172,14 +228,16 @@ class SegmentService {
   // ==================== SEGMENT CATEGORIES (8 endpoints) ====================
 
   /**
-   * GET /segment-categories/ - Get all categories
+   * GET /segment-categories/root - Get all categories
    */
   async getSegmentCategories(
     search?: string,
     skipCache: boolean = false
   ): Promise<SegmentCategoriesResponse> {
     const queryString = this.buildQueryParams({ search, skipCache });
-    return this.requestCategories<SegmentCategoriesResponse>(`${queryString}`);
+    return this.requestCategories<SegmentCategoriesResponse>(
+      `/root${queryString}`
+    );
   }
 
   /**
@@ -460,9 +518,11 @@ class SegmentService {
    */
   async getSegmentStats(
     skipCache: boolean = false
-  ): Promise<ApiSuccessResponse<any>> {
+  ): Promise<ApiSuccessResponse<Record<string, unknown>>> {
     const queryString = this.buildQueryParams({ skipCache });
-    return this.request<ApiSuccessResponse<any>>(`/stats${queryString}`);
+    return this.request<ApiSuccessResponse<Record<string, unknown>>>(
+      `/stats${queryString}`
+    );
   }
 
   // ==================== QUERY GENERATION ENDPOINTS (2 endpoints) ====================
@@ -471,15 +531,14 @@ class SegmentService {
    * POST /segments/generate-query/preview - Generate segment query preview
    */
   async generateQueryPreview(request: {
-    criteria: any;
-  }): Promise<ApiSuccessResponse<{ query: string; preview: any }>> {
-    return this.request<ApiSuccessResponse<{ query: string; preview: any }>>(
-      "/generate-query/preview",
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
+    criteria: SegmentCriteriaType;
+  }): Promise<ApiSuccessResponse<{ query: string; preview: PreviewResponse }>> {
+    return this.request<
+      ApiSuccessResponse<{ query: string; preview: PreviewResponse }>
+    >("/generate-query/preview", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
   }
 
   /**
@@ -1126,7 +1185,7 @@ class SegmentService {
    */
   async getPreviewCount(
     id: number,
-    criteriaOverride?: Record<string, any>
+    criteriaOverride?: SegmentCriteriaType
   ): Promise<ApiSuccessResponse<{ count: number }>> {
     const queryString = criteriaOverride
       ? this.buildQueryParams({
@@ -1283,19 +1342,6 @@ class SegmentService {
     return this.request<ApiSuccessResponse<ExportStatusResponse>>(
       `/${segmentId}/export-status/${jobId}`
     );
-  }
-
-  // ==================== HEALTH CHECK (1 endpoint) ====================
-
-  /**
-   * GET /segments/health - Health check
-   */
-  async healthCheck(): Promise<
-    ApiSuccessResponse<{ status: string; timestamp: string }>
-  > {
-    return this.request<
-      ApiSuccessResponse<{ status: string; timestamp: string }>
-    >("/health");
   }
 }
 

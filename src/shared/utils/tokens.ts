@@ -39,6 +39,30 @@ export const colors = {
     info: "#C38BFB", // Info messages (Purple 500)
   },
 
+  // Chart colors for distribution charts
+  charts: {
+    offers: {
+      discount: "#C38BFB", // Purple 500
+      cashback: "#FC9C9C", // Coral 500
+      freeShipping: "#F7B430", // Yellow 500
+      buyOneGetOne: "#94DF5A", // Green 500
+      voucher: "#4FDFF3", // Cyan/Teal for voucher (different from discount)
+    },
+    segments: {
+      dynamic: "#6B8E6B", // Lighter green (Green 600)
+      static: "#B84A6B", // Lighter red/maroon (Red 600)
+      trigger: "#A66B3D", // Lighter brown (Brown 600)
+      hybrid: "#5B6870", // Lighter neutral (NEUTRAL 600)
+    },
+    campaigns: {
+      active: "#94DF5A", // Green 500
+      pending: "#FC9C9C", // Coral 500
+      paused: "#F7B430", // Yellow 500
+      completed: "#66E8FA", // Brand 400
+      draft: "#6B7280", // Gray
+    },
+  },
+
   // Configuration status colors
   configStatus: {
     active: "#C38BFB", // Purple 500 - Active

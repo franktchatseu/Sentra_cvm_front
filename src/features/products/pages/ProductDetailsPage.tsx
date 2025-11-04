@@ -12,11 +12,11 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { Product } from "../../../../shared/types/product";
-import { ProductCategory } from "../../../../shared/types/productCategory";
+import { Product } from "../types/product";
+import { ProductCategory } from "../types/productCategory";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -37,19 +37,26 @@ export default function ProductDetailsPage() {
       setLoading(true);
       setError(null);
 
-      const [productData, categoriesData] = await Promise.all([
-        productService.getProductById(id!, "id"),
+      const [productResponse, categoriesResponse] = await Promise.all([
+        productService.getProductById(Number(id), true),
         productCategoryService.getAllCategories({
           limit: 100,
           skipCache: true,
         }),
       ]);
 
+      if (!productResponse.success || !productResponse.data) {
+        throw new Error("Product not found");
+      }
+
+      const productData = productResponse.data;
+      console.log("Backend response for single product:", productResponse);
+      console.log("Product data:", productData);
       setProduct(productData);
 
       // Find the category for this product
-      const productCategory = (categoriesData.data || []).find(
-        (cat) => cat.id === Number(productData.category_id)
+      const productCategory = (categoriesResponse.data || []).find(
+        (cat) => cat.id === productData.category_id
       );
       setCategory(productCategory || null);
     } catch (err) {
@@ -199,11 +206,16 @@ export default function ProductDetailsPage() {
         <div className="flex flex-col sm:flex-row xl:flex-row lg:flex-col gap-3">
           <button
             onClick={handleToggleStatus}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit text-white ${
-              product.is_active
-                ? "bg-yellow-600 hover:bg-yellow-700"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
+            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit text-white"
+            style={{
+              backgroundColor: button.secondaryAction.background,
+            }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.opacity = "1";
+            }}
           >
             {product.is_active ? (
               <>
@@ -220,14 +232,12 @@ export default function ProductDetailsPage() {
           <button
             onClick={() => navigate(`/dashboard/products/${id}/edit`)}
             className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit"
-            style={{ backgroundColor: color.primary.action }}
+            style={{ backgroundColor: button.action.background }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
+              (e.target as HTMLButtonElement).style.opacity = "0.9";
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
+              (e.target as HTMLButtonElement).style.opacity = "1";
             }}
           >
             <Edit className="w-4 h-4" />
@@ -244,9 +254,9 @@ export default function ProductDetailsPage() {
       </div>
 
       {/* Product Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {/* Main Product Info */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           <div
             className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
           >
@@ -309,10 +319,10 @@ export default function ProductDetailsPage() {
                 <label
                   className={`text-sm font-medium ${tw.textMuted} block mb-1`}
                 >
-                  Product ID
+                  Product Code
                 </label>
                 <p className={`text-base ${tw.textPrimary} font-mono`}>
-                  {product.product_id || product.id || "N/A"}
+                  {product.product_code || product.id || "N/A"}
                 </p>
               </div>
               <div>
@@ -323,6 +333,20 @@ export default function ProductDetailsPage() {
                 </label>
                 <p className={`text-base ${tw.textPrimary} font-mono`}>
                   {product.da_id || "N/A"}
+                </p>
+              </div>
+              <div>
+                <label
+                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                >
+                  Price
+                </label>
+                <p className={`text-base ${tw.textPrimary} font-semibold`}>
+                  $
+                  {typeof product.price === "number"
+                    ? product.price.toFixed(2)
+                    : parseFloat(String(product.price || 0)).toFixed(2)}{" "}
+                  {product.currency || "USD"}
                 </p>
               </div>
               <div>
@@ -350,43 +374,22 @@ export default function ProductDetailsPage() {
                   })}
                 </p>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Product Stats */}
-          <div
-            className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
-          >
-            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
-              Product Statistics
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className={`text-sm ${tw.textMuted}`}>Status</span>
-                <span
-                  className={`text-sm font-medium ${
-                    product.is_active ? "text-green-600" : "text-gray-500"
-                  }`}
+              <div>
+                <label
+                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
                 >
-                  {product.is_active ? "Active" : "Inactive"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={`text-sm ${tw.textMuted}`}>Created</span>
-                <span className={`text-sm ${tw.textPrimary}`}>
-                  {new Date(product.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={`text-sm ${tw.textMuted}`}>Last Updated</span>
-                <span className={`text-sm ${tw.textPrimary}`}>
+                  Last Updated
+                </label>
+                <p className={`text-base ${tw.textPrimary} flex items-center`}>
+                  <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                   {product.updated_at
-                    ? new Date(product.updated_at).toLocaleDateString()
+                    ? new Date(product.updated_at).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
                     : "Never"}
-                </span>
+                </p>
               </div>
             </div>
           </div>

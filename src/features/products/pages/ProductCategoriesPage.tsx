@@ -24,7 +24,6 @@ import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
-import AssignItemsModal from "../../../shared/components/AssignItemsModal";
 
 interface ProductsModalProps {
   isOpen: boolean;
@@ -210,10 +209,9 @@ function ProductsModal({
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          if (!showAssignModal) {
-                            loadAllProducts();
-                          }
-                          setShowAssignModal(true);
+                          navigate(
+                            `/dashboard/products/catalogs/${category.id}/assign`
+                          );
                         }}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >
@@ -302,21 +300,6 @@ function ProductsModal({
           </div>
 
           {/* Assign Products Modal */}
-          <AssignItemsModal<Product>
-            isOpen={showAssignModal}
-            onClose={() => setShowAssignModal(false)}
-            title={`Assign Products to "${category.name}"`}
-            itemName="product"
-            allItems={allProducts}
-            assignedItemIds={assignedProductIds}
-            onAssign={handleAssignProducts}
-            onRefresh={() => {
-              loadProducts();
-              onRefreshProductCounts();
-            }}
-            loading={loadingAllProducts}
-            searchPlaceholder="Search products..."
-          />
         </>
       )}
     </>
