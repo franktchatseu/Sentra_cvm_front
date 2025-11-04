@@ -25,7 +25,6 @@ import {
   Bell,
   List,
   Building2,
-  Grid3X3,
 } from "lucide-react";
 import logo from "../../../assets/efforte.png";
 import { color } from "../../../shared/utils/utils";

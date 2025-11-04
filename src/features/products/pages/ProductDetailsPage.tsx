@@ -5,17 +5,11 @@ import {
   Edit,
   Trash2,
   Package,
-  Calendar,
   Tag,
   Power,
   PowerOff,
   Eye,
   EyeOff,
-  DollarSign,
-  Box,
-  Clock,
-  Hash,
-  FileText,
 } from "lucide-react";
 import { Product } from "../types/product";
 import { ProductCategory } from "../types/productCategory";
@@ -315,9 +309,7 @@ export default function ProductDetailsPage() {
           <div
             className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
           >
-            <h3
-              className={`text-lg font-semibold ${tw.textPrimary} mb-6`}
-            >
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
               Basic Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -372,9 +364,7 @@ export default function ProductDetailsPage() {
           <div
             className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
           >
-            <h3
-              className={`text-lg font-semibold ${tw.textPrimary} mb-6`}
-            >
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
               Pricing
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -421,9 +411,7 @@ export default function ProductDetailsPage() {
             <div
               className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
             >
-              <h3
-                className={`text-lg font-semibold ${tw.textPrimary} mb-6`}
-              >
+              <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
                 Validity Period
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -460,10 +448,7 @@ export default function ProductDetailsPage() {
                     >
                       Effective From
                     </label>
-                    <p
-                      className={`text-base ${tw.textPrimary} flex items-center`}
-                    >
-                      <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                    <p className={`text-base ${tw.textPrimary}`}>
                       {new Date(product.effective_from).toLocaleDateString(
                         "en-US",
                         {
@@ -482,10 +467,7 @@ export default function ProductDetailsPage() {
                     >
                       Effective To
                     </label>
-                    <p
-                      className={`text-base ${tw.textPrimary} flex items-center`}
-                    >
-                      <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                    <p className={`text-base ${tw.textPrimary}`}>
                       {new Date(product.effective_to).toLocaleDateString(
                         "en-US",
                         {
@@ -508,13 +490,7 @@ export default function ProductDetailsPage() {
           <div
             className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
           >
-            <h3
-              className={`text-lg font-semibold ${tw.textPrimary} mb-6 flex items-center`}
-            >
-              <Clock
-                className="w-5 h-5 mr-2"
-                style={{ color: color.primary.accent }}
-              />
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
               Timeline
             </h3>
             <div className="space-y-5">
