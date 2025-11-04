@@ -20,6 +20,9 @@ import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
+import { offerService } from "../services/offerService";
+import AssignItemsModal from "../../../shared/components/AssignItemsModal";
+import { Offer } from "../types/offer";
 import {
   OfferCategoryType,
   CreateOfferCategoryRequest,
@@ -188,18 +191,26 @@ interface OffersModalProps {
   onClose: () => void;
   category: OfferCategoryType | null;
   onRefreshCategories: () => void;
+  onRefreshCounts: () => void;
 }
 
-function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
+function OffersModal({
+  isOpen,
+  onClose,
+  category,
+  onRefreshCategories,
+  onRefreshCounts,
+}: OffersModalProps) {
+  const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
   const [offers, setOffers] = useState<BasicOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredOffers, setFilteredOffers] = useState<BasicOffer[]>([]);
-  const [showAssignDropdown, setShowAssignDropdown] = useState(false);
-  const [allOffersList, setAllOffersList] = useState<BasicOffer[]>([]);
-  const [assigningOffer, setAssigningOffer] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [allOffers, setAllOffers] = useState<Offer[]>([]);
+  const [loadingAllOffers, setLoadingAllOffers] = useState(false);
 
   useEffect(() => {
     if (isOpen && category) {
@@ -227,6 +238,9 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
     try {
       setLoading(true);
       setError(null);
+      console.log(
+        `[OfferCategories] Loading offers for category ${category.id} (${category.name})...`
+      );
       const response = await offerCategoryService.getCategoryOffers(
         category.id,
         {
@@ -234,11 +248,18 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
           skipCache: true,
         }
       );
+      console.log(
+        `[OfferCategories] getCategoryOffers response for category ${category.id}:`,
+        response
+      );
       // Backend returns offers in response.data
       const offersData = (response.data || []) as BasicOffer[];
+      console.log(
+        `[OfferCategories] Found ${offersData.length} offers in category ${category.id}`
+      );
       setOffers(offersData);
     } catch (err) {
-      console.error("Failed to load offers:", err);
+      console.error("[OfferCategories] Failed to load offers:", err);
       setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
       setLoading(false);
@@ -251,218 +272,262 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
   //   }
   // };
 
-  // TODO: Update these methods to use new offer service endpoints
-  const loadUnassignedOffers = async () => {
+  // Load all offers for assignment modal
+  const loadAllOffers = async () => {
     try {
-      // For now, just set empty array - will update when we fix offer service
-      setAllOffersList([]);
-    } catch (err) {
-      console.error("Failed to load unassigned offers:", err);
-      setAllOffersList([]);
-    }
-  };
-
-  const handleAssignOffer = async () => {
-    if (!category) return;
-
-    try {
-      setAssigningOffer(true);
-      // TODO: Update to use new offer service endpoints
-      showToast(
-        "Offer assignment temporarily disabled - will be updated with new endpoints"
+      setLoadingAllOffers(true);
+      console.log(
+        "[OfferCategories] Loading all offers for assignment modal..."
       );
-      setShowAssignDropdown(false);
+      const response = await offerService.searchOffers({
+        limit: 1000,
+        skipCache: true,
+      });
+      console.log("[OfferCategories] searchOffers response:", response);
+      console.log("[OfferCategories] Response structure:", {
+        hasData: !!response.data,
+        dataType: Array.isArray(response.data) ? "array" : typeof response.data,
+        dataLength: Array.isArray(response.data) ? response.data.length : "N/A",
+        fullResponse: response,
+      });
+
+      // Check if response is paginated or direct array
+      let offersData: Offer[] = [];
+      if (Array.isArray(response.data)) {
+        offersData = response.data as Offer[];
+      } else if (response.data && Array.isArray((response.data as any).data)) {
+        offersData = (response.data as any).data as Offer[];
+      } else if (
+        (response as any).data &&
+        Array.isArray((response as any).data)
+      ) {
+        offersData = (response as any).data as Offer[];
+      }
+
+      console.log(
+        `[OfferCategories] Extracted ${offersData.length} offers for assignment modal`
+      );
+      setAllOffers(offersData);
     } catch (err) {
-      console.error("Failed to assign offer:", err);
-      showError(err instanceof Error ? err.message : "Failed to assign offer");
+      console.error("[OfferCategories] Failed to load all offers:", err);
+      setAllOffers([]);
     } finally {
-      setAssigningOffer(false);
+      setLoadingAllOffers(false);
     }
   };
 
-  return isOpen && category
-    ? createPortal(
-        <div className="fixed inset-0 z-[9999] overflow-y-auto">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50"
-            onClick={onClose}
-          ></div>
-          <div className="relative min-h-screen flex items-center justify-center p-4">
-            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <div>
-                  <h2 className={`${tw.subHeading} text-gray-900`}>
-                    Offers in "{category.name}"
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {offers.length} offer{offers.length !== 1 ? "s" : ""} found
-                  </p>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
+  // Get assigned offer IDs (offers in this category)
+  const assignedOfferIds = offers
+    .map((offer) => offer.id)
+    .filter((id): id is number | string => id !== undefined);
 
-              {/* Search and Actions */}
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search offers..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+  // Handle assignment
+  const handleAssignOffers = async (
+    offerIds: (number | string)[]
+  ): Promise<{ success: number; failed: number; errors?: string[] }> => {
+    if (!category) {
+      return { success: 0, failed: 0 };
+    }
+
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    // Assign each offer individually
+    for (const offerId of offerIds) {
+      try {
+        await offerService.updateOffer(Number(offerId), {
+          category_id: category.id,
+        });
+        success++;
+      } catch (err) {
+        failed++;
+        const errorMsg =
+          err instanceof Error
+            ? err.message
+            : `Failed to assign offer ${offerId}`;
+        errors.push(errorMsg);
+        console.error(`Failed to assign offer ${offerId}:`, err);
+      }
+    }
+
+    // Refresh offers list and counts
+    loadOffers();
+    onRefreshCounts();
+
+    return { success, failed, errors };
+  };
+
+  return (
+    <>
+      {isOpen && category && (
+        <>
+          {/* Main Offers Modal */}
+          <div className="fixed inset-0 z-[9999] overflow-y-auto">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50"
+              onClick={onClose}
+            ></div>
+            <div className="relative min-h-screen flex items-center justify-center p-4">
+              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <div>
+                    <h2 className={`${tw.subHeading} text-gray-900`}>
+                      Offers in "{category.name}"
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {offers.length} offer{offers.length !== 1 ? "s" : ""}{" "}
+                      found
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <div className="relative">
+                  <button
+                    onClick={onClose}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+
+                {/* Search and Actions */}
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search offers..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          if (!showAssignDropdown) {
-                            loadUnassignedOffers();
+                          if (!showAssignModal) {
+                            loadAllOffers();
                           }
-                          setShowAssignDropdown(!showAssignDropdown);
+                          setShowAssignModal(true);
                         }}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                        disabled={assigningOffer}
                       >
                         <Plus className="w-4 h-4" />
                         Assign Existing Offer
                       </button>
-
-                      {/* Dropdown for available offers */}
-                      {showAssignDropdown && (
-                        <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-                          {allOffersList.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500 text-sm">
-                              No available offers to assign
-                            </div>
-                          ) : (
-                            <div className="py-2">
-                              {allOffersList.map((offer: BasicOffer, index) => (
-                                <button
-                                  key={offer?.id || index}
-                                  onClick={() => handleAssignOffer()}
-                                  disabled={assigningOffer}
-                                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
-                                >
-                                  <div className="font-medium text-gray-900 text-sm">
-                                    {offer?.name || "Unknown Offer"}
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {offer?.description || "No description"}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
-
-                    {/* <button
-                  onClick={handleCreateOffer}
-                  className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
-                  style={{ backgroundColor: color.primary.action }}
-                >
-                  <Plus className="w-4 h-4" />
-                  Create New Offer
-                </button> */}
                   </div>
                 </div>
-              </div>
 
-              {/* Content */}
-              <div className="p-6 max-h-96 overflow-y-auto">
-                {loading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-8">
-                    <p className="text-red-600 mb-4">{error}</p>
-                    <button
-                      onClick={loadOffers}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                ) : filteredOffers.length === 0 ? (
-                  <div className="text-center py-8">
-                    <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
-                      {searchTerm
-                        ? "No offers found"
-                        : "No offers in this category"}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      {searchTerm
-                        ? "Try adjusting your search terms"
-                        : "Create a new offer or assign an existing one to this category"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredOffers.map((offer: BasicOffer, index) => (
-                      <div
-                        key={offer?.id || index}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                {/* Content */}
+                <div className="p-6 max-h-96 overflow-y-auto">
+                  {loading ? (
+                    <div className="flex justify-center items-center py-8">
+                      <LoadingSpinner />
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-600 mb-4">{error}</p>
+                      <button
+                        onClick={loadOffers}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="h-10 w-10 rounded-lg flex items-center justify-center"
-                              style={{ backgroundColor: color.primary.accent }}
-                            >
-                              <MessageSquare className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900">
-                                {offer?.name || "Unknown Offer"}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {offer?.description || "No description"}
-                              </p>
+                        Try Again
+                      </button>
+                    </div>
+                  ) : filteredOffers.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+                        {searchTerm
+                          ? "No offers found"
+                          : "No offers in this category"}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {searchTerm
+                          ? "Try adjusting your search terms"
+                          : "Create a new offer or assign an existing one to this category"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredOffers.map((offer: BasicOffer, index) => (
+                        <div
+                          key={offer?.id || index}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="h-10 w-10 rounded-lg flex items-center justify-center"
+                                style={{
+                                  backgroundColor: color.primary.accent,
+                                }}
+                              >
+                                <MessageSquare className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  {offer?.name || "Unknown Offer"}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {offer?.description || "No description"}
+                                </p>
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                offer?.status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : offer?.status === "draft"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {offer?.status || "unknown"}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (offer?.id) {
+                                  navigate(`/dashboard/offers/${offer.id}`);
+                                }
+                              }}
+                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                            >
+                              View
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              offer?.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : offer?.status === "draft"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {offer?.status || "unknown"}
-                          </span>
-                          <button
-                            onClick={() => handleAssignOffer()}
-                            className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>,
-        document.body
-      )
-    : null;
+
+          {/* Assign Offers Modal */}
+          <AssignItemsModal<Offer>
+            isOpen={showAssignModal}
+            onClose={() => setShowAssignModal(false)}
+            title={`Assign Offers to "${category.name}"`}
+            itemName="offer"
+            allItems={allOffers}
+            assignedItemIds={assignedOfferIds}
+            onAssign={handleAssignOffers}
+            onRefresh={() => {
+              loadOffers();
+              onRefreshCounts();
+            }}
+            loading={loadingAllOffers}
+            searchPlaceholder="Search offers..."
+          />
+        </>
+      )}
+    </>
+  );
 }
 
 export default function OfferCategoriesPage() {
@@ -577,11 +642,6 @@ export default function OfferCategoriesPage() {
       // Load analytics data
       await loadUnusedCategories();
       await loadPopularCategory();
-      // Test active categories endpoint
-      await testActiveCategories();
-      // Test specific lookup endpoints
-      await testCategoryById();
-      await testCategoryByName();
       // Load offers first, then categories (to avoid race condition)
       await loadAllOffers();
       await loadCategories(true); // Always skip cache for fresh data
@@ -688,12 +748,20 @@ export default function OfferCategoriesPage() {
   };
 
   // Load offer counts for all categories at once
-  const loadAllOfferCounts = async () => {
+  const loadAllOfferCounts = async (categories?: OfferCategoryWithCount[]) => {
     try {
+      console.log("[OfferCategories] Loading offer counts...");
       const response = await offerCategoryService.getOfferCounts(true);
+      console.log("[OfferCategories] getOfferCounts response:", response);
 
       if (response.success && response.data) {
-        // Convert array to object keyed by categoryId
+        console.log("[OfferCategories] Raw counts data:", response.data);
+
+        // Use provided categories or fall back to state
+        const categoriesToMatch = categories || offerCategories;
+
+        // Backend returns: { category_name: string, offer_count: string }
+        // We need to match by category name to get the category ID
         const countsMap: Record<
           number,
           {
@@ -706,27 +774,49 @@ export default function OfferCategoriesPage() {
         > = {};
 
         response.data.forEach(
-          (item: {
-            categoryId: number;
-            totalOffers: number;
-            activeOffers: number;
-            expiredOffers: number;
-            draftOffers: number;
-          }) => {
-            countsMap[item.categoryId] = {
-              totalOffers: item.totalOffers || 0,
-              activeOffers: item.activeOffers || 0,
-              expiredOffers: item.expiredOffers || 0,
-              draftOffers: item.draftOffers || 0,
-              pendingOffers: 0, // Add missing field
-            };
+          (item: { category_name: string; offer_count: string | number }) => {
+            // Find the category by name to get its ID
+            const matchingCategory = categoriesToMatch.find(
+              (cat) => cat.name === item.category_name
+            );
+
+            if (matchingCategory) {
+              const categoryId =
+                typeof matchingCategory.id === "string"
+                  ? parseInt(matchingCategory.id, 10)
+                  : matchingCategory.id;
+              const offerCount =
+                typeof item.offer_count === "string"
+                  ? parseInt(item.offer_count, 10)
+                  : item.offer_count || 0;
+
+              console.log(
+                `[OfferCategories] Mapping count for category ${categoryId} (${item.category_name}):`,
+                { offerCount, item }
+              );
+
+              countsMap[categoryId] = {
+                totalOffers: offerCount,
+                activeOffers: 0, // Backend doesn't provide this breakdown
+                expiredOffers: 0,
+                draftOffers: 0,
+                pendingOffers: 0,
+              };
+            } else {
+              console.warn(
+                `[OfferCategories] Could not find category with name: ${item.category_name}`
+              );
+            }
           }
         );
 
+        console.log("[OfferCategories] Final counts map:", countsMap);
         setCategoryOfferCounts(countsMap);
+      } else {
+        console.warn("[OfferCategories] No counts data in response:", response);
       }
     } catch (err) {
-      console.error("Failed to load all offer counts:", err);
+      console.error("[OfferCategories] Failed to load all offer counts:", err);
     }
   };
 
@@ -755,12 +845,19 @@ export default function OfferCategoriesPage() {
 
   const loadCategories = async (skipCache = false) => {
     try {
+      console.log(
+        "[OfferCategories] loadCategories called, skipCache:",
+        skipCache
+      );
       setLoading(true);
 
       let response;
+      let endpointName = "";
 
       // Choose endpoint based on filter type and advanced search
       if (hasAdvancedFilters()) {
+        endpointName = "advancedSearch";
+        console.log("[OfferCategories] Using advancedSearch endpoint");
         // Use advanced search when advanced filters are set
         response = await offerCategoryService.advancedSearch({
           name: advancedSearch.exactName.trim() || undefined,
@@ -771,6 +868,11 @@ export default function OfferCategoriesPage() {
           skipCache: skipCache,
         });
       } else if (debouncedSearchTerm) {
+        endpointName = "searchCategories";
+        console.log(
+          "[OfferCategories] Using searchCategories endpoint, searchTerm:",
+          debouncedSearchTerm
+        );
         // Use search endpoint when there's a search term
         response = await offerCategoryService.searchCategories({
           q: debouncedSearchTerm,
@@ -781,24 +883,36 @@ export default function OfferCategoriesPage() {
         // Use different endpoints based on filter type
         switch (filterType) {
           case "unused":
+            endpointName = "getUnusedCategories";
+            console.log("[OfferCategories] Using getUnusedCategories endpoint");
             response = await offerCategoryService.getUnusedCategories({
               limit: 50,
               skipCache: skipCache,
             });
             break;
           case "popular":
+            endpointName = "getPopularCategories";
+            console.log(
+              "[OfferCategories] Using getPopularCategories endpoint"
+            );
             response = await offerCategoryService.getPopularCategories({
               limit: 50,
               skipCache: skipCache,
             });
             break;
           case "active":
+            endpointName = "getActiveCategories";
+            console.log("[OfferCategories] Using getActiveCategories endpoint");
             response = await offerCategoryService.getActiveCategories({
               limit: 50,
               skipCache: skipCache,
             });
             break;
           case "inactive":
+            endpointName = "getAllCategories (filtered)";
+            console.log(
+              "[OfferCategories] Using getAllCategories endpoint (will filter inactive)"
+            );
             // For inactive, we'll get all and filter client-side
             response = await offerCategoryService.getAllCategories({
               limit: 50,
@@ -806,6 +920,8 @@ export default function OfferCategoriesPage() {
             });
             break;
           default: // 'all'
+            endpointName = "getAllCategories";
+            console.log("[OfferCategories] Using getAllCategories endpoint");
             response = await offerCategoryService.getAllCategories({
               limit: 50,
               skipCache: skipCache,
@@ -814,12 +930,35 @@ export default function OfferCategoriesPage() {
         }
       }
 
+      console.log(`[OfferCategories] ${endpointName} response:`, response);
+      const categoriesData = response.data || [];
+      console.log(
+        `[OfferCategories] Loaded ${categoriesData.length} categories:`,
+        categoriesData.map((c) => ({ id: c.id, name: c.name }))
+      );
+
       // Use provided offers data or fall back to state
       // Add offer count to each category by counting from offers
-      let categoriesWithCounts = (response.data || []).map((category) => ({
-        ...category,
-        offer_count: getOfferCountForCategory(),
-      }));
+      let categoriesWithCounts = categoriesData.map((category) => {
+        const categoryId =
+          typeof category.id === "string"
+            ? parseInt(category.id, 10)
+            : category.id;
+        return {
+          ...category,
+          id: categoryId, // Ensure ID is a number
+          offer_count: getOfferCountForCategory(),
+        };
+      });
+
+      console.log(
+        "[OfferCategories] Categories with counts (before server counts):",
+        categoriesWithCounts.map((c) => ({
+          id: c.id,
+          name: c.name,
+          offer_count: c.offer_count,
+        }))
+      );
 
       // Apply client-side filtering for inactive categories
       if (filterType === "inactive" && !debouncedSearchTerm) {
@@ -832,13 +971,10 @@ export default function OfferCategoriesPage() {
       setError("");
 
       // Load offer counts for all categories at once
-      await loadAllOfferCounts();
-
-      // Test getCategoryActiveOfferCount
-      await testCategoryActiveOfferCount();
-
-      // Test getActiveOfferCounts
-      await testActiveOfferCounts();
+      // Note: loadAllOfferCounts needs offerCategories to match by name,
+      // so we need to call it after setting the state, but we'll use the local variable
+      // We'll pass categoriesWithCounts to loadAllOfferCounts
+      await loadAllOfferCounts(categoriesWithCounts);
     } catch (err) {
       console.error("Failed to load categories:", err);
       setError(err instanceof Error ? err.message : "Error loading categories");
@@ -1344,25 +1480,41 @@ export default function OfferCategoriesPage() {
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                 <span className="text-sm text-gray-600">
-                  {categoryOfferCounts[category.id] ? (
-                    <>
-                      {categoryOfferCounts[category.id].totalOffers} offer
-                      {categoryOfferCounts[category.id].totalOffers !== 1
-                        ? "s"
-                        : ""}
-                      {categoryOfferCounts[category.id].activeOffers > 0 && (
-                        <span className="text-green-600 ml-1">
-                          ({categoryOfferCounts[category.id].activeOffers}{" "}
-                          active)
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {category.offer_count || 0} offer
-                      {category.offer_count !== 1 ? "s" : ""}
-                    </>
-                  )}
+                  {(() => {
+                    const categoryId =
+                      typeof category.id === "string"
+                        ? parseInt(category.id, 10)
+                        : category.id;
+                    const count = categoryOfferCounts[categoryId];
+                    console.log(
+                      `[OfferCategories] Displaying count for category ${categoryId} (${category.name}):`,
+                      {
+                        categoryId,
+                        categoryIdType: typeof categoryId,
+                        hasCount: !!count,
+                        count,
+                        fallbackOfferCount: category.offer_count,
+                        allCategoryIds:
+                          Object.keys(categoryOfferCounts).map(Number),
+                      }
+                    );
+                    return count ? (
+                      <>
+                        {count.totalOffers} offer
+                        {count.totalOffers !== 1 ? "s" : ""}
+                        {count.activeOffers > 0 && (
+                          <span className="text-green-600 ml-1">
+                            ({count.activeOffers} active)
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {category.offer_count || 0} offer
+                        {category.offer_count !== 1 ? "s" : ""}
+                      </>
+                    );
+                  })()}
                 </span>
                 <button
                   onClick={() => handleViewOffers(category)}
@@ -1390,25 +1542,29 @@ export default function OfferCategoriesPage() {
                     {category.name}
                   </h3>
                   <p className="text-sm text-gray-600 mt-0.5">
-                    {categoryOfferCounts[category.id] ? (
-                      <>
-                        {categoryOfferCounts[category.id].totalOffers} offer
-                        {categoryOfferCounts[category.id].totalOffers !== 1
-                          ? "s"
-                          : ""}
-                        {categoryOfferCounts[category.id].activeOffers > 0 && (
-                          <span className="text-green-600 ml-1">
-                            ({categoryOfferCounts[category.id].activeOffers}{" "}
-                            active)
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {category.offer_count || 0} offer
-                        {category.offer_count !== 1 ? "s" : ""}
-                      </>
-                    )}
+                    {(() => {
+                      const categoryId =
+                        typeof category.id === "string"
+                          ? parseInt(category.id, 10)
+                          : category.id;
+                      const count = categoryOfferCounts[categoryId];
+                      return count ? (
+                        <>
+                          {count.totalOffers} offer
+                          {count.totalOffers !== 1 ? "s" : ""}
+                          {count.activeOffers > 0 && (
+                            <span className="text-green-600 ml-1">
+                              ({count.activeOffers} active)
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {category.offer_count || 0} offer
+                          {category.offer_count !== 1 ? "s" : ""}
+                        </>
+                      );
+                    })()}
                   </p>
                 </div>
                 <button
@@ -1463,9 +1619,10 @@ export default function OfferCategoriesPage() {
         }}
         category={selectedCategory}
         onRefreshCategories={async () => {
-          await loadAllOffers();
+          await loadAllOfferCounts();
           await loadCategories(true);
         }}
+        onRefreshCounts={loadAllOfferCounts}
       />
 
       {/* Advanced Filters Side Modal */}

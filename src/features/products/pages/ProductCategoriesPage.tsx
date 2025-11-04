@@ -24,6 +24,7 @@ import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
+import AssignItemsModal from "../../../shared/components/AssignItemsModal";
 
 interface ProductsModalProps {
   isOpen: boolean;
@@ -40,16 +41,16 @@ function ProductsModal({
   onRefreshCategories,
   onRefreshProductCounts,
 }: ProductsModalProps) {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [showAssignDropdown, setShowAssignDropdown] = useState(false);
-  const [allProductsList, setAllProductsList] = useState<Product[]>([]);
-  const [assigningProduct, setAssigningProduct] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loadingAllProducts, setLoadingAllProducts] = useState(false);
 
   useEffect(() => {
     if (isOpen && category) {
@@ -99,223 +100,227 @@ function ProductsModal({
   //   }
   // };
 
-  const loadUnassignedProducts = async () => {
+  // Load all products for assignment modal
+  const loadAllProducts = async () => {
     try {
+      setLoadingAllProducts(true);
       const response = await productService.getAllProducts({
-        limit: 100,
+        limit: 1000,
         skipCache: true,
       });
-      // Get products not in this category or with no category
-      const unassigned = (response.data || []).filter(
-        (p: Product) =>
-          !p.category_id || Number(p.category_id) !== Number(category?.id)
-      );
-      setAllProductsList(unassigned);
+      const productsData = (response.data || []) as Product[];
+      setAllProducts(productsData);
     } catch (err) {
-      console.error("Failed to load unassigned products:", err);
-      setAllProductsList([]);
-    }
-  };
-
-  const handleAssignProduct = async (productId: number) => {
-    if (!category) return;
-
-    try {
-      setAssigningProduct(true);
-      await productService.updateProduct(productId, {
-        category_id: Number(category.id),
-      });
-      showToast("Product assigned successfully");
-      setShowAssignDropdown(false);
-      loadProducts(); // Refresh the products in this category
-      loadUnassignedProducts(); // Refresh unassigned list
-      onRefreshCategories(); // Refresh parent categories list with updated counts
-
-      // Refresh product counts for real-time updates
-      onRefreshProductCounts();
-    } catch (err) {
-      console.error("Failed to assign product:", err);
-      showError(
-        err instanceof Error ? err.message : "Failed to assign product"
-      );
+      console.error("Failed to load all products:", err);
+      setAllProducts([]);
     } finally {
-      setAssigningProduct(false);
+      setLoadingAllProducts(false);
     }
   };
 
-  return isOpen && category
-    ? createPortal(
-        <div className="fixed inset-0 z-[9999] overflow-y-auto">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50"
-            onClick={onClose}
-          ></div>
-          <div className="relative min-h-screen flex items-center justify-center p-4">
-            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <div>
-                  <h2 className={`${tw.subHeading} text-gray-900`}>
-                    Products in {category.name}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {products.length} product{products.length !== 1 ? "s" : ""}{" "}
-                    found
-                  </p>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+  // Get assigned product IDs (products in this category)
+  const assignedProductIds = products
+    .map((product) => product.id)
+    .filter((id): id is number | string => id !== undefined);
 
-              {/* Search and Actions */}
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search
-                      className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${tw.textMuted}]`}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Search products..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+  // Handle assignment
+  const handleAssignProducts = async (
+    productIds: (number | string)[]
+  ): Promise<{ success: number; failed: number; errors?: string[] }> => {
+    if (!category) {
+      return { success: 0, failed: 0 };
+    }
+
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    // Assign each product individually
+    for (const productId of productIds) {
+      try {
+        await productService.updateProduct(Number(productId), {
+          category_id: Number(category.id),
+        });
+        success++;
+      } catch (err) {
+        failed++;
+        const errorMsg =
+          err instanceof Error
+            ? err.message
+            : `Failed to assign product ${productId}`;
+        errors.push(errorMsg);
+        console.error(`Failed to assign product ${productId}:`, err);
+      }
+    }
+
+    // Refresh products list and counts
+    loadProducts();
+    onRefreshProductCounts();
+
+    return { success, failed, errors };
+  };
+
+  return (
+    <>
+      {isOpen && category && (
+        <>
+          {/* Main Products Modal */}
+          <div className="fixed inset-0 z-[9999] overflow-y-auto">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50"
+              onClick={onClose}
+            ></div>
+            <div className="relative min-h-screen flex items-center justify-center p-4">
+              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <div>
+                    <h2 className={`${tw.subHeading} text-gray-900`}>
+                      Products in {category.name}
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {products.length} product
+                      {products.length !== 1 ? "s" : ""} found
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <div className="relative">
+                  <button
+                    onClick={onClose}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Search and Actions */}
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Search
+                        className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400`}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          if (!showAssignDropdown) {
-                            loadUnassignedProducts();
+                          if (!showAssignModal) {
+                            loadAllProducts();
                           }
-                          setShowAssignDropdown(!showAssignDropdown);
+                          setShowAssignModal(true);
                         }}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                        disabled={assigningProduct}
                       >
                         Assign Existing Product
                       </button>
-
-                      {/* Dropdown for available products */}
-                      {showAssignDropdown && (
-                        <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-                          {allProductsList.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500 text-sm">
-                              No available products to assign
-                            </div>
-                          ) : (
-                            <div className="py-2">
-                              {allProductsList.map((product) => (
-                                <button
-                                  key={product.id}
-                                  onClick={() =>
-                                    handleAssignProduct(product.id)
-                                  }
-                                  disabled={assigningProduct}
-                                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
-                                >
-                                  <div className="font-medium text-gray-900 text-sm">
-                                    {product.name}
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {product.description || "No description"}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
-
-                    {/* <button
-                  onClick={handleCreateProduct}
-                  className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
-                  style={{ backgroundColor: color.primary.action }}
-                >
-                  Create New Product
-                </button> */}
                   </div>
                 </div>
-              </div>
 
-              {/* Content */}
-              <div className="p-6 max-h-96 overflow-y-auto">
-                {loading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-8">
-                    <p className="text-red-600 mb-4">{error}</p>
-                    <button
-                      onClick={loadProducts}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                ) : filteredProducts.length === 0 ? (
-                  <div className="text-center py-8">
-                    {/* Icon removed */}
-                    <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
-                      {searchTerm
-                        ? "No products found"
-                        : "No products in this category"}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      {searchTerm
-                        ? "Try adjusting your search terms"
-                        : "Create a new product in this category"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                {/* Content */}
+                <div className="p-6 max-h-96 overflow-y-auto">
+                  {loading ? (
+                    <div className="flex justify-center items-center py-8">
+                      <LoadingSpinner />
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-600 mb-4">{error}</p>
+                      <button
+                        onClick={loadProducts}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <h4 className="font-medium text-gray-900">
-                                {product.name}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {product.description || "No description"}
-                              </p>
+                        Try Again
+                      </button>
+                    </div>
+                  ) : filteredProducts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+                        {searchTerm
+                          ? "No products found"
+                          : "No products in this category"}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {searchTerm
+                          ? "Try adjusting your search terms"
+                          : "Create a new product or assign an existing one to this category"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  {product.name}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {product.description || "No description"}
+                                </p>
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                product.is_active
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {product.is_active ? "Active" : "Inactive"}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (product.id) {
+                                  navigate(`/dashboard/products/${product.id}`);
+                                }
+                              }}
+                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                            >
+                              View
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              product.is_active
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {product.is_active ? "Active" : "Inactive"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>,
-        document.body
-      )
-    : null;
+
+          {/* Assign Products Modal */}
+          <AssignItemsModal<Product>
+            isOpen={showAssignModal}
+            onClose={() => setShowAssignModal(false)}
+            title={`Assign Products to "${category.name}"`}
+            itemName="product"
+            allItems={allProducts}
+            assignedItemIds={assignedProductIds}
+            onAssign={handleAssignProducts}
+            onRefresh={() => {
+              loadProducts();
+              onRefreshProductCounts();
+            }}
+            loading={loadingAllProducts}
+            searchPlaceholder="Search products..."
+          />
+        </>
+      )}
+    </>
+  );
 }
 
 export default function ProductCatalogsPage() {

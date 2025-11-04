@@ -16,8 +16,7 @@ import {
 } from "../types/productCategory";
 
 class ProductCategoryService {
-  private baseUrl =
-    "http://cvm.groupngs.com:8080/api/database-service/product-categories";
+  private baseUrl = buildApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES);
 
   private async request<T>(
     endpoint: string,

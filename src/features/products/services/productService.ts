@@ -10,11 +10,14 @@ import {
   ProductAvailability,
   ProductMargin,
 } from "../types/product";
-import { getAuthHeaders } from "../../../shared/services/api";
+import {
+  getAuthHeaders,
+  buildApiUrl,
+  API_CONFIG,
+} from "../../../shared/services/api";
 
 class ProductService {
-  private baseUrl =
-    "http://cvm.groupngs.com:8080/api/database-service/products";
+  private baseUrl = buildApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS);
 
   private async request<T>(
     endpoint: string,

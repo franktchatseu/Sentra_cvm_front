@@ -25,6 +25,7 @@ import {
   Bell,
   List,
   Building2,
+  Grid3X3,
 } from "lucide-react";
 import logo from "../../../assets/efforte.png";
 import { color } from "../../../shared/utils/utils";
@@ -219,6 +220,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       type: "parent",
       entity: "configuration",
       children: [
+        {
+          name: "All Configurations",
+          href: "/dashboard/configuration",
+          icon: Grid3X3,
+          type: "single",
+          entity: "configuration",
+        },
         {
           name: "Campaign Catalogs",
           href: "/dashboard/campaign-catalogs",

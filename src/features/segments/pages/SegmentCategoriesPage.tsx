@@ -23,6 +23,7 @@ import {
 } from "../types/segment";
 import { Segment } from "../types/segment";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import AssignItemsModal from "../../../shared/components/AssignItemsModal";
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -185,17 +186,24 @@ interface SegmentsModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: SegmentCategory | null;
+  onRefreshCounts: () => void;
 }
 
-function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
+function SegmentsModal({
+  isOpen,
+  onClose,
+  category,
+  onRefreshCounts,
+}: SegmentsModalProps) {
+  const navigate = useNavigate();
+  const { success: showToast, error: showError } = useToast();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [filteredSegments, setFilteredSegments] = useState<Segment[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showAssignDropdown, setShowAssignDropdown] = useState(false);
-  const [allSegmentsList, setAllSegmentsList] = useState<Segment[]>([]);
-  const [assigningSegment, setAssigningSegment] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [allSegments, setAllSegments] = useState<Segment[]>([]);
+  const [loadingAllSegments, setLoadingAllSegments] = useState(false);
 
   const loadCategorySegments = useCallback(async () => {
     setIsLoading(true);
@@ -242,218 +250,210 @@ function SegmentsModal({ isOpen, onClose, category }: SegmentsModalProps) {
     }
   }, [searchTerm, segments]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowAssignDropdown(false);
-      }
-    };
-
-    if (showAssignDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showAssignDropdown]);
-
-  const loadUnassignedSegments = async () => {
+  // Load all segments for assignment modal
+  const loadAllSegments = async () => {
     try {
-      console.log("Loading unassigned segments...");
-      const response = await segmentService.getSegments({ skipCache: true });
-      const allSegments = response.data || [];
-      console.log("All segments:", allSegments);
-
-      // Filter out segments that are already in the current category
-      const unassignedSegments = allSegments.filter((segment) => {
-        const segmentCategory =
-          typeof segment.category === "string"
-            ? parseInt(segment.category, 10)
-            : segment.category;
-        return segmentCategory !== category?.id;
+      setLoadingAllSegments(true);
+      const response = await segmentService.getSegments({
+        limit: 1000,
+        skipCache: true,
       });
-
-      console.log("Unassigned segments:", unassignedSegments);
-      setAllSegmentsList(unassignedSegments);
+      const segmentsData = (response.data || []) as Segment[];
+      setAllSegments(segmentsData);
     } catch (err) {
-      console.error("Failed to load unassigned segments:", err);
-      setAllSegmentsList([]);
-    }
-  };
-
-  const handleAssignSegment = async (segmentId: number) => {
-    if (!category) return;
-
-    try {
-      setAssigningSegment(true);
-      console.log(`Assigning segment ${segmentId} to category ${category.id}`);
-
-      // TODO: Implement segment assignment API call
-      // await segmentService.updateSegment(segmentId, { category: category.id });
-
-      // For now, just show success message
-      console.log("Segment assignment would happen here");
-
-      setShowAssignDropdown(false);
-      // Refresh the segments in the modal
-      loadCategorySegments();
-    } catch (err) {
-      console.error("Failed to assign segment:", err);
+      console.error("Failed to load all segments:", err);
+      setAllSegments([]);
     } finally {
-      setAssigningSegment(false);
+      setLoadingAllSegments(false);
     }
   };
 
-  return isOpen && category
-    ? createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className={`${tw.subHeading} text-gray-900`}>
-                  Segments in {category?.name}
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {segments.length} segment{segments.length !== 1 ? "s" : ""} in
-                  this catalog
-                </p>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+  // Get assigned segment IDs (segments in this category)
+  const assignedSegmentIds = segments
+    .map((segment) => segment.id)
+    .filter((id): id is number | string => id !== undefined);
 
-            {/* Search and Assign Button */}
-            <div className="px-6 pt-4 pb-2 border-b border-gray-200">
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search segments..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                  />
+  // Handle assignment
+  const handleAssignSegments = async (
+    segmentIds: (number | string)[]
+  ): Promise<{ success: number; failed: number; errors?: string[] }> => {
+    if (!category) {
+      return { success: 0, failed: 0 };
+    }
+
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    // Assign each segment individually
+    for (const segmentId of segmentIds) {
+      try {
+        await segmentService.updateSegment(Number(segmentId), {
+          category: category.id,
+        });
+        success++;
+      } catch (err) {
+        failed++;
+        const errorMsg =
+          err instanceof Error
+            ? err.message
+            : `Failed to assign segment ${segmentId}`;
+        errors.push(errorMsg);
+        console.error(`Failed to assign segment ${segmentId}:`, err);
+      }
+    }
+
+    // Refresh segments list and counts
+    loadCategorySegments();
+    onRefreshCounts();
+
+    return { success, failed, errors };
+  };
+
+  return (
+    <>
+      {isOpen && category && (
+        <>
+          {/* Main Segments Modal */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                  <h2 className={`${tw.subHeading} text-gray-900`}>
+                    Segments in {category?.name}
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {segments.length} segment{segments.length !== 1 ? "s" : ""}{" "}
+                    in this catalog
+                  </p>
                 </div>
-                <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Search and Assign Button */}
+              <div className="px-6 pt-4 pb-2 border-b border-gray-200">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search segments..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    />
+                  </div>
                   <button
                     onClick={() => {
-                      if (!showAssignDropdown) {
-                        loadUnassignedSegments();
+                      if (!showAssignModal) {
+                        loadAllSegments();
                       }
-                      setShowAssignDropdown(!showAssignDropdown);
+                      setShowAssignModal(true);
                     }}
                     className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                    disabled={assigningSegment}
                   >
                     <Plus className="w-4 h-4" />
                     Assign Existing Segments
                   </button>
-
-                  {/* Dropdown for available segments */}
-                  {showAssignDropdown && (
-                    <div className="absolute top-full right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-                      {allSegmentsList.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500 text-sm">
-                          No available segments to assign
-                        </div>
-                      ) : (
-                        <div className="py-2">
-                          {allSegmentsList.map((segment) => (
-                            <button
-                              key={segment.id}
-                              onClick={() => handleAssignSegment(segment.id)}
-                              disabled={assigningSegment}
-                              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
-                            >
-                              <div className="font-medium text-gray-900 text-sm">
-                                {segment.name}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {segment.description || "No description"}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <LoadingSpinner variant="modern" size="lg" color="primary" />
-                  <p className="text-gray-500 mt-4">Loading segments...</p>
-                </div>
-              ) : filteredSegments.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">
-                    {searchTerm
-                      ? "No segments match your search"
-                      : "No segments in this catalog"}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredSegments.map((segment) => (
-                    <div
-                      key={segment.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <h3 className={`${tw.subHeading} text-gray-900`}>
-                          {segment.name}
-                        </h3>
-                        {segment.description && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            {segment.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-4 mt-2">
-                          <span className="text-xs text-gray-500">
-                            Type:{" "}
-                            <span className="font-medium capitalize">
-                              {segment.type}
-                            </span>
-                          </span>
-                          {"customer_count" in segment &&
-                            segment.customer_count !== undefined && (
-                              <span className="text-xs text-gray-500">
-                                Members:{" "}
-                                <span className="font-medium">
-                                  {(
-                                    segment as Segment & {
-                                      customer_count?: number;
-                                    }
-                                  ).customer_count?.toLocaleString() || "0"}
-                                </span>
+              <div className="flex-1 overflow-y-auto p-6">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <LoadingSpinner
+                      variant="modern"
+                      size="lg"
+                      color="primary"
+                    />
+                    <p className="text-gray-500 mt-4">Loading segments...</p>
+                  </div>
+                ) : filteredSegments.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">
+                      {searchTerm
+                        ? "No segments match your search"
+                        : "No segments in this catalog"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredSegments.map((segment) => (
+                      <div
+                        key={segment.id}
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <h3 className={`${tw.subHeading} text-gray-900`}>
+                            {segment.name}
+                          </h3>
+                          {segment.description && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              {segment.description}
+                            </p>
+                          )}
+                          {segment.customer_count !== undefined && (
+                            <span className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              <span>
+                                {typeof segment.customer_count === "number"
+                                  ? segment.customer_count.toLocaleString()
+                                  : typeof segment.customer_count === "string"
+                                  ? parseInt(
+                                      segment.customer_count,
+                                      10
+                                    ).toLocaleString()
+                                  : "0"}
                               </span>
-                            )}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              if (segment.id) {
+                                navigate(`/dashboard/segments/${segment.id}`);
+                              }
+                            }}
+                            className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                          >
+                            View
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>,
-        document.body
-      )
-    : null;
+
+          {/* Assign Segments Modal */}
+          <AssignItemsModal<Segment>
+            isOpen={showAssignModal}
+            onClose={() => setShowAssignModal(false)}
+            title={`Assign Segments to "${category.name}"`}
+            itemName="segment"
+            allItems={allSegments}
+            assignedItemIds={assignedSegmentIds}
+            onAssign={handleAssignSegments}
+            onRefresh={() => {
+              loadCategorySegments();
+              onRefreshCounts();
+            }}
+            loading={loadingAllSegments}
+            searchPlaceholder="Search segments..."
+          />
+        </>
+      )}
+    </>
+  );
 }
 
 export default function SegmentCategoriesPage() {
@@ -881,6 +881,7 @@ export default function SegmentCategoriesPage() {
           setSelectedCategory(null);
         }}
         category={selectedCategory}
+        onRefreshCounts={() => loadSegmentCounts(categories)}
       />
     </div>
   );

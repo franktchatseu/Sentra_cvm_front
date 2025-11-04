@@ -1,8 +1,4 @@
-import {
-  API_CONFIG,
-  buildApiUrl,
-  getAuthHeaders,
-} from "../../../shared/services/api";
+import { buildApiUrl, getAuthHeaders } from "../../../shared/services/api";
 import {
   UserType,
   CreateUserRequest,
@@ -26,7 +22,7 @@ import {
   PaginatedResponse,
 } from "../types/user";
 
-const BASE_URL = buildApiUrl("/users");
+const BASE_URL = buildApiUrl("/system-users");
 
 class UserService {
   private async request<T>(
@@ -34,7 +30,21 @@ class UserService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    console.log("Making request to:", url);
+
+    // Log request details for create user endpoint
+    if (endpoint === "/" && options.method === "POST") {
+      console.log("🌐 FETCH REQUEST:");
+      console.log("Full URL:", url);
+      console.log("Method:", options.method);
+      console.log("Headers:", {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+        ...options.headers,
+      });
+      if (options.body) {
+        console.log("Body:", options.body);
+      }
+    }
 
     const response = await fetch(url, {
       headers: {
@@ -45,9 +55,51 @@ class UserService {
       ...options,
     });
 
+    // Log response for create user endpoint
+    if (endpoint === "/" && options.method === "POST") {
+      console.log("📥 RESPONSE:");
+      console.log("Status:", response.status);
+      console.log("Status Text:", response.statusText);
+      console.log("OK:", response.ok);
+    }
+
+    // Get response text first to check if it's valid JSON
+    let responseText = "";
+    try {
+      responseText = await response.text();
+    } catch (err) {
+      throw new Error(
+        `Failed to read response: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
+
+    // Handle empty responses
+    if (!responseText || responseText.trim() === "") {
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error! status: ${response.status}. Empty response from server.`
+        );
+      }
+      // Empty successful response
+      throw new Error("Empty response from server");
+    }
+
     if (!response.ok) {
+      // Log error details for create user endpoint
+      if (endpoint === "/" && options.method === "POST") {
+        console.error("❌ ERROR RESPONSE:");
+        console.error("Status:", response.status);
+        console.error("Response Text:", responseText);
+      }
+
       try {
-        const errorData = await response.json();
+        // Try to parse as JSON
+        const errorData = JSON.parse(responseText);
+        if (endpoint === "/" && options.method === "POST") {
+          console.error("Parsed Error Data:", errorData);
+        }
         if (errorData.error) {
           throw new Error(errorData.error);
         }
@@ -59,6 +111,17 @@ class UserService {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       } catch (err) {
+        if (err instanceof SyntaxError) {
+          // Response is not JSON, return the text as error
+          console.error("Non-JSON error response:", responseText);
+          throw new Error(
+            `HTTP error! status: ${response.status}. ${
+              responseText.length > 200
+                ? responseText.substring(0, 200) + "..."
+                : responseText
+            }`
+          );
+        }
         if (err instanceof Error) {
           throw err;
         }
@@ -66,7 +129,23 @@ class UserService {
       }
     }
 
-    return response.json();
+    // Try to parse the response as JSON
+    try {
+      const parsed = JSON.parse(responseText);
+      return parsed;
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        console.error("Invalid JSON response. URL:", url);
+        console.error("Response text:", responseText.substring(0, 500));
+        throw new Error(
+          `Invalid JSON response from server. First 200 chars: ${responseText.substring(
+            0,
+            200
+          )}`
+        );
+      }
+      throw err;
+    }
   }
 
   private buildQueryParams(params: Record<string, unknown>): string {
@@ -652,6 +731,12 @@ class UserService {
   async createUser(
     request: CreateUserRequest
   ): Promise<ApiSuccessResponse<UserType>> {
+    const url = `${BASE_URL}/`;
+    console.log("🔵 CREATE USER ENDPOINT CALL:");
+    console.log("URL:", url);
+    console.log("Method: POST");
+    console.log("Request body:", JSON.stringify(request, null, 2));
+
     return this.request<ApiSuccessResponse<UserType>>("/", {
       method: "POST",
       body: JSON.stringify(request),

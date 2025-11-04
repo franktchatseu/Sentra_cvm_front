@@ -1,35 +1,34 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, User as UserIcon, Mail, Shield, Save } from "lucide-react";
+import { X, User as UserIcon, Mail, Shield, Save, Lock } from "lucide-react";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-import { authService } from "../../auth/services/authService";
+import { userService } from "../../users/services/userService";
+import { accountService } from "../../account/services/accountService";
+import {
+  UserType,
+  CreateUserRequest,
+  UpdateUserRequest,
+} from "../../users/types/user";
 import { useToast } from "../../../contexts/ToastContext";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 
-interface User {
-  user_id: number;
-  first_name: string;
-  last_name: string;
-  private_email_address: string;
-  role: "admin" | "user";
-  is_activated: boolean;
-  created_on: string;
-}
-
 interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user?: User | null;
+  user?: UserType | null;
   onUserSaved: () => void;
 }
 
 interface UserFormData {
+  username: string;
   first_name: string;
   last_name: string;
-  private_email_address: string;
-  role: "admin" | "user";
-  is_activated: boolean;
+  email_address: string;
+  password?: string;
+  primary_role_id?: number;
+  department?: string;
+  employee_id?: string;
 }
 
 export default function UserModal({
@@ -41,29 +40,38 @@ export default function UserModal({
   const { success, error } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<UserFormData>({
+    username: "",
     first_name: "",
     last_name: "",
-    private_email_address: "",
-    role: "user",
-    is_activated: true,
+    email_address: "",
+    password: "",
+    primary_role_id: undefined,
+    department: "",
+    employee_id: "",
   });
 
   useEffect(() => {
     if (user) {
       setFormData({
+        username: user.username,
         first_name: user.first_name,
         last_name: user.last_name,
-        private_email_address: user.private_email_address,
-        role: user.role,
-        is_activated: user.is_activated,
+        email_address: user.email_address || user.email || "",
+        password: "", // Don't populate password for updates
+        primary_role_id: user.primary_role_id || user.role_id,
+        department: user.department || "",
+        employee_id: user.employee_id || "",
       });
     } else {
       setFormData({
+        username: "",
         first_name: "",
         last_name: "",
-        private_email_address: "",
-        role: "user",
-        is_activated: true,
+        email_address: "",
+        password: "",
+        primary_role_id: undefined,
+        department: "",
+        employee_id: "",
       });
     }
   }, [user, isOpen]);
@@ -81,24 +89,89 @@ export default function UserModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🚀 HANDLE SUBMIT CALLED!");
+    console.log("User object:", user);
+    console.log("Form data:", formData);
     setIsLoading(true);
 
     try {
       if (user) {
+        console.log("📝 Updating existing user...");
         // Update existing user
-        await authService.updateUser(user.user_id, formData);
+        const updateData: UpdateUserRequest = {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email_address: formData.email_address,
+          department: formData.department || undefined,
+          employee_id: formData.employee_id || undefined,
+        };
+        await userService.updateUser(user.id, updateData);
         success(
           "User Updated",
           `${formData.first_name} ${formData.last_name} has been updated successfully`
         );
       } else {
-        // Create new user
-        await authService.createUser({
-          firstName: formData.first_name,
-          lastName: formData.last_name,
-          email: formData.private_email_address,
-          role: formData.role,
-        });
+        console.log("✨ Creating new user...");
+        console.log(
+          "Password provided:",
+          !!formData.password,
+          "Length:",
+          formData.password?.length
+        );
+        // Create new user - need to hash password first
+        if (!formData.password || formData.password.length < 8) {
+          console.log("❌ Password validation failed");
+          error(
+            "Validation Error",
+            "Password is required and must be at least 8 characters"
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        // Hash password using the dev endpoint
+        console.log("🔐 Starting password hash...");
+        const hashResponse = await accountService.hashPassword(
+          formData.password
+        );
+        console.log("🔐 Hash response:", hashResponse);
+        if (!hashResponse.success) {
+          console.error("❌ Hash failed:", hashResponse);
+          throw new Error("Failed to hash password");
+        }
+        console.log("✅ Password hashed successfully");
+
+        // Get hashed password from response (API returns hashedPassword, not data.hash)
+        const hashedPassword =
+          (hashResponse as any).hashedPassword ||
+          (hashResponse as any).data?.hash;
+
+        if (!hashedPassword) {
+          console.error("❌ No hashed password in response:", hashResponse);
+          throw new Error("Failed to get hashed password from response");
+        }
+
+        console.log(
+          "✅ Using hashed password:",
+          hashedPassword.substring(0, 20) + "..."
+        );
+
+        const createData: CreateUserRequest = {
+          username: formData.username || formData.email_address.split("@")[0],
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email_address: formData.email_address,
+          password_hash: hashedPassword,
+          password_algorithm: "bcrypt",
+          primary_role_id: formData.primary_role_id,
+          department: formData.department || undefined,
+          employee_id: formData.employee_id || undefined,
+        };
+
+        console.log("Creating user with data:", createData);
+        console.log("Calling userService.createUser endpoint...");
+        const createResponse = await userService.createUser(createData);
+        console.log("Create user response:", createResponse);
         success(
           "User Created",
           `${formData.first_name} ${formData.last_name} has been created successfully`
@@ -197,9 +270,9 @@ export default function UserModal({
                     <Mail className={`w-5 h-5 ${tw.textMuted}`} />
                   </div>
                   <input
-                    name="private_email_address"
+                    name="email_address"
                     type="email"
-                    value={formData.private_email_address}
+                    value={formData.email_address}
                     onChange={handleChange}
                     required
                     className={`block w-full pl-10 pr-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
@@ -208,41 +281,83 @@ export default function UserModal({
                 </div>
               </div>
 
-              <div>
-                <label
-                  className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
-                >
-                  <Shield className={`w-4 h-4 inline mr-2 ${tw.textMuted}`} />
-                  Role
-                </label>
-                <HeadlessSelect
-                  options={[
-                    { value: "user", label: "User" },
-                    { value: "admin", label: "Administrator" },
-                  ]}
-                  value={formData.role}
-                  onChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      role: value as "admin" | "user",
-                    })
-                  }
-                  placeholder="Select role"
-                  className="text-sm"
-                />
-              </div>
+              {!user && (
+                <>
+                  <div>
+                    <label
+                      className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
+                    >
+                      Username
+                    </label>
+                    <input
+                      name="username"
+                      type="text"
+                      value={formData.username}
+                      onChange={handleChange}
+                      className={`block w-full px-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                      placeholder="Leave empty to auto-generate from email"
+                    />
+                  </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="is_activated"
-                  checked={formData.is_activated}
-                  onChange={handleChange}
-                  className={`w-4 h-4 text-[${color.primary.action}] border ${tw.borderDefault} rounded focus:outline-none`}
-                />
-                <label className={`ml-2 text-sm font-medium ${tw.textPrimary}`}>
-                  Account Activated
-                </label>
+                  <div>
+                    <label
+                      className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
+                    >
+                      Password *{" "}
+                      <span className="text-xs text-gray-500">
+                        (min 8 characters)
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className={`w-5 h-5 ${tw.textMuted}`} />
+                      </div>
+                      <input
+                        name="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                        minLength={8}
+                        className={`block w-full pl-10 pr-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                        placeholder="Password"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
+                  >
+                    Department
+                  </label>
+                  <input
+                    name="department"
+                    type="text"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className={`block w-full px-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                    placeholder="Department"
+                  />
+                </div>
+                <div>
+                  <label
+                    className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
+                  >
+                    Employee ID
+                  </label>
+                  <input
+                    name="employee_id"
+                    type="text"
+                    value={formData.employee_id}
+                    onChange={handleChange}
+                    className={`block w-full px-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
+                    placeholder="Employee ID"
+                  />
+                </div>
               </div>
 
               {/* Actions */}

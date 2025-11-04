@@ -1,8 +1,4 @@
-import {
-  API_CONFIG,
-  buildApiUrl,
-  getAuthHeaders,
-} from "../../../shared/services/api";
+import { buildApiUrl, getAuthHeaders } from "../../../shared/services/api";
 import {
   CreateAccountRequestRequest,
   RecordConsentsRequest,
@@ -11,12 +7,11 @@ import {
   ApproveAccountRequestRequest,
   RejectAccountRequestRequest,
   CreateDirectAccountRequest,
-  HashPasswordRequest,
   ApiSuccessResponse,
   AccountRequestType,
 } from "../types/account";
 
-const BASE_URL = buildApiUrl("/account");
+const BASE_URL = buildApiUrl("/accounts");
 
 class AccountService {
   private async request<T>(
@@ -24,7 +19,6 @@ class AccountService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    console.log("Making request to:", url);
 
     const response = await fetch(url, {
       headers: {
@@ -35,9 +29,29 @@ class AccountService {
       ...options,
     });
 
+    let responseText = "";
+    try {
+      responseText = await response.text();
+    } catch (err) {
+      throw new Error(
+        `Failed to read response: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
+
+    if (!responseText || responseText.trim() === "") {
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error! status: ${response.status}. Empty response from server.`
+        );
+      }
+      throw new Error("Empty response from server");
+    }
+
     if (!response.ok) {
       try {
-        const errorData = await response.json();
+        const errorData = JSON.parse(responseText);
         if (errorData.error) {
           throw new Error(errorData.error);
         }
@@ -49,6 +63,16 @@ class AccountService {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       } catch (err) {
+        if (err instanceof SyntaxError) {
+          console.error("Non-JSON error response:", responseText);
+          throw new Error(
+            `HTTP error! status: ${response.status}. ${
+              responseText.length > 200
+                ? responseText.substring(0, 200) + "..."
+                : responseText
+            }`
+          );
+        }
         if (err instanceof Error) {
           throw err;
         }
@@ -56,13 +80,28 @@ class AccountService {
       }
     }
 
-    return response.json();
+    try {
+      const parsed = JSON.parse(responseText);
+      return parsed;
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        console.error("Invalid JSON response. URL:", url);
+        console.error("Response text:", responseText.substring(0, 500));
+        throw new Error(
+          `Invalid JSON response from server. First 200 chars: ${responseText.substring(
+            0,
+            200
+          )}`
+        );
+      }
+      throw err;
+    }
   }
 
   // ==================== ACCOUNT REQUEST ENDPOINTS (8 endpoints) ====================
 
   /**
-   * POST /account/request - Create account request
+   * POST /accounts/request - Create account request
    */
   async createAccountRequest(
     request: CreateAccountRequestRequest
@@ -74,7 +113,7 @@ class AccountService {
   }
 
   /**
-   * POST /account/request/:id/consents - Record request consents
+   * POST /accounts/request/:id/consents - Record request consents
    */
   async recordConsents(
     id: number,
@@ -90,7 +129,7 @@ class AccountService {
   }
 
   /**
-   * POST /account/request/:id/submit - Submit account request for approval
+   * POST /accounts/request/:id/submit - Submit account request for approval
    */
   async submitAccountRequest(
     id: number,
@@ -106,7 +145,7 @@ class AccountService {
   }
 
   /**
-   * POST /account/request/:id/assign-approver - Assign approver to request
+   * POST /accounts/request/:id/assign-approver - Assign approver to request
    */
   async assignApprover(
     id: number,
@@ -122,7 +161,7 @@ class AccountService {
   }
 
   /**
-   * POST /account/request/:id/approve - Approve account request
+   * POST /accounts/request/:id/approve - Approve account request
    */
   async approveAccountRequest(
     id: number,
@@ -138,7 +177,7 @@ class AccountService {
   }
 
   /**
-   * POST /account/request/:id/reject - Reject account request
+   * POST /accounts/request/:id/reject - Reject account request
    */
   async rejectAccountRequest(
     id: number,
@@ -154,7 +193,7 @@ class AccountService {
   }
 
   /**
-   * POST /account/create-direct - Create account directly (admin only)
+   * POST /accounts/create-direct - Create account directly (admin only)
    */
   async createDirectAccount(
     request: CreateDirectAccountRequest
@@ -169,16 +208,16 @@ class AccountService {
   }
 
   /**
-   * POST /account/dev/hash-password - Hash password (dev only)
+   * POST /accounts/dev/hash-password - Hash password (dev only)
    */
   async hashPassword(
-    request: HashPasswordRequest
+    password: string
   ): Promise<ApiSuccessResponse<{ hash: string }>> {
     return this.request<ApiSuccessResponse<{ hash: string }>>(
       "/dev/hash-password",
       {
         method: "POST",
-        body: JSON.stringify(request),
+        body: JSON.stringify({ password }),
       }
     );
   }
