@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://sentra-wheat.vercel.app/p", // Replace with your actual Vercel domain
+    "https://sentra-wheat.vercel.app", // Replace with your actual Vercel domain
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
   ].filter(Boolean);
 
@@ -39,8 +39,7 @@ export default async function handler(req, res) {
 
     // Construct the target URL
     // Use environment variable or default to localhost
-    const API_BASE_URL =
-      process.env.API_BASE_URL || "http://cvm.groupngs.com/api/database-service";
+    const API_BASE_URL = "http://cvm.groupngs.com/api/database-service";
     
     // Log for debugging in production
     console.log("Proxy request:", {
