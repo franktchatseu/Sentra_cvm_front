@@ -40,7 +40,16 @@ export default async function handler(req, res) {
     // Construct the target URL
     // Use environment variable or default to localhost
     const API_BASE_URL =
-      process.env.API_BASE_URL || "http://localhost:8080/api/database-service";
+      process.env.API_BASE_URL || "http://cvm.groupngs.com/api/database-service";
+    
+    // Log for debugging in production
+    console.log("Proxy request:", {
+      method: req.method,
+      apiPath,
+      targetUrl: `${API_BASE_URL}/${apiPath}`,
+      hasApiBaseUrl: !!process.env.API_BASE_URL,
+    });
+    
     const targetUrl = `${API_BASE_URL}/${apiPath}`;
 
     // Prepare headers for the backend request
@@ -89,6 +98,7 @@ export default async function handler(req, res) {
     res.status(500).json({
       error: "Proxy request failed",
       message: error.message,
+      apiBaseUrlConfigured: !!process.env.API_BASE_URL,
       details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
