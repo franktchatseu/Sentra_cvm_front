@@ -5,18 +5,17 @@ import {
   Edit,
   Trash2,
   Package,
-  Calendar,
   Tag,
   Power,
   PowerOff,
   Eye,
   EyeOff,
 } from "lucide-react";
-import { Product } from "../../../../shared/types/product";
-import { ProductCategory } from "../../../../shared/types/productCategory";
+import { Product } from "../types/product";
+import { ProductCategory } from "../types/productCategory";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -37,19 +36,24 @@ export default function ProductDetailsPage() {
       setLoading(true);
       setError(null);
 
-      const [productData, categoriesData] = await Promise.all([
-        productService.getProductById(id!, "id"),
+      const [productResponse, categoriesResponse] = await Promise.all([
+        productService.getProductById(Number(id), true),
         productCategoryService.getAllCategories({
           limit: 100,
           skipCache: true,
         }),
       ]);
 
+      if (!productResponse.success || !productResponse.data) {
+        throw new Error("Product not found");
+      }
+
+      const productData = productResponse.data;
       setProduct(productData);
 
       // Find the category for this product
-      const productCategory = (categoriesData.data || []).find(
-        (cat) => cat.id === Number(productData.category_id)
+      const productCategory = (categoriesResponse.data || []).find(
+        (cat) => cat.id === productData.category_id
       );
       setCategory(productCategory || null);
     } catch (err) {
@@ -199,11 +203,16 @@ export default function ProductDetailsPage() {
         <div className="flex flex-col sm:flex-row xl:flex-row lg:flex-col gap-3">
           <button
             onClick={handleToggleStatus}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit text-white ${
-              product.is_active
-                ? "bg-yellow-600 hover:bg-yellow-700"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
+            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit text-white"
+            style={{
+              backgroundColor: button.secondaryAction.background,
+            }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.opacity = "1";
+            }}
           >
             {product.is_active ? (
               <>
@@ -220,14 +229,12 @@ export default function ProductDetailsPage() {
           <button
             onClick={() => navigate(`/dashboard/products/${id}/edit`)}
             className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit"
-            style={{ backgroundColor: color.primary.action }}
+            style={{ backgroundColor: button.action.background }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
+              (e.target as HTMLButtonElement).style.opacity = "0.9";
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
+              (e.target as HTMLButtonElement).style.opacity = "1";
             }}
           >
             <Edit className="w-4 h-4" />
@@ -247,87 +254,92 @@ export default function ProductDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Product Info */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Product Overview */}
           <div
             className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
           >
-            <div className="flex items-start space-x-4">
+            <div className="flex items-start space-x-4 mb-6">
               <div
-                className="h-12 w-12 rounded-xl flex items-center justify-center"
+                className="h-14 w-14 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: color.primary.accent }}
               >
-                <Package className="w-6 h-6 text-white" />
+                <Package className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className={`text-xl font-bold ${tw.textPrimary} mb-2`}>
+                <h2 className={`text-2xl font-bold ${tw.textPrimary} mb-2`}>
                   {product.name}
                 </h2>
-                <p className={`${tw.textSecondary} mb-4`}>
+                <p className={`${tw.textSecondary} text-base leading-relaxed`}>
                   {product.description || "No description available"}
                 </p>
-                <div className="flex items-center space-x-3">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      product.is_active
-                        ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
-                        : `bg-[${color.surface.cards}] text-[${color.text.primary}]`
-                    }`}
-                  >
-                    {product.is_active ? (
-                      <>
-                        <Eye className="w-4 h-4 mr-1" />
-                        Active
-                      </>
-                    ) : (
-                      <>
-                        <EyeOff className="w-4 h-4 mr-1" />
-                        Inactive
-                      </>
-                    )}
-                  </span>
-                  {category && (
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
-                    >
-                      <Tag className="w-4 h-4 mr-1" />
-                      {category.name}
-                    </span>
-                  )}
-                </div>
               </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-200">
+              <span
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
+                  product.is_active
+                    ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                    : `bg-[${color.surface.cards}] text-[${color.text.primary}]`
+                }`}
+              >
+                {product.is_active ? (
+                  <>
+                    <Eye className="w-4 h-4 mr-1.5" />
+                    Active
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-1.5" />
+                    Inactive
+                  </>
+                )}
+              </span>
+              {category && (
+                <span
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                >
+                  <Tag className="w-4 h-4 mr-1.5" />
+                  {category.name}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Product Details */}
+          {/* Basic Information */}
           <div
             className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
           >
-            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
-              Product Information
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
+              Basic Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1">
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
                 >
-                  Product ID
+                  Product Code
                 </label>
-                <p className={`text-base ${tw.textPrimary} font-mono`}>
-                  {product.product_id || product.id || "N/A"}
+                <p
+                  className={`text-base ${tw.textPrimary} font-mono font-semibold`}
+                >
+                  {product.product_code || product.id || "N/A"}
                 </p>
               </div>
-              <div>
+              <div className="space-y-1">
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
                 >
                   DA ID
                 </label>
-                <p className={`text-base ${tw.textPrimary} font-mono`}>
+                <p
+                  className={`text-base ${tw.textPrimary} font-mono font-semibold`}
+                >
                   {product.da_id || "N/A"}
                 </p>
               </div>
-              <div>
+              <div className="space-y-1">
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
                 >
                   Category
                 </label>
@@ -335,61 +347,251 @@ export default function ProductDetailsPage() {
                   {category?.name || "No category assigned"}
                 </p>
               </div>
-              <div>
+              <div className="space-y-1">
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
                 >
-                  Created Date
+                  Requires Inventory
                 </label>
-                <p className={`text-base ${tw.textPrimary} flex items-center`}>
-                  <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                  {new Date(product.created_at).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                <p className={`text-base ${tw.textPrimary}`}>
+                  {product.requires_inventory ? "Yes" : "No"}
                 </p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Product Stats */}
+          {/* Pricing Information */}
           <div
             className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
           >
-            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
-              Product Statistics
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
+              Pricing
             </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className={`text-sm ${tw.textMuted}`}>Status</span>
-                <span
-                  className={`text-sm font-medium ${
-                    product.is_active ? "text-green-600" : "text-gray-500"
-                  }`}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <label
+                  className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
                 >
-                  {product.is_active ? "Active" : "Inactive"}
-                </span>
+                  Price
+                </label>
+                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
+                  {typeof product.price === "number"
+                    ? product.price.toFixed(2)
+                    : parseFloat(String(product.price || 0)).toFixed(2)}{" "}
+                  <span className="text-base font-normal text-gray-500">
+                    {product.currency || "USD"}
+                  </span>
+                </p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className={`text-sm ${tw.textMuted}`}>Created</span>
-                <span className={`text-sm ${tw.textPrimary}`}>
-                  {new Date(product.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={`text-sm ${tw.textMuted}`}>Last Updated</span>
-                <span className={`text-sm ${tw.textPrimary}`}>
-                  {product.updated_at
-                    ? new Date(product.updated_at).toLocaleDateString()
-                    : "Never"}
-                </span>
-              </div>
+              {product.cost && (
+                <div className="space-y-1">
+                  <label
+                    className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                  >
+                    Cost
+                  </label>
+                  <p className={`text-xl font-semibold ${tw.textPrimary}`}>
+                    {typeof product.cost === "number"
+                      ? product.cost.toFixed(2)
+                      : parseFloat(String(product.cost || 0)).toFixed(2)}{" "}
+                    <span className="text-base font-normal text-gray-500">
+                      {product.currency || "USD"}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Validity Information */}
+          {(product.validity_days ||
+            product.validity_hours ||
+            product.effective_from ||
+            product.effective_to) && (
+            <div
+              className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+            >
+              <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
+                Validity Period
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {product.validity_days && (
+                  <div className="space-y-1">
+                    <label
+                      className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                    >
+                      Validity Days
+                    </label>
+                    <p className={`text-base ${tw.textPrimary} font-semibold`}>
+                      {product.validity_days}{" "}
+                      {product.validity_days === 1 ? "day" : "days"}
+                    </p>
+                  </div>
+                )}
+                {product.validity_hours && (
+                  <div className="space-y-1">
+                    <label
+                      className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                    >
+                      Validity Hours
+                    </label>
+                    <p className={`text-base ${tw.textPrimary} font-semibold`}>
+                      {product.validity_hours}{" "}
+                      {product.validity_hours === 1 ? "hour" : "hours"}
+                    </p>
+                  </div>
+                )}
+                {product.effective_from && (
+                  <div className="space-y-1">
+                    <label
+                      className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                    >
+                      Effective From
+                    </label>
+                    <p className={`text-base ${tw.textPrimary}`}>
+                      {new Date(product.effective_from).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </p>
+                  </div>
+                )}
+                {product.effective_to && (
+                  <div className="space-y-1">
+                    <label
+                      className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                    >
+                      Effective To
+                    </label>
+                    <p className={`text-base ${tw.textPrimary}`}>
+                      {new Date(product.effective_to).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar - Timeline & Metadata */}
+        <div className="space-y-6">
+          {/* Timeline */}
+          <div
+            className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+          >
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
+              Timeline
+            </h3>
+            <div className="space-y-5">
+              <div className="relative pl-6 border-l-2 border-gray-200">
+                <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-gray-300"></div>
+                <div className="space-y-1">
+                  <p
+                    className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                  >
+                    Created
+                  </p>
+                  <p className={`text-sm ${tw.textPrimary} font-semibold`}>
+                    {new Date(product.created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                  <p className={`text-xs ${tw.textMuted}`}>
+                    {new Date(product.created_at).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+              {product.updated_at && (
+                <div className="relative pl-6 border-l-2 border-gray-200">
+                  <div
+                    className="absolute -left-2 top-0 w-4 h-4 rounded-full"
+                    style={{ backgroundColor: color.primary.accent }}
+                  ></div>
+                  <div className="space-y-1">
+                    <p
+                      className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                    >
+                      Last Updated
+                    </p>
+                    <p className={`text-sm ${tw.textPrimary} font-semibold`}>
+                      {new Date(product.updated_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </p>
+                    <p className={`text-xs ${tw.textMuted}`}>
+                      {new Date(product.updated_at).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Additional Info */}
+          {(product.available_quantity !== null || product.metadata) && (
+            <div
+              className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+            >
+              <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
+                Additional Information
+              </h3>
+              <div className="space-y-4">
+                {product.available_quantity !== null && (
+                  <div className="space-y-1">
+                    <label
+                      className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                    >
+                      Available Quantity
+                    </label>
+                    <p className={`text-base ${tw.textPrimary} font-semibold`}>
+                      {product.available_quantity}
+                    </p>
+                  </div>
+                )}
+                {product.metadata && (
+                  <div className="space-y-1">
+                    <label
+                      className={`text-xs font-medium ${tw.textMuted} uppercase tracking-wide`}
+                    >
+                      Metadata
+                    </label>
+                    <pre
+                      className={`text-xs ${tw.textPrimary} bg-gray-50 p-3 rounded-lg overflow-x-auto`}
+                    >
+                      {JSON.stringify(product.metadata, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

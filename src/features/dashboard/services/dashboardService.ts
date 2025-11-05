@@ -13,31 +13,64 @@ export interface DashboardStats {
 class DashboardService {
   async getDashboardStats(): Promise<DashboardStats> {
     try {
-      const [offersResponse, segmentsResponse, campaignsResponse] =
-        await Promise.all([
-          offerService.searchOffers({ limit: 1, skipCache: true }),
-          segmentService.getSegments(),
-          campaignService.getAllCampaigns(),
-        ]);
+      // Fetch offers and segments stats
+      const offersStatsResponse = await offerService.getStats(true);
+      const segmentsStatsResponse = await segmentService.getSegmentStats(true);
 
-      // Calculate conversion rate
-      const totalCampaigns = campaignsResponse.meta?.total || 0;
-      const campaigns = campaignsResponse.data || [];
+      // Extract total offers from stats response (backend uses snake_case)
+      const offersData = offersStatsResponse.data as
+        | Record<string, unknown>
+        | undefined;
+      const totalOffersRaw = offersData?.total_offers;
+      const totalOffers =
+        typeof totalOffersRaw === "string"
+          ? parseInt(totalOffersRaw, 10) || 0
+          : (totalOffersRaw as number) || 0;
 
-      // Count successful campaigns
-      const successfulCampaigns = (campaigns as Campaign[]).filter(
-        (campaign) => campaign.status === "completed"
-      ).length;
+      // Extract total segments from stats response (backend uses snake_case and returns strings)
+      const segmentsData = segmentsStatsResponse.data as
+        | Record<string, unknown>
+        | undefined;
+      const totalSegmentsRaw = segmentsData?.total_segments;
+      const totalSegments =
+        typeof totalSegmentsRaw === "string"
+          ? parseInt(totalSegmentsRaw, 10) || 0
+          : (totalSegmentsRaw as number) || 0;
 
-      const conversionRate =
-        totalCampaigns > 0
-          ? Math.round((successfulCampaigns / totalCampaigns) * 100)
-          : 0;
+      // Temporarily skip campaigns due to API error
+      let activeCampaigns = 0;
+      let conversionRate = 0;
+
+      try {
+        const [allCampaignsResponse, activeCampaignsResponse] =
+          await Promise.all([
+            campaignService.getAllCampaigns(),
+            campaignService.getAllCampaigns({ status: "active" }),
+          ]);
+
+        activeCampaigns = activeCampaignsResponse.meta?.total || 0;
+
+        // Calculate conversion rate from all campaigns
+        const totalCampaigns = allCampaignsResponse.meta?.total || 0;
+        const campaigns = allCampaignsResponse.data || [];
+
+        // Count successful campaigns
+        const successfulCampaigns = (campaigns as Campaign[]).filter(
+          (campaign) => campaign.status === "completed"
+        ).length;
+
+        conversionRate =
+          totalCampaigns > 0
+            ? Math.round((successfulCampaigns / totalCampaigns) * 100)
+            : 0;
+      } catch {
+        // Continue with offers and segments stats
+      }
 
       return {
-        totalOffers: offersResponse.meta?.total || 0,
-        totalSegments: segmentsResponse.meta?.total || 0,
-        activeCampaigns: totalCampaigns,
+        totalOffers,
+        totalSegments,
+        activeCampaigns,
         conversionRate,
       };
     } catch (error) {

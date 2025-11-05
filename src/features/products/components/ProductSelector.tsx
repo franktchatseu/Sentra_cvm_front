@@ -179,10 +179,11 @@ export default function ProductSelector({
                 </div>
                 <button
                   onClick={() => handleRemoveProduct(product.id)}
-                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 hover:border-red-300 transition-colors duration-200"
                   title="Remove product"
                 >
                   <X className="w-4 h-4" />
+                  <span>Remove</span>
                 </button>
               </div>
             ))}
@@ -325,12 +326,23 @@ export default function ProductSelector({
                           key={product.id}
                           onClick={() => handleProductToggle(product)}
                           className={`relative p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
-                            isSelected ? "border-green-500" : "border-gray-200"
+                            isSelected ? "" : "border-gray-200"
                           }`}
+                          style={
+                            isSelected
+                              ? {
+                                  borderColor: color.primary.accent,
+                                  borderWidth: "2px",
+                                }
+                              : {}
+                          }
                         >
                           {/* Selection Indicator */}
                           {isSelected && (
-                            <div className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center bg-green-600 transition-all duration-200">
+                            <div
+                              className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200"
+                              style={{ backgroundColor: color.primary.accent }}
+                            >
                               <Check className="w-4 h-4 text-white" />
                             </div>
                           )}

@@ -11,6 +11,11 @@ import {
   Trash2,
   Play,
   Pause,
+  XCircle,
+  Package,
+  TrendingUp,
+  BarChart3,
+  DollarSign,
 } from "lucide-react";
 import { Product } from "../types/product";
 import { ProductCategory } from "../types/productCategory";
@@ -45,6 +50,14 @@ export default function ProductsPage() {
   });
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<{
+    totalProducts: number;
+    activeProducts: number;
+    inactiveProducts: number;
+    averagePrice: number;
+  } | null>(null);
+  const [topSelling, setTopSelling] = useState<Product[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
   const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
 
@@ -69,44 +82,69 @@ export default function ProductsPage() {
       const offset = ((filters.page || 1) - 1) * limit;
 
       let response;
+      let productsList: Product[] = [];
 
-      if (filters.search) {
-        response = await productService.searchProducts({
-          q: filters.search,
+      // Use superSearch if we have filters or need inactive products
+      if (
+        filters.search ||
+        filters.categoryId ||
+        filters.isActive !== undefined
+      ) {
+        response = await productService.superSearch({
+          ...(filters.search && { name: filters.search }),
+          ...(filters.categoryId && { category_id: filters.categoryId }),
+          ...(filters.isActive !== undefined && {
+            is_active: filters.isActive,
+          }),
           limit,
           offset,
           skipCache: true,
         });
-      } else if (filters.categoryId) {
-        response = await productService.getProductsByCategory(
-          filters.categoryId,
-          {
-            limit,
-            offset,
-            skipCache: true,
-          }
-        );
-      } else if (filters.isActive !== undefined) {
-        response = filters.isActive
-          ? await productService.getActiveProducts({
-              limit,
-              offset,
-              skipCache: true,
-            })
-          : await productService.getAllProducts({
-              limit,
-              offset,
-              skipCache: true,
-            });
+        productsList = response.data || [];
       } else {
         response = await productService.getAllProducts({
           limit,
           offset,
           skipCache: true,
         });
+        productsList = response.data || [];
       }
 
-      setProducts(response.data || []);
+      // Client-side sorting if sortBy and sortDirection are provided
+      if (filters.sortBy && filters.sortDirection) {
+        productsList = [...productsList].sort((a, b) => {
+          let aValue: any;
+          let bValue: any;
+
+          switch (filters.sortBy) {
+            case "created_at":
+              aValue = new Date(a.created_at).getTime();
+              bValue = new Date(b.created_at).getTime();
+              break;
+            case "name":
+              aValue = (a.name || "").toLowerCase();
+              bValue = (b.name || "").toLowerCase();
+              break;
+            case "product_id":
+              aValue = (a.product_code || a.id || "").toString().toLowerCase();
+              bValue = (b.product_code || b.id || "").toString().toLowerCase();
+              break;
+            default:
+              aValue = a[filters.sortBy as keyof Product];
+              bValue = b[filters.sortBy as keyof Product];
+          }
+
+          if (aValue < bValue) {
+            return filters.sortDirection === "ASC" ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return filters.sortDirection === "ASC" ? 1 : -1;
+          }
+          return 0;
+        });
+      }
+
+      setProducts(productsList);
       const totalCount = response.pagination?.total || 0;
       setTotal(totalCount);
       setTotalPages(Math.ceil(totalCount / limit) || 1);
@@ -120,7 +158,38 @@ export default function ProductsPage() {
   useEffect(() => {
     loadProducts();
     loadCategories();
+    loadStats();
   }, [loadProducts]);
+
+  const loadStats = async () => {
+    try {
+      setStatsLoading(true);
+
+      // Get product stats
+      const statsResponse = await productService.getStats(true);
+      if (statsResponse.success && statsResponse.data) {
+        setStats({
+          totalProducts: statsResponse.data.total_products || 0,
+          activeProducts: statsResponse.data.active_products || 0,
+          inactiveProducts: statsResponse.data.inactive_products || 0,
+          averagePrice: statsResponse.data.average_price || 0,
+        });
+      }
+
+      // Get top selling products
+      const topSellingResponse = await productService.getTopSelling({
+        limit: 5,
+        skipCache: true,
+      });
+      if (topSellingResponse.data) {
+        setTopSelling(topSellingResponse.data);
+      }
+    } catch (err) {
+      console.error("Failed to load stats:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const handleSearch = (searchTerm: string) => {
     setFilters({ ...filters, search: searchTerm, page: 1 });
@@ -192,7 +261,7 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
             Products Management
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
@@ -232,6 +301,121 @@ export default function ProductsPage() {
             <Plus className="w-4 h-4" />
             Create Product
           </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {/* Total Products Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Total Products
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {statsLoading ? (
+                  <span className="text-gray-400">...</span>
+                ) : (
+                  stats?.totalProducts || 0
+                )}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <Package className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        {/* Active Products Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Active Products
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {statsLoading ? (
+                  <span className="text-gray-400">...</span>
+                ) : (
+                  stats?.activeProducts || 0
+                )}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        {/* Inactive Products Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Inactive Products
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {statsLoading ? (
+                  <span className="text-gray-400">...</span>
+                ) : (
+                  stats?.inactiveProducts || 0
+                )}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <XCircle className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        {/* Average Price Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Average Price
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {statsLoading ? (
+                  <span className="text-gray-400">...</span>
+                ) : stats?.averagePrice ? (
+                  `$${stats.averagePrice.toFixed(2)}`
+                ) : (
+                  "$0.00"
+                )}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <DollarSign className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        {/* Top Selling Products Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Top Selling
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {statsLoading ? (
+                  <span className="text-gray-400">...</span>
+                ) : (
+                  topSelling.length || 0
+                )}
+              </p>
+              {topSelling.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {topSelling[0]?.name || "Products"}
+                </p>
+              )}
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <BarChart3 className="w-6 h-6 text-gray-900" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -327,7 +511,7 @@ export default function ProductsPage() {
 
       {/* Products Table */}
       <div
-        className={`bg-white rounded-xl shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
+        className={`bg-white rounded-lg shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -341,7 +525,7 @@ export default function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-12">
             {/* Icon removed */}
-            <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
+            <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
               No products found
             </h3>
             <p className={`${tw.textMuted} mb-6`}>
@@ -369,7 +553,7 @@ export default function ProductsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead
-                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  className={`border-b ${tw.borderDefault}`}
                   style={{ background: color.surface.tableHeader }}
                 >
                   <tr>

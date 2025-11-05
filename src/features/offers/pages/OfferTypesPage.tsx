@@ -292,7 +292,7 @@ export default function OfferTypesPage() {
 
       {/* Offer Types Table */}
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}
+        className={`bg-white rounded-lg border border-[${color.border.default}] overflow-hidden`}
       >
         {filteredOfferTypes.length === 0 ? (
           <div className="text-center py-12">
@@ -324,7 +324,7 @@ export default function OfferTypesPage() {
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead
-                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  className={`border-b ${tw.borderDefault}`}
                   style={{ background: color.surface.tableHeader }}
                 >
                   <tr>

@@ -10,11 +10,80 @@ import {
   ProductAvailability,
   ProductMargin,
 } from "../types/product";
-import { getAuthHeaders } from "../../../shared/services/api";
+import {
+  getAuthHeaders,
+  buildApiUrl,
+  API_CONFIG,
+} from "../../../shared/services/api";
 
 class ProductService {
-  private baseUrl =
-    "http://cvm.groupngs.com:8080/api/database-service/products";
+  private baseUrl = buildApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS);
+
+  /**
+   * Translates technical error messages to user-friendly messages
+   */
+  private getUserFriendlyError(
+    errorMessage: string,
+    statusCode: number,
+    operation: string = "operation"
+  ): string {
+    // List of technical/generic error messages that should be translated
+    const technicalErrors = [
+      "internal server error",
+      "server error",
+      "bad request",
+      "unauthorized",
+      "forbidden",
+      "not found",
+      "method not allowed",
+      "unprocessable entity",
+      "too many requests",
+      "service unavailable",
+      "http error",
+      "network error",
+      "fetch failed",
+    ];
+
+    // Check if error message is technical/generic
+    const isTechnicalError = technicalErrors.some((techError) =>
+      errorMessage.toLowerCase().includes(techError)
+    );
+
+    // If it's a technical error or contains status code, provide user-friendly message
+    if (isTechnicalError || errorMessage.includes("status:")) {
+      // Map status codes to user-friendly messages
+      const statusMessages: Record<number, string> = {
+        400: "The request was invalid. Please check your input and try again.",
+        401: "You are not authorized to perform this action. Please log in and try again.",
+        403: "You don't have permission to perform this action.",
+        404: "The requested resource was not found.",
+        409: "This item already exists. Please use a different value.",
+        422: "The provided data is invalid. Please check your input and try again.",
+        429: "Too many requests. Please wait a moment and try again.",
+        500: "A server error occurred. Please try again later or contact support if the problem persists.",
+        502: "Service temporarily unavailable. Please try again later.",
+        503: "Service temporarily unavailable. Please try again later.",
+        504: "Request timed out. Please try again.",
+      };
+
+      // If we have a specific message for this status code, use it
+      if (statusMessages[statusCode]) {
+        return statusMessages[statusCode];
+      }
+
+      // Generic messages based on status code range
+      if (statusCode >= 500) {
+        return "A server error occurred. Please try again later or contact support if the problem persists.";
+      } else if (statusCode >= 400) {
+        return "There was a problem with your request. Please check your input and try again.";
+      } else {
+        return `An error occurred while ${operation}. Please try again.`;
+      }
+    }
+
+    // If it's a user-friendly error message (like "DA ID already exists"), return as-is
+    return errorMessage;
+  }
 
   private async request<T>(
     endpoint: string,
@@ -30,29 +99,83 @@ class ProductService {
       ...options,
     });
 
-    if (!response.ok) {
-      // Try to parse error message from response
-      try {
-        const errorData = await response.json();
+    // Parse response first
+    const contentType = response.headers.get("content-type");
+    let responseData: any;
 
-        if (errorData.error) {
-          throw new Error(errorData.error);
-        }
-        if (errorData.message) {
-          throw new Error(errorData.message);
-        }
-        if (errorData.details) {
-          throw new Error(errorData.details);
-        }
-        // If we have data but no specific error message, show generic error
-        throw new Error("An error occurred. Please try again.");
-      } catch {
-        // If parsing fails, show generic error
-        throw new Error("An error occurred. Please try again.");
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        responseData = text ? JSON.parse(text) : {};
       }
+    } catch (parseError) {
+      responseData = {};
     }
 
-    return response.json();
+    // Check if response has success: false (backend may return 200 with error)
+    if (responseData && responseData.success === false) {
+      const errorMessage =
+        responseData.error ||
+        responseData.message ||
+        responseData.details ||
+        "Operation failed";
+      throw new Error(
+        typeof errorMessage === "string"
+          ? errorMessage
+          : JSON.stringify(errorMessage)
+      );
+    }
+
+    if (!response.ok) {
+      // Try to parse error message from response
+      let errorMessage = `HTTP error! status: ${response.status}`;
+
+      try {
+        const errorData = responseData || {};
+
+        // Check for error message in various possible locations
+        // Backend returns: { success: false, error: "message" }
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.details) {
+          errorMessage =
+            typeof errorData.details === "string"
+              ? errorData.details
+              : JSON.stringify(errorData.details);
+        } else if (typeof errorData === "string") {
+          errorMessage = errorData;
+        }
+      } catch {
+        // If parsing fails, use status text
+        errorMessage =
+          response.statusText || `HTTP error! status: ${response.status}`;
+      }
+
+      // Extract operation type from endpoint for better error messages
+      const operation =
+        endpoint.includes("create") || options.method === "POST"
+          ? "creating the product"
+          : endpoint.includes("update") ||
+            options.method === "PUT" ||
+            options.method === "PATCH"
+          ? "updating the product"
+          : "processing your request";
+
+      // Translate to user-friendly message if needed
+      const friendlyMessage = this.getUserFriendlyError(
+        errorMessage,
+        response.status,
+        operation
+      );
+
+      throw new Error(friendlyMessage);
+    }
+
+    return responseData;
   }
 
   // 1. Analytics & Stats Endpoints

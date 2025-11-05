@@ -57,6 +57,7 @@ export interface UpdateProductRequest {
   effective_from?: string;
   effective_to?: string;
   da_id?: string;
+  is_active?: boolean;
   metadata?: Record<string, unknown>;
   updated_by?: number;
 }

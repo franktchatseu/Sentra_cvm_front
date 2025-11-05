@@ -30,10 +30,13 @@ import OfferTypesPage from "../../offers/pages/OfferTypesPage";
 import OfferCategoriesPage from "../../offers/pages/OfferCategoriesPage";
 import CategoryDetailsPage from "../../offers/pages/CategoryDetailsPage";
 import UserManagementPage from "../components/UserManagementPage";
+import UserDetailsPage from "../../users/pages/UserDetailsPage";
 import ConfigurationPage from "../components/ConfigurationPage";
+import ConfigurationDetailsPage from "../components/ConfigurationDetailsPage";
 import ControlGroupsPage from "../../products/pages/ControlGroupsPage";
 import DepartmentPage from "../../campaigns/pages/DepartmentPage";
 import LineOfBusinessPage from "../../campaigns/pages/LineOfBusinessPage";
+import AssignItemsPage from "../../../shared/pages/AssignItemsPage";
 
 export default function Dashboard() {
   return (
@@ -81,18 +84,35 @@ export default function Dashboard() {
         <Route path="/products/:id" element={<ProductDetailsPage />} />
         <Route path="/products/:id/edit" element={<EditProductPage />} />
         <Route path="/products/catalogs" element={<ProductCategoriesPage />} />
+        <Route
+          path="/products/catalogs/:catalogId/assign"
+          element={<AssignItemsPage itemType="products" />}
+        />
         <Route path="/product-types" element={<ProductTypesPage />} />
         <Route path="/offer-types" element={<OfferTypesPage />} />
         <Route path="/offer-catalogs" element={<OfferCategoriesPage />} />
+        <Route
+          path="/offer-catalogs/:catalogId/assign"
+          element={<AssignItemsPage itemType="offers" />}
+        />
         {/* <Route path="/offer-catalogs/:id" element={<CategoryDetailsPage />} /> */}
         <Route path="/user-management" element={<UserManagementPage />} />
+        <Route path="/user-management/:id" element={<UserDetailsPage />} />
         <Route path="/segments" element={<SegmentManagementPage />} />
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />
         <Route path="/segments/:id/edit" element={<EditSegmentPage />} />
         <Route path="/segment-catalogs" element={<SegmentCategoriesPage />} />
+        <Route
+          path="/segment-catalogs/:catalogId/assign"
+          element={<AssignItemsPage itemType="segments" />}
+        />
         <Route path="/segment-list" element={<SegmentListPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
+        <Route
+          path="/configuration/:id"
+          element={<ConfigurationDetailsPage />}
+        />
       </Routes>
     </DashboardLayout>
   );

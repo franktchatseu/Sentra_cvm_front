@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Target,
@@ -15,6 +15,7 @@ import { Product } from "../../products/types/product";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
+import { offerCreativeService } from "../services/offerCreativeService";
 import { productCategoryService } from "../../products/services/productCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
 import ProductSelector from "../../products/components/ProductSelector";
@@ -24,11 +25,20 @@ import OfferRewardStep from "../components/OfferRewardStep";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
+// Import the types from offerCreative instead of defining locally
+import {
+  OfferCreative as OfferCreativeType,
+  CreativeChannel,
+  Locale,
+} from "../types/offerCreative";
+
+// Local creative for form (uses string ID until saved)
 interface OfferCreative {
   id: string;
-  channel: "sms" | "email" | "push" | "web" | "whatsapp";
-  locale: string;
+  channel: CreativeChannel;
+  locale: Locale;
   title: string;
   text_body: string;
   html_body: string;
@@ -264,7 +274,7 @@ function BasicInfoStep({
             onChange={(value) => {
               setFormData({
                 ...formData,
-                offer_type: (value as OfferTypeEnum) || "data",
+                offer_type: value ? (value as OfferTypeEnum) : undefined,
               });
               if (validationErrors?.offer_type && clearValidationErrors) {
                 clearValidationErrors();
@@ -393,6 +403,49 @@ function ProductStepWrapper({
   selectedProducts: Product[];
   onProductsChange: (products: Product[]) => void;
 }) {
+  // Track previous products to prevent unnecessary updates
+  const prevProductsRef = useRef<Product[]>(selectedProducts);
+
+  const handleProductsChange = useCallback(
+    (products: Product[]) => {
+      // Check if products actually changed (by reference and length)
+      const productsChanged =
+        prevProductsRef.current.length !== products.length ||
+        prevProductsRef.current.some((p, i) => p.id !== products[i]?.id);
+
+      if (!productsChanged) {
+        // Products haven't changed, don't update anything
+        return;
+      }
+
+      prevProductsRef.current = products;
+
+      // Update selected products
+      onProductsChange(products);
+
+      // Update primary product ID only if it changed
+      const firstProductId = products[0]?.id;
+      const newPrimaryId = firstProductId ? Number(firstProductId) : undefined;
+
+      setFormData((prev) => {
+        // Only update if primary_product_id actually changed
+        if (prev.primary_product_id === newPrimaryId) {
+          return prev; // Return same object reference to prevent unnecessary re-render
+        }
+        return {
+          ...prev,
+          primary_product_id: newPrimaryId,
+        };
+      });
+    },
+    [onProductsChange, setFormData]
+  );
+
+  // Update ref when selectedProducts prop changes
+  useEffect(() => {
+    prevProductsRef.current = selectedProducts;
+  }, [selectedProducts]);
+
   return (
     <div className="space-y-6">
       <div className="mt-8 mb-8 flex items-start justify-between">
@@ -408,16 +461,7 @@ function ProductStepWrapper({
       <div className="space-y-6">
         <ProductSelector
           selectedProducts={selectedProducts}
-          onProductsChange={(products) => {
-            onProductsChange(products);
-            const firstProductId = products[0]?.id;
-            setFormData({
-              ...formData,
-              primary_product_id: firstProductId
-                ? Number(firstProductId)
-                : undefined,
-            });
-          }}
+          onProductsChange={handleProductsChange}
           multiSelect={true}
           showAddButtonInline={true}
         />
@@ -430,6 +474,7 @@ function ProductStepWrapper({
 function OfferCreativeStepWrapper({
   creatives,
   setCreatives,
+  validationErrors,
 }: Omit<
   StepProps,
   | "currentStep"
@@ -444,7 +489,6 @@ function OfferCreativeStepWrapper({
   | "rewards"
   | "setRewards"
   | "isLoading"
-  | "validationErrors"
   | "clearValidationErrors"
   | "offerCategories"
   | "categoriesLoading"
@@ -464,6 +508,7 @@ function OfferCreativeStepWrapper({
       <OfferCreativeStep
         creatives={creatives}
         onCreativesChange={setCreatives}
+        validationError={validationErrors?.creatives}
       />
     </div>
   );
@@ -803,11 +848,13 @@ export default function CreateOfferPage() {
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
   const totalSteps = 6;
 
-  const [formData, setFormData] = useState<CreateOfferRequest>({
+  const [formData, setFormData] = useState<
+    Omit<CreateOfferRequest, "offer_type"> & { offer_type?: OfferTypeEnum }
+  >({
     name: "",
     code: "",
     description: "",
-    offer_type: "data" as OfferTypeEnum,
+    offer_type: undefined, // Start undefined like category_id
     category_id: undefined,
     max_usage_per_customer: 1,
     eligibility_rules: {},
@@ -817,9 +864,13 @@ export default function CreateOfferPage() {
   const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
   const [rewards, setRewards] = useState<OfferReward[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [initialProducts, setInitialProducts] = useState<Product[]>([]); // Track initial products for edit mode
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1])); // Track visited steps
+
+  const { user } = useAuth();
 
   // Preselect category from URL parameter
   useEffect(() => {
@@ -832,29 +883,21 @@ export default function CreateOfferPage() {
     }
   }, [searchParams, isEditMode]);
 
-  // Generate dummy offer type based on offer ID (same logic as OfferDetailsPage)
-  const getDummyOfferType = (offerId: string | number) => {
-    const offerTypes = [
-      "STV",
-      "Short Text (SMS/USSD)",
-      "Email",
-      "Voice Push",
-      "WAP Push",
-      "Rich Media",
-    ];
-    const typeIndex = Number(offerId) % offerTypes.length;
-    return offerTypes[typeIndex];
-  };
-
   // Load offer data for edit mode
   const loadOfferData = useCallback(async () => {
     if (!id) return;
 
     setIsLoadingOffer(true);
     try {
-      const [offerResponse, productsData] = await Promise.all([
+      const [offerResponse, productsData, creativesData] = await Promise.all([
         offerService.getOfferById(parseInt(id)),
         offerService.getOfferProducts(parseInt(id)).catch(() => []), // Load existing products, ignore errors
+        offerCreativeService
+          .getByOffer(parseInt(id), { limit: 100, skipCache: true })
+          .catch(() => ({
+            data: [],
+            pagination: { total: 0, limit: 100, offset: 0, hasMore: false },
+          })), // Load existing creatives, ignore errors
       ]);
 
       const response = offerResponse as { data?: Offer; success?: boolean };
@@ -864,14 +907,11 @@ export default function CreateOfferPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const products = (productsData as any)?.data || productsData || [];
 
-      // Generate dummy offer type based on offer ID since backend doesn't store it
-      const dummyOfferType = getDummyOfferType(offer.id!);
-
       const newFormData: CreateOfferRequest = {
         name: offer.name || "",
         code: offer.code || "",
         description: offer.description || "",
-        offer_type: dummyOfferType as OfferTypeEnum, // Use dummy offer type
+        offer_type: offer.offer_type || OfferTypeEnum.DATA, // Use actual offer_type from backend
         category_id: offer.category_id ? Number(offer.category_id) : undefined,
         primary_product_id: offer.primary_product_id
           ? Number(offer.primary_product_id)
@@ -895,6 +935,7 @@ export default function CreateOfferPage() {
             return {
               ...productData,
               is_primary: link.is_primary,
+              link_id: link.id || link.link_id, // Preserve link_id for unlinking
             };
           } catch (error) {
             console.error(
@@ -906,12 +947,39 @@ export default function CreateOfferPage() {
               id: link.product_id,
               name: `Product ${link.product_id}`,
               is_primary: link.is_primary,
+              link_id: link.id || link.link_id, // Preserve link_id for unlinking
             };
           }
         });
 
         const fullProducts = await Promise.all(productDetailsPromises);
         setSelectedProducts(fullProducts);
+        // Store initial products for comparison in edit mode
+        setInitialProducts(fullProducts.map((p) => ({ ...p })));
+      } else {
+        // If no products, reset initial products
+        setInitialProducts([]);
+      }
+
+      // Load existing creatives and prefill the creatives state
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const creativesResponse = creativesData as any;
+      const creativesList = creativesResponse?.data || [];
+
+      if (Array.isArray(creativesList) && creativesList.length > 0) {
+        // Map backend creative structure to frontend OfferCreative structure
+        const mappedCreatives: OfferCreative[] = creativesList.map(
+          (creative: any) => ({
+            id: String(creative.id || ""), // Use creative ID if available, otherwise empty string
+            channel: creative.channel,
+            locale: creative.locale,
+            title: creative.title || "",
+            text_body: creative.text_body || "",
+            html_body: creative.html_body || "",
+            variables: creative.variables || {},
+          })
+        );
+        setCreatives(mappedCreatives);
       }
     } catch (error) {
       console.error("[Edit Mode] Failed to load offer data:", error);
@@ -919,7 +987,7 @@ export default function CreateOfferPage() {
     } finally {
       setIsLoadingOffer(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, setFormData, setCreatives]);
 
   // Offer categories state
   const [offerCategories, setOfferCategories] = useState<OfferCategoryType[]>(
@@ -954,22 +1022,11 @@ export default function CreateOfferPage() {
       setIsEditMode(true);
       loadOfferData();
     }
-  }, [id, loadOfferData]);
-
-  // Show loading state while loading offer data
-  if (isLoadingOffer) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#588157] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading offer...</p>
-        </div>
-      </div>
-    );
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Validation functions
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const errors: Record<string, string> = {};
 
     // Required fields validation
@@ -996,14 +1053,14 @@ export default function CreateOfferPage() {
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+  }, [formData, creatives, trackingSources, rewards]);
 
-  const clearValidationErrors = () => {
+  const clearValidationErrors = useCallback(() => {
     setValidationErrors({});
-  };
+  }, []);
 
   // Validation function for each step
-  const validateCurrentStep = () => {
+  const validateCurrentStep = useCallback(() => {
     switch (currentStep) {
       case 1: // Basic Info step
         return (
@@ -1014,7 +1071,7 @@ export default function CreateOfferPage() {
       case 2: // Products step
         return true; // Products are optional; allow proceeding
       case 3: // Creative step
-        return creatives.length > 0;
+        return true; // Creatives are optional; allow proceeding
       case 4: // Tracking step
         return trackingSources.length > 0;
       case 5: // Rewards step
@@ -1024,43 +1081,58 @@ export default function CreateOfferPage() {
       default:
         return false;
     }
-  };
+  }, [
+    currentStep,
+    formData,
+    creatives,
+    trackingSources,
+    rewards,
+    // Removed validationErrors and clearValidationErrors to break circular dependency
+  ]);
 
-  const canNavigateToStep = (targetStep: number) => {
-    // Can always go to previous steps
-    if (targetStep < currentStep) return true;
+  const canNavigateToStep = useCallback(
+    (targetStep: number) => {
+      // Can always go to previously visited steps
+      if (visitedSteps.has(targetStep)) return true;
 
-    // Can't go to future steps beyond current + 1
-    if (targetStep > currentStep + 1) return false;
+      // Can go to next step only if current step is valid
+      if (targetStep === currentStep + 1) return validateCurrentStep();
 
-    // Can go to next step only if current step is valid
-    if (targetStep === currentStep + 1) return validateCurrentStep();
+      // Can stay on current step
+      if (targetStep === currentStep) return true;
 
-    // Can stay on current step
-    if (targetStep === currentStep) return true;
+      // Can't go to future steps beyond current + 1
+      return false;
+    },
+    [visitedSteps, currentStep, validateCurrentStep]
+  );
 
-    return false;
-  };
-
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (validateCurrentStep() && currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      setVisitedSteps((prev) => new Set(prev).add(nextStep));
     }
-  };
+  }, [currentStep, totalSteps, validateCurrentStep]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
-  };
+  }, [currentStep]);
 
-  const handleStepClick = (stepId: number) => {
-    if (canNavigateToStep(stepId)) {
-      setCurrentStep(stepId);
-    }
-  };
+  const handleStepClick = useCallback(
+    (stepId: number) => {
+      if (canNavigateToStep(stepId)) {
+        setCurrentStep(stepId);
+        // Mark the clicked step as visited
+        setVisitedSteps((prev) => new Set(prev).add(stepId));
+      }
+    },
+    [canNavigateToStep]
+  );
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -1072,8 +1144,14 @@ export default function CreateOfferPage() {
         return;
       }
 
-      // Send all form data including offer_type
-      const apiData = formData;
+      // Prepare API data - remove empty description if not provided
+      // Backend doesn't accept empty strings for description
+      const { description, ...formDataWithoutDescription } = formData;
+      const apiData: CreateOfferRequest = {
+        ...formDataWithoutDescription,
+        offer_type: formData.offer_type!, // Required by validation, so safe to assert
+        ...(description?.trim() ? { description: description.trim() } : {}),
+      };
 
       let offerId: number;
 
@@ -1081,21 +1159,185 @@ export default function CreateOfferPage() {
         await offerService.updateOffer(parseInt(id), apiData);
         offerId = parseInt(id);
       } else {
-        const createdOffer = await offerService.createOffer(apiData);
-        offerId = createdOffer.id!;
+        const createdOfferResponse = await offerService.createOffer(apiData);
+
+        // Extract offer ID from response - BaseResponse wraps the Offer in .data
+        // Try data.id first, then insertId as fallback
+        offerId =
+          createdOfferResponse.data?.id || createdOfferResponse.insertId;
+
+        if (!offerId) {
+          console.error(
+            "[Submit] Could not extract offer ID from response:",
+            createdOfferResponse
+          );
+          console.error(
+            "[Submit] Response keys:",
+            Object.keys(createdOfferResponse)
+          );
+          throw new Error("Failed to get offer ID from creation response");
+        }
       }
 
-      // Link products to the offer if any were selected
-      if (selectedProducts.length > 0) {
+      // Handle product linking/unlinking
+      if (
+        selectedProducts.length > 0 ||
+        (isEditMode && initialProducts.length > 0)
+      ) {
         try {
-          const productIds = selectedProducts.map((p) => parseInt(p.id!));
-          await offerService.linkProducts(offerId, productIds);
+          if (!user?.user_id) {
+            throw new Error("User ID not available for linking products");
+          }
+
+          if (!offerId) {
+            throw new Error("Offer ID is not available for linking products");
+          }
+
+          if (isEditMode) {
+            // In edit mode, compare initial products with current products
+            const initialProductIds = new Set(
+              initialProducts.map((p) => String(p.id || p.product_id))
+            );
+            const currentProductIds = new Set(
+              selectedProducts.map((p) => String(p.id || p.product_id))
+            );
+
+            // Find products to unlink (in initial but not in current)
+            const productsToUnlink = initialProducts.filter(
+              (p) => !currentProductIds.has(String(p.id || p.product_id))
+            );
+
+            // Find products to link (in current but not in initial)
+            const productsToLink = selectedProducts.filter(
+              (p) => !initialProductIds.has(String(p.id || p.product_id))
+            );
+
+            // Unlink removed products
+            if (productsToUnlink.length > 0) {
+              for (const product of productsToUnlink) {
+                // Try to find link_id from the product object (might be stored as link_id or id)
+                const linkId = (product as any).link_id;
+                if (linkId) {
+                  try {
+                    await offerService.unlinkProductById(linkId);
+                  } catch (unlinkError) {
+                    console.error(
+                      `[Submit] Failed to unlink product ${product.id}:`,
+                      unlinkError
+                    );
+                    // Continue with other operations even if one fails
+                  }
+                } else {
+                  console.warn(
+                    `[Submit] No link_id found for product ${product.id}, cannot unlink`
+                  );
+                }
+              }
+            }
+
+            // Link newly added products
+            if (productsToLink.length > 0) {
+              const primaryProductId = formData.primary_product_id;
+              const links = productsToLink.map((p) => {
+                const productId = parseInt(p.id!);
+                return {
+                  offer_id: Number(offerId),
+                  product_id: productId,
+                  is_primary: primaryProductId === productId,
+                  quantity: 1,
+                };
+              });
+
+              const batchRequest = {
+                links: links,
+                created_by: user.user_id,
+              };
+
+              await offerService.linkProductsBatch(batchRequest);
+            }
+
+            // Handle primary product change (if primary changed but product still exists)
+            const currentPrimaryId = formData.primary_product_id;
+            if (currentPrimaryId) {
+              const primaryProduct = selectedProducts.find(
+                (p) => Number(p.id || p.product_id) === currentPrimaryId
+              );
+              const initialPrimary = initialProducts.find((p) => p.is_primary);
+
+              // If primary changed to a different existing product
+              if (
+                primaryProduct &&
+                initialPrimary &&
+                Number(initialPrimary.id || initialPrimary.product_id) !==
+                  currentPrimaryId
+              ) {
+                // The primary product is managed through the offer details page
+                // For now, we'll just log this - the user can set primary via details page
+                console.log(
+                  "[Submit] Primary product changed, but update should be done via offer details page"
+                );
+              }
+            }
+          } else {
+            // Create mode: link all selected products
+            const primaryProductId = formData.primary_product_id;
+            const links = selectedProducts.map((p) => {
+              const productId = parseInt(p.id!);
+              return {
+                offer_id: Number(offerId),
+                product_id: productId,
+                is_primary: primaryProductId === productId,
+                quantity: 1,
+              };
+            });
+
+            const batchRequest = {
+              links: links,
+              created_by: user.user_id,
+            };
+
+            await offerService.linkProductsBatch(batchRequest);
+          }
         } catch (productError) {
-          console.error("[Submit] Failed to link products:", productError);
+          console.error("[Submit] Failed to manage products:", productError);
+          showError(
+            `Offer ${isEditMode ? "updated" : "created"}, but failed to ${
+              isEditMode ? "update" : "link"
+            } products. Creatives will still be saved.`
+          );
+        }
+      }
+
+      // Save creatives to the offer if any were created
+      // Note: This runs regardless of product linking success/failure
+      if (creatives.length > 0) {
+        try {
+          if (!user?.user_id) {
+            throw new Error("User ID not available for saving creatives");
+          }
+
+          // Create creatives for each channel/locale combination
+          const creativePromises = creatives.map(async (creative) => {
+            const creativePayload = {
+              offer_id: offerId,
+              channel: creative.channel,
+              locale: creative.locale,
+              title: creative.title || undefined,
+              text_body: creative.text_body || undefined,
+              html_body: creative.html_body || undefined,
+              variables: creative.variables || undefined,
+              created_by: user.user_id,
+            };
+
+            return await offerCreativeService.create(creativePayload);
+          });
+
+          await Promise.all(creativePromises);
+        } catch (creativeError) {
           showError(
             `Offer ${
               isEditMode ? "updated" : "created"
-            }, but failed to link products`
+            }, but failed to save creatives`
           );
           navigate("/dashboard/offers");
           return;
@@ -1112,45 +1354,74 @@ export default function CreateOfferPage() {
       // Parse API error response for better error messages
       let errorMessage = "Failed to create offer";
 
-      if (err && typeof err === "object" && "response" in err) {
-        const errorResponse = err as {
-          response?: {
-            data?: { message?: string; error?: string; details?: unknown };
-          };
-        };
-
-        if (errorResponse.response?.data?.message) {
-          errorMessage = errorResponse.response.data.message;
-        } else if (errorResponse.response?.data?.error) {
-          errorMessage = errorResponse.response.data.error;
-        } else if (errorResponse.response?.data?.details) {
-          // Handle validation errors from API
-          const details = errorResponse.response.data.details;
-          if (Array.isArray(details)) {
-            const fieldErrors: Record<string, string> = {};
-            details.forEach((detail: { field?: string; message?: string }) => {
-              if (detail.field) {
-                fieldErrors[detail.field] = detail.message || "Invalid value";
-              }
-            });
-            setValidationErrors(fieldErrors);
-            errorMessage = "Please fix the validation errors below";
-          } else if (typeof details === "object") {
-            setValidationErrors(details as Record<string, string>);
-            errorMessage = "Please fix the validation errors below";
-          }
-        }
-      } else if (err instanceof Error) {
+      // Handle Error objects (from service)
+      if (err instanceof Error) {
         errorMessage = err.message;
+      } else if (err && typeof err === "object") {
+        // Handle response objects
+        if ("response" in err) {
+          const errorResponse = err as {
+            response?: {
+              data?: { message?: string; error?: string; details?: unknown };
+            };
+          };
+
+          if (errorResponse.response?.data?.message) {
+            errorMessage = errorResponse.response.data.message;
+          } else if (errorResponse.response?.data?.error) {
+            errorMessage = errorResponse.response.data.error;
+          } else if (errorResponse.response?.data?.details) {
+            // Handle validation errors from API
+            const details = errorResponse.response.data.details;
+            if (Array.isArray(details)) {
+              const fieldErrors: Record<string, string> = {};
+              details.forEach(
+                (detail: { field?: string; message?: string }) => {
+                  if (detail.field) {
+                    fieldErrors[detail.field] =
+                      detail.message || "Invalid value";
+                  }
+                }
+              );
+              setValidationErrors(fieldErrors);
+              errorMessage = "Please fix the validation errors below";
+            } else if (typeof details === "object") {
+              setValidationErrors(details as Record<string, string>);
+              errorMessage = "Please fix the validation errors below";
+            }
+          }
+        } else if ("error" in err && typeof (err as any).error === "string") {
+          // Handle direct error objects
+          errorMessage = (err as any).error;
+        } else if (
+          "message" in err &&
+          typeof (err as any).message === "string"
+        ) {
+          errorMessage = (err as any).message;
+        }
       }
 
+      // Show error to user
+      showError("Error", errorMessage);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    isEditMode,
+    id,
+    validateForm,
+    clearValidationErrors,
+    formData,
+    selectedProducts,
+    user,
+    creatives,
+    navigate,
+    showError,
+    showToast,
+  ]);
 
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = useCallback(async () => {
     try {
       setIsSavingDraft(true);
       if (!formData.name.trim()) {
@@ -1161,7 +1432,7 @@ export default function CreateOfferPage() {
       const draftData: CreateOfferRequest = {
         name: formData.name,
         code: formData.code,
-        offer_type: formData.offer_type,
+        offer_type: formData.offer_type || OfferTypeEnum.DATA, // Default to DATA if not set for draft
         max_usage_per_customer: formData.max_usage_per_customer,
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
@@ -1186,34 +1457,55 @@ export default function CreateOfferPage() {
     } finally {
       setIsSavingDraft(false);
     }
-  };
+  }, [formData, navigate, showError, showToast]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     navigate("/dashboard/offers");
-  };
+  }, [navigate]);
 
-  const stepProps = {
-    currentStep,
-    totalSteps,
-    onNext: handleNext,
-    onPrev: handlePrev,
-    onSubmit: handleSubmit,
-    formData,
-    setFormData,
-    creatives,
-    setCreatives,
-    trackingSources,
-    setTrackingSources,
-    rewards,
-    setRewards,
-    isLoading,
-    validationErrors,
-    clearValidationErrors,
-    offerCategories,
-    categoriesLoading,
-    onSaveDraft: handleSaveDraft,
-    onCancel: handleCancel,
-  };
+  const stepProps = useMemo(
+    () => ({
+      currentStep,
+      totalSteps,
+      onNext: handleNext,
+      onPrev: handlePrev,
+      onSubmit: handleSubmit,
+      formData,
+      setFormData,
+      creatives,
+      setCreatives,
+      trackingSources,
+      setTrackingSources,
+      rewards,
+      setRewards,
+      isLoading,
+      validationErrors,
+      clearValidationErrors,
+      offerCategories,
+      categoriesLoading,
+      onSaveDraft: handleSaveDraft,
+      onCancel: handleCancel,
+    }),
+    [
+      currentStep,
+      totalSteps,
+      handleNext,
+      handlePrev,
+      handleSubmit,
+      formData,
+      // setFormData, setCreatives, etc. are stable - don't need in deps
+      creatives,
+      trackingSources,
+      rewards,
+      isLoading,
+      validationErrors,
+      clearValidationErrors,
+      offerCategories,
+      categoriesLoading,
+      handleSaveDraft,
+      handleCancel,
+    ]
+  );
 
   const getStepStatus = (stepId: number) => {
     if (stepId < currentStep) return "completed";
@@ -1221,30 +1513,19 @@ export default function CreateOfferPage() {
     return "upcoming";
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <BasicInfoStep {...stepProps} />;
-      case 2:
-        return (
-          <ProductStepWrapper
-            {...stepProps}
-            selectedProducts={selectedProducts}
-            onProductsChange={setSelectedProducts}
-          />
-        );
-      case 3:
-        return <OfferCreativeStepWrapper {...stepProps} />;
-      case 4:
-        return <OfferTrackingStepWrapper {...stepProps} />;
-      case 5:
-        return <OfferRewardStepWrapper {...stepProps} />;
-      case 6:
-        return <ReviewStep {...stepProps} />;
-      default:
-        return <BasicInfoStep {...stepProps} />;
-    }
-  };
+  // Render step directly in JSX instead of memoizing to avoid dependency issues
+
+  // Show loading state while loading offer data (after all hooks)
+  if (isLoadingOffer) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#588157] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading offer...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -1426,7 +1707,22 @@ export default function CreateOfferPage() {
             </div>
           )}
 
-          <div className="pb-10">{renderStep()}</div>
+          <div className="pb-10">
+            {currentStep === 1 && <BasicInfoStep {...stepProps} />}
+            {currentStep === 2 && (
+              <ProductStepWrapper
+                {...stepProps}
+                selectedProducts={selectedProducts}
+                onProductsChange={setSelectedProducts}
+                formData={formData}
+                setFormData={setFormData}
+              />
+            )}
+            {currentStep === 3 && <OfferCreativeStepWrapper {...stepProps} />}
+            {currentStep === 4 && <OfferTrackingStepWrapper {...stepProps} />}
+            {currentStep === 5 && <OfferRewardStepWrapper {...stepProps} />}
+            {currentStep === 6 && <ReviewStep {...stepProps} />}
+          </div>
 
           {/* Sticky Bottom Navigation */}
           <div className="sticky bottom-0 z-50 bg-white py-4">

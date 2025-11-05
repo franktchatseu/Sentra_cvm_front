@@ -39,6 +39,56 @@ export const colors = {
     info: "#C38BFB", // Info messages (Purple 500)
   },
 
+  // Tertiary tag colors for status indicators
+  tertiary: {
+    tag1: "#C38BFB", // Purple 500
+    tag2: "#FC9C9C", // Coral 500
+    tag3: "#F7B430", // Yellow 500
+    tag4: "#15803d", // Green 700 - same as stat cards (bg-green-100 text-green-700)
+    // Active tag colors matching stat cards (bg-green-100 text-green-700)
+    active: {
+      background: "#dcfce7", // green-100
+      text: "#15803d", // green-700
+    },
+  },
+
+  // Chart colors for distribution charts
+  charts: {
+    offers: {
+      discount: "#C38BFB", // Purple 500
+      cashback: "#FC9C9C", // Coral 500
+      freeShipping: "#F7B430", // Yellow 500
+      buyOneGetOne: "#94DF5A", // Green 500
+      voucher: "#4FDFF3", // Cyan/Teal for voucher (different from discount)
+    },
+    segments: {
+      dynamic: "#6B8E6B", // Lighter green (Green 600)
+      static: "#B84A6B", // Lighter red/maroon (Red 600)
+      trigger: "#A66B3D", // Lighter brown (Brown 600)
+      hybrid: "#5B6870", // Lighter neutral (NEUTRAL 600)
+    },
+    campaigns: {
+      active: "#94DF5A", // Green 500
+      pending: "#FC9C9C", // Coral 500
+      paused: "#F7B430", // Yellow 500
+      completed: "#66E8FA", // Brand 400
+      draft: "#6B7280", // Gray
+    },
+    products: {
+      // Color palette for product categories (rotating colors)
+      color1: "#C38BFB", // Purple
+      color2: "#FC9C9C", // Coral
+      color3: "#F7B430", // Yellow
+      color4: "#94DF5A", // Green
+      color5: "#4FDFF3", // Cyan
+      color6: "#6B8E6B", // Green 600
+      color7: "#B84A6B", // Red 600
+      color8: "#A66B3D", // Brown 600
+      color9: "#5B6870", // Neutral 600
+      color10: "#66E8FA", // Brand 400
+    },
+  },
+
   // Configuration status colors
   configStatus: {
     active: "#C38BFB", // Purple 500 - Active
@@ -79,24 +129,31 @@ export const colors = {
 };
 
 export const fonts = {
-  // Primary font for headlines and call-to-actions
+  // Primary font for main headings - Satoshi Variable
   primary: {
-    name: "Satoshi",
+    name: "Satoshi Variable",
     fallback:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
-  // Secondary font for body text, captions, and supporting elements
+  // Secondary font for sub-headings - Using Impact as primary (Et Mono fallback not available)
   secondary: {
-    name: "PP Supply Mono",
+    name: "Impact",
     fallback:
-      'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
+  },
+
+  // Tertiary font for card headings - PP Supply Mono
+  tertiary: {
+    name: "PP Supply Mono",
+    fallback: 'monospace, "Courier New", Courier, monospace',
   },
 
   weights: {
     normal: 400,
     medium: 500,
     bold: 700,
+    extraBold: 800, // For main headings
   },
 
   sizes: {
@@ -113,32 +170,70 @@ export const fonts = {
     displaySm: "3rem",
     displayMd: "3.75rem",
     displayLg: "4.5rem",
+    // New sizes for typography system
+    mainHeading: "5.472rem", // 87.552px
+    subHeading: "1.0944rem", // 17.5104px
   },
 
   typography: {
-    // Headings use Satoshi Bold with tight letter spacing
+    // Main Headings use Satoshi Variable with weight 800
+    mainHeading: {
+      size: "5.472rem", // 87.552px
+      weight: 800, // Extra bold
+      family: "primary",
+      lineHeight: "110%",
+      letterSpacing: "-4%",
+      fontKerning: "normal",
+    },
+    // Sub-headings use Impact with weight 400
+    subHeading: {
+      size: "1.0944rem", // 17.5104px
+      weight: 400, // Normal weight
+      family: "secondary",
+      lineHeight: "normal",
+      letterSpacing: "-8%", // -3px equivalent but percentage-based for responsiveness
+      fontKerning: "normal",
+    },
     heading: {
       size: "1.875rem",
-      weight: 400, // Regular weight
+      weight: 800, // Updated to extra bold to match main headings
       family: "primary",
       lineHeight: "120%",
       letterSpacing: "-4%",
     },
     subtitle: {
       size: "1.25rem",
-      weight: 500, // Medium instead of 600
-      family: "primary",
+      weight: 400, // Updated to match sub-headings
+      family: "secondary",
       lineHeight: "120%",
       letterSpacing: "-8%",
     },
     cardTitle: {
       size: "1.25rem",
-      weight: 500, // Medium instead of 600
+      weight: 500,
       family: "primary",
       lineHeight: "120%",
       letterSpacing: "-4%",
     },
-    // Body text uses PP Supply Mono with variable line heights
+    // Card headings use Satoshi Variable (different weight from main headings)
+    cardHeading: {
+      size: "1.125rem", // 18px
+      weight: 600, // Semi-bold weight from Satoshi Variable
+      family: "primary",
+      lineHeight: "normal",
+      letterSpacing: "0%",
+      fontKerning: "normal",
+    },
+    // Card sub-headings use sans-serif only
+    cardSubHeading: {
+      size: "0.875rem", // 14px
+      weight: 400, // Normal weight
+      family: "sans-serif", // System sans-serif font
+      lineHeight: "normal",
+      letterSpacing: "0%",
+      fontKerning: "normal",
+    },
+    // Body text uses secondary font with variable line heights
     body: {
       size: "1rem",
       weight: 400,

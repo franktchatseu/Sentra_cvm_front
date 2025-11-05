@@ -7,6 +7,8 @@ export const color = {
   surface: colors.surface,
   status: colors.status,
   configStatus: colors.configStatus,
+  tertiary: colors.tertiary,
+  charts: colors.charts,
   text: colors.text,
   interactive: colors.interactive,
   border: colors.border,
@@ -77,7 +79,17 @@ export const tw = {
   fontPrimary: "font-sans",
   fontSecondary: "font-mono",
 
-  // Typography classes using system fonts with proper line heights
+  // Typography classes using Satoshi Variable and Impact fonts
+  // Main headings - Satoshi Variable, weight 800, 87.552px, line-height 110%, letter-spacing -4%
+  mainHeading: `font-['Satoshi_Variable',sans-serif] text-[2rem] font-[800] leading-[110%] tracking-[-0.04em]`,
+  // Sub-headings - Impact, weight 400, 17.5104px, letter-spacing -8%
+  subHeading: `font-['Impact',sans-serif] text-[1.0944rem] font-normal leading-normal tracking-[-0.08em]`,
+  // Card headings - Satoshi Variable, weight 600, 18px
+  cardHeading: `font-['Satoshi_Variable',sans-serif] text-[1.125rem] font-semibold leading-normal`,
+  // Card sub-headings - sans-serif only, weight 400, 14px
+  cardSubHeading: `font-sans text-[0.875rem] font-normal leading-normal`,
+
+  // Legacy typography classes (for backward compatibility)
   heading: "text-3xl font-bold leading-[120%] tracking-[-0.04em]",
   subtitle: "text-xl font-medium leading-[120%] tracking-[-0.08em]",
   cardTitle: "text-lg font-medium leading-[120%] tracking-[-0.02em]",
@@ -88,7 +100,7 @@ export const tw = {
   buttonText: "text-sm font-medium leading-[130%] tracking-[0.02em]",
   label: "text-xs font-medium leading-[120%] tracking-[0.05em] uppercase",
 
-  button: `bg-[#252829] hover:bg-[#252829]/90 active:bg-[#252829]/80 text-white text-sm font-medium transition-colors px-6 py-2 rounded-lg`,
+  button: `bg-[#252829] active:bg-[#252829]/80 text-white text-sm font-medium transition-colors px-6 py-2 rounded-lg cursor-pointer`,
 };
 
 // Complete component styles - pre-built styles for common UI elements that you can use directly

@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
-import { Segment, CreateSegmentRequest, SegmentConditionGroup } from '../types/segment';
-import SegmentConditionsBuilder from './SegmentConditionsBuilder';
-import { segmentService } from '../services/segmentService';
-import { color, tw, button } from '../../../shared/utils/utils';
-import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
+import {
+  Segment,
+  CreateSegmentRequest,
+  SegmentConditionGroup,
+} from "../types/segment";
+import SegmentConditionsBuilder from "./SegmentConditionsBuilder";
+import { segmentService } from "../services/segmentService";
+import { color, tw, button } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 interface SegmentModalProps {
   isOpen: boolean;
@@ -14,21 +18,28 @@ interface SegmentModalProps {
   segment?: Segment | null;
 }
 
-export default function SegmentModal({ isOpen, onClose, onSave, segment }: SegmentModalProps) {
+export default function SegmentModal({
+  isOpen,
+  onClose,
+  onSave,
+  segment,
+}: SegmentModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     tags: [] as string[],
     conditions: [] as SegmentConditionGroup[],
     type: "dynamic",
-    category: undefined as number | undefined
+    category: undefined as number | undefined,
   });
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    []
+  );
 
   // Load categories
   useEffect(() => {
@@ -37,7 +48,7 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
         const response = await segmentService.getSegmentCategories();
         setCategories(response.data || []);
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.error("Failed to load categories:", err);
       }
     };
 
@@ -63,9 +74,9 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
               // Group rules by their order and operator
               const currentGroup: SegmentConditionGroup = {
                 id: Math.random().toString(36).substr(2, 9),
-                operator: 'AND',
-                conditionType: 'rule',
-                conditions: []
+                operator: "AND",
+                conditionType: "rule",
+                conditions: [],
               };
 
               for (const rule of rules) {
@@ -80,13 +91,28 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                 currentGroup.conditions.push({
                   id: Math.random().toString(36).substr(2, 9),
                   field: ruleJson.field,
-                  operator: ruleJson.operator as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in',
+                  operator: ruleJson.operator as
+                    | "equals"
+                    | "not_equals"
+                    | "contains"
+                    | "not_contains"
+                    | "greater_than"
+                    | "less_than"
+                    | "in"
+                    | "not_in",
                   value: ruleJson.value,
-                  type: (ruleJson.type as 'string' | 'number' | 'boolean' | 'array') || 'string'
+                  type:
+                    (ruleJson.type as
+                      | "string"
+                      | "number"
+                      | "boolean"
+                      | "array") || "string",
                 });
 
                 if (ruleJson.group_operator) {
-                  currentGroup.operator = ruleJson.group_operator as 'AND' | 'OR';
+                  currentGroup.operator = ruleJson.group_operator as
+                    | "AND"
+                    | "OR";
                 }
               }
 
@@ -95,35 +121,38 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
             setFormData({
               name: segment.name,
-              description: segment.description || '',
+              description: segment.description || "",
               tags: segment.tags || [],
-              conditions: conditionGroups.length > 0 ? conditionGroups : (segment.conditions || []),
+              conditions:
+                conditionGroups.length > 0
+                  ? conditionGroups
+                  : segment.conditions || [],
               type: "dynamic",
-              category: segment.category
+              category: segment.category,
             });
           } catch (err) {
-            console.error('Failed to load rules:', err);
+            console.error("Failed to load rules:", err);
             // Fallback to conditions from segment if rules fail to load
             setFormData({
               name: segment.name,
-              description: segment.description || '',
+              description: segment.description || "",
               tags: segment.tags || [],
               conditions: segment.conditions || [],
               type: "dynamic",
-              category: segment.category
+              category: segment.category,
             });
           }
         } else {
           setFormData({
-            name: '',
-            description: '',
+            name: "",
+            description: "",
             tags: [],
             type: "dynamic",
             conditions: [],
-            category: undefined
+            category: undefined,
           });
         }
-        setError('');
+        setError("");
         setPreviewCount(null);
       }
     };
@@ -132,25 +161,25 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
   }, [isOpen, segment]);
 
   const handleAddTag = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
+    if (e.key === "Enter" && tagInput.trim()) {
       e.preventDefault();
       const newTag = tagInput.trim().toLowerCase();
       if (!formData.tags.includes(newTag)) {
         const updatedTags = [...formData.tags, newTag];
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          tags: updatedTags
+          tags: updatedTags,
         }));
       }
-      setTagInput('');
+      setTagInput("");
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    const updatedTags = formData.tags.filter(tag => tag !== tagToRemove);
-    setFormData(prev => ({
+    const updatedTags = formData.tags.filter((tag) => tag !== tagToRemove);
+    setFormData((prev) => ({
       ...prev,
-      tags: updatedTags
+      tags: updatedTags,
     }));
   };
 
@@ -161,27 +190,33 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
     }
 
     setIsPreviewLoading(true);
-    setError('');
+    setError("");
 
     try {
       // Transform conditions to backend criteria format
       const criteria = {
-        conditions: formData.conditions.flatMap(group =>
-          group.conditions.map((condition: { field: string; operator: string; value: string | number | string[] }) => ({
-            field: condition.field,
-            operator: condition.operator,
-            value: condition.value
-          }))
-        )
+        conditions: formData.conditions.flatMap((group) =>
+          group.conditions.map(
+            (condition: {
+              field: string;
+              operator: string;
+              value: string | number | string[];
+            }) => ({
+              field: condition.field,
+              operator: condition.operator,
+              value: condition.value,
+            })
+          )
+        ),
       };
 
       // First validate the criteria
       const validationResult = await segmentService.validateCriteria({
-        criteria
+        criteria,
       });
 
       if (!validationResult.valid) {
-        setError(validationResult.errors?.join(', ') || 'Invalid criteria');
+        setError(validationResult.errors?.join(", ") || "Invalid criteria");
         setPreviewCount(null);
         return;
       }
@@ -189,14 +224,16 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
       // If validation passes, get preview data with sample size
       // Note: For new segments without ID, we use the legacy preview endpoint
       const previewResult = await segmentService.getSegmentPreview(
-        formData.conditions.flatMap(group => group.conditions) as unknown as Record<string, unknown>[]
+        formData.conditions.flatMap(
+          (group) => group.conditions
+        ) as unknown as Record<string, unknown>[]
       );
 
       setPreviewCount(previewResult.count || 0);
-      setError(''); // Clear any previous errors
+      setError(""); // Clear any previous errors
     } catch (err) {
-      console.error('Preview failed:', err);
-      setError((err as Error).message || 'Failed to preview segment');
+      console.error("Preview failed:", err);
+      setError((err as Error).message || "Failed to preview segment");
       setPreviewCount(null);
     } finally {
       setIsPreviewLoading(false);
@@ -205,14 +242,12 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
+    setError("");
 
     if (!formData.name.trim()) {
-      setError('Segment name is required');
+      setError("Segment name is required");
       return;
     }
-
 
     setIsLoading(true);
     try {
@@ -227,20 +262,23 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
           name: formData.name,
           description: formData.description,
           tags: formData.tags,
-          category: formData.category
+          category: formData.category,
         });
 
         // Extract segment from response (backend returns {success, message, data})
-        savedSegment = (updateResponse as { data?: Segment }).data || updateResponse as Segment;
+        savedSegment =
+          (updateResponse as { data?: Segment }).data ||
+          (updateResponse as Segment);
 
         // Get existing rules to delete them
-        const existingRulesResponse = await segmentService.getSegmentRules(segmentId);
+        const existingRulesResponse = await segmentService.getSegmentRules(
+          segmentId
+        );
 
         // Handle both response formats: array or {data: array}
         const existingRules = Array.isArray(existingRulesResponse)
           ? existingRulesResponse
           : (existingRulesResponse as { data?: unknown[] })?.data || [];
-
 
         // Delete all existing rules
         for (const rule of existingRules) {
@@ -260,9 +298,9 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                 operator: condition.operator,
                 value: condition.value,
                 type: condition.type,
-                group_operator: conditionGroup.operator
+                group_operator: conditionGroup.operator,
               },
-              rule_order: ruleOrder++
+              rule_order: ruleOrder++,
             });
           }
         }
@@ -273,12 +311,16 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
           description: formData.description,
           tags: formData.tags,
           type: "dynamic",
-          category: formData.category
+          category: formData.category,
         };
-        const createResponse = await segmentService.createSegment(createRequest);
+        const createResponse = await segmentService.createSegment(
+          createRequest
+        );
 
         // Extract segment from response (backend returns {success, message, data})
-        savedSegment = (createResponse as { data?: Segment }).data || createResponse as Segment;
+        savedSegment =
+          (createResponse as { data?: Segment }).data ||
+          (createResponse as Segment);
 
         // Now create rules for the new segment
         const segmentId = savedSegment.id || savedSegment.segment_id!;
@@ -292,9 +334,9 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
                 operator: condition.operator,
                 value: condition.value,
                 type: condition.type,
-                group_operator: conditionGroup.operator
+                group_operator: conditionGroup.operator,
               },
-              rule_order: ruleOrder++
+              rule_order: ruleOrder++,
             });
           }
         }
@@ -303,248 +345,323 @@ export default function SegmentModal({ isOpen, onClose, onSave, segment }: Segme
       onSave(savedSegment);
       onClose();
     } catch (err: unknown) {
-      setError((err as Error).message || 'Failed to save segment');
+      setError((err as Error).message || "Failed to save segment");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] overflow-y-auto">
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
-
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className={`flex items-center justify-between p-6 border-b border-[${tw.borderDefault}] bg-gradient-to-r from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 flex-shrink-0`}>
-            <div>
-              <h2 className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {segment ? 'Edit Segment' : 'Create New Segment'}
-              </h2>
-              <p className={`${tw.textSecondary} mt-1`}>
-                Define customer segments using rules and filters
-              </p>
-            </div>
-            <button
+  return isOpen
+    ? createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-black" />
-            </button>
-          </div>
+            />
 
-          {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto">
-            <form id="segment-form" onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Error Message */}
-              {error && (
-                <div className={`p-4 bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-lg`}>
-                  <p className={`text-sm text-[${color.status.danger}]`}>{error}</p>
-                </div>
-              )}
-
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div
+                className={`flex items-center justify-between p-6 border-b border-[${tw.borderDefault}] bg-gradient-to-r from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 flex-shrink-0`}
+              >
                 <div>
-                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
-                    Segment Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter segment name"
-                    className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
-                    required
-                  />
+                  <h2 className={`text-2xl font-bold ${tw.textPrimary}`}>
+                    {segment ? "Edit Segment" : "Create New Segment"}
+                  </h2>
+                  <p className={`${tw.textSecondary} mt-1`}>
+                    Define customer segments using rules and filters
+                  </p>
                 </div>
-
-                <div>
-                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
-                    Segment Catalog
-                  </label>
-                  <HeadlessSelect
-                    options={[
-                      { value: '', label: 'No catalog (Uncategorized)' },
-                      ...categories.map(cat => ({ value: cat.id, label: cat.name }))
-                    ]}
-                    value={formData.category || ''}
-                    onChange={(value) => setFormData(prev => ({ ...prev, category: value ? Number(value) : undefined }))}
-                    placeholder="Select a catalog"
-                  />
-                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-black" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
-                    Tags
-                  </label>
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
+              {/* Content - Scrollable */}
+              <div className="flex-1 overflow-y-auto">
+                <form
+                  id="segment-form"
+                  onSubmit={handleSubmit}
+                  className="p-6 space-y-6"
+                >
+                  {/* Error Message */}
+                  {error && (
+                    <div
+                      className={`p-4 bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-lg`}
+                    >
+                      <p className={`text-sm text-[${color.status.danger}]`}>
+                        {error}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                      >
+                        Segment Name *
+                      </label>
                       <input
                         type="text"
-                        value={tagInput}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setTagInput(value);
-
-                          // Auto-add tag when comma is typed
-                          if (value.includes(',')) {
-                            const tag = value.replace(',', '').trim();
-                            if (tag && !formData.tags.includes(tag.toLowerCase())) {
-                              const updatedTags = [...formData.tags, tag.toLowerCase()];
-                              setFormData(prev => ({ ...prev, tags: updatedTags }));
-                              setTagInput('');
-                            }
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          handleAddTag(e);
-                        }}
-                        placeholder="Type tags separated by commas (e.g., premium, high-value)"
-                        className={`flex-1 px-4 py-3 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder="Enter segment name"
+                        className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
+                        required
                       />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (tagInput.trim()) {
-                            const newTag = tagInput.trim().toLowerCase();
-                            if (!formData.tags.includes(newTag)) {
-                              const updatedTags = [...formData.tags, newTag];
-                              setFormData(prev => ({ ...prev, tags: updatedTags }));
-                              setTagInput('');
-                            }
-                          }
-                        }}
-                        className="transition-colors text-sm"
-                        style={{
-                          backgroundColor: button.secondaryAction.background,
-                          color: button.secondaryAction.color,
-                          border: button.secondaryAction.border,
-                          borderRadius: button.secondaryAction.borderRadius,
-                          paddingTop: button.secondaryAction.paddingY,
-                          paddingBottom: button.secondaryAction.paddingY,
-                          paddingLeft: button.secondaryAction.paddingX,
-                          paddingRight: button.secondaryAction.paddingX
-                        }}
-                      >
-                        Add
-                      </button>
                     </div>
-                    {formData.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {formData.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className={`inline-flex items-center px-3 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
+
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                      >
+                        Segment Catalog
+                      </label>
+                      <HeadlessSelect
+                        options={[
+                          { value: "", label: "No catalog (Uncategorized)" },
+                          ...categories.map((cat) => ({
+                            value: cat.id,
+                            label: cat.name,
+                          })),
+                        ]}
+                        value={formData.category || ""}
+                        onChange={(value) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            category: value ? Number(value) : undefined,
+                          }))
+                        }
+                        placeholder="Select a catalog"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label
+                        className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                      >
+                        Tags
+                      </label>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={tagInput}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setTagInput(value);
+
+                              // Auto-add tag when comma is typed
+                              if (value.includes(",")) {
+                                const tag = value.replace(",", "").trim();
+                                if (
+                                  tag &&
+                                  !formData.tags.includes(tag.toLowerCase())
+                                ) {
+                                  const updatedTags = [
+                                    ...formData.tags,
+                                    tag.toLowerCase(),
+                                  ];
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    tags: updatedTags,
+                                  }));
+                                  setTagInput("");
+                                }
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              handleAddTag(e);
+                            }}
+                            placeholder="Type tags separated by commas (e.g., premium, high-value)"
+                            className={`flex-1 px-4 py-3 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (tagInput.trim()) {
+                                const newTag = tagInput.trim().toLowerCase();
+                                if (!formData.tags.includes(newTag)) {
+                                  const updatedTags = [
+                                    ...formData.tags,
+                                    newTag,
+                                  ];
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    tags: updatedTags,
+                                  }));
+                                  setTagInput("");
+                                }
+                              }
+                            }}
+                            className="transition-colors text-sm"
+                            style={{
+                              backgroundColor:
+                                button.secondaryAction.background,
+                              color: button.secondaryAction.color,
+                              border: button.secondaryAction.border,
+                              borderRadius: button.secondaryAction.borderRadius,
+                              paddingTop: button.secondaryAction.paddingY,
+                              paddingBottom: button.secondaryAction.paddingY,
+                              paddingLeft: button.secondaryAction.paddingX,
+                              paddingRight: button.secondaryAction.paddingX,
+                            }}
                           >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveTag(tag)}
-                              className={`ml-2 text-[${color.primary.accent}] hover:text-[${color.primary.accent}]/80`}
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
+                            Add
+                          </button>
+                        </div>
+                        {formData.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {formData.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className={`inline-flex items-center px-3 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
+                              >
+                                {tag}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveTag(tag)}
+                                  className={`ml-2 text-[${color.primary.accent}] hover:text-[${color.primary.accent}]/80`}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <div>
-                <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe this segment..."
-                  rows={3}
-                  className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-lg text-sm`}
-                />
-              </div>
-
-              {/* Segment Conditions */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <label className={`block text-sm font-medium ${tw.textPrimary}`}>
-                    Segment Conditions *
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    {previewCount !== null && (
-                      <span className={`text-sm ${tw.textSecondary}`}>
-                        {previewCount.toLocaleString()} customers
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handlePreview}
-                      disabled={isPreviewLoading || formData.conditions.length === 0}
-                      className={`inline-flex items-center text-sm transition-colors`}
-                      style={{
-                        backgroundColor: button.secondaryAction.background,
-                        color: button.secondaryAction.color,
-                        border: button.secondaryAction.border,
-                        borderRadius: button.secondaryAction.borderRadius,
-                        paddingTop: button.secondaryAction.paddingY,
-                        paddingBottom: button.secondaryAction.paddingY,
-                        paddingLeft: button.secondaryAction.paddingX,
-                        paddingRight: button.secondaryAction.paddingX
-                      }}
+                  <div>
+                    <label
+                      className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
                     >
-                      {isPreviewLoading ? 'Loading...' : 'Preview'}
-                    </button>
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                      placeholder="Describe this segment..."
+                      rows={3}
+                      className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-lg text-sm`}
+                    />
                   </div>
-                </div>
 
-                <div className={`border border-[${tw.borderDefault}] rounded-lg p-4 bg-[${color.surface.cards}]`}>
-                  <SegmentConditionsBuilder
-                    conditions={formData.conditions}
-                    onChange={(conditions) => setFormData(prev => ({ ...prev, conditions }))}
-                  />
-                </div>
+                  {/* Segment Conditions */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <label
+                        className={`block text-sm font-medium ${tw.textPrimary}`}
+                      >
+                        Segment Conditions *
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        {previewCount !== null && (
+                          <span className={`text-sm ${tw.textSecondary}`}>
+                            {previewCount.toLocaleString()} customers
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handlePreview}
+                          disabled={
+                            isPreviewLoading || formData.conditions.length === 0
+                          }
+                          className={`inline-flex items-center text-sm transition-colors`}
+                          style={{
+                            backgroundColor: button.secondaryAction.background,
+                            color: button.secondaryAction.color,
+                            border: button.secondaryAction.border,
+                            borderRadius: button.secondaryAction.borderRadius,
+                            paddingTop: button.secondaryAction.paddingY,
+                            paddingBottom: button.secondaryAction.paddingY,
+                            paddingLeft: button.secondaryAction.paddingX,
+                            paddingRight: button.secondaryAction.paddingX,
+                          }}
+                        >
+                          {isPreviewLoading ? "Loading..." : "Preview"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`border border-[${tw.borderDefault}] rounded-lg p-4 bg-[${color.surface.cards}]`}
+                    >
+                      <SegmentConditionsBuilder
+                        conditions={formData.conditions}
+                        onChange={(conditions) =>
+                          setFormData((prev) => ({ ...prev, conditions }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
 
-          {/* Footer - Sticky */}
-          <div className={`flex items-center justify-end space-x-4 p-6 border-t border-[${tw.borderDefault}]  flex-shrink-0`}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${tw.borderDefault}] rounded-lg hover:bg-[${color.surface.cards}] transition-colors text-sm`}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="segment-form"
-              disabled={isLoading}
-              className="inline-flex items-center px-6 py-2 text-white rounded-lg transition-colors text-sm"
-              style={{ backgroundColor: isLoading ? color.text.muted : color.primary.action }}
-              onMouseEnter={(e) => {
-                if (!isLoading) {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isLoading) {
-                  (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                }
-              }}
-            >
-              {isLoading ? 'Saving...' : segment ? 'Update Segment' : 'Create Segment'}
-            </button>
+              {/* Footer - Sticky */}
+              <div
+                className={`flex items-center justify-end space-x-4 p-6 border-t border-[${tw.borderDefault}]  flex-shrink-0`}
+              >
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${tw.borderDefault}] rounded-lg hover:bg-[${color.surface.cards}] transition-colors text-sm`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="segment-form"
+                  disabled={isLoading}
+                  className="inline-flex items-center px-6 py-2 text-white rounded-lg transition-colors text-sm"
+                  style={{
+                    backgroundColor: isLoading
+                      ? color.text.muted
+                      : color.primary.action,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading) {
+                      (e.target as HTMLButtonElement).style.backgroundColor =
+                        color.primary.action;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading) {
+                      (e.target as HTMLButtonElement).style.backgroundColor =
+                        color.primary.action;
+                    }
+                  }}
+                >
+                  {isLoading
+                    ? "Saving..."
+                    : segment
+                    ? "Update Segment"
+                    : "Create Segment"}
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
+        </div>,
+        document.body
+      )
+    : null;
 }

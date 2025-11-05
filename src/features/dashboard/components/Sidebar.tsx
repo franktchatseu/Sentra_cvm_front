@@ -88,7 +88,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     "offer management",
     "product management",
     "segment management",
-    "configuration",
   ]);
 
   const navigation: NavigationItem[] = [
@@ -134,6 +133,27 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "campaigns",
         },
+        {
+          name: "Campaign Catalogs",
+          href: "/dashboard/campaign-catalogs",
+          icon: Folder,
+          type: "single",
+          entity: "campaigns",
+        },
+        {
+          name: "Line of Business",
+          href: "/dashboard/line-of-business",
+          icon: Briefcase,
+          type: "single",
+          entity: "campaigns",
+        },
+        {
+          name: "Campaign Communication Policy",
+          href: "/dashboard/campaign-communication-policy",
+          icon: Bell,
+          type: "single",
+          entity: "campaigns",
+        },
       ],
     },
     {
@@ -154,6 +174,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           name: "Offer Types",
           href: "/dashboard/offer-types",
           icon: Tag,
+          type: "single",
+          entity: "offers",
+        },
+        {
+          name: "Offer Catalogs",
+          href: "/dashboard/offer-catalogs",
+          icon: FolderOpen,
           type: "single",
           entity: "offers",
         },
@@ -180,6 +207,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "products",
         },
+        {
+          name: "Product Catalogs",
+          href: "/dashboard/products/catalogs",
+          icon: FolderOpen,
+          type: "single",
+          entity: "products",
+        },
       ],
     },
     {
@@ -203,6 +237,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "segments",
         },
+        {
+          name: "Segment Catalogs",
+          href: "/dashboard/segment-catalogs",
+          icon: FolderOpen,
+          type: "single",
+          entity: "segments",
+        },
       ],
     },
     {
@@ -216,52 +257,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       name: "Configuration",
       href: "/dashboard/configuration",
       icon: Cog,
-      type: "parent",
+      type: "single",
       entity: "configuration",
-      children: [
-        {
-          name: "Campaign Catalogs",
-          href: "/dashboard/campaign-catalogs",
-          icon: Folder,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Offer Catalogs",
-          href: "/dashboard/offer-catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Product Catalogs",
-          href: "/dashboard/products/catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Segment Catalogs",
-          href: "/dashboard/segment-catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Line of Business",
-          href: "/dashboard/line-of-business",
-          icon: Briefcase,
-          type: "single",
-          entity: "configuration",
-        },
-        {
-          name: "Campaign Communication Policy",
-          href: "/dashboard/campaign-communication-policy",
-          icon: Bell,
-          type: "single",
-          entity: "configuration",
-        },
-      ],
     },
   ];
 
@@ -386,9 +383,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           onClick={() =>
                             toggleExpanded(item.name.toLowerCase())
                           }
-                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(
-                            isActive
-                          )}`}
+                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-300 ease-out ${
+                            !isActive ? "hover:scale-105 hover:shadow-lg" : ""
+                          } ${getItemClasses(isActive)}`}
                         >
                           <div className="flex items-center gap-x-3">
                             <Icon
@@ -516,9 +513,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={item.name}
                       to={item.href}
                       onClick={handleLinkClick}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(
-                        isActive
-                      )}`}
+                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-300 ease-out ${
+                        !isActive ? "hover:scale-105 hover:shadow-lg" : ""
+                      } ${getItemClasses(isActive)}`}
                     >
                       <Icon
                         className={`h-5 w-5 shrink-0 ${getIconClasses(
@@ -538,7 +535,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Desktop Sidebar - Minimized on md/lg, Full on xl */}
       <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-32 xl:w-80 md:flex-col">
         <div
-          className="flex flex-col h-screen border-r border-gray-200 md:px-3 xl:px-6 py-6"
+          className="flex flex-col h-screen md:px-3 xl:px-6 py-6"
           style={{
             background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`,
           }}
@@ -575,9 +572,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     >
                       <button
                         onClick={() => toggleExpanded(item.name.toLowerCase())}
-                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(
-                          isActive
-                        )}`}
+                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out ${
+                          !isActive ? "hover:scale-105 hover:shadow-lg" : ""
+                        } ${getItemClasses(isActive)}`}
                         title={item.name}
                       >
                         <div className="flex items-center gap-x-3">
@@ -805,7 +802,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </ul>
           </nav>
 
-          <div className="pt-6 border-t border-gray-200 flex-shrink-0">
+          <div className="pt-6 flex-shrink-0">
             <ul className="md:space-y-1 xl:space-y-1">
               {secondaryNavigation.map((item, index) => {
                 const Icon = item.icon;
@@ -821,7 +818,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }}
                   >
                     <Link
-                      to={item.href}
+                      to="#"
+                      onClick={(e) => e.preventDefault()}
                       className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(
                         isActive
                       )}`}

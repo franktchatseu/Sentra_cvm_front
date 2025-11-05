@@ -131,16 +131,8 @@ export default function CategorySelector({
           <button
             type="button"
             onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
-            className="px-3 py-2 text-white rounded-lg transition-colors flex items-center justify-center text-sm"
+            className="px-3 py-2 text-white rounded-lg flex items-center justify-center text-sm"
             style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.accent;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
             title="Create new catalog"
           >
             <Plus className="w-4 h-4" />

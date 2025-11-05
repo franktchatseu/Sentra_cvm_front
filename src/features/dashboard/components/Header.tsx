@@ -1,8 +1,8 @@
-import { Bell, Search, User, LogOut, Menu } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
-import logo from '../../../assets/efforte.png';
-import { User as UserType } from '../../../shared/types/auth';
-import { color } from '../../../shared/utils/utils';
+import { Bell, Search, User, LogOut, Menu } from "lucide-react";
+import { useAuth } from "../../../contexts/AuthContext";
+import logo from "../../../assets/efforte.png";
+import { User as UserType } from "../../../features/auth/types/auth";
+import { color } from "../../../shared/utils/utils";
 interface HeaderProps {
   onMenuClick?: () => void;
 }
@@ -14,7 +14,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
     <header
       className="sticky top-0 z-40 m-0 p-0"
       style={{
-        background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`
+        background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`,
       }}
     >
       <div className="flex h-16 items-center justify-between px-5 lg:px-8">
@@ -32,7 +32,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               className="w-full pl-10 pr-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60"
               placeholder="Search campaigns, products, users..."
               type="search"
-              style={{ outline: 'none' }}
+              style={{ outline: "none" }}
             />
           </div>
         </div>
@@ -54,8 +54,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 <User className="w-6 h-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <div className="text-sm font-medium text-white">{user?.email || 'User'}</div>
-                <div className="text-xs font-medium leading-[140%] tracking-[0.05em] text-white/70">Administrator</div>
+                <div className="text-sm font-medium text-white">
+                  {user?.email || "User"}
+                </div>
+                <div className="text-xs font-medium leading-[140%] tracking-[0.05em] text-white/70">
+                  Administrator
+                </div>
               </div>
             </div>
 
@@ -73,25 +77,22 @@ export default function Header({ onMenuClick }: HeaderProps) {
   );
 }
 
-
-
-
 interface GuestHeaderProps {
   isLoaded?: boolean;
   className?: string;
   onLogout?: () => void;
   showLogo?: boolean;
   showUserInfo?: boolean;
-  variant?: 'default' | 'transparent' | 'solid';
+  variant?: "default" | "transparent" | "solid";
 }
 
 export function GuestHeader({
   isLoaded = true,
-  className = '',
+  className = "",
   onLogout,
   showLogo = true,
   showUserInfo = true,
-  variant = 'default'
+  variant = "default",
 }: GuestHeaderProps) {
   const { user, logout } = useAuth();
 
@@ -102,28 +103,29 @@ export function GuestHeader({
       try {
         await logout();
       } catch (error) {
-        console.error('Logout failed:', error);
+        console.error("Logout failed:", error);
       }
     }
   };
 
   const getHeaderStyles = () => {
     const baseStyles = "relative z-10 transition-all duration-1000 ease-out";
-    const loadedStyles = isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0';
+    const loadedStyles = isLoaded
+      ? "translate-y-0 opacity-100"
+      : "-translate-y-4 opacity-0";
 
     switch (variant) {
-      case 'transparent':
+      case "transparent":
         return `${baseStyles} ${loadedStyles} bg-transparent border-b border-white/10`;
-      case 'solid':
+      case "solid":
         return `${baseStyles} ${loadedStyles} bg-[#0a192f] border-b border-white/20`;
-      case 'default':
+      case "default":
       default:
         return `${baseStyles} ${loadedStyles} bg-[#0a192f]/90 backdrop-blur-sm border-b border-white/10`;
     }
   };
 
   return (
-
     <header className={`${getHeaderStyles()} ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20 lg:h-24">
@@ -142,7 +144,7 @@ export function GuestHeader({
           {showUserInfo && (
             <div className="flex items-center space-x-4">
               <div className="text-sm text-white/80">
-                {(user as UserType & { email?: string })?.email || 'User'}
+                {(user as UserType & { email?: string })?.email || "User"}
               </div>
 
               <button

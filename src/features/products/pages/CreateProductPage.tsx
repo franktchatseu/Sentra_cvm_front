@@ -16,12 +16,13 @@ export default function CreateProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState<CreateProductRequest>({
-    product_id: "",
+    product_code: "",
     name: "",
-    da_id: "",
+    price: 0,
     description: "",
     category_id: undefined,
-    is_active: true,
+    currency: "USD",
+    da_id: "",
   });
 
   // Preselect category from URL parameter
@@ -40,11 +41,12 @@ export default function CreateProductPage() {
 
     // Validate required fields
     if (
-      !formData.product_id.trim() ||
+      !formData.product_code.trim() ||
       !formData.name.trim() ||
-      !formData?.da_id?.trim()
+      formData.price <= 0 ||
+      !formData.da_id.trim()
     ) {
-      setError("Product ID, Name, and DA ID are required");
+      setError("Product Code, Name, Price, and DA ID are required");
       return;
     }
 
@@ -62,8 +64,11 @@ export default function CreateProductPage() {
       // Extract detailed error message from backend response
       let errorMessage = "Failed to create product";
 
-      if (err && typeof err === "object") {
-        // Check for response.data.error or response.data.message
+      if (err instanceof Error) {
+        // Error from service (already extracted and translated to user-friendly message)
+        errorMessage = err.message;
+      } else if (err && typeof err === "object") {
+        // Fallback for axios-style errors or other error formats
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = err as any;
         if (error.response?.data?.error) {
@@ -120,22 +125,22 @@ export default function CreateProductPage() {
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 transition-shadow hover:shadow-md">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Product ID */}
+            {/* Product Code */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product ID <span className="text-red-500">*</span>
+                Product Code <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
-                value={formData.product_id}
+                value={formData.product_code}
                 onChange={(e) =>
-                  handleInputChange("product_id", e.target.value)
+                  handleInputChange("product_code", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="e.g., VOICE_BUNDLE_001"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -153,26 +158,44 @@ export default function CreateProductPage() {
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
                 placeholder="e.g., Premium Voice Bundle"
               />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Price <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.price}
+                onChange={(e) =>
+                  handleInputChange("price", parseFloat(e.target.value) || 0)
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                placeholder="0.00"
+              />
+              <p className="text-sm text-gray-500 mt-1">Product price</p>
             </div>
 
             {/* DA ID */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                DA ID *
+                DA ID <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={formData.da_id}
                 onChange={(e) => handleInputChange("da_id", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
-                placeholder="e.g., DA_001"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                placeholder="Enter DA ID"
               />
               <p className="text-sm text-gray-500 mt-1">
-                Data Analytics identifier
+                Digital Asset identifier
               </p>
             </div>
 
@@ -203,40 +226,201 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm  "
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
                 placeholder="Describe the product features and benefits..."
               />
             </div>
 
-            {/* Status */}
-            <div>
+            {/* Currency - COMMENTED OUT */}
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
+                Currency
               </label>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="is_active"
-                    checked={formData.is_active === true}
-                    onChange={() => handleInputChange("is_active", true)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 "
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Active</span>
+              <select
+                value={formData.currency || "USD"}
+                onChange={(e) => handleInputChange("currency", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+              >
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="KES">KES</option>
+              </select>
+            </div> */}
+          </div>
+
+          {/* Optional Fields - COMMENTED OUT */}
+          {/* 
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Optional Fields
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cost
                 </label>
-                <label className="flex items-center">
+                <div className="relative">
                   <input
-                    type="radio"
-                    name="is_active"
-                    checked={formData.is_active === false}
-                    onChange={() => handleInputChange("is_active", false)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 "
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.cost || ""}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "cost",
+                        parseFloat(e.target.value) || undefined
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm pr-8"
+                    placeholder="0.00"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Inactive</span>
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                    {formData.currency || "USD"}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Product cost for margin calculation
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  DA ID
                 </label>
+                <input
+                  type="text"
+                  value={formData.da_id || ""}
+                  onChange={(e) => handleInputChange("da_id", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                  placeholder="e.g., DA_001"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Data Analytics identifier
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Validity (Days)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.validity_days || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "validity_days",
+                      parseInt(e.target.value) || undefined
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                  placeholder="e.g., 30"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Product validity in days
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Validity (Hours)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.validity_hours || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "validity_hours",
+                      parseInt(e.target.value) || undefined
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                  placeholder="e.g., 24"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Product validity in hours
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Available Quantity
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.available_quantity || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "available_quantity",
+                      parseInt(e.target.value) || undefined
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                  placeholder="e.g., 100"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Stock quantity available
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Requires Inventory
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.requires_inventory || false}
+                    onChange={(e) =>
+                      handleInputChange("requires_inventory", e.target.checked)
+                    }
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Track inventory for this product
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Effective From
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.effective_from || ""}
+                  onChange={(e) =>
+                    handleInputChange("effective_from", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  When the product becomes available
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Effective To
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.effective_to || ""}
+                  onChange={(e) =>
+                    handleInputChange("effective_to", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  When the product expires
+                </p>
               </div>
             </div>
           </div>
+          */}
 
           {/* Actions */}
           <div className="flex justify-between pt-6">

@@ -1,8 +1,4 @@
-import {
-  API_CONFIG,
-  buildApiUrl,
-  getAuthHeaders,
-} from "../../../shared/services/api";
+import { buildApiUrl, getAuthHeaders } from "../../../shared/services/api";
 import {
   ProductCategory as ProductCategoryType,
   ApiResponse,
@@ -16,8 +12,7 @@ import {
 } from "../types/productCategory";
 
 class ProductCategoryService {
-  private baseUrl =
-    "http://cvm.groupngs.com:8080/api/database-service/product-categories";
+  private baseUrl = buildApiUrl("/product-categories");
 
   private async request<T>(
     endpoint: string,

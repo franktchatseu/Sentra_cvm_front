@@ -1,16 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Package,
-  Save,
-  AlertCircle
-} from 'lucide-react';
-import { Product, UpdateProductRequest } from '../types/product';
-import { productService } from '../services/productService';
-import CategorySelector from '../../../shared/components/CategorySelector';
-import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
-import { color, tw } from '../../../shared/utils/utils';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Package, Save, AlertCircle } from "lucide-react";
+import { Product, UpdateProductRequest } from "../types/product";
+import { productService } from "../services/productService";
+import CategorySelector from "../../../shared/components/CategorySelector";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import { color, tw } from "../../../shared/utils/utils";
 
 export default function EditProductPage() {
   const navigate = useNavigate();
@@ -20,12 +15,13 @@ export default function EditProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<UpdateProductRequest>({
-    product_id: '',
-    name: '',
-    da_id: '',
-    description: '',
+    product_code: "",
+    name: "",
+    da_id: "",
+    description: "",
     category_id: undefined,
-    is_active: true
+    price: 0,
+    currency: "USD",
   });
 
   useEffect(() => {
@@ -34,25 +30,31 @@ export default function EditProductPage() {
     }
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-
   const loadProduct = async () => {
     try {
       setIsLoadingProduct(true);
       setError(null);
-      const productData = await productService.getProductById(id!, 'id');
+      const response = await productService.getProductById(Number(id), true);
+
+      if (!response.data) {
+        throw new Error("Product not found");
+      }
+
+      const productData = response.data;
       setProduct(productData);
 
       // Populate form with existing data based on API response structure
       setFormData({
-        product_id: productData.product_id,
-        name: productData.name,
-        da_id: productData.da_id,
-        description: productData.description || '',
-        category_id: productData.category_id ? parseInt(productData.category_id) : undefined,
-        is_active: productData.is_active
+        product_code: productData.product_code || "",
+        name: productData.name || "",
+        da_id: productData.da_id || "",
+        description: productData.description || "",
+        category_id: productData.category_id,
+        price: productData.price || 0,
+        currency: productData.currency || "USD",
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load product');
+      setError(err instanceof Error ? err.message : "Failed to load product");
     } finally {
       setIsLoadingProduct(false);
     }
@@ -62,8 +64,12 @@ export default function EditProductPage() {
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.name?.trim() || !formData.da_id?.trim()) {
-      setError('Product name and DA ID are required');
+    if (
+      !formData.name?.trim() ||
+      !formData.product_code?.trim() ||
+      !formData.da_id?.trim()
+    ) {
+      setError("Product code, name, and DA ID are required");
       return;
     }
 
@@ -71,13 +77,23 @@ export default function EditProductPage() {
       setIsLoading(true);
       setError(null);
 
-      await productService.updateProduct(Number(id), formData);
-      navigate('/dashboard/products');
+      // Remove is_active from update payload as backend doesn't accept it
+      // Status is controlled via activate/deactivate endpoints, not through update
+      const { is_active, ...updateData } = formData;
+
+      // Update product data
+      await productService.updateProduct(Number(id), updateData);
+
+      navigate("/dashboard/products");
     } catch (err) {
       // Extract detailed error message from backend response
-      let errorMessage = 'Failed to update product';
+      let errorMessage = "Failed to update product";
 
-      if (err && typeof err === 'object') {
+      if (err instanceof Error) {
+        // Error from service (already extracted and translated to user-friendly message)
+        errorMessage = err.message;
+      } else if (err && typeof err === "object") {
+        // Fallback for axios-style errors or other error formats
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const error = err as any;
         if (error.response?.data?.error) {
@@ -89,22 +105,32 @@ export default function EditProductPage() {
         }
       }
 
-      console.error('Product update error:', err);
+      console.error("Product update error:", err);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (field: keyof UpdateProductRequest, value: string | number | boolean | undefined) => {
+  const handleInputChange = (
+    field: keyof UpdateProductRequest,
+    value: string | number | boolean | undefined
+  ) => {
     setFormData({ ...formData, [field]: value });
   };
 
   if (isLoadingProduct) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <LoadingSpinner variant="modern" size="xl" color="primary" className="mb-4" />
-        <p className={`${tw.textMuted} font-medium text-sm`}>Loading product...</p>
+        <LoadingSpinner
+          variant="modern"
+          size="xl"
+          color="primary"
+          className="mb-4"
+        />
+        <p className={`${tw.textMuted} font-medium text-sm`}>
+          Loading product...
+        </p>
       </div>
     );
   }
@@ -114,10 +140,14 @@ export default function EditProductPage() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Product not found</h3>
-          <p className="text-gray-500 mb-6">The product you're looking for doesn't exist.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Product not found
+          </h3>
+          <p className="text-gray-500 mb-6">
+            The product you're looking for doesn't exist.
+          </p>
           <button
-            onClick={() => navigate('/dashboard/products')}
+            onClick={() => navigate("/dashboard/products")}
             className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200"
           >
             Back to Products
@@ -132,7 +162,7 @@ export default function EditProductPage() {
       {/* Header */}
       <div>
         <button
-          onClick={() => navigate('/dashboard/products')}
+          onClick={() => navigate("/dashboard/products")}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -140,7 +170,7 @@ export default function EditProductPage() {
         </button>
 
         <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Edit Product
           </h1>
           <p className="text-gray-600 text-sm">Update product information</p>
@@ -156,22 +186,27 @@ export default function EditProductPage() {
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 transition-shadow hover:shadow-md">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Product ID */}
+            {/* Product Code */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product ID
+                Product Code <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                value={formData.product_id}
-                onChange={(e) => handleInputChange('product_id', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
+                required
+                value={formData.product_code}
+                onChange={(e) =>
+                  handleInputChange("product_code", e.target.value)
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="e.g., VOICE_BUNDLE_001"
               />
-              <p className="text-sm text-gray-500 mt-1">Unique identifier for the product</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Unique identifier for the product
+              </p>
             </div>
 
             {/* Product Name */}
@@ -183,10 +218,28 @@ export default function EditProductPage() {
                 type="text"
                 required
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
                 placeholder="e.g., Premium Voice Bundle"
               />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Price <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.price}
+                onChange={(e) =>
+                  handleInputChange("price", parseFloat(e.target.value) || 0)
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                placeholder="0.00"
+              />
+              <p className="text-sm text-gray-500 mt-1">Product price</p>
             </div>
 
             {/* DA ID */}
@@ -198,67 +251,44 @@ export default function EditProductPage() {
                 type="text"
                 required
                 value={formData.da_id}
-                onChange={(e) => handleInputChange('da_id', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg "
-                placeholder="e.g., DA_001"
+                onChange={(e) => handleInputChange("da_id", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                placeholder="Enter DA ID"
               />
-              <p className="text-sm text-gray-500 mt-1">Data Analytics identifier</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Digital Asset identifier
+              </p>
             </div>
 
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                Catalog
               </label>
               <CategorySelector
                 value={formData.category_id}
-                onChange={(categoryId) => handleInputChange('category_id', categoryId)}
-                placeholder="Select or create a category"
+                onChange={(categoryId) =>
+                  handleInputChange("category_id", categoryId)
+                }
+                placeholder="Select Catalog"
                 allowCreate={true}
               />
             </div>
-          </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg "
-              placeholder="Describe the product features and benefits..."
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="is_active"
-                  checked={formData.is_active === true}
-                  onChange={() => handleInputChange('is_active', true)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
-                />
-                <span className="ml-2 text-sm text-gray-700">Active</span>
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
               </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="is_active"
-                  checked={formData.is_active === false}
-                  onChange={() => handleInputChange('is_active', false)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:outline-none"
-                />
-                <span className="ml-2 text-sm text-gray-700">Inactive</span>
-              </label>
+              <textarea
+                rows={4}
+                value={formData.description}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
+                placeholder="Describe the product features and benefits..."
+              />
             </div>
           </div>
 
@@ -266,27 +296,47 @@ export default function EditProductPage() {
           <div className="flex justify-between pt-6">
             <button
               type="button"
-              onClick={() => navigate('/dashboard/products')}
-              className="px-3 py-2 border text-sm border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              onClick={() => navigate("/dashboard/products")}
+              className="px-3 py-2 text-sm rounded-lg flex items-center gap-2 border transition-colors"
+              style={{
+                borderColor: color.border.default,
+                color: color.text.secondary,
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  color.interactive.hover;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  "transparent";
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
               style={{ backgroundColor: color.primary.action }}
-              onMouseEnter={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
-              onMouseLeave={(e) => { if (!isLoading) (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action; }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  (e.target as HTMLButtonElement).style.backgroundColor =
+                    color.primary.action;
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  color.primary.action;
+              }}
             >
               {isLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   Updating...
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
+                  <Save className="w-5 h-5" />
                   Update Product
                 </>
               )}
