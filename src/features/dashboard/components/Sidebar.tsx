@@ -535,7 +535,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Desktop Sidebar - Minimized on md/lg, Full on xl */}
       <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-32 xl:w-80 md:flex-col">
         <div
-          className="flex flex-col h-screen border-r border-gray-200 md:px-3 xl:px-6 py-6"
+          className="flex flex-col h-screen md:px-3 xl:px-6 py-6"
           style={{
             background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`,
           }}

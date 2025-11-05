@@ -39,6 +39,19 @@ export const colors = {
     info: "#C38BFB", // Info messages (Purple 500)
   },
 
+  // Tertiary tag colors for status indicators
+  tertiary: {
+    tag1: "#C38BFB", // Purple 500
+    tag2: "#FC9C9C", // Coral 500
+    tag3: "#F7B430", // Yellow 500
+    tag4: "#15803d", // Green 700 - same as stat cards (bg-green-100 text-green-700)
+    // Active tag colors matching stat cards (bg-green-100 text-green-700)
+    active: {
+      background: "#dcfce7", // green-100
+      text: "#15803d", // green-700
+    },
+  },
+
   // Chart colors for distribution charts
   charts: {
     offers: {
@@ -60,6 +73,19 @@ export const colors = {
       paused: "#F7B430", // Yellow 500
       completed: "#66E8FA", // Brand 400
       draft: "#6B7280", // Gray
+    },
+    products: {
+      // Color palette for product categories (rotating colors)
+      color1: "#C38BFB", // Purple
+      color2: "#FC9C9C", // Coral
+      color3: "#F7B430", // Yellow
+      color4: "#94DF5A", // Green
+      color5: "#4FDFF3", // Cyan
+      color6: "#6B8E6B", // Green 600
+      color7: "#B84A6B", // Red 600
+      color8: "#A66B3D", // Brown 600
+      color9: "#5B6870", // Neutral 600
+      color10: "#66E8FA", // Brand 400
     },
   },
 

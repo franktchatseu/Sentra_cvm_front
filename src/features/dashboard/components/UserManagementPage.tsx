@@ -30,7 +30,7 @@ export default function UserManagementPage() {
   const [errorState, setErrorState] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "requests">("users");
-  const [filterRole, setFilterRole] = useState<"all" | "admin" | "user">("all");
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
   >("all");
@@ -281,24 +281,32 @@ export default function UserManagementPage() {
     }
   };
 
+  // Get unique departments from users
+  const uniqueDepartments = Array.from(
+    new Set(
+      users
+        .map((user) => user.department)
+        .filter((dept) => dept && dept.trim() !== "")
+    )
+  ).sort();
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.email_address || user.email || "")
         .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (user.role_name || "").toLowerCase().includes(searchTerm.toLowerCase());
+        .includes(searchTerm.toLowerCase());
 
-    const matchesRole =
-      filterRole === "all" ||
-      (user.role_name || "").toLowerCase() === filterRole;
+    const matchesDepartment =
+      filterDepartment === "all" ||
+      (user.department || "").toLowerCase() === filterDepartment.toLowerCase();
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" && user.status === "active") ||
       (filterStatus === "inactive" && user.status !== "active");
 
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesDepartment && matchesStatus;
   });
 
   const filteredRequests = accountRequests.filter((request: any) => {
@@ -311,13 +319,9 @@ export default function UserManagementPage() {
         .includes(searchTerm.toLowerCase()) ||
       (request.email_address || request.email || "")
         .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (request.role || "").toLowerCase().includes(searchTerm.toLowerCase());
+        .includes(searchTerm.toLowerCase());
 
-    const matchesRole =
-      filterRole === "all" || (request.role || "").toLowerCase() === filterRole;
-
-    return matchesSearch && matchesRole;
+    return matchesSearch;
   });
 
   return (
@@ -421,16 +425,16 @@ export default function UserManagementPage() {
           <div className="flex gap-3">
             <HeadlessSelect
               options={[
-                { value: "all", label: "All Roles" },
-                { value: "admin", label: "Admin" },
-                { value: "user", label: "User" },
+                { value: "all", label: "All Departments" },
+                ...uniqueDepartments.map((dept) => ({
+                  value: dept.toLowerCase(),
+                  label: dept,
+                })),
               ]}
-              value={filterRole}
-              onChange={(value) =>
-                setFilterRole(value as "all" | "admin" | "user")
-              }
-              placeholder="Select role"
-              className="min-w-[140px]"
+              value={filterDepartment}
+              onChange={(value) => setFilterDepartment(value as string)}
+              placeholder="Select department"
+              className="min-w-[160px]"
             />
 
             <HeadlessSelect

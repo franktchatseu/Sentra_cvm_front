@@ -7,6 +7,7 @@ export const color = {
   surface: colors.surface,
   status: colors.status,
   configStatus: colors.configStatus,
+  tertiary: colors.tertiary,
   charts: colors.charts,
   text: colors.text,
   interactive: colors.interactive,

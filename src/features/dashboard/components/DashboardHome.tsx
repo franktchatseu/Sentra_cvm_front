@@ -12,11 +12,13 @@ import {
   Package,
   Folder,
   ShoppingBag,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { tw, color } from "../../../shared/utils/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import { offerService } from "../../offers/services/offerService";
 import { segmentService } from "../../segments/services/segmentService";
 import { productService } from "../../products/services/productService";
@@ -49,10 +51,22 @@ export default function DashboardHome() {
   const [offerDistributionLoading, setOfferDistributionLoading] =
     useState(true);
 
-  // State for recent activity filter
-  const [recentActivityFilter, setRecentActivityFilter] = useState<
-    "campaigns" | "offers" | "segments"
+  // State for latest items filter
+  const [latestItemsFilter, setLatestItemsFilter] = useState<
+    "campaigns" | "offers" | "segments" | "products"
   >("campaigns");
+
+  // State for dropdown (mobile)
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useClickOutside(dropdownRef, () => setIsFilterDropdownOpen(false));
+
+  // State for latest items data
+  const [recentOffers, setRecentOffers] = useState<any[]>([]);
+  const [recentSegments, setRecentSegments] = useState<any[]>([]);
+  const [recentProducts, setRecentProducts] = useState<any[]>([]);
 
   // State for stats
   const [offersStats, setOffersStats] = useState<{
@@ -66,94 +80,192 @@ export default function DashboardHome() {
     total: number;
   } | null>(null);
 
-  // Fetch Offer Type Distribution (using dummy data for now)
-  useEffect(() => {
-    // Using dummy data for now - will connect to real endpoint later
-    const dummyData = [
-      { name: "Discount", value: 45, color: color.charts.offers.discount },
-      { name: "Cashback", value: 22, color: color.charts.offers.cashback },
-      {
-        name: "Free Shipping",
-        value: 12,
-        color: color.charts.offers.freeShipping,
-      },
-      {
-        name: "Buy One Get One",
-        value: 8,
-        color: color.charts.offers.buyOneGetOne,
-      },
-      { name: "Voucher", value: 5, color: color.charts.offers.voucher },
-    ];
-    setOfferTypeDistribution(dummyData);
-    setOfferDistributionLoading(false);
+  // State for percentage changes
+  const [percentageChanges, setPercentageChanges] = useState<{
+    offers: number | null;
+    segments: number | null;
+    products: number | null;
+  }>({
+    offers: null,
+    segments: null,
+    products: null,
+  });
 
-    // TODO: Uncomment when ready to use real endpoint
-    // const fetchOfferTypeDistribution = async () => {
-    //   try {
-    //     setOfferDistributionLoading(true);
-    //     const response = await offerService.getTypeDistribution();
-    //     const data = response.data || response;
-    //     const colors = [
-    //       "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
-    //       "#EC4899", "#06B6D4", "#84CC16",
-    //     ];
-    //     const chartData = [
-    //       { name: "Data", value: data.data || 0, color: colors[0] },
-    //       { name: "Voice", value: data.voice || 0, color: colors[1] },
-    //       { name: "SMS", value: data.sms || 0, color: colors[2] },
-    //       { name: "Combo", value: data.combo || 0, color: colors[3] },
-    //       { name: "Voucher", value: data.voucher || 0, color: colors[4] },
-    //       { name: "Loyalty", value: data.loyalty || 0, color: colors[5] },
-    //       { name: "Discount", value: data.discount || 0, color: colors[6] },
-    //       { name: "Bundle", value: data.bundle || 0, color: colors[7] },
-    //       { name: "Bonus", value: data.bonus || 0, color: colors[0] },
-    //       { name: "Other", value: data.other || 0, color: colors[1] },
-    //     ].filter((item) => item.value > 0);
-    //     setOfferTypeDistribution(chartData.length > 0 ? chartData : dummyData);
-    //   } catch (error) {
-    //     console.error("Error fetching offer type distribution:", error);
-    //     setOfferTypeDistribution(dummyData);
-    //   } finally {
-    //     setOfferDistributionLoading(false);
-    //   }
-    // };
-    // fetchOfferTypeDistribution();
+  // State for segment type distribution
+  const [segmentTypeDistribution, setSegmentTypeDistribution] = useState<
+    Array<{
+      type: string;
+      count: number;
+      percentage: number;
+      color: string;
+    }>
+  >([]);
+
+  // State for top performing offers
+  // const [topOffers, setTopOffers] = useState<
+  //   Array<{
+  //     id: number;
+  //     name: string;
+  //     status: string;
+  //   }>
+  // >([]);
+
+  // Fetch Offer Type Distribution
+  useEffect(() => {
+    const fetchOfferTypeDistribution = async () => {
+      try {
+        setOfferDistributionLoading(true);
+        const response = await offerService.getTypeDistribution();
+
+        if (response.success && response.data) {
+          const data = response.data;
+
+          // Map API response to chart format using token colors
+          const typeColorMap: Record<string, string> = {
+            discount: color.charts.offers.discount,
+            cashback: color.charts.offers.cashback,
+            freeShipping: color.charts.offers.freeShipping,
+            buyOneGetOne: color.charts.offers.buyOneGetOne,
+            voucher: color.charts.offers.voucher,
+            data: color.charts.offers.discount, // Fallback color
+            voice: color.charts.offers.cashback,
+            sms: color.charts.offers.freeShipping,
+            combo: color.charts.offers.buyOneGetOne,
+            loyalty: color.charts.offers.voucher,
+            bundle: color.charts.offers.discount,
+            bonus: color.charts.offers.cashback,
+          };
+
+          // Handle array format: [{ offer_type: "data", count: "5" }]
+          let chartData: Array<{ name: string; value: number; color: string }> =
+            [];
+
+          if (Array.isArray(data)) {
+            chartData = data
+              .filter((item) => {
+                const count = parseInt(item.count || "0", 10);
+                return count > 0;
+              })
+              .map((item) => {
+                const offerType = (item.offer_type || "").toLowerCase();
+                const count = parseInt(item.count || "0", 10);
+                return {
+                  name: offerType.charAt(0).toUpperCase() + offerType.slice(1),
+                  value: count,
+                  color:
+                    typeColorMap[offerType] || color.charts.offers.discount,
+                };
+              });
+          } else {
+            // Fallback: Handle object format if API changes
+            chartData = Object.entries(data)
+              .filter(([_, value]) => {
+                const numValue =
+                  typeof value === "number"
+                    ? value
+                    : parseInt(String(value), 10);
+                return numValue > 0;
+              })
+              .map(([type, value]) => {
+                const numValue =
+                  typeof value === "number"
+                    ? value
+                    : parseInt(String(value), 10);
+                return {
+                  name: type.charAt(0).toUpperCase() + type.slice(1),
+                  value: numValue,
+                  color:
+                    typeColorMap[type.toLowerCase()] ||
+                    color.charts.offers.discount,
+                };
+              });
+          }
+
+          setOfferTypeDistribution(chartData.length > 0 ? chartData : []);
+        } else {
+          setOfferTypeDistribution([]);
+        }
+      } catch (error) {
+        // Fallback to empty state
+        setOfferTypeDistribution([]);
+      } finally {
+        setOfferDistributionLoading(false);
+      }
+    };
+
+    fetchOfferTypeDistribution();
   }, []);
 
   // Fetch stats for offers, segments, and products
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch offers stats
+        // Fetch offers stats - try getStats first, fallback to searchOffers for total count
         const offersResponse = await offerService.getStats();
         if (offersResponse.success && offersResponse.data) {
-          setOffersStats({
-            total: offersResponse.data.totalOffers || 0,
-            active: offersResponse.data.activeOffers || 0,
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching offers stats:", error);
-      }
-
-      try {
-        // Fetch segments stats
-        const segmentsResponse = await segmentService.getSegmentStats();
-        if (segmentsResponse.success && segmentsResponse.data) {
-          // Try to get total from pagination or stats
-          const segmentsList = await segmentService.getSegments({ limit: 1 });
-          if (segmentsList.total !== undefined) {
-            setSegmentsStats({
-              total: segmentsList.total,
-            });
-          } else if (segmentsResponse.data.total) {
-            setSegmentsStats({
-              total: segmentsResponse.data.total,
+          const total = offersResponse.data.totalOffers || 0;
+          const active = offersResponse.data.activeOffers || 0;
+          if (total > 0 || active > 0) {
+            setOffersStats({ total, active });
+          } else {
+            // Fallback: get total from pagination if stats returns 0
+            const offersList = await offerService.searchOffers({ limit: 1 });
+            if (offersList.pagination?.total !== undefined) {
+              setOffersStats({
+                total: offersList.pagination.total,
+                active: active || 0,
+              });
+            } else {
+              setOffersStats({ total: 0, active: 0 });
+            }
+          }
+        } else {
+          // Fallback: get total from pagination
+          const offersList = await offerService.searchOffers({ limit: 1 });
+          if (offersList.pagination?.total !== undefined) {
+            setOffersStats({
+              total: offersList.pagination.total,
+              active: 0,
             });
           }
         }
       } catch (error) {
-        console.error("Error fetching segments stats:", error);
+        // Final fallback: try to get total from pagination
+        try {
+          const offersList = await offerService.searchOffers({ limit: 1 });
+          if (offersList.pagination?.total !== undefined) {
+            setOffersStats({
+              total: offersList.pagination.total,
+              active: 0,
+            });
+          } else {
+            setOffersStats({ total: 0, active: 0 });
+          }
+        } catch (fallbackError) {
+          setOffersStats({ total: 0, active: 0 });
+        }
+      }
+
+      try {
+        // Fetch segments stats - use getSegments with limit 1 to get total from pagination
+        const segmentsList = await segmentService.getSegments({ limit: 1 });
+        if (segmentsList.total !== undefined) {
+          setSegmentsStats({
+            total: segmentsList.total,
+          });
+        } else {
+          // Fallback: try getSegmentStats if available
+          const segmentsResponse = await segmentService.getSegmentStats();
+          if (segmentsResponse.success && segmentsResponse.data) {
+            const total =
+              (segmentsResponse.data as any).total_segments ||
+              (segmentsResponse.data as any).total ||
+              0;
+            setSegmentsStats({ total });
+          }
+        }
+      } catch (error) {
+        setSegmentsStats({ total: 0 });
       }
 
       try {
@@ -165,18 +277,401 @@ export default function DashboardHome() {
           });
         }
       } catch (error) {
-        console.error("Error fetching products stats:", error);
+        setProductsStats({ total: 0 });
       }
     };
 
     fetchStats();
   }, []);
 
+  // Fetch latest items (offers, segments, products)
+  useEffect(() => {
+    const fetchLatestItems = async () => {
+      try {
+        // Fetch latest offers
+        const offersResponse = await offerService.searchOffers({ limit: 3 });
+        if (
+          offersResponse.success &&
+          offersResponse.data &&
+          offersResponse.data.length > 0
+        ) {
+          const formattedOffers = offersResponse.data
+            .slice(0, 3)
+            .map((offer: any) => {
+              return {
+                id: offer.id,
+                name: offer.name,
+                status: offer.status?.toLowerCase() || "draft",
+                type: offer.offer_type || "Unknown",
+                created: offer.created_at
+                  ? new Date(offer.created_at).toLocaleDateString()
+                  : "Unknown",
+                created_at: offer.created_at,
+              };
+            });
+          setRecentOffers(formattedOffers);
+        }
+      } catch (error) {}
+
+      try {
+        // Fetch latest segments
+        const segmentsResponse = await segmentService.getSegments({ limit: 3 });
+        if (
+          segmentsResponse.data &&
+          Array.isArray(segmentsResponse.data) &&
+          segmentsResponse.data.length > 0
+        ) {
+          const formattedSegments = segmentsResponse.data
+            .slice(0, 3)
+            .map((segment: any) => {
+              return {
+                id: segment.id,
+                name: segment.name,
+                type: segment.type || "Unknown",
+                members: segment.size_estimate ?? 0,
+                created: segment.created_at
+                  ? new Date(segment.created_at).toLocaleDateString()
+                  : "Unknown",
+                created_at: segment.created_at,
+              };
+            });
+          setRecentSegments(formattedSegments);
+        }
+      } catch (error) {}
+
+      try {
+        // Fetch latest products
+        const productsResponse = await productService.getAllProducts({
+          limit: 3,
+        });
+        if (
+          productsResponse.data &&
+          Array.isArray(productsResponse.data) &&
+          productsResponse.data.length > 0
+        ) {
+          const formattedProducts = productsResponse.data
+            .slice(0, 3)
+            .map((product: any) => {
+              return {
+                id: product.id,
+                name: product.name,
+                code: product.product_code || "N/A",
+                status: product.is_active ? "active" : "inactive",
+                created: product.created_at
+                  ? new Date(product.created_at).toLocaleDateString()
+                  : "Unknown",
+                created_at: product.created_at,
+              };
+            });
+          setRecentProducts(formattedProducts);
+        }
+      } catch (error) {}
+    };
+
+    fetchLatestItems();
+  }, []);
+
+  // Fetch Top Performing Offers
+  // useEffect(() => {
+  //   const fetchTopOffers = async () => {
+  //     try {
+  //       // Fetch active offers, then sort by most recently created/updated
+  //       const response = await offerService.getActiveOffers({ limit: 20 });
+  //       if (
+  //         response.data &&
+  //         Array.isArray(response.data) &&
+  //         response.data.length > 0
+  //       ) {
+  //         // Sort by created_at (newest first) to show most recently active offers
+  //         const sortedOffers = [...response.data].sort((a: any, b: any) => {
+  //           const dateA = new Date(a.created_at || a.updated_at || 0).getTime();
+  //           const dateB = new Date(b.created_at || b.updated_at || 0).getTime();
+  //           return dateB - dateA; // Newest first
+  //         });
+
+  //         // Take top 4 most recent active offers
+  //         const offers = sortedOffers.slice(0, 4).map((offer: any) => ({
+  //           id: offer.id,
+  //           name: offer.name || offer.offer_name || "Unnamed Offer",
+  //           status: offer.status || "Unknown",
+  //           created_at: offer.created_at,
+  //         }));
+  //         setTopOffers(offers);
+  //       } else {
+  //         // Fallback to empty array
+  //         setTopOffers([]);
+  //       }
+  //     } catch (error) {
+  //       // On error, keep empty array
+  //       setTopOffers([]);
+  //     }
+  //   };
+
+  //   fetchTopOffers();
+  // }, []);
+
+  // Fetch Segment Type Distribution
+  useEffect(() => {
+    const fetchSegmentTypeDistribution = async () => {
+      try {
+        const response = await segmentService.getTypeDistribution();
+
+        if (response.success && response.data) {
+          const data = response.data;
+
+          // Handle array format: [{ type: "dynamic", count: "1" }]
+          let distribution: Array<{
+            type: string;
+            count: number;
+            percentage: number;
+            color: string;
+          }> = [];
+
+          if (Array.isArray(data)) {
+            // Calculate total from array
+            const total = data.reduce((sum, item) => {
+              return sum + parseInt(item.count || "0", 10);
+            }, 0);
+
+            distribution = data
+              .map((item) => {
+                const segmentType = (item.type || "").toLowerCase();
+                const count = parseInt(item.count || "0", 10);
+                const percentage = total > 0 ? (count / total) * 100 : 0;
+
+                // Map type to color
+                const typeColorMap: Record<string, string> = {
+                  dynamic: color.charts.segments.dynamic,
+                  static: color.charts.segments.static,
+                  trigger: color.charts.segments.trigger,
+                  hybrid: color.charts.segments.hybrid,
+                };
+
+                return {
+                  type:
+                    segmentType.charAt(0).toUpperCase() + segmentType.slice(1),
+                  count,
+                  percentage,
+                  color:
+                    typeColorMap[segmentType] || color.charts.segments.dynamic,
+                };
+              })
+              .filter((item) => item.count > 0);
+          } else {
+            // Fallback: Handle object format if API changes
+            const total =
+              data.total || data.dynamic + data.static + data.trigger || 0;
+
+            distribution = [
+              {
+                type: "Dynamic",
+                count: parseInt(String(data.dynamic || 0), 10),
+                percentage:
+                  total > 0
+                    ? (parseInt(String(data.dynamic || 0), 10) / total) * 100
+                    : 0,
+                color: color.charts.segments.dynamic,
+              },
+              {
+                type: "Static",
+                count: parseInt(String(data.static || 0), 10),
+                percentage:
+                  total > 0
+                    ? (parseInt(String(data.static || 0), 10) / total) * 100
+                    : 0,
+                color: color.charts.segments.static,
+              },
+              {
+                type: "Trigger",
+                count: parseInt(String(data.trigger || 0), 10),
+                percentage:
+                  total > 0
+                    ? (parseInt(String(data.trigger || 0), 10) / total) * 100
+                    : 0,
+                color: color.charts.segments.trigger,
+              },
+            ].filter((item) => item.count > 0);
+          }
+
+          setSegmentTypeDistribution(distribution);
+        } else {
+          setSegmentTypeDistribution([]);
+        }
+      } catch (error) {
+        setSegmentTypeDistribution([]);
+      }
+    };
+
+    fetchSegmentTypeDistribution();
+  }, []);
+
+  // Calculate percentage changes (vs last month)
+  useEffect(() => {
+    const calculatePercentageChanges = async () => {
+      try {
+        // Calculate date ranges for current month vs previous month
+        const now = new Date();
+        const currentMonthStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          1
+        );
+        const currentMonthEnd = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999
+        );
+        const previousMonthStart = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          1
+        );
+        const previousMonthEnd = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          0,
+          23,
+          59,
+          59,
+          999
+        );
+
+        // Calculate Offers percentage change using date range
+        try {
+          const currentOffers = await offerService.getOffersByDateRange({
+            startDate: currentMonthStart.toISOString(),
+            endDate: currentMonthEnd.toISOString(),
+            limit: 1,
+          });
+          const previousOffers = await offerService.getOffersByDateRange({
+            startDate: previousMonthStart.toISOString(),
+            endDate: previousMonthEnd.toISOString(),
+            limit: 1,
+          });
+
+          const currentCount = currentOffers.pagination?.total || 0;
+          const previousCount = previousOffers.pagination?.total || 0;
+
+          const offersChange =
+            previousCount > 0
+              ? ((currentCount - previousCount) / previousCount) * 100
+              : currentCount > 0
+              ? 100
+              : 0;
+
+          setPercentageChanges((prev) => ({
+            ...prev,
+            offers: offersChange,
+          }));
+        } catch (error) {}
+
+        // Calculate Segments percentage change using date-based filtering
+        // Get all segments and filter by created_at date
+        try {
+          // Get all segments (we'll filter by created_at client-side)
+          const allSegments = await segmentService.getSegments({ limit: 1000 });
+
+          if (allSegments.data && Array.isArray(allSegments.data)) {
+            const currentMonthSegments = allSegments.data.filter((segment) => {
+              if (!segment.created_at) return false;
+              const createdDate = new Date(segment.created_at);
+              return (
+                createdDate >= currentMonthStart &&
+                createdDate <= currentMonthEnd
+              );
+            });
+
+            const previousMonthSegments = allSegments.data.filter((segment) => {
+              if (!segment.created_at) return false;
+              const createdDate = new Date(segment.created_at);
+              return (
+                createdDate >= previousMonthStart &&
+                createdDate <= previousMonthEnd
+              );
+            });
+
+            const currentCount = currentMonthSegments.length;
+            const previousCount = previousMonthSegments.length;
+
+            const segmentsChange =
+              previousCount > 0
+                ? ((currentCount - previousCount) / previousCount) * 100
+                : currentCount > 0
+                ? 100
+                : 0;
+
+            setPercentageChanges((prev) => ({
+              ...prev,
+              segments: segmentsChange,
+            }));
+          }
+        } catch (error) {}
+
+        // Calculate Products percentage change using date-based filtering
+        // Get all products and filter by created_at date
+        try {
+          // Get all products (we'll filter by created_at client-side)
+          const allProducts = await productService.getAllProducts({
+            limit: 1000,
+          });
+
+          if (allProducts.data && Array.isArray(allProducts.data)) {
+            const currentMonthProducts = allProducts.data.filter((product) => {
+              if (!product.created_at) return false;
+              const createdDate = new Date(product.created_at);
+              return (
+                createdDate >= currentMonthStart &&
+                createdDate <= currentMonthEnd
+              );
+            });
+
+            const previousMonthProducts = allProducts.data.filter((product) => {
+              if (!product.created_at) return false;
+              const createdDate = new Date(product.created_at);
+              return (
+                createdDate >= previousMonthStart &&
+                createdDate <= previousMonthEnd
+              );
+            });
+
+            const currentCount = currentMonthProducts.length;
+            const previousCount = previousMonthProducts.length;
+
+            const productsChange =
+              previousCount > 0
+                ? ((currentCount - previousCount) / previousCount) * 100
+                : currentCount > 0
+                ? 100
+                : 0;
+
+            setPercentageChanges((prev) => ({
+              ...prev,
+              products: productsChange,
+            }));
+          }
+        } catch (error) {}
+      } catch (error) {}
+    };
+
+    // Only calculate if we have current stats
+    if (
+      offersStats !== null ||
+      segmentsStats !== null ||
+      productsStats !== null
+    ) {
+      calculatePercentageChanges();
+    }
+  }, [offersStats, segmentsStats, productsStats]);
+
   // Stats data - campaigns hardcoded, others use real data
   const stats = [
     {
       name: "Active Campaigns",
-      value: "24", // Hardcoded as per user request
+      value: "10", // Hardcoded as per user request
       change: "+12%",
       changeType: "positive" as const,
       icon: Target,
@@ -184,22 +679,52 @@ export default function DashboardHome() {
     {
       name: "Total Segments",
       value: segmentsStats?.total?.toLocaleString() || "0",
-      change: "+8%", // Placeholder - can be calculated from trends later
-      changeType: "positive" as const,
+      change:
+        percentageChanges.segments !== null
+          ? `${
+              percentageChanges.segments >= 0 ? "+" : ""
+            }${percentageChanges.segments.toFixed(1)}%`
+          : "N/A",
+      changeType:
+        percentageChanges.segments !== null
+          ? percentageChanges.segments >= 0
+            ? "positive"
+            : "negative"
+          : "positive",
       icon: Users,
     },
     {
       name: "Total Offers",
       value: offersStats?.total?.toLocaleString() || "0",
-      change: "-3%", // Placeholder - can be calculated from trends later
-      changeType: "negative" as const,
+      change:
+        percentageChanges.offers !== null
+          ? `${
+              percentageChanges.offers >= 0 ? "+" : ""
+            }${percentageChanges.offers.toFixed(1)}%`
+          : "N/A",
+      changeType:
+        percentageChanges.offers !== null
+          ? percentageChanges.offers >= 0
+            ? "positive"
+            : "negative"
+          : "positive",
       icon: Package,
     },
     {
       name: "Total Products",
       value: productsStats?.total?.toLocaleString() || "0",
-      change: "+15%", // Placeholder - can be calculated from trends later
-      changeType: "positive" as const,
+      change:
+        percentageChanges.products !== null
+          ? `${
+              percentageChanges.products >= 0 ? "+" : ""
+            }${percentageChanges.products.toFixed(1)}%`
+          : "+15%", // Placeholder if calculation not available
+      changeType:
+        percentageChanges.products !== null
+          ? percentageChanges.products >= 0
+            ? "positive"
+            : "negative"
+          : "positive",
       icon: ShoppingBag,
     },
     {
@@ -253,54 +778,6 @@ export default function DashboardHome() {
     },
   ];
 
-  const recentOffers = [
-    {
-      id: 1,
-      name: "Spring Sale - 20% Off",
-      status: "active",
-      type: "Discount",
-      created: "2 hours ago",
-    },
-    {
-      id: 2,
-      name: "Free Shipping Weekend",
-      status: "active",
-      type: "Free Shipping",
-      created: "5 hours ago",
-    },
-    {
-      id: 3,
-      name: "Cashback Special",
-      status: "pending",
-      type: "Cashback",
-      created: "1 day ago",
-    },
-  ];
-
-  const recentSegments = [
-    {
-      id: 1,
-      name: "High Value Customers Q1",
-      type: "Dynamic",
-      members: 12450,
-      created: "3 hours ago",
-    },
-    {
-      id: 2,
-      name: "New Product Interest",
-      type: "Trigger",
-      members: 8900,
-      created: "1 day ago",
-    },
-    {
-      id: 3,
-      name: "Premium Members List",
-      type: "Static",
-      members: 5600,
-      created: "2 days ago",
-    },
-  ];
-
   // CVM-relevant metrics: Top Performing Campaigns
   const topCampaigns = [
     {
@@ -329,7 +806,7 @@ export default function DashboardHome() {
     },
   ];
 
-  // CVM-relevant metrics: Top Performing Offers
+  // Dummy data for top performing offers
   const topOffers = [
     {
       id: 1,
@@ -389,27 +866,6 @@ export default function DashboardHome() {
     },
   ];
 
-  const segmentTypeDistribution = [
-    {
-      type: "Dynamic",
-      count: 98,
-      percentage: 62.8,
-      color: color.charts.segments.dynamic,
-    },
-    {
-      type: "Static",
-      count: 45,
-      percentage: 28.8,
-      color: color.charts.segments.static,
-    },
-    {
-      type: "Trigger",
-      count: 13,
-      percentage: 8.4,
-      color: color.charts.segments.trigger,
-    },
-  ];
-
   // CVM-relevant: Items requiring attention
   const requiresAttention = [
     {
@@ -453,7 +909,7 @@ export default function DashboardHome() {
       icon: Target,
     },
     { name: "New Offer", href: "/dashboard/offers/create", icon: Package },
-    { name: "Build Segment", href: "/dashboard/segments/create", icon: Users },
+    { name: "Build Segment", href: "/dashboard/segments", icon: Users },
     {
       name: "Create Product",
       href: "/dashboard/products/create",
@@ -479,7 +935,16 @@ export default function DashboardHome() {
     return "user";
   };
 
+  // Helper function to convert hex to rgba
+  const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
   const getStatusColor = (status: string) => {
+    // Map status to standard Tailwind color classes
     switch (status.toLowerCase()) {
       case "active":
         return "bg-green-100 text-green-700 border-green-200";
@@ -521,13 +986,12 @@ export default function DashboardHome() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className="p-2 rounded-lg"
-                      style={{ backgroundColor: `${color.primary.accent}15` }}
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: color.primary.accent,
+                      }}
                     >
-                      <Icon
-                        className="h-5 w-5"
-                        style={{ color: color.primary.accent }}
-                      />
+                      <Icon className="h-5 w-5 text-white" />
                     </div>
                     <div className="space-y-1">
                       <p className={`text-3xl font-bold ${tw.textPrimary}`}>
@@ -565,35 +1029,105 @@ export default function DashboardHome() {
         })}
       </div>
 
-      {/* Recent Activity and Quick Actions - Side by Side */}
+      {/* Recently Added and Quick Actions - Side by Side */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Recent Activity - Takes 2 columns */}
+        {/* Recently Added - Takes 2 columns */}
         <div className="xl:col-span-2">
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full">
             <div className="px-6 py-4 border-b border-gray-100">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className={tw.cardHeading}>Recent Activity</h2>
+                  <h2 className={tw.cardHeading}>Recently Added</h2>
                   <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                    Latest campaigns, offers, and segments
+                    Newly created campaigns, offers, segments, and products
                   </p>
                 </div>
-                {/* Filter Tabs */}
-                <div className="flex gap-2">
+
+                {/* Filter Dropdown - Mobile/Tablet */}
+                <div
+                  className="xl:hidden relative w-full sm:w-auto"
+                  ref={dropdownRef}
+                >
+                  <button
+                    onClick={() =>
+                      setIsFilterDropdownOpen(!isFilterDropdownOpen)
+                    }
+                    className="w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all border border-gray-200"
+                  >
+                    <span>
+                      {[
+                        { key: "campaigns", label: "Campaigns" },
+                        { key: "offers", label: "Offers" },
+                        { key: "segments", label: "Segments" },
+                        { key: "products", label: "Products" },
+                      ].find((tab) => tab.key === latestItemsFilter)?.label ||
+                        "Campaigns"}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        isFilterDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {isFilterDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {[
+                        { key: "campaigns", label: "Campaigns" },
+                        { key: "offers", label: "Offers" },
+                        { key: "segments", label: "Segments" },
+                        { key: "products", label: "Products" },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => {
+                            setLatestItemsFilter(
+                              tab.key as
+                                | "campaigns"
+                                | "offers"
+                                | "segments"
+                                | "products"
+                            );
+                            setIsFilterDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
+                            latestItemsFilter === tab.key
+                              ? "bg-gray-900 text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                          } ${
+                            tab.key !== "products"
+                              ? "border-b border-gray-100"
+                              : ""
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Filter Tabs - Desktop (xl and above) */}
+                <div className="hidden xl:flex gap-2">
                   {[
                     { key: "campaigns", label: "Campaigns" },
                     { key: "offers", label: "Offers" },
                     { key: "segments", label: "Segments" },
+                    { key: "products", label: "Products" },
                   ].map((tab) => (
                     <button
                       key={tab.key}
                       onClick={() =>
-                        setRecentActivityFilter(
-                          tab.key as "campaigns" | "offers" | "segments"
+                        setLatestItemsFilter(
+                          tab.key as
+                            | "campaigns"
+                            | "offers"
+                            | "segments"
+                            | "products"
                         )
                       }
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        recentActivityFilter === tab.key
+                        latestItemsFilter === tab.key
                           ? "bg-gray-900 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
@@ -608,7 +1142,7 @@ export default function DashboardHome() {
             <div className="p-6">
               <div className="space-y-4">
                 {/* Campaigns */}
-                {recentActivityFilter === "campaigns" &&
+                {latestItemsFilter === "campaigns" &&
                   campaigns.slice(0, 3).map((campaign) => (
                     <div
                       key={campaign.id}
@@ -618,13 +1152,12 @@ export default function DashboardHome() {
                       }
                     >
                       <div
-                        className="p-2 rounded-lg flex-shrink-0"
-                        style={{ backgroundColor: `${color.primary.accent}15` }}
+                        className="p-2 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: color.primary.accent,
+                        }}
                       >
-                        <Target
-                          className="h-5 w-5"
-                          style={{ color: color.primary.accent }}
-                        />
+                        <Target className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
@@ -632,7 +1165,7 @@ export default function DashboardHome() {
                             {campaign.name}
                           </h3>
                           <span
-                            className={`px-2 py-1 rounded text-sm font-bold border flex-shrink-0 ${getStatusColor(
+                            className={`px-3 py-1 rounded-full text-sm font-bold border flex-shrink-0 ${getStatusColor(
                               campaign.status
                             )}`}
                           >
@@ -660,7 +1193,7 @@ export default function DashboardHome() {
                   ))}
 
                 {/* Offers */}
-                {recentActivityFilter === "offers" &&
+                {latestItemsFilter === "offers" &&
                   recentOffers.slice(0, 3).map((offer) => (
                     <div
                       key={offer.id}
@@ -668,13 +1201,12 @@ export default function DashboardHome() {
                       onClick={() => navigate(`/dashboard/offers/${offer.id}`)}
                     >
                       <div
-                        className="p-2 rounded-lg flex-shrink-0"
-                        style={{ backgroundColor: `${color.primary.accent}15` }}
+                        className="p-2 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: color.primary.accent,
+                        }}
                       >
-                        <Package
-                          className="h-5 w-5"
-                          style={{ color: color.primary.accent }}
-                        />
+                        <Package className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
@@ -682,7 +1214,7 @@ export default function DashboardHome() {
                             {offer.name}
                           </h3>
                           <span
-                            className={`px-2 py-1 rounded text-sm font-bold border flex-shrink-0 ${getStatusColor(
+                            className={`px-3 py-1 rounded-full text-sm font-bold border flex-shrink-0 ${getStatusColor(
                               offer.status
                             )}`}
                           >
@@ -700,7 +1232,7 @@ export default function DashboardHome() {
                   ))}
 
                 {/* Segments */}
-                {recentActivityFilter === "segments" &&
+                {latestItemsFilter === "segments" &&
                   recentSegments.slice(0, 3).map((segment) => (
                     <div
                       key={segment.id}
@@ -710,20 +1242,19 @@ export default function DashboardHome() {
                       }
                     >
                       <div
-                        className="p-2 rounded-lg flex-shrink-0"
-                        style={{ backgroundColor: `${color.primary.accent}15` }}
+                        className="p-2 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: color.primary.accent,
+                        }}
                       >
-                        <Users
-                          className="h-5 w-5"
-                          style={{ color: color.primary.accent }}
-                        />
+                        <Users className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="font-semibold text-base text-gray-900 truncate">
                             {segment.name}
                           </h3>
-                          <span className="px-2 py-1 rounded text-sm font-medium bg-blue-100 text-blue-700 border border-blue-200 flex-shrink-0">
+                          <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200 flex-shrink-0">
                             {segment.type}
                           </span>
                         </div>
@@ -739,32 +1270,76 @@ export default function DashboardHome() {
                     </div>
                   ))}
 
+                {/* Products */}
+                {latestItemsFilter === "products" &&
+                  recentProducts.slice(0, 3).map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center gap-4 p-5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      onClick={() =>
+                        navigate(`/dashboard/products/${product.id}`)
+                      }
+                    >
+                      <div
+                        className="p-2 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: color.primary.accent,
+                        }}
+                      >
+                        <ShoppingBag className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-base text-gray-900 truncate">
+                            {product.name}
+                          </h3>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-bold border flex-shrink-0 ${getStatusColor(
+                              product.status
+                            )}`}
+                          >
+                            {product.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-black">
+                          <span>Code: {product.code}</span>
+                          <span>•</span>
+                          <span>{product.created}</span>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                    </div>
+                  ))}
+
                 {/* Empty State */}
-                {((recentActivityFilter === "campaigns" &&
+                {((latestItemsFilter === "campaigns" &&
                   campaigns.length === 0) ||
-                  (recentActivityFilter === "offers" &&
+                  (latestItemsFilter === "offers" &&
                     recentOffers.length === 0) ||
-                  (recentActivityFilter === "segments" &&
-                    recentSegments.length === 0)) && (
+                  (latestItemsFilter === "segments" &&
+                    recentSegments.length === 0) ||
+                  (latestItemsFilter === "products" &&
+                    recentProducts.length === 0)) && (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
                       <p className="text-sm text-gray-500 mb-2">
-                        No recent {recentActivityFilter} found
+                        No {latestItemsFilter} found
                       </p>
                       <button
                         onClick={() => {
-                          if (recentActivityFilter === "campaigns") {
+                          if (latestItemsFilter === "campaigns") {
                             navigate("/dashboard/campaigns/create");
-                          } else if (recentActivityFilter === "offers") {
+                          } else if (latestItemsFilter === "offers") {
                             navigate("/dashboard/offers/create");
-                          } else if (recentActivityFilter === "segments") {
+                          } else if (latestItemsFilter === "segments") {
                             navigate("/dashboard/segments/create");
+                          } else if (latestItemsFilter === "products") {
+                            navigate("/dashboard/products/create");
                           }
                         }}
-                        className="text-sm font-medium"
-                        style={{ color: color.primary.accent }}
+                        className="text-sm font-medium text-black hover:text-gray-700"
                       >
-                        Create your first {recentActivityFilter.slice(0, -1)} →
+                        Create your first {latestItemsFilter.slice(0, -1)} →
                       </button>
                     </div>
                   </div>
@@ -792,10 +1367,14 @@ export default function DashboardHome() {
                     onClick={() => navigate(action.href)}
                     className="w-full flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all"
                   >
-                    <Icon
-                      className="h-5 w-5"
-                      style={{ color: color.primary.accent }}
-                    />
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: color.primary.accent,
+                      }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
                     <span className="font-semibold text-sm text-gray-700">
                       {action.name}
                     </span>
@@ -838,8 +1417,8 @@ export default function DashboardHome() {
                     </div>
                   </div>
                 ) : (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-64 w-full min-h-[256px]">
+                    <ResponsiveContainer width="100%" height={256}>
                       <PieChart>
                         <Pie
                           data={offerTypeDistribution}
@@ -850,6 +1429,8 @@ export default function DashboardHome() {
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
+                          isAnimationActive={true}
+                          animationDuration={300}
                         >
                           {offerTypeDistribution.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -891,48 +1472,62 @@ export default function DashboardHome() {
                 </p>
               </div>
               <div className="p-6">
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={segmentTypeDistribution.map((item) => ({
-                          name: item.type,
-                          value: item.count,
-                          color: item.color,
-                        }))}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {segmentTypeDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => value.toLocaleString()}
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          padding: "8px",
-                        }}
-                      />
-                      <Legend
-                        verticalAlign="bottom"
-                        height={36}
-                        formatter={(value) => (
-                          <span style={{ fontSize: "12px", color: "#000000" }}>
-                            {value}
-                          </span>
-                        )}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                {segmentTypeDistribution.length === 0 ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <p className="text-sm text-black">
+                        No segment type data available
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-64 w-full min-h-[256px]">
+                    <ResponsiveContainer width="100%" height={256}>
+                      <PieChart>
+                        <Pie
+                          data={segmentTypeDistribution.map((item) => ({
+                            name: item.type,
+                            value: item.count,
+                            color: item.color,
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          isAnimationActive={true}
+                          animationDuration={300}
+                        >
+                          {segmentTypeDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number) => value.toLocaleString()}
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                            padding: "8px",
+                          }}
+                        />
+                        <Legend
+                          verticalAlign="bottom"
+                          height={36}
+                          formatter={(value) => (
+                            <span
+                              style={{ fontSize: "12px", color: "#000000" }}
+                            >
+                              {value}
+                            </span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -952,12 +1547,18 @@ export default function DashboardHome() {
                   {topCampaigns.map((campaign, index) => (
                     <div
                       key={campaign.id}
-                      className="flex items-center justify-between p-5 bg-gray-50 rounded-lg border border-gray-200"
+                      className="flex items-center justify-between p-5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      onClick={() =>
+                        navigate(`/dashboard/campaigns/${campaign.id}`)
+                      }
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm"
-                          style={{ backgroundColor: color.primary.accent }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
+                          style={{
+                            backgroundColor: color.primary.accent,
+                            color: "#FFFFFF",
+                          }}
                         >
                           {index + 1}
                         </div>
@@ -970,8 +1571,19 @@ export default function DashboardHome() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-black">{campaign.status}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
+                              campaign.status.toLowerCase() === "active"
+                                ? "text-black bg-transparent border-0 font-normal"
+                                : `font-bold border ${getStatusColor(campaign.status)}`
+                            }`}
+                          >
+                            {campaign.status}
+                          </span>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
                       </div>
                     </div>
                   ))}
@@ -992,12 +1604,16 @@ export default function DashboardHome() {
                   {topOffers.map((offer, index) => (
                     <div
                       key={offer.id}
-                      className="flex items-center justify-between p-5 bg-gray-50 rounded-lg border border-gray-200"
+                      className="flex items-center justify-between p-5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      onClick={() => navigate(`/dashboard/offers/${offer.id}`)}
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm"
-                          style={{ backgroundColor: color.primary.accent }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
+                          style={{
+                            backgroundColor: color.primary.accent,
+                            color: "#FFFFFF",
+                          }}
                         >
                           {index + 1}
                         </div>
@@ -1010,11 +1626,25 @@ export default function DashboardHome() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm text-blue-600">
-                          {offer.engagement.toLocaleString()} engaged
-                        </p>
-                        <p className="text-sm text-black">{offer.status}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p
+                            className="font-bold text-sm"
+                            style={{ color: "#2563eb" }}
+                          >
+                            {offer.engagement.toLocaleString()} engaged
+                          </p>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
+                              offer.status.toLowerCase() === "active"
+                                ? "text-black bg-transparent border-0 font-normal"
+                                : `font-bold border ${getStatusColor(offer.status)}`
+                            }`}
+                          >
+                            {offer.status}
+                          </span>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
                       </div>
                     </div>
                   ))}
@@ -1035,8 +1665,8 @@ export default function DashboardHome() {
               </p>
             </div>
             <div className="p-6">
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-64 w-full min-h-[256px]">
+                <ResponsiveContainer width="100%" height={256}>
                   <PieChart>
                     <Pie
                       data={campaignStatusDistribution.map((item) => ({
@@ -1051,6 +1681,8 @@ export default function DashboardHome() {
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
+                      isAnimationActive={true}
+                      animationDuration={300}
                     >
                       {campaignStatusDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -1101,10 +1733,10 @@ export default function DashboardHome() {
                           {item.title}
                         </p>
                         <span
-                          className={`px-2 py-1 rounded text-sm font-medium ${
+                          className={`px-3 py-1 rounded-full text-sm font-medium border ${
                             item.priority === "high"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
+                              ? "bg-red-100 text-red-700 border-red-200"
+                              : "bg-yellow-100 text-yellow-700 border-yellow-200"
                           }`}
                         >
                           {item.priority === "high" ? "High" : "Medium"}
@@ -1114,7 +1746,8 @@ export default function DashboardHome() {
                         {item.description}
                       </p>
                       <button
-                        className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                        className="text-sm font-medium hover:opacity-80 transition-opacity"
+                        style={{ color: "#2563eb" }}
                         onClick={() => {
                           // Navigate to appropriate page based on type
                           // This will be implemented when routing is ready
