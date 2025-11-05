@@ -864,6 +864,7 @@ export default function CreateOfferPage() {
   const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
   const [rewards, setRewards] = useState<OfferReward[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [initialProducts, setInitialProducts] = useState<Product[]>([]); // Track initial products for edit mode
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -888,9 +889,15 @@ export default function CreateOfferPage() {
 
     setIsLoadingOffer(true);
     try {
-      const [offerResponse, productsData] = await Promise.all([
+      const [offerResponse, productsData, creativesData] = await Promise.all([
         offerService.getOfferById(parseInt(id)),
         offerService.getOfferProducts(parseInt(id)).catch(() => []), // Load existing products, ignore errors
+        offerCreativeService
+          .getByOffer(parseInt(id), { limit: 100, skipCache: true })
+          .catch(() => ({
+            data: [],
+            pagination: { total: 0, limit: 100, offset: 0, hasMore: false },
+          })), // Load existing creatives, ignore errors
       ]);
 
       const response = offerResponse as { data?: Offer; success?: boolean };
@@ -928,6 +935,7 @@ export default function CreateOfferPage() {
             return {
               ...productData,
               is_primary: link.is_primary,
+              link_id: link.id || link.link_id, // Preserve link_id for unlinking
             };
           } catch (error) {
             console.error(
@@ -939,12 +947,39 @@ export default function CreateOfferPage() {
               id: link.product_id,
               name: `Product ${link.product_id}`,
               is_primary: link.is_primary,
+              link_id: link.id || link.link_id, // Preserve link_id for unlinking
             };
           }
         });
 
         const fullProducts = await Promise.all(productDetailsPromises);
         setSelectedProducts(fullProducts);
+        // Store initial products for comparison in edit mode
+        setInitialProducts(fullProducts.map((p) => ({ ...p })));
+      } else {
+        // If no products, reset initial products
+        setInitialProducts([]);
+      }
+
+      // Load existing creatives and prefill the creatives state
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const creativesResponse = creativesData as any;
+      const creativesList = creativesResponse?.data || [];
+
+      if (Array.isArray(creativesList) && creativesList.length > 0) {
+        // Map backend creative structure to frontend OfferCreative structure
+        const mappedCreatives: OfferCreative[] = creativesList.map(
+          (creative: any) => ({
+            id: String(creative.id || ""), // Use creative ID if available, otherwise empty string
+            channel: creative.channel,
+            locale: creative.locale,
+            title: creative.title || "",
+            text_body: creative.text_body || "",
+            html_body: creative.html_body || "",
+            variables: creative.variables || {},
+          })
+        );
+        setCreatives(mappedCreatives);
       }
     } catch (error) {
       console.error("[Edit Mode] Failed to load offer data:", error);
@@ -952,7 +987,7 @@ export default function CreateOfferPage() {
     } finally {
       setIsLoadingOffer(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, setFormData, setCreatives]);
 
   // Offer categories state
   const [offerCategories, setOfferCategories] = useState<OfferCategoryType[]>(
@@ -1144,8 +1179,11 @@ export default function CreateOfferPage() {
         }
       }
 
-      // Link products to the offer if any were selected
-      if (selectedProducts.length > 0) {
+      // Handle product linking/unlinking
+      if (
+        selectedProducts.length > 0 ||
+        (isEditMode && initialProducts.length > 0)
+      ) {
         try {
           if (!user?.user_id) {
             throw new Error("User ID not available for linking products");
@@ -1155,50 +1193,117 @@ export default function CreateOfferPage() {
             throw new Error("Offer ID is not available for linking products");
           }
 
-          // Determine which product is primary (if primary_product_id is set in formData)
-          const primaryProductId = formData.primary_product_id;
+          if (isEditMode) {
+            // In edit mode, compare initial products with current products
+            const initialProductIds = new Set(
+              initialProducts.map((p) => String(p.id || p.product_id))
+            );
+            const currentProductIds = new Set(
+              selectedProducts.map((p) => String(p.id || p.product_id))
+            );
 
-          // Create links with primary product flag and quantity
-          // Note: Batch endpoint has created_by at ROOT level, NOT in each link
-          const links = selectedProducts.map((p) => {
-            const productId = parseInt(p.id!);
-            const link = {
-              offer_id: Number(offerId), // Ensure it's a number
-              product_id: productId,
-              is_primary: primaryProductId === productId,
-              quantity: 1, // Default quantity, can be customized later
+            // Find products to unlink (in initial but not in current)
+            const productsToUnlink = initialProducts.filter(
+              (p) => !currentProductIds.has(String(p.id || p.product_id))
+            );
+
+            // Find products to link (in current but not in initial)
+            const productsToLink = selectedProducts.filter(
+              (p) => !initialProductIds.has(String(p.id || p.product_id))
+            );
+
+            // Unlink removed products
+            if (productsToUnlink.length > 0) {
+              for (const product of productsToUnlink) {
+                // Try to find link_id from the product object (might be stored as link_id or id)
+                const linkId = (product as any).link_id;
+                if (linkId) {
+                  try {
+                    await offerService.unlinkProductById(linkId);
+                  } catch (unlinkError) {
+                    console.error(
+                      `[Submit] Failed to unlink product ${product.id}:`,
+                      unlinkError
+                    );
+                    // Continue with other operations even if one fails
+                  }
+                } else {
+                  console.warn(
+                    `[Submit] No link_id found for product ${product.id}, cannot unlink`
+                  );
+                }
+              }
+            }
+
+            // Link newly added products
+            if (productsToLink.length > 0) {
+              const primaryProductId = formData.primary_product_id;
+              const links = productsToLink.map((p) => {
+                const productId = parseInt(p.id!);
+                return {
+                  offer_id: Number(offerId),
+                  product_id: productId,
+                  is_primary: primaryProductId === productId,
+                  quantity: 1,
+                };
+              });
+
+              const batchRequest = {
+                links: links,
+                created_by: user.user_id,
+              };
+
+              await offerService.linkProductsBatch(batchRequest);
+            }
+
+            // Handle primary product change (if primary changed but product still exists)
+            const currentPrimaryId = formData.primary_product_id;
+            if (currentPrimaryId) {
+              const primaryProduct = selectedProducts.find(
+                (p) => Number(p.id || p.product_id) === currentPrimaryId
+              );
+              const initialPrimary = initialProducts.find((p) => p.is_primary);
+
+              // If primary changed to a different existing product
+              if (
+                primaryProduct &&
+                initialPrimary &&
+                Number(initialPrimary.id || initialPrimary.product_id) !==
+                  currentPrimaryId
+              ) {
+                // The primary product is managed through the offer details page
+                // For now, we'll just log this - the user can set primary via details page
+                console.log(
+                  "[Submit] Primary product changed, but update should be done via offer details page"
+                );
+              }
+            }
+          } else {
+            // Create mode: link all selected products
+            const primaryProductId = formData.primary_product_id;
+            const links = selectedProducts.map((p) => {
+              const productId = parseInt(p.id!);
+              return {
+                offer_id: Number(offerId),
+                product_id: productId,
+                is_primary: primaryProductId === productId,
+                quantity: 1,
+              };
+            });
+
+            const batchRequest = {
+              links: links,
+              created_by: user.user_id,
             };
 
-            // Validate link has all required fields
-            if (!link.offer_id) {
-              throw new Error(
-                `Link for product ${productId} is missing offer_id`
-              );
-            }
-            if (!link.product_id) {
-              throw new Error(
-                `Link for product ${productId} is missing product_id`
-              );
-            }
-
-            return link;
-          });
-
-          // Batch request structure: created_by at root, not in links
-          const batchRequest = {
-            links: links,
-            created_by: user.user_id, // Required at root level for batch
-          };
-
-          await offerService.linkProductsBatch(batchRequest);
+            await offerService.linkProductsBatch(batchRequest);
+          }
         } catch (productError) {
-          console.error("[Submit] Failed to link products:", productError);
-          // Don't return here - continue to save creatives even if products failed
-          // Show error but allow creatives to be saved
+          console.error("[Submit] Failed to manage products:", productError);
           showError(
-            `Offer ${
-              isEditMode ? "updated" : "created"
-            }, but failed to link products. Creatives will still be saved.`
+            `Offer ${isEditMode ? "updated" : "created"}, but failed to ${
+              isEditMode ? "update" : "link"
+            } products. Creatives will still be saved.`
           );
         }
       }
@@ -1249,38 +1354,55 @@ export default function CreateOfferPage() {
       // Parse API error response for better error messages
       let errorMessage = "Failed to create offer";
 
-      if (err && typeof err === "object" && "response" in err) {
-        const errorResponse = err as {
-          response?: {
-            data?: { message?: string; error?: string; details?: unknown };
-          };
-        };
-
-        if (errorResponse.response?.data?.message) {
-          errorMessage = errorResponse.response.data.message;
-        } else if (errorResponse.response?.data?.error) {
-          errorMessage = errorResponse.response.data.error;
-        } else if (errorResponse.response?.data?.details) {
-          // Handle validation errors from API
-          const details = errorResponse.response.data.details;
-          if (Array.isArray(details)) {
-            const fieldErrors: Record<string, string> = {};
-            details.forEach((detail: { field?: string; message?: string }) => {
-              if (detail.field) {
-                fieldErrors[detail.field] = detail.message || "Invalid value";
-              }
-            });
-            setValidationErrors(fieldErrors);
-            errorMessage = "Please fix the validation errors below";
-          } else if (typeof details === "object") {
-            setValidationErrors(details as Record<string, string>);
-            errorMessage = "Please fix the validation errors below";
-          }
-        }
-      } else if (err instanceof Error) {
+      // Handle Error objects (from service)
+      if (err instanceof Error) {
         errorMessage = err.message;
+      } else if (err && typeof err === "object") {
+        // Handle response objects
+        if ("response" in err) {
+          const errorResponse = err as {
+            response?: {
+              data?: { message?: string; error?: string; details?: unknown };
+            };
+          };
+
+          if (errorResponse.response?.data?.message) {
+            errorMessage = errorResponse.response.data.message;
+          } else if (errorResponse.response?.data?.error) {
+            errorMessage = errorResponse.response.data.error;
+          } else if (errorResponse.response?.data?.details) {
+            // Handle validation errors from API
+            const details = errorResponse.response.data.details;
+            if (Array.isArray(details)) {
+              const fieldErrors: Record<string, string> = {};
+              details.forEach(
+                (detail: { field?: string; message?: string }) => {
+                  if (detail.field) {
+                    fieldErrors[detail.field] =
+                      detail.message || "Invalid value";
+                  }
+                }
+              );
+              setValidationErrors(fieldErrors);
+              errorMessage = "Please fix the validation errors below";
+            } else if (typeof details === "object") {
+              setValidationErrors(details as Record<string, string>);
+              errorMessage = "Please fix the validation errors below";
+            }
+          }
+        } else if ("error" in err && typeof (err as any).error === "string") {
+          // Handle direct error objects
+          errorMessage = (err as any).error;
+        } else if (
+          "message" in err &&
+          typeof (err as any).message === "string"
+        ) {
+          errorMessage = (err as any).message;
+        }
       }
 
+      // Show error to user
+      showError("Error", errorMessage);
       setError(errorMessage);
     } finally {
       setIsLoading(false);

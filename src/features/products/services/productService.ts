@@ -99,38 +99,60 @@ class ProductService {
       ...options,
     });
 
+    // Parse response first
+    const contentType = response.headers.get("content-type");
+    let responseData: any;
+
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        responseData = text ? JSON.parse(text) : {};
+      }
+    } catch (parseError) {
+      responseData = {};
+    }
+
+    // Check if response has success: false (backend may return 200 with error)
+    if (responseData && responseData.success === false) {
+      const errorMessage =
+        responseData.error ||
+        responseData.message ||
+        responseData.details ||
+        "Operation failed";
+      throw new Error(
+        typeof errorMessage === "string"
+          ? errorMessage
+          : JSON.stringify(errorMessage)
+      );
+    }
+
     if (!response.ok) {
       // Try to parse error message from response
       let errorMessage = `HTTP error! status: ${response.status}`;
 
       try {
-        const contentType = response.headers.get("content-type");
+        const errorData = responseData || {};
 
-        // Only try to parse JSON if response is JSON
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-
-          // Check for error message in various possible locations
-          // Backend returns: { success: false, error: "message" }
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.details) {
-            errorMessage = errorData.details;
-          } else if (typeof errorData === "string") {
-            errorMessage = errorData;
-          }
-        } else {
-          // Try to get text response
-          const text = await response.text();
-          if (text) {
-            errorMessage = text;
-          }
+        // Check for error message in various possible locations
+        // Backend returns: { success: false, error: "message" }
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.details) {
+          errorMessage =
+            typeof errorData.details === "string"
+              ? errorData.details
+              : JSON.stringify(errorData.details);
+        } else if (typeof errorData === "string") {
+          errorMessage = errorData;
         }
-      } catch (parseError) {
-        // If parsing fails, use the status-based error message
-        console.error("Failed to parse error response:", parseError);
+      } catch {
+        // If parsing fails, use status text
+        errorMessage =
+          response.statusText || `HTTP error! status: ${response.status}`;
       }
 
       // Extract operation type from endpoint for better error messages
@@ -153,7 +175,7 @@ class ProductService {
       throw new Error(friendlyMessage);
     }
 
-    return response.json();
+    return responseData;
   }
 
   // 1. Analytics & Stats Endpoints

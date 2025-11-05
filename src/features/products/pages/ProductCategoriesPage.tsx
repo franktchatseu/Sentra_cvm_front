@@ -215,7 +215,7 @@ function ProductsModal({
                         }}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >
-                        Assign Existing Product
+                        Add products to this catalog
                       </button>
                     </div>
                   </div>

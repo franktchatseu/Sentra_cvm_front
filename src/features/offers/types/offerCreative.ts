@@ -112,8 +112,8 @@ export interface UpdateVariablesRequest {
 
 // Clone request
 export interface CloneCreativeRequest {
-  target_locale?: string;
-  target_channel?: CreativeChannel;
+  newLocale?: string; // Required for clone-locale
+  newChannel?: CreativeChannel; // Required for clone-channel
   created_by?: number;
 }
 
@@ -124,7 +124,7 @@ export interface CreateVersionRequest {
 
 // Render request
 export interface RenderCreativeRequest {
-  variables: Record<string, string | number | boolean>;
+  variableOverrides?: Record<string, string | number | boolean>;
 }
 
 // Render response
@@ -136,7 +136,7 @@ export interface RenderCreativeResponse {
 
 // Search params
 export interface SearchCreativeParams {
-  query?: string;
+  searchTerm: string; // Required - backend expects searchTerm (not query or q)
   offer_id?: number;
   channel?: CreativeChannel;
   locale?: string;
@@ -149,7 +149,7 @@ export interface SearchCreativeParams {
 
 // Super search params (advanced)
 export interface SuperSearchCreativeParams {
-  query?: string;
+  searchTerm?: string; // Changed from query to searchTerm to match backend
   offer_id?: number;
   channel?: CreativeChannel;
   locale?: string;
@@ -163,6 +163,15 @@ export interface SuperSearchCreativeParams {
   limit?: number;
   offset?: number;
   skipCache?: boolean;
+}
+
+// Rollback request
+export interface RollbackCreativeRequest {
+  offerId: number; // Required
+  channel: CreativeChannel; // Required
+  locale: string; // Required
+  version: number; // Required - version to rollback to
+  updated_by?: number; // Optional
 }
 
 // Stats response

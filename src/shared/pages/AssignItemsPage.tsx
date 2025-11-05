@@ -424,10 +424,25 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
           success++;
         } catch (err) {
           failed++;
+          const errorMessage =
+            err instanceof Error
+              ? err.message
+              : typeof err === "object" && err !== null && "error" in err
+              ? String((err as any).error)
+              : typeof err === "object" && err !== null && "message" in err
+              ? String((err as any).message)
+              : `Failed to assign ${typeInfo.singular}`;
+
           console.error(
             `Failed to assign ${typeInfo.singular} ${itemId}:`,
+            errorMessage,
             err
           );
+
+          // Show specific error for the first failed item
+          if (failed === 1) {
+            showError(`Failed to assign ${typeInfo.singular}`, errorMessage);
+          }
         }
       }
 

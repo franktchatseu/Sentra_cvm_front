@@ -88,29 +88,66 @@ class SegmentService {
       ...options,
     });
 
+    // Parse response first
+    const contentType = response.headers.get("content-type");
+    let responseData: any;
+
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        responseData = text ? JSON.parse(text) : {};
+      }
+    } catch (parseError) {
+      // If parsing fails, handle based on response status
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
+        );
+      }
+      responseData = {};
+    }
+
+    // Check if response has success: false (backend may return 200 with error)
+    if (responseData && responseData.success === false) {
+      if (responseData.error) {
+        throw new Error(responseData.error);
+      }
+      if (responseData.message) {
+        throw new Error(responseData.message);
+      }
+      if (responseData.details) {
+        throw new Error(
+          typeof responseData.details === "string"
+            ? responseData.details
+            : JSON.stringify(responseData.details)
+        );
+      }
+      throw new Error("Operation failed");
+    }
+
+    // Handle HTTP error status codes (4xx, 5xx)
     if (!response.ok) {
       try {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          if (errorData.error) {
-            throw new Error(errorData.error);
-          }
-          if (errorData.message) {
-            throw new Error(errorData.message);
-          }
-          if (errorData.details) {
-            throw new Error(errorData.details);
-          }
-        } else {
-          // Non-JSON error response
-          const errorText = await response.text();
-          console.error(`[SegmentService] Non-JSON error response:`, errorText);
+        const errorData = responseData || {};
+
+        if (errorData.error) {
+          throw new Error(errorData.error);
+        }
+        if (errorData.message) {
+          throw new Error(errorData.message);
+        }
+        if (errorData.details) {
           throw new Error(
-            `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
+            typeof errorData.details === "string"
+              ? errorData.details
+              : JSON.stringify(errorData.details)
           );
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
+        );
       } catch (err) {
         if (err instanceof Error && !err.message.includes("HTTP error")) {
           throw err;
@@ -121,50 +158,8 @@ class SegmentService {
       }
     }
 
-    // Clone response to read it multiple times if needed
-    const responseClone = response.clone();
-
-    // Check if response is JSON before parsing
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      const text = await response.text();
-      console.error(
-        `[SegmentService] Non-JSON response received (status: ${response.status}):`,
-        text.substring(0, 200)
-      );
-      throw new Error(
-        `Expected JSON response but received ${
-          contentType || "unknown type"
-        }. Status: ${response.status}`
-      );
-    }
-
-    try {
-      const jsonData = await response.json();
-      console.log("[SegmentService] Response parsed successfully");
-      return jsonData;
-    } catch (parseError) {
-      console.error(`[SegmentService] JSON parse error:`, parseError);
-      // Use cloned response to read text
-      try {
-        const text = await responseClone.text();
-        console.error(
-          `[SegmentService] Response text (first 500 chars):`,
-          text.substring(0, 500)
-        );
-        throw new Error(
-          `Failed to parse JSON response: ${
-            parseError instanceof Error ? parseError.message : "Unknown error"
-          }. Response: ${text.substring(0, 100)}`
-        );
-      } catch {
-        throw new Error(
-          `Failed to parse JSON response: ${
-            parseError instanceof Error ? parseError.message : "Unknown error"
-          }`
-        );
-      }
-    }
+    console.log("[SegmentService] Response parsed successfully");
+    return responseData;
   }
 
   private async requestCategories<T>(

@@ -17,12 +17,14 @@ import {
   X,
   Star,
   StarOff,
+  MessageSquare,
 } from "lucide-react";
 import { Offer, OfferStatusEnum } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
+import { offerCreativeService } from "../services/offerCreativeService";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -58,6 +60,8 @@ export default function OfferDetailsPage() {
     null
   );
   const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
+  const [offerCreatives, setOfferCreatives] = useState<OfferCreativeType[]>([]);
+  const [creativesLoading, setCreativesLoading] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
   // Close More menu when clicking outside
@@ -251,10 +255,34 @@ export default function OfferDetailsPage() {
     [id]
   );
 
+  const loadCreatives = useCallback(
+    async (skipCache: boolean = false) => {
+      if (!id) return;
+
+      try {
+        setCreativesLoading(true);
+        const response = await offerCreativeService.getByOffer(Number(id), {
+          limit: 100,
+          skipCache,
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const creativesData = (response as any).data || [];
+        setOfferCreatives(creativesData);
+      } catch (err) {
+        console.error("Failed to load creatives:", err);
+        setOfferCreatives([]);
+      } finally {
+        setCreativesLoading(false);
+      }
+    },
+    [id]
+  );
+
   useEffect(() => {
     if (id) {
       loadOffer();
       loadProducts();
+      loadCreatives();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -1058,6 +1086,119 @@ export default function OfferDetailsPage() {
             <p className={`text-sm ${tw.textMuted}`}>
               No products linked to this offer
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* Offer Creatives Section */}
+      <div
+        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
+          <button
+            onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
+            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
+            style={{ backgroundColor: color.primary.action }}
+          >
+            <Edit className="w-4 h-4" />
+            Edit Creatives
+          </button>
+        </div>
+
+        {creativesLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <LoadingSpinner />
+          </div>
+        ) : offerCreatives.length > 0 ? (
+          <div className="space-y-4">
+            {offerCreatives.map(
+              (creative: OfferCreativeType, index: number) => (
+                <div
+                  key={creative.id || index}
+                  className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: color.primary.accent }}
+                      >
+                        <MessageSquare className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`font-medium ${tw.textPrimary}`}>
+                            {creative.title || `Creative ${creative.channel}`}
+                          </p>
+                          <span
+                            className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
+                            style={{ backgroundColor: color.primary.accent }}
+                          >
+                            {creative.channel}
+                          </span>
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            {creative.locale}
+                          </span>
+                          {creative.is_active && (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                              Active
+                            </span>
+                          )}
+                          {creative.version && (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              v{creative.version}
+                            </span>
+                          )}
+                        </div>
+                        {creative.text_body && (
+                          <p
+                            className={`text-sm ${tw.textMuted} mt-2 line-clamp-2`}
+                          >
+                            {creative.text_body}
+                          </p>
+                        )}
+                        {creative.variables &&
+                          Object.keys(creative.variables).length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {Object.keys(creative.variables)
+                                .slice(0, 3)
+                                .map((key) => (
+                                  <span
+                                    key={key}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
+                                  >
+                                    {key}
+                                  </span>
+                                ))}
+                              {Object.keys(creative.variables).length > 3 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                  +{Object.keys(creative.variables).length - 3}{" "}
+                                  more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p className={`text-sm ${tw.textMuted}`}>
+              No creatives created for this offer
+            </p>
+            <button
+              onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
+              className="mt-4 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              Create Creative
+            </button>
           </div>
         )}
       </div>

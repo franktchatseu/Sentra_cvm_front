@@ -10,6 +10,7 @@ import {
   RenderCreativeResponseType,
   SearchCreativeParams,
   SuperSearchCreativeParams,
+  RollbackCreativeRequest,
   CreativeStatsResponse,
   ChannelCoverageResponse,
   OfferCreativeResponse,
@@ -53,15 +54,49 @@ class OfferCreativeService {
     );
     console.log(`[OfferCreativeService] Response URL: ${response.url}`);
 
+    // Parse response first
+    const contentType = response.headers.get("content-type");
+    let responseData: any;
+
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        responseData = text ? JSON.parse(text) : {};
+      }
+    } catch (parseError) {
+      // If parsing fails, handle based on response status
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
+        );
+      }
+      responseData = {};
+    }
+
+    // Check if response has success: false (backend may return 200 with error)
+    if (responseData && responseData.success === false) {
+      if (responseData.error) {
+        throw new Error(responseData.error);
+      }
+      if (responseData.message) {
+        throw new Error(responseData.message);
+      }
+      if (responseData.details) {
+        throw new Error(
+          typeof responseData.details === "string"
+            ? responseData.details
+            : JSON.stringify(responseData.details)
+        );
+      }
+      throw new Error("Operation failed");
+    }
+
+    // Handle HTTP error status codes (4xx, 5xx)
     if (!response.ok) {
       try {
-        const errorData = await response.json();
-        console.error(`[OfferCreativeService] API Error Response:`, {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorData,
-          url: url,
-        });
+        const errorData = responseData || {};
 
         if (errorData.error) {
           throw new Error(errorData.error);
@@ -70,7 +105,11 @@ class OfferCreativeService {
           throw new Error(errorData.message);
         }
         if (errorData.details) {
-          throw new Error(errorData.details);
+          throw new Error(
+            typeof errorData.details === "string"
+              ? errorData.details
+              : JSON.stringify(errorData.details)
+          );
         }
         throw new Error(
           `HTTP error! status: ${response.status}, details: ${JSON.stringify(
@@ -88,9 +127,8 @@ class OfferCreativeService {
       }
     }
 
-    const result = await response.json();
-    console.log(`[OfferCreativeService] Response data:`, result);
-    return result;
+    console.log(`[OfferCreativeService] Response data:`, responseData);
+    return responseData;
   }
 
   // ============================================
@@ -124,9 +162,11 @@ class OfferCreativeService {
   }
 
   // GET /offer-creatives/search
+  // Backend expects: searchTerm (required), limit, offset, skipCache
   async search(params: SearchCreativeParams): Promise<OfferCreativesResponse> {
     const queryParams = new URLSearchParams();
-    if (params.query) queryParams.append("query", params.query);
+    // Backend expects searchTerm (required), not query or q
+    queryParams.append("searchTerm", params.searchTerm);
     if (params.offer_id)
       queryParams.append("offer_id", params.offer_id.toString());
     if (params.channel) queryParams.append("channel", params.channel);
@@ -156,7 +196,8 @@ class OfferCreativeService {
     params: SuperSearchCreativeParams
   ): Promise<OfferCreativesResponse> {
     const queryParams = new URLSearchParams();
-    if (params.query) queryParams.append("query", params.query);
+    // Changed from query to searchTerm to match backend
+    if (params.searchTerm) queryParams.append("searchTerm", params.searchTerm);
     if (params.offer_id)
       queryParams.append("offer_id", params.offer_id.toString());
     if (params.channel) queryParams.append("channel", params.channel);
@@ -301,17 +342,25 @@ class OfferCreativeService {
   }
 
   // GET /offer-creatives/offer/:offerId/channel/:channel/latest
+  // Query params: locale (optional, defaults to "en"), skipCache (optional)
   async getLatestByOfferAndChannel(
     offerId: number,
     channel: CreativeChannel,
-    skipCache: boolean = false
+    params?: { locale?: string; skipCache?: boolean }
   ): Promise<OfferCreativeResponse> {
-    const params = skipCache ? "?skipCache=true" : "";
+    const queryParams = new URLSearchParams();
+    if (params?.locale) queryParams.append("locale", params.locale);
+    if (params?.skipCache) queryParams.append("skipCache", "true");
+    const queryString = queryParams.toString();
     console.log(
-      `[OfferCreativeService] getLatestByOfferAndChannel - offerId: ${offerId}, channel: ${channel}`
+      `[OfferCreativeService] getLatestByOfferAndChannel - offerId: ${offerId}, channel: ${channel}, locale: ${
+        params?.locale || "en"
+      }`
     );
     const result = await this.request<OfferCreativeResponse>(
-      `/offer/${offerId}/channel/${channel}/latest${params}`
+      `/offer/${offerId}/channel/${channel}/latest${
+        queryString ? `?${queryString}` : ""
+      }`
     );
     console.log(
       `[OfferCreativeService] getLatestByOfferAndChannel response:`,
@@ -321,18 +370,27 @@ class OfferCreativeService {
   }
 
   // GET /offer-creatives/offer/:offerId/channel/:channel/versions
+  // Query params: locale (optional, defaults to "en"), limit, offset, skipCache
   async getVersionsByOfferAndChannel(
     offerId: number,
     channel: CreativeChannel,
-    params?: { limit?: number; offset?: number; skipCache?: boolean }
+    params?: {
+      locale?: string;
+      limit?: number;
+      offset?: number;
+      skipCache?: boolean;
+    }
   ): Promise<OfferCreativesResponse> {
     const queryParams = new URLSearchParams();
+    if (params?.locale) queryParams.append("locale", params.locale);
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.offset) queryParams.append("offset", params.offset.toString());
     if (params?.skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
     console.log(
-      `[OfferCreativeService] getVersionsByOfferAndChannel - offerId: ${offerId}, channel: ${channel}`
+      `[OfferCreativeService] getVersionsByOfferAndChannel - offerId: ${offerId}, channel: ${channel}, locale: ${
+        params?.locale || "en"
+      }`
     );
     const result = await this.request<OfferCreativesResponse>(
       `/offer/${offerId}/channel/${channel}/versions${
@@ -385,19 +443,33 @@ class OfferCreativeService {
   }
 
   // GET /offer-creatives/:id/render
+  // Query params: skipCache (optional)
+  // Body: variableOverrides (optional object) - backend accepts body with GET (non-standard but supported)
   async render(
     id: number,
-    request: RenderCreativeRequest,
+    request?: RenderCreativeRequest,
     skipCache: boolean = false
   ): Promise<RenderCreativeResponseType> {
-    const params = skipCache ? "&skipCache=true" : "";
+    const queryParams = new URLSearchParams();
+    if (skipCache) queryParams.append("skipCache", "true");
+    const queryString = queryParams.toString();
     console.log(`[OfferCreativeService] render - id: ${id}, request:`, request);
+
+    // Backend expects GET with body containing variableOverrides
+    const options: RequestInit = {
+      method: "GET",
+    };
+
+    // Add body if variableOverrides are provided
+    if (request?.variableOverrides) {
+      options.body = JSON.stringify({
+        variableOverrides: request.variableOverrides,
+      });
+    }
+
     const result = await this.request<RenderCreativeResponseType>(
-      `/${id}/render${params ? `?${params}` : ""}`,
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
+      `/${id}/render${queryString ? `?${queryString}` : ""}`,
+      options
     );
     console.log(`[OfferCreativeService] render response:`, result);
     return result;
@@ -477,16 +549,22 @@ class OfferCreativeService {
   }
 
   // POST /offer-creatives/:id/clone-locale
+  // Body: newLocale (required), created_by (optional)
   async cloneToLocale(
     id: number,
-    request: CloneCreativeRequest
+    request: { newLocale: string; created_by?: number }
   ): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] cloneToLocale - id: ${id}`);
+    console.log(
+      `[OfferCreativeService] cloneToLocale - id: ${id}, newLocale: ${request.newLocale}`
+    );
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/clone-locale`,
       {
         method: "POST",
-        body: JSON.stringify(request),
+        body: JSON.stringify({
+          newLocale: request.newLocale,
+          created_by: request.created_by,
+        }),
       }
     );
     console.log(`[OfferCreativeService] cloneToLocale response:`, result);
@@ -494,16 +572,22 @@ class OfferCreativeService {
   }
 
   // POST /offer-creatives/:id/clone-channel
+  // Body: newChannel (required), created_by (optional)
   async cloneToChannel(
     id: number,
-    request: CloneCreativeRequest
+    request: { newChannel: CreativeChannel; created_by?: number }
   ): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] cloneToChannel - id: ${id}`);
+    console.log(
+      `[OfferCreativeService] cloneToChannel - id: ${id}, newChannel: ${request.newChannel}`
+    );
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/clone-channel`,
       {
         method: "POST",
-        body: JSON.stringify(request),
+        body: JSON.stringify({
+          newChannel: request.newChannel,
+          created_by: request.created_by,
+        }),
       }
     );
     console.log(`[OfferCreativeService] cloneToChannel response:`, result);
@@ -541,12 +625,26 @@ class OfferCreativeService {
   }
 
   // PATCH /offer-creatives/:id/rollback
-  async rollback(id: number): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] rollback - id: ${id}`);
+  // Body: offerId (required), channel (required), locale (required), version (required), updated_by (optional)
+  async rollback(
+    id: number,
+    request: RollbackCreativeRequest
+  ): Promise<OfferCreativeResponse> {
+    console.log(
+      `[OfferCreativeService] rollback - id: ${id}, request:`,
+      request
+    );
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/rollback`,
       {
         method: "PATCH",
+        body: JSON.stringify({
+          offerId: request.offerId,
+          channel: request.channel,
+          locale: request.locale,
+          version: request.version,
+          updated_by: request.updated_by,
+        }),
       }
     );
     console.log(`[OfferCreativeService] rollback response:`, result);

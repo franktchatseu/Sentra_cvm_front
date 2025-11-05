@@ -322,7 +322,7 @@ function OffersModal({
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >
                         <Plus className="w-4 h-4" />
-                        Assign Existing Offer
+                        Add offers to this catalog
                       </button>
                     </div>
                   </div>

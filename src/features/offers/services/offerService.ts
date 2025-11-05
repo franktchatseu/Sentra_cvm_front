@@ -51,35 +51,74 @@ class OfferService {
       ...options,
     });
 
-    if (!response.ok) {
-      // Try to parse error message from response
-      try {
-        const errorData = await response.json();
+    // Parse response
+    const contentType = response.headers.get("content-type");
+    let responseData: any;
 
-        if (errorData.error) {
-          throw new Error(errorData.error);
-        }
-        if (errorData.message) {
-          throw new Error(errorData.message);
-        }
-        if (errorData.details) {
-          throw new Error(errorData.details);
-        }
-        // If we have data but no specific error message, show generic error
-        throw new Error(
-          `HTTP error! status: ${response.status}, details: ${JSON.stringify(
-            errorData
-          )}`
-        );
-      } catch (parseError) {
-        // If parsing fails, show generic error
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        responseData = text ? JSON.parse(text) : {};
+      }
+    } catch (parseError) {
+      // If parsing fails, handle based on response status
+      if (!response.ok) {
         throw new Error(
           `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
         );
       }
+      // If response is ok but can't parse, return empty object
+      responseData = {};
     }
 
-    return response.json();
+    // Check if response has success: false (backend may return 200 with error)
+    // This handles cases where backend returns 200 OK but with {success: false, error: "..."}
+    if (responseData && responseData.success === false) {
+      if (responseData.error) {
+        throw new Error(responseData.error);
+      }
+      if (responseData.message) {
+        throw new Error(responseData.message);
+      }
+      if (responseData.details) {
+        throw new Error(
+          typeof responseData.details === "string"
+            ? responseData.details
+            : JSON.stringify(responseData.details)
+        );
+      }
+      throw new Error("Operation failed");
+    }
+
+    // Handle HTTP error status codes (4xx, 5xx)
+    if (!response.ok) {
+      // Try to extract error message from response
+      const errorData = responseData || {};
+
+      if (errorData.error) {
+        throw new Error(errorData.error);
+      }
+      if (errorData.message) {
+        throw new Error(errorData.message);
+      }
+      if (errorData.details) {
+        throw new Error(
+          typeof errorData.details === "string"
+            ? errorData.details
+            : JSON.stringify(errorData.details)
+        );
+      }
+      // If we have data but no specific error message, show generic error
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${JSON.stringify(
+          errorData
+        )}`
+      );
+    }
+
+    return responseData;
   }
 
   // Analytics & Stats
