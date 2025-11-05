@@ -383,9 +383,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           onClick={() =>
                             toggleExpanded(item.name.toLowerCase())
                           }
-                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(
-                            isActive
-                          )}`}
+                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-300 ease-out ${
+                            !isActive ? "hover:scale-105 hover:shadow-lg" : ""
+                          } ${getItemClasses(isActive)}`}
                         >
                           <div className="flex items-center gap-x-3">
                             <Icon
@@ -513,9 +513,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={item.name}
                       to={item.href}
                       onClick={handleLinkClick}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(
-                        isActive
-                      )}`}
+                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-300 ease-out ${
+                        !isActive ? "hover:scale-105 hover:shadow-lg" : ""
+                      } ${getItemClasses(isActive)}`}
                     >
                       <Icon
                         className={`h-5 w-5 shrink-0 ${getIconClasses(
@@ -572,9 +572,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     >
                       <button
                         onClick={() => toggleExpanded(item.name.toLowerCase())}
-                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg ${getItemClasses(
-                          isActive
-                        )}`}
+                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out ${
+                          !isActive ? "hover:scale-105 hover:shadow-lg" : ""
+                        } ${getItemClasses(isActive)}`}
                         title={item.name}
                       >
                         <div className="flex items-center gap-x-3">

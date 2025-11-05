@@ -426,7 +426,7 @@ export default function GenericConfigurationPage({
       </div>
 
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] overflow-hidden`}
+        className={`bg-white rounded-lg border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center py-12">

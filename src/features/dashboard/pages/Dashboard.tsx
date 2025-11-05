@@ -32,6 +32,7 @@ import CategoryDetailsPage from "../../offers/pages/CategoryDetailsPage";
 import UserManagementPage from "../components/UserManagementPage";
 import UserDetailsPage from "../../users/pages/UserDetailsPage";
 import ConfigurationPage from "../components/ConfigurationPage";
+import ConfigurationDetailsPage from "../components/ConfigurationDetailsPage";
 import ControlGroupsPage from "../../products/pages/ControlGroupsPage";
 import DepartmentPage from "../../campaigns/pages/DepartmentPage";
 import LineOfBusinessPage from "../../campaigns/pages/LineOfBusinessPage";
@@ -108,6 +109,10 @@ export default function Dashboard() {
         <Route path="/segment-list" element={<SegmentListPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
+        <Route
+          path="/configuration/:id"
+          element={<ConfigurationDetailsPage />}
+        />
       </Routes>
     </DashboardLayout>
   );

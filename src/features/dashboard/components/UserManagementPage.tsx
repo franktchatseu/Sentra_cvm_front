@@ -386,13 +386,13 @@ export default function UserManagementPage() {
           <div className="flex items-center gap-2">
             <span>Pending Requests</span>
             <span
-              className="px-2 py-0.5 rounded-full text-xs"
+              className="px-2 py-0.5 rounded-full text-xs text-white"
               style={{
                 backgroundColor:
                   activeTab === "requests"
                     ? color.primary.accent
                     : color.text.muted,
-                color: activeTab === "requests" ? "white" : "black",
+                color: "white",
               }}
             >
               {accountRequests.filter((r) => r.force_password_reset).length}
@@ -456,7 +456,7 @@ export default function UserManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white border border-gray-200 rounded-2xl p-6 overflow-hidden`}
+        className={`bg-white border border-gray-200 rounded-lg p-6 overflow-hidden`}
       >
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -516,7 +516,7 @@ export default function UserManagementPage() {
               <div className="max-md:hidden overflow-x-auto -mx-6 -mt-6">
                 <table className="w-full">
                   <thead
-                    className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                    className={`border-b ${tw.borderDefault}`}
                     style={{ background: color.surface.tableHeader }}
                   >
                     <tr>

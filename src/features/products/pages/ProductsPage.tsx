@@ -11,6 +11,7 @@ import {
   Trash2,
   Play,
   Pause,
+  XCircle,
   Package,
   TrendingUp,
   BarChart3,
@@ -363,7 +364,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div className="p-3 bg-gray-100 rounded-lg">
-              <Pause className="w-6 h-6 text-gray-900" />
+              <XCircle className="w-6 h-6 text-gray-900" />
             </div>
           </div>
         </div>
@@ -510,7 +511,7 @@ export default function ProductsPage() {
 
       {/* Products Table */}
       <div
-        className={`bg-white rounded-xl shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
+        className={`bg-white rounded-lg shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -552,7 +553,7 @@ export default function ProductsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead
-                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  className={`border-b ${tw.borderDefault}`}
                   style={{ background: color.surface.tableHeader }}
                 >
                   <tr>

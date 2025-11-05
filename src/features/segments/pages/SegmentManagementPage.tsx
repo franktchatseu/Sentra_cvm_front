@@ -592,7 +592,7 @@ export default function SegmentManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] overflow-x-auto`}
+        className={`bg-white rounded-lg border border-[${color.border.default}] overflow-x-auto`}
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -650,7 +650,7 @@ export default function SegmentManagementPage() {
             <div className="hidden lg:block overflow-x-auto overflow-y-visible">
               <table className="w-full">
                 <thead
-                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
+                  className={`border-b ${tw.borderDefault}`}
                   style={{ background: color.surface.tableHeader }}
                 >
                   <tr>

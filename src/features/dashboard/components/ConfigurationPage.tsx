@@ -251,6 +251,12 @@ export default function ConfigurationPage() {
     // navigate(config.navigationPath);
   };
 
+  const handleViewDetails = (config: ConfigurationItem) => {
+    // Navigate to a details page showing all sub-configurations
+    // For now, we'll navigate to the main page - we can create a details page later
+    navigate(`/dashboard/configuration/${config.id}`);
+  };
+
   const handleAddConfiguration = () => {
     setEditingConfig(undefined);
     setIsModalOpen(true);
@@ -494,6 +500,10 @@ export default function ConfigurationPage() {
                     </span>
                     <div className="flex items-center space-x-1">
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetails(config);
+                        }}
                         className={`p-2 ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 rounded-lg transition-all duration-200`}
                         style={{
                           "&:hover": { color: color.primary.accent },
@@ -576,7 +586,12 @@ export default function ConfigurationPage() {
 
                     <div className="flex items-center space-x-2">
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetails(config);
+                        }}
                         className={`p-2 ${tw.textMuted} hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200`}
+                        title="View Details"
                       >
                         <Eye className="h-5 w-5" />
                       </button>

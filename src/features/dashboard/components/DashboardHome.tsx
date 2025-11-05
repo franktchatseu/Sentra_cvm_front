@@ -1577,7 +1577,9 @@ export default function DashboardHome() {
                             className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
                               campaign.status.toLowerCase() === "active"
                                 ? "text-black bg-transparent border-0 font-normal"
-                                : `font-bold border ${getStatusColor(campaign.status)}`
+                                : `font-bold border ${getStatusColor(
+                                    campaign.status
+                                  )}`
                             }`}
                           >
                             {campaign.status}
@@ -1638,7 +1640,9 @@ export default function DashboardHome() {
                             className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
                               offer.status.toLowerCase() === "active"
                                 ? "text-black bg-transparent border-0 font-normal"
-                                : `font-bold border ${getStatusColor(offer.status)}`
+                                : `font-bold border ${getStatusColor(
+                                    offer.status
+                                  )}`
                             }`}
                           >
                             {offer.status}
