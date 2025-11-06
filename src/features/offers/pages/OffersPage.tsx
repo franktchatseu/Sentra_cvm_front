@@ -95,7 +95,7 @@ export default function OffersPage() {
         setCategories(response.data);
       }
     } catch (err) {
-      console.error("Error loading categories:", err);
+      // Error loading categories
     }
   };
 
@@ -125,7 +125,6 @@ export default function OffersPage() {
     } catch (err) {
       const errorMessage = (err as Error).message || "Failed to load offers";
       showError("Failed to load offers", errorMessage);
-      console.error("Error loading offers:", err);
     } finally {
       setLoading(false);
     }
@@ -159,11 +158,26 @@ export default function OffersPage() {
         try {
           const offersResponse = await offerService.getStats();
           if (offersResponse.success && offersResponse.data) {
-            total = offersResponse.data.totalOffers || 0;
-            active = offersResponse.data.activeOffers || 0;
+            // Try different possible field names (camelCase and snake_case)
+            // Backend returns strings, so parse them
+            total =
+              parseInt(offersResponse.data.total_offers as string) ||
+              parseInt(offersResponse.data.totalOffers as string) ||
+              parseInt(offersResponse.data.total as string) ||
+              offersResponse.data.total ||
+              0;
+            // Use currently_active (offers valid right now) instead of active_offers
+            // Backend returns strings, so parse them
+            active =
+              parseInt(offersResponse.data.currently_active as string) ||
+              parseInt(offersResponse.data.currentlyActive as string) ||
+              parseInt(offersResponse.data.active_offers as string) ||
+              parseInt(offersResponse.data.activeOffers as string) ||
+              offersResponse.data.active ||
+              0;
           }
         } catch (error) {
-          console.error("Error fetching offer stats:", error);
+          // Error fetching offer stats
         }
 
         // If stats don't have total, get from pagination
@@ -174,7 +188,7 @@ export default function OffersPage() {
               total = offersList.pagination.total;
             }
           } catch (error) {
-            console.error("Error fetching total offers:", error);
+            // Error fetching total offers
           }
         }
 
@@ -185,22 +199,63 @@ export default function OffersPage() {
           });
           expired = expiredResponse.pagination?.total || 0;
         } catch (error) {
-          console.error("Error fetching expired offers:", error);
+          // Error fetching expired offers
         }
 
         // Fetch pending approval offers count
+        // Use status-based endpoint: combine pending_approval + draft (drafts need approval)
         try {
-          const pendingResponse = await offerService.getPendingApprovalOffers({
-            limit: 1,
-          });
-          pendingApproval = pendingResponse.pagination?.total || 0;
+          let pendingCount = 0;
+          let draftCount = 0;
+
+          // Get pending_approval status offers
+          try {
+            const pendingResponse = await offerService.getOffersByStatus(
+              OfferStatusEnum.PENDING_APPROVAL,
+              { limit: 1, skipCache: true }
+            );
+            pendingCount = pendingResponse.pagination?.total || 0;
+          } catch (pendingError) {
+            // Error fetching pending_approval status
+          }
+
+          // Get draft status offers (drafts are considered pending approval)
+          try {
+            const draftResponse = await offerService.getOffersByStatus(
+              OfferStatusEnum.DRAFT,
+              { limit: 1, skipCache: true }
+            );
+            draftCount = draftResponse.pagination?.total || 0;
+          } catch (draftError) {
+            // Error fetching draft status
+          }
+
+          // Combine both counts
+          pendingApproval = pendingCount + draftCount;
         } catch (error) {
-          console.error("Error fetching pending approval offers:", error);
+          // Error in pending approval logic
+          // Final fallback: Filter all offers
+          try {
+            const allOffers = await offerService.searchOffers({
+              limit: 100,
+              skipCache: true,
+            });
+            const pendingCount =
+              allOffers.data?.filter(
+                (o: any) =>
+                  o.status === "pending_approval" ||
+                  o.status === "draft" ||
+                  o.approval_status === "pending"
+              ).length || 0;
+            pendingApproval = pendingCount;
+          } catch (finalError) {
+            // All fallbacks failed
+            pendingApproval = 0;
+          }
         }
 
         setOfferStats({ total, active, expired, pendingApproval });
       } catch (error) {
-        console.error("Error loading offer stats:", error);
         setOfferStats({ total: 0, active: 0, expired: 0, pendingApproval: 0 });
       } finally {
         setStatsLoading(false);
@@ -330,7 +385,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to delete offer");
-      console.error("Delete offer error:", err);
+      // Delete offer error
     }
   };
 
@@ -362,7 +417,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to activate offer");
-      console.error("Activate offer error:", err);
+      // Activate offer error
     } finally {
       setLoadingAction(null);
     }
@@ -396,7 +451,7 @@ export default function OffersPage() {
   //     setShowActionMenu(null);
   //   } catch (err) {
   //     showError("Error", "Failed to deactivate offer");
-  //     console.error("Deactivate offer error:", err);
+  // Deactivate offer error
   //   } finally {
   //     setLoadingAction(null);
   //   }
@@ -430,7 +485,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to pause offer");
-      console.error("Pause offer error:", err);
+      // Pause offer error
     } finally {
       setLoadingAction(null);
     }
@@ -445,7 +500,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to archive offer");
-      console.error("Archive offer error:", err);
+      // Archive offer error
     } finally {
       setLoadingAction(null);
     }
@@ -479,7 +534,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to expire offer");
-      console.error("Expire offer error:", err);
+      // Expire offer error
     } finally {
       setLoadingAction(null);
     }
@@ -497,7 +552,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to request approval");
-      console.error("Request approval error:", err);
+      // Request approval error
     } finally {
       setLoadingAction(null);
     }
@@ -516,7 +571,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to approve offer");
-      console.error("Approve offer error:", err);
+      // Approve offer error
     } finally {
       setLoadingAction(null);
     }
@@ -535,7 +590,7 @@ export default function OffersPage() {
       setShowActionMenu(null);
     } catch (err) {
       showError("Error", "Failed to reject offer");
-      console.error("Reject offer error:", err);
+      // Reject offer error
     } finally {
       setLoadingAction(null);
     }
@@ -670,25 +725,25 @@ export default function OffersPage() {
       name: "Total Offers",
       value: offerStats?.total?.toLocaleString() || "0",
       icon: Package,
-      color: color.primary.accent,
+      color: color.tertiary.tag1, // Purple
     },
     {
-      name: "Active Offers",
+      name: "Currently Active",
       value: offerStats?.active?.toLocaleString() || "0",
       icon: CheckCircle,
-      color: "#10B981", // Green
+      color: color.tertiary.tag4, // Green
     },
     {
       name: "Expired Offers",
       value: offerStats?.expired?.toLocaleString() || "0",
       icon: Clock,
-      color: "#F59E0B", // Orange
+      color: color.tertiary.tag3, // Yellow
     },
     {
-      name: "Pending Approval",
+      name: "Draft",
       value: offerStats?.pendingApproval?.toLocaleString() || "0",
       icon: AlertCircle,
-      color: "#EF4444", // Red
+      color: color.tertiary.tag2, // Coral
     },
   ];
 

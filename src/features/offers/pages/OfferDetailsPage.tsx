@@ -14,14 +14,13 @@ import {
   Archive,
   MoreVertical,
   Package,
-  X,
   Star,
   StarOff,
   MessageSquare,
   Save,
   Plus,
 } from "lucide-react";
-import { Offer, OfferStatusEnum } from "../types/offer";
+import { Offer, OfferStatusEnum, OfferProductLink } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
@@ -35,7 +34,9 @@ import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import RegularModal from "../../../shared/components/ui/RegularModal";
 import { Product } from "../../products/types/product";
-import ProductSelector from "../../products/components/ProductSelector";
+import { Search, Check } from "lucide-react";
+import { productCategoryService } from "../../products/services/productCategoryService";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 export default function OfferDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -84,11 +85,19 @@ export default function OfferDetailsPage() {
   const [variablesJson, setVariablesJson] = useState("");
   const [isSavingCreative, setIsSavingCreative] = useState(false);
 
-  // Add product state
-  const [showProductSelector, setShowProductSelector] = useState(false);
+  // Add product modal state
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [selectedProductsToAdd, setSelectedProductsToAdd] = useState<Product[]>(
     []
   );
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+  const [productsSearchLoading, setProductsSearchLoading] = useState(false);
+  const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [selectedProductCategory, setSelectedProductCategory] =
+    useState<string>("all");
+  const [productCategories, setProductCategories] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
   const [isLinkingProducts, setIsLinkingProducts] = useState(false);
 
   // Close More menu when clicking outside
@@ -126,11 +135,10 @@ export default function OfferDetailsPage() {
               setCategoryName(category.name);
             }
           } catch (error) {
-            console.error("Failed to fetch category name:", error);
+            // Failed to fetch category name
           }
         }
       } catch (err) {
-        console.error("Failed to load offer:", err);
         setError(err instanceof Error ? err.message : "Failed to load offer");
       } finally {
         setLoading(false);
@@ -146,55 +154,35 @@ export default function OfferDetailsPage() {
       try {
         setProductsLoading(true);
 
-        // Test multiple endpoints for product linking
-        console.log("[OfferDetails] Testing offer-product endpoints...");
-
-        // 1. Get products using new endpoint (direct test)
-        console.log("[OfferDetails] 1. Testing getProductsByOffer...");
+        // Get products using new endpoint
         const productsResponse = await offerService.getProductsByOffer(
           Number(id),
           { skipCache }
         );
-        console.log(
-          "[OfferDetails] getProductsByOffer response:",
-          productsResponse
-        );
 
-        // 2. Check if offer has primary product
-        console.log("[OfferDetails] 2. Testing checkOfferHasPrimaryProduct...");
+        // Check if offer has primary product
         try {
           const hasPrimaryResponse =
             await offerService.checkOfferHasPrimaryProduct(
               Number(id),
               skipCache
-            );
-          console.log(
-            "[OfferDetails] checkOfferHasPrimaryProduct response:",
-            hasPrimaryResponse
           );
           setHasPrimaryProduct(hasPrimaryResponse.data?.hasPrimary || false);
         } catch (err) {
-          console.error("[OfferDetails] Failed to check primary product:", err);
+          // Failed to check primary product
         }
 
-        // 3. Get primary product if it exists
-        console.log("[OfferDetails] 3. Testing getPrimaryProductByOffer...");
+        // Get primary product if it exists
         try {
           const primaryResponse = await offerService.getPrimaryProductByOffer(
             Number(id),
             skipCache
           );
-          console.log(
-            "[OfferDetails] getPrimaryProductByOffer response:",
-            primaryResponse
-          );
           if (primaryResponse.data) {
             setPrimaryProductId(primaryResponse.data.product_id);
           }
         } catch (err) {
-          console.log(
-            "[OfferDetails] No primary product found (expected if none set)"
-          );
+          // No primary product found (expected if none set)
         }
 
         // Use legacy method for compatibility
@@ -209,35 +197,35 @@ export default function OfferDetailsPage() {
           (response as any).data || productsResponse.data || response;
 
         if (Array.isArray(productsData) && productsData.length > 0) {
+          // Deduplicate links by product_id - if multiple links exist for same product,
+          // keep the primary one, or the first one if none is primary
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const uniqueLinksMap = new Map<number, any>();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          productsData.forEach((link: any) => {
+            const productId = link.product_id;
+            if (!uniqueLinksMap.has(productId)) {
+              uniqueLinksMap.set(productId, link);
+            } else {
+              // If we already have this product, prefer the primary one
+              const existingLink = uniqueLinksMap.get(productId);
+              if (link.is_primary && !existingLink.is_primary) {
+                uniqueLinksMap.set(productId, link);
+              }
+            }
+          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const uniqueLinks = Array.from(uniqueLinksMap.values());
+
           // Backend returns product links with only product_id, so we need to fetch full product details
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const productDetailsPromises = productsData.map(async (link: any) => {
+          const productDetailsPromises = uniqueLinks.map(async (link: any) => {
             try {
               const productResponse = await productService.getProductById(
                 link.product_id
               );
               const productData =
                 (productResponse as { data?: unknown }).data || productResponse;
-
-              // Test getOffersByProductId for each product
-              console.log(
-                `[OfferDetails] Testing getOffersByProductId for product ${link.product_id}...`
-              );
-              try {
-                const offersForProduct =
-                  await offerService.getOffersByProductId(link.product_id, {
-                    skipCache,
-                  });
-                console.log(
-                  `[OfferDetails] getOffersByProductId(${link.product_id}) response:`,
-                  offersForProduct
-                );
-              } catch (err) {
-                console.error(
-                  `[OfferDetails] Failed to get offers for product ${link.product_id}:`,
-                  err
-                );
-              }
 
               return {
                 ...productData,
@@ -246,11 +234,7 @@ export default function OfferDetailsPage() {
                 product_id: link.product_id,
               };
             } catch (error) {
-              console.error(
-                "Failed to fetch product details for ID:",
-                link.product_id,
-                error
-              );
+              // Failed to fetch product details
               return {
                 id: link.product_id,
                 name: `Product ${link.product_id}`,
@@ -273,7 +257,6 @@ export default function OfferDetailsPage() {
           setLinkedProducts([]);
         }
       } catch (err) {
-        console.error("Failed to load products:", err);
         setLinkedProducts([]);
       } finally {
         setProductsLoading(false);
@@ -296,7 +279,6 @@ export default function OfferDetailsPage() {
         const creativesData = (response as any).data || [];
         setOfferCreatives(creativesData);
       } catch (err) {
-        console.error("Failed to load creatives:", err);
         setOfferCreatives([]);
       } finally {
         setCreativesLoading(false);
@@ -364,7 +346,7 @@ export default function OfferDetailsPage() {
       setIsEditCreativeModalOpen(false);
       loadCreatives(true); // Reload with skipCache
     } catch (err) {
-      console.error("[OfferDetails] Failed to update creative:", err);
+      // Failed to update creative
       showError(
         err instanceof Error ? err.message : "Failed to update creative"
       );
@@ -389,16 +371,99 @@ export default function OfferDetailsPage() {
       success("Creative Deleted", "Creative has been deleted successfully");
       loadCreatives(true); // Reload with skipCache
     } catch (err) {
-      console.error("[OfferDetails] Failed to delete creative:", err);
+      // Failed to delete creative
       showError(
         err instanceof Error ? err.message : "Failed to delete creative"
       );
     }
   };
 
-  // Handle product selection changes
-  const handleProductsChange = (products: Product[]) => {
-    setSelectedProductsToAdd(products);
+  // Load product categories for filter
+  const loadProductCategories = useCallback(async () => {
+    try {
+      const response = await productCategoryService.getAllCategories({
+        limit: 100,
+        skipCache: true,
+      });
+      const categoryOptions = [
+        { value: "all", label: "All Categories" },
+        ...(response.data || []).map((category: any) => ({
+          value: category.id.toString(),
+          label: category.name,
+        })),
+      ];
+      setProductCategories(categoryOptions);
+    } catch (error) {
+      // Error loading categories
+      setProductCategories([{ value: "all", label: "All Categories" }]);
+    }
+  }, []);
+
+  // Load available products for selection
+  const loadAvailableProducts = useCallback(async () => {
+    try {
+      setProductsSearchLoading(true);
+      const searchQuery = productSearchTerm.trim();
+
+      let response;
+      if (searchQuery) {
+        // Use searchProducts when there's a search term
+        response = await productService.searchProducts({
+          q: searchQuery,
+          limit: 100,
+          skipCache: true,
+        });
+      } else {
+        // Use getAllProducts when there's no search term
+        response = await productService.getAllProducts({
+          limit: 100,
+          skipCache: true,
+        });
+      }
+
+      let products = response.data || [];
+
+      // Apply category filter if not 'all'
+      if (selectedProductCategory !== "all") {
+        products = products.filter(
+          (product: Product) =>
+            product.category_id?.toString() === selectedProductCategory
+        );
+      }
+
+      setAvailableProducts(products);
+    } catch (err) {
+      // Failed to load products
+      setAvailableProducts([]);
+    } finally {
+      setProductsSearchLoading(false);
+    }
+  }, [productSearchTerm, selectedProductCategory]);
+
+  // Load categories when modal opens
+  useEffect(() => {
+    if (isAddProductModalOpen) {
+      loadProductCategories();
+    }
+  }, [isAddProductModalOpen, loadProductCategories]);
+
+  // Load products when modal opens, search changes, or category changes
+  useEffect(() => {
+    if (isAddProductModalOpen) {
+      loadAvailableProducts();
+    }
+  }, [isAddProductModalOpen, loadAvailableProducts]);
+
+  // Toggle product selection
+  const toggleProductSelection = (product: Product) => {
+    const isSelected = selectedProductsToAdd.some((p) => p.id === product.id);
+    if (isSelected) {
+      setSelectedProductsToAdd(
+        selectedProductsToAdd.filter((p) => p.id !== product.id)
+      );
+    } else {
+      setSelectedProductsToAdd([...selectedProductsToAdd, product]);
+    }
   };
 
   // Handle adding products after selection
@@ -434,14 +499,15 @@ export default function OfferDetailsPage() {
         } linked successfully`
       );
 
-      // Reset state
-      setShowProductSelector(false);
+      // Reset state and close modal
+      setIsAddProductModalOpen(false);
       setSelectedProductsToAdd([]);
+      setProductSearchTerm("");
 
       // Refresh products list
       loadProducts(true);
     } catch (err) {
-      console.error("[OfferDetails] Failed to link products:", err);
+      // Failed to link products
       showError(err instanceof Error ? err.message : "Failed to link products");
     } finally {
       setIsLinkingProducts(false);
@@ -633,9 +699,7 @@ export default function OfferDetailsPage() {
 
     try {
       setUnlinkingProductId(linkId);
-      console.log("[OfferDetails] Testing unlinkProductById...");
       const result = await offerService.unlinkProductById(linkId);
-      console.log("[OfferDetails] unlinkProductById response:", result);
       success(
         "Product Unlinked",
         `"${productName}" has been unlinked from this offer.`
@@ -643,35 +707,65 @@ export default function OfferDetailsPage() {
       // Reload products with cache bypassed to get fresh data
       loadProducts(true);
     } catch (err) {
-      console.error("[OfferDetails] Failed to unlink product:", err);
+      // Failed to unlink product
       showError("Failed to unlink product");
     } finally {
       setUnlinkingProductId(null);
     }
   };
 
+  // TODO: Backend needs to provide an endpoint to update is_primary without unlinking products
+  // Currently commented out because it unlinks the old primary product entirely,
+  // when we only want to unset it as primary while keeping it linked to the offer
   const handleSetPrimaryProduct = async (
     productId: number,
     linkId: number,
     productName: string
   ) => {
+    // Handler commented out - waiting for backend endpoint to update is_primary flag
+    // without unlinking products
+    showError(
+      "Feature Unavailable",
+      "Setting primary product is temporarily disabled. Backend endpoint needed to update primary status without unlinking products."
+    );
+    return;
+
+    /* COMMENTED OUT - Waiting for backend endpoint
     if (!user?.user_id) {
       showError("Error", "User ID not available. Please log in again.");
       return;
     }
 
     // Check if there's already a primary product
-    const existingPrimary = linkedProducts.find((p: any) => p.is_primary);
-    let confirmed = true;
+    let existingPrimaryLink: OfferProductLink | null = null;
+    try {
+      const primaryResponse = await offerService.getPrimaryProductByOffer(
+        Number(id),
+        true
+      );
+      if (primaryResponse.success && primaryResponse.data) {
+        existingPrimaryLink = primaryResponse.data;
+      }
+    } catch (err) {
+      // No primary product exists (expected if none set)
+    }
 
-    if (existingPrimary && existingPrimary.product_id !== productId) {
+    let confirmed = true;
+    if (existingPrimaryLink && existingPrimaryLink.product_id !== productId) {
+      // Get the name of the current primary product
+      const currentPrimaryProduct = linkedProducts.find(
+        (p: any) => p.product_id === existingPrimaryLink.product_id
+      );
+      const currentPrimaryName =
+        currentPrimaryProduct?.name ||
+        `Product ${existingPrimaryLink.product_id}`;
+
       confirmed = await confirm({
         title: "Set Primary Product",
-        message: `Setting "${productName}" as the primary product will replace the current primary product (${
-          existingPrimary.name || `Product ${existingPrimary.product_id}`
-        }). Do you want to continue?`,
+        message: `Setting "${productName}" as the primary product will replace the current primary product (${currentPrimaryName}). Do you want to continue?`,
         confirmText: "Set as Primary",
         cancelText: "Cancel",
+        type: "info",
       });
     }
 
@@ -679,11 +773,14 @@ export default function OfferDetailsPage() {
 
     try {
       setSettingPrimaryId(productId);
-      console.log("[OfferDetails] Testing linkProductToOffer (set primary)...");
 
-      // Use linkProductToOffer to set as primary
-      // Note: This will replace the existing primary if one exists
-      const result = await offerService.linkProductToOffer({
+      // Step 1: Unlink the old primary product if it exists
+      if (existingPrimaryLink && existingPrimaryLink.id) {
+        await offerService.unlinkProductById(existingPrimaryLink.id);
+      }
+
+      // Step 2: Link the new product as primary
+      await offerService.linkProductToOffer({
         offer_id: Number(id),
         product_id: productId,
         is_primary: true,
@@ -691,10 +788,6 @@ export default function OfferDetailsPage() {
         created_by: user.user_id,
       });
 
-      console.log(
-        "[OfferDetails] linkProductToOffer (primary) response:",
-        result
-      );
       success(
         "Primary Product Set",
         `"${productName}" is now the primary product for this offer.`
@@ -703,11 +796,12 @@ export default function OfferDetailsPage() {
       // Reload products with cache bypassed to get fresh data
       loadProducts(true);
     } catch (err) {
-      console.error("[OfferDetails] Failed to set primary product:", err);
+      // Failed to set primary product
       showError("Failed to set primary product");
     } finally {
       setSettingPrimaryId(null);
     }
+    */
   };
 
   // Generate dummy offer type based on offer characteristics
@@ -1104,14 +1198,14 @@ export default function OfferDetailsPage() {
             Linked Products
           </h3>
           <div className="flex items-center gap-3">
-            {!productsLoading && linkedProducts.length > 0 && (
-              <span className={`text-sm ${tw.textMuted}`}>
-                {linkedProducts.length} product
-                {linkedProducts.length !== 1 ? "s" : ""}
-              </span>
-            )}
+          {!productsLoading && linkedProducts.length > 0 && (
+            <span className={`text-sm ${tw.textMuted}`}>
+              {linkedProducts.length} product
+              {linkedProducts.length !== 1 ? "s" : ""}
+            </span>
+          )}
             <button
-              onClick={() => setShowProductSelector(true)}
+              onClick={() => setIsAddProductModalOpen(true)}
               className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
               style={{ backgroundColor: color.primary.action }}
             >
@@ -1129,16 +1223,6 @@ export default function OfferDetailsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {linkedProducts.map((product: any, index: number) => {
-              // Debug logging
-              if (index === 0) {
-                console.log("[OfferDetails] Product data for buttons:", {
-                  product,
-                  hasLinkId: !!product.link_id,
-                  isPrimary: product.is_primary,
-                  primaryProductId,
-                });
-              }
-
               const isPrimary =
                 product.is_primary ||
                 (product.product_id && product.product_id === primaryProductId);
@@ -1149,7 +1233,9 @@ export default function OfferDetailsPage() {
 
               return (
                 <div
-                  key={product.id || index}
+                  key={
+                    product.link_id || `product-${product.product_id}-${index}`
+                  }
                   className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -1186,6 +1272,7 @@ export default function OfferDetailsPage() {
                     {/* Set as Primary button - Show if not primary and has link_id or product_id */}
                     {!isPrimary &&
                       (product.link_id || product.product_id || product.id) && (
+                        <div className="relative group">
                         <button
                           onClick={() =>
                             handleSetPrimaryProduct(
@@ -1196,12 +1283,14 @@ export default function OfferDetailsPage() {
                             )
                           }
                           disabled={isSettingPrimary || isUnlinking}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg border border-gray-300 hover:border-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Set as primary product"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 rounded-lg border border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isSettingPrimary ? (
                             <>
-                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-yellow-600"></div>
+                                <div
+                                  className="animate-spin rounded-full h-3.5 w-3.5 border-b-2"
+                                  style={{ borderColor: color.primary.accent }}
+                                ></div>
                               <span>Setting...</span>
                             </>
                           ) : (
@@ -1211,16 +1300,19 @@ export default function OfferDetailsPage() {
                             </>
                           )}
                         </button>
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg whitespace-normal w-96 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg z-50">
+                            Mark this product as the main product for this
+                            offer. Only one product can be primary per offer.
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900"></div>
+                          </div>
+                        </div>
                       )}
                     {/* Unlink button - Always show if we have products */}
                     {(product.link_id || product.product_id || product.id) && (
                       <button
                         onClick={() => {
                           if (!product.link_id) {
-                            console.warn(
-                              "[OfferDetails] No link_id found for product, cannot unlink:",
-                              product
-                            );
                             showError(
                               "Cannot unlink: Link ID not available. Product may need to be re-linked."
                             );
@@ -1248,10 +1340,7 @@ export default function OfferDetailsPage() {
                             <span>Unlinking...</span>
                           </>
                         ) : (
-                          <>
-                            <X className="w-4 h-4" />
                             <span>Unlink</span>
-                          </>
                         )}
                       </button>
                     )}
@@ -1279,7 +1368,7 @@ export default function OfferDetailsPage() {
       >
         <div className="mb-4">
           <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
-        </div>
+    </div>
 
         {creativesLoading ? (
           <div className="flex justify-center items-center py-8">
@@ -1289,7 +1378,9 @@ export default function OfferDetailsPage() {
           <div className="space-y-4">
             {offerCreatives.map((creative: OfferCreative, index: number) => (
               <div
-                key={creative.id || index}
+                key={`creative-${creative.id || creative.channel}-${
+                  creative.locale
+                }-${index}`}
                 className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
@@ -1510,89 +1601,208 @@ export default function OfferDetailsPage() {
         </div>
       </RegularModal>
 
-      {/* Product Selector - Renders when showProductSelector is true */}
-      {showProductSelector && (
-        <>
-          <ProductSelector
-            selectedProducts={selectedProductsToAdd}
-            onProductsChange={handleProductsChange}
-            multiSelect={true}
-            showAddButtonInline={true}
-            autoOpenModal={true}
-          />
+      {/* Add Product Modal - Custom Selector */}
+      <RegularModal
+        isOpen={isAddProductModalOpen}
+        onClose={() => {
+          setIsAddProductModalOpen(false);
+          setSelectedProductsToAdd([]);
+          setProductSearchTerm("");
+          setSelectedProductCategory("all");
+        }}
+        title="Add Products to Offer"
+        size="full"
+      >
+        <div className="space-y-4">
+          {/* Search and Filter Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={productSearchTerm}
+                onChange={(e) => setProductSearchTerm(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-          {/* Confirmation Modal - Shows after products are selected */}
+            {/* Category Filter */}
+            <div>
+              <HeadlessSelect
+                value={selectedProductCategory}
+                onChange={(value) => setSelectedProductCategory(String(value))}
+                options={productCategories}
+                placeholder="Filter by category"
+              />
+            </div>
+          </div>
+
+          {/* Selected Products Count */}
           {selectedProductsToAdd.length > 0 && (
-            <RegularModal
-              isOpen={true}
-              onClose={() => {
-                setShowProductSelector(false);
-                setSelectedProductsToAdd([]);
-              }}
-              title="Link Products to Offer"
-              size="md"
+            <div
+              className="rounded-lg p-3"
+              style={{ backgroundColor: color.primary.accent }}
             >
-              <div className="space-y-4">
-                <p className="text-gray-700">
-                  Link {selectedProductsToAdd.length} product
-                  {selectedProductsToAdd.length !== 1 ? "s" : ""} to this offer?
-                </p>
+              <p className="text-sm text-black font-medium">
+                {selectedProductsToAdd.length} product
+                {selectedProductsToAdd.length !== 1 ? "s" : ""} selected
+              </p>
+            </div>
+          )}
 
-                <div className="bg-gray-50 rounded-lg p-4 max-h-60 overflow-y-auto">
-                  {selectedProductsToAdd.map((product) => (
+          {/* Products List */}
+          <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+            {productsSearchLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : availableProducts.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {availableProducts.map((product) => {
+                  const isSelected = selectedProductsToAdd.some(
+                    (p) => p.id === product.id
+                  );
+                  const isAlreadyLinked = linkedProducts.some(
+                    (p) => p.id === product.id
+                  );
+
+                  return (
                     <div
                       key={product.id}
-                      className="flex items-center gap-3 py-2 border-b border-gray-200 last:border-0"
+                      onClick={() => {
+                        if (!isAlreadyLinked) {
+                          toggleProductSelection(product);
+                        }
+                      }}
+                      className={`p-4 transition-colors ${
+                        isAlreadyLinked
+                          ? "bg-gray-50 opacity-60 cursor-not-allowed"
+                          : "hover:bg-gray-50 cursor-pointer"
+                      }`}
                     >
-                      <Package className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {product.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {product.description}
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              isAlreadyLinked ? "bg-gray-200" : "bg-gray-100"
+                            }`}
+                          >
+                            <Package
+                              className="w-5 h-5"
+                              style={{
+                                color: isAlreadyLinked
+                                  ? "#9CA3AF"
+                                  : color.primary.accent,
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <h5
+                              className={`font-medium ${
+                                isAlreadyLinked
+                                  ? "text-gray-500"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {product.name}
+                            </h5>
+                            <p
+                              className={`text-sm ${
+                                isAlreadyLinked
+                                  ? "text-gray-400"
+                                  : "text-gray-600"
+                              }`}
+                            >
+                              {product.description}
+                            </p>
+                            {isAlreadyLinked && (
+                              <span className="text-xs text-gray-500 italic mt-1 block">
+                                Already linked to this offer
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {!isAlreadyLinked && (
+                          <div
+                            className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                              isSelected ? "" : "border-gray-300 bg-white"
+                            }`}
+                            style={
+                              isSelected
+                                ? {
+                                    borderColor: color.primary.accent,
+                                    backgroundColor: color.primary.accent,
+                                  }
+                                : {}
+                            }
+                          >
+                            {isSelected && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                        )}
+                        {isAlreadyLinked && (
+                          <div className="w-6 h-6 rounded border-2 border-gray-300 bg-gray-200 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-gray-500" />
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <button
-                    onClick={() => {
-                      setShowProductSelector(false);
-                      setSelectedProductsToAdd([]);
-                    }}
-                    disabled={isLinkingProducts}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmAddProducts}
-                    disabled={isLinkingProducts}
-                    className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-                    style={{ backgroundColor: color.primary.action }}
-                  >
-                    {isLinkingProducts ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Linking...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        Link Product
-                        {selectedProductsToAdd.length !== 1 ? "s" : ""}
-                      </>
-                    )}
-                  </button>
-                </div>
+                  );
+                })}
               </div>
-            </RegularModal>
-          )}
-        </>
-      )}
+            ) : (
+              <div className="text-center py-12">
+                <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm text-gray-500">
+                  {productSearchTerm
+                    ? "No products found matching your search"
+                    : "No products available"}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              onClick={() => {
+                setIsAddProductModalOpen(false);
+                setSelectedProductsToAdd([]);
+                setProductSearchTerm("");
+              }}
+              disabled={isLinkingProducts}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmAddProducts}
+              disabled={isLinkingProducts || selectedProductsToAdd.length === 0}
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isLinkingProducts ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Linking...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Link{" "}
+                  {selectedProductsToAdd.length > 0
+                    ? `${selectedProductsToAdd.length} `
+                    : ""}
+                  Product{selectedProductsToAdd.length !== 1 ? "s" : ""}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </RegularModal>
     </div>
   );
 }

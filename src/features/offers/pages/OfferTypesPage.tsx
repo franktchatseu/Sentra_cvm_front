@@ -153,7 +153,7 @@ export default function OfferTypesPage() {
       setNewTypeName("");
       setNewTypeDescription("");
     } catch (err) {
-      console.error("Failed to create offer type:", err);
+      // Failed to create offer type
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to create offer type"
@@ -194,7 +194,7 @@ export default function OfferTypesPage() {
       setEditName("");
       setEditDescription("");
     } catch (err) {
-      console.error("Failed to update offer type:", err);
+      // Failed to update offer type
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to update offer type"
@@ -222,7 +222,7 @@ export default function OfferTypesPage() {
         `"${offerType.name}" has been deleted successfully.`
       );
     } catch (err) {
-      console.error("Failed to delete offer type:", err);
+      // Failed to delete offer type
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to delete offer type"

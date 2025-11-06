@@ -244,7 +244,7 @@ export default function OfferCreativeStep({
         const rendered = (response as any).data || response;
         setPreviewResult(rendered);
       } catch (err) {
-        console.error("Failed to render creative:", err);
+        // Failed to render creative
         setPreviewError(
           err instanceof Error ? err.message : "Failed to render creative"
         );
@@ -347,7 +347,7 @@ export default function OfferCreativeStep({
         setPreviewResult(clientPreview);
       }
     } catch (err) {
-      console.error("Failed to preview with overrides:", err);
+      // Failed to preview with overrides
       setPreviewError(
         err instanceof Error ? err.message : "Invalid variable overrides JSON"
       );

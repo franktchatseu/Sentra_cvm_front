@@ -32,13 +32,6 @@ class OfferCreativeService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    console.log(`[OfferCreativeService] Making request to: ${url}`);
-    console.log(
-      `[OfferCreativeService] Request method: ${options.method || "GET"}`
-    );
-    if (options.body) {
-      console.log(`[OfferCreativeService] Request body:`, options.body);
-    }
 
     const response = await fetch(url, {
       headers: {
@@ -48,11 +41,6 @@ class OfferCreativeService {
       },
       ...options,
     });
-
-    console.log(
-      `[OfferCreativeService] Response status: ${response.status} ${response.statusText}`
-    );
-    console.log(`[OfferCreativeService] Response URL: ${response.url}`);
 
     // Parse response first
     const contentType = response.headers.get("content-type");
@@ -117,17 +105,12 @@ class OfferCreativeService {
           )}`
         );
       } catch (parseError: any) {
-        console.error(
-          `[OfferCreativeService] Failed to parse error response:`,
-          parseError
-        );
         throw new Error(
           `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
         );
       }
     }
 
-    console.log(`[OfferCreativeService] Response data:`, responseData);
     return responseData;
   }
 
@@ -138,9 +121,7 @@ class OfferCreativeService {
   // GET /offer-creatives/stats
   async getStats(skipCache: boolean = false): Promise<CreativeStatsResponse> {
     const params = skipCache ? "?skipCache=true" : "";
-    console.log(`[OfferCreativeService] getStats - skipCache: ${skipCache}`);
     const result = await this.request<CreativeStatsResponse>(`/stats${params}`);
-    console.log(`[OfferCreativeService] getStats response:`, result);
     return result;
   }
 
@@ -153,11 +134,9 @@ class OfferCreativeService {
     if (limit) params.append("limit", limit.toString());
     if (skipCache) params.append("skipCache", "true");
     const queryString = params.toString();
-    console.log(`[OfferCreativeService] getMostRevised - limit: ${limit}`);
     const result = await this.request<OfferCreativesResponse>(
       `/most-revised${queryString ? `?${queryString}` : ""}`
     );
-    console.log(`[OfferCreativeService] getMostRevised response:`, result);
     return result;
   }
 
@@ -183,11 +162,9 @@ class OfferCreativeService {
     if (params.skipCache) queryParams.append("skipCache", "true");
 
     const queryString = queryParams.toString();
-    console.log(`[OfferCreativeService] search - params:`, params);
     const result = await this.request<OfferCreativesResponse>(
       `/search${queryString ? `?${queryString}` : ""}`
     );
-    console.log(`[OfferCreativeService] search response:`, result);
     return result;
   }
 
@@ -223,11 +200,9 @@ class OfferCreativeService {
     if (params.skipCache) queryParams.append("skipCache", "true");
 
     const queryString = queryParams.toString();
-    console.log(`[OfferCreativeService] superSearch - params:`, params);
     const result = await this.request<OfferCreativesResponse>(
       `/super-search${queryString ? `?${queryString}` : ""}`
     );
-    console.log(`[OfferCreativeService] superSearch response:`, result);
     return result;
   }
 
@@ -241,13 +216,9 @@ class OfferCreativeService {
     if (params?.offset) queryParams.append("offset", params.offset.toString());
     if (params?.skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
-    console.log(
-      `[OfferCreativeService] getByTemplateType - templateTypeId: ${templateTypeId}`
-    );
     const result = await this.request<OfferCreativesResponse>(
       `/template-type/${templateTypeId}${queryString ? `?${queryString}` : ""}`
     );
-    console.log(`[OfferCreativeService] getByTemplateType response:`, result);
     return result;
   }
 
@@ -261,11 +232,9 @@ class OfferCreativeService {
     if (params?.offset) queryParams.append("offset", params.offset.toString());
     if (params?.skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
-    console.log(`[OfferCreativeService] getByChannel - channel: ${channel}`);
     const result = await this.request<OfferCreativesResponse>(
       `/channel/${channel}${queryString ? `?${queryString}` : ""}`
     );
-    console.log(`[OfferCreativeService] getByChannel response:`, result);
     return result;
   }
 
@@ -279,13 +248,11 @@ class OfferCreativeService {
     if (params?.offset) queryParams.append("offset", params.offset.toString());
     if (params?.skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
-    console.log(`[OfferCreativeService] getByLocale - locale: ${locale}`);
     const result = await this.request<OfferCreativesResponse>(
       `/locale/${encodeURIComponent(locale)}${
         queryString ? `?${queryString}` : ""
       }`
     );
-    console.log(`[OfferCreativeService] getByLocale response:`, result);
     return result;
   }
 
@@ -295,13 +262,9 @@ class OfferCreativeService {
     skipCache: boolean = false
   ): Promise<BaseResponse<CreativeChannel[]>> {
     const params = skipCache ? "?skipCache=true" : "";
-    console.log(
-      `[OfferCreativeService] getChannelsByOffer - offerId: ${offerId}`
-    );
     const result = await this.request<BaseResponse<CreativeChannel[]>>(
       `/offer/${offerId}/channels${params}`
     );
-    console.log(`[OfferCreativeService] getChannelsByOffer response:`, result);
     return result;
   }
 
@@ -311,13 +274,9 @@ class OfferCreativeService {
     skipCache: boolean = false
   ): Promise<ChannelCoverageResponse> {
     const params = skipCache ? "?skipCache=true" : "";
-    console.log(
-      `[OfferCreativeService] getChannelCoverage - offerId: ${offerId}`
-    );
     const result = await this.request<ChannelCoverageResponse>(
       `/offer/${offerId}/channel-coverage${params}`
     );
-    console.log(`[OfferCreativeService] getChannelCoverage response:`, result);
     return result;
   }
 
@@ -328,15 +287,8 @@ class OfferCreativeService {
     skipCache: boolean = false
   ): Promise<BaseResponse<string[]>> {
     const params = skipCache ? "?skipCache=true" : "";
-    console.log(
-      `[OfferCreativeService] getLocalesByOfferAndChannel - offerId: ${offerId}, channel: ${channel}`
-    );
     const result = await this.request<BaseResponse<string[]>>(
       `/offer/${offerId}/channel/${channel}/locales${params}`
-    );
-    console.log(
-      `[OfferCreativeService] getLocalesByOfferAndChannel response:`,
-      result
     );
     return result;
   }
@@ -352,19 +304,10 @@ class OfferCreativeService {
     if (params?.locale) queryParams.append("locale", params.locale);
     if (params?.skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
-    console.log(
-      `[OfferCreativeService] getLatestByOfferAndChannel - offerId: ${offerId}, channel: ${channel}, locale: ${
-        params?.locale || "en"
-      }`
-    );
     const result = await this.request<OfferCreativeResponse>(
       `/offer/${offerId}/channel/${channel}/latest${
         queryString ? `?${queryString}` : ""
       }`
-    );
-    console.log(
-      `[OfferCreativeService] getLatestByOfferAndChannel response:`,
-      result
     );
     return result;
   }
@@ -387,19 +330,10 @@ class OfferCreativeService {
     if (params?.offset) queryParams.append("offset", params.offset.toString());
     if (params?.skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
-    console.log(
-      `[OfferCreativeService] getVersionsByOfferAndChannel - offerId: ${offerId}, channel: ${channel}, locale: ${
-        params?.locale || "en"
-      }`
-    );
     const result = await this.request<OfferCreativesResponse>(
       `/offer/${offerId}/channel/${channel}/versions${
         queryString ? `?${queryString}` : ""
       }`
-    );
-    console.log(
-      `[OfferCreativeService] getVersionsByOfferAndChannel response:`,
-      result
     );
     return result;
   }
@@ -411,15 +345,8 @@ class OfferCreativeService {
     skipCache: boolean = false
   ): Promise<OfferCreativeResponse> {
     const params = skipCache ? "?skipCache=true" : "";
-    console.log(
-      `[OfferCreativeService] getByOfferAndChannel - offerId: ${offerId}, channel: ${channel}`
-    );
     const result = await this.request<OfferCreativeResponse>(
       `/offer/${offerId}/channel/${channel}${params}`
-    );
-    console.log(
-      `[OfferCreativeService] getByOfferAndChannel response:`,
-      result
     );
     return result;
   }
@@ -434,11 +361,9 @@ class OfferCreativeService {
     if (params?.offset) queryParams.append("offset", params.offset.toString());
     if (params?.skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
-    console.log(`[OfferCreativeService] getByOffer - offerId: ${offerId}`);
     const result = await this.request<OfferCreativesResponse>(
       `/offer/${offerId}${queryString ? `?${queryString}` : ""}`
     );
-    console.log(`[OfferCreativeService] getByOffer response:`, result);
     return result;
   }
 
@@ -453,7 +378,6 @@ class OfferCreativeService {
     const queryParams = new URLSearchParams();
     if (skipCache) queryParams.append("skipCache", "true");
     const queryString = queryParams.toString();
-    console.log(`[OfferCreativeService] render - id: ${id}, request:`, request);
 
     // Backend expects GET with body containing variableOverrides
     const options: RequestInit = {
@@ -471,7 +395,6 @@ class OfferCreativeService {
       `/${id}/render${queryString ? `?${queryString}` : ""}`,
       options
     );
-    console.log(`[OfferCreativeService] render response:`, result);
     return result;
   }
 
@@ -481,9 +404,7 @@ class OfferCreativeService {
     skipCache: boolean = false
   ): Promise<OfferCreativeResponse> {
     const params = skipCache ? "?skipCache=true" : "";
-    console.log(`[OfferCreativeService] getById - id: ${id}`);
     const result = await this.request<OfferCreativeResponse>(`/${id}${params}`);
-    console.log(`[OfferCreativeService] getById response:`, result);
     return result;
   }
 
@@ -495,37 +416,11 @@ class OfferCreativeService {
   async create(
     request: CreateOfferCreativeRequest
   ): Promise<OfferCreativeResponse> {
-    console.log(
-      `[OfferCreativeService] create - incoming request:`,
-      JSON.stringify(request, null, 2)
-    );
-    console.log(`[OfferCreativeService] create - request details:`, {
-      offer_id: request.offer_id,
-      channel: request.channel,
-      locale: request.locale,
-      has_title: !!request.title,
-      has_text_body: !!request.text_body,
-      has_html_body: !!request.html_body,
-      has_variables:
-        !!request.variables && Object.keys(request.variables).length > 0,
-      created_by: request.created_by,
+    const result = await this.request<OfferCreativeResponse>(`/`, {
+      method: "POST",
+      body: JSON.stringify(request),
     });
-
-    try {
-      const result = await this.request<OfferCreativeResponse>(`/`, {
-        method: "POST",
-        body: JSON.stringify(request),
-      });
-      console.log(`[OfferCreativeService] create - SUCCESS response:`, result);
-      return result;
-    } catch (error: any) {
-      console.error(`[OfferCreativeService] create - ERROR:`, {
-        message: error?.message,
-        error: error,
-        requestPayload: request,
-      });
-      throw error;
-    }
+    return result;
   }
 
   // POST /offer-creatives/offer/:offerId/channel/:channel/new-version
@@ -534,9 +429,6 @@ class OfferCreativeService {
     channel: CreativeChannel,
     request: CreateVersionRequest = {}
   ): Promise<OfferCreativeResponse> {
-    console.log(
-      `[OfferCreativeService] createNewVersion - offerId: ${offerId}, channel: ${channel}`
-    );
     const result = await this.request<OfferCreativeResponse>(
       `/offer/${offerId}/channel/${channel}/new-version`,
       {
@@ -544,7 +436,6 @@ class OfferCreativeService {
         body: JSON.stringify(request),
       }
     );
-    console.log(`[OfferCreativeService] createNewVersion response:`, result);
     return result;
   }
 
@@ -554,9 +445,6 @@ class OfferCreativeService {
     id: number,
     request: { newLocale: string; created_by?: number }
   ): Promise<OfferCreativeResponse> {
-    console.log(
-      `[OfferCreativeService] cloneToLocale - id: ${id}, newLocale: ${request.newLocale}`
-    );
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/clone-locale`,
       {
@@ -567,7 +455,6 @@ class OfferCreativeService {
         }),
       }
     );
-    console.log(`[OfferCreativeService] cloneToLocale response:`, result);
     return result;
   }
 
@@ -577,9 +464,6 @@ class OfferCreativeService {
     id: number,
     request: { newChannel: CreativeChannel; created_by?: number }
   ): Promise<OfferCreativeResponse> {
-    console.log(
-      `[OfferCreativeService] cloneToChannel - id: ${id}, newChannel: ${request.newChannel}`
-    );
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/clone-channel`,
       {
@@ -590,7 +474,6 @@ class OfferCreativeService {
         }),
       }
     );
-    console.log(`[OfferCreativeService] cloneToChannel response:`, result);
     return result;
   }
 
@@ -600,27 +483,23 @@ class OfferCreativeService {
 
   // PATCH /offer-creatives/:id/activate
   async activate(id: number): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] activate - id: ${id}`);
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/activate`,
       {
         method: "PATCH",
       }
     );
-    console.log(`[OfferCreativeService] activate response:`, result);
     return result;
   }
 
   // PATCH /offer-creatives/:id/deactivate
   async deactivate(id: number): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] deactivate - id: ${id}`);
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/deactivate`,
       {
         method: "PATCH",
       }
     );
-    console.log(`[OfferCreativeService] deactivate response:`, result);
     return result;
   }
 
@@ -630,10 +509,6 @@ class OfferCreativeService {
     id: number,
     request: RollbackCreativeRequest
   ): Promise<OfferCreativeResponse> {
-    console.log(
-      `[OfferCreativeService] rollback - id: ${id}, request:`,
-      request
-    );
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/rollback`,
       {
@@ -647,7 +522,6 @@ class OfferCreativeService {
         }),
       }
     );
-    console.log(`[OfferCreativeService] rollback response:`, result);
     return result;
   }
 
@@ -656,12 +530,10 @@ class OfferCreativeService {
     id: number,
     request: UpdateContentRequest
   ): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] updateContent - id: ${id}`);
     const result = await this.request<OfferCreativeResponse>(`/${id}/content`, {
       method: "PATCH",
       body: JSON.stringify(request),
     });
-    console.log(`[OfferCreativeService] updateContent response:`, result);
     return result;
   }
 

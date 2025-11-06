@@ -938,11 +938,7 @@ export default function CreateOfferPage() {
               link_id: link.id || link.link_id, // Preserve link_id for unlinking
             };
           } catch (error) {
-            console.error(
-              "Failed to fetch product details for ID:",
-              link.product_id,
-              error
-            );
+            // Failed to fetch product details
             return {
               id: link.product_id,
               name: `Product ${link.product_id}`,
@@ -982,7 +978,7 @@ export default function CreateOfferPage() {
         setCreatives(mappedCreatives);
       }
     } catch (error) {
-      console.error("[Edit Mode] Failed to load offer data:", error);
+      // Failed to load offer data
       navigate("/dashboard/offers");
     } finally {
       setIsLoadingOffer(false);
@@ -1006,7 +1002,7 @@ export default function CreateOfferPage() {
         });
         setOfferCategories(response.data || []);
       } catch (err) {
-        console.error("Failed to load offer categories:", err);
+        // Failed to load offer categories
         // Keep empty array on error, user can still proceed
       } finally {
         setCategoriesLoading(false);
@@ -1167,14 +1163,6 @@ export default function CreateOfferPage() {
           createdOfferResponse.data?.id || createdOfferResponse.insertId;
 
         if (!offerId) {
-          console.error(
-            "[Submit] Could not extract offer ID from response:",
-            createdOfferResponse
-          );
-          console.error(
-            "[Submit] Response keys:",
-            Object.keys(createdOfferResponse)
-          );
           throw new Error("Failed to get offer ID from creation response");
         }
       }
@@ -1221,16 +1209,10 @@ export default function CreateOfferPage() {
                   try {
                     await offerService.unlinkProductById(linkId);
                   } catch (unlinkError) {
-                    console.error(
-                      `[Submit] Failed to unlink product ${product.id}:`,
-                      unlinkError
-                    );
-                    // Continue with other operations even if one fails
+                    // Failed to unlink product, continue with other operations
                   }
                 } else {
-                  console.warn(
-                    `[Submit] No link_id found for product ${product.id}, cannot unlink`
-                  );
+                  // No link_id found for product, cannot unlink
                 }
               }
             }
@@ -1271,11 +1253,7 @@ export default function CreateOfferPage() {
                 Number(initialPrimary.id || initialPrimary.product_id) !==
                   currentPrimaryId
               ) {
-                // The primary product is managed through the offer details page
-                // For now, we'll just log this - the user can set primary via details page
-                console.log(
-                  "[Submit] Primary product changed, but update should be done via offer details page"
-                );
+                // Primary product changes are managed through the offer details page
               }
             }
           } else {
@@ -1299,7 +1277,7 @@ export default function CreateOfferPage() {
             await offerService.linkProductsBatch(batchRequest);
           }
         } catch (productError) {
-          console.error("[Submit] Failed to manage products:", productError);
+          // Failed to manage products
           showError(
             `Offer ${isEditMode ? "updated" : "created"}, but failed to ${
               isEditMode ? "update" : "link"
@@ -1349,7 +1327,7 @@ export default function CreateOfferPage() {
 
       navigate("/dashboard/offers");
     } catch (err: unknown) {
-      console.error("Create offer error:", err);
+      // Create offer error
 
       // Parse API error response for better error messages
       let errorMessage = "Failed to create offer";

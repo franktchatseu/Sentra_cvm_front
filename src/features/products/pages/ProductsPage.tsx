@@ -321,8 +321,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <Package className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag1}20` }}
+            >
+              <Package
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag1 }}
+              />
             </div>
           </div>
         </div>
@@ -342,8 +348,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag4}20` }}
+            >
+              <TrendingUp
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag4 }}
+              />
             </div>
           </div>
         </div>
@@ -363,8 +375,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <XCircle className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag3}20` }}
+            >
+              <XCircle
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag3 }}
+              />
             </div>
           </div>
         </div>
@@ -386,8 +404,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag2}20` }}
+            >
+              <DollarSign
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag2 }}
+              />
             </div>
           </div>
         </div>
@@ -412,8 +436,14 @@ export default function ProductsPage() {
                 </p>
               )}
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag1}20` }}
+            >
+              <BarChart3
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag1 }}
+              />
             </div>
           </div>
         </div>

@@ -234,9 +234,6 @@ function OffersModal({
     try {
       setLoading(true);
       setError(null);
-      console.log(
-        `[OfferCategories] Loading offers for category ${category.id} (${category.name})...`
-      );
       const response = await offerCategoryService.getCategoryOffers(
         category.id,
         {
@@ -244,18 +241,11 @@ function OffersModal({
           skipCache: true,
         }
       );
-      console.log(
-        `[OfferCategories] getCategoryOffers response for category ${category.id}:`,
-        response
-      );
       // Backend returns offers in response.data
       const offersData = (response.data || []) as BasicOffer[];
-      console.log(
-        `[OfferCategories] Found ${offersData.length} offers in category ${category.id}`
-      );
       setOffers(offersData);
     } catch (err) {
-      console.error("[OfferCategories] Failed to load offers:", err);
+      // Failed to load offers
       setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
       setLoading(false);
@@ -547,7 +537,7 @@ function OfferCategoriesPage() {
       // For now, just return empty array to avoid errors
       return [];
     } catch (err) {
-      console.error("Failed to load offers for counting:", err);
+      // Failed to load offers for counting
       return [];
     }
   };
@@ -565,7 +555,7 @@ function OfferCategoriesPage() {
         categoriesWithOffers: parseInt(data.categories_with_description) || 0, // Using categories_with_description as proxy
       });
     } catch (err) {
-      console.error("Failed to load stats:", err);
+      // Failed to load stats
       setStats(null);
     }
   };
@@ -580,7 +570,7 @@ function OfferCategoriesPage() {
         setUnusedCount(response.data.length);
       }
     } catch (err) {
-      console.error("Failed to load unused categories:", err);
+      // Failed to load unused categories
       setUnusedCount(0);
     }
   };
@@ -599,7 +589,7 @@ function OfferCategoriesPage() {
         });
       }
     } catch (err) {
-      console.error("Failed to load popular category:", err);
+      // Failed to load popular category
       setPopularCategory(null);
     }
   };
@@ -612,7 +602,7 @@ function OfferCategoriesPage() {
       });
       // Active categories test - no console logs needed
     } catch (err) {
-      console.error("Failed to load active categories:", err);
+      // Failed to load active categories
     }
   };
 
@@ -621,7 +611,7 @@ function OfferCategoriesPage() {
       // Test with ID 1 (Free shipping)
       await offerCategoryService.getCategoryById(1, true);
     } catch (err) {
-      console.error("Failed to load category by ID:", err);
+      // Failed to load category by ID
     }
   };
 
@@ -630,7 +620,7 @@ function OfferCategoriesPage() {
       // Test with "Free shipping" name
       await offerCategoryService.getCategoryByName("Free shipping", true);
     } catch (err) {
-      console.error("Failed to load category by name:", err);
+      // Failed to load category by name
     }
   };
 
@@ -642,13 +632,9 @@ function OfferCategoriesPage() {
   // Load offer counts for all categories at once
   const loadAllOfferCounts = async (categories?: OfferCategoryWithCount[]) => {
     try {
-      console.log("[OfferCategories] Loading offer counts...");
       const response = await offerCategoryService.getOfferCounts(true);
-      console.log("[OfferCategories] getOfferCounts response:", response);
 
       if (response.success && response.data) {
-        console.log("[OfferCategories] Raw counts data:", response.data);
-
         // Use provided categories or fall back to state
         const categoriesToMatch = categories || offerCategories;
 
@@ -682,11 +668,6 @@ function OfferCategoriesPage() {
                   ? parseInt(item.offer_count, 10)
                   : item.offer_count || 0;
 
-              console.log(
-                `[OfferCategories] Mapping count for category ${categoryId} (${item.category_name}):`,
-                { offerCount, item }
-              );
-
               countsMap[categoryId] = {
                 totalOffers: offerCount,
                 activeOffers: 0, // Backend doesn't provide this breakdown
@@ -695,20 +676,14 @@ function OfferCategoriesPage() {
                 pendingOffers: 0,
               };
             } else {
-              console.warn(
-                `[OfferCategories] Could not find category with name: ${item.category_name}`
-              );
             }
           }
         );
 
-        console.log("[OfferCategories] Final counts map:", countsMap);
         setCategoryOfferCounts(countsMap);
-      } else {
-        console.warn("[OfferCategories] No counts data in response:", response);
       }
     } catch (err) {
-      console.error("[OfferCategories] Failed to load all offer counts:", err);
+      // Failed to load all offer counts
     }
   };
 
@@ -718,7 +693,7 @@ function OfferCategoriesPage() {
       await offerCategoryService.getCategoryActiveOfferCount(1, true);
       // Response received successfully - no action needed
     } catch (err) {
-      console.error("Failed to load active offer count for category 1:", err);
+      // Failed to load active offer count
     }
   };
 
@@ -728,19 +703,12 @@ function OfferCategoriesPage() {
       await offerCategoryService.getActiveOfferCounts(true);
       // Response received successfully - no action needed
     } catch (err) {
-      console.error(
-        "Failed to load active offer counts for all categories:",
-        err
-      );
+      // Failed to load active offer counts for all categories
     }
   };
 
   const loadCategories = async (skipCache = false) => {
     try {
-      console.log(
-        "[OfferCategories] loadCategories called, skipCache:",
-        skipCache
-      );
       setLoading(true);
 
       let response;
@@ -749,7 +717,6 @@ function OfferCategoriesPage() {
       // Choose endpoint based on filter type and advanced search
       if (hasAdvancedFilters()) {
         endpointName = "advancedSearch";
-        console.log("[OfferCategories] Using advancedSearch endpoint");
         // Use advanced search when advanced filters are set
         response = await offerCategoryService.advancedSearch({
           name: advancedSearch.exactName.trim() || undefined,
@@ -761,10 +728,6 @@ function OfferCategoriesPage() {
         });
       } else if (debouncedSearchTerm) {
         endpointName = "searchCategories";
-        console.log(
-          "[OfferCategories] Using searchCategories endpoint, searchTerm:",
-          debouncedSearchTerm
-        );
         // Use search endpoint when there's a search term
         response = await offerCategoryService.searchCategories({
           q: debouncedSearchTerm,
@@ -776,7 +739,6 @@ function OfferCategoriesPage() {
         switch (filterType) {
           case "unused":
             endpointName = "getUnusedCategories";
-            console.log("[OfferCategories] Using getUnusedCategories endpoint");
             response = await offerCategoryService.getUnusedCategories({
               limit: 50,
               skipCache: skipCache,
@@ -784,9 +746,6 @@ function OfferCategoriesPage() {
             break;
           case "popular":
             endpointName = "getPopularCategories";
-            console.log(
-              "[OfferCategories] Using getPopularCategories endpoint"
-            );
             response = await offerCategoryService.getPopularCategories({
               limit: 50,
               skipCache: skipCache,
@@ -794,7 +753,6 @@ function OfferCategoriesPage() {
             break;
           case "active":
             endpointName = "getActiveCategories";
-            console.log("[OfferCategories] Using getActiveCategories endpoint");
             response = await offerCategoryService.getActiveCategories({
               limit: 50,
               skipCache: skipCache,
@@ -802,9 +760,6 @@ function OfferCategoriesPage() {
             break;
           case "inactive":
             endpointName = "getAllCategories (filtered)";
-            console.log(
-              "[OfferCategories] Using getAllCategories endpoint (will filter inactive)"
-            );
             // For inactive, we'll get all and filter client-side
             response = await offerCategoryService.getAllCategories({
               limit: 50,
@@ -813,7 +768,6 @@ function OfferCategoriesPage() {
             break;
           default: // 'all'
             endpointName = "getAllCategories";
-            console.log("[OfferCategories] Using getAllCategories endpoint");
             response = await offerCategoryService.getAllCategories({
               limit: 50,
               skipCache: skipCache,
@@ -822,12 +776,7 @@ function OfferCategoriesPage() {
         }
       }
 
-      console.log(`[OfferCategories] ${endpointName} response:`, response);
       const categoriesData = response.data || [];
-      console.log(
-        `[OfferCategories] Loaded ${categoriesData.length} categories:`,
-        categoriesData.map((c) => ({ id: c.id, name: c.name }))
-      );
 
       // Use provided offers data or fall back to state
       // Add offer count to each category by counting from offers
@@ -842,15 +791,6 @@ function OfferCategoriesPage() {
           offer_count: getOfferCountForCategory(),
         };
       });
-
-      console.log(
-        "[OfferCategories] Categories with counts (before server counts):",
-        categoriesWithCounts.map((c) => ({
-          id: c.id,
-          name: c.name,
-          offer_count: c.offer_count,
-        }))
-      );
 
       // Apply client-side filtering for inactive categories
       if (filterType === "inactive" && !debouncedSearchTerm) {
@@ -868,7 +808,7 @@ function OfferCategoriesPage() {
       // We'll pass categoriesWithCounts to loadAllOfferCounts
       await loadAllOfferCounts(categoriesWithCounts);
     } catch (err) {
-      console.error("Failed to load categories:", err);
+      // Failed to load categories
       setError(err instanceof Error ? err.message : "Error loading categories");
       showError("Failed to load offer categories", "Please try again later.");
       setOfferCategories([]);
@@ -911,7 +851,7 @@ function OfferCategoriesPage() {
         `"${category.name}" has been deleted successfully.`
       );
     } catch (err) {
-      console.error("Error deleting category:", err);
+      // Error"Error deleting category:", err);
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to delete category"
@@ -952,7 +892,7 @@ function OfferCategoriesPage() {
       setIsModalOpen(false);
       setEditingCategory(undefined);
     } catch (err) {
-      console.error("Failed to save category:", err);
+      // Error"Failed to save category:", err);
       showError("Failed to save category", "Please try again later.");
     }
   };
@@ -1378,18 +1318,6 @@ function OfferCategoriesPage() {
                         ? parseInt(category.id, 10)
                         : category.id;
                     const count = categoryOfferCounts[categoryId];
-                    console.log(
-                      `[OfferCategories] Displaying count for category ${categoryId} (${category.name}):`,
-                      {
-                        categoryId,
-                        categoryIdType: typeof categoryId,
-                        hasCount: !!count,
-                        count,
-                        fallbackOfferCount: category.offer_count,
-                        allCategoryIds:
-                          Object.keys(categoryOfferCounts).map(Number),
-                      }
-                    );
                     return count ? (
                       <>
                         {count.totalOffers} offer
