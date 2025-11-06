@@ -824,7 +824,7 @@ export default function OffersPage() {
 
       {/* Offers Table */}
       <div
-        className={`bg-white rounded-lg shadow-sm border border-[${color.border.default}] overflow-hidden`}
+        className={`bg-white rounded-lg shadow-sm border border-[${color.border.default}]`}
       >
         {loading ? (
           <div className="flex items-center justify-center h-64">
@@ -847,7 +847,7 @@ export default function OffersPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div>
             <table className="w-full">
               <thead
                 className={`border-b ${tw.borderDefault}`}
@@ -1059,9 +1059,8 @@ export default function OffersPage() {
 
                           {showActionMenu === offer.id && (
                             <div
-                              className="action-dropdown absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4"
+                              className="action-dropdown absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4 z-[9999]"
                               style={{
-                                zIndex: 9999,
                                 maxHeight: "80vh",
                                 overflowY: "auto",
                               }}
