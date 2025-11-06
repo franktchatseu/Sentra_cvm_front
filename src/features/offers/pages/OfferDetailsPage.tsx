@@ -280,9 +280,9 @@ export default function OfferDetailsPage() {
 
   useEffect(() => {
     if (id) {
-      loadOffer();
-      loadProducts();
-      loadCreatives();
+      loadOffer(true); // Skip cache for fresh data
+      loadProducts(true); // Skip cache for fresh data
+      loadCreatives(true); // Skip cache for fresh data
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -326,7 +326,7 @@ export default function OfferDetailsPage() {
         "Offer Approved",
         `"${offer?.name}" has been approved successfully.`
       );
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after approval
     } catch {
       showError("Failed to approve offer");
     } finally {
@@ -343,7 +343,7 @@ export default function OfferDetailsPage() {
       setIsRejectLoading(true);
       await offerService.rejectOffer(Number(id), { rejected_by: user.user_id });
       success("Offer Rejected", `"${offer?.name}" has been rejected.`);
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after rejection
     } catch {
       showError("Failed to reject offer");
     } finally {
@@ -359,7 +359,7 @@ export default function OfferDetailsPage() {
         "Approval Requested",
         "Your approval request has been submitted successfully."
       );
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after approval request
     } catch {
       showError("Failed to request approval");
     } finally {
@@ -374,7 +374,7 @@ export default function OfferDetailsPage() {
         status: OfferStatusEnum.ACTIVE,
       });
       success("Offer Activated", `"${offer?.name}" is now active.`);
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after activation
     } catch {
       showError("Failed to activate offer");
     } finally {
@@ -389,7 +389,7 @@ export default function OfferDetailsPage() {
         status: OfferStatusEnum.PAUSED,
       });
       success("Offer Paused", `"${offer?.name}" has been paused.`);
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after pausing
     } catch {
       showError("Failed to pause offer");
     } finally {
@@ -404,7 +404,7 @@ export default function OfferDetailsPage() {
         status: OfferStatusEnum.DRAFT,
       });
       success("Offer Deactivated", `"${offer?.name}" has been deactivated.`);
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after deactivation
     } catch {
       showError("Failed to deactivate offer");
     } finally {
@@ -425,7 +425,7 @@ export default function OfferDetailsPage() {
         status: OfferStatusEnum.EXPIRED,
       });
       success("Offer Expired", `"${offer?.name}" has been expired.`);
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after expiration
     } catch {
       showError("Failed to expire offer");
     } finally {
@@ -445,7 +445,7 @@ export default function OfferDetailsPage() {
         status: OfferStatusEnum.ARCHIVED,
       });
       success("Offer Archived", `"${offer?.name}" has been archived.`);
-      loadOffer();
+      loadOffer(true); // Skip cache to get fresh data after archiving
     } catch {
       showError("Failed to archive offer");
     }
