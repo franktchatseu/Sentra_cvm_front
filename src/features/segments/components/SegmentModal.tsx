@@ -5,6 +5,7 @@ import {
   Segment,
   CreateSegmentRequest,
   SegmentConditionGroup,
+  PreviewResponse,
 } from "../types/segment";
 import SegmentConditionsBuilder from "./SegmentConditionsBuilder";
 import { segmentService } from "../services/segmentService";
@@ -222,15 +223,43 @@ export default function SegmentModal({
       }
 
       // If validation passes, get preview data with sample size
-      // Note: For new segments without ID, we use the legacy preview endpoint
-      const previewResult = await segmentService.getSegmentPreview(
-        formData.conditions.flatMap(
-          (group) => group.conditions
-        ) as unknown as Record<string, unknown>[]
-      );
+      // Use generateQueryPreview for segments without ID (new segments)
+      try {
+        const previewResult = await segmentService.generateQueryPreview({
+          criteria: {
+            from: "customers", // Default base table
+            where: formData.conditions.map((group) => ({
+              operator: group.operator,
+              conditions: group.conditions.map((condition) => ({
+                field: condition.field,
+                operator: condition.operator as
+                  | "="
+                  | "!="
+                  | ">"
+                  | "<"
+                  | ">="
+                  | "<="
+                  | "IN"
+                  | "NOT IN"
+                  | "LIKE",
+                value: condition.value,
+              })),
+            })),
+          },
+        });
 
-      setPreviewCount(previewResult.count || 0);
-      setError(""); // Clear any previous errors
+        // Extract count from preview response
+        const previewData = (
+          previewResult as { data?: { preview?: PreviewResponse } }
+        ).data?.preview;
+        setPreviewCount(previewData?.total_records || 0);
+        setError(""); // Clear any previous errors
+      } catch (previewError) {
+        // If preview fails, just show validation success without count
+        console.warn("Preview count unavailable:", previewError);
+        setPreviewCount(null);
+        setError(""); // Validation passed, so clear errors
+      }
     } catch (err) {
       console.error("Preview failed:", err);
       setError((err as Error).message || "Failed to preview segment");

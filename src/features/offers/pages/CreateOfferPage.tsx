@@ -937,7 +937,7 @@ export default function CreateOfferPage() {
               is_primary: link.is_primary,
               link_id: link.id || link.link_id, // Preserve link_id for unlinking
             };
-          } catch (error) {
+          } catch {
             // Failed to fetch product details
             return {
               id: link.product_id,

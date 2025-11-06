@@ -64,10 +64,6 @@ export default function OffersPage() {
 
   // Dropdown menu state
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Loading states for individual offers
@@ -94,7 +90,7 @@ export default function OffersPage() {
       if (response.success && response.data) {
         setCategories(response.data);
       }
-    } catch (err) {
+    } catch {
       // Error loading categories
     }
   };
@@ -122,9 +118,11 @@ export default function OffersPage() {
           "Unable to retrieve offers. Please try again."
         );
       }
-    } catch (err) {
-      const errorMessage = (err as Error).message || "Failed to load offers";
-      showError("Failed to load offers", errorMessage);
+    } catch {
+      showError(
+        "Failed to load offers",
+        "An error occurred while loading offers"
+      );
     } finally {
       setLoading(false);
     }
@@ -160,23 +158,25 @@ export default function OffersPage() {
           if (offersResponse.success && offersResponse.data) {
             // Try different possible field names (camelCase and snake_case)
             // Backend returns strings, so parse them
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = offersResponse.data as any;
             total =
-              parseInt(offersResponse.data.total_offers as string) ||
-              parseInt(offersResponse.data.totalOffers as string) ||
-              parseInt(offersResponse.data.total as string) ||
-              offersResponse.data.total ||
+              parseInt(data.total_offers as string) ||
+              parseInt(data.totalOffers as string) ||
+              parseInt(data.total as string) ||
+              (typeof data.total === "number" ? data.total : 0) ||
               0;
             // Use currently_active (offers valid right now) instead of active_offers
             // Backend returns strings, so parse them
             active =
-              parseInt(offersResponse.data.currently_active as string) ||
-              parseInt(offersResponse.data.currentlyActive as string) ||
-              parseInt(offersResponse.data.active_offers as string) ||
-              parseInt(offersResponse.data.activeOffers as string) ||
-              offersResponse.data.active ||
+              parseInt(data.currently_active as string) ||
+              parseInt(data.currentlyActive as string) ||
+              parseInt(data.active_offers as string) ||
+              parseInt(data.activeOffers as string) ||
+              (typeof data.active === "number" ? data.active : 0) ||
               0;
           }
-        } catch (error) {
+        } catch {
           // Error fetching offer stats
         }
 
@@ -187,7 +187,7 @@ export default function OffersPage() {
             if (offersList.pagination?.total !== undefined) {
               total = offersList.pagination.total;
             }
-          } catch (error) {
+          } catch {
             // Error fetching total offers
           }
         }
@@ -198,7 +198,7 @@ export default function OffersPage() {
             limit: 1,
           });
           expired = expiredResponse.pagination?.total || 0;
-        } catch (error) {
+        } catch {
           // Error fetching expired offers
         }
 
@@ -215,7 +215,7 @@ export default function OffersPage() {
               { limit: 1, skipCache: true }
             );
             pendingCount = pendingResponse.pagination?.total || 0;
-          } catch (pendingError) {
+          } catch {
             // Error fetching pending_approval status
           }
 
@@ -226,13 +226,13 @@ export default function OffersPage() {
               { limit: 1, skipCache: true }
             );
             draftCount = draftResponse.pagination?.total || 0;
-          } catch (draftError) {
+          } catch {
             // Error fetching draft status
           }
 
           // Combine both counts
           pendingApproval = pendingCount + draftCount;
-        } catch (error) {
+        } catch {
           // Error in pending approval logic
           // Final fallback: Filter all offers
           try {
@@ -242,20 +242,21 @@ export default function OffersPage() {
             });
             const pendingCount =
               allOffers.data?.filter(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (o: any) =>
                   o.status === "pending_approval" ||
                   o.status === "draft" ||
                   o.approval_status === "pending"
               ).length || 0;
             pendingApproval = pendingCount;
-          } catch (finalError) {
+          } catch {
             // All fallbacks failed
             pendingApproval = 0;
           }
         }
 
         setOfferStats({ total, active, expired, pendingApproval });
-      } catch (error) {
+      } catch {
         setOfferStats({ total: 0, active: 0, expired: 0, pendingApproval: 0 });
       } finally {
         setStatsLoading(false);
@@ -315,35 +316,10 @@ export default function OffersPage() {
   };
 
   // Calculate dropdown position
-  const calculateDropdownPosition = (buttonElement: HTMLElement) => {
-    const rect = buttonElement.getBoundingClientRect();
-    const dropdownWidth = 256; // w-64
-    const dropdownHeight = 300;
-
-    let top = rect.bottom + 8;
-    let left = rect.right - dropdownWidth;
-
-    if (left < 8) left = 8;
-    if (left + dropdownWidth > window.innerWidth - 8) {
-      left = window.innerWidth - dropdownWidth - 8;
-    }
-    if (top + dropdownHeight > window.innerHeight - 8) {
-      top = rect.top - dropdownHeight - 8;
-    }
-
-    return { top, left };
-  };
-
-  const handleActionMenuToggle = (
-    offerId: number,
-    buttonElement: HTMLElement
-  ) => {
+  const handleActionMenuToggle = (offerId: number) => {
     if (showActionMenu === offerId) {
       setShowActionMenu(null);
-      setDropdownPosition(null);
     } else {
-      const position = calculateDropdownPosition(buttonElement);
-      setDropdownPosition(position);
       setShowActionMenu(offerId);
     }
   };
@@ -358,7 +334,6 @@ export default function OffersPage() {
 
         if (!isInsideDropdown && !isInsideButton) {
           setShowActionMenu(null);
-          setDropdownPosition(null);
         }
       }
     };
@@ -383,7 +358,7 @@ export default function OffersPage() {
       success("Offer Deleted", `"${name}" has been deleted successfully.`);
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to delete offer");
       // Delete offer error
     }
@@ -415,7 +390,7 @@ export default function OffersPage() {
 
       success("Offer Activated", "Offer has been activated successfully.");
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to activate offer");
       // Activate offer error
     } finally {
@@ -483,7 +458,7 @@ export default function OffersPage() {
 
       success("Offer Paused", "Offer has been paused successfully.");
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to pause offer");
       // Pause offer error
     } finally {
@@ -498,7 +473,7 @@ export default function OffersPage() {
       success("Offer Archived", "Offer has been archived successfully.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to archive offer");
       // Archive offer error
     } finally {
@@ -532,7 +507,7 @@ export default function OffersPage() {
 
       success("Offer Expired", "Offer has been expired successfully.");
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to expire offer");
       // Expire offer error
     } finally {
@@ -550,7 +525,7 @@ export default function OffersPage() {
       );
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to request approval");
       // Request approval error
     } finally {
@@ -569,7 +544,7 @@ export default function OffersPage() {
       success("Offer Approved", "Offer has been approved successfully.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to approve offer");
       // Approve offer error
     } finally {
@@ -588,7 +563,7 @@ export default function OffersPage() {
       success("Offer Rejected", "Offer has been rejected.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to reject offer");
       // Reject offer error
     } finally {
@@ -1073,9 +1048,8 @@ export default function OffersPage() {
                           }}
                         >
                           <button
-                            onClick={(e) =>
-                              offer.id &&
-                              handleActionMenuToggle(offer.id, e.currentTarget)
+                            onClick={() =>
+                              offer.id && handleActionMenuToggle(offer.id)
                             }
                             className={`action-button ${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
                             title="More Actions"
@@ -1083,13 +1057,11 @@ export default function OffersPage() {
                             <MoreHorizontal className="h-4 w-4" />
                           </button>
 
-                          {showActionMenu === offer.id && dropdownPosition && (
+                          {showActionMenu === offer.id && (
                             <div
-                              className="action-dropdown fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4"
+                              className="action-dropdown absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4"
                               style={{
-                                zIndex: 99999,
-                                top: `${dropdownPosition.top}px`,
-                                left: `${dropdownPosition.left}px`,
+                                zIndex: 9999,
                                 maxHeight: "80vh",
                                 overflowY: "auto",
                               }}

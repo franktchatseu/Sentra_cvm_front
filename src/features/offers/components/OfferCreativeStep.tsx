@@ -17,7 +17,6 @@ import RegularModal from "../../../shared/components/ui/RegularModal";
 import {
   CreativeChannel,
   Locale,
-  VALID_CHANNELS,
   COMMON_LOCALES,
   OfferCreative,
   RenderCreativeResponse,
@@ -241,6 +240,7 @@ export default function OfferCreativeStep({
           true // Skip cache
         );
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const rendered = (response as any).data || response;
         setPreviewResult(rendered);
       } catch (err) {
@@ -326,6 +326,7 @@ export default function OfferCreativeStep({
           { variableOverrides: finalOverrides },
           true
         );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const rendered = (response as any).data || response;
         setPreviewResult(rendered);
       } else {
@@ -402,12 +403,10 @@ export default function OfferCreativeStep({
               backgroundColor: color.primary.action,
             }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.hover;
+              (e.target as HTMLButtonElement).style.opacity = "0.9";
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
+              (e.target as HTMLButtonElement).style.opacity = "1";
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -428,12 +427,10 @@ export default function OfferCreativeStep({
                     backgroundColor: color.primary.action,
                   }}
                   onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.hover;
+                    (e.target as HTMLButtonElement).style.opacity = "0.9";
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
+                    (e.target as HTMLButtonElement).style.opacity = "1";
                   }}
                 >
                   <Plus className="w-5 h-5 mr-1.5" />
@@ -554,7 +551,7 @@ export default function OfferCreativeStep({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     />
                     <div className="text-xs text-gray-500 mt-1">
-                      {selectedCreativeData.title.length}/160 characters
+                      {(selectedCreativeData.title || "").length}/160 characters
                     </div>
                   </div>
 
@@ -650,12 +647,10 @@ export default function OfferCreativeStep({
                         backgroundColor: color.primary.action,
                       }}
                       onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          color.primary.hover;
+                        (e.target as HTMLButtonElement).style.opacity = "0.9";
                       }}
                       onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          color.primary.action;
+                        (e.target as HTMLButtonElement).style.opacity = "1";
                       }}
                     >
                       <Eye className="w-4 h-4 mr-2" />

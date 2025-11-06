@@ -216,23 +216,21 @@ export const fonts = {
       lineHeight: "120%",
       letterSpacing: "-4%",
     },
-    // Card headings use Satoshi Variable (different weight from main headings)
+    // Card headings use sans-serif
     cardHeading: {
       size: "1.125rem", // 18px
-      weight: 600, // Semi-bold weight from Satoshi Variable
-      family: "primary",
+      weight: 600, // Semi-bold weight
+      family: "sans-serif", // System sans-serif font
       lineHeight: "normal",
       letterSpacing: "0%",
-      fontKerning: "normal",
     },
-    // Card sub-headings use sans-serif only
+    // Card sub-headings use sans-serif
     cardSubHeading: {
       size: "0.875rem", // 14px
       weight: 400, // Normal weight
       family: "sans-serif", // System sans-serif font
       lineHeight: "normal",
       letterSpacing: "0%",
-      fontKerning: "normal",
     },
     // Body text uses secondary font with variable line heights
     body: {

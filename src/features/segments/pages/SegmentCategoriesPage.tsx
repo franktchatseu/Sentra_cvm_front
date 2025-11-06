@@ -743,8 +743,8 @@ export default function SegmentCategoriesPage() {
               key={category.id}
               className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`${tw.subHeading} text-gray-900`}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className={`${tw.cardHeading} text-gray-900`}>
                   {category.name}
                 </h3>
                 <div className="flex items-center space-x-1">
@@ -768,7 +768,9 @@ export default function SegmentCategoriesPage() {
                 </div>
               </div>
               {category.description && (
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+                <p
+                  className={`${tw.cardSubHeading} text-gray-500 mb-4 line-clamp-2`}
+                >
                   {category.description}
                 </p>
               )}
@@ -802,7 +804,7 @@ export default function SegmentCategoriesPage() {
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
-                  <h3 className={`${tw.subHeading} text-gray-900`}>
+                  <h3 className={`${tw.cardHeading} text-gray-900`}>
                     {category.name}
                   </h3>
                   <p className="text-sm text-gray-600 mt-0.5">

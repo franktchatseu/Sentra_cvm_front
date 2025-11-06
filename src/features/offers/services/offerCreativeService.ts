@@ -1,10 +1,8 @@
 import {
-  OfferCreative,
   CreateOfferCreativeRequest,
   UpdateOfferCreativeRequest,
   UpdateContentRequest,
   UpdateVariablesRequest,
-  CloneCreativeRequest,
   CreateVersionRequest,
   RenderCreativeRequest,
   RenderCreativeResponseType,
@@ -44,6 +42,7 @@ class OfferCreativeService {
 
     // Parse response first
     const contentType = response.headers.get("content-type");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let responseData: any;
 
     try {
@@ -53,7 +52,7 @@ class OfferCreativeService {
         const text = await response.text();
         responseData = text ? JSON.parse(text) : {};
       }
-    } catch (parseError) {
+    } catch {
       // If parsing fails, handle based on response status
       if (!response.ok) {
         throw new Error(
@@ -104,7 +103,7 @@ class OfferCreativeService {
             errorData
           )}`
         );
-      } catch (parseError: any) {
+      } catch {
         throw new Error(
           `HTTP error! status: ${response.status}, statusText: ${response.statusText}`
         );
@@ -542,7 +541,6 @@ class OfferCreativeService {
     id: number,
     request: UpdateVariablesRequest
   ): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] updateVariables - id: ${id}`);
     const result = await this.request<OfferCreativeResponse>(
       `/${id}/variables`,
       {
@@ -550,7 +548,6 @@ class OfferCreativeService {
         body: JSON.stringify(request),
       }
     );
-    console.log(`[OfferCreativeService] updateVariables response:`, result);
     return result;
   }
 
@@ -559,12 +556,10 @@ class OfferCreativeService {
     id: number,
     request: UpdateOfferCreativeRequest
   ): Promise<OfferCreativeResponse> {
-    console.log(`[OfferCreativeService] update - id: ${id}`);
     const result = await this.request<OfferCreativeResponse>(`/${id}`, {
       method: "PATCH",
       body: JSON.stringify(request),
     });
-    console.log(`[OfferCreativeService] update response:`, result);
     return result;
   }
 
@@ -574,14 +569,12 @@ class OfferCreativeService {
 
   // DELETE /offer-creatives/:id
   async delete(id: number): Promise<{ success: boolean; message: string }> {
-    console.log(`[OfferCreativeService] delete - id: ${id}`);
     const result = await this.request<{ success: boolean; message: string }>(
       `/${id}`,
       {
         method: "DELETE",
       }
     );
-    console.log(`[OfferCreativeService] delete response:`, result);
     return result;
   }
 }

@@ -118,8 +118,8 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
             setCatalogName(catalog.data?.name || "");
             break;
         }
-      } catch (err) {
-        console.error("Failed to load catalog name:", err);
+      } catch {
+        // Failed to load catalog name
       }
     };
 
@@ -178,16 +178,13 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
           if (!catalogId) return;
 
           try {
-            console.log(
-              `[AssignItemsPage] Loading assigned ${itemType} for catalog ${catalogId}`
-            );
             let assigned: (number | string)[] = [];
             switch (itemType) {
               case "offers": {
                 const offersResponse =
                   await offerCategoryService.getCategoryOffers(
                     Number(catalogId),
-                    { limit: 1000, skipCache: true }
+                    { limit: 100, skipCache: true }
                   );
                 const offers = (offersResponse.data || []) as Offer[];
                 assigned = offers.map((offer) => offer.id);
@@ -197,7 +194,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                 const productsResponse =
                   await productService.getProductsByCategory(
                     Number(catalogId),
-                    { limit: 1000, skipCache: true }
+                    { limit: 100, skipCache: true }
                   );
                 assigned = (productsResponse.data || []).map(
                   (product: Product) => product.id
@@ -226,11 +223,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                     categorySegments = segmentsResponse as Segment[];
                   }
                   assigned = categorySegments.map((s: Segment) => s.id);
-                } catch (err) {
-                  console.error(
-                    `[AssignItemsPage] Error loading segments for category ${catalogId}:`,
-                    err
-                  );
+                } catch {
                   // Fallback: try to get all segments and filter
                   try {
                     const allSegmentsResponse =
@@ -255,25 +248,14 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                           s.category && String(s.category) === String(catalogId)
                       )
                       .map((s: Segment) => s.id);
-                  } catch (fallbackErr) {
-                    console.error(
-                      `[AssignItemsPage] Fallback also failed:`,
-                      fallbackErr
-                    );
+                  } catch {
                     assigned = [];
                   }
                 }
                 break;
             }
             setAssignedItemIds(assigned);
-            console.log(
-              `[AssignItemsPage] Loaded ${assigned.length} assigned ${itemType}`
-            );
-          } catch (err) {
-            console.error(
-              `[AssignItemsPage] Failed to load assigned ${itemType}:`,
-              err
-            );
+          } catch {
             // Set empty array on error to prevent UI issues
             setAssignedItemIds([]);
           }
@@ -281,15 +263,6 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
 
         await loadAssignedItems();
       } catch (err) {
-        console.error(
-          `[AssignItemsPage] Failed to load ${typeInfo.plural}:`,
-          err
-        );
-        // Log more details about the error
-        if (err instanceof Error) {
-          console.error(`[AssignItemsPage] Error message:`, err.message);
-          console.error(`[AssignItemsPage] Error stack:`, err.stack);
-        }
         showError(
           `Failed to load ${typeInfo.plural}`,
           err instanceof Error ? err.message : "Unknown error"
@@ -433,12 +406,6 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
               ? String((err as any).message)
               : `Failed to assign ${typeInfo.singular}`;
 
-          console.error(
-            `Failed to assign ${typeInfo.singular} ${itemId}:`,
-            errorMessage,
-            err
-          );
-
           // Show specific error for the first failed item
           if (failed === 1) {
             showError(`Failed to assign ${typeInfo.singular}`, errorMessage);
@@ -460,7 +427,6 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
         showError(`Failed to assign ${typeInfo.plural}. Please try again.`);
       }
     } catch (err) {
-      console.error(`Failed to assign ${typeInfo.plural}:`, err);
       showError(
         err instanceof Error
           ? err.message

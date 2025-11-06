@@ -20,8 +20,6 @@ import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
-import { offerService } from "../services/offerService";
-import { Offer } from "../types/offer";
 import {
   OfferCategoryType,
   CreateOfferCategoryRequest,
@@ -90,7 +88,7 @@ function CategoryModal({
 
       await onSave(categoryData); // Wait for save to complete
       onClose(); // Only close after save succeeds
-    } catch (err) {
+    } catch {
       setError(err instanceof Error ? err.message : "Failed to save category");
     } finally {
       setIsLoading(false);
@@ -189,19 +187,10 @@ interface OffersModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: OfferCategoryType | null;
-  onRefreshCategories: () => void;
-  onRefreshCounts: () => void;
 }
 
-function OffersModal({
-  isOpen,
-  onClose,
-  category,
-  onRefreshCategories,
-  onRefreshCounts,
-}: OffersModalProps) {
+function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
   const navigate = useNavigate();
-  const { success: showToast, error: showError } = useToast();
   const [offers, setOffers] = useState<BasicOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -244,7 +233,7 @@ function OffersModal({
       // Backend returns offers in response.data
       const offersData = (response.data || []) as BasicOffer[];
       setOffers(offersData);
-    } catch (err) {
+    } catch {
       // Failed to load offers
       setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
@@ -536,7 +525,7 @@ function OfferCategoriesPage() {
       // TODO: Update to use new offer service endpoints when we update OffersPage
       // For now, just return empty array to avoid errors
       return [];
-    } catch (err) {
+    } catch {
       // Failed to load offers for counting
       return [];
     }
@@ -554,7 +543,7 @@ function OfferCategoriesPage() {
           0,
         categoriesWithOffers: parseInt(data.categories_with_description) || 0, // Using categories_with_description as proxy
       });
-    } catch (err) {
+    } catch {
       // Failed to load stats
       setStats(null);
     }
@@ -569,7 +558,7 @@ function OfferCategoriesPage() {
       if (response.success && response.data) {
         setUnusedCount(response.data.length);
       }
-    } catch (err) {
+    } catch {
       // Failed to load unused categories
       setUnusedCount(0);
     }
@@ -588,39 +577,9 @@ function OfferCategoriesPage() {
           count: topCategory.offerCount || 0,
         });
       }
-    } catch (err) {
+    } catch {
       // Failed to load popular category
       setPopularCategory(null);
-    }
-  };
-
-  const testActiveCategories = async () => {
-    try {
-      await offerCategoryService.getActiveCategories({
-        limit: 50,
-        skipCache: true,
-      });
-      // Active categories test - no console logs needed
-    } catch (err) {
-      // Failed to load active categories
-    }
-  };
-
-  const testCategoryById = async () => {
-    try {
-      // Test with ID 1 (Free shipping)
-      await offerCategoryService.getCategoryById(1, true);
-    } catch (err) {
-      // Failed to load category by ID
-    }
-  };
-
-  const testCategoryByName = async () => {
-    try {
-      // Test with "Free shipping" name
-      await offerCategoryService.getCategoryByName("Free shipping", true);
-    } catch (err) {
-      // Failed to load category by name
     }
   };
 
@@ -675,35 +634,14 @@ function OfferCategoriesPage() {
                 draftOffers: 0,
                 pendingOffers: 0,
               };
-            } else {
             }
           }
         );
 
         setCategoryOfferCounts(countsMap);
       }
-    } catch (err) {
+    } catch {
       // Failed to load all offer counts
-    }
-  };
-
-  // Test getCategoryActiveOfferCount for a specific category
-  const testCategoryActiveOfferCount = async () => {
-    try {
-      await offerCategoryService.getCategoryActiveOfferCount(1, true);
-      // Response received successfully - no action needed
-    } catch (err) {
-      // Failed to load active offer count
-    }
-  };
-
-  // Test getActiveOfferCounts for all categories
-  const testActiveOfferCounts = async () => {
-    try {
-      await offerCategoryService.getActiveOfferCounts(true);
-      // Response received successfully - no action needed
-    } catch (err) {
-      // Failed to load active offer counts for all categories
     }
   };
 
@@ -712,11 +650,9 @@ function OfferCategoriesPage() {
       setLoading(true);
 
       let response;
-      let endpointName = "";
 
       // Choose endpoint based on filter type and advanced search
       if (hasAdvancedFilters()) {
-        endpointName = "advancedSearch";
         // Use advanced search when advanced filters are set
         response = await offerCategoryService.advancedSearch({
           name: advancedSearch.exactName.trim() || undefined,
@@ -727,7 +663,6 @@ function OfferCategoriesPage() {
           skipCache: skipCache,
         });
       } else if (debouncedSearchTerm) {
-        endpointName = "searchCategories";
         // Use search endpoint when there's a search term
         response = await offerCategoryService.searchCategories({
           q: debouncedSearchTerm,
@@ -738,28 +673,24 @@ function OfferCategoriesPage() {
         // Use different endpoints based on filter type
         switch (filterType) {
           case "unused":
-            endpointName = "getUnusedCategories";
             response = await offerCategoryService.getUnusedCategories({
               limit: 50,
               skipCache: skipCache,
             });
             break;
           case "popular":
-            endpointName = "getPopularCategories";
             response = await offerCategoryService.getPopularCategories({
               limit: 50,
               skipCache: skipCache,
             });
             break;
           case "active":
-            endpointName = "getActiveCategories";
             response = await offerCategoryService.getActiveCategories({
               limit: 50,
               skipCache: skipCache,
             });
             break;
           case "inactive":
-            endpointName = "getAllCategories (filtered)";
             // For inactive, we'll get all and filter client-side
             response = await offerCategoryService.getAllCategories({
               limit: 50,
@@ -767,7 +698,6 @@ function OfferCategoriesPage() {
             });
             break;
           default: // 'all'
-            endpointName = "getAllCategories";
             response = await offerCategoryService.getAllCategories({
               limit: 50,
               skipCache: skipCache,
@@ -807,10 +737,9 @@ function OfferCategoriesPage() {
       // so we need to call it after setting the state, but we'll use the local variable
       // We'll pass categoriesWithCounts to loadAllOfferCounts
       await loadAllOfferCounts(categoriesWithCounts);
-    } catch (err) {
+    } catch {
       // Failed to load categories
-      setError(err instanceof Error ? err.message : "Error loading categories");
-      showError("Failed to load offer categories", "Please try again later.");
+      setError("Error loading categories");
       setOfferCategories([]);
     } finally {
       setLoading(false);
@@ -850,7 +779,7 @@ function OfferCategoriesPage() {
         "Category Deleted",
         `"${category.name}" has been deleted successfully.`
       );
-    } catch (err) {
+    } catch {
       // Error"Error deleting category:", err);
       showError(
         "Error",
@@ -891,7 +820,7 @@ function OfferCategoriesPage() {
 
       setIsModalOpen(false);
       setEditingCategory(undefined);
-    } catch (err) {
+    } catch {
       // Error"Failed to save category:", err);
       showError("Failed to save category", "Please try again later.");
     }
@@ -1274,9 +1203,9 @@ function OfferCategoriesPage() {
               className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
               style={{ backgroundColor: color.surface.cards }}
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-2">
                 <h3
-                  className={`${tw.subHeading} text-gray-900 flex-1 truncate`}
+                  className={`${tw.cardHeading} text-gray-900 flex-1 truncate`}
                 >
                   {category.name}
                 </h3>
@@ -1305,7 +1234,9 @@ function OfferCategoriesPage() {
                 </div>
               </div>
               {category.description && (
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+                <p
+                  className={`${tw.cardSubHeading} text-gray-500 mb-4 line-clamp-2`}
+                >
                   {category.description}
                 </p>
               )}

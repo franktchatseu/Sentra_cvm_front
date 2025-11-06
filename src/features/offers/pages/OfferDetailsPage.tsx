@@ -20,7 +20,7 @@ import {
   Save,
   Plus,
 } from "lucide-react";
-import { Offer, OfferStatusEnum, OfferProductLink } from "../types/offer";
+import { Offer, OfferStatusEnum } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
@@ -55,18 +55,15 @@ export default function OfferDetailsPage() {
     useState(false);
   const [isActivateLoading, setIsActivateLoading] = useState(false);
   const [isPauseLoading, setIsPauseLoading] = useState(false);
-  const [isDeactivateLoading, setIsDeactivateLoading] = useState(false);
   const [isExpireLoading, setIsExpireLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [linkedProducts, setLinkedProducts] = useState<any[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [categoryName, setCategoryName] = useState<string>("Uncategorized");
   const [primaryProductId, setPrimaryProductId] = useState<number | null>(null);
-  const [hasPrimaryProduct, setHasPrimaryProduct] = useState<boolean>(false);
   const [unlinkingProductId, setUnlinkingProductId] = useState<number | null>(
     null
   );
-  const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
   const [offerCreatives, setOfferCreatives] = useState<OfferCreative[]>([]);
   const [creativesLoading, setCreativesLoading] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -134,7 +131,7 @@ export default function OfferDetailsPage() {
             if (category) {
               setCategoryName(category.name);
             }
-          } catch (error) {
+          } catch {
             // Failed to fetch category name
           }
         }
@@ -162,13 +159,8 @@ export default function OfferDetailsPage() {
 
         // Check if offer has primary product
         try {
-          const hasPrimaryResponse =
-            await offerService.checkOfferHasPrimaryProduct(
-              Number(id),
-              skipCache
-          );
-          setHasPrimaryProduct(hasPrimaryResponse.data?.hasPrimary || false);
-        } catch (err) {
+          await offerService.checkOfferHasPrimaryProduct(Number(id), skipCache);
+        } catch {
           // Failed to check primary product
         }
 
@@ -181,7 +173,7 @@ export default function OfferDetailsPage() {
           if (primaryResponse.data) {
             setPrimaryProductId(primaryResponse.data.product_id);
           }
-        } catch (err) {
+        } catch {
           // No primary product found (expected if none set)
         }
 
@@ -192,8 +184,8 @@ export default function OfferDetailsPage() {
         );
 
         // Extract products from response.data if wrapped, otherwise use response directly
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const productsData =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (response as any).data || productsResponse.data || response;
 
         if (Array.isArray(productsData) && productsData.length > 0) {
@@ -214,7 +206,6 @@ export default function OfferDetailsPage() {
               }
             }
           });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const uniqueLinks = Array.from(uniqueLinksMap.values());
 
           // Backend returns product links with only product_id, so we need to fetch full product details
@@ -233,7 +224,7 @@ export default function OfferDetailsPage() {
                 link_id: link.id,
                 product_id: link.product_id,
               };
-            } catch (error) {
+            } catch {
               // Failed to fetch product details
               return {
                 id: link.product_id,
@@ -249,6 +240,7 @@ export default function OfferDetailsPage() {
           setLinkedProducts(fullProducts);
 
           // Find primary product from loaded products
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const primary = fullProducts.find((p: any) => p.is_primary);
           if (primary && !primaryProductId) {
             setPrimaryProductId(primary.product_id || primary.id);
@@ -256,13 +248,13 @@ export default function OfferDetailsPage() {
         } else {
           setLinkedProducts([]);
         }
-      } catch (err) {
+      } catch {
         setLinkedProducts([]);
       } finally {
         setProductsLoading(false);
       }
     },
-    [id]
+    [id, primaryProductId]
   );
 
   const loadCreatives = useCallback(
@@ -278,7 +270,7 @@ export default function OfferDetailsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const creativesData = (response as any).data || [];
         setOfferCreatives(creativesData);
-      } catch (err) {
+      } catch {
         setOfferCreatives([]);
       } finally {
         setCreativesLoading(false);
@@ -387,13 +379,14 @@ export default function OfferDetailsPage() {
       });
       const categoryOptions = [
         { value: "all", label: "All Categories" },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...(response.data || []).map((category: any) => ({
           value: category.id.toString(),
           label: category.name,
         })),
       ];
       setProductCategories(categoryOptions);
-    } catch (error) {
+    } catch {
       // Error loading categories
       setProductCategories([{ value: "all", label: "All Categories" }]);
     }
@@ -432,7 +425,7 @@ export default function OfferDetailsPage() {
       }
 
       setAvailableProducts(products);
-    } catch (err) {
+    } catch {
       // Failed to load products
       setAvailableProducts([]);
     } finally {
@@ -633,21 +626,6 @@ export default function OfferDetailsPage() {
     }
   };
 
-  const handleDeactivate = async () => {
-    try {
-      setIsDeactivateLoading(true);
-      await offerService.updateOfferStatus(Number(id), {
-        status: OfferStatusEnum.DRAFT,
-      });
-      success("Offer Deactivated", `"${offer?.name}" has been deactivated.`);
-      loadOffer(true); // Skip cache to get fresh data after deactivation
-    } catch {
-      showError("Failed to deactivate offer");
-    } finally {
-      setIsDeactivateLoading(false);
-    }
-  };
-
   const handleExpire = async () => {
     const confirmed = await confirm({
       title: "Expire Offer",
@@ -699,14 +677,14 @@ export default function OfferDetailsPage() {
 
     try {
       setUnlinkingProductId(linkId);
-      const result = await offerService.unlinkProductById(linkId);
+      await offerService.unlinkProductById(linkId);
       success(
         "Product Unlinked",
         `"${productName}" has been unlinked from this offer.`
       );
       // Reload products with cache bypassed to get fresh data
       loadProducts(true);
-    } catch (err) {
+    } catch {
       // Failed to unlink product
       showError("Failed to unlink product");
     } finally {
@@ -717,11 +695,7 @@ export default function OfferDetailsPage() {
   // TODO: Backend needs to provide an endpoint to update is_primary without unlinking products
   // Currently commented out because it unlinks the old primary product entirely,
   // when we only want to unset it as primary while keeping it linked to the offer
-  const handleSetPrimaryProduct = async (
-    productId: number,
-    linkId: number,
-    productName: string
-  ) => {
+  const handleSetPrimaryProduct = async () => {
     // Handler commented out - waiting for backend endpoint to update is_primary flag
     // without unlinking products
     showError(
@@ -1198,12 +1172,12 @@ export default function OfferDetailsPage() {
             Linked Products
           </h3>
           <div className="flex items-center gap-3">
-          {!productsLoading && linkedProducts.length > 0 && (
-            <span className={`text-sm ${tw.textMuted}`}>
-              {linkedProducts.length} product
-              {linkedProducts.length !== 1 ? "s" : ""}
-            </span>
-          )}
+            {!productsLoading && linkedProducts.length > 0 && (
+              <span className={`text-sm ${tw.textMuted}`}>
+                {linkedProducts.length} product
+                {linkedProducts.length !== 1 ? "s" : ""}
+              </span>
+            )}
             <button
               onClick={() => setIsAddProductModalOpen(true)}
               className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
@@ -1228,8 +1202,7 @@ export default function OfferDetailsPage() {
                 (product.product_id && product.product_id === primaryProductId);
               const isUnlinking =
                 product.link_id && unlinkingProductId === product.link_id;
-              const isSettingPrimary =
-                product.product_id && settingPrimaryId === product.product_id;
+              const isSettingPrimary = false; // Feature disabled
 
               return (
                 <div
@@ -1273,33 +1246,26 @@ export default function OfferDetailsPage() {
                     {!isPrimary &&
                       (product.link_id || product.product_id || product.id) && (
                         <div className="relative group">
-                        <button
-                          onClick={() =>
-                            handleSetPrimaryProduct(
-                              product.product_id || product.id,
-                              product.link_id || 0, // Use 0 as fallback if link_id doesn't exist
-                              product.name ||
-                                `Product ${product.product_id || product.id}`
-                            )
-                          }
-                          disabled={isSettingPrimary || isUnlinking}
+                          <button
+                            onClick={handleSetPrimaryProduct}
+                            disabled={isSettingPrimary || isUnlinking}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 rounded-lg border border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isSettingPrimary ? (
-                            <>
+                          >
+                            {isSettingPrimary ? (
+                              <>
                                 <div
                                   className="animate-spin rounded-full h-3.5 w-3.5 border-b-2"
                                   style={{ borderColor: color.primary.accent }}
                                 ></div>
-                              <span>Setting...</span>
-                            </>
-                          ) : (
-                            <>
-                              <StarOff className="w-4 h-4" />
-                              <span>Set Primary</span>
-                            </>
-                          )}
-                        </button>
+                                <span>Setting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <StarOff className="w-4 h-4" />
+                                <span>Set Primary</span>
+                              </>
+                            )}
+                          </button>
                           {/* Tooltip */}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg whitespace-normal w-96 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg z-50">
                             Mark this product as the main product for this
@@ -1340,7 +1306,7 @@ export default function OfferDetailsPage() {
                             <span>Unlinking...</span>
                           </>
                         ) : (
-                            <span>Unlink</span>
+                          <span>Unlink</span>
                         )}
                       </button>
                     )}
@@ -1368,7 +1334,7 @@ export default function OfferDetailsPage() {
       >
         <div className="mb-4">
           <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
-    </div>
+        </div>
 
         {creativesLoading ? (
           <div className="flex justify-center items-center py-8">
