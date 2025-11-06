@@ -77,7 +77,6 @@ class SegmentService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    console.log("[SegmentService] Making request to:", url);
 
     const response = await fetch(url, {
       headers: {
@@ -158,7 +157,6 @@ class SegmentService {
       }
     }
 
-    console.log("[SegmentService] Response parsed successfully");
     return responseData;
   }
 

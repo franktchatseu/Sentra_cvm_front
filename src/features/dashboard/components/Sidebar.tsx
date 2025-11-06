@@ -26,7 +26,7 @@ import {
   List,
   Building2,
 } from "lucide-react";
-import logo from "../../../assets/efforte.png";
+import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
 
 // Hide scrollbar CSS and custom animations
@@ -351,7 +351,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           >
             <div className="flex h-16 shrink-0 items-center justify-between px-6">
               <div className="flex items-center space-x-3">
-                <div className="w-16 h-16 flex items-center justify-center">
+                <div className="w-12 h-12 flex items-center justify-center">
                   <img
                     src={logo}
                     alt="Sentra Logo"

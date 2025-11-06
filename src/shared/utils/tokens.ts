@@ -143,10 +143,11 @@ export const fonts = {
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
   },
 
-  // Tertiary font for card headings - PP Supply Mono
+  // Tertiary font for card headings - sans-serif
   tertiary: {
-    name: "PP Supply Mono",
-    fallback: 'monospace, "Courier New", Courier, monospace',
+    name: "sans-serif",
+    fallback:
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
 
   weights: {

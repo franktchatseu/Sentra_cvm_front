@@ -18,6 +18,8 @@ import {
   Star,
   StarOff,
   MessageSquare,
+  Save,
+  Plus,
 } from "lucide-react";
 import { Offer, OfferStatusEnum } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
@@ -25,11 +27,15 @@ import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
 import { offerCreativeService } from "../services/offerCreativeService";
+import { OfferCreative } from "../types/offerCreative";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import RegularModal from "../../../shared/components/ui/RegularModal";
+import { Product } from "../../products/types/product";
+import ProductSelector from "../../products/components/ProductSelector";
 
 export default function OfferDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -60,9 +66,30 @@ export default function OfferDetailsPage() {
     null
   );
   const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
-  const [offerCreatives, setOfferCreatives] = useState<OfferCreativeType[]>([]);
+  const [offerCreatives, setOfferCreatives] = useState<OfferCreative[]>([]);
   const [creativesLoading, setCreativesLoading] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Creative edit modal state
+  const [isEditCreativeModalOpen, setIsEditCreativeModalOpen] = useState(false);
+  const [editingCreative, setEditingCreative] = useState<OfferCreative | null>(
+    null
+  );
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    text_body: "",
+    html_body: "",
+    variables: {} as Record<string, string | number | boolean>,
+  });
+  const [variablesJson, setVariablesJson] = useState("");
+  const [isSavingCreative, setIsSavingCreative] = useState(false);
+
+  // Add product state
+  const [showProductSelector, setShowProductSelector] = useState(false);
+  const [selectedProductsToAdd, setSelectedProductsToAdd] = useState<Product[]>(
+    []
+  );
+  const [isLinkingProducts, setIsLinkingProducts] = useState(false);
 
   // Close More menu when clicking outside
   useClickOutside(moreMenuRef, () => setShowMoreMenu(false));
@@ -277,6 +304,149 @@ export default function OfferDetailsPage() {
     },
     [id]
   );
+
+  // Handle edit creative
+  const handleEditCreative = (creative: OfferCreative) => {
+    setEditingCreative(creative);
+    setEditFormData({
+      title: creative.title || "",
+      text_body: creative.text_body || "",
+      html_body: creative.html_body || "",
+      variables: creative.variables || {},
+    });
+    setVariablesJson(JSON.stringify(creative.variables || {}, null, 2));
+    setIsEditCreativeModalOpen(true);
+  };
+
+  // Handle save creative
+  const handleSaveCreative = async () => {
+    if (!editingCreative || !user?.user_id) return;
+
+    try {
+      setIsSavingCreative(true);
+
+      // Parse variables JSON
+      let parsedVariables = {};
+      if (variablesJson.trim()) {
+        try {
+          parsedVariables = JSON.parse(variablesJson);
+        } catch {
+          showError("Invalid JSON in variables field");
+          return;
+        }
+      }
+
+      // Build update payload - only include non-empty fields
+      const updatePayload: Record<string, unknown> = {
+        updated_by: user.user_id,
+      };
+
+      // Only add fields if they have content (not empty strings)
+      if (editFormData.title && editFormData.title.trim()) {
+        updatePayload.title = editFormData.title;
+      }
+      if (editFormData.text_body && editFormData.text_body.trim()) {
+        updatePayload.text_body = editFormData.text_body;
+      }
+      if (editFormData.html_body && editFormData.html_body.trim()) {
+        updatePayload.html_body = editFormData.html_body;
+      }
+      if (Object.keys(parsedVariables).length > 0) {
+        updatePayload.variables = parsedVariables;
+      }
+
+      await offerCreativeService.update(
+        editingCreative.id as number,
+        updatePayload
+      );
+
+      success("Creative Updated", "Creative has been updated successfully");
+      setIsEditCreativeModalOpen(false);
+      loadCreatives(true); // Reload with skipCache
+    } catch (err) {
+      console.error("[OfferDetails] Failed to update creative:", err);
+      showError(
+        err instanceof Error ? err.message : "Failed to update creative"
+      );
+    } finally {
+      setIsSavingCreative(false);
+    }
+  };
+
+  // Handle delete creative
+  const handleDeleteCreative = async (creative: OfferCreative) => {
+    const confirmed = await confirm({
+      title: "Delete Creative",
+      message: `Are you sure you want to delete this ${creative.channel} creative? This action cannot be undone.`,
+      type: "danger",
+      confirmText: "Delete",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await offerCreativeService.delete(creative.id as number);
+      success("Creative Deleted", "Creative has been deleted successfully");
+      loadCreatives(true); // Reload with skipCache
+    } catch (err) {
+      console.error("[OfferDetails] Failed to delete creative:", err);
+      showError(
+        err instanceof Error ? err.message : "Failed to delete creative"
+      );
+    }
+  };
+
+  // Handle product selection changes
+  const handleProductsChange = (products: Product[]) => {
+    setSelectedProductsToAdd(products);
+  };
+
+  // Handle adding products after selection
+  const handleConfirmAddProducts = async () => {
+    if (!id || !user?.user_id || selectedProductsToAdd.length === 0) return;
+
+    try {
+      setIsLinkingProducts(true);
+
+      // Check if offer currently has a primary product
+      const currentPrimaryExists = linkedProducts.some((p) => p.is_primary);
+
+      // Prepare links for batch linking
+      const links = selectedProductsToAdd.map((product, index) => ({
+        offer_id: Number(id),
+        product_id:
+          typeof product.id === "string" ? parseInt(product.id) : product.id!,
+        is_primary: !currentPrimaryExists && index === 0, // First product is primary if no primary exists
+        quantity: 1,
+      }));
+
+      const batchRequest = {
+        links: links,
+        created_by: user.user_id,
+      };
+
+      await offerService.linkProductsBatch(batchRequest);
+
+      success(
+        "Products Linked",
+        `${selectedProductsToAdd.length} product${
+          selectedProductsToAdd.length > 1 ? "s" : ""
+        } linked successfully`
+      );
+
+      // Reset state
+      setShowProductSelector(false);
+      setSelectedProductsToAdd([]);
+
+      // Refresh products list
+      loadProducts(true);
+    } catch (err) {
+      console.error("[OfferDetails] Failed to link products:", err);
+      showError(err instanceof Error ? err.message : "Failed to link products");
+    } finally {
+      setIsLinkingProducts(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -933,12 +1103,22 @@ export default function OfferDetailsPage() {
             <Package className="w-5 h-5" />
             Linked Products
           </h3>
-          {!productsLoading && linkedProducts.length > 0 && (
-            <span className={`text-sm ${tw.textMuted}`}>
-              {linkedProducts.length} product
-              {linkedProducts.length !== 1 ? "s" : ""}
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {!productsLoading && linkedProducts.length > 0 && (
+              <span className={`text-sm ${tw.textMuted}`}>
+                {linkedProducts.length} product
+                {linkedProducts.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            <button
+              onClick={() => setShowProductSelector(true)}
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              <Plus className="w-4 h-4" />
+              Add Product
+            </button>
+          </div>
         </div>
 
         {productsLoading ? (
@@ -1083,8 +1263,11 @@ export default function OfferDetailsPage() {
         ) : (
           <div className="text-center py-8">
             <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className={`text-sm ${tw.textMuted}`}>
+            <p className={`text-sm ${tw.textMuted} mb-1`}>
               No products linked to this offer
+            </p>
+            <p className={`text-xs ${tw.textMuted}`}>
+              Click "Add Product" above to link products to this offer
             </p>
           </div>
         )}
@@ -1094,16 +1277,8 @@ export default function OfferDetailsPage() {
       <div
         className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
           <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
-          <button
-            onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
-            style={{ backgroundColor: color.primary.action }}
-          >
-            <Edit className="w-4 h-4" />
-            Edit Creatives
-          </button>
         </div>
 
         {creativesLoading ? (
@@ -1112,96 +1287,312 @@ export default function OfferDetailsPage() {
           </div>
         ) : offerCreatives.length > 0 ? (
           <div className="space-y-4">
-            {offerCreatives.map(
-              (creative: OfferCreativeType, index: number) => (
-                <div
-                  key={creative.id || index}
-                  className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div
-                        className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: color.primary.accent }}
-                      >
-                        <MessageSquare className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className={`font-medium ${tw.textPrimary}`}>
-                            {creative.title || `Creative ${creative.channel}`}
-                          </p>
-                          <span
-                            className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
-                            style={{ backgroundColor: color.primary.accent }}
-                          >
-                            {creative.channel}
+            {offerCreatives.map((creative: OfferCreative, index: number) => (
+              <div
+                key={creative.id || index}
+                className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: color.primary.accent }}
+                    >
+                      <MessageSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`font-medium ${tw.textPrimary}`}>
+                          {creative.title || `Creative ${creative.channel}`}
+                        </p>
+                        <span
+                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
+                          style={{ backgroundColor: color.primary.accent }}
+                        >
+                          {creative.channel}
+                        </span>
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                          {creative.locale}
+                        </span>
+                        {creative.is_active && (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                            Active
                           </span>
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                            {creative.locale}
-                          </span>
-                          {creative.is_active && (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                              Active
-                            </span>
-                          )}
-                          {creative.version && (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              v{creative.version}
-                            </span>
-                          )}
-                        </div>
-                        {creative.text_body && (
-                          <p
-                            className={`text-sm ${tw.textMuted} mt-2 line-clamp-2`}
-                          >
-                            {creative.text_body}
-                          </p>
                         )}
-                        {creative.variables &&
-                          Object.keys(creative.variables).length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {Object.keys(creative.variables)
-                                .slice(0, 3)
-                                .map((key) => (
-                                  <span
-                                    key={key}
-                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
-                                  >
-                                    {key}
-                                  </span>
-                                ))}
-                              {Object.keys(creative.variables).length > 3 && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                                  +{Object.keys(creative.variables).length - 3}{" "}
-                                  more
-                                </span>
-                              )}
-                            </div>
-                          )}
+                        {creative.version && (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            v{creative.version}
+                          </span>
+                        )}
                       </div>
+                      {creative.text_body && (
+                        <p
+                          className={`text-sm ${tw.textMuted} mt-2 line-clamp-2`}
+                        >
+                          {creative.text_body}
+                        </p>
+                      )}
+                      {creative.variables &&
+                        Object.keys(creative.variables).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {Object.keys(creative.variables)
+                              .slice(0, 3)
+                              .map((key) => (
+                                <span
+                                  key={key}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
+                                >
+                                  {key}
+                                </span>
+                              ))}
+                            {Object.keys(creative.variables).length > 3 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                +{Object.keys(creative.variables).length - 3}{" "}
+                                more
+                              </span>
+                            )}
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>
-              )
-            )}
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 ml-4">
+                  <button
+                    onClick={() => handleEditCreative(creative)}
+                    className="p-2 rounded-lg transition-colors hover:opacity-80"
+                    style={{
+                      color: color.primary.accent,
+                      backgroundColor: `${color.primary.accent}10`,
+                    }}
+                    title="Edit creative"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCreative(creative)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete creative"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="text-center py-8">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className={`text-sm ${tw.textMuted}`}>
-              No creatives created for this offer
+              No creatives created for this offer. Edit the offer to add
+              creatives.
             </p>
-            <button
-              onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
-              className="mt-4 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-              style={{ backgroundColor: color.primary.action }}
-            >
-              Create Creative
-            </button>
           </div>
         )}
       </div>
+
+      {/* Edit Creative Modal */}
+      <RegularModal
+        isOpen={isEditCreativeModalOpen}
+        onClose={() => setIsEditCreativeModalOpen(false)}
+        title={`Edit ${editingCreative?.channel} Creative`}
+        size="xl"
+      >
+        <div className="space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              value={editFormData.title}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, title: e.target.value })
+              }
+              placeholder="Enter creative title..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Text Body */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Text Body
+            </label>
+            <textarea
+              value={editFormData.text_body}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, text_body: e.target.value })
+              }
+              placeholder="Enter text content..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* HTML Body (for Email/Web) */}
+          {(editingCreative?.channel === "Email" ||
+            editingCreative?.channel === "Web") && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                HTML Body
+              </label>
+              <textarea
+                value={editFormData.html_body}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    html_body: e.target.value,
+                  })
+                }
+                placeholder="Enter HTML content..."
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              />
+            </div>
+          )}
+
+          {/* Variables */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Variables (JSON)
+            </label>
+            <textarea
+              value={variablesJson}
+              onChange={(e) => setVariablesJson(e.target.value)}
+              placeholder='{"variable_name": "value"}'
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              {(() => {
+                if (!variablesJson.trim()) return "Empty variables";
+                try {
+                  JSON.parse(variablesJson);
+                  return <span className="text-green-600">✓ Valid JSON</span>;
+                } catch {
+                  return <span className="text-red-600">⚠ Invalid JSON</span>;
+                }
+              })()}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              onClick={() => setIsEditCreativeModalOpen(false)}
+              disabled={isSavingCreative}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveCreative}
+              disabled={isSavingCreative}
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isSavingCreative ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </RegularModal>
+
+      {/* Product Selector - Renders when showProductSelector is true */}
+      {showProductSelector && (
+        <>
+          <ProductSelector
+            selectedProducts={selectedProductsToAdd}
+            onProductsChange={handleProductsChange}
+            multiSelect={true}
+            showAddButtonInline={true}
+            autoOpenModal={true}
+          />
+
+          {/* Confirmation Modal - Shows after products are selected */}
+          {selectedProductsToAdd.length > 0 && (
+            <RegularModal
+              isOpen={true}
+              onClose={() => {
+                setShowProductSelector(false);
+                setSelectedProductsToAdd([]);
+              }}
+              title="Link Products to Offer"
+              size="md"
+            >
+              <div className="space-y-4">
+                <p className="text-gray-700">
+                  Link {selectedProductsToAdd.length} product
+                  {selectedProductsToAdd.length !== 1 ? "s" : ""} to this offer?
+                </p>
+
+                <div className="bg-gray-50 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  {selectedProductsToAdd.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center gap-3 py-2 border-b border-gray-200 last:border-0"
+                    >
+                      <Package className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {product.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    onClick={() => {
+                      setShowProductSelector(false);
+                      setSelectedProductsToAdd([]);
+                    }}
+                    disabled={isLinkingProducts}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmAddProducts}
+                    disabled={isLinkingProducts}
+                    className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                    style={{ backgroundColor: color.primary.action }}
+                  >
+                    {isLinkingProducts ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Linking...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        Link Product
+                        {selectedProductsToAdd.length !== 1 ? "s" : ""}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </RegularModal>
+          )}
+        </>
+      )}
     </div>
   );
 }

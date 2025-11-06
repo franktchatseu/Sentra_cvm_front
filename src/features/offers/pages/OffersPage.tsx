@@ -17,6 +17,7 @@ import {
   Archive,
   Filter,
   AlertCircle,
+  Package,
 } from "lucide-react";
 import { Offer, SearchParams, OfferStatusEnum } from "../types/offer";
 import { offerService } from "../services/offerService";
@@ -37,6 +38,13 @@ export default function OffersPage() {
   const [categories, setCategories] = useState<OfferCategoryType[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalOffers, setTotalOffers] = useState(0);
+  const [offerStats, setOfferStats] = useState<{
+    total: number;
+    active: number;
+    expired: number;
+    pendingApproval: number;
+  } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [filters, setFilters] = useState<SearchParams>({
     page: 1,
     limit: 10,
@@ -102,20 +110,13 @@ export default function OffersPage() {
         skipCache: skipCache,
       };
 
-      console.log("Loading offers with params:", searchParams);
       const response = await offerService.searchOffers(searchParams);
-      console.log("Offers response:", response);
-      console.log("Offers response.data:", response.data);
-      console.log("Offers response.pagination:", response.pagination);
-      console.log("Offers response keys:", Object.keys(response));
 
       if (response.success && response.data) {
         setOffers(response.data);
         const total = response.pagination?.total || response.data.length;
-        console.log("Total offers:", total);
         setTotalOffers(total);
       } else {
-        console.error("Response not successful:", response);
         showError(
           "Failed to load offers",
           "Unable to retrieve offers. Please try again."
@@ -142,6 +143,71 @@ export default function OffersPage() {
   // Load categories on mount
   useEffect(() => {
     loadCategories();
+  }, []);
+
+  // Load offer stats
+  useEffect(() => {
+    const fetchOfferStats = async () => {
+      try {
+        setStatsLoading(true);
+        let total = 0;
+        let active = 0;
+        let expired = 0;
+        let pendingApproval = 0;
+
+        // Fetch total and active from stats
+        try {
+          const offersResponse = await offerService.getStats();
+          if (offersResponse.success && offersResponse.data) {
+            total = offersResponse.data.totalOffers || 0;
+            active = offersResponse.data.activeOffers || 0;
+          }
+        } catch (error) {
+          console.error("Error fetching offer stats:", error);
+        }
+
+        // If stats don't have total, get from pagination
+        if (total === 0) {
+          try {
+            const offersList = await offerService.searchOffers({ limit: 1 });
+            if (offersList.pagination?.total !== undefined) {
+              total = offersList.pagination.total;
+            }
+          } catch (error) {
+            console.error("Error fetching total offers:", error);
+          }
+        }
+
+        // Fetch expired offers count
+        try {
+          const expiredResponse = await offerService.getExpiredOffers({
+            limit: 1,
+          });
+          expired = expiredResponse.pagination?.total || 0;
+        } catch (error) {
+          console.error("Error fetching expired offers:", error);
+        }
+
+        // Fetch pending approval offers count
+        try {
+          const pendingResponse = await offerService.getPendingApprovalOffers({
+            limit: 1,
+          });
+          pendingApproval = pendingResponse.pagination?.total || 0;
+        } catch (error) {
+          console.error("Error fetching pending approval offers:", error);
+        }
+
+        setOfferStats({ total, active, expired, pendingApproval });
+      } catch (error) {
+        console.error("Error loading offer stats:", error);
+        setOfferStats({ total: 0, active: 0, expired: 0, pendingApproval: 0 });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchOfferStats();
   }, []);
 
   // Load offers on component mount and filter changes
@@ -598,6 +664,34 @@ export default function OffersPage() {
     return matchesSearch && matchesStatus && matchesApproval;
   });
 
+  // Offer stats cards data
+  const offerStatsCards = [
+    {
+      name: "Total Offers",
+      value: offerStats?.total?.toLocaleString() || "0",
+      icon: Package,
+      color: color.primary.accent,
+    },
+    {
+      name: "Active Offers",
+      value: offerStats?.active?.toLocaleString() || "0",
+      icon: CheckCircle,
+      color: "#10B981", // Green
+    },
+    {
+      name: "Expired Offers",
+      value: offerStats?.expired?.toLocaleString() || "0",
+      icon: Clock,
+      color: "#F59E0B", // Orange
+    },
+    {
+      name: "Pending Approval",
+      value: offerStats?.pendingApproval?.toLocaleString() || "0",
+      icon: AlertCircle,
+      color: "#EF4444", // Red
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -619,6 +713,42 @@ export default function OffersPage() {
           <Plus className="h-4 w-4 mr-2" />
           Create Offer
         </button>
+      </div>
+
+      {/* Offer Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {offerStatsCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.name}
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: stat.color || color.primary.accent,
+                      }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`text-3xl font-bold ${tw.textPrimary}`}>
+                        {statsLoading ? "..." : stat.value}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {stat.name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Search and Filter Bar */}

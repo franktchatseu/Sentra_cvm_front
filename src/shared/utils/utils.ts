@@ -16,7 +16,7 @@ export const color = {
   iconSizes: colors.iconSizes,
 };
 
-// Font system with Satoshi and PP Supply Mono - includes weights, sizes, and pre-defined typography styles
+// Font system with Satoshi and sans-serif - includes weights, sizes, and pre-defined typography styles
 export const typography = {
   primary: fonts.primary.name,
   secondary: fonts.secondary.name,

@@ -14,6 +14,7 @@ interface ProductSelectorProps {
   onProductsChange: (products: Product[]) => void;
   multiSelect?: boolean;
   showAddButtonInline?: boolean;
+  autoOpenModal?: boolean; // Auto-open modal on mount (skip empty state)
 }
 
 export default function ProductSelector({
@@ -21,6 +22,7 @@ export default function ProductSelector({
   onProductsChange,
   multiSelect = true,
   showAddButtonInline = false,
+  autoOpenModal = false,
 }: ProductSelectorProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<
@@ -29,7 +31,7 @@ export default function ProductSelector({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(autoOpenModal); // Auto-open if prop is true
 
   const loadCategories = useCallback(async () => {
     try {

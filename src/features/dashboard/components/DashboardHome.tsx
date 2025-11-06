@@ -202,33 +202,25 @@ export default function DashboardHome() {
       try {
         // Fetch offers stats - try getStats first, fallback to searchOffers for total count
         const offersResponse = await offerService.getStats();
+        let total = 0;
+        let active = 0;
+        let expired = 0;
+        let pendingApproval = 0;
+
         if (offersResponse.success && offersResponse.data) {
-          const total = offersResponse.data.totalOffers || 0;
-          const active = offersResponse.data.activeOffers || 0;
-          if (total > 0 || active > 0) {
-            setOffersStats({ total, active });
-          } else {
-            // Fallback: get total from pagination if stats returns 0
-            const offersList = await offerService.searchOffers({ limit: 1 });
-            if (offersList.pagination?.total !== undefined) {
-              setOffersStats({
-                total: offersList.pagination.total,
-                active: active || 0,
-              });
-            } else {
-              setOffersStats({ total: 0, active: 0 });
-            }
-          }
-        } else {
-          // Fallback: get total from pagination
+          total = offersResponse.data.totalOffers || 0;
+          active = offersResponse.data.activeOffers || 0;
+        }
+
+        // If stats don't have total, get from pagination
+        if (total === 0) {
           const offersList = await offerService.searchOffers({ limit: 1 });
           if (offersList.pagination?.total !== undefined) {
-            setOffersStats({
-              total: offersList.pagination.total,
-              active: 0,
-            });
+            total = offersList.pagination.total;
           }
         }
+
+        setOffersStats({ total, active });
       } catch (error) {
         // Final fallback: try to get total from pagination
         try {
@@ -692,23 +684,6 @@ export default function DashboardHome() {
             : "negative"
           : "positive",
       icon: Users,
-    },
-    {
-      name: "Total Offers",
-      value: offersStats?.total?.toLocaleString() || "0",
-      change:
-        percentageChanges.offers !== null
-          ? `${
-              percentageChanges.offers >= 0 ? "+" : ""
-            }${percentageChanges.offers.toFixed(1)}%`
-          : "N/A",
-      changeType:
-        percentageChanges.offers !== null
-          ? percentageChanges.offers >= 0
-            ? "positive"
-            : "negative"
-          : "positive",
-      icon: Package,
     },
     {
       name: "Total Products",
