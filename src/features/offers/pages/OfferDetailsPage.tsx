@@ -13,12 +13,7 @@ import {
   Pause,
   Archive,
   MoreVertical,
-  Package,
-  Star,
-  StarOff,
-  MessageSquare,
   Save,
-  Plus,
 } from "lucide-react";
 import { Offer, OfferStatusEnum } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
@@ -929,6 +924,14 @@ export default function OfferDetailsPage() {
     */
   };
 
+  const navigateToProductDetails = (productId: number) => {
+    navigate(`/dashboard/products/${productId}`);
+  };
+
+  const navigateToCreativeDetails = (creativeId: number) => {
+    navigate(`/dashboard/offer-creatives/${creativeId}`);
+  };
+
   // Generate dummy offer type based on offer characteristics
   // Using the same types as in CreateOfferPage dropdown
   const getOfferType = (offer: Offer) => {
@@ -1318,10 +1321,7 @@ export default function OfferDetailsPage() {
         className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`${tw.cardHeading} flex items-center gap-2`}>
-            <Package className="w-5 h-5" />
-            Linked Products
-          </h3>
+          <h3 className={`${tw.cardHeading}`}>Linked Products</h3>
           <div className="flex items-center gap-3">
             {!productsLoading && linkedProducts.length > 0 && (
               <span className={`text-sm ${tw.textMuted}`}>
@@ -1331,10 +1331,10 @@ export default function OfferDetailsPage() {
             )}
             <button
               onClick={() => setIsAddProductModalOpen(true)}
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
               style={{ backgroundColor: color.primary.action }}
+              type="button"
             >
-              <Plus className="w-4 h-4" />
               Add Product
             </button>
           </div>
@@ -1345,135 +1345,148 @@ export default function OfferDetailsPage() {
             <LoadingSpinner />
           </div>
         ) : linkedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {linkedProducts.map((product: any, index: number) => {
-              const isPrimary =
-                product.is_primary ||
-                (product.product_id && product.product_id === primaryProductId);
-              const isUnlinking =
-                product.link_id && unlinkingProductId === product.link_id;
-              const isSettingPrimary = false; // Feature disabled
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Product
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Description
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Primary
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {linkedProducts.map((product: any, index: number) => {
+                  const rawProductId = product.product_id ?? product.id;
+                  const productId =
+                    rawProductId !== undefined && rawProductId !== null
+                      ? Number(rawProductId)
+                      : null;
+                  const hasValidProductId =
+                    productId !== null && !Number.isNaN(productId);
+                  const productName =
+                    product.name ||
+                    product.product_name ||
+                    `Product ${hasValidProductId ? productId : index + 1}`;
+                  const isPrimary =
+                    product.is_primary ||
+                    (product.product_id &&
+                      product.product_id === primaryProductId);
+                  const isUnlinking =
+                    product.link_id && unlinkingProductId === product.link_id;
+                  const isSettingPrimary = false; // Feature disabled for now
 
-              return (
-                <div
-                  key={
-                    product.link_id || `product-${product.product_id}-${index}`
-                  }
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: color.primary.accent }}
+                  return (
+                    <tr
+                      key={
+                        product.link_id ||
+                        `product-${hasValidProductId ? productId : index}`
+                      }
                     >
-                      <Package className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className={`font-medium ${tw.textPrimary} truncate`}>
-                          {product.name ||
-                            product.product_name ||
-                            `Product ${product.product_id || product.id}`}
-                        </p>
-                        {isPrimary && (
-                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        )}
-                      </div>
-                      {product.description && (
-                        <p className={`text-sm ${tw.textMuted} truncate`}>
-                          {product.description}
-                        </p>
-                      )}
-                      {isPrimary && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                          Primary
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-                    {/* Set as Primary button - Show if not primary and has link_id or product_id */}
-                    {!isPrimary &&
-                      (product.link_id || product.product_id || product.id) && (
-                        <div className="relative group">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {hasValidProductId ? (
                           <button
-                            onClick={handleSetPrimaryProduct}
-                            disabled={isSettingPrimary || isUnlinking}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 rounded-lg border border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="button"
+                            onClick={() =>
+                              navigateToProductDetails(productId as number)
+                            }
+                            className="hover:underline"
+                            style={{ color: color.primary.accent }}
                           >
-                            {isSettingPrimary ? (
-                              <>
-                                <div
-                                  className="animate-spin rounded-full h-3.5 w-3.5 border-b-2"
-                                  style={{ borderColor: color.primary.accent }}
-                                ></div>
-                                <span>Setting...</span>
-                              </>
-                            ) : (
-                              <>
-                                <StarOff className="w-4 h-4" />
-                                <span>Set Primary</span>
-                              </>
-                            )}
+                            {productName}
                           </button>
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg whitespace-normal w-96 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg z-50">
-                            Mark this product as the main product for this
-                            offer. Only one product can be primary per offer.
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900"></div>
-                          </div>
-                        </div>
-                      )}
-                    {/* Unlink button - Always show if we have products */}
-                    {(product.link_id || product.product_id || product.id) && (
-                      <button
-                        onClick={() => {
-                          if (!product.link_id) {
-                            showError(
-                              "Cannot unlink: Link ID not available. Product may need to be re-linked."
-                            );
-                            return;
-                          }
-                          handleUnlinkProduct(
-                            product.link_id,
-                            product.name ||
-                              `Product ${product.product_id || product.id}`
-                          );
-                        }}
-                        disabled={
-                          isUnlinking || isSettingPrimary || !product.link_id
-                        }
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-300 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          product.link_id
-                            ? "Unlink product"
-                            : "Link ID not available"
-                        }
-                      >
-                        {isUnlinking ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-red-600"></div>
-                            <span>Unlinking...</span>
-                          </>
                         ) : (
-                          <span>Unlink</span>
+                          <span>{productName}</span>
                         )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                        <div className={`text-xs ${tw.textMuted} mt-1`}>
+                          ID:{" "}
+                          {hasValidProductId
+                            ? productId
+                            : product.product_id || product.id || "N/A"}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {product.description ? (
+                          product.description
+                        ) : (
+                          <span className={`text-xs ${tw.textMuted}`}>
+                            No description provided
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {isPrimary ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
+                            Primary
+                          </span>
+                        ) : (
+                          <span className={`text-sm ${tw.textMuted}`}>—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center gap-3">
+                          {!isPrimary &&
+                            (product.link_id || hasValidProductId) && (
+                              <button
+                                type="button"
+                                onClick={handleSetPrimaryProduct}
+                                disabled={isSettingPrimary || isUnlinking}
+                                className="text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{ color: color.primary.accent }}
+                                title="Set this product as the primary product"
+                              >
+                                Set Primary
+                              </button>
+                            )}
+                          {(product.link_id || hasValidProductId) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!product.link_id) {
+                                  showError(
+                                    "Cannot unlink: Link ID not available. Product may need to be re-linked."
+                                  );
+                                  return;
+                                }
+                                handleUnlinkProduct(
+                                  product.link_id,
+                                  productName
+                                );
+                              }}
+                              disabled={
+                                isUnlinking ||
+                                isSettingPrimary ||
+                                !product.link_id
+                              }
+                              className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isUnlinking ? "Unlinking..." : "Unlink"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="text-center py-8">
-            <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className={`text-sm ${tw.textMuted} mb-1`}>
-              No products linked to this offer
+              No products linked to this offer.
             </p>
             <p className={`text-xs ${tw.textMuted}`}>
-              Click "Add Product" above to link products to this offer
+              Click "Add Product" above to link products to this offer.
             </p>
           </div>
         )}
@@ -1484,10 +1497,7 @@ export default function OfferDetailsPage() {
         className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`${tw.cardHeading} flex items-center gap-2`}>
-            <MessageSquare className="w-5 h-5" />
-            Offer Creatives
-          </h3>
+          <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
           <div className="flex items-center gap-3">
             {!creativesLoading && offerCreatives.length > 0 && (
               <span className={`text-sm ${tw.textMuted}`}>
@@ -1500,10 +1510,10 @@ export default function OfferDetailsPage() {
                 resetNewCreativeForm();
                 setIsAddCreativeModalOpen(true);
               }}
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
               style={{ backgroundColor: color.primary.action }}
+              type="button"
             >
-              <Plus className="w-4 h-4" />
               Add Creative
             </button>
           </div>
@@ -1514,106 +1524,131 @@ export default function OfferDetailsPage() {
             <LoadingSpinner />
           </div>
         ) : offerCreatives.length > 0 ? (
-          <div className="space-y-4">
-            {offerCreatives.map((creative: OfferCreative, index: number) => (
-              <div
-                key={`creative-${creative.id || creative.channel}-${
-                  creative.locale
-                }-${index}`}
-                className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: color.primary.accent }}
-                    >
-                      <MessageSquare className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className={`font-medium ${tw.textPrimary}`}>
-                          {creative.title || `Creative ${creative.channel}`}
-                        </p>
-                        <span
-                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
-                          style={{ backgroundColor: color.primary.accent }}
-                        >
-                          {creative.channel}
-                        </span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                          {creative.locale}
-                        </span>
-                        {creative.is_active && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                            Active
-                          </span>
-                        )}
-                        {creative.version && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                            v{creative.version}
-                          </span>
-                        )}
-                      </div>
-                      {creative.text_body && (
-                        <p
-                          className={`text-sm ${tw.textMuted} mt-2 line-clamp-2`}
-                        >
-                          {creative.text_body}
-                        </p>
-                      )}
-                      {creative.variables &&
-                        Object.keys(creative.variables).length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {Object.keys(creative.variables)
-                              .slice(0, 3)
-                              .map((key) => (
-                                <span
-                                  key={key}
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
-                                >
-                                  {key}
-                                </span>
-                              ))}
-                            {Object.keys(creative.variables).length > 3 && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                                +{Object.keys(creative.variables).length - 3}{" "}
-                                more
-                              </span>
-                            )}
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Channel
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Locale
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Updated
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {offerCreatives.map(
+                  (creative: OfferCreative, index: number) => {
+                    const creativeId =
+                      creative.id !== undefined && creative.id !== null
+                        ? Number(creative.id)
+                        : null;
+                    const hasCreativeId =
+                      creativeId !== null && !Number.isNaN(creativeId);
+                    const creativeLabel =
+                      creative.title ||
+                      `Creative ${creative.channel}${
+                        creative.locale ? ` (${creative.locale})` : ""
+                      }`;
+                    const variablesCount = creative.variables
+                      ? Object.keys(creative.variables).length
+                      : 0;
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2 ml-4">
-                  <button
-                    onClick={() => handleEditCreative(creative)}
-                    className="p-2 rounded-lg transition-colors hover:opacity-80"
-                    style={{
-                      color: color.primary.accent,
-                      backgroundColor: `${color.primary.accent}10`,
-                    }}
-                    title="Edit creative"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteCreative(creative)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete creative"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
+                    return (
+                      <tr
+                        key={`creative-${creative.id || creative.channel}-${
+                          creative.locale
+                        }-${index}`}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          {hasCreativeId ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigateToCreativeDetails(creativeId as number)
+                              }
+                              className="hover:underline"
+                              style={{ color: color.primary.accent }}
+                            >
+                              {creativeLabel}
+                            </button>
+                          ) : (
+                            <span>{creativeLabel}</span>
+                          )}
+                          <div className={`text-xs ${tw.textMuted} mt-1`}>
+                            ID: {hasCreativeId ? creativeId : "N/A"}
+                          </div>
+                          {variablesCount > 0 && (
+                            <div className={`text-xs ${tw.textMuted} mt-1`}>
+                              {variablesCount} variable
+                              {variablesCount !== 1 ? "s" : ""}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {creative.channel}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {creative.locale || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {creative.is_active ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
+                              Inactive
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {creative.updated_at
+                            ? new Date(creative.updated_at).toLocaleString()
+                            : creative.created_at
+                            ? new Date(creative.created_at).toLocaleString()
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleEditCreative(creative)}
+                              className="text-sm font-medium hover:underline"
+                              style={{ color: color.primary.accent }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCreative(creative)}
+                              className="text-sm font-medium text-red-600 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className={`text-sm ${tw.textMuted}`}>
               No creatives created for this offer. Click "Add Creative" above to
               create one.
@@ -1779,7 +1814,7 @@ export default function OfferDetailsPage() {
             <button
               onClick={handleCreateCreative}
               disabled={isCreatingCreative}
-              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50"
               style={{ backgroundColor: color.primary.action }}
             >
               {isCreatingCreative ? (
@@ -1788,10 +1823,7 @@ export default function OfferDetailsPage() {
                   Creating...
                 </>
               ) : (
-                <>
-                  <Plus className="w-4 h-4" />
-                  Create Creative
-                </>
+                <span>Create Creative</span>
               )}
             </button>
           </div>
@@ -1981,6 +2013,14 @@ export default function OfferDetailsPage() {
                   const isAlreadyLinked = linkedProducts.some(
                     (p) => p.id === product.id
                   );
+                  const productInitial = (
+                    product.name ||
+                    product.product_code ||
+                    "P"
+                  )
+                    .toString()
+                    .charAt(0)
+                    .toUpperCase();
 
                   return (
                     <div
@@ -2003,14 +2043,16 @@ export default function OfferDetailsPage() {
                               isAlreadyLinked ? "bg-gray-200" : "bg-gray-100"
                             }`}
                           >
-                            <Package
-                              className="w-5 h-5"
+                            <span
+                              className="text-sm font-semibold"
                               style={{
                                 color: isAlreadyLinked
-                                  ? "#9CA3AF"
+                                  ? "#6B7280"
                                   : color.primary.accent,
                               }}
-                            />
+                            >
+                              {productInitial}
+                            </span>
                           </div>
                           <div className="flex-1">
                             <h5
@@ -2069,7 +2111,6 @@ export default function OfferDetailsPage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p className="text-sm text-gray-500">
                   {productSearchTerm
                     ? "No products found matching your search"
@@ -2095,7 +2136,7 @@ export default function OfferDetailsPage() {
             <button
               onClick={handleConfirmAddProducts}
               disabled={isLinkingProducts || selectedProductsToAdd.length === 0}
-              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50"
               style={{ backgroundColor: color.primary.action }}
             >
               {isLinkingProducts ? (
@@ -2104,14 +2145,13 @@ export default function OfferDetailsPage() {
                   Linking...
                 </>
               ) : (
-                <>
-                  <Plus className="w-4 h-4" />
+                <span>
                   Link{" "}
                   {selectedProductsToAdd.length > 0
                     ? `${selectedProductsToAdd.length} `
                     : ""}
                   Product{selectedProductsToAdd.length !== 1 ? "s" : ""}
-                </>
+                </span>
               )}
             </button>
           </div>

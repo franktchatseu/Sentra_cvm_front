@@ -37,6 +37,7 @@ import ControlGroupsPage from "../../products/pages/ControlGroupsPage";
 import DepartmentPage from "../../campaigns/pages/DepartmentPage";
 import LineOfBusinessPage from "../../campaigns/pages/LineOfBusinessPage";
 import AssignItemsPage from "../../../shared/pages/AssignItemsPage";
+import OfferCreativeDetailsPage from "../../offers/pages/OfferCreativeDetailsPage";
 
 export default function Dashboard() {
   return (
@@ -78,6 +79,10 @@ export default function Dashboard() {
         <Route
           path="/offers/:id/lifecycle-history"
           element={<OfferLifecycleHistoryPage />}
+        />
+        <Route
+          path="/offer-creatives/:id"
+          element={<OfferCreativeDetailsPage />}
         />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/create" element={<CreateProductPage />} />
