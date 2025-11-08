@@ -669,6 +669,23 @@ export default function DashboardHome() {
       icon: Target,
     },
     {
+      name: "Total Offers",
+      value: offersStats?.total?.toLocaleString() || "0",
+      change:
+        percentageChanges.offers !== null
+          ? `${
+              percentageChanges.offers >= 0 ? "+" : ""
+            }${percentageChanges.offers.toFixed(1)}%`
+          : "N/A",
+      changeType:
+        percentageChanges.offers !== null
+          ? percentageChanges.offers >= 0
+            ? "positive"
+            : "negative"
+          : "positive",
+      icon: Package,
+    },
+    {
       name: "Total Segments",
       value: segmentsStats?.total?.toLocaleString() || "0",
       change:

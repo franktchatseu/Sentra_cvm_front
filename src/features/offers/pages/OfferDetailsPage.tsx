@@ -26,7 +26,13 @@ import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
 import { offerCreativeService } from "../services/offerCreativeService";
-import { OfferCreative } from "../types/offerCreative";
+import {
+  OfferCreative,
+  CreativeChannel,
+  COMMON_LOCALES,
+  VALID_CHANNELS,
+  CreateOfferCreativeRequest,
+} from "../types/offerCreative";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -37,6 +43,41 @@ import { Product } from "../../products/types/product";
 import { Search, Check } from "lucide-react";
 import { productCategoryService } from "../../products/services/productCategoryService";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+
+const localeLabelMap: Record<string, string> = {
+  en: "English",
+  "en-US": "English (US)",
+  "en-GB": "English (UK)",
+  fr: "French",
+  "fr-CA": "French (Canada)",
+  "fr-FR": "French (France)",
+  es: "Spanish",
+  "es-ES": "Spanish (Spain)",
+  "es-MX": "Spanish (Mexico)",
+  de: "German",
+  "de-DE": "German (Germany)",
+  ar: "Arabic",
+  "ar-SA": "Arabic (Saudi Arabia)",
+  pt: "Portuguese",
+  "pt-BR": "Portuguese (Brazil)",
+  "pt-PT": "Portuguese (Portugal)",
+  sw: "Swahili",
+  "sw-UG": "Swahili (Uganda)",
+  "sw-KE": "Swahili (Kenya)",
+};
+
+const getLocaleLabel = (locale: string): string =>
+  localeLabelMap[locale] || locale;
+
+const creativeChannelOptions = VALID_CHANNELS.map((channel) => ({
+  value: channel,
+  label: channel,
+}));
+
+const localeOptions = COMMON_LOCALES.map((locale) => ({
+  value: locale,
+  label: getLocaleLabel(locale),
+}));
 
 export default function OfferDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -81,6 +122,24 @@ export default function OfferDetailsPage() {
   });
   const [variablesJson, setVariablesJson] = useState("");
   const [isSavingCreative, setIsSavingCreative] = useState(false);
+  const [isAddCreativeModalOpen, setIsAddCreativeModalOpen] = useState(false);
+  const [isCreatingCreative, setIsCreatingCreative] = useState(false);
+  const [newCreativeForm, setNewCreativeForm] = useState<{
+    channel: CreativeChannel;
+    locale: string;
+    title: string;
+    text_body: string;
+    html_body: string;
+    is_active: boolean;
+  }>({
+    channel: "Email" as CreativeChannel,
+    locale: "en",
+    title: "",
+    text_body: "",
+    html_body: "",
+    is_active: true,
+  });
+  const [newCreativeVariables, setNewCreativeVariables] = useState("");
 
   // Add product modal state
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -99,6 +158,18 @@ export default function OfferDetailsPage() {
 
   // Close More menu when clicking outside
   useClickOutside(moreMenuRef, () => setShowMoreMenu(false));
+
+  const resetNewCreativeForm = () => {
+    setNewCreativeForm({
+      channel: "Email" as CreativeChannel,
+      locale: "en",
+      title: "",
+      text_body: "",
+      html_body: "",
+      is_active: true,
+    });
+    setNewCreativeVariables("");
+  };
 
   const loadOffer = useCallback(
     async (skipCache: boolean = true) => {
@@ -367,6 +438,86 @@ export default function OfferDetailsPage() {
       showError(
         err instanceof Error ? err.message : "Failed to delete creative"
       );
+    }
+  };
+
+  const handleCreateCreative = async () => {
+    if (!id) {
+      showError("Offer ID is missing. Please refresh and try again.");
+      return;
+    }
+
+    if (!user?.user_id) {
+      showError("User information not available. Please log in again.");
+      return;
+    }
+
+    if (
+      !newCreativeForm.title.trim() &&
+      !newCreativeForm.text_body.trim() &&
+      !newCreativeForm.html_body.trim()
+    ) {
+      showError(
+        "Provide at least a title, text body, or HTML body before creating a creative."
+      );
+      return;
+    }
+
+    let parsedVariables: Record<string, string | number | boolean> | undefined;
+
+    if (newCreativeVariables.trim()) {
+      try {
+        const parsed = JSON.parse(newCreativeVariables);
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          Array.isArray(parsed)
+        ) {
+          showError("Variables JSON must be an object with key/value pairs.");
+          return;
+        }
+        parsedVariables = parsed;
+      } catch {
+        showError("Invalid JSON in variables field");
+        return;
+      }
+    }
+
+    try {
+      setIsCreatingCreative(true);
+
+      const payload: CreateOfferCreativeRequest = {
+        offer_id: Number(id),
+        channel: newCreativeForm.channel,
+        locale: newCreativeForm.locale,
+        is_active: newCreativeForm.is_active,
+        created_by: user.user_id,
+      };
+
+      if (newCreativeForm.title.trim()) {
+        payload.title = newCreativeForm.title.trim();
+      }
+      if (newCreativeForm.text_body.trim()) {
+        payload.text_body = newCreativeForm.text_body.trim();
+      }
+      if (newCreativeForm.html_body.trim()) {
+        payload.html_body = newCreativeForm.html_body.trim();
+      }
+      if (parsedVariables && Object.keys(parsedVariables).length > 0) {
+        payload.variables = parsedVariables;
+      }
+
+      await offerCreativeService.create(payload);
+      success("Creative Created", "Creative has been created successfully.");
+      setIsAddCreativeModalOpen(false);
+      resetNewCreativeForm();
+      loadCreatives(true);
+    } catch (err) {
+      showError(
+        err instanceof Error ? err.message : "Failed to create creative"
+      );
+    } finally {
+      setIsCreatingCreative(false);
     }
   };
 
@@ -1332,8 +1483,30 @@ export default function OfferDetailsPage() {
       <div
         className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
       >
-        <div className="mb-4">
-          <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`${tw.cardHeading} flex items-center gap-2`}>
+            <MessageSquare className="w-5 h-5" />
+            Offer Creatives
+          </h3>
+          <div className="flex items-center gap-3">
+            {!creativesLoading && offerCreatives.length > 0 && (
+              <span className={`text-sm ${tw.textMuted}`}>
+                {offerCreatives.length} creative
+                {offerCreatives.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                resetNewCreativeForm();
+                setIsAddCreativeModalOpen(true);
+              }}
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              <Plus className="w-4 h-4" />
+              Add Creative
+            </button>
+          </div>
         </div>
 
         {creativesLoading ? (
@@ -1442,13 +1615,188 @@ export default function OfferDetailsPage() {
           <div className="text-center py-8">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className={`text-sm ${tw.textMuted}`}>
-              No creatives created for this offer. Edit the offer to add
-              creatives.
+              No creatives created for this offer. Click "Add Creative" above to
+              create one.
             </p>
           </div>
         )}
       </div>
 
+      {/* Add Creative Modal */}
+      <RegularModal
+        isOpen={isAddCreativeModalOpen}
+        onClose={() => {
+          setIsAddCreativeModalOpen(false);
+          resetNewCreativeForm();
+        }}
+        title="Add Creative"
+        size="xl"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Channel
+              </label>
+              <HeadlessSelect
+                value={newCreativeForm.channel}
+                onChange={(value) =>
+                  setNewCreativeForm((prev) => ({
+                    ...prev,
+                    channel: value as CreativeChannel,
+                  }))
+                }
+                options={creativeChannelOptions}
+                placeholder="Select a channel"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Locale
+              </label>
+              <HeadlessSelect
+                value={newCreativeForm.locale}
+                onChange={(value) =>
+                  setNewCreativeForm((prev) => ({
+                    ...prev,
+                    locale: String(value),
+                  }))
+                }
+                options={localeOptions}
+                placeholder="Select a locale"
+                searchable
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              value={newCreativeForm.title}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  title: e.target.value,
+                }))
+              }
+              placeholder="Enter creative title..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Text Body
+            </label>
+            <textarea
+              value={newCreativeForm.text_body}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  text_body: e.target.value,
+                }))
+              }
+              placeholder="Enter text content..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Provide at least one of Title, Text Body, or HTML Body.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              HTML Body (optional)
+            </label>
+            <textarea
+              value={newCreativeForm.html_body}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  html_body: e.target.value,
+                }))
+              }
+              placeholder="Enter HTML content..."
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Variables (JSON)
+            </label>
+            <textarea
+              value={newCreativeVariables}
+              onChange={(e) => setNewCreativeVariables(e.target.value)}
+              placeholder='{"variable_name": "value"}'
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Provide key/value pairs for template variables. Example:{" "}
+              {'{"firstName":"John"}'}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="new-creative-active"
+              type="checkbox"
+              checked={newCreativeForm.is_active}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  is_active: e.target.checked,
+                }))
+              }
+              className="h-4 w-4 rounded border-gray-300"
+              style={{ accentColor: color.primary.action }}
+            />
+            <label
+              htmlFor="new-creative-active"
+              className="text-sm text-gray-700"
+            >
+              Mark creative as active
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              onClick={() => {
+                setIsAddCreativeModalOpen(false);
+                resetNewCreativeForm();
+              }}
+              disabled={isCreatingCreative}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateCreative}
+              disabled={isCreatingCreative}
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isCreatingCreative ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Create Creative
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </RegularModal>
       {/* Edit Creative Modal */}
       <RegularModal
         isOpen={isEditCreativeModalOpen}
