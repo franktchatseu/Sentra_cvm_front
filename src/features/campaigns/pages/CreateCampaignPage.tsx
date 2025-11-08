@@ -12,7 +12,8 @@ import {
 import { useToast } from '../../../contexts/ToastContext';
 import { color, tw } from '../../../shared/utils/utils';
 import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
-import { CreateCampaignRequest, CampaignSegment, CampaignOffer, ControlGroup, CampaignScheduling } from '../types/campaign';
+import { CampaignSegment, CampaignOffer, ControlGroup, CampaignScheduling } from '../types/campaign';
+import { CreateCampaignRequest } from '../types/createCampaign';
 
 // Extended type for form data that includes all properties needed during creation
 interface CampaignFormData extends CreateCampaignRequest {
@@ -206,6 +207,28 @@ export default function CreateCampaignPage() {
     }
   };
 
+  // Generate unique campaign code from name
+  const generateCampaignCode = (name: string): string => {
+    // Remove special characters and convert to uppercase
+    const sanitized = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, '')
+      .trim()
+      .replace(/\s+/g, '_');
+    
+    // Get current year
+    const year = new Date().getFullYear();
+    
+    // Generate random suffix for uniqueness (4 characters)
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    
+    // Create code: First 3 words of name + year + random suffix
+    const words = sanitized.split('_').filter(w => w.length > 0);
+    const prefix = words.slice(0, 3).join('_');
+    
+    return `${prefix}_${year}_${randomSuffix}`;
+  };
+
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
@@ -239,9 +262,14 @@ export default function CreateCampaignPage() {
         }];
       }
 
+      // Generate unique code from campaign name
+      const campaignCode = generateCampaignCode(formData.name);
+
       const campaignData: CreateCampaignRequest = {
         name: formData.name,
+        code: campaignCode,
         objective: formData.objective,
+        created_by: 1, // TODO: Get actual user ID from auth context
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.start_date && { start_date: formData.start_date }),
@@ -274,9 +302,15 @@ export default function CreateCampaignPage() {
         return;
       }
 
+      // Generate unique code from campaign name
+      const campaignCode = generateCampaignCode(formData.name);
+
       const draftData: CreateCampaignRequest = {
         name: formData.name,
+        code: campaignCode,
         objective: formData.objective,
+        status: 'draft', // Explicitly set as draft
+        created_by: 1, // TODO: Get actual user ID from auth context
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.start_date && { start_date: formData.start_date }),

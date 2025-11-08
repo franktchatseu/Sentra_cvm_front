@@ -22,6 +22,7 @@ import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import { offerService } from "../../offers/services/offerService";
 import { segmentService } from "../../segments/services/segmentService";
 import { productService } from "../../products/services/productService";
+import { campaignService } from "../../campaigns/services/campaignService";
 import {
   PieChart,
   Pie,
@@ -67,6 +68,7 @@ export default function DashboardHome() {
   const [recentOffers, setRecentOffers] = useState<any[]>([]);
   const [recentSegments, setRecentSegments] = useState<any[]>([]);
   const [recentProducts, setRecentProducts] = useState<any[]>([]);
+  const [recentCampaigns, setRecentCampaigns] = useState<any[]>([]);
 
   // State for stats
   const [offersStats, setOffersStats] = useState<{
@@ -79,16 +81,22 @@ export default function DashboardHome() {
   const [productsStats, setProductsStats] = useState<{
     total: number;
   } | null>(null);
+  const [campaignsStats, setCampaignsStats] = useState<{
+    total: number;
+    active: number;
+  } | null>(null);
 
   // State for percentage changes
   const [percentageChanges, setPercentageChanges] = useState<{
     offers: number | null;
     segments: number | null;
     products: number | null;
+    campaigns: number | null;
   }>({
     offers: null,
     segments: null,
     products: null,
+    campaigns: null,
   });
 
   // State for segment type distribution
@@ -279,6 +287,28 @@ export default function DashboardHome() {
       } catch (error) {
         setProductsStats({ total: 0 });
       }
+
+      try {
+        // Fetch campaigns stats
+        const campaignsResponse = await campaignService.getCampaigns({ 
+          limit: 1,
+          skipCache: true 
+        });
+        const total = campaignsResponse.pagination?.total || 0;
+        
+        // Get active campaigns count
+        const activeCampaignsResponse = await campaignService.getCampaigns({ 
+          limit: 1,
+          status: 'active',
+          skipCache: true 
+        });
+        const active = activeCampaignsResponse.pagination?.total || 0;
+        
+        setCampaignsStats({ total, active });
+      } catch (error) {
+        console.error("Failed to fetch campaigns stats:", error);
+        setCampaignsStats({ total: 0, active: 0 });
+      }
     };
 
     fetchStats();
@@ -366,6 +396,39 @@ export default function DashboardHome() {
           setRecentProducts(formattedProducts);
         }
       } catch (error) {}
+
+      try {
+        // Fetch latest campaigns
+        const campaignsResponse = await campaignService.getCampaigns({ 
+          limit: 3,
+          skipCache: true 
+        });
+        if (
+          campaignsResponse.success &&
+          campaignsResponse.data &&
+          campaignsResponse.data.length > 0
+        ) {
+          const formattedCampaigns = campaignsResponse.data
+            .slice(0, 3)
+            .map((campaign: any) => {
+              return {
+                id: campaign.id,
+                name: campaign.name,
+                status: campaign.status?.toLowerCase() || "draft",
+                segment: campaign.metadata?.channel || "Unknown",
+                performance: {
+                  response: campaign.current_participants || 0,
+                  delivered: campaign.current_participants || 0,
+                  converted: Math.floor((campaign.current_participants || 0) * 0.15),
+                },
+                created_at: campaign.created_at,
+              };
+            });
+          setRecentCampaigns(formattedCampaigns);
+        }
+      } catch (error) {
+        console.error("Failed to fetch campaigns:", error);
+      }
     };
 
     fetchLatestItems();
@@ -667,13 +730,23 @@ export default function DashboardHome() {
     }
   }, [offersStats, segmentsStats, productsStats]);
 
-  // Stats data - campaigns hardcoded, others use real data
+  // Stats data - using real data from API
   const stats = [
     {
       name: "Active Campaigns",
-      value: "10", // Hardcoded as per user request
-      change: "+12%",
-      changeType: "positive" as const,
+      value: campaignsStats?.active?.toLocaleString() || "0",
+      change:
+        percentageChanges.campaigns !== null
+          ? `${
+              percentageChanges.campaigns >= 0 ? "+" : ""
+            }${percentageChanges.campaigns.toFixed(1)}%`
+          : "N/A",
+      changeType:
+        percentageChanges.campaigns !== null
+          ? percentageChanges.campaigns >= 0
+            ? "positive"
+            : "negative"
+          : "positive",
       icon: Target,
     },
     {
@@ -733,48 +806,6 @@ export default function DashboardHome() {
       change: "+5.2%",
       changeType: "positive" as const,
       icon: TrendingUp,
-    },
-  ];
-
-  const campaigns = [
-    {
-      id: 1,
-      name: "Q1 Customer Retention Campaign",
-      status: "active",
-      segment: "High Value Customers",
-      performance: {
-        response: 15420,
-        delivered: 14500,
-        converted: 2680,
-      },
-      created_at: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Spring Promotion Campaign",
-      status: "active",
-      segment: "Premium Members",
-      performance: {
-        response: 12350,
-        delivered: 11800,
-        converted: 1890,
-      },
-      created_at: "2024-02-20",
-    },
-    {
-      id: 3,
-      name: "New Customer Onboarding",
-      status: "pending",
-      segment: "New Signups",
-      start_date: "2024-03-10",
-      created_at: "2024-02-28",
-    },
-    {
-      id: 4,
-      name: "Churn Prevention Initiative",
-      status: "paused",
-      segment: "At-Risk Customers",
-      created_at: "2024-01-10",
     },
   ];
 
@@ -1143,7 +1174,7 @@ export default function DashboardHome() {
               <div className="space-y-4">
                 {/* Campaigns */}
                 {latestItemsFilter === "campaigns" &&
-                  campaigns.slice(0, 3).map((campaign) => (
+                  recentCampaigns.slice(0, 3).map((campaign) => (
                     <div
                       key={campaign.id}
                       className="flex items-center gap-4 p-5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
@@ -1313,7 +1344,7 @@ export default function DashboardHome() {
 
                 {/* Empty State */}
                 {((latestItemsFilter === "campaigns" &&
-                  campaigns.length === 0) ||
+                  recentCampaigns.length === 0) ||
                   (latestItemsFilter === "offers" &&
                     recentOffers.length === 0) ||
                   (latestItemsFilter === "segments" &&

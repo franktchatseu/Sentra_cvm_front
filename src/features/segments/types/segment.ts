@@ -567,7 +567,8 @@ export enum ComputationStatusEnum {
 
 export interface SegmentCondition {
   id: string;
-  field: string;
+  field: string; // field_value (e.g., "customer_id") - kept for backward compatibility
+  field_id?: number; // Backend field ID - used for API calls
   operator:
     | "equals"
     | "not_equals"
@@ -577,6 +578,7 @@ export interface SegmentCondition {
     | "less_than"
     | "in"
     | "not_in";
+  operator_id?: number; // Backend operator ID - used for API calls
   value: string | number | string[];
   type: "string" | "number" | "boolean" | "array";
 }
@@ -788,4 +790,122 @@ export const OPERATOR_LABELS: Record<string, string> = {
   less_than: "Less Than",
   in: "In",
   not_in: "Not In",
+};
+
+// ==================== SEGMENTATION FIELDS API TYPES ====================
+
+/**
+ * Operator definition from backend
+ */
+export type SegmentationOperator = {
+  id: number;
+  symbol: string; // "=", "!=", ">", "<", "IN", etc.
+  label: string; // "equals", "not equals", "in list", etc.
+  requires_value: boolean;
+  requires_two_values: boolean;
+  applicable_field_types: string[]; // ["numeric", "text", "boolean", etc.]
+};
+
+/**
+ * Field definition from backend
+ */
+export type SegmentationField = {
+  id: number;
+  field_name: string; // Display name (e.g., "Customer ID")
+  field_value: string; // Backend field name (e.g., "customer_id")
+  description: string;
+  field_type: string; // "numeric", "text", "boolean", "date", "timestamp"
+  field_pg_type: string; // PostgreSQL type (e.g., "integer", "varchar(20)")
+  field_type_precision: string | null;
+  source_table: string; // e.g., "cvm.cdr_customer_subscription_data"
+  validation: {
+    strategy: string; // "none", "pattern", "range", etc.
+    distinct_values: string[] | null;
+    range_min: number | null;
+    range_max: number | null;
+    value_length: number | null;
+  };
+  ui: {
+    component_type: string | null;
+    is_multi_select: boolean;
+    is_required: boolean;
+  };
+  operators: SegmentationOperator[];
+  default_operator: number | null;
+};
+
+/**
+ * Field category from backend
+ */
+export type SegmentationFieldCategory = {
+  id: number;
+  name: string; // Display name (e.g., "Customer Identity")
+  value: string; // Backend value (e.g., "customer_identity")
+  description: string;
+  parent_category_id: number | null;
+  display_order: number;
+  fields: SegmentationField[];
+};
+
+/**
+ * Response from /segmentation-fields/profile endpoint
+ */
+export type SegmentationFieldsResponse = {
+  success: boolean;
+  data: Array<{
+    field_selector_config: SegmentationFieldCategory[];
+  }>;
+  source: string; // "cache" or "database"
+};
+
+// ==================== QUERY GENERATION TYPES ====================
+
+/**
+ * Condition for query generation
+ */
+export type QueryGenerationCondition = {
+  field_id: number;
+  operator_id: number;
+  value: string | number | string[];
+};
+
+/**
+ * Condition group for query generation
+ */
+export type QueryGenerationGroup = {
+  logic: "AND" | "OR";
+  conditions: QueryGenerationCondition[];
+};
+
+/**
+ * Order by clause for query generation
+ */
+export type QueryGenerationOrderBy = {
+  field_id: number;
+  direction: "ASC" | "DESC";
+};
+
+/**
+ * Request for query generation preview
+ */
+export type GenerateQueryPreviewRequest = {
+  fields: number[]; // Array of field IDs to select
+  filters: {
+    logic: "AND" | "OR";
+    groups: QueryGenerationGroup[];
+  };
+  order_by?: QueryGenerationOrderBy[];
+  limit?: number;
+};
+
+/**
+ * Response from query generation preview
+ */
+export type GenerateQueryPreviewResponse = {
+  success: boolean;
+  data: {
+    segment_query: string; // The generated SQL SELECT query
+    count_query: string; // The generated SQL COUNT query
+  };
+  source: string; // "database" or "cache"
 };

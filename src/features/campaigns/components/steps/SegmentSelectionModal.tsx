@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, Plus, Users, Check } from 'lucide-react';
+import { X, Search, Plus, Users } from 'lucide-react';
 import { CampaignSegment } from '../../types/campaign';
 import HeadlessSelect from '../../../../shared/components/ui/HeadlessSelect';
 import { color } from '../../../../shared/utils/utils';
@@ -165,7 +165,10 @@ export default function SegmentSelectionModal({
             </div>
             <button
               onClick={onCreateNew}
-              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-lg text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"
+              className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+              style={{ backgroundColor: color.primary.action }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${color.primary.action}cc`}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = color.primary.action}
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New
@@ -173,19 +176,28 @@ export default function SegmentSelectionModal({
           </div>
 
           {tempSelectedSegments.length > 0 && (
-            <div className="rounded-lg p-4 bg-emerald-100 border border-emerald-200">
+            <div 
+              className="rounded-lg p-4 border"
+              style={{ 
+                backgroundColor: `${color.primary.accent}15`,
+                borderColor: `${color.primary.accent}40`
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-sm font-medium text-emerald-700">
+                  <span className="text-sm font-medium" style={{ color: color.text.primary }}>
                     {tempSelectedSegments.length} segment{tempSelectedSegments.length !== 1 ? 's' : ''} selected
                   </span>
-                  <span className="text-sm ml-2 text-emerald-600">
+                  <span className="text-sm ml-2" style={{ color: color.text.secondary }}>
                     ({totalSelectedCustomers.toLocaleString()} total customers)
                   </span>
                 </div>
                 <button
                   onClick={() => setTempSelectedSegments([])}
-                  className="text-sm font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+                  className="text-sm font-medium transition-colors"
+                  style={{ color: color.primary.accent }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = `${color.primary.accent}cc`}
+                  onMouseLeave={(e) => e.currentTarget.style.color = color.primary.accent}
                 >
                   Clear All
                 </button>
@@ -194,69 +206,113 @@ export default function SegmentSelectionModal({
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-6">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <LoadingSpinner variant="modern" size="lg" color="primary" />
               <p className="text-gray-500 mt-4">Loading segments...</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredSegments.map((segment) => {
-                const isSelected = tempSelectedSegments.some(s => s.id === segment.id);
-
-                return (
-                  <div
-                    key={segment.id}
-                    onClick={() => handleSegmentToggle(segment)}
-                    className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isSelected
-                      ? ''
-                      : 'border-gray-100'
-                      }`}
-                    style={isSelected ? {
-                      borderColor: '#10b981', // emerald-500
-                      backgroundColor: 'white'
-                    } : {
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    {isSelected && (
-                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center bg-emerald-500">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-
-                    <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.primary.accent}20` }}>
-                        <Users className="w-5 h-5" style={{ color: color.primary.accent }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate text-gray-900">{segment.name}</h4>
-                        <p className="text-sm mt-1 line-clamp-2 text-gray-500">{segment.description}</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <div className="flex items-center space-x-1">
-                            <Users className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-600">
-                              {segment.customer_count.toLocaleString()}
-                            </span>
-                          </div>
-                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                            {new Date(segment.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {!isLoading && filteredSegments.length === 0 && (
+          ) : filteredSegments.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No segments found</h3>
               <p className="text-gray-500">Try adjusting your search or create a new segment</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-12">
+                      <input
+                        type="checkbox"
+                        checked={tempSelectedSegments.length === filteredSegments.length && filteredSegments.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setTempSelectedSegments(filteredSegments);
+                          } else {
+                            setTempSelectedSegments([]);
+                          }
+                        }}
+                        className="w-4 h-4 border-gray-300 rounded"
+                        style={{ 
+                          accentColor: color.primary.accent
+                        }}
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Segment Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
+                      Customers
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
+                      Created Date
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredSegments.map((segment) => {
+                    const isSelected = tempSelectedSegments.some(s => s.id === segment.id);
+
+                    return (
+                      <tr
+                        key={segment.id}
+                        onClick={() => handleSegmentToggle(segment)}
+                        className="cursor-pointer transition-colors hover:bg-gray-50"
+                        style={{
+                          backgroundColor: isSelected ? `${color.primary.accent}10` : 'white'
+                        }}
+                      >
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSegmentToggle(segment)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 border-gray-300 rounded"
+                            style={{ 
+                              accentColor: color.primary.accent
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center space-x-3">
+                            <div 
+                              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" 
+                              style={{ backgroundColor: `${color.primary.accent}20` }}
+                            >
+                              <Users className="w-5 h-5" style={{ color: color.primary.accent }} />
+                            </div>
+                            <div className="font-medium text-gray-900">{segment.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-600 max-w-md line-clamp-2">
+                            {segment.description || '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm font-medium text-gray-900">
+                              {segment.customer_count.toLocaleString()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">
+                            {new Date(segment.created_at).toLocaleDateString()}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -276,10 +332,22 @@ export default function SegmentSelectionModal({
             <button
               onClick={handleConfirm}
               disabled={tempSelectedSegments.length === 0}
-              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${tempSelectedSegments.length > 0
-                ? 'bg-[#3A5A40] text-white hover:bg-[#2f4a35]'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+              className="px-5 py-2 rounded-md text-sm font-medium transition-colors text-white"
+              style={{
+                backgroundColor: tempSelectedSegments.length > 0 ? color.primary.action : color.interactive.disabled,
+                cursor: tempSelectedSegments.length === 0 ? 'not-allowed' : 'pointer',
+                color: tempSelectedSegments.length === 0 ? color.text.muted : 'white'
+              }}
+              onMouseEnter={(e) => {
+                if (tempSelectedSegments.length > 0) {
+                  e.currentTarget.style.backgroundColor = `${color.primary.action}cc`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (tempSelectedSegments.length > 0) {
+                  e.currentTarget.style.backgroundColor = color.primary.action;
+                }
+              }}
             >
               Confirm Selection
             </button>

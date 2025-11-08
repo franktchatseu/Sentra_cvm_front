@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Loader2 } from 'lucide-react';
 import {
   SegmentCondition,
   SegmentConditionGroup,
@@ -9,6 +9,7 @@ import {
 import ListUpload from './ListUpload';
 import { color, tw, button } from '../../../shared/utils/utils';
 import HeadlessSelect from '../../../shared/components/ui/HeadlessSelect';
+import { useSegmentationFields } from '../hooks/useSegmentationFields';
 
 interface SegmentConditionsBuilderProps {
   conditions: SegmentConditionGroup[];
@@ -20,16 +21,36 @@ export default function SegmentConditionsBuilder({
   onChange
 }: SegmentConditionsBuilderProps) {
   const generateId = () => Math.random().toString(36).substr(2, 9);
+  
+  // Load segmentation fields from backend
+  const {
+    categories,
+    allFields,
+    isLoading: isLoadingFields,
+    error: fieldsError,
+    getFieldById,
+    getFieldByValue,
+    getOperatorsForField,
+    getFieldType: getBackendFieldType,
+  } = useSegmentationFields();
 
   const addConditionGroup = () => {
+    // Use first field from backend if available, fallback to hardcoded
+    const firstField = allFields.length > 0 ? allFields[0] : null;
+    const defaultFieldValue = firstField ? firstField.field_value : SEGMENT_FIELDS[0].key;
+    const defaultFieldId = firstField ? firstField.id : undefined;
+    const defaultOperatorId = firstField?.operators[0]?.id;
+
     const newGroup: SegmentConditionGroup = {
       id: generateId(),
       operator: 'AND',
       conditionType: 'rule',
       conditions: [{
         id: generateId(),
-        field: SEGMENT_FIELDS[0].key,
+        field: defaultFieldValue,
+        field_id: defaultFieldId,
         operator: 'equals',
+        operator_id: defaultOperatorId,
         value: '',
         type: 'string'
       }]
@@ -48,10 +69,18 @@ export default function SegmentConditionsBuilder({
   };
 
   const addCondition = (groupId: string) => {
+    // Use first field from backend if available, fallback to hardcoded
+    const firstField = allFields.length > 0 ? allFields[0] : null;
+    const defaultFieldValue = firstField ? firstField.field_value : SEGMENT_FIELDS[0].key;
+    const defaultFieldId = firstField ? firstField.id : undefined;
+    const defaultOperatorId = firstField?.operators[0]?.id;
+
     const newCondition: SegmentCondition = {
       id: generateId(),
-      field: SEGMENT_FIELDS[0].key,
+      field: defaultFieldValue,
+      field_id: defaultFieldId,
       operator: 'equals',
+      operator_id: defaultOperatorId,
       value: '',
       type: 'string'
     };
@@ -85,12 +114,54 @@ export default function SegmentConditionsBuilder({
   };
 
   const getFieldType = (fieldKey: string, isProfile360 = false) => {
+    // Try to get field from backend first
+    if (!isProfile360 && allFields.length > 0) {
+      const backendField = getFieldByValue(fieldKey);
+      if (backendField) {
+        // Map backend field types to our internal types
+        switch (backendField.field_type) {
+          case 'numeric':
+            return 'number';
+          case 'text':
+            return 'string';
+          case 'boolean':
+            return 'boolean';
+          default:
+            return 'string';
+        }
+      }
+    }
+
+    // Fallback to hardcoded fields for 360 profiles or if backend fields not loaded
     const fields = isProfile360 ? PROFILE_360_FIELDS : SEGMENT_FIELDS;
     const field = fields.find(f => f.key === fieldKey);
     return field?.type || 'string';
   };
 
   const getAvailableOperators = (fieldKey: string, isProfile360 = false) => {
+    // Try to get operators from backend first
+    if (!isProfile360 && allFields.length > 0) {
+      const backendField = getFieldByValue(fieldKey);
+      if (backendField && backendField.operators.length > 0) {
+        // Map backend operators to our internal operator labels
+        return backendField.operators.map(op => {
+          // Map backend symbols to our internal operator keys
+          const symbolMap: Record<string, string> = {
+            '=': 'equals',
+            '!=': 'not_equals',
+            '>': 'greater_than',
+            '<': 'less_than',
+            'IN': 'in',
+            'NOT IN': 'not_in',
+            'LIKE': 'contains',
+            'NOT LIKE': 'not_contains',
+          };
+          return symbolMap[op.symbol] || op.label;
+        });
+      }
+    }
+
+    // Fallback to hardcoded operators
     const fields = isProfile360 ? PROFILE_360_FIELDS : SEGMENT_FIELDS;
     const field = fields.find(f => f.key === fieldKey);
     return field?.operators || ['equals'];
@@ -100,6 +171,79 @@ export default function SegmentConditionsBuilder({
     const fieldType = getFieldType(condition.field, isProfile360);
     const updateFunction = isProfile360 ? updateProfileCondition : updateCondition;
 
+    // Get backend field to check for dropdown component type
+    const backendField = !isProfile360 ? getFieldByValue(condition.field) : null;
+    const isDropdown = backendField?.ui?.component_type === 'dropdown';
+    const isMultiSelect = backendField?.ui?.is_multi_select || false;
+    const distinctValues = backendField?.validation?.distinct_values || [];
+
+    // If field has dropdown component type with distinct values, render dropdown
+    if (isDropdown && distinctValues.length > 0) {
+      if (isMultiSelect || condition.operator === 'in' || condition.operator === 'not_in') {
+        // Multi-select dropdown - display as checkboxes
+        const selectedValues = Array.isArray(condition.value) 
+          ? condition.value.map(v => String(v))
+          : condition.value ? [String(condition.value)] : [];
+
+        return (
+          <div className="min-w-[200px]">
+            <div className="border border-gray-300 rounded-lg p-2 max-h-40 overflow-y-auto bg-white">
+              {distinctValues.map((val, idx) => {
+                const isChecked = selectedValues.includes(val);
+                return (
+                  <label
+                    key={idx}
+                    className="flex items-center space-x-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        let newValues: string[];
+                        if (e.target.checked) {
+                          newValues = [...selectedValues, val];
+                        } else {
+                          newValues = selectedValues.filter(v => v !== val);
+                        }
+                        updateFunction(groupId, condition.id, { 
+                          value: newValues.length > 1 ? newValues : (newValues[0] || ''), 
+                          type: newValues.length > 1 ? 'array' : 'string' 
+                        });
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{val}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {selectedValues.length} value(s) selected
+            </p>
+          </div>
+        );
+      } else {
+        // Single-select dropdown
+        return (
+          <div className="min-w-[200px]">
+            <HeadlessSelect
+              options={distinctValues.map(val => ({
+                value: val,
+                label: val
+              }))}
+              value={condition.value as string}
+              onChange={(value) => {
+                updateFunction(groupId, condition.id, { value: value as string, type: 'string' });
+              }}
+              placeholder="Select value"
+              className="text-sm"
+            />
+          </div>
+        );
+      }
+    }
+
+    // Fallback to original input logic for non-dropdown fields
     if (condition.operator === 'in' || condition.operator === 'not_in') {
       return (
         <input
@@ -171,6 +315,26 @@ export default function SegmentConditionsBuilder({
         : group
     ));
   };
+
+  // Show loading state while fields are being fetched
+  if (isLoadingFields) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400 mr-2" />
+        <p className="text-gray-500">Loading field configuration...</p>
+      </div>
+    );
+  }
+
+  // Show error if fields failed to load
+  if (fieldsError) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-2">Failed to load field configuration</p>
+        <p className="text-sm text-gray-500">{fieldsError}</p>
+      </div>
+    );
+  }
 
   if (conditions.length === 0) {
     return (
@@ -274,17 +438,37 @@ export default function SegmentConditionsBuilder({
                   {/* Field Selection */}
                   <div className="min-w-[200px]">
                     <HeadlessSelect
-                      options={SEGMENT_FIELDS.map(field => ({
-                        value: field.key,
-                        label: field.label
+                      options={(allFields.length > 0 ? allFields : SEGMENT_FIELDS).map(field => ({
+                        value: 'field_value' in field ? field.field_value : field.key,
+                        label: 'field_name' in field ? field.field_name : field.label
                       }))}
                       value={condition.field}
                       onChange={(value) => {
                         const fieldType = getFieldType(value as string);
                         const availableOperators = getAvailableOperators(value as string);
+                        
+                        // Get backend field to extract IDs
+                        const backendField = getFieldByValue(value as string);
+                        const firstOperator = backendField?.operators[0];
+                        
+                        // Map first operator symbol to our internal format
+                        const symbolMap: Record<string, string> = {
+                          '=': 'equals',
+                          '!=': 'not_equals',
+                          '>': 'greater_than',
+                          '<': 'less_than',
+                          'IN': 'in',
+                          'NOT IN': 'not_in',
+                          'LIKE': 'contains',
+                          'NOT LIKE': 'not_contains',
+                        };
+                        const mappedOperator = firstOperator ? (symbolMap[firstOperator.symbol] || firstOperator.label) : availableOperators[0];
+
                         updateCondition(group.id, condition.id, {
                           field: value as string,
-                          operator: availableOperators[0] as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in',
+                          field_id: backendField?.id,
+                          operator: mappedOperator as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in',
+                          operator_id: firstOperator?.id,
                           type: fieldType,
                           value: fieldType === 'number' ? 0 : ''
                         });
@@ -297,12 +481,41 @@ export default function SegmentConditionsBuilder({
                   {/* Operator Selection */}
                   <div className="min-w-[120px]">
                     <HeadlessSelect
-                      options={getAvailableOperators(condition.field).map(op => ({
-                        value: op,
-                        label: OPERATOR_LABELS[op]
-                      }))}
-                      value={condition.operator}
-                      onChange={(value) => updateCondition(group.id, condition.id, { operator: value as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in' })}
+                      options={(() => {
+                        const backendField = getFieldByValue(condition.field);
+                        if (backendField && backendField.operators.length > 0) {
+                          return backendField.operators.map(op => {
+                            const symbolMap: Record<string, string> = {
+                              '=': 'equals',
+                              '!=': 'not_equals',
+                              '>': 'greater_than',
+                              '<': 'less_than',
+                              'IN': 'in',
+                              'NOT IN': 'not_in',
+                              'LIKE': 'contains',
+                              'NOT LIKE': 'not_contains',
+                            };
+                            const mappedOp = symbolMap[op.symbol] || op.label;
+                            return {
+                              value: `${mappedOp}|${op.id}`, // Store both operator name and ID
+                              label: op.label.charAt(0).toUpperCase() + op.label.slice(1)
+                            };
+                          });
+                        }
+                        // Fallback to hardcoded operators
+                        return getAvailableOperators(condition.field).map(op => ({
+                          value: `${op}|`,
+                          label: OPERATOR_LABELS[op]
+                        }));
+                      })()}
+                      value={condition.operator_id ? `${condition.operator}|${condition.operator_id}` : `${condition.operator}|`}
+                      onChange={(value) => {
+                        const [operator, operatorId] = (value as string).split('|');
+                        updateCondition(group.id, condition.id, { 
+                          operator: operator as 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in',
+                          operator_id: operatorId ? parseInt(operatorId) : undefined
+                        });
+                      }}
                       placeholder="Select operator"
                       className="text-sm"
                     />

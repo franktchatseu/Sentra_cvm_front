@@ -124,49 +124,30 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Build params - backend uses mixed conventions!
-      const params: Record<string, string | number | boolean> = {
-        page: currentPage,
-        pageSize: pageSize,
-        sortBy: filters.sortBy,
-        sortDirection: filters.sortDirection.toUpperCase() as "ASC" | "DESC",
-      };
-
-      // Add search query if present
-      if (searchQuery.trim()) {
-        params.search = searchQuery.trim();
-      }
-
-      // Add status filter if not 'all'
-      if (selectedStatus !== "all") {
-        params.status = selectedStatus;
-      }
-
-      // Add approval status filter if not 'all'
-      if (filters.approvalStatus !== "all") {
-        params.approvalStatus = filters.approvalStatus;
-      }
-
-      // Add category filter if not 'all'
-      if (filters.categoryId !== "all") {
-        params.categoryId = parseInt(filters.categoryId);
-      }
-
-      // Add date range filters
-      if (filters.startDateFrom) {
-        params.startDateFrom = filters.startDateFrom;
-      }
-      if (filters.startDateTo) {
-        params.startDateTo = filters.startDateTo;
-      }
-
-      // Add skipCache to get fresh data
-      const response = await campaignService.getAllCampaigns({
-        ...params,
+      
+      // Calculate offset for pagination
+      const offset = (currentPage - 1) * pageSize;
+      
+      // Use new getCampaigns endpoint
+      const response = await campaignService.getCampaigns({
+        limit: pageSize,
+        offset: offset,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        search: searchQuery.trim() || undefined,
         skipCache: true,
       });
 
-      const campaignsData = (response.data as CampaignDisplay[]) || [];
+      // Transform backend campaigns to display format
+      const campaignsData: CampaignDisplay[] = response.data.map((campaign) => ({
+        id: campaign.id,
+        name: campaign.name,
+        description: campaign.description || undefined,
+        status: campaign.status,
+        category_id: campaign.category_id || undefined,
+        objective: campaign.objective,
+        startDate: campaign.start_date || undefined,
+        endDate: campaign.end_date || undefined,
+      }));
 
       // Helper function to generate consistent random values based on campaign ID
       const seededRandom = (seed: number, min: number, max: number) => {
@@ -294,7 +275,7 @@ export default function CampaignsPage() {
       setTotalCampaigns(
         selectedStatus === "all"
           ? finalCampaigns.length
-          : response.meta?.total || campaignsData.length
+          : response.pagination?.total || campaignsData.length
       );
     } catch (error) {
       console.error("Failed to fetch campaigns:", error);
@@ -744,21 +725,23 @@ export default function CampaignsPage() {
                           >
                             {campaign.name}
                           </div>
+                          {campaign.description && (
+                            <div className="mt-1 text-sm text-gray-500 truncate">
+                              {campaign.description}
+                            </div>
+                          )}
                           <div className="mt-2 flex items-center space-x-2">
                             <span
-                              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border"
                               style={{
-                                backgroundColor: "#E9D5FF",
-                                color: "#8B5CF6",
+                                backgroundColor: "#F0FDF4",
+                                color: "#16A34A",
+                                borderColor: "#BBF7D0"
                               }}
                             >
                               <span className="capitalize">
                                 {campaign.objective || "Acquisition"}
                               </span>
-                            </span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-sm text-gray-600">
-                              {campaign.type || "Multiple Target"}
                             </span>
                           </div>
                         </div>
@@ -819,9 +802,36 @@ export default function CampaignsPage() {
                     </td>
                     <td className="px-6 py-3 hidden xl:table-cell">
                       <div
-                        className={`text-sm ${tw.textPrimary} whitespace-nowrap`}
+                        className={`text-sm ${tw.textPrimary}`}
                       >
-                        {campaign.startDate} - {campaign.endDate}
+                        {campaign.startDate ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-1">
+                              <span className="text-gray-500 text-xs">Start:</span>
+                              <span className="font-medium">
+                                {new Date(campaign.startDate).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                            {campaign.endDate && (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-gray-500 text-xs">End:</span>
+                                <span className="font-medium">
+                                  {new Date(campaign.endDate).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Not scheduled</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-3">
