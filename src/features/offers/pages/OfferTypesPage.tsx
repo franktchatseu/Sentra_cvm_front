@@ -275,19 +275,17 @@ export default function OfferTypesPage() {
       </div>
 
       {/* Search */}
-      <div className={`bg-white my-5`}>
-        <div className="relative w-full">
-          <Search
-            className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`}
-          />
-          <input
-            type="text"
-            placeholder="Search offer types..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.border.default}] rounded-lg focus:outline-none`}
-          />
-        </div>
+      <div className="relative w-full">
+        <Search
+          className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`}
+        />
+        <input
+          type="text"
+          placeholder="Search offer types..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.border.default}] rounded-lg focus:outline-none`}
+        />
       </div>
 
       {/* Offer Types Table */}

@@ -222,7 +222,6 @@ export default function DashboardHome() {
       try {
         // Fetch offers stats - try getStats first, fallback to searchOffers for total count
         const offersResponse = await offerService.getStats();
-        console.log("Dashboard offers stats response:", offersResponse);
         const parseMetric = (value: unknown): number => {
           if (typeof value === "number") return value;
           if (typeof value === "string") {

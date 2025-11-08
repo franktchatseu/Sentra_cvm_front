@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Plus,
@@ -10,6 +10,7 @@ import {
   UserCheck,
   Users,
   Eye,
+  Building2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../../users/services/userService";
@@ -36,6 +37,21 @@ export default function UserManagementPage() {
   >("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [departmentCounts, setDepartmentCounts] = useState<
+    Record<string, number>
+  >({});
+  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [userSummary, setUserSummary] = useState<{
+    total: number;
+    cached: boolean;
+  }>({
+    total: 0,
+    cached: false,
+  });
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const hasInitializedDebounce = useRef(false);
 
   // Loading states for individual actions
   const [loadingActions, setLoadingActions] = useState<{
@@ -57,17 +73,138 @@ export default function UserManagementPage() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const parseCountMap = (data?: Record<string, unknown>) => {
+    if (!data) return {};
+    return Object.entries(data).reduce((acc, [key, value]) => {
+      let numeric = 0;
+      if (typeof value === "number") {
+        numeric = value;
+      } else if (typeof value === "string") {
+        const parsed = parseInt(value, 10);
+        numeric = Number.isNaN(parsed) ? 0 : parsed;
+      }
+      acc[key] = numeric;
+      return acc;
+    }, {} as Record<string, number>);
+  };
+
+  const buildSearchQuery = ({
+    skipCache = false,
+    searchTermOverride,
+  }: {
+    skipCache?: boolean;
+    searchTermOverride?: string;
+  } = {}) => {
+    const query: Record<string, unknown> = {};
+
+    const term = (searchTermOverride ?? searchTerm)?.trim();
+    if (term) {
+      query.q = term;
+    }
+
+    if (skipCache) {
+      query.skipCache = true;
+    }
+
+    return query;
+  };
+
+  const fetchUsers = async ({
+    skipCache = false,
+    searchTermOverride,
+  }: {
+    skipCache?: boolean;
+    searchTermOverride?: string;
+  } = {}) => {
+    const term = (searchTermOverride ?? searchTerm)?.trim();
+    if (term) {
+      return userService.searchUsers(
+        buildSearchQuery({ skipCache, searchTermOverride: term })
+      );
+    }
+
+    const baseQuery: Record<string, unknown> = {};
+    if (skipCache) {
+      baseQuery.skipCache = true;
+    }
+
+    return userService.getUsers(baseQuery);
+  };
+
+  const loadData = async ({
+    skipCache = false,
+    searchTermOverride,
+  }: {
+    skipCache?: boolean;
+    searchTermOverride?: string;
+  } = {}) => {
     try {
       setIsLoading(true);
       setErrorState("");
 
-      // Load users using new userService
-      const usersResponse = await userService.getUsers();
+      const usersResponse = await fetchUsers({ skipCache, searchTermOverride });
 
       if (usersResponse.success) {
-        console.log("Users data:", usersResponse.data);
         setUsers(usersResponse.data);
+        const totalFromResponse =
+          (usersResponse.meta?.total as number | undefined) ??
+          usersResponse.data.length;
+
+        setUserSummary({
+          total: totalFromResponse,
+          cached: Boolean(usersResponse.meta?.isCachedResponse),
+        });
+
+        setIsLoadingStats(true);
+        setStatusCounts({});
+        setDepartmentCounts({});
+        setRoleCounts({});
+
+        const analyticsResults = await Promise.allSettled([
+          userService.getStatusCounts(),
+          userService.getDepartmentCounts(),
+          userService.getRoleCounts(),
+        ]);
+
+        const [statusRes, departmentRes, roleRes] = analyticsResults;
+        let analyticsError = false;
+
+        if (statusRes.status === "fulfilled") {
+          if (statusRes.value?.success && statusRes.value.data) {
+            setStatusCounts(parseCountMap(statusRes.value.data));
+          } else {
+            analyticsError = true;
+          }
+        } else {
+          analyticsError = true;
+        }
+
+        if (departmentRes.status === "fulfilled") {
+          if (departmentRes.value?.success && departmentRes.value.data) {
+            setDepartmentCounts(parseCountMap(departmentRes.value.data));
+          } else {
+            analyticsError = true;
+          }
+        } else {
+          analyticsError = true;
+        }
+
+        if (roleRes.status === "fulfilled") {
+          if (roleRes.value?.success && roleRes.value.data) {
+            setRoleCounts(parseCountMap(roleRes.value.data));
+          } else {
+            analyticsError = true;
+          }
+        } else {
+          analyticsError = true;
+        }
+
+        if (analyticsError) {
+          showError(
+            "Analytics Error",
+            "Some analytics data could not be loaded right now."
+          );
+        }
       }
 
       // TODO: Load account requests when endpoint is available
@@ -81,6 +218,7 @@ export default function UserManagementPage() {
       );
     } finally {
       setIsLoading(false);
+      setIsLoadingStats(false);
     }
   };
 
@@ -92,14 +230,21 @@ export default function UserManagementPage() {
 
     try {
       setIsLoading(true);
-      const searchResponse = await userService.searchUsers({
-        q: searchTerm,
-        page: 1,
-        pageSize: 100,
+      const trimmedTerm = searchTerm.trim();
+      const searchResponse = await fetchUsers({
+        skipCache: true,
+        searchTermOverride: trimmedTerm,
       });
 
       if (searchResponse.success) {
         setUsers(searchResponse.data);
+        const totalFromResponse =
+          (searchResponse.meta?.total as number | undefined) ??
+          searchResponse.data.length;
+        setUserSummary({
+          total: totalFromResponse,
+          cached: Boolean(searchResponse.meta?.isCachedResponse),
+        });
       }
     } catch (err) {
       showError(
@@ -110,6 +255,25 @@ export default function UserManagementPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 400);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (!hasInitializedDebounce.current) {
+      hasInitializedDebounce.current = true;
+      return;
+    }
+
+    loadData({ skipCache: true, searchTermOverride: debouncedSearchTerm });
+  }, [debouncedSearchTerm]);
 
   const handleViewUser = (user: UserType) => {
     navigate(`/dashboard/user-management/${user.id}`);
@@ -136,7 +300,7 @@ export default function UserManagementPage() {
       await accountService.approveAccountRequest(
         request.id || request.requestId
       );
-      await loadData();
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "Request approved",
         `Account approved for ${request.first_name} ${request.last_name}`
@@ -183,7 +347,7 @@ export default function UserManagementPage() {
           reason: "Rejected by administrator",
         }
       );
-      await loadData();
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "Request rejected",
         `Request from ${request.first_name} ${request.last_name} rejected`
@@ -214,7 +378,7 @@ export default function UserManagementPage() {
     }));
 
     try {
-      const isActive = user.status === "active";
+      const isActive = isUserActive(user);
       if (isActive) {
         await userService.deactivateUser(user.id);
         success(
@@ -228,7 +392,7 @@ export default function UserManagementPage() {
           `User ${user.first_name} ${user.last_name} activated successfully`
         );
       }
-      await loadData();
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
     } catch (err) {
       showError(
         "Error updating status",
@@ -262,7 +426,7 @@ export default function UserManagementPage() {
 
     try {
       await userService.deleteUser(user.id);
-      await loadData();
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "User deleted",
         `${user.first_name} ${user.last_name} deleted successfully`
@@ -281,6 +445,51 @@ export default function UserManagementPage() {
     }
   };
 
+  // Derived analytics helpers
+  const normalizeStatus = (user: UserType) => {
+    const accountStatus = (user as unknown as { account_status?: string })
+      ?.account_status;
+    if (accountStatus && accountStatus.trim() !== "") {
+      return accountStatus.toLowerCase();
+    }
+    if (user.status && user.status.trim() !== "") {
+      return user.status.toLowerCase();
+    }
+    const isSuspended = Boolean(
+      (user as unknown as { is_suspended?: boolean })?.is_suspended
+    );
+    if (isSuspended) return "suspended";
+    const isActive = Boolean(
+      (user as unknown as { is_active?: boolean })?.is_active ??
+        (user as unknown as { is_activated?: boolean })?.is_activated
+    );
+    return isActive ? "active" : "inactive";
+  };
+
+  const formatStatusLabel = (status: string) =>
+    status
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ") || "Unknown";
+
+  const getStatusColorToken = (status: string) => {
+    if (status === "active") return color.status.success;
+    if (status === "suspended" || status === "locked") {
+      return color.status.warning;
+    }
+    return color.status.danger;
+  };
+
+  const isUserActive = (user: UserType) => {
+    const status = normalizeStatus(user);
+    if (status === "active") return true;
+    if (status === "inactive") return false;
+    return Boolean(
+      (user as unknown as { is_active?: boolean })?.is_active ??
+        (user as unknown as { is_activated?: boolean })?.is_activated
+    );
+  };
+
   // Get unique departments from users
   const uniqueDepartments = Array.from(
     new Set(
@@ -290,6 +499,68 @@ export default function UserManagementPage() {
     )
   ).sort();
 
+  const aggregateCounts = users.reduce(
+    (acc, user) => {
+      const status = normalizeStatus(user);
+      if (status === "active") {
+        acc.active += 1;
+      } else {
+        acc.inactive += 1;
+      }
+
+      if (status.includes("suspend")) {
+        acc.suspended += 1;
+      }
+
+      if (status.includes("lock")) {
+        acc.locked += 1;
+      }
+
+      return acc;
+    },
+    { active: 0, inactive: 0, suspended: 0, locked: 0 }
+  );
+
+  const totalDepartments = uniqueDepartments.length;
+  const totalUsersValue =
+    userSummary.total > 0
+      ? userSummary.total
+      : aggregateCounts.active + aggregateCounts.inactive;
+  const activeUsersValue = aggregateCounts.active;
+  const highRiskUsersValue = aggregateCounts.suspended + aggregateCounts.locked;
+
+  const statsLoadingIndicator = isLoadingStats || isLoading;
+
+  const userStatsCards = [
+    {
+      name: "Total Users",
+      value: statsLoadingIndicator ? "..." : totalUsersValue.toLocaleString(),
+      icon: Users,
+      color: color.tertiary.tag1,
+      badge: userSummary.cached ? "Cached" : undefined,
+    },
+    {
+      name: "Active Users",
+      value: statsLoadingIndicator ? "..." : activeUsersValue.toLocaleString(),
+      icon: UserCheck,
+      color: color.tertiary.tag4,
+    },
+    {
+      name: "Suspended / Locked",
+      value: statsLoadingIndicator
+        ? "..."
+        : highRiskUsersValue.toLocaleString(),
+      icon: UserX,
+      color: color.tertiary.tag2,
+    },
+    {
+      name: "Departments",
+      value: statsLoadingIndicator ? "..." : totalDepartments.toLocaleString(),
+      icon: Building2,
+      color: color.tertiary.tag3,
+    },
+  ];
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -298,13 +569,15 @@ export default function UserManagementPage() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
+    const normalizedStatus = normalizeStatus(user);
+
     const matchesDepartment =
       filterDepartment === "all" ||
       (user.department || "").toLowerCase() === filterDepartment.toLowerCase();
     const matchesStatus =
       filterStatus === "all" ||
-      (filterStatus === "active" && user.status === "active") ||
-      (filterStatus === "inactive" && user.status !== "active");
+      (filterStatus === "active" && normalizedStatus === "active") ||
+      (filterStatus === "inactive" && normalizedStatus !== "active");
 
     return matchesSearch && matchesDepartment && matchesStatus;
   });
@@ -347,6 +620,48 @@ export default function UserManagementPage() {
           Add User
         </button>
       </div>
+
+      {activeTab === "users" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {userStatsCards.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.name}
+                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="p-2 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: stat.color }}
+                      >
+                        <Icon className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className={`text-3xl font-bold ${tw.textPrimary}`}>
+                          {stat.value}
+                        </p>
+                        <p
+                          className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                        >
+                          {stat.name}
+                        </p>
+                      </div>
+                    </div>
+                    {stat.badge && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-800">
+                        {stat.badge}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-gray-200">
@@ -488,10 +803,10 @@ export default function UserManagementPage() {
         ) : activeTab === "users" ? (
           filteredUsers.length === 0 ? (
             <div className="text-center py-12">
-              <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {searchTerm ? "No Users Found" : "No Users"}
               </h3>
-              <p className={`${tw.textMuted} mb-6`}>
+              <p className="text-sm text-gray-600 mb-6">
                 {searchTerm
                   ? "Try adjusting your search criteria."
                   : "Create your first user to get started."}
@@ -553,271 +868,270 @@ export default function UserManagementPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="hover:bg-gray-50/30 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div>
-                            <div
-                              className={`text-base font-semibold ${tw.textPrimary}`}
+                    {filteredUsers.map((user) => {
+                      const normalizedStatus = normalizeStatus(user);
+                      const userIsActive = normalizedStatus === "active";
+                      const statusLabel = formatStatusLabel(normalizedStatus);
+                      const statusColor = getStatusColorToken(normalizedStatus);
+
+                      return (
+                        <tr
+                          key={user.id}
+                          className="hover:bg-gray-50/30 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleViewUser(user)}
+                                className="text-base font-semibold text-black transition-colors hover:underline"
+                              >
+                                {user.first_name} {user.last_name}
+                              </button>
+                              <div className={`text-sm ${tw.textMuted}`}>
+                                {user.email_address || user.email}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
                             >
-                              {user.first_name} {user.last_name}
+                              {user.department || "N/A"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${
+                                userIsActive
+                                  ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                                  : `bg-[${statusColor}]/10 text-[${statusColor}]`
+                              }`}
+                            >
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className={`text-sm ${tw.textSecondary}`}>
+                              {new Date(user.created_at).toLocaleDateString(
+                                "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )}
                             </div>
-                            <div className={`text-sm ${tw.textMuted}`}>
-                              {user.email_address || user.email}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
-                          >
-                            {user.department || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${
-                              user.status === "active"
-                                ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
-                                : `bg-[${color.status.danger}]/10 text-[${color.status.danger}]`
-                            }`}
-                          >
-                            {user.status === "active" ? (
-                              <>Active</>
-                            ) : (
-                              <>Inactive</>
-                            )}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className={`text-sm ${tw.textSecondary}`}>
-                            {new Date(user.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <button
-                              onClick={() => handleToggleStatus(user)}
-                              disabled={loadingActions.toggling.has(user.id)}
-                              className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              style={{
-                                color:
-                                  user.status === "active"
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => handleToggleStatus(user)}
+                                disabled={loadingActions.toggling.has(user.id)}
+                                className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{
+                                  color: userIsActive
                                     ? color.status.danger
                                     : color.status.success,
-                                backgroundColor: "transparent",
-                              }}
-                              title={
-                                loadingActions.toggling.has(user.id)
-                                  ? "Updating..."
-                                  : user.status === "active"
-                                  ? "Deactivate user"
-                                  : "Activate user"
-                              }
-                            >
-                              {loadingActions.toggling.has(user.id) ? (
-                                <LoadingSpinner
-                                  variant="modern"
-                                  size="sm"
-                                  color="primary"
-                                />
-                              ) : user.status === "active" ? (
-                                <Ban className="w-4 h-4 text-black" />
-                              ) : (
-                                <CheckCircle className="w-4 h-4 text-black" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleViewUser(user)}
-                              className="p-2 rounded-lg transition-colors"
-                              style={{
-                                color: color.primary.action,
-                                backgroundColor: "transparent",
-                              }}
-                              title="View user details"
-                            >
-                              <Eye className="w-4 h-4 text-black" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsModalOpen(true);
-                              }}
-                              className="p-2 rounded-lg transition-colors"
-                              style={{
-                                color: color.primary.action,
-                                backgroundColor: "transparent",
-                              }}
-                              title="Edit user"
-                            >
-                              <Edit className="w-4 h-4 text-black" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user)}
-                              disabled={loadingActions.deleting.has(user.id)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={
-                                loadingActions.deleting.has(user.id)
-                                  ? "Deleting..."
-                                  : "Delete user"
-                              }
-                            >
-                              {loadingActions.deleting.has(user.id) ? (
-                                <LoadingSpinner
-                                  variant="modern"
-                                  size="sm"
-                                  color="primary"
-                                />
-                              ) : (
-                                <Trash2 className="w-4 h-4 text-black" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                                  backgroundColor: "transparent",
+                                }}
+                                title={
+                                  loadingActions.toggling.has(user.id)
+                                    ? "Updating..."
+                                    : userIsActive
+                                    ? "Deactivate user"
+                                    : "Activate user"
+                                }
+                              >
+                                {loadingActions.toggling.has(user.id) ? (
+                                  <LoadingSpinner
+                                    variant="modern"
+                                    size="sm"
+                                    color="primary"
+                                  />
+                                ) : userIsActive ? (
+                                  <Ban className="w-4 h-4 text-black" />
+                                ) : (
+                                  <CheckCircle className="w-4 h-4 text-black" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleViewUser(user)}
+                                className="p-2 rounded-lg transition-colors"
+                                style={{
+                                  color: color.primary.action,
+                                  backgroundColor: "transparent",
+                                }}
+                                title="View user details"
+                              >
+                                <Eye className="w-4 h-4 text-black" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setIsModalOpen(true);
+                                }}
+                                className="p-2 rounded-lg transition-colors"
+                                style={{
+                                  color: color.primary.action,
+                                  backgroundColor: "transparent",
+                                }}
+                                title="Edit user"
+                              >
+                                <Edit className="w-4 h-4 text-black" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={loadingActions.deleting.has(user.id)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={
+                                  loadingActions.deleting.has(user.id)
+                                    ? "Deleting..."
+                                    : "Delete user"
+                                }
+                              >
+                                {loadingActions.deleting.has(user.id) ? (
+                                  <LoadingSpinner
+                                    variant="modern"
+                                    size="sm"
+                                    color="primary"
+                                  />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 text-black" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile Cards */}
               <div className="lg:hidden">
-                {filteredUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="p-4 border-b border-gray-200 last:border-b-0"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-base font-semibold ${tw.textPrimary} mb-1`}
-                      >
-                        {user.first_name} {user.last_name}
-                      </div>
-                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                        {user.email_address || user.email}
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
-                        >
-                          {user.department || "N/A"}
-                        </span>
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
-                            user.status === "active"
-                              ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
-                              : `bg-[${color.status.danger}]/10 text-[${color.status.danger}]`
-                          }`}
-                        >
-                          {user.status === "active" ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleToggleStatus(user)}
-                          disabled={loadingActions.toggling.has(user.id)}
-                          className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{
-                            color:
-                              user.status === "active"
+                {filteredUsers.map((user) => {
+                  const normalizedStatus = normalizeStatus(user);
+                  const userIsActive = normalizedStatus === "active";
+                  const statusLabel = formatStatusLabel(normalizedStatus);
+                  const statusColor = getStatusColorToken(normalizedStatus);
+
+                  return (
+                    <div
+                      key={user.id}
+                      className="p-4 border-b border-gray-200 last:border-b-0"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-base font-semibold text-black mb-1">
+                          <button
+                            type="button"
+                            onClick={() => handleViewUser(user)}
+                            className="text-black hover:underline"
+                          >
+                            {user.first_name} {user.last_name}
+                          </button>
+                        </div>
+                        <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                          {user.email_address || user.email}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                          >
+                            {user.department || "N/A"}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
+                              userIsActive
+                                ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                                : `bg-[${statusColor}]/10 text-[${statusColor}]`
+                            }`}
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            disabled={loadingActions.toggling.has(user.id)}
+                            className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                              color: userIsActive
                                 ? color.status.danger
                                 : color.status.success,
-                            backgroundColor: "transparent",
-                          }}
-                          title={
-                            loadingActions.toggling.has(user.id)
-                              ? "Updating..."
-                              : user.status === "active"
-                              ? "Deactivate user"
-                              : "Activate user"
-                          }
-                        >
-                          {loadingActions.toggling.has(user.id) ? (
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                            />
-                          ) : user.status === "active" ? (
-                            <Ban className="w-4 h-4 text-black" />
-                          ) : (
-                            <CheckCircle className="w-4 h-4 text-black" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleViewUser(user)}
-                          className="p-2 rounded-lg transition-colors flex flex-col items-center gap-1"
-                          style={{
-                            color: color.primary.action,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <Eye className="w-4 h-4 text-black" />
-                          <span className="text-xs">View</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsModalOpen(true);
-                          }}
-                          className="p-2 rounded-lg transition-colors flex flex-col items-center gap-1"
-                          style={{
-                            color: color.text.muted,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <Edit className="w-4 h-4 text-black" />
-                          <span className="text-xs">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsModalOpen(true);
-                          }}
-                          className="p-2 rounded-lg transition-colors"
-                          style={{
-                            color: color.primary.action,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <Edit className="w-4 h-4 text-black" />
-                          <span className="text-xs">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user)}
-                          disabled={loadingActions.deleting.has(user.id)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={
-                            loadingActions.deleting.has(user.id)
-                              ? "Deleting..."
-                              : "Delete user"
-                          }
-                        >
-                          {loadingActions.deleting.has(user.id) ? (
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                            />
-                          ) : (
-                            <Trash2 className="w-4 h-4 text-black" />
-                          )}
-                          <span className="text-xs">Delete</span>
-                        </button>
+                              backgroundColor: "transparent",
+                            }}
+                            title={
+                              loadingActions.toggling.has(user.id)
+                                ? "Updating..."
+                                : userIsActive
+                                ? "Deactivate user"
+                                : "Activate user"
+                            }
+                          >
+                            {loadingActions.toggling.has(user.id) ? (
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                              />
+                            ) : userIsActive ? (
+                              <Ban className="w-4 h-4 text-black" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 text-black" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleViewUser(user)}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{
+                              color: color.primary.action,
+                              backgroundColor: "transparent",
+                            }}
+                            title="View user details"
+                          >
+                            <Eye className="w-4 h-4 text-black" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsModalOpen(true);
+                            }}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{
+                              color: color.primary.action,
+                              backgroundColor: "transparent",
+                            }}
+                            title="Edit user"
+                          >
+                            <Edit className="w-4 h-4 text-black" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={loadingActions.deleting.has(user.id)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={
+                              loadingActions.deleting.has(user.id)
+                                ? "Deleting..."
+                                : "Delete user"
+                            }
+                          >
+                            {loadingActions.deleting.has(user.id) ? (
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                              />
+                            ) : (
+                              <Trash2 className="w-4 h-4 text-black" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )
@@ -1067,7 +1381,7 @@ export default function UserManagementPage() {
         onUserSaved={() => {
           setIsModalOpen(false);
           setSelectedUser(null);
-          loadData();
+          loadData({ skipCache: true }); // Skip cache to get fresh data
         }}
       />
     </div>

@@ -647,6 +647,10 @@ class SegmentService {
   ): Promise<ApiSuccessResponse<SegmentType>> {
     return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/deactivate`, {
       method: "PATCH",
+      body: JSON.stringify({}),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   }
 

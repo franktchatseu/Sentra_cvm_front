@@ -238,6 +238,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "segments",
         },
         {
+          name: "Segment Types",
+          href: "/dashboard/segment-types",
+          icon: Layers,
+          type: "single",
+          entity: "segments",
+        },
+        {
           name: "Segment Catalogs",
           href: "/dashboard/segment-catalogs",
           icon: FolderOpen,

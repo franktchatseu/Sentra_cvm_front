@@ -19,6 +19,7 @@ import SegmentDetailsPage from "../../segments/pages/SegmentDetailsPage";
 import EditSegmentPage from "../../segments/pages/EditSegmentPage";
 import SegmentCategoriesPage from "../../segments/pages/SegmentCategoriesPage";
 import SegmentListPage from "../../segments/pages/SegmentListPage";
+import SegmentTypesPage from "../../segments/pages/SegmentTypesPage";
 import CreateOfferPage from "../../offers/pages/CreateOfferPage";
 import ProductsPage from "../../products/pages/ProductsPage";
 import CreateProductPage from "../../products/pages/CreateProductPage";
@@ -28,7 +29,7 @@ import ProductCategoriesPage from "../../products/pages/ProductCategoriesPage";
 import ProductTypesPage from "../../products/pages/ProductTypesPage";
 import OfferTypesPage from "../../offers/pages/OfferTypesPage";
 import OfferCategoriesPage from "../../offers/pages/OfferCategoriesPage";
-import CategoryDetailsPage from "../../offers/pages/CategoryDetailsPage";
+// import CategoryDetailsPage from "../../offers/pages/CategoryDetailsPage";
 import UserManagementPage from "../components/UserManagementPage";
 import UserDetailsPage from "../../users/pages/UserDetailsPage";
 import ConfigurationPage from "../components/ConfigurationPage";
@@ -112,6 +113,7 @@ export default function Dashboard() {
           element={<AssignItemsPage itemType="segments" />}
         />
         <Route path="/segment-list" element={<SegmentListPage />} />
+        <Route path="/segment-types" element={<SegmentTypesPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
         <Route

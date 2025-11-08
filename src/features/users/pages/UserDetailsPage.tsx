@@ -136,6 +136,56 @@ export default function UserDetailsPage() {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
   };
 
+  const normalizeStatus = (userRecord: UserType): string => {
+    const accountStatus = (userRecord as unknown as { account_status?: string })
+      ?.account_status;
+    if (accountStatus && accountStatus.trim() !== "") {
+      return accountStatus.toLowerCase();
+    }
+    if (userRecord.status && userRecord.status.trim() !== "") {
+      return userRecord.status.toLowerCase();
+    }
+    const isSuspended = Boolean(
+      (userRecord as unknown as { is_suspended?: boolean })?.is_suspended
+    );
+    if (isSuspended) return "suspended";
+    const isActive = Boolean(
+      (userRecord as unknown as { is_active?: boolean })?.is_active ??
+        (userRecord as unknown as { is_activated?: boolean })?.is_activated
+    );
+    return isActive ? "active" : "inactive";
+  };
+
+  const formatStatusLabel = (status: string) =>
+    status
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ") || "Unknown";
+
+  const getStatusColors = (status: string) => {
+    if (status === "active") {
+      return {
+        background: color.tertiary.active.background,
+        text: color.tertiary.active.text,
+      };
+    }
+    if (status === "suspended" || status === "locked") {
+      return {
+        background: `${color.status.warning}20`,
+        text: color.status.warning,
+      };
+    }
+    return {
+      background: `${color.status.danger}20`,
+      text: color.status.danger,
+    };
+  };
+
+  const normalizedStatus = normalizeStatus(user);
+  const statusLabel = formatStatusLabel(normalizedStatus);
+  const statusColors = getStatusColors(normalizedStatus);
+  const userIsActive = normalizedStatus === "active";
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -157,18 +207,24 @@ export default function UserDetailsPage() {
           </div>
         </div>
         <div
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-            user.status === "active"
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+          style={{
+            backgroundColor: statusColors.background,
+            color: statusColors.text,
+          }}
         >
-          {user.status === "active" ? (
-            <CheckCircle className="w-3.5 h-3.5" />
+          {userIsActive ? (
+            <CheckCircle
+              className="w-3.5 h-3.5"
+              style={{ color: statusColors.text }}
+            />
           ) : (
-            <XCircle className="w-3.5 h-3.5" />
+            <XCircle
+              className="w-3.5 h-3.5"
+              style={{ color: statusColors.text }}
+            />
           )}
-          {user.status === "active" ? "Active" : "Inactive"}
+          {statusLabel}
         </div>
       </div>
 
@@ -314,13 +370,19 @@ export default function UserDetailsPage() {
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">Status</span>
                       <div className="flex items-center gap-2">
-                        {user.status === "active" ? (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        {userIsActive ? (
+                          <CheckCircle
+                            className="w-4 h-4"
+                            style={{ color: statusColors.text }}
+                          />
                         ) : (
-                          <XCircle className="w-4 h-4 text-red-600" />
+                          <XCircle
+                            className="w-4 h-4"
+                            style={{ color: statusColors.text }}
+                          />
                         )}
                         <span className="text-sm font-medium text-gray-900 capitalize">
-                          {user.status || "N/A"}
+                          {statusLabel}
                         </span>
                       </div>
                     </div>

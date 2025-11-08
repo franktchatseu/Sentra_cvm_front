@@ -31,164 +31,6 @@ import SegmentModal from "../components/SegmentModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 
-// Mock data for testing
-const MOCK_SEGMENTS: Segment[] = [
-  {
-    id: 1,
-    segment_id: 1,
-    name: "High Value Customers",
-    description: "Customers with monthly spend > $100",
-    type: "dynamic",
-    tags: ["vip", "high-value", "premium"],
-    customer_count: 15420,
-    size_estimate: 15420,
-    created_at: "2024-01-15T10:30:00Z",
-    created_on: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T14:22:00Z",
-    updated_on: "2024-01-15T14:22:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 1,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 2,
-    segment_id: 2,
-    name: "At Risk Customers",
-    description: "Customers showing churn signals",
-    type: "dynamic",
-    tags: ["at-risk", "churn", "retention"],
-    customer_count: 8934,
-    size_estimate: 8934,
-    created_at: "2024-01-10T09:15:00Z",
-    created_on: "2024-01-10T09:15:00Z",
-    updated_at: "2024-01-10T11:30:00Z",
-    updated_on: "2024-01-10T11:30:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 2,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 3,
-    segment_id: 3,
-    name: "New Subscribers",
-    description: "Customers who joined in the last 30 days",
-    type: "dynamic",
-    tags: ["new", "onboarding", "recent"],
-    customer_count: 3245,
-    size_estimate: 3245,
-    created_at: "2024-01-20T08:45:00Z",
-    created_on: "2024-01-20T08:45:00Z",
-    updated_at: "2024-01-20T10:20:00Z",
-    updated_on: "2024-01-20T10:20:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 1,
-    visibility: "public",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 4,
-    segment_id: 4,
-    name: "Voice Heavy Users",
-    description: "Customers with high voice usage patterns",
-    type: "dynamic",
-    tags: ["voice", "heavy-users", "communication"],
-    customer_count: 12678,
-    size_estimate: 12678,
-    created_at: "2024-01-12T13:20:00Z",
-    created_on: "2024-01-12T13:20:00Z",
-    updated_at: "2024-01-12T15:45:00Z",
-    updated_on: "2024-01-12T15:45:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 3,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 5,
-    segment_id: 5,
-    name: "Data Bundle Enthusiasts",
-    description: "Customers who frequently purchase data bundles",
-    type: "dynamic",
-    tags: ["data", "bundles", "heavy-data"],
-    customer_count: 18923,
-    size_estimate: 18923,
-    created_at: "2024-01-08T11:10:00Z",
-    created_on: "2024-01-08T11:10:00Z",
-    updated_at: "2024-01-08T16:30:00Z",
-    updated_on: "2024-01-08T16:30:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 2,
-    visibility: "public",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 6,
-    segment_id: 6,
-    name: "Weekend Warriors",
-    description: "Customers with high weekend usage",
-    type: "dynamic",
-    tags: ["weekend", "leisure", "entertainment"],
-    customer_count: 7456,
-    size_estimate: 7456,
-    created_at: "2024-01-18T14:00:00Z",
-    created_on: "2024-01-18T14:00:00Z",
-    updated_at: "2024-01-18T16:15:00Z",
-    updated_on: "2024-01-18T16:15:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 1,
-    visibility: "private",
-    refresh_frequency: "weekly",
-  },
-  {
-    id: 7,
-    segment_id: 7,
-    name: "Business Customers",
-    description: "B2B customers and corporate accounts",
-    type: "static",
-    tags: ["business", "corporate", "b2b"],
-    customer_count: 4321,
-    size_estimate: 4321,
-    created_at: "2024-01-05T09:30:00Z",
-    created_on: "2024-01-05T09:30:00Z",
-    updated_at: "2024-01-05T12:45:00Z",
-    updated_on: "2024-01-05T12:45:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 3,
-    visibility: "private",
-    refresh_frequency: "monthly",
-  },
-  {
-    id: 8,
-    segment_id: 8,
-    name: "Dormant Users",
-    description: "Customers with no activity in 60+ days",
-    type: "dynamic",
-    tags: ["dormant", "inactive", "re-engagement"],
-    customer_count: 5678,
-    size_estimate: 5678,
-    created_at: "2024-01-14T10:15:00Z",
-    created_on: "2024-01-14T10:15:00Z",
-    updated_at: "2024-01-14T13:20:00Z",
-    updated_on: "2024-01-14T13:20:00Z",
-    created_by: 1,
-    is_active: false,
-    category: 2,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-];
-
-const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
-
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -312,8 +154,6 @@ export default function SegmentManagementPage() {
 
   // Load analytics data
   const loadAnalytics = useCallback(async () => {
-    if (USE_MOCK_DATA) return; // Skip analytics for mock data
-
     try {
       setIsLoadingAnalytics(true);
 
@@ -380,15 +220,6 @@ export default function SegmentManagementPage() {
     try {
       setIsLoading(true);
       setError("");
-
-      if (USE_MOCK_DATA) {
-        // Use mock data for testing
-        setSegments(MOCK_SEGMENTS);
-        setTotalCount(MOCK_SEGMENTS.length);
-        setTotalPages(Math.ceil(MOCK_SEGMENTS.length / pageSize));
-        setIsLoading(false);
-        return;
-      }
 
       let segmentData: Segment[] = [];
 
@@ -729,9 +560,14 @@ export default function SegmentManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Segments */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag1 }}
+              >
+                <Layers className="w-6 h-6 text-white" />
+              </div>
               <div className="flex-1">
-                <p className={`text-sm ${tw.textMuted} mb-1`}>Total Segments</p>
                 <p className={`text-2xl font-bold ${tw.textPrimary}`}>
                   {isLoadingAnalytics ? (
                     <span className="text-gray-400">...</span>
@@ -739,32 +575,27 @@ export default function SegmentManagementPage() {
                     stats.totalSegments.toLocaleString()
                   )}
                 </p>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>Total Segments</p>
                 {analyticsData?.healthSummary?.last_7d_created &&
                   analyticsData.healthSummary.last_7d_created > 0 && (
-                    <p className={`text-xs ${tw.textMuted} mt-1`}>
+                    <p className={`text-xs ${tw.textMuted} mt-2`}>
                       +{analyticsData.healthSummary.last_7d_created} this week
                     </p>
                   )}
-              </div>
-              <div
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: `${color.tertiary.tag1}20` }}
-              >
-                <Layers
-                  className="w-6 h-6"
-                  style={{ color: color.tertiary.tag1 }}
-                />
               </div>
             </div>
           </div>
 
           {/* Active Segments */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag4 }}
+              >
+                <Activity className="w-6 h-6 text-white" />
+              </div>
               <div className="flex-1">
-                <p className={`text-sm ${tw.textMuted} mb-1`}>
-                  Active Segments
-                </p>
                 <p className={`text-2xl font-bold ${tw.textPrimary}`}>
                   {isLoadingAnalytics ? (
                     <span className="text-gray-400">...</span>
@@ -772,7 +603,10 @@ export default function SegmentManagementPage() {
                     stats.activeSegments.toLocaleString()
                   )}
                 </p>
-                <p className={`text-xs ${tw.textMuted} mt-1`}>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>
+                  Active Segments
+                </p>
+                <p className={`text-xs ${tw.textMuted} mt-2`}>
                   {stats.totalSegments > 0
                     ? `${Math.round(
                         (stats.activeSegments / stats.totalSegments) * 100
@@ -780,49 +614,42 @@ export default function SegmentManagementPage() {
                     : "0% of total"}
                 </p>
               </div>
-              <div
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: `${color.tertiary.tag4}20` }}
-              >
-                <Activity
-                  className="w-6 h-6"
-                  style={{ color: color.tertiary.tag4 }}
-                />
-              </div>
             </div>
           </div>
 
           {/* Total Customers */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag2 }}
+              >
+                <Users className="w-6 h-6 text-white" />
+              </div>
               <div className="flex-1">
-                <p className={`text-sm ${tw.textMuted} mb-1`}>
-                  Total Customers
-                </p>
                 <p className={`text-2xl font-bold ${tw.textPrimary}`}>
                   {stats.totalCustomers.toLocaleString()}
                 </p>
-                <p className={`text-xs ${tw.textMuted} mt-1`}>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>
+                  Total Customers
+                </p>
+                <p className={`text-xs ${tw.textMuted} mt-2`}>
                   Across all segments
                 </p>
-              </div>
-              <div
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: `${color.tertiary.tag2}20` }}
-              >
-                <Users
-                  className="w-6 h-6"
-                  style={{ color: color.tertiary.tag2 }}
-                />
               </div>
             </div>
           </div>
 
           {/* Top Segment */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag3 }}
+              >
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm ${tw.textMuted} mb-1`}>Top Segment</p>
                 <p
                   className={`text-lg font-bold ${tw.textPrimary} truncate`}
                   title={
@@ -837,22 +664,14 @@ export default function SegmentManagementPage() {
                     "No segments"
                   )}
                 </p>
-                <p className={`text-xs ${tw.textMuted} mt-1`}>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>Top Segment</p>
+                <p className={`text-xs ${tw.textMuted} mt-2`}>
                   {stats.largestSegments.length > 0
                     ? `${(
                         stats.largestSegments[0]?.member_count || 0
                       ).toLocaleString()} members`
                     : "No data available"}
                 </p>
-              </div>
-              <div
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: `${color.tertiary.tag3}20` }}
-              >
-                <TrendingUp
-                  className="w-6 h-6"
-                  style={{ color: color.tertiary.tag3 }}
-                />
               </div>
             </div>
           </div>
@@ -895,10 +714,7 @@ export default function SegmentManagementPage() {
             </span>
             {typeFilter !== "all" && (
               <span className="inline-flex items-center px-3 py-1.5 text-sm bg-purple-50 text-purple-700 rounded-full border border-purple-200">
-                Type:{" "}
-                {typeFilter === "all"
-                  ? "All"
-                  : typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}
+                Type: {typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}
                 <button
                   onClick={() => setTypeFilter("all")}
                   className="ml-2 hover:text-purple-900"
@@ -1053,7 +869,7 @@ export default function SegmentManagementPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                             segment.type === "dynamic"
                               ? `bg-[${color.primary.accent}]`
                               : segment.type === "static"
@@ -1077,15 +893,30 @@ export default function SegmentManagementPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
-                          {segment.tags?.map((tag) => (
-                            <span
-                              key={tag}
-                              className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
-                            >
-                              <Tag className="w-3 h-3 mr-1" />
-                              {tag}
+                          {segment.tags && segment.tags.length > 0 ? (
+                            <>
+                              {segment.tags.slice(0, 2).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
+                                >
+                                  <Tag className="w-3 h-3 mr-1" />
+                                  {tag}
+                                </span>
+                              ))}
+                              {segment.tags.length > 2 && (
+                                <span
+                                  className={`inline-flex items-center px-2 py-1 text-sm font-medium ${tw.textMuted}`}
+                                >
+                                  +{segment.tags.length - 2} more
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className={`text-sm ${tw.textMuted}`}>
+                              No tags
                             </span>
-                          ))}
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
