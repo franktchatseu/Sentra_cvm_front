@@ -1,6 +1,6 @@
 import { Bell, Search, User, LogOut, Menu } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
-import logo from "../../../assets/efforte.png";
+import logo from "../../../assets/Effortel_logo.svg";
 import { User as UserType } from "../../../features/auth/types/auth";
 import { color } from "../../../shared/utils/utils";
 interface HeaderProps {
@@ -131,7 +131,7 @@ export function GuestHeader({
         <div className="flex justify-between items-center h-20 lg:h-24">
           {showLogo && (
             <div className="flex items-center">
-              <div className="w-32 h-32 lg:w-40 lg:h-40 flex items-center justify-center">
+              <div className="w-32 h-32  flex items-center justify-center">
                 <img
                   src={logo}
                   alt="Sentra Logo"

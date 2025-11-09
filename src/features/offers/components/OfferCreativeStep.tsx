@@ -9,21 +9,39 @@ import {
   Monitor,
   Phone,
   PhoneCall,
+  Eye,
 } from "lucide-react";
 import { color } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import RegularModal from "../../../shared/components/ui/RegularModal";
 import {
   CreativeChannel,
   Locale,
-  VALID_CHANNELS,
   COMMON_LOCALES,
   OfferCreative,
+  RenderCreativeResponse,
 } from "../types/offerCreative";
+import { offerCreativeService } from "../services/offerCreativeService";
 
 interface LocalOfferCreative extends Omit<OfferCreative, "id" | "offer_id"> {
   id: string; // Use string for local temp ID
   offer_id?: number; // Optional until saved
 }
+
+// Helper function to replace variables in text (client-side preview)
+const replaceVariables = (
+  text: string,
+  variables: Record<string, string | number | boolean>
+): string => {
+  if (!text) return "";
+  let result = text;
+  Object.keys(variables).forEach((key) => {
+    const value = String(variables[key]);
+    const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+    result = result.replace(regex, value);
+  });
+  return result;
+};
 
 interface OfferCreativeStepProps {
   creatives: LocalOfferCreative[];
@@ -93,6 +111,14 @@ export default function OfferCreativeStep({
   const [variablesText, setVariablesText] = useState<Record<string, string>>(
     {}
   );
+
+  // Preview modal state
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewResult, setPreviewResult] =
+    useState<RenderCreativeResponse | null>(null);
+  const [variableOverrides, setVariableOverrides] = useState<string>("");
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -179,6 +205,158 @@ export default function OfferCreativeStep({
     }
   };
 
+  // Handle preview button click
+  const handlePreview = async () => {
+    if (!selectedCreativeData) return;
+
+    setIsPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setPreviewResult(null);
+
+    // Initialize variable overrides with stored variables
+    const storedVars = selectedCreativeData.variables || {};
+    setVariableOverrides(JSON.stringify(storedVars, null, 2));
+
+    // Check if creative has been saved (has numeric ID)
+    // Saved creatives have numeric string IDs (e.g., "123"), unsaved have random strings (e.g., "abc123xyz")
+    const creativeId = selectedCreativeData.id;
+    const numericId =
+      typeof creativeId === "number"
+        ? creativeId
+        : !isNaN(Number(creativeId)) &&
+          Number(creativeId) > 0 &&
+          String(Number(creativeId)) === String(creativeId)
+        ? Number(creativeId)
+        : null;
+
+    if (numericId !== null) {
+      // Creative has been saved - use render endpoint
+      try {
+        const overrides = storedVars; // Use stored variables as default
+        const response = await offerCreativeService.render(
+          numericId,
+          { variableOverrides: overrides },
+          true // Skip cache
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rendered = (response as any).data || response;
+        setPreviewResult(rendered);
+      } catch (err) {
+        // Failed to render creative
+        setPreviewError(
+          err instanceof Error ? err.message : "Failed to render creative"
+        );
+
+        // Fallback to client-side preview
+        const clientPreview = {
+          rendered_title: replaceVariables(
+            selectedCreativeData.title || "",
+            storedVars
+          ),
+          rendered_text_body: replaceVariables(
+            selectedCreativeData.text_body || "",
+            storedVars
+          ),
+          rendered_html_body: replaceVariables(
+            selectedCreativeData.html_body || "",
+            storedVars
+          ),
+        };
+        setPreviewResult(clientPreview);
+      }
+    } else {
+      // Creative not saved yet - use client-side preview
+      const clientPreview = {
+        rendered_title: replaceVariables(
+          selectedCreativeData.title || "",
+          storedVars
+        ),
+        rendered_text_body: replaceVariables(
+          selectedCreativeData.text_body || "",
+          storedVars
+        ),
+        rendered_html_body: replaceVariables(
+          selectedCreativeData.html_body || "",
+          storedVars
+        ),
+      };
+      setPreviewResult(clientPreview);
+    }
+
+    setPreviewLoading(false);
+  };
+
+  // Handle preview with custom variable overrides
+  const handlePreviewWithOverrides = async () => {
+    if (!selectedCreativeData) return;
+
+    setPreviewLoading(true);
+    setPreviewError(null);
+
+    try {
+      // Parse variable overrides
+      let overrides: Record<string, string | number | boolean> = {};
+      if (variableOverrides.trim()) {
+        overrides = JSON.parse(variableOverrides);
+      }
+
+      // Merge with stored variables (overrides take precedence)
+      const finalOverrides = {
+        ...(selectedCreativeData.variables || {}),
+        ...overrides,
+      };
+
+      // Check if creative has been saved
+      const creativeId = selectedCreativeData.id;
+      const numericId =
+        typeof creativeId === "number"
+          ? creativeId
+          : !isNaN(Number(creativeId)) &&
+            Number(creativeId) > 0 &&
+            String(Number(creativeId)) === String(creativeId)
+          ? Number(creativeId)
+          : null;
+
+      if (numericId !== null) {
+        // Use render endpoint
+        const response = await offerCreativeService.render(
+          numericId,
+          { variableOverrides: finalOverrides },
+          true
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rendered = (response as any).data || response;
+        setPreviewResult(rendered);
+      } else {
+        // Client-side preview
+        const clientPreview = {
+          rendered_title: replaceVariables(
+            selectedCreativeData.title || "",
+            finalOverrides
+          ),
+          rendered_text_body: replaceVariables(
+            selectedCreativeData.text_body || "",
+            finalOverrides
+          ),
+          rendered_html_body: replaceVariables(
+            selectedCreativeData.html_body || "",
+            finalOverrides
+          ),
+        };
+        setPreviewResult(clientPreview);
+      }
+    } catch (err) {
+      // Failed to preview with overrides
+      setPreviewError(
+        err instanceof Error ? err.message : "Invalid variable overrides JSON"
+      );
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Validation Error Display */}
@@ -225,12 +403,10 @@ export default function OfferCreativeStep({
               backgroundColor: color.primary.action,
             }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.hover;
+              (e.target as HTMLButtonElement).style.opacity = "0.9";
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
+              (e.target as HTMLButtonElement).style.opacity = "1";
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -251,12 +427,10 @@ export default function OfferCreativeStep({
                     backgroundColor: color.primary.action,
                   }}
                   onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.hover;
+                    (e.target as HTMLButtonElement).style.opacity = "0.9";
                   }}
                   onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
+                    (e.target as HTMLButtonElement).style.opacity = "1";
                   }}
                 >
                   <Plus className="w-5 h-5 mr-1.5" />
@@ -377,7 +551,7 @@ export default function OfferCreativeStep({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                     />
                     <div className="text-xs text-gray-500 mt-1">
-                      {selectedCreativeData.title.length}/160 characters
+                      {(selectedCreativeData.title || "").length}/160 characters
                     </div>
                   </div>
 
@@ -463,6 +637,26 @@ export default function OfferCreativeStep({
                       })()}
                     </div>
                   </div>
+
+                  {/* Preview Button */}
+                  <div className="flex justify-end pt-4">
+                    <button
+                      onClick={handlePreview}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                      style={{
+                        backgroundColor: color.primary.action,
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLButtonElement).style.opacity = "0.9";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLButtonElement).style.opacity = "1";
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Preview Creative
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -481,6 +675,138 @@ export default function OfferCreativeStep({
           </div>
         </div>
       )}
+
+      {/* Preview Modal */}
+      <RegularModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPreviewError(null);
+          setPreviewResult(null);
+          setVariableOverrides("");
+        }}
+        title="Preview Creative"
+        size="xl"
+      >
+        <div className="space-y-6">
+          {/* Variable Overrides */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Variable Overrides (JSON) - Optional
+            </label>
+            <p className="text-xs text-gray-500 mb-2">
+              Override variable values to see how the creative looks with
+              different data. Leave empty to use stored variables.
+            </p>
+            <textarea
+              value={variableOverrides}
+              onChange={(e) => setVariableOverrides(e.target.value)}
+              placeholder='{"customerName": "Alice", "discount": "75%"}'
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none font-mono text-sm"
+            />
+            <div className="flex items-center justify-between mt-2">
+              <div className="text-xs text-gray-500">
+                {(() => {
+                  if (!variableOverrides.trim())
+                    return "Using stored variables";
+                  try {
+                    JSON.parse(variableOverrides);
+                    return <span className="text-green-600">✓ Valid JSON</span>;
+                  } catch {
+                    return <span className="text-red-600">⚠ Invalid JSON</span>;
+                  }
+                })()}
+              </div>
+              <button
+                onClick={handlePreviewWithOverrides}
+                disabled={previewLoading}
+                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: color.primary.action,
+                }}
+              >
+                {previewLoading ? "Rendering..." : "Update Preview"}
+              </button>
+            </div>
+          </div>
+
+          {/* Error Display */}
+          {previewError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800">{previewError}</p>
+            </div>
+          )}
+
+          {/* Preview Result */}
+          {previewLoading && !previewResult ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+            </div>
+          ) : previewResult ? (
+            <div className="space-y-4">
+              {/* Rendered Title */}
+              {previewResult.rendered_title && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rendered Title
+                  </label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-gray-900">
+                      {previewResult.rendered_title}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Rendered Text Body */}
+              {previewResult.rendered_text_body && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rendered Text Body
+                  </label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-gray-900 whitespace-pre-wrap">
+                      {previewResult.rendered_text_body}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Rendered HTML Body */}
+              {previewResult.rendered_html_body && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rendered HTML Body
+                  </label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{
+                        __html: previewResult.rendered_html_body,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!previewResult.rendered_title &&
+                !previewResult.rendered_text_body &&
+                !previewResult.rendered_html_body && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>
+                      No content to preview. Add title, text body, or HTML body.
+                    </p>
+                  </div>
+                )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>Click "Update Preview" to see how your creative will look.</p>
+            </div>
+          )}
+        </div>
+      </RegularModal>
     </div>
   );
 }

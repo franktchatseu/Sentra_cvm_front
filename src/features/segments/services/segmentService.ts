@@ -61,6 +61,10 @@ import {
   // Size Estimation
   SizeEstimateRequest,
   SizeEstimateResponse,
+  // Segmentation Fields API
+  SegmentationFieldsResponse,
+  GenerateQueryPreviewRequest,
+  GenerateQueryPreviewResponse,
 } from "../types/segment";
 import {
   API_CONFIG,
@@ -70,6 +74,7 @@ import {
 
 const BASE_URL = buildApiUrl(API_CONFIG.ENDPOINTS.SEGMENTS || "/segments");
 const CATEGORIES_BASE_URL = buildApiUrl("/segment-categories");
+const MEMBERS_BASE_URL = buildApiUrl("/segment-members");
 
 class SegmentService {
   private async request<T>(
@@ -77,7 +82,6 @@ class SegmentService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
-    console.log("[SegmentService] Making request to:", url);
 
     const response = await fetch(url, {
       headers: {
@@ -158,7 +162,6 @@ class SegmentService {
       }
     }
 
-    console.log("[SegmentService] Response parsed successfully");
     return responseData;
   }
 
@@ -648,6 +651,10 @@ class SegmentService {
   ): Promise<ApiSuccessResponse<SegmentType>> {
     return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/deactivate`, {
       method: "PATCH",
+      body: JSON.stringify({}),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   }
 
@@ -1050,13 +1057,14 @@ class SegmentService {
 
   /**
    * GET /segments/:id/rules - Get segment rules
+   * NOTE: This endpoint doesn't exist in the backend - disabled
    */
   async getSegmentRules(
     segmentId: number
   ): Promise<ApiSuccessResponse<SegmentRuleType[]>> {
-    return this.request<ApiSuccessResponse<SegmentRuleType[]>>(
-      `/${segmentId}/rules`
-    );
+    // Endpoint doesn't exist - return empty array
+    console.warn("getSegmentRules endpoint doesn't exist in backend");
+    return Promise.resolve({ success: true, data: [] });
   }
 
   /**
@@ -1210,82 +1218,185 @@ class SegmentService {
   // ==================== SEGMENT MEMBERS (5 endpoints) ====================
 
   /**
-   * GET /segments/:id/members - Get segment members
+   * GET /segment-members/segment/:segmentId - Get segment members
+   * Note: Backend doesn't accept page/pageSize query params
    */
   async getSegmentMembers(
     id: number,
     query?: GetSegmentMembersQuery
   ): Promise<PaginatedResponse<SegmentMemberType>> {
-    const queryString = this.buildQueryParams({
-      page: query?.page,
-      pageSize: query?.pageSize,
-      sortBy: query?.sortBy,
-      sortDirection: query?.sortDirection,
+    // Backend doesn't accept page/pageSize - fetch all and handle pagination client-side
+    const url = `${MEMBERS_BASE_URL}/segment/${id}`;
+    const response = await fetch(url, {
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
     });
-    return this.request<PaginatedResponse<SegmentMemberType>>(
-      `/${id}/members${queryString}`
-    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch segment members: ${response.statusText}`
+      );
+    }
+    const data = await response.json();
+
+    // Handle pagination client-side if needed
+    const allMembers = Array.isArray(data) ? data : data.data || [];
+    const page = query?.page || 1;
+    const pageSize = query?.pageSize || 10;
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedMembers = allMembers.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedMembers,
+      meta: {
+        total: allMembers.length,
+        page: page,
+        pageSize: pageSize,
+        totalPages: Math.ceil(allMembers.length / pageSize),
+      },
+    };
   }
 
   /**
-   * POST /segments/:id/members - Add segment members
+   * POST /segment-members/segment/:segmentId - Add segment members
    */
   async addSegmentMembers(
     id: number,
     request: AddSegmentMembersRequest
   ): Promise<ApiSuccessResponse<{ added_count: number }>> {
-    return this.request<ApiSuccessResponse<{ added_count: number }>>(
-      `/${id}/members`,
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
+    const url = `${MEMBERS_BASE_URL}/segment/${id}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to add segment members: ${response.statusText}`);
+    }
+    return response.json();
   }
 
   /**
-   * DELETE /segments/:id/members - Delete segment members
+   * DELETE /segment-members/segment/:segmentId - Delete segment members
    */
   async deleteSegmentMembers(
     id: number,
     request: DeleteSegmentMembersRequest
   ): Promise<ApiSuccessResponse<{ removed_count: number }>> {
-    return this.request<ApiSuccessResponse<{ removed_count: number }>>(
-      `/${id}/members`,
-      {
-        method: "DELETE",
-        body: JSON.stringify(request),
-      }
-    );
+    const url = `${MEMBERS_BASE_URL}/segment/${id}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to delete segment members: ${response.statusText}`
+      );
+    }
+    return response.json();
   }
 
   /**
-   * GET /segments/:id/members/count - Get members count
+   * GET /segment-members/segments/counts?segmentIds=:id - Get members count
    */
   async getSegmentMembersCount(
     id: number,
     skipCache: boolean = false
   ): Promise<ApiSuccessResponse<{ count: number }>> {
-    const queryString = this.buildQueryParams({ skipCache });
-    return this.request<ApiSuccessResponse<{ count: number }>>(
-      `/${id}/members/count${queryString}`
-    );
+    const queryString = this.buildQueryParams({
+      segmentIds: id.toString(),
+      skipCache,
+    });
+    const url = `${MEMBERS_BASE_URL}/segments/counts${queryString}`;
+    const response = await fetch(url, {
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      // If endpoint fails, return 0 count instead of throwing
+      console.warn(
+        `Failed to fetch segment members count: ${response.statusText}`
+      );
+      return Promise.resolve({ success: true, data: { count: 0 } });
+    }
+    const data = await response.json();
+    // Handle response format - might be array or object
+    if (Array.isArray(data) && data.length > 0) {
+      return { success: true, data: { count: data[0].count || 0 } };
+    }
+    if (data.count !== undefined) {
+      return { success: true, data: { count: data.count } };
+    }
+    return { success: true, data: { count: 0 } };
   }
 
   /**
-   * POST /segments/:id/members/search - Search segment members
+   * POST /segment-members/segment/:segmentId/search - Search segment members
+   * Note: Backend doesn't accept query params, so we fetch all and filter client-side
    */
   async searchSegmentMembers(
     id: number,
     request: SearchSegmentMembersRequest
   ): Promise<PaginatedResponse<SegmentMemberType>> {
-    return this.request<PaginatedResponse<SegmentMemberType>>(
-      `/${id}/members/search`,
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
+    // Fetch all members and filter client-side since backend doesn't support query params
+    const url = `${MEMBERS_BASE_URL}/segment/${id}`;
+    const response = await fetch(url, {
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to search segment members: ${response.statusText}`
+      );
+    }
+    const data = await response.json();
+    const allMembers = Array.isArray(data) ? data : data.data || [];
+
+    // Filter by search query if provided
+    let filteredMembers = allMembers;
+    if (request.query) {
+      const searchTerm = request.query.toLowerCase();
+      filteredMembers = allMembers.filter((member: any) => {
+        const name = String(member.name || "").toLowerCase();
+        const email = String(member.email || "").toLowerCase();
+        const customerId = String(member.customer_id || "").toLowerCase();
+        return (
+          name.includes(searchTerm) ||
+          email.includes(searchTerm) ||
+          customerId.includes(searchTerm)
+        );
+      });
+    }
+
+    // Handle pagination client-side
+    const page = request.page || 1;
+    const pageSize = request.pageSize || 10;
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedMembers,
+      meta: {
+        total: filteredMembers.length,
+        page: page,
+        pageSize: pageSize,
+        totalPages: Math.ceil(filteredMembers.length / pageSize),
+      },
+    };
   }
 
   // ==================== SEGMENT EXPORT (3 endpoints) ====================
@@ -1337,6 +1448,63 @@ class SegmentService {
     return this.request<ApiSuccessResponse<ExportStatusResponse>>(
       `/${segmentId}/export-status/${jobId}`
     );
+  }
+
+  // ==================== SEGMENTATION FIELDS (2 endpoints) ====================
+
+  /**
+   * GET /segmentation-fields/profile - Get all available fields and operators for segmentation
+   * This endpoint returns the field configuration that users can use to build segment conditions
+   */
+  async getSegmentationFields(
+    skipCache: boolean = false
+  ): Promise<SegmentationFieldsResponse> {
+    const queryString = this.buildQueryParams({ skipCache });
+    const url = `${buildApiUrl("/segmentation-fields")}/profile${queryString}`;
+
+    const response = await fetch(url, {
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * POST /segments/generate-query/preview - Generate SQL query preview from conditions
+   * This endpoint takes the user's segment conditions and returns the generated SQL queries
+   */
+  async generateSegmentQueryPreview(
+    request: GenerateQueryPreviewRequest
+  ): Promise<GenerateQueryPreviewResponse> {
+    const url = `${buildApiUrl("/segments")}/generate-query/preview`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
   }
 }
 

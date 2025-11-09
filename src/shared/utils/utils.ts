@@ -16,7 +16,7 @@ export const color = {
   iconSizes: colors.iconSizes,
 };
 
-// Font system with Satoshi and PP Supply Mono - includes weights, sizes, and pre-defined typography styles
+// Font system with Satoshi and sans-serif - includes weights, sizes, and pre-defined typography styles
 export const typography = {
   primary: fonts.primary.name,
   secondary: fonts.secondary.name,
@@ -84,9 +84,9 @@ export const tw = {
   mainHeading: `font-['Satoshi_Variable',sans-serif] text-[2rem] font-[800] leading-[110%] tracking-[-0.04em]`,
   // Sub-headings - Impact, weight 400, 17.5104px, letter-spacing -8%
   subHeading: `font-['Impact',sans-serif] text-[1.0944rem] font-normal leading-normal tracking-[-0.08em]`,
-  // Card headings - Satoshi Variable, weight 600, 18px
-  cardHeading: `font-['Satoshi_Variable',sans-serif] text-[1.125rem] font-semibold leading-normal`,
-  // Card sub-headings - sans-serif only, weight 400, 14px
+  // Card headings - sans-serif, weight 600, 18px
+  cardHeading: `font-sans text-[1.125rem] font-semibold leading-normal`,
+  // Card sub-headings - sans-serif, weight 400, 14px
   cardSubHeading: `font-sans text-[0.875rem] font-normal leading-normal`,
 
   // Legacy typography classes (for backward compatibility)

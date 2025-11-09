@@ -153,7 +153,7 @@ export default function OfferTypesPage() {
       setNewTypeName("");
       setNewTypeDescription("");
     } catch (err) {
-      console.error("Failed to create offer type:", err);
+      // Failed to create offer type
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to create offer type"
@@ -194,7 +194,7 @@ export default function OfferTypesPage() {
       setEditName("");
       setEditDescription("");
     } catch (err) {
-      console.error("Failed to update offer type:", err);
+      // Failed to update offer type
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to update offer type"
@@ -222,7 +222,7 @@ export default function OfferTypesPage() {
         `"${offerType.name}" has been deleted successfully.`
       );
     } catch (err) {
-      console.error("Failed to delete offer type:", err);
+      // Failed to delete offer type
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to delete offer type"
@@ -275,19 +275,17 @@ export default function OfferTypesPage() {
       </div>
 
       {/* Search */}
-      <div className={`bg-white my-5`}>
-        <div className="relative w-full">
-          <Search
-            className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`}
-          />
-          <input
-            type="text"
-            placeholder="Search offer types..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.border.default}] rounded-lg focus:outline-none`}
-          />
-        </div>
+      <div className="relative w-full">
+        <Search
+          className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`}
+        />
+        <input
+          type="text"
+          placeholder="Search offer types..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={`w-full pl-10 pr-4 py-3 text-sm border border-[${color.border.default}] rounded-lg focus:outline-none`}
+        />
       </div>
 
       {/* Offer Types Table */}

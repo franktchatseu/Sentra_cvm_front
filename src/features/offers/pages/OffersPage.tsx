@@ -17,6 +17,7 @@ import {
   Archive,
   Filter,
   AlertCircle,
+  Package,
 } from "lucide-react";
 import { Offer, SearchParams, OfferStatusEnum } from "../types/offer";
 import { offerService } from "../services/offerService";
@@ -37,6 +38,13 @@ export default function OffersPage() {
   const [categories, setCategories] = useState<OfferCategoryType[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalOffers, setTotalOffers] = useState(0);
+  const [offerStats, setOfferStats] = useState<{
+    total: number;
+    active: number;
+    expired: number;
+    pendingApproval: number;
+  } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [filters, setFilters] = useState<SearchParams>({
     page: 1,
     limit: 10,
@@ -56,10 +64,6 @@ export default function OffersPage() {
 
   // Dropdown menu state
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Loading states for individual offers
@@ -86,8 +90,8 @@ export default function OffersPage() {
       if (response.success && response.data) {
         setCategories(response.data);
       }
-    } catch (err) {
-      console.error("Error loading categories:", err);
+    } catch {
+      // Error loading categories
     }
   };
 
@@ -102,29 +106,23 @@ export default function OffersPage() {
         skipCache: skipCache,
       };
 
-      console.log("Loading offers with params:", searchParams);
       const response = await offerService.searchOffers(searchParams);
-      console.log("Offers response:", response);
-      console.log("Offers response.data:", response.data);
-      console.log("Offers response.pagination:", response.pagination);
-      console.log("Offers response keys:", Object.keys(response));
 
       if (response.success && response.data) {
         setOffers(response.data);
         const total = response.pagination?.total || response.data.length;
-        console.log("Total offers:", total);
         setTotalOffers(total);
       } else {
-        console.error("Response not successful:", response);
         showError(
           "Failed to load offers",
           "Unable to retrieve offers. Please try again."
         );
       }
-    } catch (err) {
-      const errorMessage = (err as Error).message || "Failed to load offers";
-      showError("Failed to load offers", errorMessage);
-      console.error("Error loading offers:", err);
+    } catch {
+      showError(
+        "Failed to load offers",
+        "An error occurred while loading offers"
+      );
     } finally {
       setLoading(false);
     }
@@ -142,6 +140,130 @@ export default function OffersPage() {
   // Load categories on mount
   useEffect(() => {
     loadCategories();
+  }, []);
+
+  // Load offer stats
+  useEffect(() => {
+    const fetchOfferStats = async () => {
+      try {
+        setStatsLoading(true);
+        let total = 0;
+        let active = 0;
+        let expired = 0;
+        let pendingApproval = 0;
+
+        // Fetch total and active from stats
+        try {
+          const offersResponse = await offerService.getStats();
+          if (offersResponse.success && offersResponse.data) {
+            // Try different possible field names (camelCase and snake_case)
+            // Backend returns strings, so parse them
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = offersResponse.data as any;
+            total =
+              parseInt(data.total_offers as string) ||
+              parseInt(data.totalOffers as string) ||
+              parseInt(data.total as string) ||
+              (typeof data.total === "number" ? data.total : 0) ||
+              0;
+            // Use currently_active (offers valid right now) instead of active_offers
+            // Backend returns strings, so parse them
+            active =
+              parseInt(data.currently_active as string) ||
+              parseInt(data.currentlyActive as string) ||
+              parseInt(data.active_offers as string) ||
+              parseInt(data.activeOffers as string) ||
+              (typeof data.active === "number" ? data.active : 0) ||
+              0;
+          }
+        } catch {
+          // Error fetching offer stats
+        }
+
+        // If stats don't have total, get from pagination
+        if (total === 0) {
+          try {
+            const offersList = await offerService.searchOffers({ limit: 1 });
+            if (offersList.pagination?.total !== undefined) {
+              total = offersList.pagination.total;
+            }
+          } catch {
+            // Error fetching total offers
+          }
+        }
+
+        // Fetch expired offers count
+        try {
+          const expiredResponse = await offerService.getExpiredOffers({
+            limit: 1,
+          });
+          expired = expiredResponse.pagination?.total || 0;
+        } catch {
+          // Error fetching expired offers
+        }
+
+        // Fetch pending approval offers count
+        // Use status-based endpoint: combine pending_approval + draft (drafts need approval)
+        try {
+          let pendingCount = 0;
+          let draftCount = 0;
+
+          // Get pending_approval status offers
+          try {
+            const pendingResponse = await offerService.getOffersByStatus(
+              OfferStatusEnum.PENDING_APPROVAL,
+              { limit: 1, skipCache: true }
+            );
+            pendingCount = pendingResponse.pagination?.total || 0;
+          } catch {
+            // Error fetching pending_approval status
+          }
+
+          // Get draft status offers (drafts are considered pending approval)
+          try {
+            const draftResponse = await offerService.getOffersByStatus(
+              OfferStatusEnum.DRAFT,
+              { limit: 1, skipCache: true }
+            );
+            draftCount = draftResponse.pagination?.total || 0;
+          } catch {
+            // Error fetching draft status
+          }
+
+          // Combine both counts
+          pendingApproval = pendingCount + draftCount;
+        } catch {
+          // Error in pending approval logic
+          // Final fallback: Filter all offers
+          try {
+            const allOffers = await offerService.searchOffers({
+              limit: 100,
+              skipCache: true,
+            });
+            const pendingCount =
+              allOffers.data?.filter(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (o: any) =>
+                  o.status === "pending_approval" ||
+                  o.status === "draft" ||
+                  o.approval_status === "pending"
+              ).length || 0;
+            pendingApproval = pendingCount;
+          } catch {
+            // All fallbacks failed
+            pendingApproval = 0;
+          }
+        }
+
+        setOfferStats({ total, active, expired, pendingApproval });
+      } catch {
+        setOfferStats({ total: 0, active: 0, expired: 0, pendingApproval: 0 });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchOfferStats();
   }, []);
 
   // Load offers on component mount and filter changes
@@ -194,35 +316,10 @@ export default function OffersPage() {
   };
 
   // Calculate dropdown position
-  const calculateDropdownPosition = (buttonElement: HTMLElement) => {
-    const rect = buttonElement.getBoundingClientRect();
-    const dropdownWidth = 256; // w-64
-    const dropdownHeight = 300;
-
-    let top = rect.bottom + 8;
-    let left = rect.right - dropdownWidth;
-
-    if (left < 8) left = 8;
-    if (left + dropdownWidth > window.innerWidth - 8) {
-      left = window.innerWidth - dropdownWidth - 8;
-    }
-    if (top + dropdownHeight > window.innerHeight - 8) {
-      top = rect.top - dropdownHeight - 8;
-    }
-
-    return { top, left };
-  };
-
-  const handleActionMenuToggle = (
-    offerId: number,
-    buttonElement: HTMLElement
-  ) => {
+  const handleActionMenuToggle = (offerId: number) => {
     if (showActionMenu === offerId) {
       setShowActionMenu(null);
-      setDropdownPosition(null);
     } else {
-      const position = calculateDropdownPosition(buttonElement);
-      setDropdownPosition(position);
       setShowActionMenu(offerId);
     }
   };
@@ -237,7 +334,6 @@ export default function OffersPage() {
 
         if (!isInsideDropdown && !isInsideButton) {
           setShowActionMenu(null);
-          setDropdownPosition(null);
         }
       }
     };
@@ -262,9 +358,9 @@ export default function OffersPage() {
       success("Offer Deleted", `"${name}" has been deleted successfully.`);
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to delete offer");
-      console.error("Delete offer error:", err);
+      // Delete offer error
     }
   };
 
@@ -294,9 +390,9 @@ export default function OffersPage() {
 
       success("Offer Activated", "Offer has been activated successfully.");
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to activate offer");
-      console.error("Activate offer error:", err);
+      // Activate offer error
     } finally {
       setLoadingAction(null);
     }
@@ -330,7 +426,7 @@ export default function OffersPage() {
   //     setShowActionMenu(null);
   //   } catch (err) {
   //     showError("Error", "Failed to deactivate offer");
-  //     console.error("Deactivate offer error:", err);
+  // Deactivate offer error
   //   } finally {
   //     setLoadingAction(null);
   //   }
@@ -362,9 +458,9 @@ export default function OffersPage() {
 
       success("Offer Paused", "Offer has been paused successfully.");
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to pause offer");
-      console.error("Pause offer error:", err);
+      // Pause offer error
     } finally {
       setLoadingAction(null);
     }
@@ -377,9 +473,9 @@ export default function OffersPage() {
       success("Offer Archived", "Offer has been archived successfully.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to archive offer");
-      console.error("Archive offer error:", err);
+      // Archive offer error
     } finally {
       setLoadingAction(null);
     }
@@ -411,9 +507,9 @@ export default function OffersPage() {
 
       success("Offer Expired", "Offer has been expired successfully.");
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to expire offer");
-      console.error("Expire offer error:", err);
+      // Expire offer error
     } finally {
       setLoadingAction(null);
     }
@@ -429,9 +525,9 @@ export default function OffersPage() {
       );
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to request approval");
-      console.error("Request approval error:", err);
+      // Request approval error
     } finally {
       setLoadingAction(null);
     }
@@ -448,9 +544,9 @@ export default function OffersPage() {
       success("Offer Approved", "Offer has been approved successfully.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to approve offer");
-      console.error("Approve offer error:", err);
+      // Approve offer error
     } finally {
       setLoadingAction(null);
     }
@@ -467,9 +563,9 @@ export default function OffersPage() {
       success("Offer Rejected", "Offer has been rejected.");
       await loadOffers(true); // Skip cache for immediate update
       setShowActionMenu(null);
-    } catch (err) {
+    } catch {
       showError("Error", "Failed to reject offer");
-      console.error("Reject offer error:", err);
+      // Reject offer error
     } finally {
       setLoadingAction(null);
     }
@@ -598,6 +694,34 @@ export default function OffersPage() {
     return matchesSearch && matchesStatus && matchesApproval;
   });
 
+  // Offer stats cards data
+  const offerStatsCards = [
+    {
+      name: "Total Offers",
+      value: offerStats?.total?.toLocaleString() || "0",
+      icon: Package,
+      color: color.tertiary.tag1, // Purple
+    },
+    {
+      name: "Currently Active",
+      value: offerStats?.active?.toLocaleString() || "0",
+      icon: CheckCircle,
+      color: color.tertiary.tag4, // Green
+    },
+    {
+      name: "Expired Offers",
+      value: offerStats?.expired?.toLocaleString() || "0",
+      icon: Clock,
+      color: color.tertiary.tag3, // Yellow
+    },
+    {
+      name: "Draft",
+      value: offerStats?.pendingApproval?.toLocaleString() || "0",
+      icon: AlertCircle,
+      color: color.tertiary.tag2, // Coral
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -619,6 +743,42 @@ export default function OffersPage() {
           <Plus className="h-4 w-4 mr-2" />
           Create Offer
         </button>
+      </div>
+
+      {/* Offer Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {offerStatsCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.name}
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: stat.color || color.primary.accent,
+                      }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`text-3xl font-bold ${tw.textPrimary}`}>
+                        {statsLoading ? "..." : stat.value}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {stat.name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Search and Filter Bar */}
@@ -888,9 +1048,8 @@ export default function OffersPage() {
                           }}
                         >
                           <button
-                            onClick={(e) =>
-                              offer.id &&
-                              handleActionMenuToggle(offer.id, e.currentTarget)
+                            onClick={() =>
+                              offer.id && handleActionMenuToggle(offer.id)
                             }
                             className={`action-button ${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
                             title="More Actions"
@@ -898,13 +1057,10 @@ export default function OffersPage() {
                             <MoreHorizontal className="h-4 w-4" />
                           </button>
 
-                          {showActionMenu === offer.id && dropdownPosition && (
+                          {showActionMenu === offer.id && (
                             <div
-                              className="action-dropdown fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4"
+                              className="action-dropdown absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4 z-[9999]"
                               style={{
-                                zIndex: 99999,
-                                top: `${dropdownPosition.top}px`,
-                                left: `${dropdownPosition.left}px`,
                                 maxHeight: "80vh",
                                 overflowY: "auto",
                               }}

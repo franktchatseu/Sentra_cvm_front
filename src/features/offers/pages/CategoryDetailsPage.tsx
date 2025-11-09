@@ -107,7 +107,7 @@ export default function CategoryDetailsPage() {
       // Load analytics data
       await loadAnalytics();
     } catch (err) {
-      console.error("Failed to load category details:", err);
+      // Failed to load category details
       setError("Failed to load category details");
     } finally {
       setLoading(false);
@@ -143,7 +143,7 @@ export default function CategoryDetailsPage() {
           : null,
       });
     } catch (err) {
-      console.error("Failed to load analytics:", err);
+      // Failed to load analytics
       // Don't show error for analytics, just log it
     }
   }, [id]);
@@ -174,7 +174,7 @@ export default function CategoryDetailsPage() {
       setIsEditModalOpen(false);
       setEditingCategory(null);
     } catch (err) {
-      console.error("Failed to update category:", err);
+      // Failed to update category
       showError("Failed to update category");
     }
   };
@@ -202,7 +202,7 @@ export default function CategoryDetailsPage() {
           showError("Failed to delete category");
         }
       } catch (err) {
-        console.error("Failed to delete category:", err);
+        // Failed to delete category
         showError("Failed to delete category");
       }
     }
@@ -222,7 +222,7 @@ export default function CategoryDetailsPage() {
       // Reload category details
       await loadCategoryDetails();
     } catch (err) {
-      console.error("Failed to toggle category status:", err);
+      // Failed to toggle category status
       showError("Failed to update category status");
     }
   };

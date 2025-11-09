@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search,
   Plus,
@@ -10,22 +10,45 @@ import {
   UserCheck,
   Users,
   Eye,
+  UserPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../../users/services/userService";
 import { accountService } from "../../account/services/accountService";
-import { UserType } from "../../users/types/user";
+import { UserType, PaginatedResponse } from "../../users/types/user";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import UserModal from "./UserModal";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, components } from "../../../shared/utils/utils";
+import { useAuth } from "../../../contexts/AuthContext";
+import { roleService } from "../../roles/services/roleService";
+import { Role } from "../../roles/types/role";
+
+type AccountRequestListItem = {
+  id?: number;
+  requestId?: number;
+  user_id?: number;
+  first_name?: string;
+  last_name?: string;
+  email_address?: string;
+  email?: string;
+  private_email_address?: string;
+  force_password_reset?: boolean;
+  roleId?: number;
+  roleName?: string;
+  created_at?: string;
+  created_on?: string;
+  department?: string;
+};
 
 export default function UserManagementPage() {
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserType[]>([]);
-  const [accountRequests, setAccountRequests] = useState<any[]>([]);
+  const [accountRequests, setAccountRequests] = useState<
+    AccountRequestListItem[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorState, setErrorState] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,6 +59,15 @@ export default function UserManagementPage() {
   >("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [userSummary, setUserSummary] = useState<{
+    total: number;
+    cached: boolean;
+  }>({
+    total: 0,
+    cached: false,
+  });
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const hasInitializedDebounce = useRef(false);
 
   // Loading states for individual actions
   const [loadingActions, setLoadingActions] = useState<{
@@ -52,37 +84,211 @@ export default function UserManagementPage() {
 
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
+  const { user: authUser } = useAuth();
+  const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
+
+  const activateColor = color.tertiary.tag4;
+  const deactivateColor = color.configStatus.inactive;
+
+  const buildSearchQuery = useCallback(
+    ({
+      skipCache = false,
+      searchTermOverride,
+    }: {
+      skipCache?: boolean;
+      searchTermOverride?: string;
+    } = {}) => {
+      const query: Record<string, unknown> = {};
+
+      const term = (searchTermOverride ?? searchTerm)?.trim();
+      if (term) {
+        query.q = term;
+      }
+
+      if (skipCache) {
+        query.skipCache = true;
+      }
+
+      return query;
+    },
+    [searchTerm]
+  );
+
+  const fetchUsers = useCallback(
+    async ({
+      skipCache = false,
+      searchTermOverride,
+    }: {
+      skipCache?: boolean;
+      searchTermOverride?: string;
+    } = {}): Promise<PaginatedResponse<UserType>> => {
+      const term = (searchTermOverride ?? searchTerm)?.trim();
+      if (term) {
+        return userService.searchUsers(
+          buildSearchQuery({ skipCache, searchTermOverride: term })
+        );
+      }
+
+      const baseQuery: Record<string, unknown> = {};
+      if (skipCache) {
+        baseQuery.skipCache = true;
+      }
+
+      return userService.getUsers(baseQuery);
+    },
+    [buildSearchQuery, searchTerm]
+  );
+
+  const loadData = useCallback(
+    async ({
+      skipCache = false,
+      searchTermOverride,
+    }: {
+      skipCache?: boolean;
+      searchTermOverride?: string;
+    } = {}) => {
+      try {
+        setIsLoading(true);
+        setErrorState("");
+
+        const usersResponse = await fetchUsers({
+          skipCache,
+          searchTermOverride,
+        });
+
+        if (usersResponse.success) {
+          const pendingActivationUsers = usersResponse.data.filter(
+            (candidate) => {
+              const candidateStatus = (
+                candidate as unknown as { account_status?: string }
+              )?.account_status;
+              return (
+                typeof candidateStatus === "string" &&
+                candidateStatus.toLowerCase() === "pending_activation"
+              );
+            }
+          );
+
+          const activeUsers = usersResponse.data.filter((candidate) => {
+            const candidateStatus = (
+              candidate as unknown as { account_status?: string }
+            )?.account_status;
+            return !(
+              typeof candidateStatus === "string" &&
+              candidateStatus.toLowerCase() === "pending_activation"
+            );
+          });
+
+          setUsers(activeUsers);
+          setAccountRequests(
+            pendingActivationUsers.map((pending) => {
+              const primaryRoleId = (
+                pending as unknown as {
+                  primary_role_id?: number;
+                }
+              )?.primary_role_id;
+              const fallbackRoleName = (
+                pending as unknown as {
+                  role_name?: string;
+                }
+              )?.role_name;
+              const resolvedRoleName =
+                (primaryRoleId != null
+                  ? roleLookup[primaryRoleId]?.name
+                  : undefined) ?? fallbackRoleName;
+
+              return {
+                id: pending.id,
+                requestId: (
+                  pending as unknown as { onboarding_request_id?: number }
+                )?.onboarding_request_id,
+                first_name: pending.first_name,
+                last_name: pending.last_name,
+                email_address:
+                  pending.email_address ||
+                  (pending as { email?: string }).email,
+                department: pending.department || undefined,
+                roleId: primaryRoleId ?? undefined,
+                roleName: resolvedRoleName,
+                created_at: pending.created_at,
+              };
+            })
+          );
+          const totalFromResponse =
+            (usersResponse.meta?.total as number | undefined) ??
+            usersResponse.data.length;
+
+          setUserSummary({
+            total: totalFromResponse,
+            cached: Boolean(usersResponse.meta?.isCachedResponse),
+          });
+        }
+
+        // Account requests derived from pending activation users above
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load data";
+        setErrorState(message);
+        showError("Error loading users", message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchUsers, showError, roleLookup]
+  );
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRoles = async () => {
+      try {
+        const { roles } = await roleService.listRoles({
+          limit: 100,
+          offset: 0,
+          skipCache: true,
+        });
+
+        if (cancelled) return;
+
+        const mappedRoles: Record<number, Role> = {};
+        roles.forEach((role) => {
+          mappedRoles[role.id] = role;
+        });
+        setRoleLookup(mappedRoles);
+      } catch (err) {
+        console.error("Failed to load roles", err);
+      }
+    };
+
+    loadRoles();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      setErrorState("");
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 400);
 
-      // Load users using new userService
-      const usersResponse = await userService.getUsers();
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
 
-      if (usersResponse.success) {
-        console.log("Users data:", usersResponse.data);
-        setUsers(usersResponse.data);
-      }
-
-      // TODO: Load account requests when endpoint is available
-      // For now, set empty array
-      setAccountRequests([]);
-    } catch (err) {
-      setErrorState(err instanceof Error ? err.message : "Failed to load data");
-      showError(
-        "Error loading users",
-        err instanceof Error ? err.message : "Failed to load data"
-      );
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (!hasInitializedDebounce.current) {
+      hasInitializedDebounce.current = true;
+      return;
     }
-  };
+
+    loadData({ skipCache: true, searchTermOverride: debouncedSearchTerm });
+  }, [debouncedSearchTerm, loadData]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -92,14 +298,59 @@ export default function UserManagementPage() {
 
     try {
       setIsLoading(true);
-      const searchResponse = await userService.searchUsers({
-        q: searchTerm,
-        page: 1,
-        pageSize: 100,
+      const trimmedTerm = searchTerm.trim();
+      const searchResponse = await fetchUsers({
+        skipCache: true,
+        searchTermOverride: trimmedTerm,
       });
 
       if (searchResponse.success) {
-        setUsers(searchResponse.data);
+        const pendingActivationUsers = searchResponse.data.filter(
+          (candidate) => {
+            const candidateStatus = (
+              candidate as unknown as { account_status?: string }
+            )?.account_status;
+            return (
+              typeof candidateStatus === "string" &&
+              candidateStatus.toLowerCase() === "pending_activation"
+            );
+          }
+        );
+
+        const activeUsers = searchResponse.data.filter((candidate) => {
+          const candidateStatus = (
+            candidate as unknown as { account_status?: string }
+          )?.account_status;
+          return !(
+            typeof candidateStatus === "string" &&
+            candidateStatus.toLowerCase() === "pending_activation"
+          );
+        });
+
+        setUsers(activeUsers);
+        setAccountRequests(
+          pendingActivationUsers.map((pending) => ({
+            id: pending.id,
+            requestId: (
+              pending as unknown as { onboarding_request_id?: number }
+            )?.onboarding_request_id,
+            first_name: pending.first_name,
+            last_name: pending.last_name,
+            email_address:
+              pending.email_address || (pending as { email?: string }).email,
+            department: pending.department || undefined,
+            role: (pending as unknown as { role_name?: string }).role_name,
+            created_at: pending.created_at,
+          }))
+        );
+
+        const totalFromResponse =
+          (searchResponse.meta?.total as number | undefined) ??
+          searchResponse.data.length;
+        setUserSummary({
+          total: totalFromResponse,
+          cached: Boolean(searchResponse.meta?.isCachedResponse),
+        });
       }
     } catch (err) {
       showError(
@@ -115,7 +366,27 @@ export default function UserManagementPage() {
     navigate(`/dashboard/user-management/${user.id}`);
   };
 
-  const handleApproveRequest = async (request: any) => {
+  const resolveAccountRequestId = (
+    request: AccountRequestListItem
+  ): number | null => {
+    const identifier = request.id ?? request.requestId;
+    return typeof identifier === "number" ? identifier : null;
+  };
+
+  const handleApproveRequest = async (request: AccountRequestListItem) => {
+    const requestId = resolveAccountRequestId(request);
+    if (!requestId) {
+      showError(
+        "Unable to approve request",
+        "Missing identifier for the selected request."
+      );
+      return;
+    }
+
+    const onboardingRequestId =
+      typeof request.requestId === "number" ? request.requestId : null;
+    const userId = request.id ?? request.user_id ?? null;
+
     const confirmed = await confirm({
       title: "Approve Request",
       message: `Are you sure you want to approve the account request for ${request.first_name} ${request.last_name}?`,
@@ -129,14 +400,19 @@ export default function UserManagementPage() {
     // Set loading state
     setLoadingActions((prev) => ({
       ...prev,
-      approving: new Set([...prev.approving, request.id || request.requestId]),
+      approving: new Set([...prev.approving, requestId]),
     }));
 
     try {
-      await accountService.approveAccountRequest(
-        request.id || request.requestId
-      );
-      await loadData();
+      if (onboardingRequestId) {
+        await accountService.approveAccountRequest(onboardingRequestId);
+      } else if (userId) {
+        await userService.activateUser(userId, {
+          updated_by: authUser?.user_id ?? undefined,
+        });
+      }
+
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "Request approved",
         `Account approved for ${request.first_name} ${request.last_name}`
@@ -151,15 +427,26 @@ export default function UserManagementPage() {
       setLoadingActions((prev) => ({
         ...prev,
         approving: new Set(
-          [...prev.approving].filter(
-            (id) => id !== (request.id || request.requestId)
-          )
+          [...prev.approving].filter((id) => id !== requestId)
         ),
       }));
     }
   };
 
-  const handleRejectRequest = async (request: any) => {
+  const handleRejectRequest = async (request: AccountRequestListItem) => {
+    const requestId = resolveAccountRequestId(request);
+    if (!requestId) {
+      showError(
+        "Unable to reject request",
+        "Missing identifier for the selected request."
+      );
+      return;
+    }
+
+    const onboardingRequestId =
+      typeof request.requestId === "number" ? request.requestId : null;
+    const userId = request.id ?? request.user_id ?? null;
+
     const confirmed = await confirm({
       title: "Reject Request",
       message: `Are you sure you want to reject ${request.first_name} ${request.last_name}'s request?`,
@@ -173,17 +460,22 @@ export default function UserManagementPage() {
     // Set loading state
     setLoadingActions((prev) => ({
       ...prev,
-      rejecting: new Set([...prev.rejecting, request.id || request.requestId]),
+      rejecting: new Set([...prev.rejecting, requestId]),
     }));
 
     try {
-      await accountService.rejectAccountRequest(
-        request.id || request.requestId,
-        {
+      if (onboardingRequestId) {
+        await accountService.rejectAccountRequest(onboardingRequestId, {
           reason: "Rejected by administrator",
-        }
-      );
-      await loadData();
+        });
+      } else if (userId) {
+        await userService.deactivateUser(userId, {
+          updated_by: authUser?.user_id ?? undefined,
+          reason: "Rejected during onboarding",
+        });
+      }
+
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "Request rejected",
         `Request from ${request.first_name} ${request.last_name} rejected`
@@ -198,9 +490,7 @@ export default function UserManagementPage() {
       setLoadingActions((prev) => ({
         ...prev,
         rejecting: new Set(
-          [...prev.rejecting].filter(
-            (id) => id !== (request.id || request.requestId)
-          )
+          [...prev.rejecting].filter((id) => id !== requestId)
         ),
       }));
     }
@@ -214,7 +504,7 @@ export default function UserManagementPage() {
     }));
 
     try {
-      const isActive = user.status === "active";
+      const isActive = isUserActive(user);
       if (isActive) {
         await userService.deactivateUser(user.id);
         success(
@@ -228,7 +518,7 @@ export default function UserManagementPage() {
           `User ${user.first_name} ${user.last_name} activated successfully`
         );
       }
-      await loadData();
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
     } catch (err) {
       showError(
         "Error updating status",
@@ -244,6 +534,11 @@ export default function UserManagementPage() {
   };
 
   const handleDeleteUser = async (user: UserType) => {
+    if (!authUser?.user_id) {
+      showError("Unable to delete user", "Your session is missing a user id.");
+      return;
+    }
+
     const confirmed = await confirm({
       title: "Delete User",
       message: `Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone.`,
@@ -261,8 +556,8 @@ export default function UserManagementPage() {
     }));
 
     try {
-      await userService.deleteUser(user.id);
-      await loadData();
+      await userService.deleteUser(user.id, authUser.user_id);
+      await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "User deleted",
         `${user.first_name} ${user.last_name} deleted successfully`
@@ -281,14 +576,119 @@ export default function UserManagementPage() {
     }
   };
 
+  // Derived analytics helpers
+  const normalizeStatus = (user: UserType) => {
+    const accountStatus = (user as unknown as { account_status?: string })
+      ?.account_status;
+    if (accountStatus && accountStatus.trim() !== "") {
+      return accountStatus.toLowerCase();
+    }
+    if (user.status && user.status.trim() !== "") {
+      return user.status.toLowerCase();
+    }
+    const isSuspended = Boolean(
+      (user as unknown as { is_suspended?: boolean })?.is_suspended
+    );
+    if (isSuspended) return "suspended";
+    const isActive = Boolean(
+      (user as unknown as { is_active?: boolean })?.is_active ??
+        (user as unknown as { is_activated?: boolean })?.is_activated
+    );
+    return isActive ? "active" : "inactive";
+  };
+
+  const formatStatusLabel = (status: string) =>
+    status
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ") || "Unknown";
+
+  const getStatusColorToken = (status: string) => {
+    if (status === "active") return color.status.success;
+    if (status === "suspended" || status === "locked") {
+      return color.status.warning;
+    }
+    return color.status.danger;
+  };
+
+  const isUserActive = (user: UserType) => {
+    const status = normalizeStatus(user);
+    if (status === "active") return true;
+    if (status === "inactive") return false;
+    return Boolean(
+      (user as unknown as { is_active?: boolean })?.is_active ??
+        (user as unknown as { is_activated?: boolean })?.is_activated
+    );
+  };
+
   // Get unique departments from users
   const uniqueDepartments = Array.from(
     new Set(
       users
         .map((user) => user.department)
-        .filter((dept) => dept && dept.trim() !== "")
+        .filter((dept): dept is string => Boolean(dept && dept.trim() !== ""))
     )
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
+
+  const aggregateCounts = users.reduce(
+    (acc, user) => {
+      const status = normalizeStatus(user);
+      if (status === "active") {
+        acc.active += 1;
+      } else {
+        acc.inactive += 1;
+      }
+
+      if (status.includes("lock")) {
+        acc.locked += 1;
+      }
+
+      return acc;
+    },
+    { active: 0, inactive: 0, locked: 0 }
+  );
+
+  const totalUsersValue =
+    userSummary.total > 0
+      ? userSummary.total
+      : aggregateCounts.active + aggregateCounts.inactive;
+  const activeUsersValue = aggregateCounts.active;
+  const pendingActivationValue = accountRequests.length;
+  const highRiskUsersValue = aggregateCounts.locked;
+
+  const statsLoadingIndicator = isLoading;
+
+  const userStatsCards = [
+    {
+      name: "Total Users",
+      value: statsLoadingIndicator ? "..." : totalUsersValue.toLocaleString(),
+      icon: Users,
+      color: color.tertiary.tag1,
+      badge: userSummary.cached ? "Cached" : undefined,
+    },
+    {
+      name: "Active Users",
+      value: statsLoadingIndicator ? "..." : activeUsersValue.toLocaleString(),
+      icon: UserCheck,
+      color: color.tertiary.tag4,
+    },
+    {
+      name: "Pending Activation",
+      value: statsLoadingIndicator
+        ? "..."
+        : pendingActivationValue.toLocaleString(),
+      icon: UserPlus,
+      color: color.tertiary.tag2,
+    },
+    {
+      name: "Locked Users",
+      value: statsLoadingIndicator
+        ? "..."
+        : highRiskUsersValue.toLocaleString(),
+      icon: UserX,
+      color: color.tertiary.tag3,
+    },
+  ];
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -298,31 +698,50 @@ export default function UserManagementPage() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
+    const normalizedStatus = normalizeStatus(user);
+
     const matchesDepartment =
       filterDepartment === "all" ||
       (user.department || "").toLowerCase() === filterDepartment.toLowerCase();
     const matchesStatus =
       filterStatus === "all" ||
-      (filterStatus === "active" && user.status === "active") ||
-      (filterStatus === "inactive" && user.status !== "active");
+      (filterStatus === "active" && normalizedStatus === "active") ||
+      (filterStatus === "inactive" && normalizedStatus !== "active");
 
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 
-  const filteredRequests = accountRequests.filter((request: any) => {
-    const matchesSearch =
-      (request.first_name || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (request.last_name || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (request.email_address || request.email || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+  const filteredRequests = accountRequests.filter((request) => {
+    const firstName = (request.first_name ?? "").toLowerCase();
+    const lastName = (request.last_name ?? "").toLowerCase();
+    const email = (request.email_address ?? request.email ?? "").toLowerCase();
+    const needle = searchTerm.toLowerCase();
 
-    return matchesSearch;
+    return (
+      firstName.includes(needle) ||
+      lastName.includes(needle) ||
+      email.includes(needle)
+    );
   });
+
+  const getPendingRequestRole = useCallback(
+    (request: AccountRequestListItem) => {
+      if (request.roleName && request.roleName.trim() !== "") {
+        return request.roleName;
+      }
+
+      if (request.roleId != null) {
+        const resolvedRole = roleLookup[request.roleId];
+        if (resolvedRole?.name) {
+          return resolvedRole.name;
+        }
+        return `Role ID: ${request.roleId}`;
+      }
+
+      return "N/A";
+    },
+    [roleLookup]
+  );
 
   return (
     <div className="space-y-6">
@@ -332,7 +751,7 @@ export default function UserManagementPage() {
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
             User Management
           </h1>
-          <p className={`${tw.subHeading} ${tw.textSecondary} mt-2`}>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>
             Manage users and account requests
           </p>
         </div>
@@ -348,6 +767,44 @@ export default function UserManagementPage() {
         </button>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {userStatsCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.name}
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: stat.color }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-3xl font-bold text-black">
+                        {stat.value}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {stat.name}
+                      </p>
+                    </div>
+                  </div>
+                  {stat.badge && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-800">
+                      {stat.badge}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-6 border-b border-gray-200">
         <button
@@ -355,20 +812,22 @@ export default function UserManagementPage() {
           className={`px-6 py-3 text-base font-medium border-b-2 transition-colors text-black`}
           style={{
             borderBottomColor:
-              activeTab === "users" ? color.primary.accent : "#92A6B0",
+              activeTab === "users"
+                ? color.primary.accent
+                : color.border.default,
           }}
         >
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             <span>Users</span>
             <span
-              className="px-2 py-0.5 rounded-full text-xs"
+              className="px-2 py-0.5 rounded-full text-xs text-white"
               style={{
                 backgroundColor:
                   activeTab === "users"
                     ? color.primary.accent
                     : color.text.muted,
-                color: activeTab === "users" ? "white" : "black",
+                color: "white",
               }}
             >
               {users.length}
@@ -380,7 +839,9 @@ export default function UserManagementPage() {
           className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors text-black`}
           style={{
             borderBottomColor:
-              activeTab === "requests" ? color.primary.accent : "#92A6B0",
+              activeTab === "requests"
+                ? color.primary.accent
+                : color.border.default,
           }}
         >
           <div className="flex items-center gap-2">
@@ -395,7 +856,7 @@ export default function UserManagementPage() {
                 color: "white",
               }}
             >
-              {accountRequests.filter((r) => r.force_password_reset).length}
+              {accountRequests.length}
             </span>
           </div>
         </button>
@@ -477,7 +938,7 @@ export default function UserManagementPage() {
             >
               <p className="font-medium mb-3">{errorState}</p>
               <button
-                onClick={loadData}
+                onClick={() => loadData({ skipCache: true })}
                 className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors font-medium"
                 style={{ backgroundColor: color.status.danger }}
               >
@@ -488,10 +949,10 @@ export default function UserManagementPage() {
         ) : activeTab === "users" ? (
           filteredUsers.length === 0 ? (
             <div className="text-center py-12">
-              <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {searchTerm ? "No Users Found" : "No Users"}
               </h3>
-              <p className={`${tw.textMuted} mb-6`}>
+              <p className="text-sm text-gray-600 mb-6">
                 {searchTerm
                   ? "Try adjusting your search criteria."
                   : "Create your first user to get started."}
@@ -553,278 +1014,275 @@ export default function UserManagementPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="hover:bg-gray-50/30 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div>
-                            <div
-                              className={`text-base font-semibold ${tw.textPrimary}`}
-                            >
-                              {user.first_name} {user.last_name}
+                    {filteredUsers.map((user) => {
+                      const normalizedStatus = normalizeStatus(user);
+                      const userIsActive = normalizedStatus === "active";
+                      const statusLabel = formatStatusLabel(normalizedStatus);
+                      const statusColor = getStatusColorToken(normalizedStatus);
+
+                      return (
+                        <tr
+                          key={user.id}
+                          className="hover:bg-gray-50/30 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleViewUser(user)}
+                                className="text-base font-semibold text-black transition-colors hover:underline"
+                              >
+                                {user.first_name} {user.last_name}
+                              </button>
+                              <div className={`text-sm ${tw.textMuted}`}>
+                                {user.email_address || user.email}
+                              </div>
                             </div>
-                            <div className={`text-sm ${tw.textMuted}`}>
-                              {user.email_address || user.email}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                            >
+                              {user.department || "N/A"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${
+                                userIsActive
+                                  ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                                  : `bg-[${statusColor}]/10 text-[${statusColor}]`
+                              }`}
+                            >
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className={`text-sm ${tw.textSecondary}`}>
+                              {new Date(user.created_at).toLocaleDateString(
+                                "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
-                          >
-                            {user.department || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${
-                              user.status === "active"
-                                ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
-                                : `bg-[${color.status.danger}]/10 text-[${color.status.danger}]`
-                            }`}
-                          >
-                            {user.status === "active" ? (
-                              <>Active</>
-                            ) : (
-                              <>Inactive</>
-                            )}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className={`text-sm ${tw.textSecondary}`}>
-                            {new Date(user.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <button
-                              onClick={() => handleToggleStatus(user)}
-                              disabled={loadingActions.toggling.has(user.id)}
-                              className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              style={{
-                                color:
-                                  user.status === "active"
-                                    ? color.status.danger
-                                    : color.status.success,
-                                backgroundColor: "transparent",
-                              }}
-                              title={
-                                loadingActions.toggling.has(user.id)
-                                  ? "Updating..."
-                                  : user.status === "active"
-                                  ? "Deactivate user"
-                                  : "Activate user"
-                              }
-                            >
-                              {loadingActions.toggling.has(user.id) ? (
-                                <LoadingSpinner
-                                  variant="modern"
-                                  size="sm"
-                                  color="primary"
-                                />
-                              ) : user.status === "active" ? (
-                                <Ban className="w-4 h-4 text-black" />
-                              ) : (
-                                <CheckCircle className="w-4 h-4 text-black" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleViewUser(user)}
-                              className="p-2 rounded-lg transition-colors"
-                              style={{
-                                color: color.primary.action,
-                                backgroundColor: "transparent",
-                              }}
-                              title="View user details"
-                            >
-                              <Eye className="w-4 h-4 text-black" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsModalOpen(true);
-                              }}
-                              className="p-2 rounded-lg transition-colors"
-                              style={{
-                                color: color.primary.action,
-                                backgroundColor: "transparent",
-                              }}
-                              title="Edit user"
-                            >
-                              <Edit className="w-4 h-4 text-black" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user)}
-                              disabled={loadingActions.deleting.has(user.id)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={
-                                loadingActions.deleting.has(user.id)
-                                  ? "Deleting..."
-                                  : "Delete user"
-                              }
-                            >
-                              {loadingActions.deleting.has(user.id) ? (
-                                <LoadingSpinner
-                                  variant="modern"
-                                  size="sm"
-                                  color="primary"
-                                />
-                              ) : (
-                                <Trash2 className="w-4 h-4 text-black" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => handleToggleStatus(user)}
+                                disabled={loadingActions.toggling.has(user.id)}
+                                className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{
+                                  color: userIsActive
+                                    ? deactivateColor
+                                    : activateColor,
+                                }}
+                                title={
+                                  loadingActions.toggling.has(user.id)
+                                    ? "Updating..."
+                                    : userIsActive
+                                    ? "Deactivate user"
+                                    : "Activate user"
+                                }
+                              >
+                                {loadingActions.toggling.has(user.id) ? (
+                                  <LoadingSpinner
+                                    variant="modern"
+                                    size="sm"
+                                    color="primary"
+                                  />
+                                ) : userIsActive ? (
+                                  <Ban className="w-4 h-4" />
+                                ) : (
+                                  <CheckCircle className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleViewUser(user)}
+                                className="p-2 rounded-lg transition-colors"
+                                style={{
+                                  color: color.primary.action,
+                                  backgroundColor: "transparent",
+                                }}
+                                title="View user details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setIsModalOpen(true);
+                                }}
+                                className="p-2 rounded-lg transition-colors"
+                                style={{
+                                  color: color.primary.action,
+                                  backgroundColor: "transparent",
+                                }}
+                                title="Edit user"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={loadingActions.deleting.has(user.id)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={
+                                  loadingActions.deleting.has(user.id)
+                                    ? "Deleting..."
+                                    : "Delete user"
+                                }
+                              >
+                                {loadingActions.deleting.has(user.id) ? (
+                                  <LoadingSpinner
+                                    variant="modern"
+                                    size="sm"
+                                    color="primary"
+                                  />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile Cards */}
               <div className="lg:hidden">
-                {filteredUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="p-4 border-b border-gray-200 last:border-b-0"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-base font-semibold ${tw.textPrimary} mb-1`}
-                      >
-                        {user.first_name} {user.last_name}
-                      </div>
-                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                        {user.email_address || user.email}
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
-                        >
-                          {user.department || "N/A"}
-                        </span>
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
-                            user.status === "active"
-                              ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
-                              : `bg-[${color.status.danger}]/10 text-[${color.status.danger}]`
-                          }`}
-                        >
-                          {user.status === "active" ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleToggleStatus(user)}
-                          disabled={loadingActions.toggling.has(user.id)}
-                          className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{
-                            color:
-                              user.status === "active"
-                                ? color.status.danger
-                                : color.status.success,
-                            backgroundColor: "transparent",
-                          }}
-                          title={
-                            loadingActions.toggling.has(user.id)
-                              ? "Updating..."
-                              : user.status === "active"
-                              ? "Deactivate user"
-                              : "Activate user"
-                          }
-                        >
-                          {loadingActions.toggling.has(user.id) ? (
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                            />
-                          ) : user.status === "active" ? (
-                            <Ban className="w-4 h-4 text-black" />
-                          ) : (
-                            <CheckCircle className="w-4 h-4 text-black" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleViewUser(user)}
-                          className="p-2 rounded-lg transition-colors flex flex-col items-center gap-1"
-                          style={{
-                            color: color.primary.action,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <Eye className="w-4 h-4 text-black" />
-                          <span className="text-xs">View</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsModalOpen(true);
-                          }}
-                          className="p-2 rounded-lg transition-colors flex flex-col items-center gap-1"
-                          style={{
-                            color: color.text.muted,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <Edit className="w-4 h-4 text-black" />
-                          <span className="text-xs">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsModalOpen(true);
-                          }}
-                          className="p-2 rounded-lg transition-colors"
-                          style={{
-                            color: color.primary.action,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <Edit className="w-4 h-4 text-black" />
-                          <span className="text-xs">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user)}
-                          disabled={loadingActions.deleting.has(user.id)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={
-                            loadingActions.deleting.has(user.id)
-                              ? "Deleting..."
-                              : "Delete user"
-                          }
-                        >
-                          {loadingActions.deleting.has(user.id) ? (
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                            />
-                          ) : (
-                            <Trash2 className="w-4 h-4 text-black" />
-                          )}
-                          <span className="text-xs">Delete</span>
-                        </button>
+                {filteredUsers.map((user) => {
+                  const normalizedStatus = normalizeStatus(user);
+                  const userIsActive = normalizedStatus === "active";
+                  const statusLabel = formatStatusLabel(normalizedStatus);
+                  const statusColor = getStatusColorToken(normalizedStatus);
+
+                  return (
+                    <div
+                      key={user.id}
+                      className="p-4 border-b border-gray-200 last:border-b-0"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-base font-semibold text-black mb-1">
+                          <button
+                            type="button"
+                            onClick={() => handleViewUser(user)}
+                            className="text-black hover:underline"
+                          >
+                            {user.first_name} {user.last_name}
+                          </button>
+                        </div>
+                        <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                          {user.email_address || user.email}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                          >
+                            {user.department || "N/A"}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
+                              userIsActive
+                                ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
+                                : `bg-[${statusColor}]/10 text-[${statusColor}]`
+                            }`}
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            disabled={loadingActions.toggling.has(user.id)}
+                            className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                              color: userIsActive
+                                ? deactivateColor
+                                : activateColor,
+                            }}
+                            title={
+                              loadingActions.toggling.has(user.id)
+                                ? "Updating..."
+                                : userIsActive
+                                ? "Deactivate user"
+                                : "Activate user"
+                            }
+                          >
+                            {loadingActions.toggling.has(user.id) ? (
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                              />
+                            ) : userIsActive ? (
+                              <Ban className="w-4 h-4" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleViewUser(user)}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{
+                              color: color.primary.action,
+                              backgroundColor: "transparent",
+                            }}
+                            title="View user details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsModalOpen(true);
+                            }}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{
+                              color: color.primary.action,
+                              backgroundColor: "transparent",
+                            }}
+                            title="Edit user"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={loadingActions.deleting.has(user.id)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={
+                              loadingActions.deleting.has(user.id)
+                                ? "Deleting..."
+                                : "Delete user"
+                            }
+                          >
+                            {loadingActions.deleting.has(user.id) ? (
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                              />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )
         ) : // Account Requests Tab
         filteredRequests.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No Pending Requests
             </h3>
             <p className={`${tw.textMuted}`}>
@@ -842,215 +1300,252 @@ export default function UserManagementPage() {
                 >
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Applicant
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested Role
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested
                     </th>
                     <th
-                      className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredRequests.map((request: any) => (
-                    <tr
-                      key={request.id || request.requestId || request.user_id}
-                      className="hover:bg-gray-50/30 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <div
-                            className={`text-base font-semibold ${tw.textPrimary}`}
-                          >
-                            {request.first_name} {request.last_name}
+                  {filteredRequests.map((request, index) => {
+                    const requestId = resolveAccountRequestId(request);
+                    const requestKey =
+                      requestId ??
+                      request.user_id ??
+                      `${
+                        request.email ?? request.email_address ?? "request"
+                      }-${index}`;
+                    const approvingLoading =
+                      typeof requestId === "number" &&
+                      loadingActions.approving.has(requestId);
+                    const rejectingLoading =
+                      typeof requestId === "number" &&
+                      loadingActions.rejecting.has(requestId);
+                    const actionDisabled = typeof requestId !== "number";
+                    const fullName =
+                      [request.first_name, request.last_name]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim() || "Unknown";
+                    const requestEmail =
+                      request.email_address ??
+                      request.email ??
+                      request.private_email_address ??
+                      "N/A";
+                    const requestDate =
+                      request.created_at ?? request.created_on;
+                    const formattedDate = requestDate
+                      ? new Date(requestDate).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "N/A";
+                    const requestRole = getPendingRequestRole(request);
+
+                    return (
+                      <tr
+                        key={requestKey}
+                        className="hover:bg-gray-50/30 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div>
+                            <div
+                              className={`text-base font-semibold ${tw.textPrimary}`}
+                            >
+                              {fullName}
+                            </div>
+                            <div className={`text-sm ${tw.textMuted}`}>
+                              {requestEmail}
+                            </div>
                           </div>
-                          <div className={`text-sm ${tw.textMuted}`}>
-                            {request.email_address ||
-                              request.email ||
-                              request.private_email_address}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                          >
+                            {requestRole}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className={`text-sm ${tw.textSecondary}`}>
+                            {formattedDate}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
-                        >
-                          {request.role || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className={`text-sm ${tw.textSecondary}`}>
-                          {request.created_at || request.created_on
-                            ? new Date(
-                                request.created_at || request.created_on
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handleApproveRequest(request)}
-                            disabled={loadingActions.approving.has(
-                              request.id || request.requestId || request.user_id
-                            )}
-                            className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={
-                              loadingActions.approving.has(
-                                request.id ||
-                                  request.requestId ||
-                                  request.user_id
-                              )
-                                ? "Approving..."
-                                : "Approve request"
-                            }
-                          >
-                            {loadingActions.approving.has(
-                              request.id || request.requestId || request.user_id
-                            ) ? (
-                              <LoadingSpinner
-                                variant="modern"
-                                size="sm"
-                                color="primary"
-                              />
-                            ) : (
-                              <UserCheck className="w-4 h-4 text-black" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleRejectRequest(request)}
-                            disabled={loadingActions.rejecting.has(
-                              request.id || request.requestId || request.user_id
-                            )}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={
-                              loadingActions.rejecting.has(
-                                request.id ||
-                                  request.requestId ||
-                                  request.user_id
-                              )
-                                ? "Rejecting..."
-                                : "Reject request"
-                            }
-                          >
-                            {loadingActions.rejecting.has(
-                              request.id || request.requestId || request.user_id
-                            ) ? (
-                              <LoadingSpinner
-                                variant="modern"
-                                size="sm"
-                                color="primary"
-                              />
-                            ) : (
-                              <UserX className="w-4 h-4 text-black" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => handleApproveRequest(request)}
+                              disabled={actionDisabled || approvingLoading}
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={
+                                actionDisabled
+                                  ? "Missing request identifier"
+                                  : approvingLoading
+                                  ? "Approving..."
+                                  : "Approve request"
+                              }
+                            >
+                              {approvingLoading ? (
+                                <LoadingSpinner
+                                  variant="modern"
+                                  size="sm"
+                                  color="primary"
+                                />
+                              ) : (
+                                <UserCheck className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleRejectRequest(request)}
+                              disabled={actionDisabled || rejectingLoading}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={
+                                actionDisabled
+                                  ? "Missing request identifier"
+                                  : rejectingLoading
+                                  ? "Rejecting..."
+                                  : "Reject request"
+                              }
+                            >
+                              {rejectingLoading ? (
+                                <LoadingSpinner
+                                  variant="modern"
+                                  size="sm"
+                                  color="primary"
+                                />
+                              ) : (
+                                <UserX className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Cards */}
             <div className="lg:hidden">
-              {filteredRequests.map((request: any) => (
-                <div
-                  key={request.id || request.requestId || request.user_id}
-                  className="p-4 border-b border-gray-200 last:border-b-0"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={`text-base font-semibold ${tw.textPrimary} mb-1`}
-                    >
-                      {request.first_name} {request.last_name}
-                    </div>
-                    <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                      {request.email_address ||
-                        request.email ||
-                        request.private_email_address}
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+              {filteredRequests.map((request, index) => {
+                const requestId = resolveAccountRequestId(request);
+                const requestKey =
+                  requestId ??
+                  request.user_id ??
+                  `${
+                    request.email ?? request.email_address ?? "request"
+                  }-${index}`;
+                const approvingLoading =
+                  typeof requestId === "number" &&
+                  loadingActions.approving.has(requestId);
+                const rejectingLoading =
+                  typeof requestId === "number" &&
+                  loadingActions.rejecting.has(requestId);
+                const actionDisabled = typeof requestId !== "number";
+                const fullName =
+                  [request.first_name, request.last_name]
+                    .filter(Boolean)
+                    .join(" ")
+                    .trim() || "Unknown";
+                const requestEmail =
+                  request.email_address ??
+                  request.email ??
+                  request.private_email_address ??
+                  "N/A";
+                const requestRole = getPendingRequestRole(request);
+
+                return (
+                  <div
+                    key={requestKey}
+                    className="p-4 border-b border-gray-200 last:border-b-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-base font-semibold ${tw.textPrimary} mb-1`}
                       >
-                        {request.role || "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-end space-x-2">
-                      <button
-                        onClick={() => handleApproveRequest(request)}
-                        disabled={loadingActions.approving.has(
-                          request.id || request.requestId || request.user_id
-                        )}
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loadingActions.approving.has(
-                          request.id || request.requestId || request.user_id
-                        ) ? (
-                          <>
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                              className="mr-1"
-                            />
-                            Approving...
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-4 h-4 mr-1 text-black" />
-                            Approve
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleRejectRequest(request)}
-                        disabled={loadingActions.rejecting.has(
-                          request.id || request.requestId || request.user_id
-                        )}
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loadingActions.rejecting.has(
-                          request.id || request.requestId || request.user_id
-                        ) ? (
-                          <>
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                              className="mr-1"
-                            />
-                            Rejecting...
-                          </>
-                        ) : (
-                          <>
-                            <UserX className="w-4 h-4 mr-1 text-black" />
-                            Reject
-                          </>
-                        )}
-                      </button>
+                        {fullName}
+                      </div>
+                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                        {requestEmail}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                        >
+                          {requestRole}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => handleApproveRequest(request)}
+                          disabled={actionDisabled || approvingLoading}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {approvingLoading ? (
+                            <>
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                                className="mr-1"
+                              />
+                              Approving...
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-1" />
+                              Approve
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleRejectRequest(request)}
+                          disabled={actionDisabled || rejectingLoading}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {rejectingLoading ? (
+                            <>
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                                className="mr-1"
+                              />
+                              Rejecting...
+                            </>
+                          ) : (
+                            <>
+                              <UserX className="w-4 h-4 mr-1" />
+                              Reject
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
@@ -1067,7 +1562,7 @@ export default function UserManagementPage() {
         onUserSaved={() => {
           setIsModalOpen(false);
           setSelectedUser(null);
-          loadData();
+          loadData({ skipCache: true }); // Skip cache to get fresh data
         }}
       />
     </div>

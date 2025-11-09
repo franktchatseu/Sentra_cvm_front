@@ -759,9 +759,10 @@ class UserService {
   /**
    * DELETE /users/:id - Delete user
    */
-  async deleteUser(id: number): Promise<void> {
+  async deleteUser(id: number, deletedBy: number): Promise<void> {
     return this.request<void>(`/${id}`, {
       method: "DELETE",
+      body: JSON.stringify({ deleted_by: deletedBy }),
     });
   }
 }

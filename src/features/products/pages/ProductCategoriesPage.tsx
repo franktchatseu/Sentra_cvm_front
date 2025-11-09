@@ -11,8 +11,13 @@ import {
   X,
   Filter,
   XCircle,
+  FolderOpen,
+  CheckCircle,
+  Archive,
+  Star,
 } from "lucide-react";
 import {
+  CategoryStats,
   ProductCategory,
   ProductCountByCategory,
 } from "../types/productCategory";
@@ -31,7 +36,40 @@ interface ProductsModalProps {
   category: ProductCategory | null;
   onRefreshCategories: () => void;
   onRefreshProductCounts: () => void;
+  allProducts: Product[];
+  refreshAllProducts: () => Promise<Product[]>;
 }
+
+const fetchAllProductsByCategory = async (
+  categoryId: number
+): Promise<Product[]> => {
+  const pageSize = 100;
+  let offset = 0;
+  const collected: Product[] = [];
+
+  while (true) {
+    const response = await productService.getProductsByCategory(categoryId, {
+      limit: pageSize,
+      offset,
+      skipCache: true,
+    });
+
+    const batch = (response.data || []) as Product[];
+    collected.push(...batch);
+
+    const hasMore =
+      batch.length === pageSize &&
+      (response.pagination?.hasMore ?? batch.length === pageSize);
+
+    if (!hasMore) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return collected;
+};
 
 function ProductsModal({
   isOpen,
@@ -39,6 +77,8 @@ function ProductsModal({
   category,
   onRefreshCategories,
   onRefreshProductCounts,
+  allProducts,
+  refreshAllProducts,
 }: ProductsModalProps) {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
@@ -48,15 +88,21 @@ function ProductsModal({
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [loadingAllProducts, setLoadingAllProducts] = useState(false);
+  const [removingProductId, setRemovingProductId] = useState<
+    number | string | null
+  >(null);
 
   useEffect(() => {
     if (isOpen && category) {
-      loadProducts();
-      setSearchTerm("");
+      // Make sure we fetch a fresh snapshot before deriving modal data
+      const ensureDataAndLoad = async () => {
+        await refreshAllProducts();
+        loadProducts();
+        setSearchTerm("");
+      };
+      ensureDataAndLoad();
     }
-  }, [isOpen, category]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, category, refreshAllProducts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (searchTerm) {
@@ -77,14 +123,23 @@ function ProductsModal({
     try {
       setLoading(true);
       setError(null);
-      const response = await productService.getProductsByCategory(
-        Number(category.id),
-        {
-          limit: 100,
-          skipCache: true,
-        }
+
+      const snapshot = allProducts.length
+        ? allProducts
+        : await refreshAllProducts();
+
+      const categoryId = Number(category.id);
+      const productsForCategory = snapshot.filter(
+        (product: Product) => Number(product.category_id) === categoryId
       );
-      setProducts(response.data || []);
+
+      console.log(
+        "[ProductsModal] Products derived from all-products snapshot:",
+        productsForCategory.length,
+        productsForCategory
+      );
+
+      setProducts(productsForCategory);
     } catch (err) {
       console.error("Failed to load products:", err);
       setError(err instanceof Error ? err.message : "Failed to load products");
@@ -98,24 +153,6 @@ function ProductsModal({
   //     navigate(`/dashboard/products/create?categoryId=${category.id}`);
   //   }
   // };
-
-  // Load all products for assignment modal
-  const loadAllProducts = async () => {
-    try {
-      setLoadingAllProducts(true);
-      const response = await productService.getAllProducts({
-        limit: 1000,
-        skipCache: true,
-      });
-      const productsData = (response.data || []) as Product[];
-      setAllProducts(productsData);
-    } catch (err) {
-      console.error("Failed to load all products:", err);
-      setAllProducts([]);
-    } finally {
-      setLoadingAllProducts(false);
-    }
-  };
 
   // Get assigned product IDs (products in this category)
   const assignedProductIds = products
@@ -159,6 +196,51 @@ function ProductsModal({
     return { success, failed, errors };
   };
 
+  const handleRemoveProduct = async (productId: number | string) => {
+    if (!category) return;
+
+    try {
+      setRemovingProductId(productId);
+      const productResponse = await productService.getProductById(
+        Number(productId),
+        true
+      );
+      const productData = productResponse.data;
+
+      if (!productData) {
+        showError("Product details not found");
+        return;
+      }
+
+      const primaryCategoryId = Number(productData.category_id);
+      if (
+        !Number.isNaN(primaryCategoryId) &&
+        primaryCategoryId === Number(category.id)
+      ) {
+        showError(
+          "Cannot remove this product because this catalog is its primary category"
+        );
+        return;
+      }
+
+      await productService.updateProduct(Number(productId), {
+        category_id: null,
+      });
+      showToast("Product removed from catalog");
+      onRefreshCategories();
+      onRefreshProductCounts();
+      await loadProducts();
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Failed to remove product from catalog"
+      );
+    } finally {
+      setRemovingProductId(null);
+    }
+  };
+
   return (
     <>
       {isOpen && category && (
@@ -174,8 +256,8 @@ function ProductsModal({
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                   <div>
-                    <h2 className={`${tw.subHeading} text-gray-900`}>
-                      Products in {category.name}
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Products in "{category.name}"
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
                       {products.length} product
@@ -230,10 +312,7 @@ function ProductsModal({
                   ) : error ? (
                     <div className="text-center py-8">
                       <p className="text-red-600 mb-4">{error}</p>
-                      <button
-                        onClick={loadProducts}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
+                      <button onClick={loadProducts} className={tw.button}>
                         Try Again
                       </button>
                     </div>
@@ -289,6 +368,15 @@ function ProductsModal({
                             >
                               View
                             </button>
+                            <button
+                              onClick={() => handleRemoveProduct(product.id)}
+                              disabled={removingProductId === product.id}
+                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+                            >
+                              {removingProductId === product.id
+                                ? "Removing..."
+                                : "Remove"}
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -327,7 +415,7 @@ export default function ProductCatalogsPage() {
   const [selectedCategory, setSelectedCategory] =
     useState<ProductCategory | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [, setAllProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categoryProductCounts, setCategoryProductCounts] = useState<
     Record<
       number,
@@ -338,6 +426,8 @@ export default function ProductCatalogsPage() {
       }
     >
   >({});
+  const [stats, setStats] = useState<CategoryStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // Filter states
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -389,8 +479,16 @@ export default function ProductCatalogsPage() {
     });
   };
 
+  const formatNumber = (value?: number | null) =>
+    typeof value === "number" && !Number.isNaN(value)
+      ? value.toLocaleString()
+      : "...";
+
   const loadCategoryProductCounts = async () => {
     try {
+      console.log(
+        "[ProductCatalogs] Fetching counts from /product-categories/analytics/product-count?skipCache=true"
+      );
       const response = await productCategoryService.getProductCountByCategory({
         limit: 100,
         skipCache: true,
@@ -419,11 +517,49 @@ export default function ProductCatalogsPage() {
     }
   };
 
+  const loadStats = async (skipCache = false) => {
+    try {
+      setStatsLoading(true);
+      console.log(
+        "[ProductCatalogs] Fetching stats from /product-categories/stats",
+        { skipCache }
+      );
+      const response = await productCategoryService.getStats(skipCache);
+      const data = response.data as CategoryStats | undefined;
+
+      if (data) {
+        const parsed: CategoryStats = {
+          total_categories: Number(data.total_categories) || 0,
+          active_categories: Number(data.active_categories) || 0,
+          inactive_categories: Number(data.inactive_categories) || 0,
+          root_categories: Number(data.root_categories) || 0,
+          max_depth: Number(data.max_depth) || 0,
+          categories_with_products: Number(data.categories_with_products) || 0,
+          empty_categories: Number(data.empty_categories) || 0,
+          average_products_per_category:
+            Number(data.average_products_per_category) || 0,
+        };
+        setStats(parsed);
+      } else {
+        setStats(null);
+      }
+    } catch (err) {
+      console.error("Failed to load product catalog stats:", err);
+      setStats(null);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   const loadCategories = async (skipCache = false) => {
     try {
       setLoading(true);
       setError(null);
 
+      console.log(
+        "[ProductCatalogs] Fetching categories from /product-categories",
+        { skipCache }
+      );
       // Always load all categories for client-side filtering
       const response = await productCategoryService.getAllCategories({
         limit: 100,
@@ -446,7 +582,7 @@ export default function ProductCatalogsPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      await loadCategories(true); // Always skip cache for fresh data
+      await Promise.all([loadStats(true), loadCategories(true)]); // Always skip cache for fresh data
       await loadAllProducts(); // Still load products for assignment modal
     };
     loadData();
@@ -460,6 +596,37 @@ export default function ProductCatalogsPage() {
       });
       const products = response.data || [];
       setAllProducts(products);
+
+      const aggregatedCounts: Record<
+        number,
+        {
+          total_products: number;
+          active_products: number;
+          inactive_products: number;
+        }
+      > = {};
+
+      products.forEach((product: Product) => {
+        const categoryId = Number(product.category_id);
+        if (Number.isNaN(categoryId)) {
+          return;
+        }
+        if (!aggregatedCounts[categoryId]) {
+          aggregatedCounts[categoryId] = {
+            total_products: 0,
+            active_products: 0,
+            inactive_products: 0,
+          };
+        }
+        aggregatedCounts[categoryId].total_products += 1;
+        if (product.is_active) {
+          aggregatedCounts[categoryId].active_products += 1;
+        } else {
+          aggregatedCounts[categoryId].inactive_products += 1;
+        }
+      });
+
+      setCategoryProductCounts((prev) => ({ ...prev, ...aggregatedCounts }));
       return products;
     } catch (err) {
       console.error("Failed to load products for assignment:", err);
@@ -470,6 +637,7 @@ export default function ProductCatalogsPage() {
 
   const handleCategoryCreated = () => {
     loadCategories();
+    loadStats(true);
   };
 
   const handleEditCatalog = (category: ProductCategory) => {
@@ -500,7 +668,7 @@ export default function ProductCatalogsPage() {
       setEditingCatalog(null);
       setEditName("");
       setEditDescription("");
-      loadCategories();
+      await Promise.all([loadCategories(), loadStats(true)]);
     } catch (err) {
       console.error("Failed to update category:", err);
       showError(
@@ -529,7 +697,7 @@ export default function ProductCatalogsPage() {
         "Catalog Deleted",
         `"${category.name}" has been deleted successfully.`
       );
-      loadCategories();
+      await Promise.all([loadCategories(true), loadStats(true)]);
     } catch (err) {
       console.error("Failed to delete category:", err);
       showError(
@@ -614,6 +782,76 @@ export default function ProductCatalogsPage() {
     );
   });
 
+  const totalCatalogs = stats?.total_categories ?? categories.length;
+  const activeCatalogs =
+    stats?.active_categories ??
+    categories.filter((cat) => cat.is_active).length;
+  const inactiveCatalogs =
+    stats?.inactive_categories ?? Math.max(0, totalCatalogs - activeCatalogs);
+  const unusedCatalogs =
+    stats?.empty_categories ??
+    categories.filter(
+      (cat) => (categoryProductCounts[cat.id]?.total_products || 0) === 0
+    ).length;
+
+  const mostPopulatedCategoryRaw = categories.reduce<{
+    name: string;
+    count: number;
+  } | null>((acc, category) => {
+    const count = categoryProductCounts[category.id]?.total_products || 0;
+    if (!acc || count > acc.count) {
+      return {
+        name: category.name,
+        count,
+      };
+    }
+    return acc;
+  }, null);
+
+  const mostPopulatedCategory =
+    mostPopulatedCategoryRaw && mostPopulatedCategoryRaw.count > 0
+      ? mostPopulatedCategoryRaw
+      : null;
+
+  const catalogStatsCards = [
+    {
+      name: "Total Catalogs",
+      value: formatNumber(totalCatalogs),
+      icon: FolderOpen,
+      color: color.tertiary.tag1,
+    },
+    {
+      name: "Active Catalogs",
+      value: formatNumber(activeCatalogs),
+      icon: CheckCircle,
+      color: color.tertiary.tag4,
+    },
+    {
+      name: "Inactive Catalogs",
+      value: formatNumber(inactiveCatalogs),
+      icon: XCircle,
+      color: color.tertiary.tag3,
+    },
+    {
+      name: "Unused Catalogs",
+      value: formatNumber(unusedCatalogs),
+      icon: Archive,
+      color: color.tertiary.tag2,
+    },
+    {
+      name: "Most Popular",
+      value: mostPopulatedCategory?.name || "None",
+      icon: Star,
+      color: color.primary.accent,
+      description: `${formatNumber(
+        mostPopulatedCategory?.count ?? 0
+      )} products`,
+      title: mostPopulatedCategory?.name || undefined,
+      valueClass: "text-xl",
+      loading: false,
+    },
+  ];
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -661,6 +899,55 @@ export default function ProductCatalogsPage() {
             Create Catalog
           </button>
         </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {catalogStatsCards.map((stat) => {
+          const Icon = stat.icon;
+          const valueClass = stat.valueClass ?? "text-3xl";
+          const shouldMask = stat.loading ?? true;
+          const displayValue =
+            statsLoading && shouldMask ? "..." : stat.value ?? "...";
+
+          return (
+            <div
+              key={stat.name}
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2.5 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: stat.color || color.primary.accent,
+                      }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p
+                        className={`${valueClass} font-bold ${tw.textPrimary}`}
+                        title={stat.title}
+                      >
+                        {displayValue}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {stat.name}
+                      </p>
+                      {stat.description && (
+                        <p className={`text-sm ${tw.textSecondary}`}>
+                          {stat.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Search and Filters */}
@@ -883,8 +1170,8 @@ export default function ProductCatalogsPage() {
               key={category.id}
               className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex-1">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className={`${tw.cardHeading} text-gray-900 flex-1`}>
                   {category.name}
                 </h3>
                 <div className="flex items-center space-x-1">
@@ -905,7 +1192,9 @@ export default function ProductCatalogsPage() {
                 </div>
               </div>
               {category.description && (
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+                <p
+                  className={`${tw.cardSubHeading} text-gray-500 mb-4 line-clamp-2`}
+                >
                   {category.description}
                 </p>
               )}
@@ -1093,6 +1382,8 @@ export default function ProductCatalogsPage() {
         category={selectedCategory}
         onRefreshCategories={loadCategories}
         onRefreshProductCounts={loadCategoryProductCounts}
+        allProducts={allProducts}
+        refreshAllProducts={loadAllProducts}
       />
 
       {/* Advanced Filters Side Modal */}

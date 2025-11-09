@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, X, Target, ArrowLeft, Eye, Grid, List } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, ArrowLeft, Eye, Grid, List } from 'lucide-react';
 import { color, tw } from '../../../shared/utils/utils';
 import { useConfirm } from '../../../contexts/ConfirmContext';
 import { useToast } from '../../../contexts/ToastContext';
@@ -11,10 +11,13 @@ import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
 interface CampaignCategory {
     id: number;
     name: string;
-    description?: string;
-    campaign_count?: number;
-    created_at?: string;
+    description: string | null;
+    parent_category_id: number | null;
+    display_order: number;
+    is_active: boolean;
+    created_at: string;
     updated_at?: string;
+    campaign_count?: number;
 }
 
 interface CategoryModalProps {
@@ -181,9 +184,10 @@ export default function CampaignCategoriesPage() {
     const [allCampaigns, setAllCampaigns] = useState<Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>>([]);
 
     // Campaign assignment state
-    const [showAssignDropdown, setShowAssignDropdown] = useState(false);
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [unassignedCampaigns, setUnassignedCampaigns] = useState<Array<{ id: string; name: string; description?: string }>>([]);
     const [assigningCampaign, setAssigningCampaign] = useState(false);
+    const [assignSearchTerm, setAssignSearchTerm] = useState('');
 
     // Debounce search term
     useEffect(() => {
@@ -217,10 +221,7 @@ export default function CampaignCategoriesPage() {
                 campaignCategoryId === String(categoryId) ||
                 Number(campaignCategoryId) === categoryId;
 
-            // Exclude archived campaigns from count
-            const isNotArchived = campaign.status !== 'archived';
-
-            return matchesCategory && isNotArchived;
+            return matchesCategory;
         }).length;
 
         return count;
@@ -234,16 +235,14 @@ export default function CampaignCategoriesPage() {
                 skipCache: skipCache
             });
 
-            // Handle response structure - might be array or object with data property
-            const categoriesData = Array.isArray(response)
-                ? response
-                : (response as Record<string, unknown>)?.data || [];
+            // Handle new response structure with success and data properties
+            const categoriesData = response.success && response.data ? response.data : [];
 
             // Use provided campaigns data or fall back to state
             const campaignsToUse = campaignsData || allCampaigns;
 
             // Add campaign count to each category
-            const categoriesWithCounts = (categoriesData as CampaignCategory[]).map(category => {
+            const categoriesWithCounts = categoriesData.map(category => {
                 const count = getCampaignCountForCategory(category.id, campaignsToUse);
                 return {
                     ...category,
@@ -335,15 +334,33 @@ export default function CampaignCategoriesPage() {
             setIsCampaignsModalOpen(true);
             setCampaignsLoading(true);
 
-            // Fetch campaigns for this category
-            const response = await campaignService.getAllCampaigns({
-                categoryId: category.id,
-                pageSize: 50 // Get more campaigns to show in modal
+            // Fetch campaigns for this category using the correct API
+            const response = await campaignService.getCampaigns({
+                limit: 50,
+                offset: 0,
+                skipCache: true
             });
-            // Filter out archived campaigns
-            const allCampaigns = (response.data as Array<{ id: string; name: string; description?: string; status?: string; approval_status?: string; start_date?: string; end_date?: string; category_id?: number }>) || [];
-            const activeCampaigns = allCampaigns.filter(campaign => campaign.status !== 'archived');
-            setCampaigns(activeCampaigns);
+            
+            // Filter campaigns by category_id on the client side for now
+            // Backend might need to add category_id filter support
+            const allCampaigns = response.data || [];
+            const categoryCampaigns = allCampaigns.filter(campaign => 
+                campaign.category_id === category.id
+            );
+            
+            // Transform to expected format
+            const formattedCampaigns = categoryCampaigns.map(campaign => ({
+                id: String(campaign.id),
+                name: campaign.name,
+                description: campaign.description || undefined,
+                status: campaign.status,
+                approval_status: campaign.approval_status,
+                start_date: campaign.start_date || undefined,
+                end_date: campaign.end_date || undefined,
+                category_id: campaign.category_id || undefined
+            }));
+            
+            setCampaigns(formattedCampaigns);
         } catch (err) {
             console.error('Failed to fetch campaigns:', err);
             showError('Failed to load campaigns', 'Please try again later.');
@@ -355,16 +372,27 @@ export default function CampaignCategoriesPage() {
 
     const loadUnassignedCampaigns = async () => {
         try {
-            const response = await campaignService.getAllCampaigns({
-                pageSize: 100
+            const response = await campaignService.getCampaigns({
+                limit: 100,
+                offset: 0,
+                skipCache: true
             });
-            const allCampaignsData = (response.data as Array<{ id: string; name: string; description?: string; category_id?: number | null; status?: string }>) || [];
-            // Filter campaigns that are NOT in this catalog (and not archived)
-            const availableCampaigns = allCampaignsData.filter(campaign => {
-                const isNotInThisCategory = Number(campaign.category_id) !== Number(selectedCategory?.id);
-                const isNotArchived = campaign.status !== 'archived';
-                return isNotInThisCategory && isNotArchived;
-            });
+            
+            const allCampaignsData = response.data || [];
+            
+            // Filter campaigns that are NOT in this catalog
+            const availableCampaigns = allCampaignsData
+                .filter(campaign => {
+                    const isNotInThisCategory = campaign.category_id !== selectedCategory?.id;
+                    return isNotInThisCategory;
+                })
+                .map(campaign => ({
+                    id: String(campaign.id),
+                    name: campaign.name,
+                    description: campaign.description || undefined,
+                    category_id: campaign.category_id || null
+                }));
+                
             setUnassignedCampaigns(availableCampaigns);
         } catch (err) {
             console.error('Failed to load campaigns:', err);
@@ -383,7 +411,7 @@ export default function CampaignCategoriesPage() {
             });
 
             showToast('Campaign assigned successfully!');
-            setShowAssignDropdown(false);
+            setIsAssignModalOpen(false);
 
             // Reload campaigns for this category
             await handleViewCampaigns(selectedCategory);
@@ -546,6 +574,13 @@ export default function CampaignCategoriesPage() {
                                     >
                                         <Trash2 className="w-4 h-4 text-red-600" />
                                     </button>
+                                    <button
+                                        onClick={() => handleViewCampaigns(category)}
+                                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                        title="View & Assign Campaigns"
+                                    >
+                                        <Eye className="w-4 h-4 text-gray-600" />
+                                    </button>
                                 </div>
                             </div>
 
@@ -553,19 +588,6 @@ export default function CampaignCategoriesPage() {
                             {category.description && (
                                 <p className="text-sm text-gray-500 mb-4 line-clamp-2">{category.description}</p>
                             )}
-
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                                <span className="text-sm text-gray-600">
-                                    {category.campaign_count || 0} campaign{category.campaign_count !== 1 ? 's' : ''}
-                                </span>
-                                <button
-                                    onClick={() => handleViewCampaigns(category)}
-                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                    title="View & Assign Campaigns"
-                                >
-                                    <Eye className="w-4 h-4 text-gray-600" />
-                                </button>
-                            </div>
                         </div>
                     ))}
                 </div>
@@ -579,9 +601,9 @@ export default function CampaignCategoriesPage() {
                             <div className="flex items-center gap-4 flex-1">
                                 <div className="flex-1">
                                     <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
-                                    <p className="text-sm text-gray-600 mt-0.5">
-                                        {category.campaign_count || 0} campaign{category.campaign_count !== 1 ? 's' : ''}
-                                    </p>
+                                    {category.description && (
+                                        <p className="text-sm text-gray-600 mt-0.5 line-clamp-1">{category.description}</p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -642,7 +664,7 @@ export default function CampaignCategoriesPage() {
                                     setIsCampaignsModalOpen(false);
                                     setSelectedCategory(null);
                                     setCampaigns([]);
-                                    setShowAssignDropdown(false);
+                                    setIsAssignModalOpen(false);
                                 }}
                                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             >
@@ -662,48 +684,17 @@ export default function CampaignCategoriesPage() {
                                     />
                                 </div>
                                 <div className="flex gap-3">
-                                    <div className="relative">
-                                        <button
-                                            onClick={() => {
-                                                if (!showAssignDropdown) {
-                                                    loadUnassignedCampaigns();
-                                                }
-                                                setShowAssignDropdown(!showAssignDropdown);
-                                            }}
-                                            className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                                            disabled={assigningCampaign}
-                                        >
-                                            <Plus className="w-4 h-4 mr-2" />
-                                            Assign Campaign
-                                        </button>
-
-                                        {/* Dropdown for available campaigns */}
-                                        {showAssignDropdown && (
-                                            <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-                                                {unassignedCampaigns.length === 0 ? (
-                                                    <div className="p-4 text-center text-gray-500">
-                                                        No available campaigns to assign
-                                                    </div>
-                                                ) : (
-                                                    <div className="py-2">
-                                                        {unassignedCampaigns.map((campaign) => (
-                                                            <button
-                                                                key={campaign.id}
-                                                                onClick={() => handleAssignCampaign(campaign.id)}
-                                                                disabled={assigningCampaign}
-                                                                className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 border-b border-gray-100 last:border-0"
-                                                            >
-                                                                <div className="font-medium text-gray-900">{campaign.name}</div>
-                                                                {campaign.description && (
-                                                                    <div className="text-sm text-gray-600 mt-1 line-clamp-2">{campaign.description}</div>
-                                                                )}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            loadUnassignedCampaigns();
+                                            setIsAssignModalOpen(true);
+                                        }}
+                                        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                                        disabled={assigningCampaign}
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Assign Campaign
+                                    </button>
 
                                     {/* <button
                                         onClick={handleCreateNewCampaign}
@@ -777,6 +768,134 @@ export default function CampaignCategoriesPage() {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Assign Campaign Modal */}
+            {isAssignModalOpen && selectedCategory && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Assign Campaign to {selectedCategory.name}
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Select a campaign to assign to this category
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsAssignModalOpen(false);
+                                    setAssignSearchTerm('');
+                                }}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="px-6 py-4 border-b border-gray-200">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search campaigns by name or description..."
+                                    value={assignSearchTerm}
+                                    onChange={(e) => setAssignSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Campaigns List */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {unassignedCampaigns.filter(campaign => 
+                                assignSearchTerm === '' || 
+                                campaign.name.toLowerCase().includes(assignSearchTerm.toLowerCase()) ||
+                                (campaign.description && campaign.description.toLowerCase().includes(assignSearchTerm.toLowerCase()))
+                            ).length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                                        <Plus className="w-8 h-8 text-gray-400" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                        {assignSearchTerm ? 'No campaigns found' : 'No available campaigns'}
+                                    </h3>
+                                    <p className="text-sm text-gray-500 max-w-sm">
+                                        {assignSearchTerm 
+                                            ? 'Try adjusting your search terms' 
+                                            : 'All campaigns are already assigned to categories'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-3">
+                                    {unassignedCampaigns
+                                        .filter(campaign => 
+                                            assignSearchTerm === '' || 
+                                            campaign.name.toLowerCase().includes(assignSearchTerm.toLowerCase()) ||
+                                            (campaign.description && campaign.description.toLowerCase().includes(assignSearchTerm.toLowerCase()))
+                                        )
+                                        .map((campaign) => (
+                                            <button
+                                                key={campaign.id}
+                                                onClick={() => handleAssignCampaign(campaign.id)}
+                                                disabled={assigningCampaign}
+                                                className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                                            >
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                                        <h4 className="font-semibold text-base text-gray-900 group-hover:text-blue-700 transition-colors truncate mb-1">
+                                                            {campaign.name}
+                                                        </h4>
+                                                        {campaign.description && (
+                                                            <p className="text-sm text-gray-600 line-clamp-2">
+                                                                {campaign.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-shrink-0 self-center">
+                                                        <div className="p-2 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
+                                                            <Plus className="w-5 h-5 text-blue-600" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))
+                                    }
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-gray-600">
+                                    {unassignedCampaigns.filter(campaign => 
+                                        assignSearchTerm === '' || 
+                                        campaign.name.toLowerCase().includes(assignSearchTerm.toLowerCase()) ||
+                                        (campaign.description && campaign.description.toLowerCase().includes(assignSearchTerm.toLowerCase()))
+                                    ).length} campaign{unassignedCampaigns.filter(campaign => 
+                                        assignSearchTerm === '' || 
+                                        campaign.name.toLowerCase().includes(assignSearchTerm.toLowerCase()) ||
+                                        (campaign.description && campaign.description.toLowerCase().includes(assignSearchTerm.toLowerCase()))
+                                    ).length !== 1 ? 's' : ''} available
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        setIsAssignModalOpen(false);
+                                        setAssignSearchTerm('');
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>,

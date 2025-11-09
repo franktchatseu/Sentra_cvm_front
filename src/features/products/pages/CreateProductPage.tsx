@@ -15,6 +15,7 @@ export default function CreateProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [formData, setFormData] = useState<CreateProductRequest>({
     product_code: "",
     name: "",
@@ -94,44 +95,72 @@ export default function CreateProductPage() {
     setFormData({ ...formData, [field]: value });
   };
 
+  const handleCategoryCreated = (categoryId: number) => {
+    // Auto-select the newly created category
+    setFormData({ ...formData, category_id: categoryId });
+    // Trigger refresh of the CategorySelector
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <button
-          onClick={() => navigate("/dashboard/products")}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Products
-        </button>
-
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Create New Product
-          </h1>
-          <p className="text-gray-600 text-sm">
-            Add a new product to your catalog
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/dashboard/products")}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            style={{ color: color.text.secondary }}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+              Create New Product
+            </h1>
+            <p className={`${tw.textSecondary} mt-1 text-sm`}>
+              Add a new product to your catalog
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-          <p className="text-red-700">{error}</p>
+        <div
+          className="rounded-lg p-4 flex items-center gap-3"
+          style={{
+            backgroundColor: `${color.status.danger}20`,
+            borderColor: color.status.danger,
+            borderWidth: "1px",
+          }}
+        >
+          <AlertCircle
+            className="w-5 h-5 flex-shrink-0"
+            style={{ color: color.status.danger }}
+          />
+          <p style={{ color: color.status.danger }}>{error}</p>
         </div>
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 transition-shadow hover:shadow-md">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Product Information Card */}
+        <div
+          className="rounded-xl border p-6"
+          style={{
+            borderColor: color.border.default,
+            backgroundColor: color.surface.background,
+          }}
+        >
+          <div className="space-y-5">
             {/* Product Code */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Code <span className="text-red-500">*</span>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
+                Product Code{" "}
+                <span style={{ color: color.status.danger }}>*</span>
               </label>
               <input
                 type="text"
@@ -140,33 +169,59 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("product_code", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                style={{
+                  borderColor: color.border.default,
+                  outline: "none",
+                }}
                 placeholder="e.g., VOICE_BUNDLE_001"
+                onFocus={(e) => {
+                  e.target.style.borderColor = color.primary.accent;
+                  e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = color.border.default;
+                  e.target.style.boxShadow = "none";
+                }}
               />
-              <p className="text-sm text-gray-500 mt-1">
-                Unique identifier for the product
-              </p>
             </div>
 
             {/* Product Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Name <span className="text-red-500">*</span>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
+                Product Name{" "}
+                <span style={{ color: color.status.danger }}>*</span>
               </label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                style={{
+                  borderColor: color.border.default,
+                  outline: "none",
+                }}
                 placeholder="e.g., Premium Voice Bundle"
+                onFocus={(e) => {
+                  e.target.style.borderColor = color.primary.accent;
+                  e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = color.border.default;
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </div>
 
             {/* Price */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price <span className="text-red-500">*</span>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
+                Price <span style={{ color: color.status.danger }}>*</span>
               </label>
               <input
                 type="text"
@@ -175,33 +230,57 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("price", parseFloat(e.target.value) || 0)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                style={{
+                  borderColor: color.border.default,
+                  outline: "none",
+                }}
                 placeholder="0.00"
+                onFocus={(e) => {
+                  e.target.style.borderColor = color.primary.accent;
+                  e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = color.border.default;
+                  e.target.style.boxShadow = "none";
+                }}
               />
-              <p className="text-sm text-gray-500 mt-1">Product price</p>
             </div>
 
             {/* DA ID */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                DA ID <span className="text-red-500">*</span>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
+                DA ID <span style={{ color: color.status.danger }}>*</span>
               </label>
               <input
                 type="text"
                 required
                 value={formData.da_id}
                 onChange={(e) => handleInputChange("da_id", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                style={{
+                  borderColor: color.border.default,
+                  outline: "none",
+                }}
                 placeholder="Enter DA ID"
+                onFocus={(e) => {
+                  e.target.style.borderColor = color.primary.accent;
+                  e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = color.border.default;
+                  e.target.style.boxShadow = "none";
+                }}
               />
-              <p className="text-sm text-gray-500 mt-1">
-                Digital Asset identifier
-              </p>
             </div>
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 Catalog
               </label>
               <CategorySelector
@@ -212,12 +291,15 @@ export default function CreateProductPage() {
                 placeholder="Select Catalog"
                 allowCreate={true}
                 onCreateCategory={() => setShowCreateModal(true)}
+                refreshTrigger={refreshTrigger}
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 Description
               </label>
               <textarea
@@ -226,219 +308,41 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all resize-none"
+                style={{
+                  borderColor: color.border.default,
+                  outline: "none",
+                }}
                 placeholder="Describe the product features and benefits..."
+                onFocus={(e) => {
+                  e.target.style.borderColor = color.primary.accent;
+                  e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = color.border.default;
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </div>
-
-            {/* Currency - COMMENTED OUT */}
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Currency
-              </label>
-              <select
-                value={formData.currency || "USD"}
-                onChange={(e) => handleInputChange("currency", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-              >
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="KES">KES</option>
-              </select>
-            </div> */}
           </div>
 
-          {/* Optional Fields - COMMENTED OUT */}
-          {/* 
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Optional Fields
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cost
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.cost || ""}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "cost",
-                        parseFloat(e.target.value) || undefined
-                      )
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm pr-8"
-                    placeholder="0.00"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                    {formData.currency || "USD"}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Product cost for margin calculation
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  DA ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.da_id || ""}
-                  onChange={(e) => handleInputChange("da_id", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                  placeholder="e.g., DA_001"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Data Analytics identifier
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Validity (Days)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.validity_days || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "validity_days",
-                      parseInt(e.target.value) || undefined
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                  placeholder="e.g., 30"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Product validity in days
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Validity (Hours)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.validity_hours || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "validity_hours",
-                      parseInt(e.target.value) || undefined
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                  placeholder="e.g., 24"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Product validity in hours
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Available Quantity
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.available_quantity || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "available_quantity",
-                      parseInt(e.target.value) || undefined
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                  placeholder="e.g., 100"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Stock quantity available
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Requires Inventory
-                </label>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.requires_inventory || false}
-                    onChange={(e) =>
-                      handleInputChange("requires_inventory", e.target.checked)
-                    }
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">
-                    Track inventory for this product
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Effective From
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.effective_from || ""}
-                  onChange={(e) =>
-                    handleInputChange("effective_from", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  When the product becomes available
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Effective To
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.effective_to || ""}
-                  onChange={(e) =>
-                    handleInputChange("effective_to", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  When the product expires
-                </p>
-              </div>
-            </div>
-          </div>
-          */}
-
-          {/* Actions */}
-          <div className="flex justify-between pt-6">
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-8">
             <button
               type="button"
               onClick={() => navigate("/dashboard/products")}
-              className="px-3 py-2 text-sm rounded-lg flex items-center gap-2 border transition-colors"
+              className="px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
               style={{
+                borderWidth: "1px",
                 borderColor: color.border.default,
                 color: color.text.secondary,
+                backgroundColor: "transparent",
               }}
               onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  color.interactive.hover;
+                e.currentTarget.style.backgroundColor = color.surface.cards;
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "transparent";
+                e.currentTarget.style.backgroundColor = "transparent";
               }}
             >
               Cancel
@@ -446,39 +350,40 @@ export default function CreateProductPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
-              style={{ backgroundColor: color.primary.action }}
+              className="px-6 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: color.primary.action,
+              }}
               onMouseEnter={(e) => {
-                if (!e.currentTarget.disabled) {
-                  (e.target as HTMLButtonElement).style.backgroundColor =
-                    color.primary.action;
+                if (!isLoading) {
+                  e.currentTarget.style.opacity = "0.9";
                 }
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  color.primary.action;
+                e.currentTarget.style.opacity = "1";
               }}
             >
               {isLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Save className="w-5 h-5" />
+                  <Save className="w-4 h-4" />
                   Create Product
                 </>
               )}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
 
       {/* Create Catalog Modal */}
       <CreateCategoryModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
+        onCategoryCreated={handleCategoryCreated}
       />
     </div>
   );

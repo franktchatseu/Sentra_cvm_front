@@ -5,6 +5,7 @@ import {
   Segment,
   CreateSegmentRequest,
   SegmentConditionGroup,
+  PreviewResponse,
 } from "../types/segment";
 import SegmentConditionsBuilder from "./SegmentConditionsBuilder";
 import { segmentService } from "../services/segmentService";
@@ -37,6 +38,7 @@ export default function SegmentModal({
   const [error, setError] = useState("");
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewQuery, setPreviewQuery] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>(
     []
   );
@@ -61,87 +63,17 @@ export default function SegmentModal({
     const loadSegmentData = async () => {
       if (isOpen) {
         if (segment) {
-          const segmentId = segment.segment_id || segment.id!;
-
-          try {
-            // Load rules from backend
-            const rules = await segmentService.getSegmentRules(segmentId);
-
-            // Convert rules back to condition groups
-            const conditionGroups: SegmentConditionGroup[] = [];
-
-            if (rules.length > 0) {
-              // Group rules by their order and operator
-              const currentGroup: SegmentConditionGroup = {
-                id: Math.random().toString(36).substr(2, 9),
-                operator: "AND",
-                conditionType: "rule",
-                conditions: [],
-              };
-
-              for (const rule of rules) {
-                const ruleJson = rule.rule_json as {
-                  field: string;
-                  operator: string;
-                  value: string | number | string[];
-                  type?: string;
-                  group_operator?: string;
-                };
-
-                currentGroup.conditions.push({
-                  id: Math.random().toString(36).substr(2, 9),
-                  field: ruleJson.field,
-                  operator: ruleJson.operator as
-                    | "equals"
-                    | "not_equals"
-                    | "contains"
-                    | "not_contains"
-                    | "greater_than"
-                    | "less_than"
-                    | "in"
-                    | "not_in",
-                  value: ruleJson.value,
-                  type:
-                    (ruleJson.type as
-                      | "string"
-                      | "number"
-                      | "boolean"
-                      | "array") || "string",
-                });
-
-                if (ruleJson.group_operator) {
-                  currentGroup.operator = ruleJson.group_operator as
-                    | "AND"
-                    | "OR";
-                }
-              }
-
-              conditionGroups.push(currentGroup);
-            }
-
-            setFormData({
-              name: segment.name,
-              description: segment.description || "",
-              tags: segment.tags || [],
-              conditions:
-                conditionGroups.length > 0
-                  ? conditionGroups
-                  : segment.conditions || [],
-              type: "dynamic",
-              category: segment.category,
-            });
-          } catch (err) {
-            console.error("Failed to load rules:", err);
-            // Fallback to conditions from segment if rules fail to load
-            setFormData({
-              name: segment.name,
-              description: segment.description || "",
-              tags: segment.tags || [],
-              conditions: segment.conditions || [],
-              type: "dynamic",
-              category: segment.category,
-            });
-          }
+          // NOTE: With the new implementation, segments are created with SQL queries directly
+          // We cannot reconstruct UI conditions from the SQL query
+          // When editing, user will need to rebuild conditions from scratch
+          setFormData({
+            name: segment.name,
+            description: segment.description || "",
+            tags: segment.tags || [],
+            conditions: [], // Cannot reconstruct from query - user must rebuild
+            type: "dynamic",
+            category: segment.category ?? undefined,
+          });
         } else {
           setFormData({
             name: "",
@@ -152,8 +84,6 @@ export default function SegmentModal({
             category: undefined,
           });
         }
-        setError("");
-        setPreviewCount(null);
       }
     };
 
@@ -186,6 +116,7 @@ export default function SegmentModal({
   const handlePreview = async () => {
     if (formData.conditions.length === 0) {
       setPreviewCount(0);
+      setPreviewQuery(null);
       return;
     }
 
@@ -193,50 +124,160 @@ export default function SegmentModal({
     setError("");
 
     try {
-      // Transform conditions to backend criteria format
-      const criteria = {
-        conditions: formData.conditions.flatMap((group) =>
-          group.conditions.map(
-            (condition: {
-              field: string;
-              operator: string;
-              value: string | number | string[];
-            }) => ({
-              field: condition.field,
-              operator: condition.operator,
+      // Extract all unique field IDs from conditions
+      const fieldIds = new Set<number>();
+      const queryConditions: Array<{
+        field_id: number;
+        operator_id: number;
+        value: string | number | string[];
+      }> = [];
+
+      // Process each condition group
+      for (const group of formData.conditions) {
+        if (group.conditionType !== 'rule') {
+          continue; // Skip non-rule condition types for now
+        }
+
+        for (const condition of group.conditions) {
+          if (condition.field_id && condition.operator_id) {
+            fieldIds.add(condition.field_id);
+            queryConditions.push({
+              field_id: condition.field_id,
+              operator_id: condition.operator_id,
               value: condition.value,
-            })
-          )
-        ),
-      };
+            });
+          } else {
+            throw new Error(`Missing field_id or operator_id for condition. Please reload the page.`);
+          }
+        }
+      }
 
-      // First validate the criteria
-      const validationResult = await segmentService.validateCriteria({
-        criteria,
-      });
-
-      if (!validationResult.valid) {
-        setError(validationResult.errors?.join(", ") || "Invalid criteria");
+      if (queryConditions.length === 0) {
+        setError("No valid conditions to preview");
         setPreviewCount(null);
+        setPreviewQuery(null);
         return;
       }
 
-      // If validation passes, get preview data with sample size
-      // Note: For new segments without ID, we use the legacy preview endpoint
-      const previewResult = await segmentService.getSegmentPreview(
-        formData.conditions.flatMap(
-          (group) => group.conditions
-        ) as unknown as Record<string, unknown>[]
-      );
+      // Build the request for query generation
+      const queryRequest = {
+        fields: Array.from(fieldIds), // Fields to select in the query
+        filters: {
+          logic: "AND" as const,
+          groups: formData.conditions
+            .filter(group => group.conditionType === 'rule')
+            .map(group => ({
+              logic: group.operator,
+              conditions: group.conditions
+                .filter(c => c.field_id && c.operator_id)
+                .map(c => ({
+                  field_id: c.field_id!,
+                  operator_id: c.operator_id!,
+                  value: c.value,
+                }))
+            }))
+        },
+        limit: 100, // Preview limit
+      };
 
-      setPreviewCount(previewResult.count || 0);
-      setError(""); // Clear any previous errors
+      // Call the query generation preview API
+      const response = await segmentService.generateSegmentQueryPreview(queryRequest);
+
+      if (response.success && response.data) {
+        setPreviewQuery(response.data.segment_query);
+        // Note: The backend doesn't return count in preview yet
+        // You could parse the SQL or make a separate count call
+        setPreviewCount(null); // Set to null for now, or implement count extraction
+        setError("");
+      } else {
+        throw new Error("Failed to generate query preview");
+      }
     } catch (err) {
       console.error("Preview failed:", err);
       setError((err as Error).message || "Failed to preview segment");
       setPreviewCount(null);
+      setPreviewQuery(null);
     } finally {
       setIsPreviewLoading(false);
+    }
+  };
+
+  /**
+   * Generate a unique code from segment name
+   */
+  const generateSegmentCode = (name: string): string => {
+    return name
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 50); // Limit to 50 chars
+  };
+
+  /**
+   * Generate SQL query from conditions
+   */
+  const generateQueryFromConditions = async (): Promise<{segment_query: string, count_query: string} | null> => {
+    if (formData.conditions.length === 0) {
+      return null;
+    }
+
+    try {
+      // Extract all unique field IDs from conditions
+      const fieldIds = new Set<number>();
+      
+      // Process each condition group
+      for (const group of formData.conditions) {
+        if (group.conditionType !== 'rule') {
+          continue; // Skip non-rule condition types for now
+        }
+
+        for (const condition of group.conditions) {
+          if (condition.field_id && condition.operator_id) {
+            fieldIds.add(condition.field_id);
+          } else {
+            throw new Error(`Missing field_id or operator_id for condition. Please reload the page.`);
+          }
+        }
+      }
+
+      if (fieldIds.size === 0) {
+        throw new Error("No valid conditions to generate query");
+      }
+
+      // Build the request for query generation (without limit for production)
+      const queryRequest = {
+        fields: Array.from(fieldIds),
+        filters: {
+          logic: "AND" as const,
+          groups: formData.conditions
+            .filter(group => group.conditionType === 'rule')
+            .map(group => ({
+              logic: group.operator,
+              conditions: group.conditions
+                .filter(c => c.field_id && c.operator_id)
+                .map(c => ({
+                  field_id: c.field_id!,
+                  operator_id: c.operator_id!,
+                  value: c.value,
+                }))
+            }))
+        },
+        // Don't set limit for production query
+      };
+
+      // Call the query generation API
+      const response = await segmentService.generateSegmentQueryPreview(queryRequest);
+
+      if (response.success && response.data) {
+        return {
+          segment_query: response.data.segment_query,
+          count_query: response.data.count_query
+        };
+      } else {
+        throw new Error("Failed to generate query");
+      }
+    } catch (err) {
+      throw new Error((err as Error).message || "Failed to generate query from conditions");
     }
   };
 
@@ -249,102 +290,74 @@ export default function SegmentModal({
       return;
     }
 
+    if (formData.conditions.length === 0) {
+      setError("Please add at least one condition");
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Generate SQL query from conditions
+      const queries = await generateQueryFromConditions();
+      
+      if (!queries) {
+        setError("Failed to generate query from conditions");
+        return;
+      }
+
+      // Generate unique code
+      const code = generateSegmentCode(formData.name);
+
       let savedSegment: Segment;
 
       if (segment) {
-        // Update existing segment
-        const segmentId = segment.segment_id || segment.id!;
+        // Update existing segment with new query
+        const segmentId = segment.id!;
 
-        // Update segment basic info
         const updateResponse = await segmentService.updateSegment(segmentId, {
           name: formData.name,
           description: formData.description,
           tags: formData.tags,
           category: formData.category,
+          query: queries.segment_query,
+          count_query: queries.count_query,
         });
 
-        // Extract segment from response (backend returns {success, message, data})
+        // Extract segment from response
         savedSegment =
-          (updateResponse as { data?: Segment }).data ||
-          (updateResponse as Segment);
-
-        // Get existing rules to delete them
-        const existingRulesResponse = await segmentService.getSegmentRules(
-          segmentId
-        );
-
-        // Handle both response formats: array or {data: array}
-        const existingRules = Array.isArray(existingRulesResponse)
-          ? existingRulesResponse
-          : (existingRulesResponse as { data?: unknown[] })?.data || [];
-
-        // Delete all existing rules
-        for (const rule of existingRules) {
-          const ruleWithId = rule as { id?: number };
-          if (ruleWithId.id) {
-            await segmentService.deleteSegmentRule(segmentId, ruleWithId.id);
-          }
-        }
-
-        // Create new rules from conditions
-        let ruleOrder = 1;
-        for (const conditionGroup of formData.conditions) {
-          for (const condition of conditionGroup.conditions) {
-            await segmentService.createSegmentRule(segmentId, {
-              rule_json: {
-                field: condition.field,
-                operator: condition.operator,
-                value: condition.value,
-                type: condition.type,
-                group_operator: conditionGroup.operator,
-              },
-              rule_order: ruleOrder++,
-            });
-          }
-        }
+          (updateResponse as any).data ||
+          (updateResponse as any);
       } else {
-        // Create new segment (without conditions first)
+        // Create new segment with query
         const createRequest: CreateSegmentRequest = {
           name: formData.name,
+          code: code,
           description: formData.description,
           tags: formData.tags,
           type: "dynamic",
           category: formData.category,
+          query: queries.segment_query,
+          count_query: queries.count_query,
+          is_active: true,
+          visibility: "private",
         };
-        const createResponse = await segmentService.createSegment(
-          createRequest
-        );
+        
+        const createResponse = await segmentService.createSegment(createRequest);
 
-        // Extract segment from response (backend returns {success, message, data})
-        savedSegment =
-          (createResponse as { data?: Segment }).data ||
-          (createResponse as Segment);
-
-        // Now create rules for the new segment
-        const segmentId = savedSegment.id || savedSegment.segment_id!;
-        let ruleOrder = 1;
-
-        for (const conditionGroup of formData.conditions) {
-          for (const condition of conditionGroup.conditions) {
-            await segmentService.createSegmentRule(segmentId, {
-              rule_json: {
-                field: condition.field,
-                operator: condition.operator,
-                value: condition.value,
-                type: condition.type,
-                group_operator: conditionGroup.operator,
-              },
-              rule_order: ruleOrder++,
-            });
-          }
+        // Extract segment from response - backend returns {success: true, data: [segment]}
+        if ((createResponse as any).success && Array.isArray((createResponse as any).data)) {
+          savedSegment = (createResponse as any).data[0];
+        } else {
+          savedSegment =
+            (createResponse as any).data ||
+            (createResponse as any);
         }
       }
 
       onSave(savedSegment);
       onClose();
     } catch (err: unknown) {
+      console.error("Failed to save segment:", err);
       setError((err as Error).message || "Failed to save segment");
     } finally {
       setIsLoading(false);
@@ -613,6 +626,29 @@ export default function SegmentModal({
                         }
                       />
                     </div>
+
+                    {/* Query Preview Section */}
+                    {previewQuery && (
+                      <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-gray-700">
+                            Generated SQL Query
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(previewQuery);
+                            }}
+                            className="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <pre className="text-xs bg-white p-3 rounded border border-gray-300 overflow-x-auto">
+                          <code className="text-gray-800">{previewQuery}</code>
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 </form>
               </div>
