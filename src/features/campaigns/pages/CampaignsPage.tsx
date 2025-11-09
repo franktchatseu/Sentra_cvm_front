@@ -27,6 +27,9 @@ import { useFileDownload } from "../../../shared/hooks/useFileDownload";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import ExecuteCampaignModal from "../components/ExecuteCampaignModal";
+import ApproveCampaignModal from "../components/ApproveCampaignModal";
+import RejectCampaignModal from "../components/RejectCampaignModal";
 
 interface CampaignDisplay {
   id: number;
@@ -74,7 +77,22 @@ export default function CampaignsPage() {
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const [showExecuteModal, setShowExecuteModal] = useState(false);
+  const [campaignToExecute, setCampaignToExecute] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [campaignToApprove, setCampaignToApprove] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [campaignToReject, setCampaignToReject] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({}); 
   const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
   const [allCampaignsUnfiltered, setAllCampaignsUnfiltered] = useState<
     CampaignDisplay[]
@@ -916,6 +934,100 @@ export default function CampaignsPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setCampaignToExecute({ id: campaign.id, name: campaign.name });
+                                  setShowExecuteModal(true);
+                                  setShowActionMenu(null);
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Play
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: color.primary.accent }}
+                                />
+                                Execute Campaign
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCampaignToApprove({ id: campaign.id, name: campaign.name });
+                                  setShowApproveModal(true);
+                                  setShowActionMenu(null);
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <CheckCircle
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#10B981' }}
+                                />
+                                Approve Campaign
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCampaignToReject({ id: campaign.id, name: campaign.name });
+                                  setShowRejectModal(true);
+                                  setShowActionMenu(null);
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Trash2
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#EF4444' }}
+                                />
+                                Reject Campaign
+                              </button>
+
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setShowActionMenu(null);
+                                  try {
+                                    await campaignService.activateCampaign(campaign.id);
+                                    showToast('success', `Campaign "${campaign.name}" activated successfully!`);
+                                    fetchCampaigns();
+                                  } catch (error) {
+                                    console.error('Error activating campaign:', error);
+                                    showToast('error', 'Failed to activate campaign');
+                                  }
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Play
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#10B981' }}
+                                />
+                                Activate Campaign
+                              </button>
+
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setShowActionMenu(null);
+                                  try {
+                                    await campaignService.pauseCampaign(campaign.id);
+                                    showToast('success', `Campaign "${campaign.name}" paused successfully!`);
+                                    fetchCampaigns();
+                                  } catch (error) {
+                                    console.error('Error pausing campaign:', error);
+                                    showToast('error', 'Failed to pause campaign');
+                                  }
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Pause
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#F59E0B' }}
+                                />
+                                Pause Campaign
+                              </button>
+
+                              <div className="border-t border-gray-200 my-2"></div>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   handleDuplicateCampaign(campaign);
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
@@ -1265,6 +1377,54 @@ export default function CampaignsPage() {
         confirmText="Delete Campaign"
         cancelText="Cancel"
       />
+
+      {/* Execute Campaign Modal */}
+      {campaignToExecute && (
+        <ExecuteCampaignModal
+          isOpen={showExecuteModal}
+          onClose={() => {
+            setShowExecuteModal(false);
+            setCampaignToExecute(null);
+          }}
+          campaignId={campaignToExecute.id}
+          campaignName={campaignToExecute.name}
+          onSuccess={() => {
+            fetchCampaigns();
+          }}
+        />
+      )}
+
+      {/* Approve Campaign Modal */}
+      {campaignToApprove && (
+        <ApproveCampaignModal
+          isOpen={showApproveModal}
+          onClose={() => {
+            setShowApproveModal(false);
+            setCampaignToApprove(null);
+          }}
+          campaignId={campaignToApprove.id}
+          campaignName={campaignToApprove.name}
+          onSuccess={() => {
+            fetchCampaigns();
+          }}
+        />
+      )}
+
+      {/* Reject Campaign Modal */}
+      {campaignToReject && (
+        <RejectCampaignModal
+          isOpen={showRejectModal}
+          onClose={() => {
+            setShowRejectModal(false);
+            setCampaignToReject(null);
+          }}
+          campaignId={campaignToReject.id}
+          campaignName={campaignToReject.name}
+          onSuccess={() => {
+            fetchCampaigns();
+          }}
+        />
+      )}
     </div>
   );
 }

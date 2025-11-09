@@ -173,30 +173,46 @@ class CampaignService {
     });
   }
 
-  async approveCampaign(id: number, request?: ApproveCampaignRequest): Promise<ApproveCampaignResponse> {
+  async approveCampaign(id: number, approvedBy: number = 1): Promise<ApproveCampaignResponse> {
+    console.log('Approving campaign:', { id, approvedBy });
     return this.request<ApproveCampaignResponse>(`/${id}/approve`, {
-      method: 'PUT',
-      body: JSON.stringify(request || {}),
+      method: 'PATCH',
+      body: JSON.stringify({
+        approved_by: approvedBy,
+        approved_at: new Date().toISOString()
+      }),
     });
   }
 
-  async rejectCampaign(id: number, request: RejectCampaignRequest): Promise<RejectCampaignResponse> {
+  async rejectCampaign(id: number, rejectedBy: number, rejectionReason: string): Promise<RejectCampaignResponse> {
+    console.log('Rejecting campaign:', { id, rejectedBy, rejectionReason });
     return this.request<RejectCampaignResponse>(`/${id}/reject`, {
-      method: 'PUT',
-      body: JSON.stringify(request),
+      method: 'PATCH',
+      body: JSON.stringify({
+        rejected_by: rejectedBy,
+        rejection_reason: rejectionReason,
+        rejected_at: new Date().toISOString()
+      }),
     });
   }
 
-  async activateCampaign(id: number): Promise<Record<string, unknown>> {
+  async activateCampaign(id: number, updatedBy: number = 1): Promise<Record<string, unknown>> {
+    console.log('Activating campaign:', { id, updatedBy });
     return this.request<Record<string, unknown>>(`/${id}/activate`, {
-      method: 'PUT',
+      method: 'PATCH',
+      body: JSON.stringify({
+        updated_by: updatedBy
+      }),
     });
   }
 
-  async pauseCampaign(id: number, request?: PauseCampaignRequest): Promise<PauseCampaignResponse> {
+  async pauseCampaign(id: number, updatedBy: number = 1): Promise<PauseCampaignResponse> {
+    console.log('Pausing campaign:', { id, updatedBy });
     return this.request<PauseCampaignResponse>(`/${id}/pause`, {
-      method: 'PUT',
-      body: JSON.stringify(request || {}),
+      method: 'PATCH',
+      body: JSON.stringify({
+        updated_by: updatedBy
+      }),
     });
   }
 
@@ -406,6 +422,25 @@ class CampaignService {
     if (skipCache) params.append('skipCache', 'true');
     const query = params.toString() ? `?${params.toString()}` : '';
     return this.request<Record<string, unknown>[]>(`/${id}/lifecycle-history${query}`);
+  }
+
+  /**
+   * Execute a campaign
+   */
+  async executeCampaign(request: {
+    campaign_id: number;
+    segments: Array<{
+      segment_id: string | number;
+      channel_codes: string[];
+    }>;
+    mode: 'immediate' | 'scheduled';
+  }): Promise<Record<string, unknown>> {
+    console.log('Executing campaign:', request);
+    
+    return this.request<Record<string, unknown>>('/execute', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   }
 }
 

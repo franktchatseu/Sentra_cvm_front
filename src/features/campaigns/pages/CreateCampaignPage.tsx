@@ -6,7 +6,6 @@ import {
   Target,
   Users,
   Gift,
-  Calendar,
   Eye
 } from 'lucide-react';
 import { useToast } from '../../../contexts/ToastContext';
@@ -16,15 +15,22 @@ import { CampaignSegment, CampaignOffer, ControlGroup, CampaignScheduling } from
 import { CreateCampaignRequest } from '../types/createCampaign';
 
 // Extended type for form data that includes all properties needed during creation
+// Mapping interface for segment-offer relationships
+export interface SegmentOfferMapping {
+  segment_id: string;
+  offer_id: number;
+}
+
 interface CampaignFormData extends CreateCampaignRequest {
   scheduling?: CampaignScheduling;
   segments?: CampaignSegment[];
+  segmentOfferMappings?: SegmentOfferMapping[];
 }
 import { campaignService } from '../services/campaignService';
+import { campaignSegmentOfferService, CampaignSegmentOfferMapping } from '../services/campaignSegmentOfferService';
 import CampaignDefinitionStep from '../components/steps/CampaignDefinitionStep';
 import AudienceConfigurationStep from '../components/steps/AudienceConfigurationStep';
 import OfferMappingStep from '../components/steps/OfferMappingStep';
-import SchedulingStep from '../components/steps/SchedulingStepNew';
 import CampaignPreviewStep from '../components/steps/CampaignPreviewStep';
 
 interface StepProps {
@@ -39,6 +45,8 @@ interface StepProps {
   setSelectedSegments: (segments: CampaignSegment[]) => void;
   selectedOffers: CampaignOffer[];
   setSelectedOffers: (offers: CampaignOffer[]) => void;
+  segmentOfferMappings?: SegmentOfferMapping[];
+  setSegmentOfferMappings?: (mappings: SegmentOfferMapping[]) => void;
   controlGroup: ControlGroup;
   setControlGroup: (group: ControlGroup) => void;
   isLoading?: boolean;
@@ -73,14 +81,6 @@ const steps = [
   },
   {
     id: 4,
-    name: 'Schedule',
-    description: 'Timing & frequency',
-    icon: Calendar,
-    color: 'from-amber-100 to-orange-100',
-    iconColor: 'text-amber-600'
-  },
-  {
-    id: 5,
     name: 'Preview',
     description: 'Review & launch',
     icon: Eye,
@@ -115,6 +115,7 @@ export default function CreateCampaignPage() {
 
   const [selectedSegments, setSelectedSegments] = useState<CampaignSegment[]>([]);
   const [selectedOffers, setSelectedOffers] = useState<CampaignOffer[]>([]);
+  const [segmentOfferMappings, setSegmentOfferMappings] = useState<SegmentOfferMapping[]>([]);
   const [controlGroup, setControlGroup] = useState<ControlGroup>({
     enabled: false,
     percentage: 5,
@@ -163,10 +164,15 @@ export default function CreateCampaignPage() {
       case 2: // Audience step
         return selectedSegments.length > 0;
       case 3: // Offers step
+        // For multiple_target_group, verify all segments have at least one offer mapped
+        if (formData.campaign_type === 'multiple_target_group') {
+          return selectedSegments.length > 0 && 
+                 selectedSegments.every(segment => 
+                   segmentOfferMappings.some(mapping => mapping.segment_id === segment.id)
+                 );
+        }
         return selectedOffers.length > 0;
-      case 4: // Schedule step
-        return formData.scheduling && formData.scheduling.type !== undefined;
-      case 5: // Preview step
+      case 4: // Preview step
         return true; // Preview step doesn't need validation
       default:
         return false;
@@ -234,6 +240,7 @@ export default function CreateCampaignPage() {
     try {
       if (!formData.name.trim()) {
         showToast('error', 'Campaign name is required');
+        setIsLoading(false);
         return;
       }
 
@@ -282,12 +289,45 @@ export default function CreateCampaignPage() {
         showToast('success', 'Campaign updated successfully!');
       } else {
         // New campaigns are automatically created with status: 'draft', approval_status: 'pending'
-        await campaignService.createCampaign(campaignData);
-        showToast('success', 'Campaign created and submitted for approval!');
+        const createResponse = await campaignService.createCampaign(campaignData);
+        
+        // Extract campaign ID from response
+        const createdCampaignId = createResponse?.data?.id;
+        
+        if (!createdCampaignId) {
+          throw new Error('Campaign created but ID not returned');
+        }
+        
+        console.log('Campaign created with ID:', createdCampaignId);
+        
+        // Create Campaign-Segment-Offer mappings for Multiple Target campaigns
+        if (formData.campaign_type === 'multiple_target_group' && segmentOfferMappings.length > 0) {
+          console.log('Creating segment-offer mappings:', segmentOfferMappings);
+          
+          try {
+            const mappingsToCreate: CampaignSegmentOfferMapping[] = segmentOfferMappings.map(mapping => ({
+              campaign_id: createdCampaignId,
+              segment_id: mapping.segment_id,
+              offer_id: mapping.offer_id,
+              created_by: 1 // TODO: Get actual user ID from auth context
+            }));
+            
+            await campaignSegmentOfferService.createBatchMappings(mappingsToCreate);
+            console.log('Segment-offer mappings created successfully');
+            
+            showToast('success', 'Campaign created and mappings configured successfully!');
+          } catch (mappingError) {
+            console.error('Error creating mappings:', mappingError);
+            showToast('warning', 'Campaign created but some mappings failed. Please check the campaign details.');
+          }
+        } else {
+          showToast('success', 'Campaign created and submitted for approval!');
+        }
       }
 
       navigate('/dashboard/campaigns');
-    } catch {
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
       showToast('error', `Failed to ${isEditMode ? 'update' : 'create'} campaign. Please try again.`);
     } finally {
       setIsLoading(false);
@@ -378,6 +418,8 @@ export default function CreateCampaignPage() {
     setSelectedSegments,
     selectedOffers,
     setSelectedOffers,
+    segmentOfferMappings,
+    setSegmentOfferMappings,
     controlGroup,
     setControlGroup,
     isLoading,
@@ -394,8 +436,6 @@ export default function CreateCampaignPage() {
       case 3:
         return <OfferMappingStep {...stepProps} />;
       case 4:
-        return <SchedulingStep {...stepProps} />;
-      case 5:
         return <CampaignPreviewStep {...stepProps} />;
       default:
         return <CampaignDefinitionStep {...stepProps} />;
@@ -420,10 +460,20 @@ export default function CreateCampaignPage() {
     <div className="min-h-screen">
       <div className={`bg-white rounded-xl border border-[${color.border.default}] p-4`}>
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center pb-6">
-            <div></div>
-            {currentStep !== 5 && (
-              <div className="flex items-center justify-between w-full md:w-auto md:space-x-3">
+          <div className="flex items-center justify-between pb-3">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate('/dashboard/campaigns')}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h1 className={`text-lg font-semibold ${tw.textPrimary}`}>
+                {isEditMode ? 'Edit Campaign' : 'Create Campaign'}
+              </h1>
+            </div>
+            {currentStep !== 4 && (
+              <div className="flex items-center space-x-3">
                 <button
                   onClick={handleCancel}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200"
@@ -449,25 +499,8 @@ export default function CreateCampaignPage() {
             )}
           </div>
 
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/dashboard/campaigns')}
-                className=" text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className={`text-xl font-semibold ${tw.textPrimary}`}>
-                  {isEditMode ? 'Edit Campaign' : 'Create Campaign'}
-                </h1>
-                <p className={`text-sm ${tw.textMuted}`}>Step {currentStep} of {steps.length}</p>
-              </div>
-            </div>
-          </div>
-
           {/* Sticky Progress Navigation */}
-          <nav aria-label="Progress" className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200">
+          <nav aria-label="Progress" className="sticky top-16 z-40 py-3 px-6 rounded-lg border mb-4" style={{ backgroundColor: color.surface.cards, borderColor: color.border.default }}>
             {/* Mobile - Simple dots */}
             <div className="md:hidden flex items-center justify-center gap-2">
               {steps.map((step) => {
@@ -504,16 +537,12 @@ export default function CreateCampaignPage() {
                       className="relative flex flex-col items-center group z-10"
                       disabled={!canNavigateToStep(step.id)}
                     >
-                      <div className={`
-                      flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
-                      ${status === 'completed'
-                          ? `bg-[${color.primary.action}] border-[${color.primary.action}] text-white`
-                          : status === 'current'
-                            ? `bg-white border-[${color.primary.action}] text-[${color.primary.action}]`
-                            : 'bg-white border-gray-300 text-gray-400'
-                        }
-                      ${step.id <= currentStep + 2 ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
-                    `}>
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${step.id <= currentStep + 2 ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed'}`}
+                        style={{
+                          backgroundColor: status === 'completed' ? color.primary.action : 'white',
+                          borderColor: status === 'completed' || status === 'current' ? color.primary.accent : '#D1D5DB',
+                          color: status === 'completed' ? 'white' : status === 'current' ? color.primary.accent : '#9CA3AF'
+                        }}>
                         {status === 'completed' ? (
                           <Check className="w-4 h-4" />
                         ) : (
@@ -522,30 +551,29 @@ export default function CreateCampaignPage() {
                       </div>
 
                       <div className="mt-2 text-center">
-                        <div className={`text-sm font-medium ${status === 'current' ? `text-[${color.primary.action}]` :
-                          status === 'completed' ? tw.textPrimary : tw.textMuted
-                          }`}>
+                        <div className="text-xs font-medium" style={{
+                          color: status === 'current' ? color.primary.accent : status === 'completed' ? color.primary.action : '#9CA3AF'
+                        }}>
                           {step.name}
-                        </div>
-                        <div className={`text-xs mt-1 hidden lg:block ${tw.textMuted}`}>
-                          {step.description}
                         </div>
                       </div>
                     </button>
 
                     {stepIdx !== steps.length - 1 && (
                       <div
-                        className="absolute top-4 left-1/2 w-full h-0.5 bg-gray-200"
+                        className="absolute top-5 left-1/2 w-full h-0.5"
                         style={{
                           transform: 'translateX(0%)',
-                          zIndex: 1
+                          zIndex: 1,
+                          backgroundColor: '#E5E7EB'
                         }}
                       >
                         <div
-                          className={`h-full transition-all duration-500 ${step.id < currentStep
-                            ? `bg-[${color.primary.action}] w-full`
-                            : "bg-gray-200 w-0"
-                            }`}
+                          className="h-full transition-all duration-500"
+                          style={{
+                            backgroundColor: step.id < currentStep ? color.primary.accent : '#E5E7EB',
+                            width: step.id < currentStep ? '100%' : '0%'
+                          }}
                         />
                       </div>
                     )}
@@ -555,7 +583,7 @@ export default function CreateCampaignPage() {
             </div>
           </nav>
 
-          <div className="pb-8">
+          <div className="py-4">
             {renderStep()}
           </div>
 
@@ -570,7 +598,7 @@ export default function CreateCampaignPage() {
                 Previous
               </button>
               <button
-                onClick={currentStep === 5 ? handleSubmit : handleNext}
+                onClick={currentStep === 4 ? handleSubmit : handleNext}
                 disabled={isLoading || !validateCurrentStep()}
                 className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
@@ -578,10 +606,10 @@ export default function CreateCampaignPage() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {currentStep === 5 ? (isEditMode ? 'Updating...' : 'Creating...') : 'Loading...'}
+                    {currentStep === 4 ? (isEditMode ? 'Updating...' : 'Creating...') : 'Loading...'}
                   </>
                 ) : (
-                  currentStep === 5 ? (isEditMode ? 'Update Campaign' : 'Create Campaign') : 'Next Step'
+                  currentStep === 4 ? (isEditMode ? 'Update Campaign' : 'Create Campaign') : 'Next Step'
                 )}
               </button>
             </div>
