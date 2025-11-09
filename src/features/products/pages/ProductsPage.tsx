@@ -270,22 +270,6 @@ export default function ProductsPage() {
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => navigate("/dashboard/products/categories")}
-            className="px-3 py-2 md:text-sm rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base text-white"
-            style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
-          >
-            <Settings className="w-5 h-5" />
-            Categories
-          </button>
-          <button
             onClick={() => navigate("/dashboard/products/create")}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
@@ -321,8 +305,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <Package className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag1}20` }}
+            >
+              <Package
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag1 }}
+              />
             </div>
           </div>
         </div>
@@ -342,8 +332,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag4}20` }}
+            >
+              <TrendingUp
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag4 }}
+              />
             </div>
           </div>
         </div>
@@ -363,8 +359,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <XCircle className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag3}20` }}
+            >
+              <XCircle
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag3 }}
+              />
             </div>
           </div>
         </div>
@@ -386,8 +388,14 @@ export default function ProductsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag2}20` }}
+            >
+              <DollarSign
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag2 }}
+              />
             </div>
           </div>
         </div>
@@ -412,8 +420,14 @@ export default function ProductsPage() {
                 </p>
               )}
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-gray-900" />
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: `${color.tertiary.tag1}20` }}
+            >
+              <BarChart3
+                className="w-6 h-6"
+                style={{ color: color.tertiary.tag1 }}
+              />
             </div>
           </div>
         </div>
@@ -525,10 +539,10 @@ export default function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-12">
             {/* Icon removed */}
-            <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
+            <h3 className={`${tw.cardHeading} ${tw.textPrimary} mb-1`}>
               No products found
             </h3>
-            <p className={`${tw.textMuted} mb-6`}>
+            <p className={`text-sm ${tw.textMuted} mb-6`}>
               Get started by creating your first product.
             </p>
             <button

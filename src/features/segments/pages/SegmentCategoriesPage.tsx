@@ -11,6 +11,11 @@ import {
   ArrowLeft,
   Grid,
   List,
+  FolderOpen,
+  CheckCircle,
+  XCircle,
+  Archive,
+  Star,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
@@ -23,6 +28,20 @@ import {
 } from "../types/segment";
 import { Segment } from "../types/segment";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+
+const SEGMENT_CATALOG_TAG_PREFIX = "catalog:";
+
+const buildSegmentCatalogTag = (categoryId: number | string) =>
+  `${SEGMENT_CATALOG_TAG_PREFIX}${categoryId}`;
+
+const parseSegmentCatalogTag = (tag?: string): number | null => {
+  if (!tag || !tag.startsWith(SEGMENT_CATALOG_TAG_PREFIX)) {
+    return null;
+  }
+  const value = tag.slice(SEGMENT_CATALOG_TAG_PREFIX.length);
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+};
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -185,13 +204,15 @@ interface SegmentsModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: SegmentCategory | null;
-  onRefreshCounts: () => void;
+  onRefreshCategories: () => Promise<void> | void;
+  onRefreshCounts: () => Promise<void> | void;
 }
 
 function SegmentsModal({
   isOpen,
   onClose,
   category,
+  onRefreshCategories,
   onRefreshCounts,
 }: SegmentsModalProps) {
   const navigate = useNavigate();
@@ -203,6 +224,9 @@ function SegmentsModal({
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [allSegments, setAllSegments] = useState<Segment[]>([]);
   const [loadingAllSegments, setLoadingAllSegments] = useState(false);
+  const [removingSegmentId, setRemovingSegmentId] = useState<
+    number | string | null
+  >(null);
 
   const loadCategorySegments = useCallback(async () => {
     setIsLoading(true);
@@ -211,10 +235,21 @@ function SegmentsModal({
       const segmentsData = (response as { data?: Segment[] }).data || [];
 
       // Filter segments that belong to this category
-      const categorySegments = segmentsData.filter(
-        (s: Segment) =>
-          s.category && String(s.category) === String(category?.id)
-      );
+      const categoryId =
+        typeof category.id === "string"
+          ? parseInt(category.id, 10)
+          : category.id;
+      const catalogTag = buildSegmentCatalogTag(categoryId);
+
+      const categorySegments = segmentsData.filter((s: Segment) => {
+        const segmentCategory =
+          typeof s.category === "string"
+            ? parseInt(s.category, 10)
+            : s.category;
+        const matchesPrimary = segmentCategory === categoryId;
+        const matchesTag = (s.tags || []).includes(catalogTag);
+        return matchesPrimary || matchesTag;
+      });
 
       setSegments(categorySegments);
       setFilteredSegments(categorySegments);
@@ -309,6 +344,58 @@ function SegmentsModal({
     return { success, failed, errors };
   };
 
+  const handleRemoveSegment = async (segmentId: number | string) => {
+    if (!category) return;
+
+    try {
+      setRemovingSegmentId(segmentId);
+      const segmentResponse = await segmentService.getSegmentById(
+        Number(segmentId),
+        true
+      );
+      const segmentData = segmentResponse.data as Segment | undefined;
+      if (!segmentData) {
+        showError("Segment details not found");
+        return;
+      }
+
+      const catalogTag = buildSegmentCatalogTag(category.id);
+      const primaryCategoryId = Number(segmentData.category);
+      if (
+        !Number.isNaN(primaryCategoryId) &&
+        primaryCategoryId === Number(category.id)
+      ) {
+        showError(
+          "Cannot remove this segment because this catalog is its primary category"
+        );
+        return;
+      }
+
+      const tags = Array.isArray(segmentData.tags) ? segmentData.tags : [];
+      if (!tags.includes(catalogTag)) {
+        showError("Segment is not tagged with this catalog");
+        return;
+      }
+
+      const updatedTags = tags.filter((tag) => tag !== catalogTag);
+      await segmentService.updateSegment(Number(segmentId), {
+        tags: updatedTags,
+      });
+      showToast("Segment removed from catalog");
+      await loadCategorySegments();
+      await onRefreshCounts();
+      await onRefreshCategories();
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Failed to remove segment from catalog"
+      );
+    } finally {
+      setRemovingSegmentId(null);
+    }
+  };
+
   return (
     <>
       {isOpen && category && (
@@ -318,8 +405,8 @@ function SegmentsModal({
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
-                  <h2 className={`${tw.subHeading} text-gray-900`}>
-                    Segments in {category?.name}
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Segments in "{category?.name}"
                   </h2>
                   <p className="text-sm text-gray-500 mt-1">
                     {segments.length} segment{segments.length !== 1 ? "s" : ""}{" "}
@@ -397,31 +484,29 @@ function SegmentsModal({
                             </p>
                           )}
                           {segment.customer_count !== undefined && (
-                            <span className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              <span>
-                                {typeof segment.customer_count === "number"
-                                  ? segment.customer_count.toLocaleString()
-                                  : typeof segment.customer_count === "string"
-                                  ? parseInt(
-                                      segment.customer_count,
-                                      10
-                                    ).toLocaleString()
-                                  : "0"}
-                              </span>
-                            </span>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {segment.customer_count.toLocaleString()}{" "}
+                              customers
+                            </p>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => {
-                              if (segment.id) {
-                                navigate(`/dashboard/segments/${segment.id}`);
-                              }
-                            }}
+                            onClick={() =>
+                              navigate(`/dashboard/segments/${segment.id}`)
+                            }
                             className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                           >
                             View
+                          </button>
+                          <button
+                            onClick={() => handleRemoveSegment(segment.id)}
+                            disabled={removingSegmentId === segment.id}
+                            className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+                          >
+                            {removingSegmentId === segment.id
+                              ? "Removing..."
+                              : "Remove"}
                           </button>
                         </div>
                       </div>
@@ -455,10 +540,17 @@ export default function SegmentCategoriesPage() {
     {}
   );
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const formatNumber = (value?: number | null) =>
+    typeof value === "number" && !Number.isNaN(value)
+      ? value.toLocaleString()
+      : "...";
 
   const loadCategories = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log(
+        "[SegmentCatalogs] Fetching categories from /segment-categories?skipCache=true"
+      );
       const response = await segmentService.getSegmentCategories(
         undefined,
         true
@@ -501,6 +593,9 @@ export default function SegmentCategoriesPage() {
   const loadSegmentCounts = async (cats: SegmentCategory[]) => {
     try {
       console.log("Loading segments for counts...");
+      console.log(
+        "[SegmentCatalogs] Fetching segments from /segments?skipCache=true"
+      );
       const response = await segmentService.getSegments({ skipCache: true });
       console.log("Segments API response:", response);
       const segmentsData = ((response as { data?: Segment[] }).data ||
@@ -508,16 +603,43 @@ export default function SegmentCategoriesPage() {
       console.log("Segments data:", segmentsData);
 
       const counts: Record<number, number> = {};
+      const categoriesIndex = new Map<number, boolean>();
       cats.forEach((cat) => {
         const catId =
           typeof cat.id === "string" ? parseInt(cat.id, 10) : cat.id;
-        counts[catId] = segmentsData.filter((s) => {
-          const segmentCategory =
-            typeof s.category === "string"
-              ? parseInt(s.category, 10)
-              : s.category;
-          return segmentCategory === catId;
-        }).length;
+        categoriesIndex.set(catId, true);
+        counts[catId] = 0;
+      });
+
+      segmentsData.forEach((segment) => {
+        const membershipIds = new Set<number>();
+
+        const primaryCategory =
+          typeof segment.category === "string"
+            ? parseInt(segment.category, 10)
+            : segment.category;
+        if (
+          typeof primaryCategory === "number" &&
+          !Number.isNaN(primaryCategory) &&
+          categoriesIndex.has(primaryCategory)
+        ) {
+          membershipIds.add(primaryCategory);
+        }
+
+        (segment.tags || []).forEach((tag) => {
+          const parsed = parseSegmentCatalogTag(tag);
+          if (
+            typeof parsed === "number" &&
+            !Number.isNaN(parsed) &&
+            categoriesIndex.has(parsed)
+          ) {
+            membershipIds.add(parsed);
+          }
+        });
+
+        membershipIds.forEach((catId) => {
+          counts[catId] = (counts[catId] || 0) + 1;
+        });
       });
 
       setSegmentCounts(counts);
@@ -612,6 +734,85 @@ export default function SegmentCategoriesPage() {
         category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const totalCategories = categories.length;
+  const activeCategories = categories.filter((cat) => cat.is_active).length;
+  const inactiveCategories = Math.max(0, totalCategories - activeCategories);
+  const categoriesWithSegmentsCount = categories.filter(
+    (cat) => (segmentCounts[cat.id] || 0) > 0
+  ).length;
+  const emptyCategoriesCount = Math.max(
+    0,
+    totalCategories - categoriesWithSegmentsCount
+  );
+
+  const mostPopularCategoryRaw = categories.reduce<{
+    name: string;
+    count: number;
+  } | null>((acc, category) => {
+    const count = segmentCounts[category.id] || 0;
+    if (!acc || count > acc.count) {
+      return { name: category.name, count };
+    }
+    return acc;
+  }, null);
+
+  const mostPopularCategory =
+    mostPopularCategoryRaw && mostPopularCategoryRaw.count > 0
+      ? mostPopularCategoryRaw
+      : null;
+
+  const totalSegments = Object.values(segmentCounts).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  const averageSegments =
+    totalCategories > 0 ? totalSegments / totalCategories : 0;
+
+  const statsLoading = isLoading && totalCategories === 0;
+
+  const catalogStatsCards = [
+    {
+      name: "Total Catalogs",
+      value: formatNumber(totalCategories),
+      icon: FolderOpen,
+      color: color.tertiary.tag1,
+      description: `${formatNumber(totalSegments)} segments total`,
+    },
+    {
+      name: "Active Catalogs",
+      value: formatNumber(activeCategories),
+      icon: CheckCircle,
+      color: color.tertiary.tag4,
+      description:
+        averageSegments > 0
+          ? `${averageSegments.toFixed(1)} avg segments/catalog`
+          : undefined,
+    },
+    {
+      name: "Inactive Catalogs",
+      value: formatNumber(inactiveCategories),
+      icon: XCircle,
+      color: color.tertiary.tag3,
+    },
+    {
+      name: "Empty Catalogs",
+      value: formatNumber(emptyCategoriesCount),
+      icon: Archive,
+      color: color.tertiary.tag2,
+      description: `${formatNumber(categoriesWithSegmentsCount)} with segments`,
+    },
+    {
+      name: "Most Popular",
+      value: mostPopularCategory?.name || "None",
+      icon: Star,
+      color: color.primary.accent,
+      description: `${formatNumber(mostPopularCategory?.count ?? 0)} segments`,
+      title: mostPopularCategory?.name || undefined,
+      valueClass: "text-xl",
+      loading: false,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -627,7 +828,7 @@ export default function SegmentCategoriesPage() {
             <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
               Segment Catalogs
             </h1>
-            <p className={`${tw.subHeading} ${tw.textSecondary} mt-1`}>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>
               Organize your segments into catalogs
             </p>
           </div>
@@ -653,6 +854,59 @@ export default function SegmentCategoriesPage() {
           Create Catalog
         </button>
       </div>
+
+      {/* Stats Cards */}
+      {catalogStatsCards.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {catalogStatsCards.map((stat) => {
+            const Icon = stat.icon;
+            const valueClass = stat.valueClass ?? "text-3xl";
+            const shouldMask = stat.loading ?? true;
+            const displayValue =
+              statsLoading && shouldMask ? "..." : stat.value ?? "...";
+
+            return (
+              <div
+                key={stat.name}
+                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="p-2.5 rounded-full flex items-center justify-center"
+                        style={{
+                          backgroundColor: stat.color || color.primary.accent,
+                        }}
+                      >
+                        <Icon className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <p
+                          className={`${valueClass} font-bold ${tw.textPrimary}`}
+                          title={stat.title}
+                        >
+                          {displayValue}
+                        </p>
+                        <p
+                          className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                        >
+                          {stat.name}
+                        </p>
+                        {stat.description && (
+                          <p className={`text-sm ${tw.textSecondary}`}>
+                            {stat.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Search and View Toggle */}
       <div className="flex items-center gap-4">
@@ -706,10 +960,10 @@ export default function SegmentCategoriesPage() {
       ) : filteredCategories.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
           <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+          <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 mb-6">
             {searchTerm
               ? "Try adjusting your search terms"
               : "Create your first segment catalog to organize your segments"}
@@ -743,8 +997,8 @@ export default function SegmentCategoriesPage() {
               key={category.id}
               className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`${tw.subHeading} text-gray-900`}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className={`${tw.cardHeading} text-gray-900`}>
                   {category.name}
                 </h3>
                 <div className="flex items-center space-x-1">
@@ -768,7 +1022,9 @@ export default function SegmentCategoriesPage() {
                 </div>
               </div>
               {category.description && (
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+                <p
+                  className={`${tw.cardSubHeading} text-gray-500 mb-4 line-clamp-2`}
+                >
                   {category.description}
                 </p>
               )}
@@ -802,7 +1058,7 @@ export default function SegmentCategoriesPage() {
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
-                  <h3 className={`${tw.subHeading} text-gray-900`}>
+                  <h3 className={`${tw.cardHeading} text-gray-900`}>
                     {category.name}
                   </h3>
                   <p className="text-sm text-gray-600 mt-0.5">
@@ -864,6 +1120,7 @@ export default function SegmentCategoriesPage() {
           setSelectedCategory(null);
         }}
         category={selectedCategory}
+        onRefreshCategories={loadCategories}
         onRefreshCounts={() => loadSegmentCounts(categories)}
       />
     </div>

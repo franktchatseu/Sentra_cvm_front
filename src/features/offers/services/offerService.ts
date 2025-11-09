@@ -520,10 +520,9 @@ class OfferService {
     request: CreateOfferProductLinkRequest
   ): Promise<{ success: boolean; data: OfferProductLink }> {
     // Ensure quantity defaults to 1 if not provided
-    // Note: Backend sets created_by automatically, so remove it from request
-    const { created_by, ...requestWithoutCreatedBy } = request;
+    // Include created_by if provided (backend requires it in some cases)
     const requestWithDefaults = {
-      ...requestWithoutCreatedBy,
+      ...request,
       quantity: request.quantity ?? 1,
       is_primary: request.is_primary ?? false,
     };

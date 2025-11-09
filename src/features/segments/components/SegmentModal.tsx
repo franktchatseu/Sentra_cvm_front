@@ -5,6 +5,7 @@ import {
   Segment,
   CreateSegmentRequest,
   SegmentConditionGroup,
+  PreviewResponse,
 } from "../types/segment";
 import SegmentConditionsBuilder from "./SegmentConditionsBuilder";
 import { segmentService } from "../services/segmentService";

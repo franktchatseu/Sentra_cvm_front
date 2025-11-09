@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { AlertTriangle, CheckCircle, XCircle, Info, X } from "lucide-react";
+import { color } from "../../utils/utils";
 
-export type ConfirmType = 'danger' | 'warning' | 'success' | 'info';
+export type ConfirmType = "danger" | "warning" | "success" | "info";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -17,31 +18,31 @@ interface ConfirmModalProps {
 const typeConfig = {
   danger: {
     icon: XCircle,
-    iconColor: 'text-red-500',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    confirmButtonColor: 'bg-red-600 hover:bg-red-700 focus:ring-0',
+    iconColor: "text-red-500",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+    confirmButtonColor: "bg-red-600 hover:bg-red-700 focus:ring-0",
   },
   warning: {
     icon: AlertTriangle,
-    iconColor: 'text-yellow-500',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200',
-    confirmButtonColor: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-0',
+    iconColor: "text-yellow-500",
+    bgColor: "bg-yellow-50",
+    borderColor: "border-yellow-200",
+    confirmButtonColor: "bg-yellow-600 hover:bg-yellow-700 focus:ring-0",
   },
   success: {
     icon: CheckCircle,
-    iconColor: 'text-green-500',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    confirmButtonColor: 'bg-[#3A5A40] hover:bg-[#2f4a35] focus:ring-0',
+    iconColor: "text-green-500",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
+    confirmButtonColor: "bg-[#3A5A40] hover:bg-[#2f4a35] focus:ring-0",
   },
   info: {
     icon: Info,
-    iconColor: 'text-blue-500',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    confirmButtonColor: 'bg-[#3A5A40] hover:bg-[#2f4a35] focus:outline-none focus:ring-0',
+    iconColor: "", // Will use accent color from tokens
+    bgColor: "", // No background color
+    borderColor: "border-gray-200",
+    confirmButtonColor: "", // Will use action color from tokens
   },
 };
 
@@ -51,9 +52,9 @@ export default function ConfirmModal({
   onConfirm,
   title,
   message,
-  type = 'warning',
-  confirmText = 'Confirmer',
-  cancelText = 'Annuler'
+  type = "warning",
+  confirmText = "Confirmer",
+  cancelText = "Annuler",
 }: ConfirmModalProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -68,19 +69,19 @@ export default function ConfirmModal({
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 
@@ -98,27 +99,42 @@ export default function ConfirmModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black transition-opacity duration-300 ${isOpen ? 'bg-opacity-50' : 'bg-opacity-0'
-          }`}
+        className={`fixed inset-0 bg-black transition-opacity duration-300 ${
+          isOpen ? "bg-opacity-50" : "bg-opacity-0"
+        }`}
         onClick={onClose}
       />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-            }`}
+          className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ${
+            isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          }`}
         >
           {/* Header */}
-          <div className={`px-6 pt-6 pb-4 ${config.bgColor} ${config.borderColor} border-b`}>
+          <div
+            className={`px-6 pt-6 pb-4 ${config.bgColor || "bg-white"} ${
+              config.borderColor
+            } border-b`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-full ${config.bgColor}`}>
-                  <IconComponent className={`w-6 h-6 ${config.iconColor}`} />
+                <div
+                  className={`p-2 rounded-full ${
+                    config.bgColor || "bg-transparent"
+                  }`}
+                >
+                  <IconComponent
+                    className={`w-6 h-6 ${config.iconColor || ""}`}
+                    style={
+                      type === "info"
+                        ? { color: color.primary.accent }
+                        : undefined
+                    }
+                  />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {title}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
               </div>
               <button
                 onClick={onClose}
@@ -131,9 +147,7 @@ export default function ConfirmModal({
 
           {/* Content */}
           <div className="px-6 py-4">
-            <p className="text-gray-700 leading-relaxed">
-              {message}
-            </p>
+            <p className="text-gray-700 leading-relaxed">{message}</p>
           </div>
 
           {/* Actions */}
@@ -146,7 +160,26 @@ export default function ConfirmModal({
             </button>
             <button
               onClick={handleConfirm}
-              className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-0 transition-colors ${config.confirmButtonColor}`}
+              className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-0 transition-colors ${
+                config.confirmButtonColor || ""
+              }`}
+              style={
+                type === "info"
+                  ? {
+                      backgroundColor: color.primary.action,
+                    }
+                  : undefined
+              }
+              onMouseEnter={(e) => {
+                if (type === "info") {
+                  e.currentTarget.style.backgroundColor = "#1a1c1d"; // Slightly darker on hover
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (type === "info") {
+                  e.currentTarget.style.backgroundColor = color.primary.action;
+                }
+              }}
             >
               {confirmText}
             </button>

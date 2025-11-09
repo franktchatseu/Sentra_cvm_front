@@ -11,7 +11,9 @@ interface CategorySelectorProps {
   disabled?: boolean;
   allowCreate?: boolean;
   onCreateCategory?: () => void;
+  onCategoryCreated?: (categoryId: number) => void;
   className?: string;
+  refreshTrigger?: number;
 }
 
 export default function CategorySelector({
@@ -21,7 +23,9 @@ export default function CategorySelector({
   disabled = false,
   allowCreate = false,
   onCreateCategory,
+  onCategoryCreated,
   className = "",
+  refreshTrigger,
 }: CategorySelectorProps) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +38,7 @@ export default function CategorySelector({
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [refreshTrigger]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -101,16 +105,28 @@ export default function CategorySelector({
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      <div className="flex gap-2">
+      <div className="flex">
         <button
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`flex-1 px-3 py-2 text-left border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            disabled
-              ? "bg-gray-100 cursor-not-allowed"
-              : "bg-white hover:border-gray-400"
+          className={`flex-1 px-4 py-2.5 text-left border rounded-lg text-sm transition-all ${
+            disabled ? "bg-gray-100 cursor-not-allowed" : "bg-white"
           }`}
+          style={{
+            borderColor: color.border.default,
+            outline: "none",
+            borderTopRightRadius: allowCreate ? "0" : undefined,
+            borderBottomRightRadius: allowCreate ? "0" : undefined,
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = color.primary.accent;
+            e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = color.border.default;
+            e.target.style.boxShadow = "none";
+          }}
         >
           <div className="flex items-center justify-between">
             <span
@@ -131,8 +147,11 @@ export default function CategorySelector({
           <button
             type="button"
             onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
-            className="px-3 py-2 text-white rounded-lg flex items-center justify-center text-sm"
-            style={{ backgroundColor: color.primary.action }}
+            className="px-3 py-2.5 text-white rounded-r-lg flex items-center justify-center text-sm border-l-0"
+            style={{
+              backgroundColor: color.primary.action,
+              borderColor: color.primary.action,
+            }}
             title="Create new catalog"
           >
             <Plus className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   User,
@@ -23,6 +23,7 @@ import { color, tw } from "../../../shared/utils/utils";
 export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { error: showError } = useToast();
 
   const [user, setUser] = useState<UserType | null>(null);
@@ -100,6 +101,21 @@ export default function UserDetailsPage() {
     }
   };
 
+  const returnTo = (
+    location.state as { returnTo?: { pathname: string; state?: unknown } }
+  )?.returnTo;
+
+  const navigateBack = () => {
+    if (returnTo) {
+      navigate(returnTo.pathname, {
+        replace: true,
+        state: returnTo.state,
+      });
+    } else {
+      navigate("/dashboard/user-management");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -114,7 +130,7 @@ export default function UserDetailsPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600">User not found</p>
           <button
-            onClick={() => navigate("/dashboard/user-management")}
+            onClick={navigateBack}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
             Back to User Management
@@ -136,13 +152,63 @@ export default function UserDetailsPage() {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
   };
 
+  const normalizeStatus = (userRecord: UserType): string => {
+    const accountStatus = (userRecord as unknown as { account_status?: string })
+      ?.account_status;
+    if (accountStatus && accountStatus.trim() !== "") {
+      return accountStatus.toLowerCase();
+    }
+    if (userRecord.status && userRecord.status.trim() !== "") {
+      return userRecord.status.toLowerCase();
+    }
+    const isSuspended = Boolean(
+      (userRecord as unknown as { is_suspended?: boolean })?.is_suspended
+    );
+    if (isSuspended) return "suspended";
+    const isActive = Boolean(
+      (userRecord as unknown as { is_active?: boolean })?.is_active ??
+        (userRecord as unknown as { is_activated?: boolean })?.is_activated
+    );
+    return isActive ? "active" : "inactive";
+  };
+
+  const formatStatusLabel = (status: string) =>
+    status
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ") || "Unknown";
+
+  const getStatusColors = (status: string) => {
+    if (status === "active") {
+      return {
+        background: color.tertiary.active.background,
+        text: color.tertiary.active.text,
+      };
+    }
+    if (status === "suspended" || status === "locked") {
+      return {
+        background: `${color.status.warning}20`,
+        text: color.status.warning,
+      };
+    }
+    return {
+      background: `${color.status.danger}20`,
+      text: color.status.danger,
+    };
+  };
+
+  const normalizedStatus = normalizeStatus(user);
+  const statusLabel = formatStatusLabel(normalizedStatus);
+  const statusColors = getStatusColors(normalizedStatus);
+  const userIsActive = normalizedStatus === "active";
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/dashboard/user-management")}
+            onClick={navigateBack}
             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -157,18 +223,24 @@ export default function UserDetailsPage() {
           </div>
         </div>
         <div
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-            user.status === "active"
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+          style={{
+            backgroundColor: statusColors.background,
+            color: statusColors.text,
+          }}
         >
-          {user.status === "active" ? (
-            <CheckCircle className="w-3.5 h-3.5" />
+          {userIsActive ? (
+            <CheckCircle
+              className="w-3.5 h-3.5"
+              style={{ color: statusColors.text }}
+            />
           ) : (
-            <XCircle className="w-3.5 h-3.5" />
+            <XCircle
+              className="w-3.5 h-3.5"
+              style={{ color: statusColors.text }}
+            />
           )}
-          {user.status === "active" ? "Active" : "Inactive"}
+          {statusLabel}
         </div>
       </div>
 
@@ -243,16 +315,6 @@ export default function UserDetailsPage() {
                         </span>
                       </div>
                     )}
-                    {user.employee_id && (
-                      <div className="flex justify-between items-start py-2">
-                        <span className="text-sm text-gray-600">
-                          Employee ID
-                        </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {user.employee_id}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -314,13 +376,19 @@ export default function UserDetailsPage() {
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">Status</span>
                       <div className="flex items-center gap-2">
-                        {user.status === "active" ? (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        {userIsActive ? (
+                          <CheckCircle
+                            className="w-4 h-4"
+                            style={{ color: statusColors.text }}
+                          />
                         ) : (
-                          <XCircle className="w-4 h-4 text-red-600" />
+                          <XCircle
+                            className="w-4 h-4"
+                            style={{ color: statusColors.text }}
+                          />
                         )}
                         <span className="text-sm font-medium text-gray-900 capitalize">
-                          {user.status || "N/A"}
+                          {statusLabel}
                         </span>
                       </div>
                     </div>
@@ -567,7 +635,9 @@ export default function UserDetailsPage() {
                       key={report.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() =>
-                        navigate(`/dashboard/user-management/${report.id}`)
+                        navigate(`/dashboard/user-management/${report.id}`, {
+                          state: { returnTo },
+                        })
                       }
                     >
                       <div className="flex items-center gap-3">
@@ -605,7 +675,9 @@ export default function UserDetailsPage() {
                       key={manager.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() =>
-                        navigate(`/dashboard/user-management/${manager.id}`)
+                        navigate(`/dashboard/user-management/${manager.id}`, {
+                          state: { returnTo },
+                        })
                       }
                     >
                       <div className="flex items-center gap-3">

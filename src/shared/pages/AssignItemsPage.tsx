@@ -22,9 +22,18 @@ import {
   Offer,
   OfferStatusEnum,
   OfferTypeEnum,
+  UpdateOfferRequest,
 } from "../../features/offers/types/offer";
 import { Product } from "../../features/products/types/product";
-import { Segment } from "../../features/segments/types/segment";
+import {
+  Segment,
+  UpdateSegmentRequest,
+} from "../../features/segments/types/segment";
+
+const CATALOG_TAG_PREFIX = "catalog:";
+
+const buildCatalogTag = (categoryId: number | string) =>
+  `${CATALOG_TAG_PREFIX}${categoryId}`;
 
 type ItemType = "offers" | "products" | "segments";
 
@@ -118,8 +127,8 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
             setCatalogName(catalog.data?.name || "");
             break;
         }
-      } catch (err) {
-        console.error("Failed to load catalog name:", err);
+      } catch {
+        // Failed to load catalog name
       }
     };
 
@@ -178,26 +187,35 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
           if (!catalogId) return;
 
           try {
-            console.log(
-              `[AssignItemsPage] Loading assigned ${itemType} for catalog ${catalogId}`
-            );
             let assigned: (number | string)[] = [];
             switch (itemType) {
               case "offers": {
                 const offersResponse =
                   await offerCategoryService.getCategoryOffers(
                     Number(catalogId),
-                    { limit: 1000, skipCache: true }
+                    { limit: 100, skipCache: true }
                   );
                 const offers = (offersResponse.data || []) as Offer[];
-                assigned = offers.map((offer) => offer.id);
+                const assignedSet = new Set<number | string>(
+                  offers.map((offer) => offer.id)
+                );
+                const catalogTag = buildCatalogTag(catalogId);
+                (itemsData as Offer[]).forEach((offer) => {
+                  if (
+                    Array.isArray(offer.tags) &&
+                    offer.tags.includes(catalogTag)
+                  ) {
+                    assignedSet.add(offer.id);
+                  }
+                });
+                assigned = Array.from(assignedSet);
                 break;
               }
               case "products": {
                 const productsResponse =
                   await productService.getProductsByCategory(
                     Number(catalogId),
-                    { limit: 1000, skipCache: true }
+                    { limit: 100, skipCache: true }
                   );
                 assigned = (productsResponse.data || []).map(
                   (product: Product) => product.id
@@ -225,12 +243,20 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                   } else if (Array.isArray(segmentsResponse)) {
                     categorySegments = segmentsResponse as Segment[];
                   }
-                  assigned = categorySegments.map((s: Segment) => s.id);
-                } catch (err) {
-                  console.error(
-                    `[AssignItemsPage] Error loading segments for category ${catalogId}:`,
-                    err
+                  const assignedSet = new Set<number | string>(
+                    categorySegments.map((s: Segment) => s.id)
                   );
+                  const catalogTag = buildCatalogTag(catalogId);
+                  (itemsData as Segment[]).forEach((segment) => {
+                    if (
+                      Array.isArray(segment.tags) &&
+                      segment.tags.includes(catalogTag)
+                    ) {
+                      assignedSet.add(segment.id);
+                    }
+                  });
+                  assigned = Array.from(assignedSet);
+                } catch {
                   // Fallback: try to get all segments and filter
                   try {
                     const allSegmentsResponse =
@@ -252,44 +278,29 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                     assigned = allSegments
                       .filter(
                         (s: Segment) =>
-                          s.category && String(s.category) === String(catalogId)
+                          (s.category &&
+                            String(s.category) === String(catalogId)) ||
+                          (Array.isArray(s.tags) &&
+                            s.tags.includes(buildCatalogTag(catalogId)))
                       )
                       .map((s: Segment) => s.id);
-                  } catch (fallbackErr) {
-                    console.error(
-                      `[AssignItemsPage] Fallback also failed:`,
-                      fallbackErr
-                    );
+                  } catch {
                     assigned = [];
                   }
                 }
                 break;
             }
             setAssignedItemIds(assigned);
-            console.log(
-              `[AssignItemsPage] Loaded ${assigned.length} assigned ${itemType}`
-            );
-          } catch (err) {
-            console.error(
-              `[AssignItemsPage] Failed to load assigned ${itemType}:`,
-              err
-            );
+            setSelectedItemIds(new Set());
+          } catch {
             // Set empty array on error to prevent UI issues
             setAssignedItemIds([]);
+            setSelectedItemIds(new Set());
           }
         };
 
         await loadAssignedItems();
       } catch (err) {
-        console.error(
-          `[AssignItemsPage] Failed to load ${typeInfo.plural}:`,
-          err
-        );
-        // Log more details about the error
-        if (err instanceof Error) {
-          console.error(`[AssignItemsPage] Error message:`, err.message);
-          console.error(`[AssignItemsPage] Error stack:`, err.stack);
-        }
         showError(
           `Failed to load ${typeInfo.plural}`,
           err instanceof Error ? err.message : "Unknown error"
@@ -400,28 +411,91 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
       const itemIdsArray = Array.from(selectedItemIds);
       let success = 0;
       let failed = 0;
+      const successfulAssignments: (number | string)[] = [];
+      const catalogIdNumber = Number(catalogId);
+      const catalogTag = buildCatalogTag(
+        Number.isNaN(catalogIdNumber) ? catalogId || "" : catalogIdNumber
+      );
 
       // Assign each item individually
       for (const itemId of itemIdsArray) {
         try {
           switch (itemType) {
-            case "offers":
-              await offerService.updateOffer(Number(itemId), {
-                category_id: Number(catalogId),
-              });
+            case "offers": {
+              const offer = items.find((item) => item.id === itemId) as
+                | Offer
+                | undefined;
+              const existingTags = Array.isArray(offer?.tags)
+                ? offer?.tags ?? []
+                : [];
+              const updatedTagsSet = new Set(existingTags);
+              updatedTagsSet.add(catalogTag);
+              const updatedTags = Array.from(updatedTagsSet);
+
+              const updatePayload: UpdateOfferRequest = {};
+
+              if (!offer?.category_id && !Number.isNaN(catalogIdNumber)) {
+                updatePayload.category_id = catalogIdNumber;
+              }
+
+              if (
+                updatedTags.length !== existingTags.length ||
+                (!offer?.tags && updatedTags.length > 0)
+              ) {
+                updatePayload.tags = updatedTags;
+              }
+
+              if (Object.keys(updatePayload).length === 0) {
+                success++;
+                successfulAssignments.push(itemId);
+                continue;
+              }
+
+              await offerService.updateOffer(Number(itemId), updatePayload);
               break;
+            }
             case "products":
               await productService.updateProduct(Number(itemId), {
                 category_id: Number(catalogId),
               });
               break;
-            case "segments":
-              await segmentService.updateSegment(Number(itemId), {
-                category: Number(catalogId),
-              });
+            case "segments": {
+              const segment = items.find((item) => item.id === itemId) as
+                | Segment
+                | undefined;
+              const existingTags = Array.isArray(segment?.tags)
+                ? segment?.tags ?? []
+                : [];
+              const updatedTagsSet = new Set(existingTags);
+              updatedTagsSet.add(catalogTag);
+              const updatedTags = Array.from(updatedTagsSet);
+
+              const updatePayload: UpdateSegmentRequest = {};
+
+              if (
+                (segment?.category === null ||
+                  segment?.category === undefined) &&
+                !Number.isNaN(catalogIdNumber)
+              ) {
+                updatePayload.category = catalogIdNumber;
+              }
+
+              if (updatedTags.length !== existingTags.length) {
+                updatePayload.tags = updatedTags;
+              }
+
+              if (Object.keys(updatePayload).length === 0) {
+                success++;
+                successfulAssignments.push(itemId);
+                continue;
+              }
+
+              await segmentService.updateSegment(Number(itemId), updatePayload);
               break;
+            }
           }
           success++;
+          successfulAssignments.push(itemId);
         } catch (err) {
           failed++;
           const errorMessage =
@@ -432,12 +506,6 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
               : typeof err === "object" && err !== null && "message" in err
               ? String((err as any).message)
               : `Failed to assign ${typeInfo.singular}`;
-
-          console.error(
-            `Failed to assign ${typeInfo.singular} ${itemId}:`,
-            errorMessage,
-            err
-          );
 
           // Show specific error for the first failed item
           if (failed === 1) {
@@ -454,13 +522,17 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
         } else {
           showSuccess(`${success} ${typeInfo.plural} assigned successfully`);
         }
+        if (successfulAssignments.length > 0) {
+          setAssignedItemIds((prev) =>
+            Array.from(new Set([...prev, ...successfulAssignments]))
+          );
+        }
         // Navigate back to catalog page
         navigate(-1);
       } else {
         showError(`Failed to assign ${typeInfo.plural}. Please try again.`);
       }
     } catch (err) {
-      console.error(`Failed to assign ${typeInfo.plural}:`, err);
       showError(
         err instanceof Error
           ? err.message

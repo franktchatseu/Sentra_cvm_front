@@ -17,177 +17,19 @@ import {
   Copy,
   RefreshCw,
   Download,
+  Activity,
+  TrendingUp,
+  Layers,
+  Play,
+  Pause,
 } from "lucide-react";
-import {
-  Segment,
-  SegmentFilters,
-  SegmentType,
-  SortDirection,
-} from "../types/segment";
+import { Segment, SegmentFilters, SortDirection } from "../types/segment";
 import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import SegmentModal from "../components/SegmentModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
-
-// Mock data for testing
-const MOCK_SEGMENTS: Segment[] = [
-  {
-    id: 1,
-    segment_id: 1,
-    name: "High Value Customers",
-    description: "Customers with monthly spend > $100",
-    type: "dynamic",
-    tags: ["vip", "high-value", "premium"],
-    customer_count: 15420,
-    size_estimate: 15420,
-    created_at: "2024-01-15T10:30:00Z",
-    created_on: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T14:22:00Z",
-    updated_on: "2024-01-15T14:22:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 1,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 2,
-    segment_id: 2,
-    name: "At Risk Customers",
-    description: "Customers showing churn signals",
-    type: "dynamic",
-    tags: ["at-risk", "churn", "retention"],
-    customer_count: 8934,
-    size_estimate: 8934,
-    created_at: "2024-01-10T09:15:00Z",
-    created_on: "2024-01-10T09:15:00Z",
-    updated_at: "2024-01-10T11:30:00Z",
-    updated_on: "2024-01-10T11:30:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 2,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 3,
-    segment_id: 3,
-    name: "New Subscribers",
-    description: "Customers who joined in the last 30 days",
-    type: "dynamic",
-    tags: ["new", "onboarding", "recent"],
-    customer_count: 3245,
-    size_estimate: 3245,
-    created_at: "2024-01-20T08:45:00Z",
-    created_on: "2024-01-20T08:45:00Z",
-    updated_at: "2024-01-20T10:20:00Z",
-    updated_on: "2024-01-20T10:20:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 1,
-    visibility: "public",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 4,
-    segment_id: 4,
-    name: "Voice Heavy Users",
-    description: "Customers with high voice usage patterns",
-    type: "dynamic",
-    tags: ["voice", "heavy-users", "communication"],
-    customer_count: 12678,
-    size_estimate: 12678,
-    created_at: "2024-01-12T13:20:00Z",
-    created_on: "2024-01-12T13:20:00Z",
-    updated_at: "2024-01-12T15:45:00Z",
-    updated_on: "2024-01-12T15:45:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 3,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 5,
-    segment_id: 5,
-    name: "Data Bundle Enthusiasts",
-    description: "Customers who frequently purchase data bundles",
-    type: "dynamic",
-    tags: ["data", "bundles", "heavy-data"],
-    customer_count: 18923,
-    size_estimate: 18923,
-    created_at: "2024-01-08T11:10:00Z",
-    created_on: "2024-01-08T11:10:00Z",
-    updated_at: "2024-01-08T16:30:00Z",
-    updated_on: "2024-01-08T16:30:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 2,
-    visibility: "public",
-    refresh_frequency: "daily",
-  },
-  {
-    id: 6,
-    segment_id: 6,
-    name: "Weekend Warriors",
-    description: "Customers with high weekend usage",
-    type: "dynamic",
-    tags: ["weekend", "leisure", "entertainment"],
-    customer_count: 7456,
-    size_estimate: 7456,
-    created_at: "2024-01-18T14:00:00Z",
-    created_on: "2024-01-18T14:00:00Z",
-    updated_at: "2024-01-18T16:15:00Z",
-    updated_on: "2024-01-18T16:15:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 1,
-    visibility: "private",
-    refresh_frequency: "weekly",
-  },
-  {
-    id: 7,
-    segment_id: 7,
-    name: "Business Customers",
-    description: "B2B customers and corporate accounts",
-    type: "static",
-    tags: ["business", "corporate", "b2b"],
-    customer_count: 4321,
-    size_estimate: 4321,
-    created_at: "2024-01-05T09:30:00Z",
-    created_on: "2024-01-05T09:30:00Z",
-    updated_at: "2024-01-05T12:45:00Z",
-    updated_on: "2024-01-05T12:45:00Z",
-    created_by: 1,
-    is_active: true,
-    category: 3,
-    visibility: "private",
-    refresh_frequency: "monthly",
-  },
-  {
-    id: 8,
-    segment_id: 8,
-    name: "Dormant Users",
-    description: "Customers with no activity in 60+ days",
-    type: "dynamic",
-    tags: ["dormant", "inactive", "re-engagement"],
-    customer_count: 5678,
-    size_estimate: 5678,
-    created_at: "2024-01-14T10:15:00Z",
-    created_on: "2024-01-14T10:15:00Z",
-    updated_at: "2024-01-14T13:20:00Z",
-    updated_on: "2024-01-14T13:20:00Z",
-    created_by: 1,
-    is_active: false,
-    category: 2,
-    visibility: "private",
-    refresh_frequency: "daily",
-  },
-];
-
-const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
 
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
@@ -201,7 +43,9 @@ export default function SegmentManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [typeFilter, setTypeFilter] = useState<SegmentType | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<
+    "static" | "dynamic" | "trigger" | "all"
+  >("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
@@ -216,6 +60,51 @@ export default function SegmentManagementPage() {
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
   const actionMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<{
+    healthSummary: {
+      total_segments?: number;
+      active_segments?: number;
+      inactive_segments?: number;
+      dynamic_segments?: number;
+      static_segments?: number;
+      trigger_segments?: number;
+      last_24h_created?: number;
+      last_7d_created?: number;
+      last_30d_created?: number;
+      health_score?: number;
+      issues?: string[];
+    } | null;
+    typeDistribution: {
+      dynamic?: number;
+      static?: number;
+      trigger?: number;
+      total?: number;
+    } | null;
+    categoryDistribution: Array<{
+      category_id: number;
+      category_name: string;
+      segment_count: number;
+      percentage: number;
+    }>;
+    largestSegments: Array<{
+      segment_id: number;
+      name: string;
+      member_count: number;
+      type: string;
+      last_computed: string;
+    }>;
+    staleSegments: Array<{
+      segment_id: number;
+      name: string;
+      last_computed: string;
+      days_since_computed: number;
+      refresh_frequency: string;
+    }>;
+    generalStats: Record<string, unknown> | null;
+  } | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
 
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
@@ -263,38 +152,106 @@ export default function SegmentManagementPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Load analytics data
+  const loadAnalytics = useCallback(async () => {
+    try {
+      setIsLoadingAnalytics(true);
+
+      // Load all analytics endpoints in parallel
+      const [
+        healthSummaryResponse,
+        typeDistributionResponse,
+        categoryDistributionResponse,
+        largestSegmentsResponse,
+        staleSegmentsResponse,
+        generalStatsResponse,
+      ] = await Promise.allSettled([
+        segmentService.getHealthSummary(),
+        segmentService.getTypeDistribution(),
+        segmentService.getCategoryDistribution(),
+        segmentService.getLargestSegments(5),
+        segmentService.getStaleSegments(7),
+        segmentService.getSegmentStats(true),
+      ]);
+
+      const analytics = {
+        healthSummary:
+          healthSummaryResponse.status === "fulfilled"
+            ? healthSummaryResponse.value.data || healthSummaryResponse.value
+            : null,
+        typeDistribution:
+          typeDistributionResponse.status === "fulfilled"
+            ? typeDistributionResponse.value.data ||
+              typeDistributionResponse.value
+            : null,
+        categoryDistribution:
+          categoryDistributionResponse.status === "fulfilled"
+            ? categoryDistributionResponse.value.data ||
+              categoryDistributionResponse.value ||
+              []
+            : [],
+        largestSegments:
+          largestSegmentsResponse.status === "fulfilled"
+            ? largestSegmentsResponse.value.data ||
+              largestSegmentsResponse.value ||
+              []
+            : [],
+        staleSegments:
+          staleSegmentsResponse.status === "fulfilled"
+            ? staleSegmentsResponse.value.data ||
+              staleSegmentsResponse.value ||
+              []
+            : [],
+        generalStats:
+          generalStatsResponse.status === "fulfilled"
+            ? generalStatsResponse.value.data || generalStatsResponse.value
+            : null,
+      };
+
+      setAnalyticsData(analytics);
+    } catch {
+      // Don't show error to user, just use fallback data
+    } finally {
+      setIsLoadingAnalytics(false);
+    }
+  }, []);
+
   const loadSegments = useCallback(async () => {
     try {
       setIsLoading(true);
       setError("");
 
-      if (USE_MOCK_DATA) {
-        // Use mock data for testing
-        console.log("🚀 LOADING SEGMENTS - Using mock data");
-        setSegments(MOCK_SEGMENTS);
-        setTotalCount(MOCK_SEGMENTS.length);
-        setTotalPages(Math.ceil(MOCK_SEGMENTS.length / pageSize));
-        setIsLoading(false);
-        return;
+      let segmentData: Segment[] = [];
+
+      // Use searchSegments endpoint if there's a search term, otherwise use getSegments
+      if (debouncedSearchTerm) {
+        const searchResponse = await segmentService.searchSegments({
+          q: debouncedSearchTerm,
+          type:
+            typeFilter !== "all" &&
+            (typeFilter === "static" ||
+              typeFilter === "dynamic" ||
+              typeFilter === "trigger")
+              ? typeFilter
+              : undefined,
+          skipCache: true,
+        });
+        segmentData = searchResponse.data || [];
+      } else {
+        const filters: SegmentFilters = {
+          skipCache: true,
+        };
+        if (
+          typeFilter !== "all" &&
+          (typeFilter === "static" ||
+            typeFilter === "dynamic" ||
+            typeFilter === "trigger")
+        ) {
+          filters.type = typeFilter;
+        }
+        const response = await segmentService.getSegments(filters);
+        segmentData = response.data || [];
       }
-
-      // Use client-side tag filtering (search endpoint has issues)
-
-      const filters: SegmentFilters = {
-        // Remove page, pageSize, sortBy, and sortDirection as backend doesn't support them
-        skipCache: true, // Always skip cache to get fresh data
-      };
-
-      if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
-      if (typeFilter !== "all") filters.type = typeFilter;
-
-      console.log("Loading segments with filters:", filters);
-      const response = await segmentService.getSegments(filters);
-      console.log("Segments response:", response);
-
-      // Handle both response formats
-      let segmentData = response.data || response.segments || [];
-      console.log("Segment data:", segmentData);
 
       // Apply client-side tag filtering if tags are selected
       if (selectedTags.length > 0) {
@@ -330,6 +287,11 @@ export default function SegmentManagementPage() {
     loadSegments();
   }, [loadSegments]);
 
+  // Load analytics on mount
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
+
   const handleSearch = () => {
     loadSegments();
   };
@@ -345,7 +307,7 @@ export default function SegmentManagementPage() {
   };
 
   const handleEditSegment = (segmentId: number) => {
-    const segment = segments.find((s) => (s.segment_id || s.id) === segmentId);
+    const segment = segments.find((s) => s.id === segmentId);
     if (segment) {
       setSelectedSegment(segment);
       setIsModalOpen(true);
@@ -366,7 +328,7 @@ export default function SegmentManagementPage() {
     if (!confirmed) return;
 
     try {
-      const segmentId = segment.segment_id || segment.id!;
+      const segmentId = segment.id;
       await segmentService.deleteSegment(segmentId);
       await loadSegments();
       success(
@@ -393,7 +355,7 @@ export default function SegmentManagementPage() {
 
     if (!confirmed) return;
 
-    const segmentId = segment.segment_id || segment.id!;
+    const segmentId = segment.id;
     const newName = `${segment.name} (Copy)`;
 
     try {
@@ -444,7 +406,7 @@ export default function SegmentManagementPage() {
     if (!confirmed) return;
 
     try {
-      const segmentId = segment.segment_id || segment.id!;
+      const segmentId = segment.id;
       await segmentService.computeSegment(segmentId);
       success(
         "Segment computed",
@@ -461,8 +423,10 @@ export default function SegmentManagementPage() {
   const handleExportSegment = async (segment: Segment) => {
     setShowActionMenu(null);
     try {
-      const segmentId = segment.segment_id || segment.id!;
-      const blob = await segmentService.exportSegment(segmentId, "json");
+      const segmentId = segment.id;
+      const blob = await segmentService.exportSegment(segmentId, {
+        format: "json",
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -479,6 +443,30 @@ export default function SegmentManagementPage() {
         "Export failed",
         (err as Error).message || "Failed to export segment"
       );
+    }
+  };
+
+  const handleToggleStatus = async (segment: Segment) => {
+    try {
+      const segmentId = segment.id;
+      if (segment.is_active) {
+        await segmentService.deactivateSegment(segmentId);
+        success(
+          "Segment Deactivated",
+          `"${segment.name}" has been deactivated successfully.`
+        );
+      } else {
+        await segmentService.activateSegment(segmentId);
+        success(
+          "Segment Activated",
+          `"${segment.name}" has been activated successfully.`
+        );
+      }
+      await loadSegments();
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update segment status";
+      showError("Error", errorMessage);
     }
   };
 
@@ -502,6 +490,48 @@ export default function SegmentManagementPage() {
     return matchesSearch && matchesTags;
   });
 
+  // Calculate statistics - use analytics data if available, otherwise fallback to client-side calculation
+  const stats = {
+    totalSegments:
+      analyticsData?.healthSummary?.total_segments ?? allSegments.length,
+    activeSegments:
+      analyticsData?.healthSummary?.active_segments ??
+      allSegments.filter((s) => s.is_active).length,
+    totalCustomers: allSegments.reduce((sum, s) => {
+      const count = s.size_estimate || 0;
+      return sum + count;
+    }, 0),
+    // Use type distribution from analytics if available
+    typeCounts: analyticsData?.typeDistribution
+      ? {
+          dynamic: analyticsData.typeDistribution.dynamic || 0,
+          static: analyticsData.typeDistribution.static || 0,
+          trigger: analyticsData.typeDistribution.trigger || 0,
+          predictive: allSegments.filter((s) => s.type === "predictive").length,
+          behavioral: allSegments.filter((s) => s.type === "behavioral").length,
+          demographic: allSegments.filter((s) => s.type === "demographic")
+            .length,
+          geographic: allSegments.filter((s) => s.type === "geographic").length,
+          transactional: allSegments.filter((s) => s.type === "transactional")
+            .length,
+        }
+      : {
+          dynamic: allSegments.filter((s) => s.type === "dynamic").length,
+          static: allSegments.filter((s) => s.type === "static").length,
+          trigger: 0, // Trigger type not in SegmentType union
+          predictive: allSegments.filter((s) => s.type === "predictive").length,
+          behavioral: allSegments.filter((s) => s.type === "behavioral").length,
+          demographic: allSegments.filter((s) => s.type === "demographic")
+            .length,
+          geographic: allSegments.filter((s) => s.type === "geographic").length,
+          transactional: allSegments.filter((s) => s.type === "transactional")
+            .length,
+        },
+    healthScore: analyticsData?.healthSummary?.health_score ?? null,
+    staleSegmentsCount: analyticsData?.staleSegments?.length ?? 0,
+    largestSegments: analyticsData?.largestSegments || [],
+  };
+
   return (
     <div className="space-y-6 ">
       {/* Header */}
@@ -524,6 +554,129 @@ export default function SegmentManagementPage() {
           </button>
         </div>
       </div>
+
+      {/* Stats Cards */}
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total Segments */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag1 }}
+              >
+                <Layers className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
+                  {isLoadingAnalytics ? (
+                    <span className="text-gray-400">...</span>
+                  ) : (
+                    stats.totalSegments.toLocaleString()
+                  )}
+                </p>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>Total Segments</p>
+                {analyticsData?.healthSummary?.last_7d_created &&
+                  analyticsData.healthSummary.last_7d_created > 0 && (
+                    <p className={`text-xs ${tw.textMuted} mt-2`}>
+                      +{analyticsData.healthSummary.last_7d_created} this week
+                    </p>
+                  )}
+              </div>
+            </div>
+          </div>
+
+          {/* Active Segments */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag4 }}
+              >
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
+                  {isLoadingAnalytics ? (
+                    <span className="text-gray-400">...</span>
+                  ) : (
+                    stats.activeSegments.toLocaleString()
+                  )}
+                </p>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>
+                  Active Segments
+                </p>
+                <p className={`text-xs ${tw.textMuted} mt-2`}>
+                  {stats.totalSegments > 0
+                    ? `${Math.round(
+                        (stats.activeSegments / stats.totalSegments) * 100
+                      )}% of total`
+                    : "0% of total"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Customers */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag2 }}
+              >
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
+                  {stats.totalCustomers.toLocaleString()}
+                </p>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>
+                  Total Customers
+                </p>
+                <p className={`text-xs ${tw.textMuted} mt-2`}>
+                  Across all segments
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Segment */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className="p-3 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: color.tertiary.tag3 }}
+              >
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className={`text-lg font-bold ${tw.textPrimary} truncate`}
+                  title={
+                    stats.largestSegments[0]?.name || "No segments available"
+                  }
+                >
+                  {isLoadingAnalytics ? (
+                    <span className="text-gray-400">...</span>
+                  ) : stats.largestSegments.length > 0 ? (
+                    stats.largestSegments[0]?.name || "No name"
+                  ) : (
+                    "No segments"
+                  )}
+                </p>
+                <p className={`text-sm ${tw.textMuted} mt-1`}>Top Segment</p>
+                <p className={`text-xs ${tw.textMuted} mt-2`}>
+                  {stats.largestSegments.length > 0
+                    ? `${(
+                        stats.largestSegments[0]?.member_count || 0
+                      ).toLocaleString()} members`
+                    : "No data available"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className={``}>
@@ -580,7 +733,7 @@ export default function SegmentManagementPage() {
                   onClick={() =>
                     setSelectedTags((prev) => prev.filter((t) => t !== tag))
                   }
-                  className="ml-2 hover:text-green-900"
+                  className="ml-2 "
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -592,7 +745,7 @@ export default function SegmentManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white rounded-lg border border-[${color.border.default}] overflow-x-auto`}
+        className={`bg-white rounded-lg border border-[${color.border.default}] `}
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -647,7 +800,7 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto overflow-y-visible">
+            <div className="hidden lg:block ">
               <table className="w-full">
                 <thead
                   className={`border-b ${tw.borderDefault}`}
@@ -701,7 +854,7 @@ export default function SegmentManagementPage() {
                 <tbody className={`bg-white divide-y ${tw.borderDefault}/50`}>
                   {filteredSegments.map((segment) => (
                     <tr
-                      key={segment.segment_id || segment.id}
+                      key={segment.id}
                       className={`group hover:bg-gray-50/30 transition-all duration-300`}
                     >
                       <td className="px-6 py-4">
@@ -716,7 +869,7 @@ export default function SegmentManagementPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                             segment.type === "dynamic"
                               ? `bg-[${color.primary.accent}]`
                               : segment.type === "static"
@@ -740,15 +893,30 @@ export default function SegmentManagementPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
-                          {segment.tags?.map((tag) => (
-                            <span
-                              key={tag}
-                              className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
-                            >
-                              <Tag className="w-3 h-3 mr-1" />
-                              {tag}
+                          {segment.tags && segment.tags.length > 0 ? (
+                            <>
+                              {segment.tags.slice(0, 2).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
+                                >
+                                  <Tag className="w-3 h-3 mr-1" />
+                                  {tag}
+                                </span>
+                              ))}
+                              {segment.tags.length > 2 && (
+                                <span
+                                  className={`inline-flex items-center px-2 py-1 text-sm font-medium ${tw.textMuted}`}
+                                >
+                                  +{segment.tags.length - 2} more
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className={`text-sm ${tw.textMuted}`}>
+                              No tags
                             </span>
-                          ))}
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -757,7 +925,7 @@ export default function SegmentManagementPage() {
                             className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`}
                           />
                           <span className={`text-sm ${tw.textPrimary}`}>
-                            {segment.customer_count?.toLocaleString() || "0"}
+                            {(segment.size_estimate || 0).toLocaleString()}
                           </span>
                         </div>
                       </td>
@@ -779,80 +947,76 @@ export default function SegmentManagementPage() {
                           <div
                             className={`text-sm ${tw.textPrimary} font-medium`}
                           >
-                            {new Date(
-                              segment.created_on || segment.created_at!
-                            ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {new Date(segment.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center justify-end space-x-2">
                           <button
-                            onClick={() =>
-                              handleViewSegment(
-                                segment.segment_id || segment.id!
-                              )
-                            }
+                            onClick={() => handleViewSegment(segment.id)}
                             className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             title="View Details"
                           >
-                            <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            <Eye className="w-4 h-4 " />
                           </button>
                           <button
-                            onClick={() =>
-                              handleEditSegment(
-                                segment.segment_id || segment.id!
-                              )
+                            onClick={() => handleToggleStatus(segment)}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                            title={
+                              segment.is_active ? "Deactivate" : "Activate"
                             }
+                          >
+                            {segment.is_active ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleEditSegment(segment.id)}
                             className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             title="Edit"
                           >
-                            <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            <Edit className="w-4 h-4 " />
                           </button>
                           <div
                             className="relative"
                             ref={(el) => {
-                              actionMenuRefs.current[
-                                String(segment.segment_id || segment.id!)
-                              ] = el;
+                              actionMenuRefs.current[String(segment.id)] = el;
                             }}
                           >
                             <button
-                              onClick={() =>
-                                handleActionMenuToggle(
-                                  segment.segment_id || segment.id!
-                                )
-                              }
+                              onClick={() => handleActionMenuToggle(segment.id)}
                               className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             >
-                              <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                              <MoreHorizontal className="w-4 h-4" />
                             </button>
 
-                            {showActionMenu ===
-                              (segment.segment_id || segment.id) && (
+                            {showActionMenu === segment.id && (
                               <div
-                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3 z-[100]"
+                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3"
                                 style={{
                                   maxHeight: "80vh",
                                   overflowY: "auto",
+                                  zIndex: 9999,
                                 }}
                               >
                                 <button
                                   onClick={() =>
                                     handleDuplicateSegment(segment)
                                   }
-                                  disabled={
-                                    duplicatingSegment ===
-                                    (segment.segment_id || segment.id)
-                                  }
+                                  disabled={duplicatingSegment === segment.id}
                                   className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {duplicatingSegment ===
-                                  (segment.segment_id || segment.id) ? (
+                                  {duplicatingSegment === segment.id ? (
                                     <>
                                       <div className="w-4 h-4 mr-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
                                       Duplicating...
@@ -911,7 +1075,7 @@ export default function SegmentManagementPage() {
             <div className="lg:hidden space-y-4 p-4">
               {filteredSegments.map((segment) => (
                 <div
-                  key={segment.segment_id || segment.id}
+                  key={segment.id}
                   className={`bg-white border ${tw.borderDefault} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -927,18 +1091,25 @@ export default function SegmentManagementPage() {
                     {/* Mobile Actions */}
                     <div className="flex items-center space-x-1">
                       <button
-                        onClick={() =>
-                          handleViewSegment(segment.segment_id || segment.id!)
-                        }
+                        onClick={() => handleToggleStatus(segment)}
+                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        title={segment.is_active ? "Deactivate" : "Activate"}
+                      >
+                        {segment.is_active ? (
+                          <Pause className="w-4 h-4" />
+                        ) : (
+                          <Play className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleViewSegment(segment.id)}
                         className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() =>
-                          handleEditSegment(segment.segment_id || segment.id!)
-                        }
+                        onClick={() => handleEditSegment(segment.id)}
                         className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
                         title="Edit"
                       >
@@ -947,17 +1118,11 @@ export default function SegmentManagementPage() {
                       <div
                         className="relative"
                         ref={(el) => {
-                          actionMenuRefs.current[
-                            `mobile-${segment.segment_id || segment.id!}`
-                          ] = el;
+                          actionMenuRefs.current[`mobile-${segment.id}`] = el;
                         }}
                       >
                         <button
-                          onClick={() =>
-                            handleActionMenuToggle(
-                              segment.segment_id || segment.id!
-                            )
-                          }
+                          onClick={() => handleActionMenuToggle(segment.id)}
                           className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -1006,18 +1171,18 @@ export default function SegmentManagementPage() {
                   >
                     <div className="flex items-center">
                       {/* Icon removed */}
-                      {segment.customer_count?.toLocaleString() || "0"}{" "}
-                      customers
+                      {(segment.size_estimate || 0).toLocaleString()} customers
                     </div>
                     <div>
                       Created:{" "}
-                      {new Date(
-                        segment.created_on || segment.created_at!
-                      ).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {new Date(segment.created_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
                     </div>
                   </div>
                 </div>

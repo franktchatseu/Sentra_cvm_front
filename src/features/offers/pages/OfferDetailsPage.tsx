@@ -13,11 +13,7 @@ import {
   Pause,
   Archive,
   MoreVertical,
-  Package,
-  X,
-  Star,
-  StarOff,
-  MessageSquare,
+  Save,
 } from "lucide-react";
 import { Offer, OfferStatusEnum } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
@@ -25,11 +21,58 @@ import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
 import { offerCreativeService } from "../services/offerCreativeService";
+import {
+  OfferCreative,
+  CreativeChannel,
+  COMMON_LOCALES,
+  VALID_CHANNELS,
+  CreateOfferCreativeRequest,
+} from "../types/offerCreative";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import RegularModal from "../../../shared/components/ui/RegularModal";
+import { Product } from "../../products/types/product";
+import { Search, Check } from "lucide-react";
+import { productCategoryService } from "../../products/services/productCategoryService";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+
+const localeLabelMap: Record<string, string> = {
+  en: "English",
+  "en-US": "English (US)",
+  "en-GB": "English (UK)",
+  fr: "French",
+  "fr-CA": "French (Canada)",
+  "fr-FR": "French (France)",
+  es: "Spanish",
+  "es-ES": "Spanish (Spain)",
+  "es-MX": "Spanish (Mexico)",
+  de: "German",
+  "de-DE": "German (Germany)",
+  ar: "Arabic",
+  "ar-SA": "Arabic (Saudi Arabia)",
+  pt: "Portuguese",
+  "pt-BR": "Portuguese (Brazil)",
+  "pt-PT": "Portuguese (Portugal)",
+  sw: "Swahili",
+  "sw-UG": "Swahili (Uganda)",
+  "sw-KE": "Swahili (Kenya)",
+};
+
+const getLocaleLabel = (locale: string): string =>
+  localeLabelMap[locale] || locale;
+
+const creativeChannelOptions = VALID_CHANNELS.map((channel) => ({
+  value: channel,
+  label: channel,
+}));
+
+const localeOptions = COMMON_LOCALES.map((locale) => ({
+  value: locale,
+  label: getLocaleLabel(locale),
+}));
 
 export default function OfferDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,24 +91,80 @@ export default function OfferDetailsPage() {
     useState(false);
   const [isActivateLoading, setIsActivateLoading] = useState(false);
   const [isPauseLoading, setIsPauseLoading] = useState(false);
-  const [isDeactivateLoading, setIsDeactivateLoading] = useState(false);
   const [isExpireLoading, setIsExpireLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [linkedProducts, setLinkedProducts] = useState<any[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [categoryName, setCategoryName] = useState<string>("Uncategorized");
   const [primaryProductId, setPrimaryProductId] = useState<number | null>(null);
-  const [hasPrimaryProduct, setHasPrimaryProduct] = useState<boolean>(false);
   const [unlinkingProductId, setUnlinkingProductId] = useState<number | null>(
     null
   );
-  const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
-  const [offerCreatives, setOfferCreatives] = useState<OfferCreativeType[]>([]);
+  const [offerCreatives, setOfferCreatives] = useState<OfferCreative[]>([]);
   const [creativesLoading, setCreativesLoading] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
+  // Creative edit modal state
+  const [isEditCreativeModalOpen, setIsEditCreativeModalOpen] = useState(false);
+  const [editingCreative, setEditingCreative] = useState<OfferCreative | null>(
+    null
+  );
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    text_body: "",
+    html_body: "",
+    variables: {} as Record<string, string | number | boolean>,
+  });
+  const [variablesJson, setVariablesJson] = useState("");
+  const [isSavingCreative, setIsSavingCreative] = useState(false);
+  const [isAddCreativeModalOpen, setIsAddCreativeModalOpen] = useState(false);
+  const [isCreatingCreative, setIsCreatingCreative] = useState(false);
+  const [newCreativeForm, setNewCreativeForm] = useState<{
+    channel: CreativeChannel;
+    locale: string;
+    title: string;
+    text_body: string;
+    html_body: string;
+    is_active: boolean;
+  }>({
+    channel: "Email" as CreativeChannel,
+    locale: "en",
+    title: "",
+    text_body: "",
+    html_body: "",
+    is_active: true,
+  });
+  const [newCreativeVariables, setNewCreativeVariables] = useState("");
+
+  // Add product modal state
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [selectedProductsToAdd, setSelectedProductsToAdd] = useState<Product[]>(
+    []
+  );
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+  const [productsSearchLoading, setProductsSearchLoading] = useState(false);
+  const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [selectedProductCategory, setSelectedProductCategory] =
+    useState<string>("all");
+  const [productCategories, setProductCategories] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [isLinkingProducts, setIsLinkingProducts] = useState(false);
+
   // Close More menu when clicking outside
   useClickOutside(moreMenuRef, () => setShowMoreMenu(false));
+
+  const resetNewCreativeForm = () => {
+    setNewCreativeForm({
+      channel: "Email" as CreativeChannel,
+      locale: "en",
+      title: "",
+      text_body: "",
+      html_body: "",
+      is_active: true,
+    });
+    setNewCreativeVariables("");
+  };
 
   const loadOffer = useCallback(
     async (skipCache: boolean = true) => {
@@ -98,12 +197,11 @@ export default function OfferDetailsPage() {
             if (category) {
               setCategoryName(category.name);
             }
-          } catch (error) {
-            console.error("Failed to fetch category name:", error);
+          } catch {
+            // Failed to fetch category name
           }
         }
       } catch (err) {
-        console.error("Failed to load offer:", err);
         setError(err instanceof Error ? err.message : "Failed to load offer");
       } finally {
         setLoading(false);
@@ -119,55 +217,30 @@ export default function OfferDetailsPage() {
       try {
         setProductsLoading(true);
 
-        // Test multiple endpoints for product linking
-        console.log("[OfferDetails] Testing offer-product endpoints...");
-
-        // 1. Get products using new endpoint (direct test)
-        console.log("[OfferDetails] 1. Testing getProductsByOffer...");
+        // Get products using new endpoint
         const productsResponse = await offerService.getProductsByOffer(
           Number(id),
           { skipCache }
         );
-        console.log(
-          "[OfferDetails] getProductsByOffer response:",
-          productsResponse
-        );
 
-        // 2. Check if offer has primary product
-        console.log("[OfferDetails] 2. Testing checkOfferHasPrimaryProduct...");
+        // Check if offer has primary product
         try {
-          const hasPrimaryResponse =
-            await offerService.checkOfferHasPrimaryProduct(
-              Number(id),
-              skipCache
-            );
-          console.log(
-            "[OfferDetails] checkOfferHasPrimaryProduct response:",
-            hasPrimaryResponse
-          );
-          setHasPrimaryProduct(hasPrimaryResponse.data?.hasPrimary || false);
-        } catch (err) {
-          console.error("[OfferDetails] Failed to check primary product:", err);
+          await offerService.checkOfferHasPrimaryProduct(Number(id), skipCache);
+        } catch {
+          // Failed to check primary product
         }
 
-        // 3. Get primary product if it exists
-        console.log("[OfferDetails] 3. Testing getPrimaryProductByOffer...");
+        // Get primary product if it exists
         try {
           const primaryResponse = await offerService.getPrimaryProductByOffer(
             Number(id),
             skipCache
           );
-          console.log(
-            "[OfferDetails] getPrimaryProductByOffer response:",
-            primaryResponse
-          );
           if (primaryResponse.data) {
             setPrimaryProductId(primaryResponse.data.product_id);
           }
-        } catch (err) {
-          console.log(
-            "[OfferDetails] No primary product found (expected if none set)"
-          );
+        } catch {
+          // No primary product found (expected if none set)
         }
 
         // Use legacy method for compatibility
@@ -177,14 +250,33 @@ export default function OfferDetailsPage() {
         );
 
         // Extract products from response.data if wrapped, otherwise use response directly
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const productsData =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (response as any).data || productsResponse.data || response;
 
         if (Array.isArray(productsData) && productsData.length > 0) {
+          // Deduplicate links by product_id - if multiple links exist for same product,
+          // keep the primary one, or the first one if none is primary
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const uniqueLinksMap = new Map<number, any>();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          productsData.forEach((link: any) => {
+            const productId = link.product_id;
+            if (!uniqueLinksMap.has(productId)) {
+              uniqueLinksMap.set(productId, link);
+            } else {
+              // If we already have this product, prefer the primary one
+              const existingLink = uniqueLinksMap.get(productId);
+              if (link.is_primary && !existingLink.is_primary) {
+                uniqueLinksMap.set(productId, link);
+              }
+            }
+          });
+          const uniqueLinks = Array.from(uniqueLinksMap.values());
+
           // Backend returns product links with only product_id, so we need to fetch full product details
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const productDetailsPromises = productsData.map(async (link: any) => {
+          const productDetailsPromises = uniqueLinks.map(async (link: any) => {
             try {
               const productResponse = await productService.getProductById(
                 link.product_id
@@ -192,38 +284,14 @@ export default function OfferDetailsPage() {
               const productData =
                 (productResponse as { data?: unknown }).data || productResponse;
 
-              // Test getOffersByProductId for each product
-              console.log(
-                `[OfferDetails] Testing getOffersByProductId for product ${link.product_id}...`
-              );
-              try {
-                const offersForProduct =
-                  await offerService.getOffersByProductId(link.product_id, {
-                    skipCache,
-                  });
-                console.log(
-                  `[OfferDetails] getOffersByProductId(${link.product_id}) response:`,
-                  offersForProduct
-                );
-              } catch (err) {
-                console.error(
-                  `[OfferDetails] Failed to get offers for product ${link.product_id}:`,
-                  err
-                );
-              }
-
               return {
                 ...productData,
                 is_primary: link.is_primary,
                 link_id: link.id,
                 product_id: link.product_id,
               };
-            } catch (error) {
-              console.error(
-                "Failed to fetch product details for ID:",
-                link.product_id,
-                error
-              );
+            } catch {
+              // Failed to fetch product details
               return {
                 id: link.product_id,
                 name: `Product ${link.product_id}`,
@@ -238,6 +306,7 @@ export default function OfferDetailsPage() {
           setLinkedProducts(fullProducts);
 
           // Find primary product from loaded products
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const primary = fullProducts.find((p: any) => p.is_primary);
           if (primary && !primaryProductId) {
             setPrimaryProductId(primary.product_id || primary.id);
@@ -245,14 +314,13 @@ export default function OfferDetailsPage() {
         } else {
           setLinkedProducts([]);
         }
-      } catch (err) {
-        console.error("Failed to load products:", err);
+      } catch {
         setLinkedProducts([]);
       } finally {
         setProductsLoading(false);
       }
     },
-    [id]
+    [id, primaryProductId]
   );
 
   const loadCreatives = useCallback(
@@ -268,8 +336,7 @@ export default function OfferDetailsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const creativesData = (response as any).data || [];
         setOfferCreatives(creativesData);
-      } catch (err) {
-        console.error("Failed to load creatives:", err);
+      } catch {
         setOfferCreatives([]);
       } finally {
         setCreativesLoading(false);
@@ -277,6 +344,314 @@ export default function OfferDetailsPage() {
     },
     [id]
   );
+
+  // Handle edit creative
+  const handleEditCreative = (creative: OfferCreative) => {
+    setEditingCreative(creative);
+    setEditFormData({
+      title: creative.title || "",
+      text_body: creative.text_body || "",
+      html_body: creative.html_body || "",
+      variables: creative.variables || {},
+    });
+    setVariablesJson(JSON.stringify(creative.variables || {}, null, 2));
+    setIsEditCreativeModalOpen(true);
+  };
+
+  // Handle save creative
+  const handleSaveCreative = async () => {
+    if (!editingCreative || !user?.user_id) return;
+
+    try {
+      setIsSavingCreative(true);
+
+      // Parse variables JSON
+      let parsedVariables = {};
+      if (variablesJson.trim()) {
+        try {
+          parsedVariables = JSON.parse(variablesJson);
+        } catch {
+          showError("Invalid JSON in variables field");
+          return;
+        }
+      }
+
+      // Build update payload - only include non-empty fields
+      const updatePayload: Record<string, unknown> = {
+        updated_by: user.user_id,
+      };
+
+      // Only add fields if they have content (not empty strings)
+      if (editFormData.title && editFormData.title.trim()) {
+        updatePayload.title = editFormData.title;
+      }
+      if (editFormData.text_body && editFormData.text_body.trim()) {
+        updatePayload.text_body = editFormData.text_body;
+      }
+      if (editFormData.html_body && editFormData.html_body.trim()) {
+        updatePayload.html_body = editFormData.html_body;
+      }
+      if (Object.keys(parsedVariables).length > 0) {
+        updatePayload.variables = parsedVariables;
+      }
+
+      await offerCreativeService.update(
+        editingCreative.id as number,
+        updatePayload
+      );
+
+      success("Creative Updated", "Creative has been updated successfully");
+      setIsEditCreativeModalOpen(false);
+      loadCreatives(true); // Reload with skipCache
+    } catch (err) {
+      // Failed to update creative
+      showError(
+        err instanceof Error ? err.message : "Failed to update creative"
+      );
+    } finally {
+      setIsSavingCreative(false);
+    }
+  };
+
+  // Handle delete creative
+  const handleDeleteCreative = async (creative: OfferCreative) => {
+    const confirmed = await confirm({
+      title: "Delete Creative",
+      message: `Are you sure you want to delete this ${creative.channel} creative? This action cannot be undone.`,
+      type: "danger",
+      confirmText: "Delete",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await offerCreativeService.delete(creative.id as number);
+      success("Creative Deleted", "Creative has been deleted successfully");
+      loadCreatives(true); // Reload with skipCache
+    } catch (err) {
+      // Failed to delete creative
+      showError(
+        err instanceof Error ? err.message : "Failed to delete creative"
+      );
+    }
+  };
+
+  const handleCreateCreative = async () => {
+    if (!id) {
+      showError("Offer ID is missing. Please refresh and try again.");
+      return;
+    }
+
+    if (!user?.user_id) {
+      showError("User information not available. Please log in again.");
+      return;
+    }
+
+    if (
+      !newCreativeForm.title.trim() &&
+      !newCreativeForm.text_body.trim() &&
+      !newCreativeForm.html_body.trim()
+    ) {
+      showError(
+        "Provide at least a title, text body, or HTML body before creating a creative."
+      );
+      return;
+    }
+
+    let parsedVariables: Record<string, string | number | boolean> | undefined;
+
+    if (newCreativeVariables.trim()) {
+      try {
+        const parsed = JSON.parse(newCreativeVariables);
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          Array.isArray(parsed)
+        ) {
+          showError("Variables JSON must be an object with key/value pairs.");
+          return;
+        }
+        parsedVariables = parsed;
+      } catch {
+        showError("Invalid JSON in variables field");
+        return;
+      }
+    }
+
+    try {
+      setIsCreatingCreative(true);
+
+      const payload: CreateOfferCreativeRequest = {
+        offer_id: Number(id),
+        channel: newCreativeForm.channel,
+        locale: newCreativeForm.locale,
+        is_active: newCreativeForm.is_active,
+        created_by: user.user_id,
+      };
+
+      if (newCreativeForm.title.trim()) {
+        payload.title = newCreativeForm.title.trim();
+      }
+      if (newCreativeForm.text_body.trim()) {
+        payload.text_body = newCreativeForm.text_body.trim();
+      }
+      if (newCreativeForm.html_body.trim()) {
+        payload.html_body = newCreativeForm.html_body.trim();
+      }
+      if (parsedVariables && Object.keys(parsedVariables).length > 0) {
+        payload.variables = parsedVariables;
+      }
+
+      await offerCreativeService.create(payload);
+      success("Creative Created", "Creative has been created successfully.");
+      setIsAddCreativeModalOpen(false);
+      resetNewCreativeForm();
+      loadCreatives(true);
+    } catch (err) {
+      showError(
+        err instanceof Error ? err.message : "Failed to create creative"
+      );
+    } finally {
+      setIsCreatingCreative(false);
+    }
+  };
+
+  // Load product categories for filter
+  const loadProductCategories = useCallback(async () => {
+    try {
+      const response = await productCategoryService.getAllCategories({
+        limit: 100,
+        skipCache: true,
+      });
+      const categoryOptions = [
+        { value: "all", label: "All Categories" },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...(response.data || []).map((category: any) => ({
+          value: category.id.toString(),
+          label: category.name,
+        })),
+      ];
+      setProductCategories(categoryOptions);
+    } catch {
+      // Error loading categories
+      setProductCategories([{ value: "all", label: "All Categories" }]);
+    }
+  }, []);
+
+  // Load available products for selection
+  const loadAvailableProducts = useCallback(async () => {
+    try {
+      setProductsSearchLoading(true);
+      const searchQuery = productSearchTerm.trim();
+
+      let response;
+      if (searchQuery) {
+        // Use searchProducts when there's a search term
+        response = await productService.searchProducts({
+          q: searchQuery,
+          limit: 100,
+          skipCache: true,
+        });
+      } else {
+        // Use getAllProducts when there's no search term
+        response = await productService.getAllProducts({
+          limit: 100,
+          skipCache: true,
+        });
+      }
+
+      let products = response.data || [];
+
+      // Apply category filter if not 'all'
+      if (selectedProductCategory !== "all") {
+        products = products.filter(
+          (product: Product) =>
+            product.category_id?.toString() === selectedProductCategory
+        );
+      }
+
+      setAvailableProducts(products);
+    } catch {
+      // Failed to load products
+      setAvailableProducts([]);
+    } finally {
+      setProductsSearchLoading(false);
+    }
+  }, [productSearchTerm, selectedProductCategory]);
+
+  // Load categories when modal opens
+  useEffect(() => {
+    if (isAddProductModalOpen) {
+      loadProductCategories();
+    }
+  }, [isAddProductModalOpen, loadProductCategories]);
+
+  // Load products when modal opens, search changes, or category changes
+  useEffect(() => {
+    if (isAddProductModalOpen) {
+      loadAvailableProducts();
+    }
+  }, [isAddProductModalOpen, loadAvailableProducts]);
+
+  // Toggle product selection
+  const toggleProductSelection = (product: Product) => {
+    const isSelected = selectedProductsToAdd.some((p) => p.id === product.id);
+    if (isSelected) {
+      setSelectedProductsToAdd(
+        selectedProductsToAdd.filter((p) => p.id !== product.id)
+      );
+    } else {
+      setSelectedProductsToAdd([...selectedProductsToAdd, product]);
+    }
+  };
+
+  // Handle adding products after selection
+  const handleConfirmAddProducts = async () => {
+    if (!id || !user?.user_id || selectedProductsToAdd.length === 0) return;
+
+    try {
+      setIsLinkingProducts(true);
+
+      // Check if offer currently has a primary product
+      const currentPrimaryExists = linkedProducts.some((p) => p.is_primary);
+
+      // Prepare links for batch linking
+      const links = selectedProductsToAdd.map((product, index) => ({
+        offer_id: Number(id),
+        product_id:
+          typeof product.id === "string" ? parseInt(product.id) : product.id!,
+        is_primary: !currentPrimaryExists && index === 0, // First product is primary if no primary exists
+        quantity: 1,
+      }));
+
+      const batchRequest = {
+        links: links,
+        created_by: user.user_id,
+      };
+
+      await offerService.linkProductsBatch(batchRequest);
+
+      success(
+        "Products Linked",
+        `${selectedProductsToAdd.length} product${
+          selectedProductsToAdd.length > 1 ? "s" : ""
+        } linked successfully`
+      );
+
+      // Reset state and close modal
+      setIsAddProductModalOpen(false);
+      setSelectedProductsToAdd([]);
+      setProductSearchTerm("");
+
+      // Refresh products list
+      loadProducts(true);
+    } catch (err) {
+      // Failed to link products
+      showError(err instanceof Error ? err.message : "Failed to link products");
+    } finally {
+      setIsLinkingProducts(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -397,21 +772,6 @@ export default function OfferDetailsPage() {
     }
   };
 
-  const handleDeactivate = async () => {
-    try {
-      setIsDeactivateLoading(true);
-      await offerService.updateOfferStatus(Number(id), {
-        status: OfferStatusEnum.DRAFT,
-      });
-      success("Offer Deactivated", `"${offer?.name}" has been deactivated.`);
-      loadOffer(true); // Skip cache to get fresh data after deactivation
-    } catch {
-      showError("Failed to deactivate offer");
-    } finally {
-      setIsDeactivateLoading(false);
-    }
-  };
-
   const handleExpire = async () => {
     const confirmed = await confirm({
       title: "Expire Offer",
@@ -463,45 +823,69 @@ export default function OfferDetailsPage() {
 
     try {
       setUnlinkingProductId(linkId);
-      console.log("[OfferDetails] Testing unlinkProductById...");
-      const result = await offerService.unlinkProductById(linkId);
-      console.log("[OfferDetails] unlinkProductById response:", result);
+      await offerService.unlinkProductById(linkId);
       success(
         "Product Unlinked",
         `"${productName}" has been unlinked from this offer.`
       );
       // Reload products with cache bypassed to get fresh data
       loadProducts(true);
-    } catch (err) {
-      console.error("[OfferDetails] Failed to unlink product:", err);
+    } catch {
+      // Failed to unlink product
       showError("Failed to unlink product");
     } finally {
       setUnlinkingProductId(null);
     }
   };
 
-  const handleSetPrimaryProduct = async (
-    productId: number,
-    linkId: number,
-    productName: string
-  ) => {
+  // TODO: Backend needs to provide an endpoint to update is_primary without unlinking products
+  // Currently commented out because it unlinks the old primary product entirely,
+  // when we only want to unset it as primary while keeping it linked to the offer
+  const handleSetPrimaryProduct = async () => {
+    // Handler commented out - waiting for backend endpoint to update is_primary flag
+    // without unlinking products
+    showError(
+      "Feature Unavailable",
+      "Setting primary product is temporarily disabled. Backend endpoint needed to update primary status without unlinking products."
+    );
+    return;
+
+    /* COMMENTED OUT - Waiting for backend endpoint
     if (!user?.user_id) {
       showError("Error", "User ID not available. Please log in again.");
       return;
     }
 
     // Check if there's already a primary product
-    const existingPrimary = linkedProducts.find((p: any) => p.is_primary);
-    let confirmed = true;
+    let existingPrimaryLink: OfferProductLink | null = null;
+    try {
+      const primaryResponse = await offerService.getPrimaryProductByOffer(
+        Number(id),
+        true
+      );
+      if (primaryResponse.success && primaryResponse.data) {
+        existingPrimaryLink = primaryResponse.data;
+      }
+    } catch (err) {
+      // No primary product exists (expected if none set)
+    }
 
-    if (existingPrimary && existingPrimary.product_id !== productId) {
+    let confirmed = true;
+    if (existingPrimaryLink && existingPrimaryLink.product_id !== productId) {
+      // Get the name of the current primary product
+      const currentPrimaryProduct = linkedProducts.find(
+        (p: any) => p.product_id === existingPrimaryLink.product_id
+      );
+      const currentPrimaryName =
+        currentPrimaryProduct?.name ||
+        `Product ${existingPrimaryLink.product_id}`;
+
       confirmed = await confirm({
         title: "Set Primary Product",
-        message: `Setting "${productName}" as the primary product will replace the current primary product (${
-          existingPrimary.name || `Product ${existingPrimary.product_id}`
-        }). Do you want to continue?`,
+        message: `Setting "${productName}" as the primary product will replace the current primary product (${currentPrimaryName}). Do you want to continue?`,
         confirmText: "Set as Primary",
         cancelText: "Cancel",
+        type: "info",
       });
     }
 
@@ -509,11 +893,14 @@ export default function OfferDetailsPage() {
 
     try {
       setSettingPrimaryId(productId);
-      console.log("[OfferDetails] Testing linkProductToOffer (set primary)...");
 
-      // Use linkProductToOffer to set as primary
-      // Note: This will replace the existing primary if one exists
-      const result = await offerService.linkProductToOffer({
+      // Step 1: Unlink the old primary product if it exists
+      if (existingPrimaryLink && existingPrimaryLink.id) {
+        await offerService.unlinkProductById(existingPrimaryLink.id);
+      }
+
+      // Step 2: Link the new product as primary
+      await offerService.linkProductToOffer({
         offer_id: Number(id),
         product_id: productId,
         is_primary: true,
@@ -521,10 +908,6 @@ export default function OfferDetailsPage() {
         created_by: user.user_id,
       });
 
-      console.log(
-        "[OfferDetails] linkProductToOffer (primary) response:",
-        result
-      );
       success(
         "Primary Product Set",
         `"${productName}" is now the primary product for this offer.`
@@ -533,11 +916,35 @@ export default function OfferDetailsPage() {
       // Reload products with cache bypassed to get fresh data
       loadProducts(true);
     } catch (err) {
-      console.error("[OfferDetails] Failed to set primary product:", err);
+      // Failed to set primary product
       showError("Failed to set primary product");
     } finally {
       setSettingPrimaryId(null);
     }
+    */
+  };
+
+  const offerDetailsPath = id ? `/dashboard/offers/${id}` : "/dashboard/offers";
+
+  const buildOfferReturnState = (section: "products" | "creatives") => ({
+    pathname: offerDetailsPath,
+    section,
+  });
+
+  const navigateToProductDetails = (productId: number) => {
+    navigate(`/dashboard/products/${productId}`, {
+      state: {
+        returnTo: buildOfferReturnState("products"),
+      },
+    });
+  };
+
+  const navigateToCreativeDetails = (creativeId: number) => {
+    navigate(`/dashboard/offer-creatives/${creativeId}`, {
+      state: {
+        returnTo: buildOfferReturnState("creatives"),
+      },
+    });
   };
 
   // Generate dummy offer type based on offer characteristics
@@ -925,20 +1332,21 @@ export default function OfferDetailsPage() {
       </div>
 
       {/* Linked Products Section */}
-      <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+      <section
+        className={`mt-12 bg-white rounded-xl border border-[${color.border.default}] p-6 space-y-4`}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`${tw.cardHeading} flex items-center gap-2`}>
-            <Package className="w-5 h-5" />
-            Linked Products
-          </h3>
-          {!productsLoading && linkedProducts.length > 0 && (
-            <span className={`text-sm ${tw.textMuted}`}>
-              {linkedProducts.length} product
-              {linkedProducts.length !== 1 ? "s" : ""}
-            </span>
-          )}
+          <h3 className={`${tw.cardHeading}`}>Linked Products</h3>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsAddProductModalOpen(true)}
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+              style={{ backgroundColor: color.primary.action }}
+              type="button"
+            >
+              Add Product
+            </button>
+          </div>
         </div>
 
         {productsLoading ? (
@@ -946,164 +1354,188 @@ export default function OfferDetailsPage() {
             <LoadingSpinner />
           </div>
         ) : linkedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {linkedProducts.map((product: any, index: number) => {
-              // Debug logging
-              if (index === 0) {
-                console.log("[OfferDetails] Product data for buttons:", {
-                  product,
-                  hasLinkId: !!product.link_id,
-                  isPrimary: product.is_primary,
-                  primaryProductId,
-                });
-              }
+          <div
+            className={`overflow-x-auto border border-[${color.border.default}] rounded-lg`}
+          >
+            <table className="w-full">
+              <thead
+                className={`border-b ${tw.borderDefault}`}
+                style={{ background: color.surface.tableHeader }}
+              >
+                <tr>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Product
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Description
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Primary
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                className={`bg-white divide-y divide-[${color.border.default}]`}
+              >
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {linkedProducts.map((product: any, index: number) => {
+                  const rawProductId = product.product_id ?? product.id;
+                  const productId =
+                    rawProductId !== undefined && rawProductId !== null
+                      ? Number(rawProductId)
+                      : null;
+                  const hasValidProductId =
+                    productId !== null && !Number.isNaN(productId);
+                  const productName =
+                    product.name ||
+                    product.product_code ||
+                    `Product ${hasValidProductId ? productId : index + 1}`;
+                  const isPrimary =
+                    product.is_primary ||
+                    (product.product_id &&
+                      product.product_id === primaryProductId);
+                  const isUnlinking =
+                    product.link_id && unlinkingProductId === product.link_id;
+                  const isSettingPrimary = false; // Feature disabled for now
 
-              const isPrimary =
-                product.is_primary ||
-                (product.product_id && product.product_id === primaryProductId);
-              const isUnlinking =
-                product.link_id && unlinkingProductId === product.link_id;
-              const isSettingPrimary =
-                product.product_id && settingPrimaryId === product.product_id;
-
-              return (
-                <div
-                  key={product.id || index}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: color.primary.accent }}
+                  return (
+                    <tr
+                      key={
+                        product.link_id ||
+                        `product-${hasValidProductId ? productId : index}`
+                      }
+                      className="hover:bg-gray-50 transition-colors duration-150"
                     >
-                      <Package className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className={`font-medium ${tw.textPrimary} truncate`}>
-                          {product.name ||
-                            product.product_name ||
-                            `Product ${product.product_id || product.id}`}
-                        </p>
-                        {isPrimary && (
-                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        )}
-                      </div>
-                      {product.description && (
-                        <p className={`text-sm ${tw.textMuted} truncate`}>
-                          {product.description}
-                        </p>
-                      )}
-                      {isPrimary && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                          Primary
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-                    {/* Set as Primary button - Show if not primary and has link_id or product_id */}
-                    {!isPrimary &&
-                      (product.link_id || product.product_id || product.id) && (
-                        <button
-                          onClick={() =>
-                            handleSetPrimaryProduct(
-                              product.product_id || product.id,
-                              product.link_id || 0, // Use 0 as fallback if link_id doesn't exist
-                              product.name ||
-                                `Product ${product.product_id || product.id}`
-                            )
-                          }
-                          disabled={isSettingPrimary || isUnlinking}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg border border-gray-300 hover:border-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Set as primary product"
-                        >
-                          {isSettingPrimary ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-yellow-600"></div>
-                              <span>Setting...</span>
-                            </>
-                          ) : (
-                            <>
-                              <StarOff className="w-4 h-4" />
-                              <span>Set Primary</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    {/* Unlink button - Always show if we have products */}
-                    {(product.link_id || product.product_id || product.id) && (
-                      <button
-                        onClick={() => {
-                          if (!product.link_id) {
-                            console.warn(
-                              "[OfferDetails] No link_id found for product, cannot unlink:",
-                              product
-                            );
-                            showError(
-                              "Cannot unlink: Link ID not available. Product may need to be re-linked."
-                            );
-                            return;
-                          }
-                          handleUnlinkProduct(
-                            product.link_id,
-                            product.name ||
-                              `Product ${product.product_id || product.id}`
-                          );
-                        }}
-                        disabled={
-                          isUnlinking || isSettingPrimary || !product.link_id
-                        }
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-300 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          product.link_id
-                            ? "Unlink product"
-                            : "Link ID not available"
-                        }
-                      >
-                        {isUnlinking ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-red-600"></div>
-                            <span>Unlinking...</span>
-                          </>
+                      <td className="px-6 py-5 text-sm font-medium text-gray-900">
+                        {hasValidProductId ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigateToProductDetails(productId as number)
+                            }
+                            className="hover:underline text-left"
+                            style={{ color: color.primary.accent }}
+                          >
+                            {productName}
+                          </button>
                         ) : (
-                          <>
-                            <X className="w-4 h-4" />
-                            <span>Unlink</span>
-                          </>
+                          <span>{productName}</span>
                         )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td className="px-6 py-5 text-sm text-gray-600">
+                        {product.description ? (
+                          <span className="line-clamp-2">
+                            {product.description}
+                          </span>
+                        ) : (
+                          <span className={`text-sm ${tw.textMuted}`}>
+                            No description provided
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-5 text-sm">
+                        {isPrimary ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
+                            Primary
+                          </span>
+                        ) : (
+                          <span className={`text-sm ${tw.textMuted}`}>—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-5 text-sm">
+                        <div className="flex items-center gap-3">
+                          {!isPrimary &&
+                            (product.link_id || hasValidProductId) && (
+                              <button
+                                type="button"
+                                onClick={handleSetPrimaryProduct}
+                                disabled={isSettingPrimary || isUnlinking}
+                                className="text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{ color: color.primary.accent }}
+                                title="Set this product as the primary product"
+                              >
+                                Set Primary
+                              </button>
+                            )}
+                          {(product.link_id || hasValidProductId) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!product.link_id) {
+                                  showError(
+                                    "Cannot unlink: Link ID not available. Product may need to be re-linked."
+                                  );
+                                  return;
+                                }
+                                handleUnlinkProduct(
+                                  product.link_id,
+                                  productName
+                                );
+                              }}
+                              disabled={
+                                isUnlinking ||
+                                isSettingPrimary ||
+                                !product.link_id
+                              }
+                              className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isUnlinking ? "Unlinking..." : "Unlink"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="text-center py-8">
-            <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className={`text-sm ${tw.textMuted}`}>
-              No products linked to this offer
+            <p className={`text-sm ${tw.textMuted} mb-1`}>
+              No products linked to this offer.
+            </p>
+            <p className={`text-xs ${tw.textMuted}`}>
+              Click "Add Product" above to link products to this offer.
             </p>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Offer Creatives Section */}
-      <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+      <section
+        className={`mt-12 bg-white rounded-xl border border-[${color.border.default}] p-6 space-y-4`}
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
-          <button
-            onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
-            style={{ backgroundColor: color.primary.action }}
-          >
-            <Edit className="w-4 h-4" />
-            Edit Creatives
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                resetNewCreativeForm();
+                setIsAddCreativeModalOpen(true);
+              }}
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+              style={{ backgroundColor: color.primary.action }}
+              type="button"
+            >
+              Add Creative
+            </button>
+          </div>
         </div>
 
         {creativesLoading ? (
@@ -1111,97 +1543,653 @@ export default function OfferDetailsPage() {
             <LoadingSpinner />
           </div>
         ) : offerCreatives.length > 0 ? (
-          <div className="space-y-4">
-            {offerCreatives.map(
-              (creative: OfferCreativeType, index: number) => (
-                <div
-                  key={creative.id || index}
-                  className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div
-                        className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: color.primary.accent }}
+          <div
+            className={`overflow-x-auto border border-[${color.border.default}] rounded-lg`}
+          >
+            <table className="w-full">
+              <thead
+                className={`border-b ${tw.borderDefault}`}
+                style={{ background: color.surface.tableHeader }}
+              >
+                <tr>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Name
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Channel
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Locale
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Updated
+                  </th>
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                className={`bg-white divide-y divide-[${color.border.default}]`}
+              >
+                {offerCreatives.map(
+                  (creative: OfferCreative, index: number) => {
+                    const creativeId =
+                      creative.id !== undefined && creative.id !== null
+                        ? Number(creative.id)
+                        : null;
+                    const hasCreativeId =
+                      creativeId !== null && !Number.isNaN(creativeId);
+                    const creativeLabel =
+                      creative.title ||
+                      `Creative ${creative.channel}${
+                        creative.locale ? ` (${creative.locale})` : ""
+                      }`;
+
+                    return (
+                      <tr
+                        key={`creative-${creative.id || creative.channel}-${
+                          creative.locale
+                        }-${index}`}
+                        className="hover:bg-gray-50 transition-colors duration-150"
                       >
-                        <MessageSquare className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className={`font-medium ${tw.textPrimary}`}>
-                            {creative.title || `Creative ${creative.channel}`}
-                          </p>
-                          <span
-                            className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
-                            style={{ backgroundColor: color.primary.accent }}
-                          >
-                            {creative.channel}
-                          </span>
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                            {creative.locale}
-                          </span>
-                          {creative.is_active && (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                        <td className="px-6 py-5 text-sm font-medium text-gray-900">
+                          {hasCreativeId ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigateToCreativeDetails(creativeId as number)
+                              }
+                              className="hover:underline"
+                              style={{ color: color.primary.accent }}
+                            >
+                              {creativeLabel}
+                            </button>
+                          ) : (
+                            <span>{creativeLabel}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-5 text-sm text-gray-600">
+                          {creative.channel}
+                        </td>
+                        <td className="px-6 py-5 text-sm text-gray-600">
+                          {creative.locale || "—"}
+                        </td>
+                        <td className="px-6 py-5 text-sm">
+                          {creative.is_active ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
                               Active
                             </span>
-                          )}
-                          {creative.version && (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              v{creative.version}
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">
+                              Inactive
                             </span>
                           )}
-                        </div>
-                        {creative.text_body && (
-                          <p
-                            className={`text-sm ${tw.textMuted} mt-2 line-clamp-2`}
-                          >
-                            {creative.text_body}
-                          </p>
-                        )}
-                        {creative.variables &&
-                          Object.keys(creative.variables).length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {Object.keys(creative.variables)
-                                .slice(0, 3)
-                                .map((key) => (
-                                  <span
-                                    key={key}
-                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
-                                  >
-                                    {key}
-                                  </span>
-                                ))}
-                              {Object.keys(creative.variables).length > 3 && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                                  +{Object.keys(creative.variables).length - 3}{" "}
-                                  more
-                                </span>
-                              )}
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
+                        </td>
+                        <td className="px-6 py-5 text-sm text-gray-600">
+                          {creative.updated_at
+                            ? new Date(creative.updated_at).toLocaleString()
+                            : creative.created_at
+                            ? new Date(creative.created_at).toLocaleString()
+                            : "—"}
+                        </td>
+                        <td className="px-6 py-5 text-sm">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleEditCreative(creative)}
+                              className="text-sm font-medium hover:underline"
+                              style={{ color: color.primary.accent }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCreative(creative)}
+                              className="text-sm font-medium text-red-600 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className={`text-sm ${tw.textMuted}`}>
-              No creatives created for this offer
+              No creatives created for this offer. Click "Add Creative" above to
+              create one.
             </p>
-            <button
-              onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
-              className="mt-4 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-              style={{ backgroundColor: color.primary.action }}
-            >
-              Create Creative
-            </button>
           </div>
         )}
-      </div>
+      </section>
+
+      {/* Add Creative Modal */}
+      <RegularModal
+        isOpen={isAddCreativeModalOpen}
+        onClose={() => {
+          setIsAddCreativeModalOpen(false);
+          resetNewCreativeForm();
+        }}
+        title="Add Creative"
+        size="xl"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Channel
+              </label>
+              <HeadlessSelect
+                value={newCreativeForm.channel}
+                onChange={(value) =>
+                  setNewCreativeForm((prev) => ({
+                    ...prev,
+                    channel: value as CreativeChannel,
+                  }))
+                }
+                options={creativeChannelOptions}
+                placeholder="Select a channel"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Locale
+              </label>
+              <HeadlessSelect
+                value={newCreativeForm.locale}
+                onChange={(value) =>
+                  setNewCreativeForm((prev) => ({
+                    ...prev,
+                    locale: String(value),
+                  }))
+                }
+                options={localeOptions}
+                placeholder="Select a locale"
+                searchable
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              value={newCreativeForm.title}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  title: e.target.value,
+                }))
+              }
+              placeholder="Enter creative title..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Text Body
+            </label>
+            <textarea
+              value={newCreativeForm.text_body}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  text_body: e.target.value,
+                }))
+              }
+              placeholder="Enter text content..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Provide at least one of Title, Text Body, or HTML Body.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              HTML Body (optional)
+            </label>
+            <textarea
+              value={newCreativeForm.html_body}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  html_body: e.target.value,
+                }))
+              }
+              placeholder="Enter HTML content..."
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Variables (JSON)
+            </label>
+            <textarea
+              value={newCreativeVariables}
+              onChange={(e) => setNewCreativeVariables(e.target.value)}
+              placeholder='{"variable_name": "value"}'
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Provide key/value pairs for template variables. Example:{" "}
+              {'{"firstName":"John"}'}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="new-creative-active"
+              type="checkbox"
+              checked={newCreativeForm.is_active}
+              onChange={(e) =>
+                setNewCreativeForm((prev) => ({
+                  ...prev,
+                  is_active: e.target.checked,
+                }))
+              }
+              className="h-4 w-4 rounded border-gray-300"
+              style={{ accentColor: color.primary.action }}
+            />
+            <label
+              htmlFor="new-creative-active"
+              className="text-sm text-gray-700"
+            >
+              Mark creative as active
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              onClick={() => {
+                setIsAddCreativeModalOpen(false);
+                resetNewCreativeForm();
+              }}
+              disabled={isCreatingCreative}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateCreative}
+              disabled={isCreatingCreative}
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isCreatingCreative ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Creating...
+                </>
+              ) : (
+                <span>Create Creative</span>
+              )}
+            </button>
+          </div>
+        </div>
+      </RegularModal>
+      {/* Edit Creative Modal */}
+      <RegularModal
+        isOpen={isEditCreativeModalOpen}
+        onClose={() => setIsEditCreativeModalOpen(false)}
+        title={`Edit ${editingCreative?.channel} Creative`}
+        size="xl"
+      >
+        <div className="space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              value={editFormData.title}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, title: e.target.value })
+              }
+              placeholder="Enter creative title..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Text Body */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Text Body
+            </label>
+            <textarea
+              value={editFormData.text_body}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, text_body: e.target.value })
+              }
+              placeholder="Enter text content..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* HTML Body (for Email/Web) */}
+          {(editingCreative?.channel === "Email" ||
+            editingCreative?.channel === "Web") && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                HTML Body
+              </label>
+              <textarea
+                value={editFormData.html_body}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    html_body: e.target.value,
+                  })
+                }
+                placeholder="Enter HTML content..."
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              />
+            </div>
+          )}
+
+          {/* Variables */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Variables (JSON)
+            </label>
+            <textarea
+              value={variablesJson}
+              onChange={(e) => setVariablesJson(e.target.value)}
+              placeholder='{"variable_name": "value"}'
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              {(() => {
+                if (!variablesJson.trim()) return "Empty variables";
+                try {
+                  JSON.parse(variablesJson);
+                  return <span className="text-green-600">✓ Valid JSON</span>;
+                } catch {
+                  return <span className="text-red-600">⚠ Invalid JSON</span>;
+                }
+              })()}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              onClick={() => setIsEditCreativeModalOpen(false)}
+              disabled={isSavingCreative}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveCreative}
+              disabled={isSavingCreative}
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isSavingCreative ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </RegularModal>
+
+      {/* Add Product Modal - Custom Selector */}
+      <RegularModal
+        isOpen={isAddProductModalOpen}
+        onClose={() => {
+          setIsAddProductModalOpen(false);
+          setSelectedProductsToAdd([]);
+          setProductSearchTerm("");
+          setSelectedProductCategory("all");
+        }}
+        title="Add Products to Offer"
+        size="full"
+      >
+        <div className="space-y-4">
+          {/* Search and Filter Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={productSearchTerm}
+                onChange={(e) => setProductSearchTerm(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <div>
+              <HeadlessSelect
+                value={selectedProductCategory}
+                onChange={(value) => setSelectedProductCategory(String(value))}
+                options={productCategories}
+                placeholder="Filter by category"
+              />
+            </div>
+          </div>
+
+          {/* Selected Products Count */}
+          {selectedProductsToAdd.length > 0 && (
+            <div
+              className="rounded-lg p-3"
+              style={{ backgroundColor: color.primary.accent }}
+            >
+              <p className="text-sm text-black font-medium">
+                {selectedProductsToAdd.length} product
+                {selectedProductsToAdd.length !== 1 ? "s" : ""} selected
+              </p>
+            </div>
+          )}
+
+          {/* Products List */}
+          <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+            {productsSearchLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : availableProducts.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {availableProducts.map((product) => {
+                  const isSelected = selectedProductsToAdd.some(
+                    (p) => p.id === product.id
+                  );
+                  const isAlreadyLinked = linkedProducts.some(
+                    (p) => p.id === product.id
+                  );
+                  const productInitial = (
+                    product.name ||
+                    product.product_code ||
+                    "P"
+                  )
+                    .toString()
+                    .charAt(0)
+                    .toUpperCase();
+
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => {
+                        if (!isAlreadyLinked) {
+                          toggleProductSelection(product);
+                        }
+                      }}
+                      className={`p-4 transition-colors ${
+                        isAlreadyLinked
+                          ? "bg-gray-50 opacity-60 cursor-not-allowed"
+                          : "hover:bg-gray-50 cursor-pointer"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              isAlreadyLinked ? "bg-gray-200" : "bg-gray-100"
+                            }`}
+                          >
+                            <span
+                              className="text-sm font-semibold"
+                              style={{
+                                color: isAlreadyLinked
+                                  ? "#6B7280"
+                                  : color.primary.accent,
+                              }}
+                            >
+                              {productInitial}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h5
+                              className={`font-medium ${
+                                isAlreadyLinked
+                                  ? "text-gray-500"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {product.name}
+                            </h5>
+                            <p
+                              className={`text-sm ${
+                                isAlreadyLinked
+                                  ? "text-gray-400"
+                                  : "text-gray-600"
+                              }`}
+                            >
+                              {product.description}
+                            </p>
+                            {isAlreadyLinked && (
+                              <span className="text-xs text-gray-500 italic mt-1 block">
+                                Already linked to this offer
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {!isAlreadyLinked && (
+                          <div
+                            className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                              isSelected ? "" : "border-gray-300 bg-white"
+                            }`}
+                            style={
+                              isSelected
+                                ? {
+                                    borderColor: color.primary.accent,
+                                    backgroundColor: color.primary.accent,
+                                  }
+                                : {}
+                            }
+                          >
+                            {isSelected && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                        )}
+                        {isAlreadyLinked && (
+                          <div className="w-6 h-6 rounded border-2 border-gray-300 bg-gray-200 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-sm text-gray-500">
+                  {productSearchTerm
+                    ? "No products found matching your search"
+                    : "No products available"}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              onClick={() => {
+                setIsAddProductModalOpen(false);
+                setSelectedProductsToAdd([]);
+                setProductSearchTerm("");
+              }}
+              disabled={isLinkingProducts}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmAddProducts}
+              disabled={isLinkingProducts || selectedProductsToAdd.length === 0}
+              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isLinkingProducts ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Linking...
+                </>
+              ) : (
+                <span>
+                  Link{" "}
+                  {selectedProductsToAdd.length > 0
+                    ? `${selectedProductsToAdd.length} `
+                    : ""}
+                  Product{selectedProductsToAdd.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </RegularModal>
     </div>
   );
 }
