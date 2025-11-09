@@ -7,7 +7,7 @@ import { useToast } from "../../contexts/ToastContext";
 interface CreateCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCategoryCreated?: () => void;
+  onCategoryCreated?: (categoryId: number) => void;
 }
 
 export default function CreateCategoryModal({
@@ -25,7 +25,7 @@ export default function CreateCategoryModal({
 
     try {
       setIsCreating(true);
-      await productCategoryService.createCategory({
+      const response = await productCategoryService.createCategory({
         name: newCategoryName.trim(),
         description: newCategoryDescription.trim() || undefined,
       });
@@ -34,10 +34,16 @@ export default function CreateCategoryModal({
         "Category Created",
         `"${newCategoryName}" has been created successfully.`
       );
+
+      const createdCategoryId = response.data?.id;
+
       onClose();
       setNewCategoryName("");
       setNewCategoryDescription("");
-      onCategoryCreated?.();
+
+      if (createdCategoryId) {
+        onCategoryCreated?.(createdCategoryId);
+      }
     } catch (err) {
       console.error("Failed to create category:", err);
       showError(

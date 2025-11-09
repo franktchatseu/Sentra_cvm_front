@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search,
   Plus,
@@ -15,18 +15,36 @@ import {
 import { useNavigate } from "react-router-dom";
 import { userService } from "../../users/services/userService";
 import { accountService } from "../../account/services/accountService";
-import { UserType } from "../../users/types/user";
+import { UserType, PaginatedResponse } from "../../users/types/user";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import UserModal from "./UserModal";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, components } from "../../../shared/utils/utils";
+import { useAuth } from "../../../contexts/AuthContext";
+
+type AccountRequestListItem = {
+  id?: number;
+  requestId?: number;
+  user_id?: number;
+  first_name?: string;
+  last_name?: string;
+  email_address?: string;
+  email?: string;
+  private_email_address?: string;
+  force_password_reset?: boolean;
+  role?: string;
+  created_at?: string;
+  created_on?: string;
+};
 
 export default function UserManagementPage() {
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserType[]>([]);
-  const [accountRequests, setAccountRequests] = useState<any[]>([]);
+  const [accountRequests, setAccountRequests] = useState<
+    AccountRequestListItem[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorState, setErrorState] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,12 +55,6 @@ export default function UserManagementPage() {
   >("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
-  const [departmentCounts, setDepartmentCounts] = useState<
-    Record<string, number>
-  >({});
-  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [userSummary, setUserSummary] = useState<{
     total: number;
     cached: boolean;
@@ -68,159 +80,125 @@ export default function UserManagementPage() {
 
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
+  const { user: authUser } = useAuth();
+
+  const activateColor = color.tertiary.tag4;
+  const deactivateColor = color.configStatus.inactive;
+
+  const buildSearchQuery = useCallback(
+    ({
+      skipCache = false,
+      searchTermOverride,
+    }: {
+      skipCache?: boolean;
+      searchTermOverride?: string;
+    } = {}) => {
+      const query: Record<string, unknown> = {};
+
+      const term = (searchTermOverride ?? searchTerm)?.trim();
+      if (term) {
+        query.q = term;
+      }
+
+      if (skipCache) {
+        query.skipCache = true;
+      }
+
+      return query;
+    },
+    [searchTerm]
+  );
+
+  const fetchUsers = useCallback(
+    async ({
+      skipCache = false,
+      searchTermOverride,
+    }: {
+      skipCache?: boolean;
+      searchTermOverride?: string;
+    } = {}): Promise<PaginatedResponse<UserType>> => {
+      const term = (searchTermOverride ?? searchTerm)?.trim();
+      if (term) {
+        return userService.searchUsers(
+          buildSearchQuery({ skipCache, searchTermOverride: term })
+        );
+      }
+
+      const baseQuery: Record<string, unknown> = {};
+      if (skipCache) {
+        baseQuery.skipCache = true;
+      }
+
+      return userService.getUsers(baseQuery);
+    },
+    [buildSearchQuery, searchTerm]
+  );
+
+  const loadData = useCallback(
+    async ({
+      skipCache = false,
+      searchTermOverride,
+    }: {
+      skipCache?: boolean;
+      searchTermOverride?: string;
+    } = {}) => {
+      try {
+        setIsLoading(true);
+        setErrorState("");
+
+        const usersResponse = await fetchUsers({
+          skipCache,
+          searchTermOverride,
+        });
+
+        if (usersResponse.success) {
+          setUsers(usersResponse.data);
+          const totalFromResponse =
+            (usersResponse.meta?.total as number | undefined) ??
+            usersResponse.data.length;
+
+          setUserSummary({
+            total: totalFromResponse,
+            cached: Boolean(usersResponse.meta?.isCachedResponse),
+          });
+        }
+
+        // Placeholder until account requests endpoint is wired
+        setAccountRequests([]);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load data";
+        setErrorState(message);
+        showError("Error loading users", message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchUsers, showError]
+  );
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const parseCountMap = (data?: Record<string, unknown>) => {
-    if (!data) return {};
-    return Object.entries(data).reduce((acc, [key, value]) => {
-      let numeric = 0;
-      if (typeof value === "number") {
-        numeric = value;
-      } else if (typeof value === "string") {
-        const parsed = parseInt(value, 10);
-        numeric = Number.isNaN(parsed) ? 0 : parsed;
-      }
-      acc[key] = numeric;
-      return acc;
-    }, {} as Record<string, number>);
-  };
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 400);
 
-  const buildSearchQuery = ({
-    skipCache = false,
-    searchTermOverride,
-  }: {
-    skipCache?: boolean;
-    searchTermOverride?: string;
-  } = {}) => {
-    const query: Record<string, unknown> = {};
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
 
-    const term = (searchTermOverride ?? searchTerm)?.trim();
-    if (term) {
-      query.q = term;
+  useEffect(() => {
+    if (!hasInitializedDebounce.current) {
+      hasInitializedDebounce.current = true;
+      return;
     }
 
-    if (skipCache) {
-      query.skipCache = true;
-    }
-
-    return query;
-  };
-
-  const fetchUsers = async ({
-    skipCache = false,
-    searchTermOverride,
-  }: {
-    skipCache?: boolean;
-    searchTermOverride?: string;
-  } = {}) => {
-    const term = (searchTermOverride ?? searchTerm)?.trim();
-    if (term) {
-      return userService.searchUsers(
-        buildSearchQuery({ skipCache, searchTermOverride: term })
-      );
-    }
-
-    const baseQuery: Record<string, unknown> = {};
-    if (skipCache) {
-      baseQuery.skipCache = true;
-    }
-
-    return userService.getUsers(baseQuery);
-  };
-
-  const loadData = async ({
-    skipCache = false,
-    searchTermOverride,
-  }: {
-    skipCache?: boolean;
-    searchTermOverride?: string;
-  } = {}) => {
-    try {
-      setIsLoading(true);
-      setErrorState("");
-
-      const usersResponse = await fetchUsers({ skipCache, searchTermOverride });
-
-      if (usersResponse.success) {
-        setUsers(usersResponse.data);
-        const totalFromResponse =
-          (usersResponse.meta?.total as number | undefined) ??
-          usersResponse.data.length;
-
-        setUserSummary({
-          total: totalFromResponse,
-          cached: Boolean(usersResponse.meta?.isCachedResponse),
-        });
-
-        setIsLoadingStats(true);
-        setStatusCounts({});
-        setDepartmentCounts({});
-        setRoleCounts({});
-
-        const analyticsResults = await Promise.allSettled([
-          userService.getStatusCounts(),
-          userService.getDepartmentCounts(),
-          userService.getRoleCounts(),
-        ]);
-
-        const [statusRes, departmentRes, roleRes] = analyticsResults;
-        let analyticsError = false;
-
-        if (statusRes.status === "fulfilled") {
-          if (statusRes.value?.success && statusRes.value.data) {
-            setStatusCounts(parseCountMap(statusRes.value.data));
-          } else {
-            analyticsError = true;
-          }
-        } else {
-          analyticsError = true;
-        }
-
-        if (departmentRes.status === "fulfilled") {
-          if (departmentRes.value?.success && departmentRes.value.data) {
-            setDepartmentCounts(parseCountMap(departmentRes.value.data));
-          } else {
-            analyticsError = true;
-          }
-        } else {
-          analyticsError = true;
-        }
-
-        if (roleRes.status === "fulfilled") {
-          if (roleRes.value?.success && roleRes.value.data) {
-            setRoleCounts(parseCountMap(roleRes.value.data));
-          } else {
-            analyticsError = true;
-          }
-        } else {
-          analyticsError = true;
-        }
-
-        if (analyticsError) {
-          showError(
-            "Analytics Error",
-            "Some analytics data could not be loaded right now."
-          );
-        }
-      }
-
-      // TODO: Load account requests when endpoint is available
-      // For now, set empty array
-      setAccountRequests([]);
-    } catch (err) {
-      setErrorState(err instanceof Error ? err.message : "Failed to load data");
-      showError(
-        "Error loading users",
-        err instanceof Error ? err.message : "Failed to load data"
-      );
-    } finally {
-      setIsLoading(false);
-      setIsLoadingStats(false);
-    }
-  };
+    loadData({ skipCache: true, searchTermOverride: debouncedSearchTerm });
+  }, [debouncedSearchTerm, loadData]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -256,30 +234,27 @@ export default function UserManagementPage() {
     }
   };
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
-    }, 400);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
-
-  useEffect(() => {
-    if (!hasInitializedDebounce.current) {
-      hasInitializedDebounce.current = true;
-      return;
-    }
-
-    loadData({ skipCache: true, searchTermOverride: debouncedSearchTerm });
-  }, [debouncedSearchTerm]);
-
   const handleViewUser = (user: UserType) => {
     navigate(`/dashboard/user-management/${user.id}`);
   };
 
-  const handleApproveRequest = async (request: any) => {
+  const resolveAccountRequestId = (
+    request: AccountRequestListItem
+  ): number | null => {
+    const identifier = request.id ?? request.requestId;
+    return typeof identifier === "number" ? identifier : null;
+  };
+
+  const handleApproveRequest = async (request: AccountRequestListItem) => {
+    const requestId = resolveAccountRequestId(request);
+    if (!requestId) {
+      showError(
+        "Unable to approve request",
+        "Missing identifier for the selected request."
+      );
+      return;
+    }
+
     const confirmed = await confirm({
       title: "Approve Request",
       message: `Are you sure you want to approve the account request for ${request.first_name} ${request.last_name}?`,
@@ -293,13 +268,11 @@ export default function UserManagementPage() {
     // Set loading state
     setLoadingActions((prev) => ({
       ...prev,
-      approving: new Set([...prev.approving, request.id || request.requestId]),
+      approving: new Set([...prev.approving, requestId]),
     }));
 
     try {
-      await accountService.approveAccountRequest(
-        request.id || request.requestId
-      );
+      await accountService.approveAccountRequest(requestId);
       await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "Request approved",
@@ -316,14 +289,23 @@ export default function UserManagementPage() {
         ...prev,
         approving: new Set(
           [...prev.approving].filter(
-            (id) => id !== (request.id || request.requestId)
+            (id) => id !== requestId
           )
         ),
       }));
     }
   };
 
-  const handleRejectRequest = async (request: any) => {
+  const handleRejectRequest = async (request: AccountRequestListItem) => {
+    const requestId = resolveAccountRequestId(request);
+    if (!requestId) {
+      showError(
+        "Unable to reject request",
+        "Missing identifier for the selected request."
+      );
+      return;
+    }
+
     const confirmed = await confirm({
       title: "Reject Request",
       message: `Are you sure you want to reject ${request.first_name} ${request.last_name}'s request?`,
@@ -337,12 +319,12 @@ export default function UserManagementPage() {
     // Set loading state
     setLoadingActions((prev) => ({
       ...prev,
-      rejecting: new Set([...prev.rejecting, request.id || request.requestId]),
+      rejecting: new Set([...prev.rejecting, requestId]),
     }));
 
     try {
       await accountService.rejectAccountRequest(
-        request.id || request.requestId,
+        requestId,
         {
           reason: "Rejected by administrator",
         }
@@ -363,7 +345,7 @@ export default function UserManagementPage() {
         ...prev,
         rejecting: new Set(
           [...prev.rejecting].filter(
-            (id) => id !== (request.id || request.requestId)
+            (id) => id !== requestId
           )
         ),
       }));
@@ -408,6 +390,11 @@ export default function UserManagementPage() {
   };
 
   const handleDeleteUser = async (user: UserType) => {
+    if (!authUser?.user_id) {
+      showError("Unable to delete user", "Your session is missing a user id.");
+      return;
+    }
+
     const confirmed = await confirm({
       title: "Delete User",
       message: `Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone.`,
@@ -425,7 +412,7 @@ export default function UserManagementPage() {
     }));
 
     try {
-      await userService.deleteUser(user.id);
+      await userService.deleteUser(user.id, authUser.user_id);
       await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "User deleted",
@@ -495,9 +482,9 @@ export default function UserManagementPage() {
     new Set(
       users
         .map((user) => user.department)
-        .filter((dept) => dept && dept.trim() !== "")
+        .filter((dept): dept is string => Boolean(dept && dept.trim() !== ""))
     )
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   const aggregateCounts = users.reduce(
     (acc, user) => {
@@ -529,7 +516,7 @@ export default function UserManagementPage() {
   const activeUsersValue = aggregateCounts.active;
   const highRiskUsersValue = aggregateCounts.suspended + aggregateCounts.locked;
 
-  const statsLoadingIndicator = isLoadingStats || isLoading;
+  const statsLoadingIndicator = isLoading;
 
   const userStatsCards = [
     {
@@ -582,19 +569,17 @@ export default function UserManagementPage() {
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 
-  const filteredRequests = accountRequests.filter((request: any) => {
-    const matchesSearch =
-      (request.first_name || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (request.last_name || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (request.email_address || request.email || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+  const filteredRequests = accountRequests.filter((request) => {
+    const firstName = (request.first_name ?? "").toLowerCase();
+    const lastName = (request.last_name ?? "").toLowerCase();
+    const email = (request.email_address ?? request.email ?? "").toLowerCase();
+    const needle = searchTerm.toLowerCase();
 
-    return matchesSearch;
+    return (
+      firstName.includes(needle) ||
+      lastName.includes(needle) ||
+      email.includes(needle)
+    );
   });
 
   return (
@@ -710,7 +695,11 @@ export default function UserManagementPage() {
                 color: "white",
               }}
             >
-              {accountRequests.filter((r) => r.force_password_reset).length}
+              {
+                accountRequests.filter((request) =>
+                  Boolean(request.force_password_reset)
+                ).length
+              }
             </span>
           </div>
         </button>
@@ -792,7 +781,7 @@ export default function UserManagementPage() {
             >
               <p className="font-medium mb-3">{errorState}</p>
               <button
-                onClick={loadData}
+                onClick={() => loadData({ skipCache: true })}
                 className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors font-medium"
                 style={{ backgroundColor: color.status.danger }}
               >
@@ -931,9 +920,8 @@ export default function UserManagementPage() {
                                 className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{
                                   color: userIsActive
-                                    ? color.status.danger
-                                    : color.status.success,
-                                  backgroundColor: "transparent",
+                                    ? deactivateColor
+                                    : activateColor,
                                 }}
                                 title={
                                   loadingActions.toggling.has(user.id)
@@ -950,9 +938,9 @@ export default function UserManagementPage() {
                                     color="primary"
                                   />
                                 ) : userIsActive ? (
-                                  <Ban className="w-4 h-4 text-black" />
+                                  <Ban className="w-4 h-4" />
                                 ) : (
-                                  <CheckCircle className="w-4 h-4 text-black" />
+                                  <CheckCircle className="w-4 h-4" />
                                 )}
                               </button>
                               <button
@@ -964,7 +952,7 @@ export default function UserManagementPage() {
                                 }}
                                 title="View user details"
                               >
-                                <Eye className="w-4 h-4 text-black" />
+                                <Eye className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => {
@@ -978,7 +966,7 @@ export default function UserManagementPage() {
                                 }}
                                 title="Edit user"
                               >
-                                <Edit className="w-4 h-4 text-black" />
+                                <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleDeleteUser(user)}
@@ -997,7 +985,7 @@ export default function UserManagementPage() {
                                     color="primary"
                                   />
                                 ) : (
-                                  <Trash2 className="w-4 h-4 text-black" />
+                                  <Trash2 className="w-4 h-4" />
                                 )}
                               </button>
                             </div>
@@ -1058,9 +1046,8 @@ export default function UserManagementPage() {
                             className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{
                               color: userIsActive
-                                ? color.status.danger
-                                : color.status.success,
-                              backgroundColor: "transparent",
+                                ? deactivateColor
+                                : activateColor,
                             }}
                             title={
                               loadingActions.toggling.has(user.id)
@@ -1077,9 +1064,9 @@ export default function UserManagementPage() {
                                 color="primary"
                               />
                             ) : userIsActive ? (
-                              <Ban className="w-4 h-4 text-black" />
+                              <Ban className="w-4 h-4" />
                             ) : (
-                              <CheckCircle className="w-4 h-4 text-black" />
+                              <CheckCircle className="w-4 h-4" />
                             )}
                           </button>
                           <button
@@ -1091,7 +1078,7 @@ export default function UserManagementPage() {
                             }}
                             title="View user details"
                           >
-                            <Eye className="w-4 h-4 text-black" />
+                            <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => {
@@ -1105,7 +1092,7 @@ export default function UserManagementPage() {
                             }}
                             title="Edit user"
                           >
-                            <Edit className="w-4 h-4 text-black" />
+                            <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user)}
@@ -1124,7 +1111,7 @@ export default function UserManagementPage() {
                                 color="primary"
                               />
                             ) : (
-                              <Trash2 className="w-4 h-4 text-black" />
+                              <Trash2 className="w-4 h-4" />
                             )}
                           </button>
                         </div>
@@ -1178,193 +1165,221 @@ export default function UserManagementPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredRequests.map((request: any) => (
-                    <tr
-                      key={request.id || request.requestId || request.user_id}
-                      className="hover:bg-gray-50/30 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <div
-                            className={`text-base font-semibold ${tw.textPrimary}`}
-                          >
-                            {request.first_name} {request.last_name}
+                  {filteredRequests.map((request, index) => {
+                    const requestId = resolveAccountRequestId(request);
+                    const requestKey =
+                      requestId ??
+                      request.user_id ??
+                      `${request.email ?? request.email_address ?? "request"}-${index}`;
+                    const approvingLoading =
+                      typeof requestId === "number" &&
+                      loadingActions.approving.has(requestId);
+                    const rejectingLoading =
+                      typeof requestId === "number" &&
+                      loadingActions.rejecting.has(requestId);
+                    const actionDisabled = typeof requestId !== "number";
+                    const fullName =
+                      [request.first_name, request.last_name]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim() || "Unknown";
+                    const requestEmail =
+                      request.email_address ??
+                      request.email ??
+                      request.private_email_address ??
+                      "N/A";
+                    const requestDate = request.created_at ?? request.created_on;
+                    const formattedDate = requestDate
+                      ? new Date(requestDate).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "N/A";
+                    const requestRole = request.role ?? "N/A";
+
+                    return (
+                      <tr
+                        key={requestKey}
+                        className="hover:bg-gray-50/30 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div>
+                            <div
+                              className={`text-base font-semibold ${tw.textPrimary}`}
+                            >
+                              {fullName}
+                            </div>
+                            <div className={`text-sm ${tw.textMuted}`}>
+                              {requestEmail}
+                            </div>
                           </div>
-                          <div className={`text-sm ${tw.textMuted}`}>
-                            {request.email_address ||
-                              request.email ||
-                              request.private_email_address}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                          >
+                            {requestRole}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className={`text-sm ${tw.textSecondary}`}>
+                            {formattedDate}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
-                        >
-                          {request.role || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className={`text-sm ${tw.textSecondary}`}>
-                          {request.created_at || request.created_on
-                            ? new Date(
-                                request.created_at || request.created_on
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handleApproveRequest(request)}
-                            disabled={loadingActions.approving.has(
-                              request.id || request.requestId || request.user_id
-                            )}
-                            className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={
-                              loadingActions.approving.has(
-                                request.id ||
-                                  request.requestId ||
-                                  request.user_id
-                              )
-                                ? "Approving..."
-                                : "Approve request"
-                            }
-                          >
-                            {loadingActions.approving.has(
-                              request.id || request.requestId || request.user_id
-                            ) ? (
-                              <LoadingSpinner
-                                variant="modern"
-                                size="sm"
-                                color="primary"
-                              />
-                            ) : (
-                              <UserCheck className="w-4 h-4 text-black" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleRejectRequest(request)}
-                            disabled={loadingActions.rejecting.has(
-                              request.id || request.requestId || request.user_id
-                            )}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={
-                              loadingActions.rejecting.has(
-                                request.id ||
-                                  request.requestId ||
-                                  request.user_id
-                              )
-                                ? "Rejecting..."
-                                : "Reject request"
-                            }
-                          >
-                            {loadingActions.rejecting.has(
-                              request.id || request.requestId || request.user_id
-                            ) ? (
-                              <LoadingSpinner
-                                variant="modern"
-                                size="sm"
-                                color="primary"
-                              />
-                            ) : (
-                              <UserX className="w-4 h-4 text-black" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => handleApproveRequest(request)}
+                              disabled={actionDisabled || approvingLoading}
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={
+                                actionDisabled
+                                  ? "Missing request identifier"
+                                  : approvingLoading
+                                  ? "Approving..."
+                                  : "Approve request"
+                              }
+                            >
+                              {approvingLoading ? (
+                                <LoadingSpinner
+                                  variant="modern"
+                                  size="sm"
+                                  color="primary"
+                                />
+                              ) : (
+                                <UserCheck className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleRejectRequest(request)}
+                              disabled={actionDisabled || rejectingLoading}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={
+                                actionDisabled
+                                  ? "Missing request identifier"
+                                  : rejectingLoading
+                                  ? "Rejecting..."
+                                  : "Reject request"
+                              }
+                            >
+                              {rejectingLoading ? (
+                                <LoadingSpinner
+                                  variant="modern"
+                                  size="sm"
+                                  color="primary"
+                                />
+                              ) : (
+                                <UserX className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Cards */}
             <div className="lg:hidden">
-              {filteredRequests.map((request: any) => (
-                <div
-                  key={request.id || request.requestId || request.user_id}
-                  className="p-4 border-b border-gray-200 last:border-b-0"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={`text-base font-semibold ${tw.textPrimary} mb-1`}
-                    >
-                      {request.first_name} {request.last_name}
-                    </div>
-                    <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                      {request.email_address ||
-                        request.email ||
-                        request.private_email_address}
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+              {filteredRequests.map((request, index) => {
+                const requestId = resolveAccountRequestId(request);
+                const requestKey =
+                  requestId ??
+                  request.user_id ??
+                  `${request.email ?? request.email_address ?? "request"}-${index}`;
+                const approvingLoading =
+                  typeof requestId === "number" &&
+                  loadingActions.approving.has(requestId);
+                const rejectingLoading =
+                  typeof requestId === "number" &&
+                  loadingActions.rejecting.has(requestId);
+                const actionDisabled = typeof requestId !== "number";
+                const fullName =
+                  [request.first_name, request.last_name]
+                    .filter(Boolean)
+                    .join(" ")
+                    .trim() || "Unknown";
+                const requestEmail =
+                  request.email_address ??
+                  request.email ??
+                  request.private_email_address ??
+                  "N/A";
+                const requestRole = request.role ?? "N/A";
+
+                return (
+                  <div
+                    key={requestKey}
+                    className="p-4 border-b border-gray-200 last:border-b-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-base font-semibold ${tw.textPrimary} mb-1`}
                       >
-                        {request.role || "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-end space-x-2">
-                      <button
-                        onClick={() => handleApproveRequest(request)}
-                        disabled={loadingActions.approving.has(
-                          request.id || request.requestId || request.user_id
-                        )}
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loadingActions.approving.has(
-                          request.id || request.requestId || request.user_id
-                        ) ? (
-                          <>
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                              className="mr-1"
-                            />
-                            Approving...
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-4 h-4 mr-1 text-black" />
-                            Approve
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleRejectRequest(request)}
-                        disabled={loadingActions.rejecting.has(
-                          request.id || request.requestId || request.user_id
-                        )}
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loadingActions.rejecting.has(
-                          request.id || request.requestId || request.user_id
-                        ) ? (
-                          <>
-                            <LoadingSpinner
-                              variant="modern"
-                              size="sm"
-                              color="primary"
-                              className="mr-1"
-                            />
-                            Rejecting...
-                          </>
-                        ) : (
-                          <>
-                            <UserX className="w-4 h-4 mr-1 text-black" />
-                            Reject
-                          </>
-                        )}
-                      </button>
+                        {fullName}
+                      </div>
+                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                        {requestEmail}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                        >
+                          {requestRole}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => handleApproveRequest(request)}
+                          disabled={actionDisabled || approvingLoading}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {approvingLoading ? (
+                            <>
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                                className="mr-1"
+                              />
+                              Approving...
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-1" />
+                              Approve
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleRejectRequest(request)}
+                          disabled={actionDisabled || rejectingLoading}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {rejectingLoading ? (
+                            <>
+                              <LoadingSpinner
+                                variant="modern"
+                                size="sm"
+                                color="primary"
+                                className="mr-1"
+                              />
+                              Rejecting...
+                            </>
+                          ) : (
+                            <>
+                              <UserX className="w-4 h-4 mr-1" />
+                              Reject
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

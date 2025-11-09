@@ -1,4 +1,12 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Target,
@@ -16,7 +24,7 @@ import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { productService } from "../../products/services/productService";
 import { offerCreativeService } from "../services/offerCreativeService";
-import { productCategoryService } from "../../products/services/productCategoryService";
+// import { productCategoryService } from "../../products/services/productCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
 import ProductSelector from "../../products/components/ProductSelector";
 import OfferCreativeStep from "../components/OfferCreativeStep";
@@ -28,22 +36,63 @@ import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 
 // Import the types from offerCreative instead of defining locally
-import {
-  OfferCreative as OfferCreativeType,
-  CreativeChannel,
-  Locale,
-} from "../types/offerCreative";
+import { OfferCreative } from "../types/offerCreative";
 
 // Local creative for form (uses string ID until saved)
-interface OfferCreative {
+type LocalOfferCreative = Omit<OfferCreative, "id" | "offer_id"> & {
   id: string;
-  channel: CreativeChannel;
-  locale: Locale;
-  title: string;
-  text_body: string;
-  html_body: string;
-  variables: Record<string, string | number | boolean>;
+  offer_id?: number;
+};
+
+interface ApiErrorDetail {
+  field?: string;
+  message?: string;
 }
+
+interface ApiErrorResponseData {
+  message?: string;
+  error?: string;
+  details?: ApiErrorDetail[] | Record<string, string>;
+}
+
+const hasResponseData = (
+  error: unknown
+): error is { response?: { data?: ApiErrorResponseData } } => {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as { response?: unknown }).response === "object"
+  );
+};
+
+const hasErrorString = (error: unknown): error is { error: string } => {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "error" in error &&
+    typeof (error as { error?: unknown }).error === "string"
+  );
+};
+
+const hasMessageString = (error: unknown): error is { message: string } => {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  );
+};
+
+const isRecordOfString = (value: unknown): value is Record<string, string> => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  return Object.values(value).every((v) => typeof v === "string");
+};
+
+type LinkedProduct = Product & { link_id?: number; is_primary?: boolean };
 
 interface TrackingRule {
   id: string;
@@ -94,9 +143,9 @@ interface StepProps {
   onPrev: () => void;
   onSubmit: () => void;
   formData: CreateOfferRequest;
-  setFormData: (data: CreateOfferRequest) => void;
-  creatives: OfferCreative[];
-  setCreatives: (creatives: OfferCreative[]) => void;
+  setFormData: Dispatch<SetStateAction<CreateOfferRequest>>;
+  creatives: LocalOfferCreative[];
+  setCreatives: (creatives: LocalOfferCreative[]) => void;
   trackingSources: TrackingSource[];
   setTrackingSources: (sources: TrackingSource[]) => void;
   rewards: OfferReward[];
@@ -258,7 +307,6 @@ function BasicInfoStep({
           </label>
           <HeadlessSelect
             options={[
-              { value: "", label: "Select offer type" },
               { value: "data", label: "Data" },
               { value: "voice", label: "Voice" },
               { value: "sms", label: "SMS" },
@@ -270,11 +318,12 @@ function BasicInfoStep({
               { value: "bonus", label: "Bonus" },
               { value: "other", label: "Other" },
             ]}
-            value={formData.offer_type || ""}
+            value={formData.offer_type}
             onChange={(value) => {
+              if (!value) return;
               setFormData({
                 ...formData,
-                offer_type: value ? (value as OfferTypeEnum) : undefined,
+                offer_type: value as OfferTypeEnum,
               });
               if (validationErrors?.offer_type && clearValidationErrors) {
                 clearValidationErrors();
@@ -375,7 +424,7 @@ function BasicInfoStep({
 
 // Step 2: Offer Products
 function ProductStepWrapper({
-  formData,
+  // formData,
   setFormData,
   selectedProducts,
   onProductsChange,
@@ -400,14 +449,14 @@ function ProductStepWrapper({
   | "onSaveDraft"
   | "onCancel"
 > & {
-  selectedProducts: Product[];
-  onProductsChange: (products: Product[]) => void;
+  selectedProducts: LinkedProduct[];
+  onProductsChange: (products: LinkedProduct[]) => void;
 }) {
   // Track previous products to prevent unnecessary updates
-  const prevProductsRef = useRef<Product[]>(selectedProducts);
+  const prevProductsRef = useRef<LinkedProduct[]>(selectedProducts);
 
   const handleProductsChange = useCallback(
-    (products: Product[]) => {
+    (products: LinkedProduct[]) => {
       // Check if products actually changed (by reference and length)
       const productsChanged =
         prevProductsRef.current.length !== products.length ||
@@ -461,7 +510,9 @@ function ProductStepWrapper({
       <div className="space-y-6">
         <ProductSelector
           selectedProducts={selectedProducts}
-          onProductsChange={handleProductsChange}
+          onProductsChange={(products) =>
+            handleProductsChange(products as LinkedProduct[])
+          }
           multiSelect={true}
           showAddButtonInline={true}
         />
@@ -848,23 +899,21 @@ export default function CreateOfferPage() {
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
   const totalSteps = 6;
 
-  const [formData, setFormData] = useState<
-    Omit<CreateOfferRequest, "offer_type"> & { offer_type?: OfferTypeEnum }
-  >({
+  const [formData, setFormData] = useState<CreateOfferRequest>({
     name: "",
     code: "",
     description: "",
-    offer_type: undefined, // Start undefined like category_id
+    offer_type: OfferTypeEnum.DATA,
     category_id: undefined,
     max_usage_per_customer: 1,
     eligibility_rules: {},
   });
 
-  const [creatives, setCreatives] = useState<OfferCreative[]>([]);
+  const [creatives, setCreatives] = useState<LocalOfferCreative[]>([]);
   const [trackingSources, setTrackingSources] = useState<TrackingSource[]>([]);
   const [rewards, setRewards] = useState<OfferReward[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const [initialProducts, setInitialProducts] = useState<Product[]>([]); // Track initial products for edit mode
+  const [selectedProducts, setSelectedProducts] = useState<LinkedProduct[]>([]);
+  const [initialProducts, setInitialProducts] = useState<LinkedProduct[]>([]); // Track initial products for edit mode
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -935,16 +984,35 @@ export default function CreateOfferPage() {
             return {
               ...productData,
               is_primary: link.is_primary,
-              link_id: link.id || link.link_id, // Preserve link_id for unlinking
-            };
+              link_id: link.id || link.link_id,
+            } as LinkedProduct;
           } catch {
-            // Failed to fetch product details
-            return {
-              id: link.product_id,
+            const fallbackProduct: LinkedProduct = {
+              id: Number(link.product_id),
+              product_uuid: "", // fallback values when details are unavailable
+              product_code: "",
               name: `Product ${link.product_id}`,
+              price: 0,
+              currency: "USD",
+              requires_inventory: false,
+              is_active: false,
+              created_at: new Date(0).toISOString(),
+              updated_at: new Date(0).toISOString(),
+              description: undefined,
+              category_id: undefined,
+              da_id: undefined,
+              validity_days: undefined,
+              validity_hours: undefined,
+              available_quantity: undefined,
+              effective_from: undefined,
+              effective_to: undefined,
+              created_by: undefined,
+              updated_by: undefined,
+              metadata: undefined,
               is_primary: link.is_primary,
-              link_id: link.id || link.link_id, // Preserve link_id for unlinking
+              link_id: link.id || link.link_id,
             };
+            return fallbackProduct;
           }
         });
 
@@ -963,21 +1031,32 @@ export default function CreateOfferPage() {
       const creativesList = creativesResponse?.data || [];
 
       if (Array.isArray(creativesList) && creativesList.length > 0) {
-        // Map backend creative structure to frontend OfferCreative structure
-        const mappedCreatives: OfferCreative[] = creativesList.map(
-          (creative: any) => ({
-            id: String(creative.id || ""), // Use creative ID if available, otherwise empty string
+        const mappedCreatives: LocalOfferCreative[] = creativesList.map(
+          (creative: OfferCreative) => ({
+            id: String(creative.id ?? Math.random().toString(36).slice(2)),
+            offer_id: creative.offer_id,
             channel: creative.channel,
             locale: creative.locale,
-            title: creative.title || "",
-            text_body: creative.text_body || "",
-            html_body: creative.html_body || "",
-            variables: creative.variables || {},
+            title: creative.title,
+            text_body: creative.text_body,
+            html_body: creative.html_body,
+            variables: creative.variables ?? {},
+            default_values: creative.default_values,
+            required_variables: creative.required_variables,
+            version: creative.version,
+            is_active: creative.is_active ?? true,
+            is_latest: creative.is_latest,
+            template_type_id: creative.template_type_id,
+            created_at: creative.created_at,
+            updated_at: creative.updated_at,
+            created_by: creative.created_by,
+            updated_by: creative.updated_by,
           })
         );
         setCreatives(mappedCreatives);
       }
     } catch (error) {
+      console.error("Failed to load offer data", error);
       // Failed to load offer data
       navigate("/dashboard/offers");
     } finally {
@@ -1001,7 +1080,7 @@ export default function CreateOfferPage() {
           skipCache: true,
         });
         setOfferCategories(response.data || []);
-      } catch (err) {
+      } catch {
         // Failed to load offer categories
         // Keep empty array on error, user can still proceed
       } finally {
@@ -1049,7 +1128,7 @@ export default function CreateOfferPage() {
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [formData, creatives, trackingSources, rewards]);
+  }, [formData]);
 
   const clearValidationErrors = useCallback(() => {
     setValidationErrors({});
@@ -1080,7 +1159,7 @@ export default function CreateOfferPage() {
   }, [
     currentStep,
     formData,
-    creatives,
+    // creatives,
     trackingSources,
     rewards,
     // Removed validationErrors and clearValidationErrors to break circular dependency
@@ -1184,36 +1263,30 @@ export default function CreateOfferPage() {
           if (isEditMode) {
             // In edit mode, compare initial products with current products
             const initialProductIds = new Set(
-              initialProducts.map((p) => String(p.id || p.product_id))
+              initialProducts.map((p) => String(p.id))
             );
             const currentProductIds = new Set(
-              selectedProducts.map((p) => String(p.id || p.product_id))
+              selectedProducts.map((p) => String(p.id))
             );
 
             // Find products to unlink (in initial but not in current)
             const productsToUnlink = initialProducts.filter(
-              (p) => !currentProductIds.has(String(p.id || p.product_id))
+              (p) => !currentProductIds.has(String(p.id))
             );
 
             // Find products to link (in current but not in initial)
             const productsToLink = selectedProducts.filter(
-              (p) => !initialProductIds.has(String(p.id || p.product_id))
+              (p) => !initialProductIds.has(String(p.id))
             );
 
             // Unlink removed products
             if (productsToUnlink.length > 0) {
               for (const product of productsToUnlink) {
-                // Try to find link_id from the product object (might be stored as link_id or id)
-                const linkId = (product as any).link_id;
-                if (linkId) {
-                  try {
-                    await offerService.unlinkProductById(linkId);
-                  } catch (unlinkError) {
-                    // Failed to unlink product, continue with other operations
-                  }
-                } else {
-                  // No link_id found for product, cannot unlink
+                const linkId = product.link_id;
+                if (!linkId) {
+                  continue;
                 }
+                await offerService.unlinkProductById(linkId);
               }
             }
 
@@ -1221,7 +1294,7 @@ export default function CreateOfferPage() {
             if (productsToLink.length > 0) {
               const primaryProductId = formData.primary_product_id;
               const links = productsToLink.map((p) => {
-                const productId = parseInt(p.id!);
+                const productId = Number(p.id);
                 return {
                   offer_id: Number(offerId),
                   product_id: productId,
@@ -1242,7 +1315,7 @@ export default function CreateOfferPage() {
             const currentPrimaryId = formData.primary_product_id;
             if (currentPrimaryId) {
               const primaryProduct = selectedProducts.find(
-                (p) => Number(p.id || p.product_id) === currentPrimaryId
+                (p) => p.id === currentPrimaryId
               );
               const initialPrimary = initialProducts.find((p) => p.is_primary);
 
@@ -1250,8 +1323,7 @@ export default function CreateOfferPage() {
               if (
                 primaryProduct &&
                 initialPrimary &&
-                Number(initialPrimary.id || initialPrimary.product_id) !==
-                  currentPrimaryId
+                initialPrimary.id !== currentPrimaryId
               ) {
                 // Primary product changes are managed through the offer details page
               }
@@ -1260,7 +1332,7 @@ export default function CreateOfferPage() {
             // Create mode: link all selected products
             const primaryProductId = formData.primary_product_id;
             const links = selectedProducts.map((p) => {
-              const productId = parseInt(p.id!);
+              const productId = Number(p.id);
               return {
                 offer_id: Number(offerId),
                 product_id: productId,
@@ -1276,7 +1348,7 @@ export default function CreateOfferPage() {
 
             await offerService.linkProductsBatch(batchRequest);
           }
-        } catch (productError) {
+        } catch {
           // Failed to manage products
           showError(
             `Offer ${isEditMode ? "updated" : "created"}, but failed to ${
@@ -1311,7 +1383,7 @@ export default function CreateOfferPage() {
           });
 
           await Promise.all(creativePromises);
-        } catch (creativeError) {
+        } catch {
           showError(
             `Offer ${
               isEditMode ? "updated" : "created"
@@ -1337,45 +1409,35 @@ export default function CreateOfferPage() {
         errorMessage = err.message;
       } else if (err && typeof err === "object") {
         // Handle response objects
-        if ("response" in err) {
-          const errorResponse = err as {
-            response?: {
-              data?: { message?: string; error?: string; details?: unknown };
-            };
-          };
+        if (hasResponseData(err)) {
+          const errorResponse = err.response;
 
-          if (errorResponse.response?.data?.message) {
-            errorMessage = errorResponse.response.data.message;
-          } else if (errorResponse.response?.data?.error) {
-            errorMessage = errorResponse.response.data.error;
-          } else if (errorResponse.response?.data?.details) {
+          if (errorResponse?.data?.message) {
+            errorMessage = errorResponse.data.message;
+          } else if (errorResponse?.data?.error) {
+            errorMessage = errorResponse.data.error;
+          } else if (errorResponse?.data?.details) {
             // Handle validation errors from API
-            const details = errorResponse.response.data.details;
+            const details = errorResponse.data.details;
             if (Array.isArray(details)) {
               const fieldErrors: Record<string, string> = {};
-              details.forEach(
-                (detail: { field?: string; message?: string }) => {
-                  if (detail.field) {
-                    fieldErrors[detail.field] =
-                      detail.message || "Invalid value";
-                  }
+              details.forEach((detail: ApiErrorDetail) => {
+                if (detail.field) {
+                  fieldErrors[detail.field] = detail.message || "Invalid value";
                 }
-              );
+              });
               setValidationErrors(fieldErrors);
               errorMessage = "Please fix the validation errors below";
-            } else if (typeof details === "object") {
-              setValidationErrors(details as Record<string, string>);
+            } else if (isRecordOfString(details)) {
+              setValidationErrors(details);
               errorMessage = "Please fix the validation errors below";
             }
           }
-        } else if ("error" in err && typeof (err as any).error === "string") {
+        } else if (hasErrorString(err)) {
           // Handle direct error objects
-          errorMessage = (err as any).error;
-        } else if (
-          "message" in err &&
-          typeof (err as any).message === "string"
-        ) {
-          errorMessage = (err as any).message;
+          errorMessage = err.error;
+        } else if (hasMessageString(err)) {
+          errorMessage = err.message;
         }
       }
 
@@ -1392,6 +1454,7 @@ export default function CreateOfferPage() {
     clearValidationErrors,
     formData,
     selectedProducts,
+    initialProducts,
     user,
     creatives,
     navigate,
@@ -1435,7 +1498,7 @@ export default function CreateOfferPage() {
     } finally {
       setIsSavingDraft(false);
     }
-  }, [formData, navigate, showError, showToast]);
+  }, [formData, showError, showToast]);
 
   const handleCancel = useCallback(() => {
     navigate("/dashboard/offers");
@@ -1529,7 +1592,7 @@ export default function CreateOfferPage() {
                   onMouseEnter={(e) => {
                     if (!isSavingDraft)
                       (e.target as HTMLButtonElement).style.backgroundColor =
-                        color.primary.hover;
+                        color.interactive.hover;
                   }}
                   onMouseLeave={(e) => {
                     if (!isSavingDraft)
@@ -1728,7 +1791,7 @@ export default function CreateOfferPage() {
                       : validateCurrentStep()
                   )
                     (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.hover;
+                      color.interactive.hover;
                 }}
                 onMouseLeave={(e) => {
                   if (

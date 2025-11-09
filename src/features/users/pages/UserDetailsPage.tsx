@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   User,
@@ -23,6 +23,7 @@ import { color, tw } from "../../../shared/utils/utils";
 export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { error: showError } = useToast();
 
   const [user, setUser] = useState<UserType | null>(null);
@@ -100,6 +101,21 @@ export default function UserDetailsPage() {
     }
   };
 
+  const returnTo = (
+    location.state as { returnTo?: { pathname: string; state?: unknown } }
+  )?.returnTo;
+
+  const navigateBack = () => {
+    if (returnTo) {
+      navigate(returnTo.pathname, {
+        replace: true,
+        state: returnTo.state,
+      });
+    } else {
+      navigate("/dashboard/user-management");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -114,7 +130,7 @@ export default function UserDetailsPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600">User not found</p>
           <button
-            onClick={() => navigate("/dashboard/user-management")}
+            onClick={navigateBack}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
             Back to User Management
@@ -192,7 +208,7 @@ export default function UserDetailsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/dashboard/user-management")}
+            onClick={navigateBack}
             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -629,7 +645,9 @@ export default function UserDetailsPage() {
                       key={report.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() =>
-                        navigate(`/dashboard/user-management/${report.id}`)
+                        navigate(`/dashboard/user-management/${report.id}`, {
+                          state: { returnTo },
+                        })
                       }
                     >
                       <div className="flex items-center gap-3">
@@ -667,7 +685,9 @@ export default function UserDetailsPage() {
                       key={manager.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() =>
-                        navigate(`/dashboard/user-management/${manager.id}`)
+                        navigate(`/dashboard/user-management/${manager.id}`, {
+                          state: { returnTo },
+                        })
                       }
                     >
                       <div className="flex items-center gap-3">

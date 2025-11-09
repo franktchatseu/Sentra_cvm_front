@@ -924,12 +924,27 @@ export default function OfferDetailsPage() {
     */
   };
 
+  const offerDetailsPath = id ? `/dashboard/offers/${id}` : "/dashboard/offers";
+
+  const buildOfferReturnState = (section: "products" | "creatives") => ({
+    pathname: offerDetailsPath,
+    section,
+  });
+
   const navigateToProductDetails = (productId: number) => {
-    navigate(`/dashboard/products/${productId}`);
+    navigate(`/dashboard/products/${productId}`, {
+      state: {
+        returnTo: buildOfferReturnState("products"),
+      },
+    });
   };
 
   const navigateToCreativeDetails = (creativeId: number) => {
-    navigate(`/dashboard/offer-creatives/${creativeId}`);
+    navigate(`/dashboard/offer-creatives/${creativeId}`, {
+      state: {
+        returnTo: buildOfferReturnState("creatives"),
+      },
+    });
   };
 
   // Generate dummy offer type based on offer characteristics
@@ -1317,18 +1332,12 @@ export default function OfferDetailsPage() {
       </div>
 
       {/* Linked Products Section */}
-      <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+      <section
+        className={`mt-12 bg-white rounded-xl border border-[${color.border.default}] p-6 space-y-4`}
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${tw.cardHeading}`}>Linked Products</h3>
           <div className="flex items-center gap-3">
-            {!productsLoading && linkedProducts.length > 0 && (
-              <span className={`text-sm ${tw.textMuted}`}>
-                {linkedProducts.length} product
-                {linkedProducts.length !== 1 ? "s" : ""}
-              </span>
-            )}
             <button
               onClick={() => setIsAddProductModalOpen(true)}
               className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
@@ -1345,25 +1354,44 @@ export default function OfferDetailsPage() {
             <LoadingSpinner />
           </div>
         ) : linkedProducts.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div
+            className={`overflow-x-auto border border-[${color.border.default}] rounded-lg`}
+          >
+            <table className="w-full">
+              <thead
+                className={`border-b ${tw.borderDefault}`}
+                style={{ background: color.surface.tableHeader }}
+              >
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Product
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Description
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Primary
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody
+                className={`bg-white divide-y divide-[${color.border.default}]`}
+              >
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {linkedProducts.map((product: any, index: number) => {
                   const rawProductId = product.product_id ?? product.id;
@@ -1375,7 +1403,7 @@ export default function OfferDetailsPage() {
                     productId !== null && !Number.isNaN(productId);
                   const productName =
                     product.name ||
-                    product.product_name ||
+                    product.product_code ||
                     `Product ${hasValidProductId ? productId : index + 1}`;
                   const isPrimary =
                     product.is_primary ||
@@ -1391,15 +1419,16 @@ export default function OfferDetailsPage() {
                         product.link_id ||
                         `product-${hasValidProductId ? productId : index}`
                       }
+                      className="hover:bg-gray-50 transition-colors duration-150"
                     >
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      <td className="px-6 py-5 text-sm font-medium text-gray-900">
                         {hasValidProductId ? (
                           <button
                             type="button"
                             onClick={() =>
                               navigateToProductDetails(productId as number)
                             }
-                            className="hover:underline"
+                            className="hover:underline text-left"
                             style={{ color: color.primary.accent }}
                           >
                             {productName}
@@ -1407,32 +1436,28 @@ export default function OfferDetailsPage() {
                         ) : (
                           <span>{productName}</span>
                         )}
-                        <div className={`text-xs ${tw.textMuted} mt-1`}>
-                          ID:{" "}
-                          {hasValidProductId
-                            ? productId
-                            : product.product_id || product.id || "N/A"}
-                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-6 py-5 text-sm text-gray-600">
                         {product.description ? (
-                          product.description
+                          <span className="line-clamp-2">
+                            {product.description}
+                          </span>
                         ) : (
-                          <span className={`text-xs ${tw.textMuted}`}>
+                          <span className={`text-sm ${tw.textMuted}`}>
                             No description provided
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-6 py-5 text-sm">
                         {isPrimary ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
                             Primary
                           </span>
                         ) : (
                           <span className={`text-sm ${tw.textMuted}`}>—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-6 py-5 text-sm">
                         <div className="flex items-center gap-3">
                           {!isPrimary &&
                             (product.link_id || hasValidProductId) && (
@@ -1490,21 +1515,15 @@ export default function OfferDetailsPage() {
             </p>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Offer Creatives Section */}
-      <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+      <section
+        className={`mt-12 bg-white rounded-xl border border-[${color.border.default}] p-6 space-y-4`}
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
           <div className="flex items-center gap-3">
-            {!creativesLoading && offerCreatives.length > 0 && (
-              <span className={`text-sm ${tw.textMuted}`}>
-                {offerCreatives.length} creative
-                {offerCreatives.length !== 1 ? "s" : ""}
-              </span>
-            )}
             <button
               onClick={() => {
                 resetNewCreativeForm();
@@ -1524,31 +1543,56 @@ export default function OfferDetailsPage() {
             <LoadingSpinner />
           </div>
         ) : offerCreatives.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div
+            className={`overflow-x-auto border border-[${color.border.default}] rounded-lg`}
+          >
+            <table className="w-full">
+              <thead
+                className={`border-b ${tw.borderDefault}`}
+                style={{ background: color.surface.tableHeader }}
+              >
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Channel
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Locale
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Updated
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody
+                className={`bg-white divide-y divide-[${color.border.default}]`}
+              >
                 {offerCreatives.map(
                   (creative: OfferCreative, index: number) => {
                     const creativeId =
@@ -1562,17 +1606,15 @@ export default function OfferDetailsPage() {
                       `Creative ${creative.channel}${
                         creative.locale ? ` (${creative.locale})` : ""
                       }`;
-                    const variablesCount = creative.variables
-                      ? Object.keys(creative.variables).length
-                      : 0;
 
                     return (
                       <tr
                         key={`creative-${creative.id || creative.channel}-${
                           creative.locale
                         }-${index}`}
+                        className="hover:bg-gray-50 transition-colors duration-150"
                       >
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        <td className="px-6 py-5 text-sm font-medium text-gray-900">
                           {hasCreativeId ? (
                             <button
                               type="button"
@@ -1587,41 +1629,32 @@ export default function OfferDetailsPage() {
                           ) : (
                             <span>{creativeLabel}</span>
                           )}
-                          <div className={`text-xs ${tw.textMuted} mt-1`}>
-                            ID: {hasCreativeId ? creativeId : "N/A"}
-                          </div>
-                          {variablesCount > 0 && (
-                            <div className={`text-xs ${tw.textMuted} mt-1`}>
-                              {variablesCount} variable
-                              {variablesCount !== 1 ? "s" : ""}
-                            </div>
-                          )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
+                        <td className="px-6 py-5 text-sm text-gray-600">
                           {creative.channel}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
+                        <td className="px-6 py-5 text-sm text-gray-600">
                           {creative.locale || "—"}
                         </td>
-                        <td className="px-4 py-3 text-sm">
+                        <td className="px-6 py-5 text-sm">
                           {creative.is_active ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
                               Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">
                               Inactive
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
+                        <td className="px-6 py-5 text-sm text-gray-600">
                           {creative.updated_at
                             ? new Date(creative.updated_at).toLocaleString()
                             : creative.created_at
                             ? new Date(creative.created_at).toLocaleString()
                             : "—"}
                         </td>
-                        <td className="px-4 py-3 text-sm">
+                        <td className="px-6 py-5 text-sm">
                           <div className="flex items-center gap-3">
                             <button
                               type="button"
@@ -1655,7 +1688,7 @@ export default function OfferDetailsPage() {
             </p>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Add Creative Modal */}
       <RegularModal

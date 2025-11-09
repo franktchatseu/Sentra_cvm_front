@@ -20,6 +20,7 @@ import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
+import { buildApiUrl, API_CONFIG } from "../../../shared/services/api";
 import {
   OfferCategoryType,
   CreateOfferCategoryRequest,
@@ -566,15 +567,33 @@ function OfferCategoriesPage() {
 
   const loadPopularCategory = async () => {
     try {
+      const endpointUrl = `${buildApiUrl(
+        API_CONFIG.ENDPOINTS.OFFER_CATEGORIES
+      )}/popular`;
+      console.log(
+        "[OfferCategories] Fetching most popular catalog from:",
+        `${endpointUrl}?limit=1&skipCache=true`
+      );
       const response = await offerCategoryService.getPopularCategories({
         limit: 1, // Just get the top one
         skipCache: true,
       });
       if (response.success && response.data && response.data.length > 0) {
-        const topCategory = response.data[0];
+        const topCategory = response.data[0] as {
+          name?: string;
+          offerCount?: number;
+          offer_count?: string | number;
+          total_offers?: string | number;
+        };
+        const parsedTotalOffers =
+          topCategory.total_offers !== undefined
+            ? Number(topCategory.total_offers)
+            : topCategory.offer_count !== undefined
+            ? Number(topCategory.offer_count)
+            : topCategory.offerCount ?? 0;
         setPopularCategory({
           name: topCategory.name,
-          count: topCategory.offerCount || 0,
+          count: Number.isNaN(parsedTotalOffers) ? 0 : parsedTotalOffers,
         });
       }
     } catch {

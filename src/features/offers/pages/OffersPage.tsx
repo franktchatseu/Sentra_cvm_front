@@ -824,7 +824,7 @@ export default function OffersPage() {
 
       {/* Offers Table */}
       <div
-        className={`bg-white rounded-lg shadow-sm border border-[${color.border.default}]`}
+        className={`bg-white rounded-lg shadow-sm border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center h-64">
@@ -847,7 +847,7 @@ export default function OffersPage() {
             </div>
           </div>
         ) : (
-          <div>
+          <div className="overflow-x-auto">
             <table className="w-full">
               <thead
                 className={`border-b ${tw.borderDefault}`}

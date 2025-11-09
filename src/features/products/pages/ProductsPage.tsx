@@ -270,22 +270,6 @@ export default function ProductsPage() {
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => navigate("/dashboard/products/categories")}
-            className="px-3 py-2 md:text-sm rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 text-base text-white"
-            style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
-          >
-            <Settings className="w-5 h-5" />
-            Categories
-          </button>
-          <button
             onClick={() => navigate("/dashboard/products/create")}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}

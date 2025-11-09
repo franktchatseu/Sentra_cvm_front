@@ -1,5 +1,6 @@
 import { useEffect, useState, ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { offerCreativeService } from "../services/offerCreativeService";
 import { OfferCreative } from "../types/offerCreative";
 import { color, tw } from "../../../shared/utils/utils";
@@ -7,19 +8,30 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { useToast } from "../../../contexts/ToastContext";
 
 const DetailItem = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div>
-    <p className={`text-sm font-medium ${tw.textMuted} mb-1`}>{label}</p>
-    <div className={`text-base ${tw.textPrimary}`}>{value}</div>
+  <div className="space-y-1">
+    <p
+      className={`text-sm font-semibold uppercase tracking-wide ${tw.textMuted}`}
+    >
+      {label}
+    </p>
+    <div className={`text-sm ${tw.textPrimary}`}>{value}</div>
   </div>
 );
 
 export default function OfferCreativeDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { error: showError } = useToast();
   const [creative, setCreative] = useState<OfferCreative | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const returnTo = (
+    location.state as {
+      returnTo?: { pathname: string; section?: string; state?: unknown };
+    }
+  )?.returnTo;
 
   useEffect(() => {
     if (!id) {
@@ -52,37 +64,136 @@ export default function OfferCreativeDetailsPage() {
   }, [id, showError]);
 
   const handleBack = () => {
-    navigate(-1);
+    if (returnTo) {
+      navigate(returnTo.pathname, {
+        replace: true,
+        state: returnTo.state ?? { focusSection: returnTo.section },
+      });
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleViewOffer = () => {
+    if (returnTo) {
+      navigate(returnTo.pathname, {
+        replace: true,
+        state: returnTo.state ?? { focusSection: returnTo.section },
+      });
+      return;
+    }
     if (creative?.offer_id) {
-      navigate(`/dashboard/offers/${creative.offer_id}`);
+      navigate(`/dashboard/offers/${creative.offer_id}`, {
+        state: { focusSection: "creatives" },
+      });
     }
   };
+
+  const handleViewUser = (userId?: number) => {
+    if (!userId) return;
+    const currentReturnState = {
+      pathname: location.pathname + location.search,
+      state: { returnTo },
+    };
+    navigate(`/dashboard/user-management/${userId}`, {
+      state: {
+        returnTo: currentReturnState,
+      },
+    });
+  };
+
+  const renderStatusBadge = (isActive?: boolean) =>
+    isActive ? (
+      <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
+        Active
+      </span>
+    ) : (
+      <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">
+        Inactive
+      </span>
+    );
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-16 space-y-4">
+        <p className={`text-sm ${tw.textMuted}`}>{error}</p>
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center gap-2 text-sm font-medium"
+          style={{ color: color.primary.accent }}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!creative) {
+    return (
+      <div className="text-center py-16 space-y-4">
+        <p className={`text-sm ${tw.textMuted}`}>
+          This creative could not be found.
+        </p>
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center gap-2 text-sm font-medium"
+          style={{ color: color.primary.accent }}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-3">
           <button
             type="button"
             onClick={handleBack}
-            className="text-sm font-medium hover:underline"
-            style={{ color: color.primary.accent }}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-black"
           >
+            <ArrowLeft className="h-4 w-4" />
             Back
           </button>
-          <h1 className={`${tw.cardHeading} mt-2`}>Offer Creative Details</h1>
-          <p className={`${tw.textSecondary}`}>
-            Review the latest information for this offer creative.
-          </p>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {creative.title || "Creative"}
+          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
+              {creative.channel}
+            </span>
+            {creative.locale && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold">
+                {creative.locale}
+              </span>
+            )}
+            {renderStatusBadge(creative.is_active)}
+            {creative.version && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm font-semibold">
+                Version {creative.version}
+              </span>
+            )}
+          </div>
         </div>
-        {creative?.offer_id && (
+        {creative.offer_id && (
           <button
             type="button"
             onClick={handleViewOffer}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
             style={{ backgroundColor: color.primary.action }}
           >
             View Offer
@@ -91,172 +202,227 @@ export default function OfferCreativeDetailsPage() {
       </div>
 
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+        className={`bg-white rounded-xl border border-[${color.border.default}] p-6 space-y-6`}
       >
-        {loading ? (
-          <div className="flex justify-center items-center py-16">
-            <LoadingSpinner />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+            <DetailItem label="Creative ID" value={creative.id ?? "—"} />
+            <DetailItem
+              label="Offer"
+              value={
+                creative.offer_id ? (
+                  <button
+                    type="button"
+                    onClick={handleViewOffer}
+                    className="font-semibold hover:underline"
+                    style={{ color: color.primary.accent }}
+                  >
+                    {creative.offer_id}
+                  </button>
+                ) : (
+                  <span className={`text-sm ${tw.textMuted}`}>—</span>
+                )
+              }
+            />
+            <DetailItem
+              label="Created"
+              value={
+                creative.created_at ? (
+                  new Date(creative.created_at).toLocaleString()
+                ) : (
+                  <span className={`text-sm ${tw.textMuted}`}>—</span>
+                )
+              }
+            />
+            <DetailItem
+              label="Updated"
+              value={
+                creative.updated_at ? (
+                  new Date(creative.updated_at).toLocaleString()
+                ) : (
+                  <span className={`text-sm ${tw.textMuted}`}>—</span>
+                )
+              }
+            />
           </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <p className={`text-sm ${tw.textMuted}`}>{error}</p>
-          </div>
-        ) : !creative ? (
-          <div className="text-center py-12">
-            <p className={`text-sm ${tw.textMuted}`}>
-              This creative could not be found.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <DetailItem label="Creative ID" value={creative.id ?? "—"} />
-              <DetailItem
-                label="Offer ID"
-                value={
-                  creative.offer_id ? (
-                    <button
-                      type="button"
-                      onClick={handleViewOffer}
-                      className="font-medium hover:underline"
-                      style={{ color: color.primary.accent }}
-                    >
-                      {creative.offer_id}
-                    </button>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-              <DetailItem label="Channel" value={creative.channel} />
-              <DetailItem label="Locale" value={creative.locale || "—"} />
-              <DetailItem
-                label="Status"
-                value={
-                  creative.is_active ? (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
-                      Inactive
-                    </span>
-                  )
-                }
-              />
-              <DetailItem
-                label="Version"
-                value={creative.version ? `v${creative.version}` : "—"}
-              />
-              <DetailItem
-                label="Created"
-                value={
-                  creative.created_at
-                    ? new Date(creative.created_at).toLocaleString()
-                    : "—"
-                }
-              />
-              <DetailItem
-                label="Last Updated"
-                value={
-                  creative.updated_at
-                    ? new Date(creative.updated_at).toLocaleString()
-                    : "—"
-                }
-              />
-            </div>
 
-            <div className="space-y-4">
-              <DetailItem
-                label="Title"
-                value={
-                  creative.title || (
-                    <span className={`text-sm ${tw.textMuted}`}>
-                      No title provided
+          <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+            <DetailItem
+              label="Template Type"
+              value={
+                creative.template_type_id ? (
+                  <div className="space-y-1">
+                    <span className="font-medium text-gray-900">
+                      Template #{creative.template_type_id}
                     </span>
-                  )
-                }
-              />
-              <DetailItem
-                label="Text Body"
-                value={
-                  creative.text_body ? (
-                    <p className={`whitespace-pre-line ${tw.textPrimary}`}>
-                      {creative.text_body}
+                    <p className={`text-sm ${tw.textMuted}`}>
+                      Determines the layout and content structure used when this
+                      creative is rendered.
                     </p>
-                  ) : (
-                    <span className={`text-sm ${tw.textMuted}`}>
-                      No text content provided
-                    </span>
-                  )
-                }
-              />
-              {(creative.channel === "Email" || creative.channel === "Web") && (
-                <DetailItem
-                  label="HTML Body"
-                  value={
-                    creative.html_body ? (
-                      <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm overflow-x-auto">
-                        {creative.html_body}
-                      </pre>
-                    ) : (
-                      <span className={`text-sm ${tw.textMuted}`}>
-                        No HTML content provided
-                      </span>
-                    )
-                  }
-                />
-              )}
-              <DetailItem
-                label="Variables"
-                value={
-                  creative.variables &&
-                  Object.keys(creative.variables || {}).length > 0 ? (
-                    <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm overflow-x-auto">
-                      {JSON.stringify(creative.variables, null, 2)}
-                    </pre>
-                  ) : (
-                    <span className={`text-sm ${tw.textMuted}`}>
-                      No variables defined
-                    </span>
-                  )
-                }
-              />
-              <DetailItem
-                label="Default Values"
-                value={
-                  creative.default_values &&
-                  Object.keys(creative.default_values || {}).length > 0 ? (
-                    <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm overflow-x-auto">
-                      {JSON.stringify(creative.default_values, null, 2)}
-                    </pre>
-                  ) : (
-                    <span className={`text-sm ${tw.textMuted}`}>
-                      No default values defined
-                    </span>
-                  )
-                }
-              />
-              <DetailItem
-                label="Required Variables"
-                value={
-                  creative.required_variables &&
-                  creative.required_variables.length > 0 ? (
-                    <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                      {creative.required_variables.map((variable) => (
-                        <li key={variable}>{variable}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className={`text-sm ${tw.textMuted}`}>
-                      No required variables
-                    </span>
-                  )
-                }
-              />
-            </div>
+                  </div>
+                ) : (
+                  <span className={`text-sm ${tw.textMuted}`}>
+                    Not specified
+                  </span>
+                )
+              }
+            />
+            <DetailItem
+              label="Created By"
+              value={
+                creative.created_by ? (
+                  <button
+                    type="button"
+                    onClick={() => handleViewUser(creative.created_by)}
+                    className="text-sm font-semibold hover:underline"
+                    style={{ color: color.primary.accent }}
+                  >
+                    {creative.created_by}
+                  </button>
+                ) : (
+                  <span className={`text-sm ${tw.textMuted}`}>—</span>
+                )
+              }
+            />
+            <DetailItem
+              label="Updated By"
+              value={
+                creative.updated_by ? (
+                  <button
+                    type="button"
+                    onClick={() => handleViewUser(creative.updated_by)}
+                    className="text-sm font-semibold hover:underline"
+                    style={{ color: color.primary.accent }}
+                  >
+                    {creative.updated_by}
+                  </button>
+                ) : (
+                  <span className={`text-sm ${tw.textMuted}`}>—</span>
+                )
+              }
+            />
+            <DetailItem
+              label="Latest Version"
+              value={creative.is_latest ? "Yes" : "No"}
+            />
           </div>
-        )}
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900">Content</h2>
+          <DetailItem
+            label="Title"
+            value={
+              creative.title || (
+                <span className={`text-sm ${tw.textMuted}`}>
+                  No title provided
+                </span>
+              )
+            }
+          />
+          <div className="space-y-2">
+            <p
+              className={`text-sm font-semibold uppercase tracking-wide ${tw.textMuted}`}
+            >
+              Text Body
+            </p>
+            {creative.text_body ? (
+              <div
+                className={`rounded-lg border border-[${color.border.default}] bg-gray-50 p-4 text-sm ${tw.textPrimary}`}
+              >
+                <pre className="whitespace-pre-wrap font-sans text-sm">
+                  {creative.text_body}
+                </pre>
+              </div>
+            ) : (
+              <span className={`text-sm ${tw.textMuted}`}>
+                No text content provided
+              </span>
+            )}
+          </div>
+
+          {(creative.channel === "Email" || creative.channel === "Web") && (
+            <div className="space-y-2">
+              <p
+                className={`text-sm font-semibold uppercase tracking-wide ${tw.textMuted}`}
+              >
+                HTML Body
+              </p>
+              {creative.html_body ? (
+                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm overflow-x-auto">
+                  {creative.html_body}
+                </pre>
+              ) : (
+                <span className={`text-sm ${tw.textMuted}`}>
+                  No HTML content provided
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <p
+              className={`text-sm font-semibold uppercase tracking-wide ${tw.textMuted}`}
+            >
+              Variables
+            </p>
+            {creative.variables &&
+            Object.keys(creative.variables || {}).length > 0 ? (
+              <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm overflow-x-auto">
+                {JSON.stringify(creative.variables, null, 2)}
+              </pre>
+            ) : (
+              <span className={`text-sm ${tw.textMuted}`}>
+                No variables defined
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p
+            className={`text-sm font-semibold uppercase tracking-wide ${tw.textMuted}`}
+          >
+            Default Values
+          </p>
+          {creative.default_values &&
+          Object.keys(creative.default_values || {}).length > 0 ? (
+            <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm overflow-x-auto">
+              {JSON.stringify(creative.default_values, null, 2)}
+            </pre>
+          ) : (
+            <span className={`text-sm ${tw.textMuted}`}>
+              No default values defined
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <p
+            className={`text-sm font-semibold uppercase tracking-wide ${tw.textMuted}`}
+          >
+            Required Variables
+          </p>
+          {creative.required_variables &&
+          creative.required_variables.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {creative.required_variables.map((variable) => (
+                <span
+                  key={variable}
+                  className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold"
+                >
+                  {variable}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className={`text-sm ${tw.textMuted}`}>
+              No required variables
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

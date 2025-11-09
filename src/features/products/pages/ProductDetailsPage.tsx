@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Edit,
@@ -23,8 +23,24 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
+
+  const returnTo = (
+    location.state as { returnTo?: { pathname: string; section?: string } }
+  )?.returnTo;
+
+  const navigateBack = () => {
+    if (returnTo) {
+      navigate(returnTo.pathname, {
+        replace: true,
+        state: { focusSection: returnTo.section },
+      });
+    } else {
+      navigate("/dashboard/products");
+    }
+  };
 
   const [product, setProduct] = useState<Product | null>(null);
   const [category, setCategory] = useState<ProductCategory | null>(null);
@@ -168,7 +184,7 @@ export default function ProductDetailsPage() {
             {error || "The product you are looking for does not exist."}
           </p>
           <button
-            onClick={() => navigate("/dashboard/products")}
+            onClick={navigateBack}
             className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
             style={{ backgroundColor: color.primary.action }}
           >
@@ -186,7 +202,7 @@ export default function ProductDetailsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate("/dashboard/products")}
+            onClick={navigateBack}
             className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
