@@ -10,7 +10,7 @@ import {
   UserCheck,
   Users,
   Eye,
-  Building2,
+  UserPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../../users/services/userService";
@@ -23,6 +23,8 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, components } from "../../../shared/utils/utils";
 import { useAuth } from "../../../contexts/AuthContext";
+import { roleService } from "../../roles/services/roleService";
+import { Role } from "../../roles/types/role";
 
 type AccountRequestListItem = {
   id?: number;
@@ -34,9 +36,11 @@ type AccountRequestListItem = {
   email?: string;
   private_email_address?: string;
   force_password_reset?: boolean;
-  role?: string;
+  roleId?: number;
+  roleName?: string;
   created_at?: string;
   created_on?: string;
+  department?: string;
 };
 
 export default function UserManagementPage() {
@@ -81,6 +85,7 @@ export default function UserManagementPage() {
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
   const { user: authUser } = useAuth();
+  const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
 
   const activateColor = color.tertiary.tag4;
   const deactivateColor = color.configStatus.inactive;
@@ -152,7 +157,63 @@ export default function UserManagementPage() {
         });
 
         if (usersResponse.success) {
-          setUsers(usersResponse.data);
+          const pendingActivationUsers = usersResponse.data.filter(
+            (candidate) => {
+              const candidateStatus = (
+                candidate as unknown as { account_status?: string }
+              )?.account_status;
+              return (
+                typeof candidateStatus === "string" &&
+                candidateStatus.toLowerCase() === "pending_activation"
+              );
+            }
+          );
+
+          const activeUsers = usersResponse.data.filter((candidate) => {
+            const candidateStatus = (
+              candidate as unknown as { account_status?: string }
+            )?.account_status;
+            return !(
+              typeof candidateStatus === "string" &&
+              candidateStatus.toLowerCase() === "pending_activation"
+            );
+          });
+
+          setUsers(activeUsers);
+          setAccountRequests(
+            pendingActivationUsers.map((pending) => {
+              const primaryRoleId = (
+                pending as unknown as {
+                  primary_role_id?: number;
+                }
+              )?.primary_role_id;
+              const fallbackRoleName = (
+                pending as unknown as {
+                  role_name?: string;
+                }
+              )?.role_name;
+              const resolvedRoleName =
+                (primaryRoleId != null
+                  ? roleLookup[primaryRoleId]?.name
+                  : undefined) ?? fallbackRoleName;
+
+              return {
+                id: pending.id,
+                requestId: (
+                  pending as unknown as { onboarding_request_id?: number }
+                )?.onboarding_request_id,
+                first_name: pending.first_name,
+                last_name: pending.last_name,
+                email_address:
+                  pending.email_address ||
+                  (pending as { email?: string }).email,
+                department: pending.department || undefined,
+                roleId: primaryRoleId ?? undefined,
+                roleName: resolvedRoleName,
+                created_at: pending.created_at,
+              };
+            })
+          );
           const totalFromResponse =
             (usersResponse.meta?.total as number | undefined) ??
             usersResponse.data.length;
@@ -163,8 +224,7 @@ export default function UserManagementPage() {
           });
         }
 
-        // Placeholder until account requests endpoint is wired
-        setAccountRequests([]);
+        // Account requests derived from pending activation users above
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to load data";
@@ -174,12 +234,42 @@ export default function UserManagementPage() {
         setIsLoading(false);
       }
     },
-    [fetchUsers, showError]
+    [fetchUsers, showError, roleLookup]
   );
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRoles = async () => {
+      try {
+        const { roles } = await roleService.listRoles({
+          limit: 100,
+          offset: 0,
+          skipCache: true,
+        });
+
+        if (cancelled) return;
+
+        const mappedRoles: Record<number, Role> = {};
+        roles.forEach((role) => {
+          mappedRoles[role.id] = role;
+        });
+        setRoleLookup(mappedRoles);
+      } catch (err) {
+        console.error("Failed to load roles", err);
+      }
+    };
+
+    loadRoles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -215,7 +305,45 @@ export default function UserManagementPage() {
       });
 
       if (searchResponse.success) {
-        setUsers(searchResponse.data);
+        const pendingActivationUsers = searchResponse.data.filter(
+          (candidate) => {
+            const candidateStatus = (
+              candidate as unknown as { account_status?: string }
+            )?.account_status;
+            return (
+              typeof candidateStatus === "string" &&
+              candidateStatus.toLowerCase() === "pending_activation"
+            );
+          }
+        );
+
+        const activeUsers = searchResponse.data.filter((candidate) => {
+          const candidateStatus = (
+            candidate as unknown as { account_status?: string }
+          )?.account_status;
+          return !(
+            typeof candidateStatus === "string" &&
+            candidateStatus.toLowerCase() === "pending_activation"
+          );
+        });
+
+        setUsers(activeUsers);
+        setAccountRequests(
+          pendingActivationUsers.map((pending) => ({
+            id: pending.id,
+            requestId: (
+              pending as unknown as { onboarding_request_id?: number }
+            )?.onboarding_request_id,
+            first_name: pending.first_name,
+            last_name: pending.last_name,
+            email_address:
+              pending.email_address || (pending as { email?: string }).email,
+            department: pending.department || undefined,
+            role: (pending as unknown as { role_name?: string }).role_name,
+            created_at: pending.created_at,
+          }))
+        );
+
         const totalFromResponse =
           (searchResponse.meta?.total as number | undefined) ??
           searchResponse.data.length;
@@ -255,6 +383,10 @@ export default function UserManagementPage() {
       return;
     }
 
+    const onboardingRequestId =
+      typeof request.requestId === "number" ? request.requestId : null;
+    const userId = request.id ?? request.user_id ?? null;
+
     const confirmed = await confirm({
       title: "Approve Request",
       message: `Are you sure you want to approve the account request for ${request.first_name} ${request.last_name}?`,
@@ -272,7 +404,14 @@ export default function UserManagementPage() {
     }));
 
     try {
-      await accountService.approveAccountRequest(requestId);
+      if (onboardingRequestId) {
+        await accountService.approveAccountRequest(onboardingRequestId);
+      } else if (userId) {
+        await userService.activateUser(userId, {
+          updated_by: authUser?.user_id ?? undefined,
+        });
+      }
+
       await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "Request approved",
@@ -288,9 +427,7 @@ export default function UserManagementPage() {
       setLoadingActions((prev) => ({
         ...prev,
         approving: new Set(
-          [...prev.approving].filter(
-            (id) => id !== requestId
-          )
+          [...prev.approving].filter((id) => id !== requestId)
         ),
       }));
     }
@@ -305,6 +442,10 @@ export default function UserManagementPage() {
       );
       return;
     }
+
+    const onboardingRequestId =
+      typeof request.requestId === "number" ? request.requestId : null;
+    const userId = request.id ?? request.user_id ?? null;
 
     const confirmed = await confirm({
       title: "Reject Request",
@@ -323,12 +464,17 @@ export default function UserManagementPage() {
     }));
 
     try {
-      await accountService.rejectAccountRequest(
-        requestId,
-        {
+      if (onboardingRequestId) {
+        await accountService.rejectAccountRequest(onboardingRequestId, {
           reason: "Rejected by administrator",
-        }
-      );
+        });
+      } else if (userId) {
+        await userService.deactivateUser(userId, {
+          updated_by: authUser?.user_id ?? undefined,
+          reason: "Rejected during onboarding",
+        });
+      }
+
       await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "Request rejected",
@@ -344,9 +490,7 @@ export default function UserManagementPage() {
       setLoadingActions((prev) => ({
         ...prev,
         rejecting: new Set(
-          [...prev.rejecting].filter(
-            (id) => id !== requestId
-          )
+          [...prev.rejecting].filter((id) => id !== requestId)
         ),
       }));
     }
@@ -495,26 +639,22 @@ export default function UserManagementPage() {
         acc.inactive += 1;
       }
 
-      if (status.includes("suspend")) {
-        acc.suspended += 1;
-      }
-
       if (status.includes("lock")) {
         acc.locked += 1;
       }
 
       return acc;
     },
-    { active: 0, inactive: 0, suspended: 0, locked: 0 }
+    { active: 0, inactive: 0, locked: 0 }
   );
 
-  const totalDepartments = uniqueDepartments.length;
   const totalUsersValue =
     userSummary.total > 0
       ? userSummary.total
       : aggregateCounts.active + aggregateCounts.inactive;
   const activeUsersValue = aggregateCounts.active;
-  const highRiskUsersValue = aggregateCounts.suspended + aggregateCounts.locked;
+  const pendingActivationValue = accountRequests.length;
+  const highRiskUsersValue = aggregateCounts.locked;
 
   const statsLoadingIndicator = isLoading;
 
@@ -533,17 +673,19 @@ export default function UserManagementPage() {
       color: color.tertiary.tag4,
     },
     {
-      name: "Suspended / Locked",
+      name: "Pending Activation",
+      value: statsLoadingIndicator
+        ? "..."
+        : pendingActivationValue.toLocaleString(),
+      icon: UserPlus,
+      color: color.tertiary.tag2,
+    },
+    {
+      name: "Locked Users",
       value: statsLoadingIndicator
         ? "..."
         : highRiskUsersValue.toLocaleString(),
       icon: UserX,
-      color: color.tertiary.tag2,
-    },
-    {
-      name: "Departments",
-      value: statsLoadingIndicator ? "..." : totalDepartments.toLocaleString(),
-      icon: Building2,
       color: color.tertiary.tag3,
     },
   ];
@@ -582,6 +724,25 @@ export default function UserManagementPage() {
     );
   });
 
+  const getPendingRequestRole = useCallback(
+    (request: AccountRequestListItem) => {
+      if (request.roleName && request.roleName.trim() !== "") {
+        return request.roleName;
+      }
+
+      if (request.roleId != null) {
+        const resolvedRole = roleLookup[request.roleId];
+        if (resolvedRole?.name) {
+          return resolvedRole.name;
+        }
+        return `Role ID: ${request.roleId}`;
+      }
+
+      return "N/A";
+    },
+    [roleLookup]
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -590,7 +751,7 @@ export default function UserManagementPage() {
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
             User Management
           </h1>
-          <p className={`${tw.subHeading} ${tw.textSecondary} mt-2`}>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>
             Manage users and account requests
           </p>
         </div>
@@ -606,47 +767,43 @@ export default function UserManagementPage() {
         </button>
       </div>
 
-      {activeTab === "users" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {userStatsCards.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div
-                key={stat.name}
-                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="p-2 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: stat.color }}
-                      >
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className={`text-3xl font-bold ${tw.textPrimary}`}>
-                          {stat.value}
-                        </p>
-                        <p
-                          className={`${tw.cardSubHeading} ${tw.textSecondary}`}
-                        >
-                          {stat.name}
-                        </p>
-                      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {userStatsCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.name}
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: stat.color }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
                     </div>
-                    {stat.badge && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-800">
-                        {stat.badge}
-                      </span>
-                    )}
+                    <div className="space-y-1">
+                      <p className="text-3xl font-bold text-black">
+                        {stat.value}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {stat.name}
+                      </p>
+                    </div>
                   </div>
+                  {stat.badge && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-800">
+                      {stat.badge}
+                    </span>
+                  )}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-gray-200">
@@ -655,20 +812,22 @@ export default function UserManagementPage() {
           className={`px-6 py-3 text-base font-medium border-b-2 transition-colors text-black`}
           style={{
             borderBottomColor:
-              activeTab === "users" ? color.primary.accent : "#92A6B0",
+              activeTab === "users"
+                ? color.primary.accent
+                : color.border.default,
           }}
         >
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             <span>Users</span>
             <span
-              className="px-2 py-0.5 rounded-full text-xs"
+              className="px-2 py-0.5 rounded-full text-xs text-white"
               style={{
                 backgroundColor:
                   activeTab === "users"
                     ? color.primary.accent
                     : color.text.muted,
-                color: activeTab === "users" ? "white" : "black",
+                color: "white",
               }}
             >
               {users.length}
@@ -680,7 +839,9 @@ export default function UserManagementPage() {
           className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors text-black`}
           style={{
             borderBottomColor:
-              activeTab === "requests" ? color.primary.accent : "#92A6B0",
+              activeTab === "requests"
+                ? color.primary.accent
+                : color.border.default,
           }}
         >
           <div className="flex items-center gap-2">
@@ -695,11 +856,7 @@ export default function UserManagementPage() {
                 color: "white",
               }}
             >
-              {
-                accountRequests.filter((request) =>
-                  Boolean(request.force_password_reset)
-                ).length
-              }
+              {accountRequests.length}
             </span>
           </div>
         </button>
@@ -1125,7 +1282,7 @@ export default function UserManagementPage() {
         ) : // Account Requests Tab
         filteredRequests.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No Pending Requests
             </h3>
             <p className={`${tw.textMuted}`}>
@@ -1143,22 +1300,26 @@ export default function UserManagementPage() {
                 >
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Applicant
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested Role
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested
                     </th>
                     <th
-                      className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
@@ -1170,7 +1331,9 @@ export default function UserManagementPage() {
                     const requestKey =
                       requestId ??
                       request.user_id ??
-                      `${request.email ?? request.email_address ?? "request"}-${index}`;
+                      `${
+                        request.email ?? request.email_address ?? "request"
+                      }-${index}`;
                     const approvingLoading =
                       typeof requestId === "number" &&
                       loadingActions.approving.has(requestId);
@@ -1188,7 +1351,8 @@ export default function UserManagementPage() {
                       request.email ??
                       request.private_email_address ??
                       "N/A";
-                    const requestDate = request.created_at ?? request.created_on;
+                    const requestDate =
+                      request.created_at ?? request.created_on;
                     const formattedDate = requestDate
                       ? new Date(requestDate).toLocaleDateString("en-US", {
                           year: "numeric",
@@ -1196,7 +1360,7 @@ export default function UserManagementPage() {
                           day: "numeric",
                         })
                       : "N/A";
-                    const requestRole = request.role ?? "N/A";
+                    const requestRole = getPendingRequestRole(request);
 
                     return (
                       <tr
@@ -1289,7 +1453,9 @@ export default function UserManagementPage() {
                 const requestKey =
                   requestId ??
                   request.user_id ??
-                  `${request.email ?? request.email_address ?? "request"}-${index}`;
+                  `${
+                    request.email ?? request.email_address ?? "request"
+                  }-${index}`;
                 const approvingLoading =
                   typeof requestId === "number" &&
                   loadingActions.approving.has(requestId);
@@ -1307,7 +1473,7 @@ export default function UserManagementPage() {
                   request.email ??
                   request.private_email_address ??
                   "N/A";
-                const requestRole = request.role ?? "N/A";
+                const requestRole = getPendingRequestRole(request);
 
                 return (
                   <div

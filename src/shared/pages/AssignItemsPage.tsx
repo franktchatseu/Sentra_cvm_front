@@ -22,9 +22,18 @@ import {
   Offer,
   OfferStatusEnum,
   OfferTypeEnum,
+  UpdateOfferRequest,
 } from "../../features/offers/types/offer";
 import { Product } from "../../features/products/types/product";
-import { Segment } from "../../features/segments/types/segment";
+import {
+  Segment,
+  UpdateSegmentRequest,
+} from "../../features/segments/types/segment";
+
+const CATALOG_TAG_PREFIX = "catalog:";
+
+const buildCatalogTag = (categoryId: number | string) =>
+  `${CATALOG_TAG_PREFIX}${categoryId}`;
 
 type ItemType = "offers" | "products" | "segments";
 
@@ -187,7 +196,19 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                     { limit: 100, skipCache: true }
                   );
                 const offers = (offersResponse.data || []) as Offer[];
-                assigned = offers.map((offer) => offer.id);
+                const assignedSet = new Set<number | string>(
+                  offers.map((offer) => offer.id)
+                );
+                const catalogTag = buildCatalogTag(catalogId);
+                (itemsData as Offer[]).forEach((offer) => {
+                  if (
+                    Array.isArray(offer.tags) &&
+                    offer.tags.includes(catalogTag)
+                  ) {
+                    assignedSet.add(offer.id);
+                  }
+                });
+                assigned = Array.from(assignedSet);
                 break;
               }
               case "products": {
@@ -222,7 +243,19 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                   } else if (Array.isArray(segmentsResponse)) {
                     categorySegments = segmentsResponse as Segment[];
                   }
-                  assigned = categorySegments.map((s: Segment) => s.id);
+                  const assignedSet = new Set<number | string>(
+                    categorySegments.map((s: Segment) => s.id)
+                  );
+                  const catalogTag = buildCatalogTag(catalogId);
+                  (itemsData as Segment[]).forEach((segment) => {
+                    if (
+                      Array.isArray(segment.tags) &&
+                      segment.tags.includes(catalogTag)
+                    ) {
+                      assignedSet.add(segment.id);
+                    }
+                  });
+                  assigned = Array.from(assignedSet);
                 } catch {
                   // Fallback: try to get all segments and filter
                   try {
@@ -245,7 +278,10 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                     assigned = allSegments
                       .filter(
                         (s: Segment) =>
-                          s.category && String(s.category) === String(catalogId)
+                          (s.category &&
+                            String(s.category) === String(catalogId)) ||
+                          (Array.isArray(s.tags) &&
+                            s.tags.includes(buildCatalogTag(catalogId)))
                       )
                       .map((s: Segment) => s.id);
                   } catch {
@@ -255,9 +291,11 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                 break;
             }
             setAssignedItemIds(assigned);
+            setSelectedItemIds(new Set());
           } catch {
             // Set empty array on error to prevent UI issues
             setAssignedItemIds([]);
+            setSelectedItemIds(new Set());
           }
         };
 
@@ -373,28 +411,91 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
       const itemIdsArray = Array.from(selectedItemIds);
       let success = 0;
       let failed = 0;
+      const successfulAssignments: (number | string)[] = [];
+      const catalogIdNumber = Number(catalogId);
+      const catalogTag = buildCatalogTag(
+        Number.isNaN(catalogIdNumber) ? catalogId || "" : catalogIdNumber
+      );
 
       // Assign each item individually
       for (const itemId of itemIdsArray) {
         try {
           switch (itemType) {
-            case "offers":
-              await offerService.updateOffer(Number(itemId), {
-                category_id: Number(catalogId),
-              });
+            case "offers": {
+              const offer = items.find((item) => item.id === itemId) as
+                | Offer
+                | undefined;
+              const existingTags = Array.isArray(offer?.tags)
+                ? offer?.tags ?? []
+                : [];
+              const updatedTagsSet = new Set(existingTags);
+              updatedTagsSet.add(catalogTag);
+              const updatedTags = Array.from(updatedTagsSet);
+
+              const updatePayload: UpdateOfferRequest = {};
+
+              if (!offer?.category_id && !Number.isNaN(catalogIdNumber)) {
+                updatePayload.category_id = catalogIdNumber;
+              }
+
+              if (
+                updatedTags.length !== existingTags.length ||
+                (!offer?.tags && updatedTags.length > 0)
+              ) {
+                updatePayload.tags = updatedTags;
+              }
+
+              if (Object.keys(updatePayload).length === 0) {
+                success++;
+                successfulAssignments.push(itemId);
+                continue;
+              }
+
+              await offerService.updateOffer(Number(itemId), updatePayload);
               break;
+            }
             case "products":
               await productService.updateProduct(Number(itemId), {
                 category_id: Number(catalogId),
               });
               break;
-            case "segments":
-              await segmentService.updateSegment(Number(itemId), {
-                category: Number(catalogId),
-              });
+            case "segments": {
+              const segment = items.find((item) => item.id === itemId) as
+                | Segment
+                | undefined;
+              const existingTags = Array.isArray(segment?.tags)
+                ? segment?.tags ?? []
+                : [];
+              const updatedTagsSet = new Set(existingTags);
+              updatedTagsSet.add(catalogTag);
+              const updatedTags = Array.from(updatedTagsSet);
+
+              const updatePayload: UpdateSegmentRequest = {};
+
+              if (
+                (segment?.category === null ||
+                  segment?.category === undefined) &&
+                !Number.isNaN(catalogIdNumber)
+              ) {
+                updatePayload.category = catalogIdNumber;
+              }
+
+              if (updatedTags.length !== existingTags.length) {
+                updatePayload.tags = updatedTags;
+              }
+
+              if (Object.keys(updatePayload).length === 0) {
+                success++;
+                successfulAssignments.push(itemId);
+                continue;
+              }
+
+              await segmentService.updateSegment(Number(itemId), updatePayload);
               break;
+            }
           }
           success++;
+          successfulAssignments.push(itemId);
         } catch (err) {
           failed++;
           const errorMessage =
@@ -420,6 +521,11 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
           );
         } else {
           showSuccess(`${success} ${typeInfo.plural} assigned successfully`);
+        }
+        if (successfulAssignments.length > 0) {
+          setAssignedItemIds((prev) =>
+            Array.from(new Set([...prev, ...successfulAssignments]))
+          );
         }
         // Navigate back to catalog page
         navigate(-1);

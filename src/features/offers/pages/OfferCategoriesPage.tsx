@@ -15,18 +15,69 @@ import {
   CheckCircle,
   XCircle,
   Filter,
+  Archive,
+  Star,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
+import { offerService } from "../services/offerService";
 import { buildApiUrl, API_CONFIG } from "../../../shared/services/api";
 import {
   OfferCategoryType,
   CreateOfferCategoryRequest,
   UpdateOfferCategoryRequest,
 } from "../types/offerCategory";
+import { Offer } from "../types/offer";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+
+const CATALOG_TAG_PREFIX = "catalog:";
+
+const buildCatalogTag = (categoryId: number | string) =>
+  `${CATALOG_TAG_PREFIX}${categoryId}`;
+
+const parseCatalogTag = (tag?: string): number | null => {
+  if (!tag || !tag.startsWith(CATALOG_TAG_PREFIX)) {
+    return null;
+  }
+  const value = tag.slice(CATALOG_TAG_PREFIX.length);
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const fetchAllOffers = async (): Promise<Offer[]> => {
+  const limit = 100;
+  let offset = 0;
+  const offers: Offer[] = [];
+
+  while (true) {
+    try {
+      const response = await offerService.searchOffers({
+        limit,
+        offset,
+        skipCache: true,
+      });
+
+      const batch = (response.data || []) as Offer[];
+      offers.push(...batch);
+
+      const hasMore =
+        batch.length === limit &&
+        (response.pagination?.hasMore ?? batch.length === limit);
+
+      if (!hasMore) {
+        break;
+      }
+
+      offset += limit;
+    } catch {
+      break;
+    }
+  }
+
+  return offers;
+};
 
 interface OfferCategoryWithCount extends OfferCategoryType {
   offer_count?: number;
@@ -188,15 +239,27 @@ interface OffersModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: OfferCategoryType | null;
+  onRefreshCategories: () => Promise<void> | void;
+  onRefreshCounts: () => Promise<void> | void;
 }
 
-function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
+function OffersModal({
+  isOpen,
+  onClose,
+  category,
+  onRefreshCategories,
+  onRefreshCounts,
+}: OffersModalProps) {
   const navigate = useNavigate();
+  const { success: showSuccess, error: showError } = useToast();
   const [offers, setOffers] = useState<BasicOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredOffers, setFilteredOffers] = useState<BasicOffer[]>([]);
+  const [removingOfferId, setRemovingOfferId] = useState<
+    number | string | null
+  >(null);
 
   useEffect(() => {
     if (isOpen && category) {
@@ -224,21 +287,96 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
     try {
       setLoading(true);
       setError(null);
-      const response = await offerCategoryService.getCategoryOffers(
-        category.id,
-        {
+      const catalogTag = buildCatalogTag(category.id);
+
+      const [primaryResponse, allOffers] = await Promise.all([
+        offerCategoryService.getCategoryOffers(category.id, {
           limit: 100,
           skipCache: true,
+        }),
+        fetchAllOffers().catch(() => []),
+      ]);
+
+      const primaryOffers =
+        ((primaryResponse?.data || []) as BasicOffer[]) ?? [];
+
+      let taggedOffers: BasicOffer[] = [];
+      taggedOffers = (allOffers as Offer[])
+        .filter(
+          (offer) =>
+            Array.isArray(offer.tags) && offer.tags.includes(catalogTag)
+        )
+        .map((offer) => ({
+          id: offer.id,
+          name: offer.name,
+          description: offer.description,
+          status: offer.status,
+        }));
+
+      const combinedOffersMap = new Map<string | number, BasicOffer>();
+      [...primaryOffers, ...taggedOffers].forEach((offer) => {
+        if (!offer?.id) {
+          return;
         }
-      );
-      // Backend returns offers in response.data
-      const offersData = (response.data || []) as BasicOffer[];
-      setOffers(offersData);
-    } catch {
-      // Failed to load offers
+        combinedOffersMap.set(offer.id, offer);
+      });
+
+      setOffers(Array.from(combinedOffersMap.values()));
+    } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoveOffer = async (offerId: number | string) => {
+    if (!category) return;
+
+    try {
+      setRemovingOfferId(offerId);
+      const offerResponse = await offerService.getOfferById(
+        Number(offerId),
+        true
+      );
+      const offerData = offerResponse.data;
+      const catalogTag = buildCatalogTag(category.id);
+
+      if (!offerData) {
+        showError("Offer details not found");
+        return;
+      }
+
+      const primaryCategoryId = Number(offerData.category_id);
+      if (
+        !Number.isNaN(primaryCategoryId) &&
+        primaryCategoryId === Number(category.id)
+      ) {
+        showError(
+          "Cannot remove this offer because this catalog is its primary category"
+        );
+        return;
+      }
+
+      const tags = Array.isArray(offerData.tags) ? offerData.tags : [];
+      if (!tags.includes(catalogTag)) {
+        showError("Offer is not tagged with this catalog");
+        return;
+      }
+
+      const updatedTags = tags.filter((tag) => tag !== catalogTag);
+      await offerService.updateOffer(Number(offerId), { tags: updatedTags });
+      showSuccess("Offer removed from catalog");
+      await loadOffers();
+      await onRefreshCounts();
+      await onRefreshCategories();
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
+          : "Failed to remove offer from catalog"
+      );
+    } finally {
+      setRemovingOfferId(null);
     }
   };
 
@@ -263,7 +401,7 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                   <div>
-                    <h2 className={`${tw.subHeading} text-gray-900`}>
+                    <h2 className="text-xl font-semibold text-gray-900">
                       Offers in "{category.name}"
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
@@ -386,6 +524,17 @@ function OffersModal({ isOpen, onClose, category }: OffersModalProps) {
                               className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                             >
                               View
+                            </button>
+                            <button
+                              onClick={() =>
+                                offer?.id && handleRemoveOffer(offer.id)
+                              }
+                              disabled={removingOfferId === offer?.id}
+                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+                            >
+                              {removingOfferId === offer?.id
+                                ? "Removing..."
+                                : "Remove"}
                             </button>
                           </div>
                         </div>
@@ -610,7 +759,10 @@ function OfferCategoriesPage() {
   // Load offer counts for all categories at once
   const loadAllOfferCounts = async (categories?: OfferCategoryWithCount[]) => {
     try {
-      const response = await offerCategoryService.getOfferCounts(true);
+      const [response, allOffers] = await Promise.all([
+        offerCategoryService.getOfferCounts(true),
+        fetchAllOffers().catch(() => []),
+      ]);
 
       if (response.success && response.data) {
         // Use provided categories or fall back to state
@@ -656,6 +808,49 @@ function OfferCategoriesPage() {
             }
           }
         );
+
+        if (Array.isArray(allOffers)) {
+          const categoriesIndex = new Map<number, boolean>();
+          (categories || offerCategories).forEach((cat) => {
+            const catId =
+              typeof cat.id === "string" ? parseInt(cat.id, 10) : cat.id;
+            categoriesIndex.set(catId, true);
+          });
+
+          (allOffers as Offer[]).forEach((offer) => {
+            if (!Array.isArray(offer.tags)) {
+              return;
+            }
+            const primaryCategoryId =
+              typeof offer.category_id === "string"
+                ? parseInt(offer.category_id, 10)
+                : offer.category_id;
+
+            const catalogIds = offer.tags
+              .map((tag) => parseCatalogTag(tag))
+              .filter(
+                (id): id is number =>
+                  typeof id === "number" && categoriesIndex.has(id)
+              );
+
+            const uniqueCatalogIds = new Set(catalogIds);
+            uniqueCatalogIds.forEach((catalogId) => {
+              if (primaryCategoryId === catalogId) {
+                return;
+              }
+              if (!countsMap[catalogId]) {
+                countsMap[catalogId] = {
+                  totalOffers: 0,
+                  activeOffers: 0,
+                  expiredOffers: 0,
+                  draftOffers: 0,
+                  pendingOffers: 0,
+                };
+              }
+              countsMap[catalogId].totalOffers += 1;
+            });
+          });
+        }
 
         setCategoryOfferCounts(countsMap);
       }
@@ -852,6 +1047,45 @@ function OfferCategoriesPage() {
         category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const formatNumber = (value?: number | null) =>
+    typeof value === "number" ? value.toLocaleString() : "...";
+
+  const catalogStatsCards = [
+    {
+      name: "Total Catalogs",
+      value: formatNumber(stats?.totalCategories),
+      icon: FolderOpen,
+      color: color.tertiary.tag1,
+    },
+    {
+      name: "Active Catalogs",
+      value: formatNumber(stats?.activeCategories),
+      icon: CheckCircle,
+      color: color.tertiary.tag4,
+    },
+    {
+      name: "Inactive Catalogs",
+      value: formatNumber(stats?.inactiveCategories),
+      icon: XCircle,
+      color: color.tertiary.tag3,
+    },
+    {
+      name: "Unused Categories",
+      value: formatNumber(unusedCount),
+      icon: Archive,
+      color: color.tertiary.tag2,
+    },
+    {
+      name: "Most Popular",
+      value: popularCategory?.name || "None",
+      icon: Star,
+      color: color.primary.accent,
+      description: `${formatNumber(popularCategory?.count ?? 0)} offers`,
+      title: popularCategory?.name || undefined,
+      valueClass: "text-xl",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -886,127 +1120,51 @@ function OfferCategoriesPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <div
-            className="rounded-xl border border-gray-200 p-4"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Catalogs
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.totalCategories}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <FolderOpen className="w-6 h-6 text-gray-900" />
-              </div>
-            </div>
-          </div>
+          {catalogStatsCards.map((stat) => {
+            const Icon = stat.icon;
+            const valueClass = stat.valueClass ?? "text-3xl";
+            const displayValue = stat.value ?? "...";
 
-          <div
-            className="rounded-xl border border-gray-200 p-4"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Active Catalogs
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.activeCategories}
-                </p>
+            return (
+              <div
+                key={stat.name}
+                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="p-2.5 rounded-full flex items-center justify-center"
+                        style={{
+                          backgroundColor: stat.color || color.primary.accent,
+                        }}
+                      >
+                        <Icon className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <p
+                          className={`${valueClass} font-bold ${tw.textPrimary}`}
+                          title={stat.title}
+                        >
+                          {displayValue}
+                        </p>
+                        <p
+                          className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                        >
+                          {stat.name}
+                        </p>
+                        {stat.description && (
+                          <p className={`text-sm ${tw.textSecondary}`}>
+                            {stat.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-gray-900" />
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="rounded-xl border border-gray-200 p-4"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Inactive Catalogs
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.inactiveCategories}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-gray-900" />
-              </div>
-            </div>
-          </div>
-
-          {/* <div
-            className="rounded-xl border border-gray-200 p-4"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Catalogs with Description
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.categoriesWithOffers}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-gray-900" />
-              </div>
-            </div>
-          </div> */}
-
-          {/* Unused Categories Stat Card */}
-          <div
-            className="rounded-xl border border-gray-200 p-4"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Unused Categories
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {unusedCount}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-gray-900" />
-              </div>
-            </div>
-          </div>
-
-          {/* Most Popular Category Stat Card */}
-          <div
-            className="rounded-xl border border-gray-200 p-4"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Most Popular
-                </p>
-                <p
-                  className="text-lg font-bold text-gray-900 truncate"
-                  title={popularCategory?.name || "None"}
-                >
-                  {popularCategory?.name || "None"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {popularCategory?.count || 0} offers
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-gray-900" />
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       )}
 
@@ -1195,10 +1353,10 @@ function OfferCategoriesPage() {
           style={{ backgroundColor: color.surface.cards }}
         >
           <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+          <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 mb-6">
             {searchTerm
               ? "Try adjusting your search terms"
               : "Create your first offer catalog to organize your offers"}

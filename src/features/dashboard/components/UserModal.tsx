@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X, User as UserIcon, Mail, Shield, Save, Lock } from "lucide-react";
+import { X, User as UserIcon, Mail, Save, Lock } from "lucide-react";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { userService } from "../../users/services/userService";
 import { accountService } from "../../account/services/accountService";
@@ -12,6 +12,8 @@ import {
 import { useToast } from "../../../contexts/ToastContext";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
+import { roleService } from "../../roles/services/roleService";
+import { Role } from "../../roles/types/role";
 
 interface UserModalProps {
   isOpen: boolean;
@@ -28,7 +30,6 @@ interface UserFormData {
   password?: string;
   primary_role_id?: number;
   department?: string;
-  employee_id?: string;
 }
 
 export default function UserModal({
@@ -47,8 +48,10 @@ export default function UserModal({
     password: "",
     primary_role_id: undefined,
     department: "",
-    employee_id: "",
   });
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
+  const [rolesError, setRolesError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -58,9 +61,8 @@ export default function UserModal({
         last_name: user.last_name,
         email_address: user.email_address || user.email || "",
         password: "", // Don't populate password for updates
-        primary_role_id: user.primary_role_id || user.role_id,
+        primary_role_id: user.primary_role_id ?? user.role_id ?? undefined,
         department: user.department || "",
-        employee_id: user.employee_id || "",
       });
     } else {
       setFormData({
@@ -71,10 +73,85 @@ export default function UserModal({
         password: "",
         primary_role_id: undefined,
         department: "",
-        employee_id: "",
       });
     }
   }, [user, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isCancelled = false;
+
+    const fetchRoles = async () => {
+      setIsLoadingRoles(true);
+      setRolesError(null);
+      try {
+        const { roles: fetchedRoles, meta } = await roleService.listRoles({
+          limit: 100,
+          offset: 0,
+          skipCache: true,
+        });
+
+        if (isCancelled) return;
+
+        setRoles(fetchedRoles);
+
+        setFormData((prev) => {
+          const currentRoleId = prev.primary_role_id;
+          const hasCurrentRole = currentRoleId
+            ? fetchedRoles.some((role) => role.id === currentRoleId)
+            : false;
+
+          if (hasCurrentRole) {
+            return prev;
+          }
+
+          const fallbackRoleId =
+            user?.primary_role_id ?? user?.role_id
+              ? user?.primary_role_id ?? user?.role_id ?? undefined
+              : fetchedRoles.find((role) => role.is_default)?.id ??
+                fetchedRoles[0]?.id;
+
+          return {
+            ...prev,
+            primary_role_id: fallbackRoleId ?? prev.primary_role_id,
+          };
+        });
+
+        if (meta?.total && meta.pageSize && meta.total > meta.pageSize) {
+          console.warn(
+            "Role list truncated. Consider implementing pagination or search for roles."
+          );
+        }
+      } catch (err) {
+        if (isCancelled) return;
+        console.error("Failed to load roles", err);
+        setRolesError(
+          err instanceof Error ? err.message : "Failed to load roles"
+        );
+        setRoles([]);
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingRoles(false);
+        }
+      }
+    };
+
+    fetchRoles();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isOpen, user]);
+
+  const roleOptions = useMemo(
+    () =>
+      roles.map((role) => ({
+        value: role.id,
+        label: role.name,
+      })),
+    [roles]
+  );
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -94,6 +171,12 @@ export default function UserModal({
     console.log("Form data:", formData);
     setIsLoading(true);
 
+    if (!formData.primary_role_id) {
+      error("Validation Error", "Role is required to create or update a user");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       if (user) {
         console.log("📝 Updating existing user...");
@@ -103,9 +186,18 @@ export default function UserModal({
           last_name: formData.last_name,
           email_address: formData.email_address,
           department: formData.department || undefined,
-          employee_id: formData.employee_id || undefined,
         };
         await userService.updateUser(user.id, updateData);
+
+        const previousRoleId = user.primary_role_id ?? user.role_id ?? null;
+        if (
+          formData.primary_role_id &&
+          formData.primary_role_id !== previousRoleId
+        ) {
+          await userService.assignRole(user.id, {
+            role_id: formData.primary_role_id,
+          });
+        }
         success(
           "User Updated",
           `${formData.first_name} ${formData.last_name} has been updated successfully`
@@ -165,7 +257,6 @@ export default function UserModal({
           password_algorithm: "bcrypt",
           primary_role_id: formData.primary_role_id,
           department: formData.department || undefined,
-          employee_id: formData.employee_id || undefined,
         };
 
         console.log("Creating user with data:", createData);
@@ -327,7 +418,41 @@ export default function UserModal({
                 </>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <label
+                    className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
+                  >
+                    Role *
+                  </label>
+                  <HeadlessSelect
+                    options={roleOptions}
+                    value={formData.primary_role_id ?? ""}
+                    onChange={(value) => {
+                      const numericValue =
+                        typeof value === "string" ? Number(value) : value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        primary_role_id: Number.isNaN(numericValue)
+                          ? undefined
+                          : numericValue,
+                      }));
+                    }}
+                    placeholder={
+                      isLoadingRoles
+                        ? "Loading roles..."
+                        : roleOptions.length > 0
+                        ? "Select a role"
+                        : "No roles available"
+                    }
+                    disabled={isLoadingRoles || roleOptions.length === 0}
+                    searchable
+                    className="w-full"
+                  />
+                  {rolesError && (
+                    <p className="mt-2 text-xs text-red-600">{rolesError}</p>
+                  )}
+                </div>
                 <div>
                   <label
                     className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
@@ -341,21 +466,6 @@ export default function UserModal({
                     onChange={handleChange}
                     className={`block w-full px-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
                     placeholder="Department"
-                  />
-                </div>
-                <div>
-                  <label
-                    className={`block text-sm font-semibold ${tw.textPrimary} mb-2`}
-                  >
-                    Employee ID
-                  </label>
-                  <input
-                    name="employee_id"
-                    type="text"
-                    value={formData.employee_id}
-                    onChange={handleChange}
-                    className={`block w-full px-3 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 text-sm`}
-                    placeholder="Employee ID"
                   />
                 </div>
               </div>

@@ -539,10 +539,10 @@ export default function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-12">
             {/* Icon removed */}
-            <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-2`}>
+            <h3 className={`${tw.cardHeading} ${tw.textPrimary} mb-1`}>
               No products found
             </h3>
-            <p className={`${tw.textMuted} mb-6`}>
+            <p className={`text-sm ${tw.textMuted} mb-6`}>
               Get started by creating your first product.
             </p>
             <button

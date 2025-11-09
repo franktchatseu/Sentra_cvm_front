@@ -315,16 +315,6 @@ export default function UserDetailsPage() {
                         </span>
                       </div>
                     )}
-                    {user.employee_id && (
-                      <div className="flex justify-between items-start py-2">
-                        <span className="text-sm text-gray-600">
-                          Employee ID
-                        </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {user.employee_id}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
