@@ -450,15 +450,18 @@ export default function CampaignDefinitionStep({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Campaign Tag
+              Campaign Tags
             </label>
             <input
               type="text"
               value={formData.tag || ''}
               onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
-              placeholder="Enter campaign tag"
+              placeholder="Enter tags separated by comma (e.g., promo, summer, new-customer)"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Separate multiple tags with commas
+            </p>
           </div>
 
           <div className="relative">
@@ -730,6 +733,47 @@ export default function CampaignDefinitionStep({
             rows={3}
           />
         </div>
+
+        {/* Campaign Schedule */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="datetime-local"
+              value={formData.start_date ? new Date(formData.start_date).toISOString().slice(0, 16) : ''}
+              onChange={(e) => {
+                const dateValue = e.target.value ? new Date(e.target.value).toISOString() : undefined;
+                setFormData({ ...formData, start_date: dateValue });
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              When should this campaign start?
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="datetime-local"
+              value={formData.end_date ? new Date(formData.end_date).toISOString().slice(0, 16) : ''}
+              onChange={(e) => {
+                const dateValue = e.target.value ? new Date(e.target.value).toISOString() : undefined;
+                setFormData({ ...formData, end_date: dateValue });
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              min={formData.start_date ? new Date(formData.start_date).toISOString().slice(0, 16) : undefined}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              When should this campaign end?
+            </p>
+          </div>
+        </div>
+
       </div>
 
       {/* Customization Modal */}
