@@ -544,7 +544,7 @@ export default function SegmentManagementPage() {
             <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
               Segment Management
             </h1>
-            <p className={`${tw.subHeading} ${tw.textSecondary} mt-2`}>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>
               Create and manage customer segments
             </p>
           </div>
@@ -800,7 +800,7 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block ">
+            <div className="hidden lg:block overflow-hidden rounded-lg">
               <table className="w-full">
                 <thead
                   className={`border-b ${tw.borderDefault}`}
@@ -1266,7 +1266,7 @@ export default function SegmentManagementPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
+                  <h3 className="text-xl font-semibold text-gray-900">
                     Filter Segments
                   </h3>
                   <button
