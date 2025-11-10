@@ -14,12 +14,14 @@ import {
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { tw, color } from "../../../shared/utils/utils";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import { offerService } from "../../offers/services/offerService";
 import { segmentService } from "../../segments/services/segmentService";
 import { productService } from "../../products/services/productService";
 import { campaignService } from "../../campaigns/services/campaignService";
+import type { CampaignResponse } from "../../campaigns/services/campaignService";
+import type { GetCampaignsResponse } from "../../campaigns/types/campaign";
 import {
   PieChart,
   Pie,
@@ -32,6 +34,28 @@ import {
 export default function DashboardHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const extractCampaignTotal = useCallback(
+    (response?: CampaignResponse | GetCampaignsResponse | null): number => {
+      if (!response) return 0;
+
+      const metaTotal =
+        (response as CampaignResponse)?.meta?.total ?? undefined;
+      if (typeof metaTotal === "number") {
+        return metaTotal;
+      }
+
+      const paginationTotal =
+        (response as GetCampaignsResponse)?.pagination?.total ?? undefined;
+      if (typeof paginationTotal === "number") {
+        return paginationTotal;
+      }
+
+      const dataArray = (response as { data?: unknown[] })?.data;
+      return Array.isArray(dataArray) ? dataArray.length : 0;
+    },
+    []
+  );
 
   // State for distributions
   const [offerTypeDistribution, setOfferTypeDistribution] = useState<
@@ -323,20 +347,20 @@ export default function DashboardHome() {
 
       try {
         // Fetch campaigns stats
-        const campaignsResponse = await campaignService.getCampaigns({ 
+        const campaignsResponse = await campaignService.getCampaigns({
           limit: 1,
-          skipCache: true 
+          skipCache: true,
         });
-        const total = campaignsResponse.pagination?.total || 0;
-        
+        const total = extractCampaignTotal(campaignsResponse);
+
         // Get active campaigns count
-        const activeCampaignsResponse = await campaignService.getCampaigns({ 
+        const activeCampaignsResponse = await campaignService.getCampaigns({
           limit: 1,
-          status: 'active',
-          skipCache: true 
+          status: "active",
+          skipCache: true,
         });
-        const active = activeCampaignsResponse.pagination?.total || 0;
-        
+        const active = extractCampaignTotal(activeCampaignsResponse);
+
         setCampaignsStats({ total, active });
       } catch (error) {
         console.error("Failed to fetch campaigns stats:", error);
@@ -345,7 +369,7 @@ export default function DashboardHome() {
     };
 
     fetchStats();
-  }, []);
+  }, [extractCampaignTotal]);
 
   // Fetch latest items (offers, segments, products)
   useEffect(() => {
@@ -460,9 +484,9 @@ export default function DashboardHome() {
 
       try {
         // Fetch latest campaigns
-        const campaignsResponse = await campaignService.getCampaigns({ 
+        const campaignsResponse = await campaignService.getCampaigns({
           limit: 3,
-          skipCache: true 
+          skipCache: true,
         });
         if (
           campaignsResponse.success &&
@@ -480,7 +504,9 @@ export default function DashboardHome() {
                 performance: {
                   response: campaign.current_participants || 0,
                   delivered: campaign.current_participants || 0,
-                  converted: Math.floor((campaign.current_participants || 0) * 0.15),
+                  converted: Math.floor(
+                    (campaign.current_participants || 0) * 0.15
+                  ),
                 },
                 created_at: campaign.created_at,
               };
@@ -695,6 +721,41 @@ export default function DashboardHome() {
           // Error calculating offers change
         }
 
+        // Calculate Campaigns percentage change using date range
+        try {
+          const currentCampaigns = await campaignService.getAllCampaigns({
+            startDateFrom: currentMonthStart.toISOString(),
+            startDateTo: currentMonthEnd.toISOString(),
+            page: 1,
+            pageSize: 1,
+            skipCache: true,
+          });
+          const previousCampaigns = await campaignService.getAllCampaigns({
+            startDateFrom: previousMonthStart.toISOString(),
+            startDateTo: previousMonthEnd.toISOString(),
+            page: 1,
+            pageSize: 1,
+            skipCache: true,
+          });
+
+          const currentCount = extractCampaignTotal(currentCampaigns);
+          const previousCount = extractCampaignTotal(previousCampaigns);
+
+          const campaignsChange =
+            previousCount > 0
+              ? ((currentCount - previousCount) / previousCount) * 100
+              : currentCount > 0
+              ? 100
+              : 0;
+
+          setPercentageChanges((prev) => ({
+            ...prev,
+            campaigns: campaignsChange,
+          }));
+        } catch {
+          // Error calculating campaigns change
+        }
+
         // Calculate Segments percentage change using date-based filtering
         // Get all segments and filter by created_at date
         try {
@@ -793,17 +854,24 @@ export default function DashboardHome() {
     if (
       offersStats !== null ||
       segmentsStats !== null ||
-      productsStats !== null
+      productsStats !== null ||
+      campaignsStats !== null
     ) {
       calculatePercentageChanges();
     }
-  }, [offersStats, segmentsStats, productsStats]);
+  }, [
+    offersStats,
+    segmentsStats,
+    productsStats,
+    campaignsStats,
+    extractCampaignTotal,
+  ]);
 
   // Stats data - using real data from API
   const stats = [
     {
-      name: "Active Campaigns",
-      value: campaignsStats?.active?.toLocaleString() || "0",
+      name: "Total Campaigns",
+      value: campaignsStats?.total?.toLocaleString() || "0",
       change:
         percentageChanges.campaigns !== null
           ? `${
@@ -817,6 +885,10 @@ export default function DashboardHome() {
             : "negative"
           : "positive",
       icon: Target,
+      extra:
+        campaignsStats?.active != null
+          ? `${campaignsStats.active.toLocaleString()} active`
+          : null,
     },
     {
       name: "Total Offers",
@@ -1184,6 +1256,9 @@ export default function DashboardHome() {
                       <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
                         {stat.name}
                       </p>
+                      {stat.extra && (
+                        <p className="text-xs text-gray-500">{stat.extra}</p>
+                      )}
                     </div>
                   </div>
                 </div>

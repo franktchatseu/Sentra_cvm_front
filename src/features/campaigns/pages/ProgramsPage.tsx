@@ -70,7 +70,7 @@ function ProgramModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className={`${tw.subHeading} text-gray-900`}>
+          <h2 className="text-xl font-semibold text-gray-900">
             {program ? "Edit Program" : "Create New Program"}
           </h2>
           <button
@@ -338,7 +338,10 @@ export default function ProgramsPage() {
           </div>
         ) : filteredPrograms.length === 0 ? (
           <div className="text-center py-12">
-            <p className={`${tw.textMuted} mb-6`}>
+            <h3 className={`${tw.cardHeading} ${tw.textPrimary} mb-1`}>
+              {searchTerm ? "No programs found" : "No programs yet"}
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
               {searchTerm
                 ? "Try adjusting your search terms."
                 : "Create your first program to get started."}

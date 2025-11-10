@@ -92,7 +92,7 @@ export default function CampaignsPage() {
     id: number;
     name: string;
   } | null>(null);
-  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({}); 
+  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
   const [allCampaignsUnfiltered, setAllCampaignsUnfiltered] = useState<
     CampaignDisplay[]
@@ -142,10 +142,10 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       // Calculate offset for pagination
       const offset = (currentPage - 1) * pageSize;
-      
+
       // Use new getCampaigns endpoint
       const response = await campaignService.getCampaigns({
         limit: pageSize,
@@ -156,16 +156,18 @@ export default function CampaignsPage() {
       });
 
       // Transform backend campaigns to display format
-      const campaignsData: CampaignDisplay[] = response.data.map((campaign) => ({
-        id: campaign.id,
-        name: campaign.name,
-        description: campaign.description || undefined,
-        status: campaign.status,
-        category_id: campaign.category_id || undefined,
-        objective: campaign.objective,
-        startDate: campaign.start_date || undefined,
-        endDate: campaign.end_date || undefined,
-      }));
+      const campaignsData: CampaignDisplay[] = response.data.map(
+        (campaign) => ({
+          id: campaign.id,
+          name: campaign.name,
+          description: campaign.description || undefined,
+          status: campaign.status,
+          category_id: campaign.category_id || undefined,
+          objective: campaign.objective,
+          startDate: campaign.start_date || undefined,
+          endDate: campaign.end_date || undefined,
+        })
+      );
 
       // Helper function to generate consistent random values based on campaign ID
       const seededRandom = (seed: number, min: number, max: number) => {
@@ -586,7 +588,7 @@ export default function CampaignsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>Campaigns</h1>
-          <p className={`${tw.subHeading} ${tw.textSecondary} mt-2`}>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>
             Manage and monitor your customer engagement campaigns
           </p>
         </div>
@@ -754,7 +756,7 @@ export default function CampaignsPage() {
                               style={{
                                 backgroundColor: "#F0FDF4",
                                 color: "#16A34A",
-                                borderColor: "#BBF7D0"
+                                borderColor: "#BBF7D0",
                               }}
                             >
                               <span className="capitalize">
@@ -819,36 +821,44 @@ export default function CampaignsPage() {
                       )}
                     </td>
                     <td className="px-6 py-3 hidden xl:table-cell">
-                      <div
-                        className={`text-sm ${tw.textPrimary}`}
-                      >
+                      <div className={`text-sm ${tw.textPrimary}`}>
                         {campaign.startDate ? (
                           <div className="space-y-1">
                             <div className="flex items-center space-x-1">
-                              <span className="text-gray-500 text-xs">Start:</span>
+                              <span className="text-gray-500 text-xs">
+                                Start:
+                              </span>
                               <span className="font-medium">
-                                {new Date(campaign.startDate).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric'
+                                {new Date(
+                                  campaign.startDate
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
                                 })}
                               </span>
                             </div>
                             {campaign.endDate && (
                               <div className="flex items-center space-x-1">
-                                <span className="text-gray-500 text-xs">End:</span>
+                                <span className="text-gray-500 text-xs">
+                                  End:
+                                </span>
                                 <span className="font-medium">
-                                  {new Date(campaign.endDate).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric'
+                                  {new Date(
+                                    campaign.endDate
+                                  ).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
                                   })}
                                 </span>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-sm">Not scheduled</span>
+                          <span className="text-gray-400 text-sm">
+                            Not scheduled
+                          </span>
                         )}
                       </div>
                     </td>
@@ -934,7 +944,10 @@ export default function CampaignsPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setCampaignToExecute({ id: campaign.id, name: campaign.name });
+                                  setCampaignToExecute({
+                                    id: campaign.id,
+                                    name: campaign.name,
+                                  });
                                   setShowExecuteModal(true);
                                   setShowActionMenu(null);
                                 }}
@@ -950,7 +963,10 @@ export default function CampaignsPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setCampaignToApprove({ id: campaign.id, name: campaign.name });
+                                  setCampaignToApprove({
+                                    id: campaign.id,
+                                    name: campaign.name,
+                                  });
                                   setShowApproveModal(true);
                                   setShowActionMenu(null);
                                 }}
@@ -958,7 +974,7 @@ export default function CampaignsPage() {
                               >
                                 <CheckCircle
                                   className="w-4 h-4 mr-4"
-                                  style={{ color: '#10B981' }}
+                                  style={{ color: "#10B981" }}
                                 />
                                 Approve Campaign
                               </button>
@@ -966,7 +982,10 @@ export default function CampaignsPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setCampaignToReject({ id: campaign.id, name: campaign.name });
+                                  setCampaignToReject({
+                                    id: campaign.id,
+                                    name: campaign.name,
+                                  });
                                   setShowRejectModal(true);
                                   setShowActionMenu(null);
                                 }}
@@ -974,7 +993,7 @@ export default function CampaignsPage() {
                               >
                                 <Trash2
                                   className="w-4 h-4 mr-4"
-                                  style={{ color: '#EF4444' }}
+                                  style={{ color: "#EF4444" }}
                                 />
                                 Reject Campaign
                               </button>
@@ -984,19 +1003,30 @@ export default function CampaignsPage() {
                                   e.stopPropagation();
                                   setShowActionMenu(null);
                                   try {
-                                    await campaignService.activateCampaign(campaign.id);
-                                    showToast('success', `Campaign "${campaign.name}" activated successfully!`);
+                                    await campaignService.activateCampaign(
+                                      campaign.id
+                                    );
+                                    showToast(
+                                      "success",
+                                      `Campaign "${campaign.name}" activated successfully!`
+                                    );
                                     fetchCampaigns();
                                   } catch (error) {
-                                    console.error('Error activating campaign:', error);
-                                    showToast('error', 'Failed to activate campaign');
+                                    console.error(
+                                      "Error activating campaign:",
+                                      error
+                                    );
+                                    showToast(
+                                      "error",
+                                      "Failed to activate campaign"
+                                    );
                                   }
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <Play
                                   className="w-4 h-4 mr-4"
-                                  style={{ color: '#10B981' }}
+                                  style={{ color: "#10B981" }}
                                 />
                                 Activate Campaign
                               </button>
@@ -1006,19 +1036,30 @@ export default function CampaignsPage() {
                                   e.stopPropagation();
                                   setShowActionMenu(null);
                                   try {
-                                    await campaignService.pauseCampaign(campaign.id);
-                                    showToast('success', `Campaign "${campaign.name}" paused successfully!`);
+                                    await campaignService.pauseCampaign(
+                                      campaign.id
+                                    );
+                                    showToast(
+                                      "success",
+                                      `Campaign "${campaign.name}" paused successfully!`
+                                    );
                                     fetchCampaigns();
                                   } catch (error) {
-                                    console.error('Error pausing campaign:', error);
-                                    showToast('error', 'Failed to pause campaign');
+                                    console.error(
+                                      "Error pausing campaign:",
+                                      error
+                                    );
+                                    showToast(
+                                      "error",
+                                      "Failed to pause campaign"
+                                    );
                                   }
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                               >
                                 <Pause
                                   className="w-4 h-4 mr-4"
-                                  style={{ color: '#F59E0B' }}
+                                  style={{ color: "#F59E0B" }}
                                 />
                                 Pause Campaign
                               </button>
@@ -1144,10 +1185,10 @@ export default function CampaignsPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-6">
-            <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+            <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
               No campaigns found
             </h3>
-            <p className="text-sm text-#f9fafb0 text-center max-w-sm">
+            <p className="text-sm text-gray-500 text-center max-w-sm">
               {selectedStatus === "completed"
                 ? "No completed campaigns yet. Campaigns will appear here once they finish running."
                 : `No ${selectedStatus} campaigns found. Try creating a new campaign or check other status filters.`}
@@ -1183,7 +1224,7 @@ export default function CampaignsPage() {
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <h2 className={`${tw.subHeading} text-gray-900`}>
+                  <h2 className="text-xl font-semibold text-gray-900">
                     Filter Campaigns
                   </h2>
                   <button
@@ -1253,7 +1294,7 @@ export default function CampaignsPage() {
                       </label>
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-xs text-#f9fafb0 mb-1">
+                          <label className="block text-xs text-gray-500 mb-1">
                             Start Date From
                           </label>
                           <input
@@ -1269,7 +1310,7 @@ export default function CampaignsPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-#f9fafb0 mb-1">
+                          <label className="block text-xs text-gray-500 mb-1">
                             Start Date To
                           </label>
                           <input

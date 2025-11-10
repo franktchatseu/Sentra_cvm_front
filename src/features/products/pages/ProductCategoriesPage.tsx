@@ -318,12 +318,12 @@ function ProductsModal({
                     </div>
                   ) : filteredProducts.length === 0 ? (
                     <div className="text-center py-8">
-                      <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+                        <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
                         {searchTerm
                           ? "No products found"
                           : "No products in this category"}
                       </h3>
-                      <p className="text-gray-600 mb-4">
+                        <p className="text-sm text-gray-600 mb-4">
                         {searchTerm
                           ? "Try adjusting your search terms"
                           : "Create a new product or assign an existing one to this category"}
@@ -572,9 +572,10 @@ export default function ProductCatalogsPage() {
       await loadCategoryProductCounts();
     } catch (err) {
       console.error("Failed to load categories:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load categories"
-      );
+      const message =
+        err instanceof Error ? err.message : "Failed to load categories";
+      showError("Failed to load categories", message);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -1120,7 +1121,7 @@ export default function ProductCatalogsPage() {
         <div
           className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-xl p-4`}
         >
-          <p>{error}</p>
+          <p className="text-sm font-medium">{error}</p>
         </div>
       )}
 
@@ -1137,10 +1138,10 @@ export default function ProductCatalogsPage() {
         </div>
       ) : filteredCatalogs.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
-          <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+          <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 mb-6">
             {searchTerm
               ? "Try adjusting your search terms"
               : "Create your first product catalog to organize your products"}

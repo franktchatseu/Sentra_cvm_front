@@ -194,7 +194,7 @@ export default function CommunicationPolicyPage() {
             <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
               Communication Policies
             </h1>
-            <p className={`${tw.subHeading} ${tw.textSecondary} mt-2`}>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>
               Manage customer communication rules and preferences
             </p>
           </div>
