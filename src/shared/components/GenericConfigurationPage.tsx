@@ -469,21 +469,25 @@ export default function GenericConfigurationPage({
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead
-                  className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.border.default}]`}
+                  className={`border-b ${tw.borderDefault}`}
+                  style={{ background: color.surface.tableHeader }}
                 >
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       {config.entityName}
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Description
                     </th>
                     <th
-                      className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
@@ -540,7 +544,7 @@ export default function GenericConfigurationPage({
                             onClick={() => handleDeleteItem(item)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 text-red-600" />
                           </button>
                         </div>
                       </td>
@@ -591,7 +595,7 @@ export default function GenericConfigurationPage({
                           onClick={() => handleDeleteItem(item)}
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </button>
                       </div>
                     </div>

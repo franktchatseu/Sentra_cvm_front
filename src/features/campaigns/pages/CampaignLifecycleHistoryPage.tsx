@@ -4,6 +4,7 @@ import { ArrowLeft, History, User, FileText } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { campaignService } from "../services/campaignService";
+import { useToast } from "../../../contexts/ToastContext";
 
 interface LifecycleHistoryEntry {
   id: number;
@@ -19,6 +20,7 @@ interface LifecycleHistoryEntry {
 export default function CampaignLifecycleHistoryPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [history, setHistory] = useState<LifecycleHistoryEntry[]>([]);
   const [campaignName, setCampaignName] = useState("");
@@ -56,6 +58,11 @@ export default function CampaignLifecycleHistoryPage() {
         setCampaignName(campaignInfo?.name || `Campaign ${id}`);
       } catch (error) {
         console.error("Failed to fetch lifecycle history:", error);
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load lifecycle history.";
+        showError("Lifecycle history unavailable", message);
         setHistory([]);
       } finally {
         setIsLoading(false);

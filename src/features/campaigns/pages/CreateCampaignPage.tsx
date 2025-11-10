@@ -670,7 +670,10 @@ export default function CreateCampaignPage() {
           </div>
 
           {/* Sticky Progress Navigation */}
-          <nav aria-label="Progress" className="sticky top-16 z-40 py-3 px-6 rounded-lg border mb-4" style={{ backgroundColor: color.surface.cards, borderColor: color.border.default }}>
+          <nav
+            aria-label="Progress"
+            className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200"
+          >
             {/* Mobile - Simple dots */}
             <div className="md:hidden flex items-center justify-center gap-2">
               {steps.map((step) => {
@@ -707,13 +710,24 @@ export default function CreateCampaignPage() {
                       className="relative flex flex-col items-center group z-10"
                       disabled={!canNavigateToStep(step.id)}
                     >
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${step.id <= currentStep + 2 ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed'}`}
-                        style={{
-                          backgroundColor: status === 'completed' ? color.primary.action : 'white',
-                          borderColor: status === 'completed' || status === 'current' ? color.primary.accent : '#D1D5DB',
-                          color: status === 'completed' ? 'white' : status === 'current' ? color.primary.accent : '#9CA3AF'
-                        }}>
-                        {status === 'completed' ? (
+                      <div
+                        className={`
+                        flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
+                        ${
+                          status === "completed"
+                            ? `bg-[${color.primary.action}] border-[${color.primary.action}] text-white`
+                            : status === "current"
+                            ? `bg-white border-[${color.primary.action}] text-[${color.primary.action}]`
+                            : "bg-white border-gray-300 text-gray-400"
+                        }
+                        ${
+                          step.id <= currentStep + 2
+                            ? "cursor-pointer hover:scale-110"
+                            : "cursor-not-allowed"
+                        }
+                      `}
+                      >
+                        {status === "completed" ? (
                           <Check className="w-4 h-4" />
                         ) : (
                           <Icon className="w-4 h-4" />
@@ -721,29 +735,39 @@ export default function CreateCampaignPage() {
                       </div>
 
                       <div className="mt-2 text-center">
-                        <div className="text-xs font-medium" style={{
-                          color: status === 'current' ? color.primary.accent : status === 'completed' ? color.primary.action : '#9CA3AF'
-                        }}>
+                        <div
+                          className={`text-sm font-medium ${
+                            status === "current"
+                              ? `text-[${color.primary.action}]`
+                              : status === "completed"
+                              ? tw.textPrimary
+                              : tw.textMuted
+                          }`}
+                        >
                           {step.name}
+                        </div>
+                        <div
+                          className={`text-xs mt-1 hidden lg:block ${tw.textMuted}`}
+                        >
+                          {step.description}
                         </div>
                       </div>
                     </button>
 
                     {stepIdx !== steps.length - 1 && (
                       <div
-                        className="absolute top-5 left-1/2 w-full h-0.5"
+                        className="absolute top-4 left-1/2 w-full h-0.5 bg-gray-200"
                         style={{
-                          transform: 'translateX(0%)',
+                          transform: "translateX(0%)",
                           zIndex: 1,
-                          backgroundColor: '#E5E7EB'
                         }}
                       >
                         <div
-                          className="h-full transition-all duration-500"
-                          style={{
-                            backgroundColor: step.id < currentStep ? color.primary.accent : '#E5E7EB',
-                            width: step.id < currentStep ? '100%' : '0%'
-                          }}
+                          className={`h-full transition-all duration-500 ${
+                            step.id < currentStep
+                              ? `bg-[${color.primary.action}] w-full`
+                              : "bg-gray-200 w-0"
+                          }`}
                         />
                       </div>
                     )}

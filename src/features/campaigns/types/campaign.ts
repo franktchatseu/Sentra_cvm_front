@@ -1,4 +1,9 @@
-export type CampaignType = 'multiple_target_group' | 'champion_challenger' | 'ab_test' | 'round_robin' | 'multiple_level';
+export type CampaignType =
+  | "multiple_target_group"
+  | "champion_challenger"
+  | "ab_test"
+  | "round_robin"
+  | "multiple_level";
 
 // Backend Campaign Response Types
 export interface BackendCampaignType {
@@ -10,8 +15,14 @@ export interface BackendCampaignType {
   objective: string;
   category_id: number | null;
   program_id: number | null;
-  status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled' | 'scheduled';
-  approval_status: 'pending' | 'approved' | 'rejected';
+  status:
+    | "draft"
+    | "active"
+    | "paused"
+    | "completed"
+    | "cancelled"
+    | "scheduled";
+  approval_status: "pending" | "approved" | "rejected";
   start_date: string | null;
   end_date: string | null;
   timezone: string | null;
@@ -41,6 +52,7 @@ export interface BackendCampaignType {
   metadata: Record<string, any> | null;
   tags: string[];
   attribution_model_id: number | null;
+  suppression_list_ids: number[] | null;
 }
 
 export interface GetCampaignsResponse {
@@ -79,15 +91,252 @@ export interface GetCampaignCategoriesResponse {
   source: string;
 }
 
+// Extended API type helpers
+export type CampaignStatus =
+  | "draft"
+  | "pending_approval"
+  | "approved"
+  | "scheduled"
+  | "active"
+  | "paused"
+  | "completed"
+  | "cancelled"
+  | "archived"
+  | "rejected";
+
+export type CampaignApprovalStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled";
+
+export type CacheSource = "cache" | "database" | "database-forced";
+
+export interface PaginationMeta {
+  limit: number;
+  offset: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export type PaginatedResponse<T> = {
+  success: true;
+  data: T[];
+  pagination: PaginationMeta;
+  source: CacheSource;
+  message?: string;
+};
+
+export type CacheableResponse<T> = {
+  success: true;
+  data: T;
+  source: CacheSource;
+  message?: string;
+};
+
+export type ErrorResponse = {
+  success: false;
+  error: string;
+  code?: string;
+};
+
+export type ApiResponse<T> = CacheableResponse<T> | ErrorResponse;
+
+export type PaginatedApiResponse<T> = PaginatedResponse<T> | ErrorResponse;
+
+export interface CampaignStatsSummary {
+  total_campaigns: number | string;
+  active_campaigns: number | string;
+  currently_active: number | string;
+  in_draft: number | string;
+  pending_approval: number | string;
+  completed: number | string;
+  archived: number | string;
+  rejected: number | string;
+  total_budget_allocated: number | string;
+  total_budget_spent: number | string;
+  avg_campaign_budget: number | string;
+  with_control_groups: number | string;
+}
+
+export interface CampaignBudgetUtilisation {
+  utilization_percentage: number;
+  remaining_budget: number;
+}
+
+export interface CampaignParticipantUtilisation {
+  utilization_percentage: number;
+  remaining_participants: number;
+}
+
+export interface CampaignPerformanceMetrics {
+  campaign: {
+    id: number;
+    name: string;
+    code: string;
+    status: CampaignStatus;
+  };
+  budget: {
+    allocated: number;
+    spent: number;
+    remaining: number;
+    utilization_percentage: number;
+  };
+  participants: {
+    current: number;
+    max?: number;
+    utilization_percentage: number;
+    remaining: number;
+  };
+  targets: {
+    reach?: number;
+    conversion_rate?: number;
+    revenue?: number;
+  };
+  control_group: {
+    enabled: boolean;
+    percentage: number;
+  };
+}
+
+export interface CampaignSegmentDetail {
+  id: number;
+  campaign_id: number;
+  segment_id: number;
+  segment_name: string;
+  segment_type: string;
+  segment_description: string;
+  is_primary: boolean;
+  include_exclude: "include" | "exclude";
+  created_at: string;
+  created_by?: number;
+}
+
+export interface CampaignExecutionRequestPayload {
+  campaign_id: number;
+  segments: Array<{
+    segment_id: number;
+    channel_codes: string[];
+  }>;
+  mode: "immediate" | "schedule";
+  schedule?: {
+    date_iso_string: string;
+  };
+}
+
+export interface CampaignExecutionSummary {
+  campaign_id: number;
+  total_broadcasts: number;
+  broadcasts_completed: number;
+  broadcasts_failed: number;
+  total_messages_attempted: number;
+  total_messages_sent: number;
+  total_messages_failed: number;
+  execution_time_ms: number;
+  broadcast_summaries: Array<{
+    broadcast_id: string;
+    segment_id: number;
+    channel_code: string;
+    messages_sent: number;
+    messages_failed: number;
+    status: string;
+  }>;
+}
+
+export type CampaignExecutionResponse =
+  | {
+      success: true;
+      data: CampaignExecutionSummary;
+      execution_time_ms: number;
+    }
+  | ErrorResponse;
+
+export type CampaignCollection = PaginatedApiResponse<BackendCampaignType>;
+
+export type CampaignDetail = ApiResponse<BackendCampaignType>;
+
+export type CampaignStatsResponse = ApiResponse<CampaignStatsSummary>;
+
+export type CampaignPerformanceResponse =
+  ApiResponse<CampaignPerformanceMetrics>;
+
+export type CampaignBudgetUtilResponse = ApiResponse<CampaignBudgetUtilisation>;
+
+export type CampaignParticipantUtilResponse =
+  ApiResponse<CampaignParticipantUtilisation>;
+
+export type CampaignSegmentsResponse = ApiResponse<{
+  data: CampaignSegmentDetail[];
+  total: number;
+}>;
+
+export interface CampaignListQuery {
+  [key: string]: unknown;
+  limit?: number;
+  offset?: number;
+  skipCache?: boolean;
+}
+
+export interface CampaignSearchQuery extends CampaignListQuery {
+  searchTerm?: string;
+}
+
+export interface CampaignDateRangeQuery extends CampaignListQuery {
+  startDate: string;
+  endDate: string;
+}
+
+export interface CampaignBudgetRangeQuery extends CampaignListQuery {
+  minBudget: number;
+  maxBudget: number;
+}
+
+export interface CampaignSuperSearchQuery extends CampaignListQuery {
+  name?: string;
+  code?: string;
+  status?: CampaignStatus;
+  approvalStatus?: CampaignApprovalStatus;
+  categoryId?: number;
+  programId?: number;
+  managerId?: number;
+  ownerTeam?: string;
+  isActive?: boolean;
+  minBudget?: number;
+  maxBudget?: number;
+  startDateFrom?: string;
+  startDateTo?: string;
+  endDateFrom?: string;
+  endDateTo?: string;
+  controlGroupEnabled?: boolean;
+  tenantId?: number;
+  clientId?: number;
+}
+
+export interface CampaignStatusQuery extends CampaignListQuery {
+  status: CampaignStatus;
+}
+
 // Base Campaign Interface
 interface CampaignBase {
   id: string;
   name: string;
   description?: string;
-  objective: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
+  objective:
+    | "acquisition"
+    | "retention"
+    | "churn_prevention"
+    | "upsell_cross_sell"
+    | "reactivation";
   category_id?: number;
-  status: 'draft' | 'pending_approval' | 'approved' | 'active' | 'paused' | 'completed' | 'cancelled';
-  approval_status?: 'pending' | 'approved' | 'rejected';
+  status:
+    | "draft"
+    | "pending_approval"
+    | "approved"
+    | "active"
+    | "paused"
+    | "completed"
+    | "cancelled";
+  approval_status?: "pending" | "approved" | "rejected";
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -96,7 +345,7 @@ interface CampaignBase {
   scheduling: CampaignScheduling;
   approval_workflow?: ApprovalWorkflow;
   is_definitive?: boolean;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority?: "low" | "medium" | "high" | "critical";
   priority_rank?: number;
   performance?: {
     delivered: number;
@@ -109,7 +358,7 @@ interface CampaignBase {
 
 // Multiple Target Group Campaign
 export interface MultipleTargetGroupCampaign extends CampaignBase {
-  campaign_type: 'multiple_target_group';
+  campaign_type: "multiple_target_group";
   config: {
     segments: CampaignSegment[];
     offer_mappings: CampaignOfferMapping[];
@@ -119,7 +368,7 @@ export interface MultipleTargetGroupCampaign extends CampaignBase {
 
 // Champion-Challenger Campaign
 export interface ChampionChallengerCampaign extends CampaignBase {
-  campaign_type: 'champion_challenger';
+  campaign_type: "champion_challenger";
   config: {
     champion: CampaignSegment;
     challengers: CampaignSegment[];
@@ -129,7 +378,7 @@ export interface ChampionChallengerCampaign extends CampaignBase {
 
 // A/B Test Campaign
 export interface ABTestCampaign extends CampaignBase {
-  campaign_type: 'ab_test';
+  campaign_type: "ab_test";
   config: {
     variant_a: CampaignSegment;
     variant_b: CampaignSegment;
@@ -139,7 +388,7 @@ export interface ABTestCampaign extends CampaignBase {
 
 // Round Robin Campaign
 export interface RoundRobinCampaign extends CampaignBase {
-  campaign_type: 'round_robin';
+  campaign_type: "round_robin";
   config: {
     segment: CampaignSegment;
     offer_sequence: SequentialOfferMapping[];
@@ -148,7 +397,7 @@ export interface RoundRobinCampaign extends CampaignBase {
 
 // Multiple Level Campaign
 export interface MultipleLevelCampaign extends CampaignBase {
-  campaign_type: 'multiple_level';
+  campaign_type: "multiple_level";
   config: {
     segment: CampaignSegment;
     offer_sequence: SequentialOfferMapping[];
@@ -156,11 +405,11 @@ export interface MultipleLevelCampaign extends CampaignBase {
 }
 
 // Discriminated Union Type
-export type Campaign = 
-  | MultipleTargetGroupCampaign 
-  | ChampionChallengerCampaign 
-  | ABTestCampaign 
-  | RoundRobinCampaign 
+export type Campaign =
+  | MultipleTargetGroupCampaign
+  | ChampionChallengerCampaign
+  | ABTestCampaign
+  | RoundRobinCampaign
   | MultipleLevelCampaign;
 
 export interface CampaignSegment {
@@ -190,7 +439,7 @@ export interface CampaignOffer {
   name: string;
   description?: string;
   offer_type: string;
-  reward_type: 'bundle' | 'points' | 'discount' | 'cashback' | 'free_service';
+  reward_type: "bundle" | "points" | "discount" | "cashback" | "free_service";
   reward_value: string;
   validity_period: number;
   terms_conditions?: string;
@@ -204,13 +453,13 @@ export interface OfferPersonalization {
 }
 
 export interface CampaignScheduling {
-  type: 'immediate' | 'scheduled' | 'recurring' | 'trigger_based';
+  type: "immediate" | "scheduled" | "recurring" | "trigger_based";
   start_date?: string;
   end_date?: string;
   time_zone: string;
   delivery_times?: string[];
   frequency?: {
-    type: 'daily' | 'weekly' | 'monthly';
+    type: "daily" | "weekly" | "monthly";
     interval: number;
     days_of_week?: number[];
     days_of_month?: number[];
@@ -247,15 +496,18 @@ export interface TriggerCondition {
 export interface ControlGroup {
   enabled: boolean;
   percentage: number;
-  type: 'standard' | 'universal';
-  universal_frequency?: 'monthly' | 'quarterly';
+  type: "standard" | "universal";
+  universal_frequency?: "monthly" | "quarterly";
   exclusion_criteria?: Record<string, string | number | boolean>;
 }
 
 export interface SegmentControlGroupConfig {
-  type: 'none' | 'with_control_group' | 'multiple_control_group';
+  type: "none" | "with_control_group" | "multiple_control_group";
   // Sub-types for 'with_control_group'
-  control_group_method?: 'fixed_percentage' | 'fixed_number' | 'advanced_parameters';
+  control_group_method?:
+    | "fixed_percentage"
+    | "fixed_number"
+    | "advanced_parameters";
   percentage?: number; // For 'fixed_percentage' method (0.1 - 50%)
   set_limits?: boolean; // Enable limits for percentage type
   lower_limit?: number; // Lower limit for control group
@@ -277,7 +529,7 @@ export interface AvailableControlGroup {
 export interface ApprovalWorkflow {
   required: boolean;
   approvers: string[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   comments?: string;
   approved_by?: string;
   approved_at?: string;
@@ -286,17 +538,27 @@ export interface ApprovalWorkflow {
 export interface CreateCampaignRequest {
   name: string; // Required field
   description?: string;
-  objective?: 'acquisition' | 'retention' | 'churn_prevention' | 'upsell_cross_sell' | 'reactivation';
+  objective?:
+    | "acquisition"
+    | "retention"
+    | "churn_prevention"
+    | "upsell_cross_sell"
+    | "reactivation";
   category_id?: number;
   program_id?: number;
   start_date?: string;
   end_date?: string;
   tag?: string;
   business?: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority?: "low" | "medium" | "high" | "critical";
   priority_rank?: number;
   is_definitive?: boolean;
-  campaign_type?: 'multiple_target_group' | 'champion_challenger' | 'ab_test' | 'round_robin' | 'multiple_level'; // frontend-only field
+  campaign_type?:
+    | "multiple_target_group"
+    | "champion_challenger"
+    | "ab_test"
+    | "round_robin"
+    | "multiple_level"; // frontend-only field
 }
 
 export interface CampaignOfferMapping {
@@ -311,7 +573,7 @@ export interface CampaignTemplate {
   name: string;
   description: string;
   category: string;
-  primary_objective: Campaign['objective'];
+  primary_objective: Campaign["objective"];
   default_segments: string[];
   default_offers: string[];
   default_scheduling: Partial<CampaignScheduling>;
@@ -320,7 +582,11 @@ export interface CampaignTemplate {
 export interface CampaignPreview {
   estimated_reach: number;
   segment_breakdown: { segment_name: string; count: number }[];
-  offer_mapping: { offer_name: string; segments: string[]; estimated_reach: number }[];
+  offer_mapping: {
+    offer_name: string;
+    segments: string[];
+    estimated_reach: number;
+  }[];
   estimated_cost: number;
   estimated_revenue: number;
   roi_projection: number;
@@ -329,15 +595,21 @@ export interface CampaignPreview {
 
 // Round Robin Configuration
 export interface IntervalConfig {
-  interval_type: 'hours' | 'days' | 'weeks';
+  interval_type: "hours" | "days" | "weeks";
   interval_value: number;
   description?: string;
 }
 
 // Multiple Level Configuration
 export interface ConditionConfig {
-  condition_type: 'customer_attribute' | 'behavior' | 'transaction' | 'custom';
-  operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'not_contains';
+  condition_type: "customer_attribute" | "behavior" | "transaction" | "custom";
+  operator:
+    | "equals"
+    | "not_equals"
+    | "greater_than"
+    | "less_than"
+    | "contains"
+    | "not_contains";
   field: string;
   value: string | number | boolean;
   description?: string;

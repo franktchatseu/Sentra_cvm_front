@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, XCircle, Clock, User } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { campaignService } from "../services/campaignService";
+import { useToast } from "../../../contexts/ToastContext";
 
 interface ApprovalHistoryEntry {
   id: number;
@@ -18,6 +19,7 @@ interface ApprovalHistoryEntry {
 export default function CampaignApprovalHistoryPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [history, setHistory] = useState<ApprovalHistoryEntry[]>([]);
   const [campaignName, setCampaignName] = useState("");
@@ -40,6 +42,11 @@ export default function CampaignApprovalHistoryPage() {
         );
       } catch (error) {
         console.error("Failed to fetch approval history:", error);
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load approval history.";
+        showError("Approval history unavailable", message);
         setHistory([]);
       } finally {
         setIsLoading(false);

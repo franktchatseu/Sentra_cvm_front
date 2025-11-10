@@ -225,7 +225,9 @@ export default function CommunicationPolicyPage() {
         </div>
       </div>
 
-      <div className={`${components.card.surface} overflow-hidden`}>
+      <div
+        className={`bg-white rounded-lg shadow-sm border border-[${color.border.default}] overflow-hidden`}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <span className={tw.textSecondary}>Loading policies...</span>
@@ -253,31 +255,37 @@ export default function CommunicationPolicyPage() {
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead
-                  className={`${tw.tableHeader} ${tw.borderDefault} border-b`}
+                  className={`border-b ${tw.borderDefault}`}
+                  style={{ background: color.surface.tableHeader }}
                 >
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Policy
                     </th>
                     <th
-                      className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Channels
                     </th>
                     <th
-                      className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Configuration Summary
                     </th>
                     <th
-                      className={`px-6 py-4 text-left ${tw.label} ${tw.textMuted}`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Status
                     </th>
                     <th
-                      className={`px-6 py-4 text-right ${tw.label} ${tw.textMuted}`}
+                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
@@ -333,9 +341,9 @@ export default function CommunicationPolicyPage() {
                           </button>
                           <button
                             onClick={() => handleDeletePolicy(policy)}
-                            className={`p-2 ${tw.danger} ${tw.statusDanger10} rounded-lg transition-colors`}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 text-red-600" />
                           </button>
                         </div>
                       </td>
@@ -390,7 +398,7 @@ export default function CommunicationPolicyPage() {
                         onClick={() => handleDeletePolicy(policy)}
                         className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4 text-red-600" />
                       </button>
                     </div>
                   </div>

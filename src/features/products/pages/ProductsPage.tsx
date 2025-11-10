@@ -149,7 +149,10 @@ export default function ProductsPage() {
       setTotal(totalCount);
       setTotalPages(Math.ceil(totalCount / limit) || 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load products");
+      const message =
+        err instanceof Error ? err.message : "Failed to load products";
+      showError("Failed to load products", message);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -517,9 +520,15 @@ export default function ProductsPage() {
       {/* Error Message */}
       {error && (
         <div
-          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 mb-6`}
+          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 mb-6 flex items-center justify-end`}
         >
-          <p className={`text-[${color.status.danger}]`}>{error}</p>
+          <button
+            onClick={() => loadProducts()}
+            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            style={{ backgroundColor: color.status.danger }}
+          >
+            Try Again
+          </button>
         </div>
       )}
 

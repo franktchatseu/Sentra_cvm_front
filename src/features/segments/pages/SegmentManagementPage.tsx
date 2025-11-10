@@ -266,7 +266,10 @@ export default function SegmentManagementPage() {
       setTotalCount(segmentData.length);
       setTotalPages(Math.ceil(segmentData.length / pageSize));
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to load segments");
+      const message =
+        (err as Error).message || "Failed to load segments. Please try again.";
+      showError("Failed to load segments", message);
+      setError(message);
       setSegments([]);
       setTotalCount(0);
       setTotalPages(1);
@@ -762,7 +765,6 @@ export default function SegmentManagementPage() {
         ) : error ? (
           <div className="p-8 text-center">
             <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-              <p className="text-red-600 font-medium mb-3 text-sm">{error}</p>
               <button
                 onClick={loadSegments}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
@@ -776,12 +778,10 @@ export default function SegmentManagementPage() {
             <div
               className={`bg-gradient-to-br from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 rounded-xl p-6 md:p-12`}
             >
-              <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-3`}>
+              <h3 className={`${tw.cardHeading} ${tw.textPrimary} mb-1`}>
                 No segments found
               </h3>
-              <p
-                className={`${tw.textSecondary} mb-8 text-sm max-w-md mx-auto`}
-              >
+              <p className="text-sm text-gray-600 mb-8 max-w-md mx-auto">
                 {searchTerm || selectedTags.length > 0
                   ? "No segments match your search criteria."
                   : "No segments have been created yet."}

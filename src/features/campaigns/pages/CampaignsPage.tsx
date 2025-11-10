@@ -20,6 +20,11 @@ import {
   History,
   CheckCircle,
   Send,
+  ChevronLeft,
+  ChevronRight,
+  Target,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -99,11 +104,18 @@ export default function CampaignsPage() {
     CampaignDisplay[]
   >([]);
   const [totalCampaigns, setTotalCampaigns] = useState(0);
-  const [currentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [categories, setCategories] = useState<
     Array<{ id: number; name: string; description?: string }>
   >([]);
+  const [campaignStats, setCampaignStats] = useState<{
+    total: number;
+    active: number;
+    draft: number;
+    pendingApproval: number;
+  } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Use click outside hook for filter modal
   useClickOutside(filterRef, () => setShowAdvancedFilters(false), {
@@ -123,9 +135,14 @@ export default function CampaignsPage() {
     try {
       const response = await campaignService.getCampaignCategories();
       console.log("Categories fetched:", response);
+      type CategoryRecord = {
+        id: number;
+        name: string;
+        description?: string;
+      };
       const categoriesData = Array.isArray(response)
         ? response
-        : (response as Record<string, unknown>)?.data || [];
+        : (response as { data?: CategoryRecord[] })?.data ?? [];
       setCategories(
         categoriesData as Array<{
           id: number;
@@ -135,9 +152,13 @@ export default function CampaignsPage() {
       );
     } catch (error) {
       console.error("Failed to fetch categories:", error);
+      showToast(
+        "error",
+        "Failed to load campaign categories. Please try again."
+      );
       setCategories([]);
     }
-  }, []);
+  }, [showToast]);
 
   // Fetch campaigns from API
   const fetchCampaigns = useCallback(async () => {
@@ -293,19 +314,142 @@ export default function CampaignsPage() {
           : campaignsWithDummyData;
 
       setCampaigns(finalCampaigns);
-      setTotalCampaigns(
-        selectedStatus === "all"
-          ? finalCampaigns.length
-          : response.pagination?.total || campaignsData.length
-      );
+      const total = response.pagination?.total || finalCampaigns.length;
+      setTotalCampaigns(total);
     } catch (error) {
       console.error("Failed to fetch campaigns:", error);
+      showToast(
+        "error",
+        "Failed to load campaigns. Please try again in a moment."
+      );
       setCampaigns([]);
       setTotalCampaigns(0);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedStatus, searchQuery, filters, currentPage, pageSize]);
+  }, [selectedStatus, searchQuery, currentPage, pageSize, showToast]);
+
+  // Fetch campaign stats
+  useEffect(() => {
+    const fetchCampaignStats = async () => {
+      try {
+        setStatsLoading(true);
+        const response = await campaignService.getCampaignStats(true);
+
+        if (response.success && response.data) {
+          const data = response.data;
+          // Parse the stats (they may come as strings or numbers)
+          const total =
+            parseInt(String(data.total_campaigns)) ||
+            (typeof data.total_campaigns === "number"
+              ? data.total_campaigns
+              : 0);
+
+          const activeNum = data.active_campaigns || data.currently_active;
+          const active =
+            typeof activeNum === "number"
+              ? activeNum
+              : parseInt(String(activeNum || "0"), 10) || 0;
+
+          const draftNum = data.in_draft;
+          const draft =
+            typeof draftNum === "number"
+              ? draftNum
+              : parseInt(String(draftNum || "0"), 10) || 0;
+
+          const pendingApprovalNum = data.pending_approval;
+          const pendingApproval =
+            typeof pendingApprovalNum === "number"
+              ? pendingApprovalNum
+              : parseInt(String(pendingApprovalNum || "0"), 10) || 0;
+
+          setCampaignStats({
+            total: Number(total),
+            active: Number(active),
+            draft: Number(draft),
+            pendingApproval: Number(pendingApproval),
+          });
+        } else {
+          // Fallback: calculate from all campaigns if stats endpoint fails
+          try {
+            const campaignsResponse = await campaignService.getCampaigns({
+              limit: 1000,
+              skipCache: true,
+            });
+            if (campaignsResponse.success && campaignsResponse.data) {
+              const allCampaigns = campaignsResponse.data;
+              const total = allCampaigns.length;
+              const active = allCampaigns.filter(
+                (c) => c.status === "active"
+              ).length;
+              const draft = allCampaigns.filter(
+                (c) => c.status === "draft"
+              ).length;
+              const pendingApproval = allCampaigns.filter(
+                (c) => c.approval_status === "pending"
+              ).length;
+              setCampaignStats({ total, active, draft, pendingApproval });
+            } else {
+              setCampaignStats({
+                total: 0,
+                active: 0,
+                draft: 0,
+                pendingApproval: 0,
+              });
+            }
+          } catch {
+            setCampaignStats({
+              total: 0,
+              active: 0,
+              draft: 0,
+              pendingApproval: 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch campaign stats:", error);
+        // Fallback: calculate from all campaigns
+        try {
+          const campaignsResponse = await campaignService.getCampaigns({
+            limit: 1000,
+            skipCache: true,
+          });
+          if (campaignsResponse.success && campaignsResponse.data) {
+            const allCampaigns = campaignsResponse.data;
+            const total = allCampaigns.length;
+            const active = allCampaigns.filter(
+              (c) => c.status === "active"
+            ).length;
+            const draft = allCampaigns.filter(
+              (c) => c.status === "draft"
+            ).length;
+            const pendingApproval = allCampaigns.filter(
+              (c) => c.approval_status === "pending"
+            ).length;
+            setCampaignStats({ total, active, draft, pendingApproval });
+          } else {
+            setCampaignStats({
+              total: 0,
+              active: 0,
+              draft: 0,
+              pendingApproval: 0,
+            });
+          }
+        } catch {
+          setCampaignStats({
+            total: 0,
+            active: 0,
+            draft: 0,
+            pendingApproval: 0,
+          });
+        }
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchCampaignStats();
+  }, []);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -554,9 +698,7 @@ export default function CampaignsPage() {
 
   const handlePauseCampaign = async (campaignId: number) => {
     try {
-      const pauseResponse = await campaignService.pauseCampaign(campaignId, {
-        comments: "Paused from campaigns list",
-      });
+      const pauseResponse = await campaignService.pauseCampaign(campaignId);
 
       // Update the campaign directly with the fresh data from API response
       const responseData = pauseResponse as unknown as {
@@ -620,6 +762,49 @@ export default function CampaignsPage() {
 
   const filteredCampaigns = campaigns;
 
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCampaigns / pageSize);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus, searchQuery]);
+
+  // Campaign stats cards data
+  const campaignStatsCards = [
+    {
+      name: "Total Campaigns",
+      value: campaignStats?.total?.toLocaleString() || "0",
+      icon: Target,
+      color: color.tertiary.tag1, // Purple
+    },
+    {
+      name: "Active Campaigns",
+      value: campaignStats?.active?.toLocaleString() || "0",
+      icon: CheckCircle,
+      color: color.tertiary.tag4, // Green
+    },
+    {
+      name: "Draft",
+      value: campaignStats?.draft?.toLocaleString() || "0",
+      icon: Clock,
+      color: color.tertiary.tag3, // Yellow
+    },
+    {
+      name: "Pending Approval",
+      value: campaignStats?.pendingApproval?.toLocaleString() || "0",
+      icon: AlertCircle,
+      color: color.tertiary.tag2, // Coral
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -639,77 +824,77 @@ export default function CampaignsPage() {
         </button>
       </div>
 
-      <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
-      >
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div className="flex flex-wrap gap-3">
-            {statusOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setSelectedStatus(option.value)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  selectedStatus === option.value
-                    ? "shadow-lg border-2"
-                    : "border"
-                }`}
-                style={{
-                  backgroundColor:
-                    selectedStatus === option.value ? "white" : "white",
-                  borderColor:
-                    selectedStatus === option.value
-                      ? color.primary.action
-                      : color.border.default,
-                  color:
-                    selectedStatus === option.value
-                      ? color.primary.action
-                      : color.text.secondary,
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedStatus !== option.value) {
-                    (
-                      e.target as HTMLButtonElement
-                    ).style.backgroundColor = `${color.primary.action}20`;
-                    (e.target as HTMLButtonElement).style.color =
-                      color.primary.action;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedStatus !== option.value) {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      "#f9fafb";
-                    (e.target as HTMLButtonElement).style.color =
-                      color.text.secondary;
-                  }
-                }}
-              >
-                {option.label} ({option.count})
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <div className="relative w-full sm:w-auto">
-              <Search
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[${color.text.muted}]`}
-              />
-              <input
-                type="text"
-                placeholder="Search campaigns..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 pr-4 py-2.5 border border-[${color.border.default}] rounded-lg focus:outline-none focus:ring-0 focus:border-[${color.primary.action}] w-full sm:w-72 text-sm`}
-              />
-            </div>
-            <button
-              onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5 border border-[${color.border.default}] ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors text-base font-medium w-full sm:w-auto`}
+      {/* Campaign Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {campaignStatsCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.name}
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
-              <Filter className="h-5 w-5 mr-2" />
-              Filters
-            </button>
-          </div>
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: stat.color || color.primary.accent,
+                      }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={`text-3xl font-bold ${tw.textPrimary}`}>
+                        {statsLoading ? "..." : stat.value}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {stat.name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5"
+            style={{ color: color.text.muted }}
+          />
+          <input
+            type="text"
+            placeholder="Search campaigns..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && setSearchQuery(searchQuery)}
+            className={`w-full pl-10 pr-4 py-3 text-sm border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
+          />
         </div>
+
+        <HeadlessSelect
+          options={statusOptions.map((option) => ({
+            value: option.value,
+            label: `${option.label} (${option.count})`,
+          }))}
+          value={selectedStatus}
+          onChange={(value) => setSelectedStatus(value as string)}
+          placeholder="All Status"
+          className=""
+        />
+
+        <button
+          onClick={() => setShowAdvancedFilters(true)}
+          className={`flex items-center px-4 py-2 rounded-lg bg-gray-50 transition-colors text-sm font-medium`}
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          Filters
+        </button>
       </div>
 
       <div
@@ -728,39 +913,46 @@ export default function CampaignsPage() {
             </p>
           </div>
         ) : filteredCampaigns.length > 0 ? (
-          <div>
+          <div className="overflow-hidden rounded-lg border border-gray-200">
             <table className="min-w-full">
               <thead
-                className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.border.default}]`}
+                className={`border-b ${tw.borderDefault}`}
+                style={{ background: color.surface.tableHeader }}
               >
                 <tr>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
                   >
                     Campaign
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
                   >
                     Status
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider hidden lg:table-cell`}
+                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell`}
+                    style={{ color: color.surface.tableHeaderText }}
                   >
                     Segment
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider hidden md:table-cell`}
+                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell`}
+                    style={{ color: color.surface.tableHeaderText }}
                   >
                     Performance
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider hidden xl:table-cell`}
+                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell`}
+                    style={{ color: color.surface.tableHeaderText }}
                   >
                     Dates
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
                   >
                     Actions
                   </th>
@@ -775,33 +967,10 @@ export default function CampaignsPage() {
                     className={`group hover:bg-gray-50/30 transition-all duration-300 relative`}
                   >
                     <td className="px-6 py-3">
-                      <div className="flex items-center space-x-4">
-                        <div className="min-w-0 flex-1">
-                          <div
-                            className={`font-semibold text-base ${tw.textPrimary} truncate`}
-                          >
-                            {campaign.name}
-                          </div>
-                          {campaign.description && (
-                            <div className="mt-1 text-sm text-gray-500 truncate">
-                              {campaign.description}
-                            </div>
-                          )}
-                          <div className="mt-2 flex items-center space-x-2">
-                            <span
-                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border"
-                              style={{
-                                backgroundColor: "#F0FDF4",
-                                color: "#16A34A",
-                                borderColor: "#BBF7D0",
-                              }}
-                            >
-                              <span className="capitalize">
-                                {campaign.objective || "Acquisition"}
-                              </span>
-                            </span>
-                          </div>
-                        </div>
+                      <div
+                        className={`font-semibold text-base ${tw.textPrimary} truncate`}
+                      >
+                        {campaign.name}
                       </div>
                     </td>
                     <td className="px-6 py-3">
@@ -975,7 +1144,8 @@ export default function CampaignsPage() {
                               style={{
                                 maxHeight: "80vh",
                                 overflowY: "auto",
-                                zIndex: 9999,
+                                zIndex: 99999,
+                                position: "absolute",
                               }}
                             >
                               <button
@@ -1093,10 +1263,7 @@ export default function CampaignsPage() {
                                   }}
                                   className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
                                 >
-                                  <Trash2
-                                    className="w-4 h-4 mr-4"
-                                    style={{ color: "#EF4444" }}
-                                  />
+                                  <Trash2 className="w-4 h-4 mr-4 text-red-600" />
                                   Reject Campaign
                                 </button>
                               )}
@@ -1327,7 +1494,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-red-50 transition-colors"
                               >
-                                <Trash2 className="w-4 h-4 mr-4 text-red-500" />
+                                <Trash2 className="w-4 h-4 mr-4 text-red-600" />
                                 Delete Campaign
                               </button>
                             </div>
@@ -1362,6 +1529,42 @@ export default function CampaignsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {!isLoading && filteredCampaigns.length > 0 && totalCampaigns > 0 && (
+        <div
+          className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div
+              className={`text-base ${tw.textSecondary} text-center sm:text-left`}
+            >
+              Showing {(currentPage - 1) * pageSize + 1} to{" "}
+              {Math.min(currentPage * pageSize, totalCampaigns)} of{" "}
+              {totalCampaigns} campaigns
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className={`text-base ${tw.textSecondary} px-2`}>
+                Page {currentPage} of {totalPages || 1}
+              </span>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters Side Modal */}
       {showAdvancedFilters &&

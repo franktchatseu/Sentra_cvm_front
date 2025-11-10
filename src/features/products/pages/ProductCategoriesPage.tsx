@@ -318,12 +318,12 @@ function ProductsModal({
                     </div>
                   ) : filteredProducts.length === 0 ? (
                     <div className="text-center py-8">
-                        <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
+                      <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
                         {searchTerm
                           ? "No products found"
                           : "No products in this category"}
                       </h3>
-                        <p className="text-sm text-gray-600 mb-4">
+                      <p className="text-sm text-gray-600 mb-4">
                         {searchTerm
                           ? "Try adjusting your search terms"
                           : "Create a new product or assign an existing one to this category"}
@@ -1119,9 +1119,15 @@ export default function ProductCatalogsPage() {
       {/* Error Message */}
       {error && (
         <div
-          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-xl p-4`}
+          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 flex items-center justify-end`}
         >
-          <p className="text-sm font-medium">{error}</p>
+          <button
+            onClick={() => loadCategories(true)}
+            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            style={{ backgroundColor: color.status.danger }}
+          >
+            Try Again
+          </button>
         </div>
       )}
 

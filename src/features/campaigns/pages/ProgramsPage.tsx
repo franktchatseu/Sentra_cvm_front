@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Edit, Trash2, X, ArrowLeft, Power, PowerOff } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  X,
+  ArrowLeft,
+  Power,
+  PowerOff,
+} from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -13,7 +22,12 @@ interface ProgramModalProps {
   isOpen: boolean;
   onClose: () => void;
   program?: Program;
-  onSave: (program: { name: string; code: string; description?: string; budget_total?: number }) => Promise<void>;
+  onSave: (program: {
+    name: string;
+    code: string;
+    description?: string;
+    budget_total?: number;
+  }) => Promise<void>;
   isSaving?: boolean;
 }
 
@@ -69,7 +83,9 @@ function ProgramModal({
       name: formData.name.trim(),
       code: formData.code.trim(),
       description: formData.description.trim() || undefined,
-      budget_total: formData.budget_total ? parseFloat(formData.budget_total) : undefined,
+      budget_total: formData.budget_total
+        ? parseFloat(formData.budget_total)
+        : undefined,
     };
 
     await onSave(programData);
@@ -135,7 +151,10 @@ function ProgramModal({
                 type="number"
                 value={formData.budget_total}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, budget_total: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    budget_total: e.target.value,
+                  }))
                 }
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Enter budget amount"
@@ -269,7 +288,8 @@ export default function ProgramsPage() {
       await loadPrograms(true);
     } catch (err) {
       console.error("Error deleting program:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete program";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete program";
       showError(errorMessage);
     }
   };
@@ -278,7 +298,7 @@ export default function ProgramsPage() {
     try {
       // TODO: Get actual user ID from auth context
       const userId = 1;
-      
+
       if (program.is_active) {
         await programService.deactivateProgram(Number(program.id), userId);
         showToast(`Program "${program.name}" deactivated successfully!`);
@@ -286,11 +306,12 @@ export default function ProgramsPage() {
         await programService.activateProgram(Number(program.id), userId);
         showToast(`Program "${program.name}" activated successfully!`);
       }
-      
+
       await loadPrograms(true);
     } catch (err) {
       console.error("Error toggling program status:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to toggle program status";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to toggle program status";
       showError(errorMessage);
     }
   };
@@ -305,16 +326,13 @@ export default function ProgramsPage() {
       setIsSaving(true);
       // TODO: Get actual user ID from auth context
       const userId = 1;
-      
+
       if (editingProgram) {
         // Update existing program
-        await programService.updateProgram(
-          Number(editingProgram.id),
-          {
-            ...programData,
-            updated_by: userId,
-          }
-        );
+        await programService.updateProgram(Number(editingProgram.id), {
+          ...programData,
+          updated_by: userId,
+        });
         showToast("Program updated successfully!");
       } else {
         // Create new program
@@ -329,7 +347,8 @@ export default function ProgramsPage() {
       await loadPrograms(true); // Skip cache to get fresh data
     } catch (err) {
       console.error("Failed to save program:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to save program";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to save program";
       showError(errorMessage);
     } finally {
       setIsSaving(false);
@@ -434,31 +453,37 @@ export default function ProgramsPage() {
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead
-                  className={`bg-gradient-to-r from-gray-50 to-gray-50/80 border-b border-[${color.border.default}]`}
+                  className={`border-b ${tw.borderDefault}`}
+                  style={{ background: color.surface.tableHeader }}
                 >
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Program
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Code
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Budget
                     </th>
                     <th
-                      className={`px-6 py-4 text-center text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-center text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Status
                     </th>
                     <th
-                      className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
@@ -485,17 +510,24 @@ export default function ProgramsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className={`text-sm font-mono ${tw.textSecondary}`}>
+                        <div
+                          className={`text-sm font-mono ${tw.textSecondary}`}
+                        >
                           {program.code}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className={`text-sm ${tw.textPrimary}`}>
-                          {program.budget_total ? `$${parseFloat(program.budget_total).toLocaleString()}` : '-'}
+                          {program.budget_total
+                            ? `$${parseFloat(
+                                program.budget_total
+                              ).toLocaleString()}`
+                            : "-"}
                         </div>
                         {program.budget_spent && (
                           <div className={`text-xs ${tw.textMuted}`}>
-                            Spent: ${parseFloat(program.budget_spent).toLocaleString()}
+                            Spent: $
+                            {parseFloat(program.budget_spent).toLocaleString()}
                           </div>
                         )}
                       </td>
@@ -503,11 +535,11 @@ export default function ProgramsPage() {
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                             program.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          {program.is_active ? 'Active' : 'Inactive'}
+                          {program.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -516,12 +548,18 @@ export default function ProgramsPage() {
                             onClick={() => handleToggleActive(program)}
                             className={`p-2 rounded-lg transition-colors ${
                               program.is_active
-                                ? 'text-orange-600 hover:bg-orange-50'
-                                : 'text-green-600 hover:bg-green-50'
+                                ? "text-orange-600 hover:bg-orange-50"
+                                : "text-green-600 hover:bg-green-50"
                             }`}
-                            title={program.is_active ? 'Deactivate' : 'Activate'}
+                            title={
+                              program.is_active ? "Deactivate" : "Activate"
+                            }
                           >
-                            {program.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                            {program.is_active ? (
+                              <PowerOff className="w-4 h-4" />
+                            ) : (
+                              <Power className="w-4 h-4" />
+                            )}
                           </button>
                           <button
                             onClick={() => handleEditProgram(program)}
@@ -547,7 +585,7 @@ export default function ProgramsPage() {
                             onClick={() => handleDeleteProgram(program)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 text-red-600" />
                           </button>
                         </div>
                       </td>
@@ -566,10 +604,14 @@ export default function ProgramsPage() {
                   <div className="flex flex-col space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
+                        <div
+                          className={`text-base font-semibold ${tw.textPrimary} mb-1`}
+                        >
                           {program.name}
                         </div>
-                        <div className={`text-xs font-mono ${tw.textMuted} mb-2`}>
+                        <div
+                          className={`text-xs font-mono ${tw.textMuted} mb-2`}
+                        >
                           {program.code}
                         </div>
                         <div className={`text-sm ${tw.textSecondary} mb-2`}>
@@ -579,36 +621,42 @@ export default function ProgramsPage() {
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           program.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {program.is_active ? 'Active' : 'Inactive'}
+                        {program.is_active ? "Active" : "Inactive"}
                       </span>
                     </div>
-                    
+
                     {program.budget_total && (
                       <div className={`text-sm ${tw.textPrimary}`}>
-                        Budget: ${parseFloat(program.budget_total).toLocaleString()}
+                        Budget: $
+                        {parseFloat(program.budget_total).toLocaleString()}
                         {program.budget_spent && (
                           <span className={`text-xs ${tw.textMuted} ml-2`}>
-                            (Spent: ${parseFloat(program.budget_spent).toLocaleString()})
+                            (Spent: $
+                            {parseFloat(program.budget_spent).toLocaleString()})
                           </span>
                         )}
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-end space-x-2 pt-2 border-t">
                       <button
                         onClick={() => handleToggleActive(program)}
                         className={`p-2 rounded-lg transition-colors ${
                           program.is_active
-                            ? 'text-orange-600 hover:bg-orange-50'
-                            : 'text-green-600 hover:bg-green-50'
+                            ? "text-orange-600 hover:bg-orange-50"
+                            : "text-green-600 hover:bg-green-50"
                         }`}
-                        title={program.is_active ? 'Deactivate' : 'Activate'}
+                        title={program.is_active ? "Deactivate" : "Activate"}
                       >
-                        {program.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                        {program.is_active ? (
+                          <PowerOff className="w-4 h-4" />
+                        ) : (
+                          <Power className="w-4 h-4" />
+                        )}
                       </button>
                       <button
                         onClick={() => handleEditProgram(program)}

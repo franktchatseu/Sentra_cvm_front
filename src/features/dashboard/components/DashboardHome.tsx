@@ -1,15 +1,38 @@
+const parseMetricValue = (value: unknown): number => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+type RecentCampaign = {
+  id: number;
+  name: string;
+  status: string;
+  statusDisplay: string;
+  objective: string;
+  performance?: {
+    response: number;
+    delivered: number;
+    converted: number;
+  };
+  created_at?: string;
+};
+
 import {
   ArrowUpRight,
   ArrowDownRight,
   Clock,
   ArrowRight,
   Users,
-  TrendingUp,
   Target,
   Package,
   Folder,
   ShoppingBag,
   ChevronDown,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -20,8 +43,12 @@ import { offerService } from "../../offers/services/offerService";
 import { segmentService } from "../../segments/services/segmentService";
 import { productService } from "../../products/services/productService";
 import { campaignService } from "../../campaigns/services/campaignService";
-import type { CampaignResponse } from "../../campaigns/services/campaignService";
-import type { GetCampaignsResponse } from "../../campaigns/types/campaign";
+import { buildApiUrl } from "../../../shared/services/api";
+import type {
+  CampaignStatus,
+  CampaignStatsSummary,
+  BackendCampaignType,
+} from "../../campaigns/types/campaign";
 import {
   PieChart,
   Pie,
@@ -35,27 +62,32 @@ export default function DashboardHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const extractCampaignTotal = useCallback(
-    (response?: CampaignResponse | GetCampaignsResponse | null): number => {
-      if (!response) return 0;
+  const extractCampaignTotal = useCallback((response?: unknown): number => {
+    if (!response || typeof response !== "object") return 0;
+    const maybeError = response as { success?: boolean };
+    if ("success" in maybeError && maybeError.success === false) {
+      return 0;
+    }
 
-      const metaTotal =
-        (response as CampaignResponse)?.meta?.total ?? undefined;
-      if (typeof metaTotal === "number") {
-        return metaTotal;
-      }
+    const withPagination = response as {
+      pagination?: { total?: number };
+    };
+    if (withPagination.pagination?.total != null) {
+      return parseMetricValue(withPagination.pagination.total);
+    }
 
-      const paginationTotal =
-        (response as GetCampaignsResponse)?.pagination?.total ?? undefined;
-      if (typeof paginationTotal === "number") {
-        return paginationTotal;
-      }
+    const withMeta = response as { meta?: { total?: number } };
+    if (withMeta.meta?.total != null) {
+      return parseMetricValue(withMeta.meta.total);
+    }
 
-      const dataArray = (response as { data?: unknown[] })?.data;
-      return Array.isArray(dataArray) ? dataArray.length : 0;
-    },
-    []
-  );
+    const withData = response as { data?: unknown[] };
+    if (Array.isArray(withData.data)) {
+      return withData.data.length;
+    }
+
+    return 0;
+  }, []);
 
   // State for distributions
   const [offerTypeDistribution, setOfferTypeDistribution] = useState<
@@ -81,7 +113,7 @@ export default function DashboardHome() {
   useClickOutside(dropdownRef, () => setIsFilterDropdownOpen(false));
 
   // State for latest items data
-  const [recentCampaigns, setRecentCampaigns] = useState<any[]>([]);
+  const [recentCampaigns, setRecentCampaigns] = useState<RecentCampaign[]>([]);
   const [recentOffers, setRecentOffers] = useState<
     Array<{
       id: number;
@@ -112,6 +144,7 @@ export default function DashboardHome() {
       created_at?: string;
     }>
   >([]);
+  const [recentItemsLoading, setRecentItemsLoading] = useState(true);
 
   // State for stats
   const [offersStats, setOffersStats] = useState<{
@@ -128,7 +161,34 @@ export default function DashboardHome() {
   const [campaignsStats, setCampaignsStats] = useState<{
     total: number;
     active: number;
+    completed: number;
   } | null>(null);
+  const [campaignStatusDistribution, setCampaignStatusDistribution] = useState<
+    Array<{ status: string; count: number; percentage: number; color: string }>
+  >([]);
+
+  const statusColorMap = useMemo<Record<string, string>>(
+    () => ({
+      draft: color.charts.campaigns.draft,
+      pending_approval: color.charts.campaigns.pending,
+      approved: color.charts.campaigns.completed,
+      scheduled: color.charts.campaigns.pending,
+      active: color.charts.campaigns.active,
+      paused: color.charts.campaigns.paused,
+      completed: color.charts.campaigns.completed,
+      cancelled: color.charts.campaigns.pending,
+      archived: color.charts.campaigns.draft,
+      rejected: color.charts.campaigns.pending,
+    }),
+    []
+  );
+
+  const formatStatusLabel = useCallback((status: string) => {
+    return status
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }, []);
 
   // State for percentage changes
   const [percentageChanges, setPercentageChanges] = useState<{
@@ -346,34 +406,93 @@ export default function DashboardHome() {
       }
 
       try {
-        // Fetch campaigns stats
-        const campaignsResponse = await campaignService.getCampaigns({
-          limit: 1,
-          skipCache: true,
-        });
-        const total = extractCampaignTotal(campaignsResponse);
+        const campaignsStatsResponse = await campaignService.getCampaignStats(
+          true
+        );
 
-        // Get active campaigns count
-        const activeCampaignsResponse = await campaignService.getCampaigns({
-          limit: 1,
-          status: "active",
-          skipCache: true,
-        });
-        const active = extractCampaignTotal(activeCampaignsResponse);
+        if (campaignsStatsResponse.success && campaignsStatsResponse.data) {
+          const statsData = campaignsStatsResponse.data as CampaignStatsSummary;
+          const total = parseMetricValue(statsData.total_campaigns);
+          const active = parseMetricValue(
+            statsData.active_campaigns ?? statsData.currently_active
+          );
+          const completed = parseMetricValue(statsData.completed);
 
-        setCampaignsStats({ total, active });
-      } catch (error) {
-        console.error("Failed to fetch campaigns stats:", error);
-        setCampaignsStats({ total: 0, active: 0 });
+          setCampaignsStats({ total, active, completed });
+
+          const initialStatusCounts: Record<string, number> = {
+            draft: parseMetricValue(statsData.in_draft ?? 0),
+            pending_approval: parseMetricValue(statsData.pending_approval ?? 0),
+            active,
+            completed: parseMetricValue(statsData.completed ?? 0),
+            archived: parseMetricValue(statsData.archived ?? 0),
+            rejected: parseMetricValue(statsData.rejected ?? 0),
+          };
+
+          const supplementaryStatuses: CampaignStatus[] = [
+            "paused",
+            "cancelled",
+          ];
+
+          const supplementary = await Promise.all(
+            supplementaryStatuses.map(async (status) => {
+              try {
+                const response = await campaignService.getCampaignsByStatus(
+                  status,
+                  {
+                    limit: 1,
+                    skipCache: true,
+                  }
+                );
+                return {
+                  status,
+                  count: extractCampaignTotal(response),
+                };
+              } catch {
+                return { status, count: 0 };
+              }
+            })
+          );
+
+          supplementary.forEach(({ status, count }) => {
+            if (count > 0) {
+              initialStatusCounts[status] =
+                (initialStatusCounts[status] ?? 0) + count;
+            }
+          });
+
+          const statusEntries = Object.entries(initialStatusCounts).filter(
+            ([, count]) => count > 0
+          );
+
+          const totalForDistribution =
+            statusEntries.reduce((sum, [, count]) => sum + count, 0) || total;
+
+          setCampaignStatusDistribution(
+            statusEntries.map(([statusKey, count]) => ({
+              status: formatStatusLabel(statusKey),
+              count,
+              percentage:
+                totalForDistribution > 0
+                  ? (count / totalForDistribution) * 100
+                  : 0,
+              color:
+                statusColorMap[statusKey] ?? color.charts.campaigns.pending,
+            }))
+          );
+        }
+      } catch {
+        // Error fetching campaign stats
       }
     };
 
     fetchStats();
-  }, [extractCampaignTotal]);
+  }, [extractCampaignTotal, formatStatusLabel, statusColorMap]);
 
   // Fetch latest items (offers, segments, products)
   useEffect(() => {
     const fetchLatestItems = async () => {
+      setRecentItemsLoading(true);
       try {
         // Fetch latest offers
         const offersResponse = await offerService.searchOffers({ limit: 3 });
@@ -405,9 +524,12 @@ export default function DashboardHome() {
               }
             );
           setRecentOffers(formattedOffers);
+        } else {
+          setRecentOffers([]);
         }
       } catch {
         // Error fetching offers
+        setRecentOffers([]);
       }
 
       try {
@@ -441,9 +563,12 @@ export default function DashboardHome() {
               }
             );
           setRecentSegments(formattedSegments);
+        } else {
+          setRecentSegments([]);
         }
       } catch {
         // Error fetching segments
+        setRecentSegments([]);
       }
 
       try {
@@ -479,8 +604,12 @@ export default function DashboardHome() {
               }
             );
           setRecentProducts(formattedProducts);
+        } else {
+          setRecentProducts([]);
         }
-      } catch (error) {}
+      } catch {
+        setRecentProducts([]);
+      }
 
       try {
         // Fetch latest campaigns
@@ -495,31 +624,40 @@ export default function DashboardHome() {
         ) {
           const formattedCampaigns = campaignsResponse.data
             .slice(0, 3)
-            .map((campaign: any) => {
+            .map((campaign: BackendCampaignType) => {
+              const participants = parseMetricValue(
+                campaign.current_participants ?? 0
+              );
+              // Extract objective from campaign
+              const objective = campaign.objective || "N/A";
+
               return {
                 id: campaign.id,
                 name: campaign.name,
-                status: campaign.status?.toLowerCase() || "draft",
-                segment: campaign.metadata?.channel || "Unknown",
+                status: campaign.status,
+                statusDisplay: formatStatusLabel(campaign.status),
+                objective,
                 performance: {
-                  response: campaign.current_participants || 0,
-                  delivered: campaign.current_participants || 0,
-                  converted: Math.floor(
-                    (campaign.current_participants || 0) * 0.15
-                  ),
+                  response: participants,
+                  delivered: participants,
+                  converted: Math.floor(participants * 0.15),
                 },
-                created_at: campaign.created_at,
+                created_at: campaign.created_at ?? undefined,
               };
             });
           setRecentCampaigns(formattedCampaigns);
+        } else {
+          setRecentCampaigns([]);
         }
-      } catch (error) {
-        console.error("Failed to fetch campaigns:", error);
+      } catch {
+        setRecentCampaigns([]);
+      } finally {
+        setRecentItemsLoading(false);
       }
     };
 
     fetchLatestItems();
-  }, []);
+  }, [formatStatusLabel]);
 
   // Fetch Top Performing Offers
   // useEffect(() => {
@@ -722,21 +860,41 @@ export default function DashboardHome() {
         }
 
         // Calculate Campaigns percentage change using date range
+        // This endpoint is used to get campaign counts for current vs previous month
+        // to calculate the percentage change shown in the "Total Campaigns" stat card
         try {
-          const currentCampaigns = await campaignService.getAllCampaigns({
-            startDateFrom: currentMonthStart.toISOString(),
-            startDateTo: currentMonthEnd.toISOString(),
-            page: 1,
-            pageSize: 1,
-            skipCache: true,
-          });
-          const previousCampaigns = await campaignService.getAllCampaigns({
-            startDateFrom: previousMonthStart.toISOString(),
-            startDateTo: previousMonthEnd.toISOString(),
-            page: 1,
-            pageSize: 1,
-            skipCache: true,
-          });
+          const currentMonthEndpoint = buildApiUrl(
+            `/campaigns/date-range?startDate=${currentMonthStart.toISOString()}&endDate=${currentMonthEnd.toISOString()}&limit=1&offset=0&skipCache=true`
+          );
+          console.log(
+            "Fetching current month campaigns for percentage change:",
+            currentMonthEndpoint
+          );
+          const currentCampaigns =
+            await campaignService.getCampaignsByDateRange({
+              startDate: currentMonthStart.toISOString(),
+              endDate: currentMonthEnd.toISOString(),
+              limit: 1,
+              offset: 0,
+              skipCache: true,
+            });
+          console.log("Current month campaigns response:", currentCampaigns);
+
+          const previousMonthEndpoint = buildApiUrl(
+            `/campaigns/date-range?startDate=${previousMonthStart.toISOString()}&endDate=${previousMonthEnd.toISOString()}&limit=1&offset=0&skipCache=true`
+          );
+          console.log(
+            "Fetching previous month campaigns for percentage change:",
+            previousMonthEndpoint
+          );
+          const previousCampaigns =
+            await campaignService.getCampaignsByDateRange({
+              startDate: previousMonthStart.toISOString(),
+              endDate: previousMonthEnd.toISOString(),
+              limit: 1,
+              offset: 0,
+              skipCache: true,
+            });
 
           const currentCount = extractCampaignTotal(currentCampaigns);
           const previousCount = extractCampaignTotal(previousCampaigns);
@@ -753,7 +911,7 @@ export default function DashboardHome() {
             campaigns: campaignsChange,
           }));
         } catch {
-          // Error calculating campaigns change
+          // Error calculating campaigns percentage change
         }
 
         // Calculate Segments percentage change using date-based filtering
@@ -867,11 +1025,17 @@ export default function DashboardHome() {
     extractCampaignTotal,
   ]);
 
+  // Calculate conversion rate from campaign stats
+  const conversionRate = useMemo(() => {
+    if (!campaignsStats || campaignsStats.total === 0) return null;
+    return (campaignsStats.completed / campaignsStats.total) * 100;
+  }, [campaignsStats]);
+
   // Stats data - using real data from API
   const stats = [
     {
       name: "Total Campaigns",
-      value: campaignsStats?.total?.toLocaleString() || "0",
+      value: campaignsStats?.total?.toLocaleString() ?? "",
       change:
         percentageChanges.campaigns !== null
           ? `${
@@ -932,7 +1096,7 @@ export default function DashboardHome() {
           ? `${
               percentageChanges.products >= 0 ? "+" : ""
             }${percentageChanges.products.toFixed(1)}%`
-          : "+15%", // Placeholder if calculation not available
+          : "N/A",
       changeType:
         percentageChanges.products !== null
           ? percentageChanges.products >= 0
@@ -943,8 +1107,8 @@ export default function DashboardHome() {
     },
     {
       name: "Conversion Rate",
-      value: "18.5%",
-      change: "+5.2%",
+      value: conversionRate !== null ? `${conversionRate.toFixed(1)}%` : "",
+      change: "N/A",
       changeType: "positive" as const,
       icon: TrendingUp,
     },
@@ -953,6 +1117,11 @@ export default function DashboardHome() {
   const quickInsights = useMemo(() => {
     const pendingApprovalCount = offersStats?.pendingApproval ?? 0;
     const productTotal = productsStats?.total ?? 0;
+    const activeCampaignsCount = campaignsStats?.active ?? 0;
+    const pendingApprovalCampaigns =
+      campaignStatusDistribution.find(
+        (item) => item.status === formatStatusLabel("pending_approval")
+      )?.count ?? 0;
 
     return [
       {
@@ -966,9 +1135,22 @@ export default function DashboardHome() {
         valueColor: color.primary.accent,
       },
       {
-        label: "Largest segment",
-        value: "High Value Customers",
-        description: "18,240 members • Growth +4.2% MoM",
+        label: "Active campaigns",
+        value: activeCampaignsCount.toLocaleString(),
+        description:
+          activeCampaignsCount > 0
+            ? "Currently running customer engagement campaigns"
+            : "No campaigns are running right now",
+        icon: Target,
+        valueColor: color.primary.accent,
+      },
+      {
+        label: "Pending approvals",
+        value: pendingApprovalCampaigns.toLocaleString(),
+        description:
+          pendingApprovalCampaigns > 0
+            ? "Campaigns awaiting approval decisions"
+            : "No campaigns are pending approval",
         icon: Users,
         valueColor: color.primary.accent,
       },
@@ -982,57 +1164,14 @@ export default function DashboardHome() {
         icon: Package,
         valueColor: color.primary.accent,
       },
-      {
-        label: "Upcoming campaign launch",
-        value: "Holiday Rewards Blast",
-        description: "Scheduled Nov 15 • Campaign setup complete",
-        icon: ArrowRight,
-        valueColor: color.primary.accent,
-      },
     ];
-  }, [offersStats, productsStats]);
-
-  const campaigns = [
-    {
-      id: 1,
-      name: "Q1 Customer Retention Campaign",
-      status: "active",
-      segment: "High Value Customers",
-      performance: {
-        response: 15420,
-        delivered: 14500,
-        converted: 2680,
-      },
-      created_at: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Spring Promotion Campaign",
-      status: "active",
-      segment: "Premium Members",
-      performance: {
-        response: 12350,
-        delivered: 11800,
-        converted: 1890,
-      },
-      created_at: "2024-02-20",
-    },
-    {
-      id: 3,
-      name: "New Customer Onboarding",
-      status: "pending",
-      segment: "New Signups",
-      start_date: "2024-03-10",
-      created_at: "2024-02-28",
-    },
-    {
-      id: 4,
-      name: "Churn Prevention Initiative",
-      status: "paused",
-      segment: "At-Risk Customers",
-      created_at: "2024-01-10",
-    },
-  ];
+  }, [
+    offersStats,
+    productsStats,
+    campaignsStats,
+    campaignStatusDistribution,
+    formatStatusLabel,
+  ]);
 
   // CVM-relevant metrics: Top Performing Campaigns
   const topCampaigns = [
@@ -1091,34 +1230,6 @@ export default function DashboardHome() {
       acceptanceRate: "42%",
       engagement: "6,230",
       status: "Active",
-    },
-  ];
-
-  // Dummy data for distributions - using chart token colors
-  const campaignStatusDistribution = [
-    {
-      status: "Active",
-      count: 24,
-      percentage: 60,
-      color: color.charts.campaigns.active,
-    },
-    {
-      status: "Pending",
-      count: 8,
-      percentage: 20,
-      color: color.charts.campaigns.pending,
-    },
-    {
-      status: "Paused",
-      count: 5,
-      percentage: 12.5,
-      color: color.charts.campaigns.paused,
-    },
-    {
-      status: "Completed",
-      count: 3,
-      percentage: 7.5,
-      color: color.charts.campaigns.completed,
     },
   ];
 
@@ -1452,8 +1563,19 @@ export default function DashboardHome() {
 
             <div className="p-6">
               <div className="space-y-4">
+                {/* Loading State */}
+                {recentItemsLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+                    <span className="ml-3 text-sm text-gray-500">
+                      Loading {latestItemsFilter}...
+                    </span>
+                  </div>
+                )}
+
                 {/* Campaigns */}
-                {latestItemsFilter === "campaigns" &&
+                {!recentItemsLoading &&
+                  latestItemsFilter === "campaigns" &&
                   recentCampaigns.slice(0, 3).map((campaign) => (
                     <div
                       key={campaign.id}
@@ -1481,13 +1603,13 @@ export default function DashboardHome() {
                               campaign.status
                             )}`}
                           >
-                            {campaign.status}
+                            {campaign.statusDisplay}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-black">
                           <span className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            {campaign.segment}
+                            <Target className="h-4 w-4" />
+                            {campaign.objective}
                           </span>
                           {campaign.performance && (
                             <>
@@ -1505,7 +1627,8 @@ export default function DashboardHome() {
                   ))}
 
                 {/* Offers */}
-                {latestItemsFilter === "offers" &&
+                {!recentItemsLoading &&
+                  latestItemsFilter === "offers" &&
                   recentOffers.slice(0, 3).map((offer) => (
                     <div
                       key={offer.id}
@@ -1545,7 +1668,8 @@ export default function DashboardHome() {
                   ))}
 
                 {/* Segments */}
-                {latestItemsFilter === "segments" &&
+                {!recentItemsLoading &&
+                  latestItemsFilter === "segments" &&
                   recentSegments.slice(0, 3).map((segment) => (
                     <div
                       key={segment.id}
@@ -1585,7 +1709,8 @@ export default function DashboardHome() {
                   ))}
 
                 {/* Products */}
-                {latestItemsFilter === "products" &&
+                {!recentItemsLoading &&
+                  latestItemsFilter === "products" &&
                   recentProducts.slice(0, 3).map((product) => (
                     <div
                       key={product.id}
@@ -1627,38 +1752,39 @@ export default function DashboardHome() {
                   ))}
 
                 {/* Empty State */}
-                {((latestItemsFilter === "campaigns" &&
-                  recentCampaigns.length === 0) ||
-                  (latestItemsFilter === "offers" &&
-                    recentOffers.length === 0) ||
-                  (latestItemsFilter === "segments" &&
-                    recentSegments.length === 0) ||
-                  (latestItemsFilter === "products" &&
-                    recentProducts.length === 0)) && (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-500 mb-2">
-                        No {latestItemsFilter} found
-                      </p>
-                      <button
-                        onClick={() => {
-                          if (latestItemsFilter === "campaigns") {
-                            navigate("/dashboard/campaigns/create");
-                          } else if (latestItemsFilter === "offers") {
-                            navigate("/dashboard/offers/create");
-                          } else if (latestItemsFilter === "segments") {
-                            navigate("/dashboard/segments/create");
-                          } else if (latestItemsFilter === "products") {
-                            navigate("/dashboard/products/create");
-                          }
-                        }}
-                        className="text-sm font-medium text-black hover:text-gray-700"
-                      >
-                        Create your first {latestItemsFilter.slice(0, -1)} →
-                      </button>
+                {!recentItemsLoading &&
+                  ((latestItemsFilter === "campaigns" &&
+                    recentCampaigns.length === 0) ||
+                    (latestItemsFilter === "offers" &&
+                      recentOffers.length === 0) ||
+                    (latestItemsFilter === "segments" &&
+                      recentSegments.length === 0) ||
+                    (latestItemsFilter === "products" &&
+                      recentProducts.length === 0)) && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-2">
+                          No {latestItemsFilter} found
+                        </p>
+                        <button
+                          onClick={() => {
+                            if (latestItemsFilter === "campaigns") {
+                              navigate("/dashboard/campaigns/create");
+                            } else if (latestItemsFilter === "offers") {
+                              navigate("/dashboard/offers/create");
+                            } else if (latestItemsFilter === "segments") {
+                              navigate("/dashboard/segments/create");
+                            } else if (latestItemsFilter === "products") {
+                              navigate("/dashboard/products/create");
+                            }
+                          }}
+                          className="text-sm font-medium text-black hover:text-gray-700"
+                        >
+                          Create your first {latestItemsFilter.slice(0, -1)} →
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           </div>
@@ -1987,50 +2113,58 @@ export default function DashboardHome() {
               </p>
             </div>
             <div className="p-6">
-              <div className="h-64 w-full min-h-[256px]">
-                <ResponsiveContainer width="100%" height={256}>
-                  <PieChart>
-                    <Pie
-                      data={campaignStatusDistribution.map((item) => ({
-                        name: item.status,
-                        value: item.count,
-                        color: item.color,
-                      }))}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      isAnimationActive={true}
-                      animationDuration={300}
-                    >
-                      {campaignStatusDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number) => value.toLocaleString()}
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "8px",
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      formatter={(value) => (
-                        <span style={{ fontSize: "12px", color: "#000000" }}>
-                          {value}
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {campaignStatusDistribution.length === 0 ? (
+                <div className="h-64 w-full min-h-[256px] flex items-center justify-center">
+                  <p className={`${tw.textSecondary} text-sm`}>
+                    No campaign status data available yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="h-64 w-full min-h-[256px]">
+                  <ResponsiveContainer width="100%" height={256}>
+                    <PieChart>
+                      <Pie
+                        data={campaignStatusDistribution.map((item) => ({
+                          name: item.status,
+                          value: item.count,
+                          color: item.color,
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        isAnimationActive={true}
+                        animationDuration={300}
+                      >
+                        {campaignStatusDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) => value.toLocaleString()}
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          padding: "8px",
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        formatter={(value) => (
+                          <span style={{ fontSize: "12px", color: "#000000" }}>
+                            {value}
+                          </span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
 
