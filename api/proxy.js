@@ -38,8 +38,11 @@ export default async function handler(req, res) {
     const apiPath = Array.isArray(path) ? path.join("/") : path || "";
 
     // Construct the target URL
-    // Use environment variable or default to localhost
-    const API_BASE_URL = "http://cvm.groupngs.com/api/database-service";
+    // Use environment variable or default based on environment
+    const API_BASE_URL = process.env.API_BASE_URL || 
+      (process.env.NODE_ENV === "production" 
+        ? "https://cvm.groupngs.com/api/database-service"
+        : "http://localhost:8080/api/database-service");
     
     // Log for debugging in production
     console.log("Proxy request:", {
