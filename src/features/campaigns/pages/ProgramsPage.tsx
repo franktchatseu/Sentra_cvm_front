@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Edit, Trash2, X, ArrowLeft } from "lucide-react";
+import { Plus, Search, Edit, Trash2, X, ArrowLeft, Power, PowerOff } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -13,7 +13,7 @@ interface ProgramModalProps {
   isOpen: boolean;
   onClose: () => void;
   program?: Program;
-  onSave: (program: { name: string; description?: string }) => Promise<void>;
+  onSave: (program: { name: string; code: string; description?: string; budget_total?: number }) => Promise<void>;
   isSaving?: boolean;
 }
 
@@ -26,7 +26,9 @@ function ProgramModal({
 }: ProgramModalProps) {
   const [formData, setFormData] = useState({
     name: "",
+    code: "",
     description: "",
+    budget_total: "",
   });
   const [error, setError] = useState("");
 
@@ -34,10 +36,12 @@ function ProgramModal({
     if (program) {
       setFormData({
         name: program.name,
+        code: program.code,
         description: program.description || "",
+        budget_total: program.budget_total || "",
       });
     } else {
-      setFormData({ name: "", description: "" });
+      setFormData({ name: "", code: "", description: "", budget_total: "" });
     }
     setError("");
   }, [program, isOpen]);
@@ -46,6 +50,11 @@ function ProgramModal({
     e.preventDefault();
     if (!formData.name.trim()) {
       setError("Program name is required");
+      return;
+    }
+
+    if (!formData.code.trim()) {
+      setError("Program code is required");
       return;
     }
 
@@ -58,7 +67,9 @@ function ProgramModal({
 
     const programData = {
       name: formData.name.trim(),
+      code: formData.code.trim(),
       description: formData.description.trim() || undefined,
+      budget_total: formData.budget_total ? parseFloat(formData.budget_total) : undefined,
     };
 
     await onSave(programData);
@@ -97,6 +108,39 @@ function ProgramModal({
                 placeholder="Enter program name"
                 maxLength={128}
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Program Code *
+              </label>
+              <input
+                type="text"
+                value={formData.code}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, code: e.target.value }))
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Enter program code (e.g., PROG-Q4-2024)"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Budget Total
+              </label>
+              <input
+                type="number"
+                value={formData.budget_total}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, budget_total: e.target.value }))
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Enter budget amount"
+                min="0"
+                step="0.01"
               />
             </div>
 
@@ -184,14 +228,14 @@ export default function ProgramsPage() {
     try {
       setLoading(true);
       const response = await programService.getAllPrograms({
-        search: searchTerm || undefined,
-        pageSize: 100,
+        limit: 100,
+        offset: 0,
         skipCache: skipCache,
       });
       setPrograms(response.data || []);
     } catch (err) {
       console.error("Failed to load programs:", err);
-      showError("Failed to load programs", "Please try again later.");
+      showError("Failed to load programs");
       setPrograms([]);
     } finally {
       setLoading(false);
@@ -221,44 +265,72 @@ export default function ProgramsPage() {
 
     try {
       await programService.deleteProgram(Number(program.id));
-      showToast(
-        "Program Deleted",
-        `"${program.name}" has been deleted successfully.`
-      );
-      await loadPrograms(true); // Skip cache to get fresh data
+      showToast(`Program "${program.name}" deleted successfully!`);
+      await loadPrograms(true);
     } catch (err) {
       console.error("Error deleting program:", err);
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to delete program"
-      );
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete program";
+      showError(errorMessage);
+    }
+  };
+
+  const handleToggleActive = async (program: Program) => {
+    try {
+      // TODO: Get actual user ID from auth context
+      const userId = 1;
+      
+      if (program.is_active) {
+        await programService.deactivateProgram(Number(program.id), userId);
+        showToast(`Program "${program.name}" deactivated successfully!`);
+      } else {
+        await programService.activateProgram(Number(program.id), userId);
+        showToast(`Program "${program.name}" activated successfully!`);
+      }
+      
+      await loadPrograms(true);
+    } catch (err) {
+      console.error("Error toggling program status:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to toggle program status";
+      showError(errorMessage);
     }
   };
 
   const handleProgramSaved = async (programData: {
     name: string;
+    code: string;
     description?: string;
+    budget_total?: number;
   }) => {
     try {
       setIsSaving(true);
+      // TODO: Get actual user ID from auth context
+      const userId = 1;
+      
       if (editingProgram) {
         // Update existing program
         await programService.updateProgram(
           Number(editingProgram.id),
-          programData
+          {
+            ...programData,
+            updated_by: userId,
+          }
         );
-        showToast("Program updated successfully");
+        showToast("Program updated successfully!");
       } else {
         // Create new program
-        await programService.createProgram(programData);
-        showToast("Program created successfully");
+        await programService.createProgram({
+          ...programData,
+          created_by: userId,
+        });
+        showToast("Program created successfully!");
       }
       setIsModalOpen(false);
       setEditingProgram(undefined);
       await loadPrograms(true); // Skip cache to get fresh data
     } catch (err) {
       console.error("Failed to save program:", err);
-      showError("Failed to save program", "Please try again later.");
+      const errorMessage = err instanceof Error ? err.message : "Failed to save program";
+      showError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -370,7 +442,17 @@ export default function ProgramsPage() {
                     <th
                       className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
                     >
-                      Description
+                      Code
+                    </th>
+                    <th
+                      className={`px-6 py-4 text-left text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                    >
+                      Budget
+                    </th>
+                    <th
+                      className={`px-6 py-4 text-center text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
+                    >
+                      Status
                     </th>
                     <th
                       className={`px-6 py-4 text-right text-xs font-medium ${tw.textMuted} uppercase tracking-wider`}
@@ -394,18 +476,50 @@ export default function ProgramsPage() {
                               {program.name}
                             </div>
                             <div className={`text-sm ${tw.textMuted}`}>
-                              ID: {program.id}
+                              {program.description || "No description"}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className={`text-sm ${tw.textSecondary} max-w-md`}>
-                          {program.description || "No description"}
+                        <div className={`text-sm font-mono ${tw.textSecondary}`}>
+                          {program.code}
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={`text-sm ${tw.textPrimary}`}>
+                          {program.budget_total ? `$${parseFloat(program.budget_total).toLocaleString()}` : '-'}
+                        </div>
+                        {program.budget_spent && (
+                          <div className={`text-xs ${tw.textMuted}`}>
+                            Spent: ${parseFloat(program.budget_spent).toLocaleString()}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            program.is_active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {program.is_active ? 'Active' : 'Inactive'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleToggleActive(program)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              program.is_active
+                                ? 'text-orange-600 hover:bg-orange-50'
+                                : 'text-green-600 hover:bg-green-50'
+                            }`}
+                            title={program.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {program.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                          </button>
                           <button
                             onClick={() => handleEditProgram(program)}
                             className="p-2 rounded-lg transition-colors"
@@ -446,44 +560,79 @@ export default function ProgramsPage() {
                   key={program.id}
                   className="p-4 border-b border-gray-200 last:border-b-0"
                 >
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-base font-semibold ${tw.textPrimary} mb-1`}
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className={`text-base font-semibold ${tw.textPrimary} mb-1`}>
+                          {program.name}
+                        </div>
+                        <div className={`text-xs font-mono ${tw.textMuted} mb-2`}>
+                          {program.code}
+                        </div>
+                        <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                          {program.description || "No description"}
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          program.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
                       >
-                        {program.name}
+                        {program.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    
+                    {program.budget_total && (
+                      <div className={`text-sm ${tw.textPrimary}`}>
+                        Budget: ${parseFloat(program.budget_total).toLocaleString()}
+                        {program.budget_spent && (
+                          <span className={`text-xs ${tw.textMuted} ml-2`}>
+                            (Spent: ${parseFloat(program.budget_spent).toLocaleString()})
+                          </span>
+                        )}
                       </div>
-                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                        {program.description || "No description"}
-                      </div>
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleEditProgram(program)}
-                          className="p-2 rounded-lg transition-colors"
-                          style={{
-                            color: color.primary.action,
-                            backgroundColor: "transparent",
-                          }}
-                          onMouseEnter={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = `${color.primary.action}10`;
-                          }}
-                          onMouseLeave={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = "transparent";
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProgram(program)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-end space-x-2 pt-2 border-t">
+                      <button
+                        onClick={() => handleToggleActive(program)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          program.is_active
+                            ? 'text-orange-600 hover:bg-orange-50'
+                            : 'text-green-600 hover:bg-green-50'
+                        }`}
+                        title={program.is_active ? 'Deactivate' : 'Activate'}
+                      >
+                        {program.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => handleEditProgram(program)}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{
+                          color: color.primary.action,
+                          backgroundColor: "transparent",
+                        }}
+                        onMouseEnter={(e) => {
+                          (
+                            e.target as HTMLButtonElement
+                          ).style.backgroundColor = `${color.primary.action}10`;
+                        }}
+                        onMouseLeave={(e) => {
+                          (
+                            e.target as HTMLButtonElement
+                          ).style.backgroundColor = "transparent";
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProgram(program)}
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

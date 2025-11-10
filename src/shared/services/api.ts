@@ -33,14 +33,16 @@ export const buildApiUrl = (endpoint: string): string => {
 };
 
 // Helper function to get auth headers
-export const getAuthHeaders = () => {
+export const getAuthHeaders = (includeContentType: boolean = true) => {
   // Check both possible token keys (authToken and auth_token for compatibility)
   const token =
     localStorage.getItem("authToken") || localStorage.getItem("auth_token");
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
+
+  if (includeContentType) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;

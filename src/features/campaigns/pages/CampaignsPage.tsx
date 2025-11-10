@@ -19,6 +19,7 @@ import {
   Download,
   History,
   CheckCircle,
+  Send,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -420,19 +421,10 @@ export default function CampaignsPage() {
   };
 
   // Action handlers using service layer
-  const handleDuplicateCampaign = async (campaign: CampaignDisplay) => {
-    try {
-      const newName = `Copy of ${campaign.name}`;
-      await campaignService.duplicateCampaign(campaign.id, { newName });
-      showToast("success", "Campaign duplicated successfully");
-      setShowActionMenu(null);
-      fetchCampaigns(); // Refresh campaigns list
-    } catch (error) {
-      console.error("Failed to duplicate campaign:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to duplicate campaign";
-      showToast("error", errorMessage);
-    }
+  const handleDuplicateCampaign = (campaign: CampaignDisplay) => {
+    // Navigate to create page with duplicateId to pre-fill form
+    setShowActionMenu(null);
+    navigate(`/dashboard/campaigns/create?duplicateId=${campaign.id}`);
   };
 
   const handleCloneWithChanges = async (campaign: CampaignDisplay) => {
@@ -466,12 +458,33 @@ export default function CampaignsPage() {
 
   const handleArchiveCampaign = async (campaignId: number) => {
     try {
-      await campaignService.archiveCampaign(campaignId);
-      console.log("Campaign archived successfully");
+      // TODO: Get actual user ID from auth context
+      const userId = 1;
+      await campaignService.archiveCampaign(campaignId, userId);
+      showToast('success', 'Campaign archived successfully!');
       setShowActionMenu(null);
       fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
-      console.error("Failed to archive campaign:", error);
+      console.error('Failed to archive campaign:', error);
+      
+      // Extract error message from backend response
+      let errorMessage = 'Failed to archive campaign';
+      
+      if (error instanceof Error) {
+        const match = error.message.match(/details: ({.*})/);
+        if (match) {
+          try {
+            const errorData = JSON.parse(match[1]);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      showToast('error', errorMessage);
     }
   };
 
@@ -486,13 +499,34 @@ export default function CampaignsPage() {
 
     setIsDeleting(true);
     try {
-      await campaignService.deleteCampaign(campaignToDelete.id);
-      console.log("Campaign deleted successfully");
+      // TODO: Get actual user ID from auth context
+      const userId = 1;
+      await campaignService.deleteCampaign(campaignToDelete.id, userId);
+      showToast('success', `Campaign "${campaignToDelete.name}" deleted successfully!`);
       setShowDeleteModal(false);
       setCampaignToDelete(null);
       fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
-      console.error("Failed to delete campaign:", error);
+      console.error('Failed to delete campaign:', error);
+      
+      // Extract error message from backend response
+      let errorMessage = 'Failed to delete campaign';
+      
+      if (error instanceof Error) {
+        const match = error.message.match(/details: ({.*})/);
+        if (match) {
+          try {
+            const errorData = JSON.parse(match[1]);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      showToast('error', errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -947,81 +981,172 @@ export default function CampaignsPage() {
                                 Execute Campaign
                               </button>
 
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCampaignToApprove({ id: campaign.id, name: campaign.name });
-                                  setShowApproveModal(true);
-                                  setShowActionMenu(null);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <CheckCircle
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: '#10B981' }}
-                                />
-                                Approve Campaign
-                              </button>
+                              {/* Request Approval - Only for draft campaigns */}
+                              {campaign.status === 'draft' && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setShowActionMenu(null);
+                                    try {
+                                      await campaignService.submitForApproval(campaign.id);
+                                      showToast('success', `Campaign "${campaign.name}" submitted for approval!`);
+                                      fetchCampaigns();
+                                    } catch (error) {
+                                      console.error('Error submitting campaign for approval:', error);
+                                      
+                                      // Extract error message from backend response
+                                      let errorMessage = 'Failed to submit campaign for approval';
+                                      
+                                      if (error instanceof Error) {
+                                        const match = error.message.match(/details: ({.*})/);
+                                        if (match) {
+                                          try {
+                                            const errorData = JSON.parse(match[1]);
+                                            errorMessage = errorData.error || errorData.message || errorMessage;
+                                          } catch {
+                                            errorMessage = error.message;
+                                          }
+                                        } else {
+                                          errorMessage = error.message;
+                                        }
+                                      }
+                                      
+                                      showToast('error', errorMessage);
+                                    }
+                                  }}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                                >
+                                  <Send
+                                    className="w-4 h-4 mr-4"
+                                    style={{ color: '#3B82F6' }}
+                                  />
+                                  Request Approval
+                                </button>
+                              )}
 
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCampaignToReject({ id: campaign.id, name: campaign.name });
-                                  setShowRejectModal(true);
-                                  setShowActionMenu(null);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Trash2
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: '#EF4444' }}
-                                />
-                                Reject Campaign
-                              </button>
+                              {/* Approve - Only for pending_approval campaigns */}
+                              {campaign.status === 'pending_approval' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCampaignToApprove({ id: campaign.id, name: campaign.name });
+                                    setShowApproveModal(true);
+                                    setShowActionMenu(null);
+                                  }}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                                >
+                                  <CheckCircle
+                                    className="w-4 h-4 mr-4"
+                                    style={{ color: '#10B981' }}
+                                  />
+                                  Approve Campaign
+                                </button>
+                              )}
 
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  setShowActionMenu(null);
-                                  try {
-                                    await campaignService.activateCampaign(campaign.id);
-                                    showToast('success', `Campaign "${campaign.name}" activated successfully!`);
-                                    fetchCampaigns();
-                                  } catch (error) {
-                                    console.error('Error activating campaign:', error);
-                                    showToast('error', 'Failed to activate campaign');
-                                  }
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Play
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: '#10B981' }}
-                                />
-                                Activate Campaign
-                              </button>
+                              {/* Reject - Only for pending_approval campaigns */}
+                              {campaign.status === 'pending_approval' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCampaignToReject({ id: campaign.id, name: campaign.name });
+                                    setShowRejectModal(true);
+                                    setShowActionMenu(null);
+                                  }}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                                >
+                                  <Trash2
+                                    className="w-4 h-4 mr-4"
+                                    style={{ color: '#EF4444' }}
+                                  />
+                                  Reject Campaign
+                                </button>
+                              )}
 
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  setShowActionMenu(null);
-                                  try {
-                                    await campaignService.pauseCampaign(campaign.id);
-                                    showToast('success', `Campaign "${campaign.name}" paused successfully!`);
-                                    fetchCampaigns();
-                                  } catch (error) {
-                                    console.error('Error pausing campaign:', error);
-                                    showToast('error', 'Failed to pause campaign');
-                                  }
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Pause
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: '#F59E0B' }}
-                                />
-                                Pause Campaign
-                              </button>
+                              {/* Activate - Only for approved campaigns */}
+                              {campaign.status === 'approved' && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setShowActionMenu(null);
+                                    try {
+                                      await campaignService.activateCampaign(campaign.id);
+                                      showToast('success', `Campaign "${campaign.name}" activated successfully!`);
+                                      fetchCampaigns();
+                                    } catch (error) {
+                                      console.error('Error activating campaign:', error);
+                                      
+                                      // Extract error message from backend response
+                                      let errorMessage = 'Failed to activate campaign';
+                                      
+                                      if (error instanceof Error) {
+                                        const match = error.message.match(/details: ({.*})/);
+                                        if (match) {
+                                          try {
+                                            const errorData = JSON.parse(match[1]);
+                                            errorMessage = errorData.error || errorData.message || errorMessage;
+                                          } catch {
+                                            errorMessage = error.message;
+                                          }
+                                        } else {
+                                          errorMessage = error.message;
+                                        }
+                                      }
+                                      
+                                      showToast('error', errorMessage);
+                                    }
+                                  }}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                                >
+                                  <Play
+                                    className="w-4 h-4 mr-4"
+                                    style={{ color: '#10B981' }}
+                                  />
+                                  Activate Campaign
+                                </button>
+                              )}
+
+                              {/* Pause - Only for active campaigns */}
+                              {campaign.status === 'active' && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setShowActionMenu(null);
+                                    try {
+                                      await campaignService.pauseCampaign(campaign.id);
+                                      showToast('success', `Campaign "${campaign.name}" paused successfully!`);
+                                      fetchCampaigns();
+                                    } catch (error) {
+                                      console.error('Error pausing campaign:', error);
+                                      
+                                      // Extract error message from backend response
+                                      let errorMessage = 'Failed to pause campaign';
+                                      
+                                      if (error instanceof Error) {
+                                        const match = error.message.match(/details: ({.*})/);
+                                        if (match) {
+                                          try {
+                                            const errorData = JSON.parse(match[1]);
+                                            errorMessage = errorData.error || errorData.message || errorMessage;
+                                          } catch {
+                                            errorMessage = error.message;
+                                          }
+                                        } else {
+                                          errorMessage = error.message;
+                                        }
+                                      }
+                                      
+                                      showToast('error', errorMessage);
+                                    }
+                                  }}
+                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                                >
+                                  <Pause
+                                    className="w-4 h-4 mr-4"
+                                    style={{ color: '#F59E0B' }}
+                                  />
+                                  Pause Campaign
+                                </button>
+                              )}
 
                               <div className="border-t border-gray-200 my-2"></div>
 

@@ -80,9 +80,13 @@ class CampaignService {
     });
   }
 
-  async deleteCampaign(id: number): Promise<void> {
+  async deleteCampaign(id: number, deletedBy: number = 1): Promise<void> {
+    console.log('Deleting campaign:', { id, deletedBy });
     return this.request<void>(`/${id}`, {
       method: 'DELETE',
+      body: JSON.stringify({
+        deleted_by: deletedBy
+      }),
     });
   }
 
@@ -173,6 +177,16 @@ class CampaignService {
     });
   }
 
+  async submitForApproval(id: number, updatedBy: number = 1): Promise<Record<string, unknown>> {
+    console.log('Submitting campaign for approval:', { id, updatedBy });
+    return this.request<Record<string, unknown>>(`/${id}/submit-approval`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        updated_by: updatedBy
+      }),
+    });
+  }
+
   async approveCampaign(id: number, approvedBy: number = 1): Promise<ApproveCampaignResponse> {
     console.log('Approving campaign:', { id, approvedBy });
     return this.request<ApproveCampaignResponse>(`/${id}/approve`, {
@@ -222,9 +236,13 @@ class CampaignService {
     });
   }
 
-  async archiveCampaign(id: number): Promise<Record<string, unknown>> {
+  async archiveCampaign(id: number, updatedBy: number = 1): Promise<Record<string, unknown>> {
+    console.log('Archiving campaign:', { id, updatedBy });
     return this.request<Record<string, unknown>>(`/${id}/archive`, {
-      method: 'PUT',
+      method: 'PATCH',
+      body: JSON.stringify({
+        updated_by: updatedBy
+      }),
     });
   }
 
@@ -430,7 +448,7 @@ class CampaignService {
   async executeCampaign(request: {
     campaign_id: number;
     segments: Array<{
-      segment_id: string | number;
+      segment_id: number;
       channel_codes: string[];
     }>;
     mode: 'immediate' | 'scheduled';

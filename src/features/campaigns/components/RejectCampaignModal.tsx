@@ -41,7 +41,27 @@ export default function RejectCampaignModal({
       onClose();
     } catch (error) {
       console.error('Error rejecting campaign:', error);
-      showToast('error', 'Failed to reject campaign. Please try again.');
+      
+      // Extract error message from backend response
+      let errorMessage = 'Failed to reject campaign. Please try again.';
+      
+      if (error instanceof Error) {
+        // Try to parse JSON error message from the error string
+        const match = error.message.match(/details: ({.*})/);
+        if (match) {
+          try {
+            const errorData = JSON.parse(match[1]);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // If parsing fails, use the full error message
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      showToast('error', errorMessage);
     } finally {
       setIsRejecting(false);
     }

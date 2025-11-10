@@ -28,6 +28,18 @@ interface CampaignFormData extends CreateCampaignRequest {
 }
 import { campaignService } from '../services/campaignService';
 import { campaignSegmentOfferService, CampaignSegmentOfferMapping } from '../services/campaignSegmentOfferService';
+import { segmentService } from '../../segments/services/segmentService';
+import { offerService } from '../../offers/services/offerService';
+import { departmentsConfig } from '../../../shared/configs/configurationPageConfigs';
+
+// Objective options mapping
+const objectiveOptions = [
+  { value: 'acquisition', label: 'New Customer Acquisition' },
+  { value: 'retention', label: 'Customer Retention' },
+  { value: 'churn_prevention', label: 'Churn Prevention' },
+  { value: 'upsell_cross_sell', label: 'Upsell/Cross-sell' },
+  { value: 'reactivation', label: 'Dormant Customer Reactivation' }
+];
 import CampaignDefinitionStep from '../components/steps/CampaignDefinitionStep';
 import AudienceConfigurationStep from '../components/steps/AudienceConfigurationStep';
 import OfferMappingStep from '../components/steps/OfferMappingStep';
@@ -98,10 +110,12 @@ export default function CreateCampaignPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDuplicateMode, setIsDuplicateMode] = useState(false);
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
 
-  // Get categoryId from URL params
+  // Get params from URL
   const categoryIdParam = searchParams.get('categoryId');
+  const duplicateIdParam = searchParams.get('duplicateId');
   const preselectedCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
 
   const [formData, setFormData] = useState<CampaignFormData>({
@@ -122,39 +136,155 @@ export default function CreateCampaignPage() {
     type: 'standard'
   });
 
-  const loadCampaignData = useCallback(async () => {
-    if (!id) return;
+  const loadCampaignData = useCallback(async (campaignId: string, isDuplicate: boolean = false) => {
+    if (!campaignId) return;
 
     setIsLoadingCampaign(true);
     try {
-      const response = await campaignService.getCampaignById(id);
+      const response = await campaignService.getCampaignById(campaignId);
       console.log('Loaded campaign data:', response);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const campaign = (response as { data?: any } | any).data || response;
-      const newFormData: CreateCampaignRequest = {
-        name: campaign?.name || '',
+      
+      // Set form data with all available fields
+      // If duplicating, prefix name with "Copy of "
+      const newFormData: CampaignFormData = {
+        name: isDuplicate ? `Copy of ${campaign?.name}` : (campaign?.name || ''),
         description: campaign?.description || '',
         objective: campaign?.objective || 'acquisition',
         category_id: campaign?.category_id || undefined,
+        program_id: campaign?.program_id || undefined,
         start_date: campaign?.start_date || undefined,
-        end_date: campaign?.end_date || undefined
+        end_date: campaign?.end_date || undefined,
+        campaign_type: campaign?.campaign_type || 'multiple_target_group',
+        // Load tags as comma-separated string from array
+        tag: campaign?.tags ? campaign.tags.join(', ') : '',
+        // Load department_id if owner_team matches a department name
+        department_id: campaign?.owner_team ? undefined : undefined, // Will be set in UI selection
       };
-      console.log('Setting form data:', newFormData);
+      console.log('Setting form data:', newFormData, 'isDuplicate:', isDuplicate);
       setFormData(newFormData);
+
+      // Load segments and offers via mappings
+      try {
+        const mappingsResponse = await campaignSegmentOfferService.getMappingsByCampaign(campaignId);
+        console.log('Loaded mappings:', mappingsResponse);
+        
+        if (mappingsResponse.success && mappingsResponse.data.length > 0) {
+          // Extract unique segment IDs and offer IDs
+          const uniqueSegmentIds = [...new Set(mappingsResponse.data.map(m => m.segment_id))];
+          const uniqueOfferIds = [...new Set(mappingsResponse.data.map(m => m.offer_id))];
+          
+          console.log('Loading segments and offers:', { uniqueSegmentIds, uniqueOfferIds });
+          
+          // Load full segment details
+          const segmentPromises = uniqueSegmentIds.map(async (segmentId) => {
+            try {
+              const response = await segmentService.getSegmentById(parseInt(segmentId), true);
+              const segment = response.data;
+              return {
+                id: String(segment.id),
+                name: segment.name,
+                description: segment.description || '',
+                customer_count: segment.size_estimate || 0,
+                criteria: {},
+                created_at: segment.created_at
+              } as CampaignSegment;
+            } catch (error) {
+              console.warn(`Failed to load segment ${segmentId}:`, error);
+              return null;
+            }
+          });
+          
+          // Load full offer details
+          const offerPromises = uniqueOfferIds.map(async (offerId) => {
+            try {
+              const response = await offerService.getOfferById(offerId, true);
+              const offer = response.data;
+              // Calculate validity period from valid_from and valid_to
+              let validityPeriod = 30;
+              if (offer.valid_from && offer.valid_to) {
+                const from = new Date(offer.valid_from);
+                const to = new Date(offer.valid_to);
+                validityPeriod = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+              }
+              
+              // Determine reward type and value based on available fields
+              let rewardType: 'bundle' | 'points' | 'discount' | 'cashback' | 'free_service' = 'discount';
+              let rewardValue = '0';
+              if (offer.discount_percentage) {
+                rewardType = 'discount';
+                rewardValue = String(offer.discount_percentage);
+              } else if (offer.discount_amount) {
+                rewardType = 'cashback';
+                rewardValue = String(offer.discount_amount);
+              } else if (offer.bonus_value) {
+                rewardType = 'points';
+                rewardValue = String(offer.bonus_value);
+              }
+              
+              return {
+                id: String(offer.id),
+                name: offer.name,
+                description: offer.description || '',
+                offer_type: offer.offer_type,
+                reward_type: rewardType,
+                reward_value: rewardValue,
+                validity_period: validityPeriod,
+                terms_conditions: JSON.stringify(offer.eligibility_rules || {})
+              } as CampaignOffer;
+            } catch (error) {
+              console.warn(`Failed to load offer ${offerId}:`, error);
+              return null;
+            }
+          });
+          
+          // Wait for all loads to complete
+          const [loadedSegments, loadedOffers] = await Promise.all([
+            Promise.all(segmentPromises),
+            Promise.all(offerPromises)
+          ]);
+          
+          // Filter out failed loads and set state
+          const validSegments = loadedSegments.filter((s): s is CampaignSegment => s !== null);
+          const validOffers = loadedOffers.filter((o): o is CampaignOffer => o !== null);
+          
+          console.log('Loaded segments and offers:', { validSegments, validOffers });
+          
+          setSelectedSegments(validSegments);
+          setSelectedOffers(validOffers);
+          
+          // Set segment-offer mappings
+          const mappings = mappingsResponse.data.map(m => ({
+            segment_id: m.segment_id,
+            offer_id: m.offer_id
+          }));
+          setSegmentOfferMappings(mappings);
+        }
+      } catch (mappingError) {
+        console.warn('Could not load campaign mappings:', mappingError);
+      }
     } catch {
       showToast('error', 'Failed to load campaign data');
       navigate('/dashboard/campaigns');
     } finally {
       setIsLoadingCampaign(false);
     }
-  }, [id, showToast, navigate]);
+  }, [showToast, navigate]);
 
   useEffect(() => {
     if (id) {
+      // Edit mode - modifying existing campaign
       setIsEditMode(true);
-      loadCampaignData();
+      setIsDuplicateMode(false);
+      loadCampaignData(id, false);
+    } else if (duplicateIdParam) {
+      // Duplicate mode - creating new campaign from existing one
+      setIsEditMode(false);
+      setIsDuplicateMode(true);
+      loadCampaignData(duplicateIdParam, true);
     }
-  }, [id, loadCampaignData]);
+  }, [id, duplicateIdParam, loadCampaignData]);
 
   // Validation function for each step
   const validateCurrentStep = () => {
@@ -269,26 +399,66 @@ export default function CreateCampaignPage() {
         }];
       }
 
-      // Generate unique code from campaign name
-      const campaignCode = generateCampaignCode(formData.name);
-
-      const campaignData: CreateCampaignRequest = {
-        name: formData.name,
-        code: campaignCode,
-        objective: formData.objective,
-        created_by: 1, // TODO: Get actual user ID from auth context
-        ...(formData.description && { description: formData.description }),
-        ...(formData.category_id && { category_id: formData.category_id }),
-        ...(formData.start_date && { start_date: formData.start_date }),
-        ...(formData.end_date && { end_date: formData.end_date })
-      };
-
       if (isEditMode && id) {
-        // Update campaign configuration (approval_status remains unchanged)
-        await campaignService.updateCampaign(parseInt(id), campaignData);
+        // Update campaign - Don't regenerate code, add updated_by
+        // Get objective label from value
+        const objectiveOption = objectiveOptions.find((o: { value: string; label: string }) => o.value === formData.objective);
+        const objectiveLabel = objectiveOption ? objectiveOption.label : formData.objective;
+        
+        // Convert tags string to array
+        const tagsArray = formData.tag ? formData.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0) : [];
+        
+        // Get department name from formData.department_id
+        const departmentId = (formData as { department_id?: number }).department_id;
+        const department = departmentId ? departmentsConfig.initialData.find((d: { id: number | string; name: string }) => Number(d.id) === Number(departmentId)) : undefined;
+        const ownerTeam = department?.name || undefined;
+        
+        const updateData: Partial<CreateCampaignRequest> = {
+          name: formData.name,
+          objective: objectiveLabel, // Send label text, not value
+          updated_by: 1, // TODO: Get actual user ID from auth context
+          ...(formData.description && { description: formData.description }),
+          ...(formData.category_id && { category_id: formData.category_id }),
+          ...(formData.program_id && { program_id: formData.program_id }),
+          ...(formData.start_date && { start_date: formData.start_date }),
+          ...(formData.end_date && { end_date: formData.end_date }),
+          ...(tagsArray.length > 0 && { tags: tagsArray }),
+          ...(ownerTeam && { owner_team: ownerTeam })
+        };
+        
+        await campaignService.updateCampaign(parseInt(id), updateData);
         showToast('success', 'Campaign updated successfully!');
       } else {
-        // New campaigns are automatically created with status: 'draft', approval_status: 'pending'
+        // Generate unique code from campaign name for NEW campaigns
+        const campaignCode = generateCampaignCode(formData.name);
+        
+        // Get objective label from value
+        const objectiveOption = objectiveOptions.find((o: { value: string; label: string }) => o.value === formData.objective);
+        const objectiveLabel = objectiveOption ? objectiveOption.label : formData.objective;
+        
+        // Convert tags string to array
+        const tagsArray = formData.tag ? formData.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0) : [];
+        
+        // Get department name from formData.department_id
+        const departmentId = (formData as { department_id?: number }).department_id;
+        const department = departmentId ? departmentsConfig.initialData.find((d: { id: number | string; name: string }) => Number(d.id) === Number(departmentId)) : undefined;
+        const ownerTeam = department?.name || undefined;
+
+        const campaignData: CreateCampaignRequest = {
+          name: formData.name,
+          code: campaignCode,
+          objective: objectiveLabel, // Send label text, not value
+          status: 'draft', // New campaigns start as draft
+          created_by: 1, // TODO: Get actual user ID from auth context
+          ...(formData.description && { description: formData.description }),
+          ...(formData.category_id && { category_id: formData.category_id }),
+          ...(formData.program_id && { program_id: formData.program_id }),
+          ...(formData.start_date && { start_date: formData.start_date }),
+          ...(formData.end_date && { end_date: formData.end_date }),
+          ...(tagsArray.length > 0 && { tags: tagsArray }),
+          ...(ownerTeam && { owner_team: ownerTeam })
+        };
+        // New campaigns are created with status: 'draft' and approval_status: 'pending'
         const createResponse = await campaignService.createCampaign(campaignData);
         
         // Extract campaign ID from response
@@ -469,7 +639,7 @@ export default function CreateCampaignPage() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <h1 className={`text-lg font-semibold ${tw.textPrimary}`}>
-                {isEditMode ? 'Edit Campaign' : 'Create Campaign'}
+                {isEditMode ? 'Edit Campaign' : isDuplicateMode ? 'Duplicate Campaign' : 'Create Campaign'}
               </h1>
             </div>
             {currentStep !== 4 && (

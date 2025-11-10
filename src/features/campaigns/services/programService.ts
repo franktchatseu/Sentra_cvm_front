@@ -1,5 +1,5 @@
 import { API_CONFIG, getAuthHeaders } from '../../../shared/services/api';
-import { Program, CreateProgramRequest, UpdateProgramRequest, ProgramResponse } from '../types/program';
+import { Program, CreateProgramRequest, UpdateProgramRequest, ProgramResponse, SingleProgramResponse } from '../types/program';
 
 const BASE_URL = `${API_CONFIG.BASE_URL}/programs`;
 
@@ -34,52 +34,56 @@ class ProgramService {
     }
 
     async getAllPrograms(params?: {
-        search?: string;
-        page?: number;
-        pageSize?: number;
-        sortBy?: 'id' | 'name' | 'description' | 'created_at';
-        sortDirection?: 'ASC' | 'DESC';
+        limit?: number;
+        offset?: number;
         skipCache?: boolean;
     }): Promise<ProgramResponse> {
         const queryParams = new URLSearchParams();
         if (params) {
-            Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
-                    queryParams.append(key, String(value));
-                }
-            });
+            if (params.limit) queryParams.append('limit', String(params.limit));
+            if (params.offset) queryParams.append('offset', String(params.offset));
+            if (params.skipCache) queryParams.append('skipCache', 'true');
         }
         const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-        return this.request<ProgramResponse>(`/all${query}`);
+        return this.request<ProgramResponse>(`${query}`);
     }
 
-    async getProgramById(id: number | string, skipCache?: boolean): Promise<Program> {
+    async getProgramById(id: number, skipCache?: boolean): Promise<SingleProgramResponse> {
         const query = skipCache ? '?skipCache=true' : '';
-        return this.request<Program>(`/${id}?searchBy=id${query}`);
+        return this.request<SingleProgramResponse>(`/${id}${query}`);
     }
 
-    async getProgramByName(name: string, skipCache?: boolean): Promise<Program> {
-        const query = skipCache ? '&skipCache=true' : '';
-        return this.request<Program>(`/${encodeURIComponent(name)}?searchBy=name${query}`);
-    }
-
-    async createProgram(request: CreateProgramRequest): Promise<Program> {
-        return this.request<Program>('/create', {
+    async createProgram(request: CreateProgramRequest): Promise<SingleProgramResponse> {
+        return this.request<SingleProgramResponse>('', {
             method: 'POST',
             body: JSON.stringify(request),
         });
     }
 
-    async updateProgram(id: number, request: UpdateProgramRequest): Promise<Program> {
-        return this.request<Program>(`/update/${id}`, {
+    async updateProgram(id: number, request: UpdateProgramRequest): Promise<SingleProgramResponse> {
+        return this.request<SingleProgramResponse>(`/${id}`, {
             method: 'PUT',
             body: JSON.stringify(request),
         });
     }
 
-    async deleteProgram(id: number): Promise<void> {
-        return this.request<void>(`/delete/${id}`, {
+    async deleteProgram(id: number): Promise<{ success: boolean; message?: string }> {
+        return this.request<{ success: boolean; message?: string }>(`/${id}`, {
             method: 'DELETE',
+        });
+    }
+
+    async activateProgram(id: number, updatedBy: number): Promise<SingleProgramResponse> {
+        return this.request<SingleProgramResponse>(`/${id}/activate`, {
+            method: 'PATCH',
+            body: JSON.stringify({ updated_by: updatedBy }),
+        });
+    }
+
+    async deactivateProgram(id: number, updatedBy: number): Promise<SingleProgramResponse> {
+        return this.request<SingleProgramResponse>(`/${id}/deactivate`, {
+            method: 'PATCH',
+            body: JSON.stringify({ updated_by: updatedBy }),
         });
     }
 }

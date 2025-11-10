@@ -12,8 +12,7 @@ export interface CreateCampaignRequest {
   program_id?: number | null; // optional, positive integer, can be null
   
   // Status
-  status?: 'draft' | 'approved' | 'active' | 'paused' | 'archived'; // optional, default: 'draft'
-  approval_status?: 'pending' | 'approved' | 'rejected'; // optional, default: 'pending'
+  status?: 'draft' | 'pending_approval' | 'approved' | 'active' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'rejected'; // optional, default: 'draft'
   
   // Schedule
   start_date?: string | null; // optional, ISO date format, can be null
@@ -48,13 +47,16 @@ export interface CreateCampaignRequest {
   
   // Audit
   created_by?: number | null; // optional, user ID who created the campaign
+  updated_by?: number | null; // optional, user ID who updated the campaign
   
   // Additional data
   tags?: string[]; // optional, array of tags
   metadata?: Record<string, unknown>; // optional, JSON object for additional data
   
-  // Frontend-only field for campaign type selection
+  // Frontend-only fields
   campaign_type?: 'multiple_target_group' | 'champion_challenger' | 'ab_test' | 'round_robin' | 'multiple_level';
+  tag?: string; // Temporary UI field for comma-separated tags
+  department_id?: number; // UI field for department selection (maps to owner_team)
 }
 
 export interface CreateCampaignResponse {

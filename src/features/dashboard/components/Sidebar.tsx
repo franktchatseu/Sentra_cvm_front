@@ -25,6 +25,7 @@ import {
   Bell,
   List,
   Building2,
+  Upload,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
@@ -252,6 +253,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "segments",
         },
       ],
+    },
+    {
+      name: "QuickLists",
+      href: "/dashboard/quicklists",
+      icon: Upload,
+      type: "single",
+      entity: "segments",
     },
     {
       name: "User Management",

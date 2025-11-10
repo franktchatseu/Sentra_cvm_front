@@ -106,12 +106,26 @@ export default function ExecuteCampaignModal({
 
     setIsExecuting(true);
     try {
+      // Prepare segments with proper type conversion
+      const segmentsData = selectedSegments.map(seg => {
+        const segmentId = typeof seg.segment_id === 'string' 
+          ? parseInt(seg.segment_id, 10) 
+          : seg.segment_id;
+        
+        // Validate segment_id is a valid number
+        if (isNaN(segmentId)) {
+          throw new Error(`Invalid segment ID: ${seg.segment_id}`);
+        }
+        
+        return {
+          segment_id: segmentId,
+          channel_codes: seg.channels
+        };
+      });
+
       const request = {
         campaign_id: campaignId,
-        segments: selectedSegments.map(seg => ({
-          segment_id: parseInt(seg.segment_id), // Convert to number
-          channel_codes: seg.channels
-        })),
+        segments: segmentsData,
         mode: executionMode
       };
 
@@ -123,7 +137,27 @@ export default function ExecuteCampaignModal({
       onClose();
     } catch (error) {
       console.error('Error executing campaign:', error);
-      showToast('error', 'Failed to execute campaign. Please try again.');
+      
+      // Extract error message from backend response
+      let errorMessage = 'Failed to execute campaign. Please try again.';
+      
+      if (error instanceof Error) {
+        // Try to parse JSON error message from the error string
+        const match = error.message.match(/details: ({.*})/);
+        if (match) {
+          try {
+            const errorData = JSON.parse(match[1]);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // If parsing fails, use the full error message
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      showToast('error', errorMessage);
     } finally {
       setIsExecuting(false);
     }
