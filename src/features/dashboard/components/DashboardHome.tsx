@@ -863,13 +863,6 @@ export default function DashboardHome() {
         // This endpoint is used to get campaign counts for current vs previous month
         // to calculate the percentage change shown in the "Total Campaigns" stat card
         try {
-          const currentMonthEndpoint = buildApiUrl(
-            `/campaigns/date-range?startDate=${currentMonthStart.toISOString()}&endDate=${currentMonthEnd.toISOString()}&limit=1&offset=0&skipCache=true`
-          );
-          console.log(
-            "Fetching current month campaigns for percentage change:",
-            currentMonthEndpoint
-          );
           const currentCampaigns =
             await campaignService.getCampaignsByDateRange({
               startDate: currentMonthStart.toISOString(),
@@ -878,15 +871,7 @@ export default function DashboardHome() {
               offset: 0,
               skipCache: true,
             });
-          console.log("Current month campaigns response:", currentCampaigns);
 
-          const previousMonthEndpoint = buildApiUrl(
-            `/campaigns/date-range?startDate=${previousMonthStart.toISOString()}&endDate=${previousMonthEnd.toISOString()}&limit=1&offset=0&skipCache=true`
-          );
-          console.log(
-            "Fetching previous month campaigns for percentage change:",
-            previousMonthEndpoint
-          );
           const previousCampaigns =
             await campaignService.getCampaignsByDateRange({
               startDate: previousMonthStart.toISOString(),
