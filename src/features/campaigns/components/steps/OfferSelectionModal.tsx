@@ -266,60 +266,80 @@ export default function OfferSelectionModal({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredOffers.map((offer) => {
-                const isSelected = tempSelectedOffers.some(
-                  (o) => o.id === offer.id
-                );
+            <div className="border rounded-lg overflow-hidden" style={{ borderColor: color.border.default }}>
+              <table className="min-w-full divide-y" style={{ borderColor: color.border.default }}>
+                <thead style={{ backgroundColor: color.surface.cards }}>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                      Select
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Offer
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      Value
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                      Duration
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y" style={{ borderColor: color.border.default }}>
+                  {filteredOffers.map((offer) => {
+                    const isSelected = tempSelectedOffers.some(
+                      (o) => o.id === offer.id
+                    );
 
-                return (
-                  <div
-                    key={offer.id}
-                    onClick={() => handleOfferToggle(offer)}
-                    className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${
-                      isSelected ? "" : "border-gray-100"
-                    }`}
-                    style={
-                      isSelected
-                        ? {
-                            borderColor: color.primary.accent,
-                            backgroundColor: "white",
-                          }
-                        : {
-                            backgroundColor: "white",
-                          }
-                    }
-                  >
-                    {isSelected && (
-                      <div
-                        className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: color.primary.accent }}
+                    return (
+                      <tr
+                        key={offer.id}
+                        onClick={() => handleOfferToggle(offer)}
+                        className="cursor-pointer transition-colors"
+                        style={{
+                          backgroundColor: isSelected ? `${color.primary.accent}10` : 'white'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) e.currentTarget.style.backgroundColor = color.surface.cards;
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) e.currentTarget.style.backgroundColor = 'white';
+                        }}
                       >
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-
-                    <div className="flex items-start space-x-3">
-                      <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${color.primary.accent}20` }}
-                      >
-                        <Gift
-                          className="w-5 h-5"
-                          style={{ color: color.primary.accent }}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 truncate">
-                          {offer.name}
-                        </h4>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                          {offer.description}
-                        </p>
-
-                        <div className="flex items-center space-x-2 mt-3">
+                        <td className="px-4 py-3">
+                          <div
+                            className="w-5 h-5 rounded border-2 flex items-center justify-center"
+                            style={{
+                              borderColor: isSelected ? color.primary.accent : '#d1d5db',
+                              backgroundColor: isSelected ? color.primary.accent : 'transparent'
+                            }}
+                          >
+                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: `${color.primary.accent}20` }}
+                            >
+                              <Gift className="w-4 h-4" style={{ color: color.primary.accent }} />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">
+                                {offer.name}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {offer.description}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
                           <span
-                            className={`text-xs px-2 py-1 rounded-full ${
+                            className={`inline-block text-xs px-2 py-1 rounded-full ${
                               rewardTypeColors[
                                 offer.reward_type as keyof typeof rewardTypeColors
                               ] || "bg-gray-100 text-gray-700"
@@ -327,36 +347,28 @@ export default function OfferSelectionModal({
                           >
                             {offer.reward_type}
                           </span>
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                            {offer.offer_type}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between mt-3">
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="flex items-center space-x-1">
-                            <DollarSign className="w-4 h-4 text-[#3b8169]" />
-                            <span className="text-sm font-medium text-[#3b8169]">
+                            <DollarSign className="w-4 h-4" style={{ color: color.primary.accent }} />
+                            <span className="text-sm font-medium" style={{ color: color.primary.accent }}>
                               {offer.reward_value}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="flex items-center space-x-1">
                             <Calendar className="w-4 h-4 text-gray-400" />
-                            <span className="text-xs text-gray-500">
-                              {offer.validity_period} days
+                            <span className="text-xs text-gray-600">
+                              {offer.validity_period}d
                             </span>
                           </div>
-                        </div>
-
-                        {offer.terms_conditions && (
-                          <p className="text-xs text-gray-400 mt-2 line-clamp-1">
-                            {offer.terms_conditions}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

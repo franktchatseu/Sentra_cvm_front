@@ -27,6 +27,9 @@ import { useFileDownload } from "../../../shared/hooks/useFileDownload";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import ExecuteCampaignModal from "../components/ExecuteCampaignModal";
+import ApproveCampaignModal from "../components/ApproveCampaignModal";
+import RejectCampaignModal from "../components/RejectCampaignModal";
 
 interface CampaignDisplay {
   id: number;
@@ -74,7 +77,22 @@ export default function CampaignsPage() {
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const [showExecuteModal, setShowExecuteModal] = useState(false);
+  const [campaignToExecute, setCampaignToExecute] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [campaignToApprove, setCampaignToApprove] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [campaignToReject, setCampaignToReject] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({}); 
   const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
   const [allCampaignsUnfiltered, setAllCampaignsUnfiltered] = useState<
     CampaignDisplay[]
@@ -124,49 +142,30 @@ export default function CampaignsPage() {
   const fetchCampaigns = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Build params - backend uses mixed conventions!
-      const params: Record<string, string | number | boolean> = {
-        page: currentPage,
-        pageSize: pageSize,
-        sortBy: filters.sortBy,
-        sortDirection: filters.sortDirection.toUpperCase() as "ASC" | "DESC",
-      };
-
-      // Add search query if present
-      if (searchQuery.trim()) {
-        params.search = searchQuery.trim();
-      }
-
-      // Add status filter if not 'all'
-      if (selectedStatus !== "all") {
-        params.status = selectedStatus;
-      }
-
-      // Add approval status filter if not 'all'
-      if (filters.approvalStatus !== "all") {
-        params.approvalStatus = filters.approvalStatus;
-      }
-
-      // Add category filter if not 'all'
-      if (filters.categoryId !== "all") {
-        params.categoryId = parseInt(filters.categoryId);
-      }
-
-      // Add date range filters
-      if (filters.startDateFrom) {
-        params.startDateFrom = filters.startDateFrom;
-      }
-      if (filters.startDateTo) {
-        params.startDateTo = filters.startDateTo;
-      }
-
-      // Add skipCache to get fresh data
-      const response = await campaignService.getAllCampaigns({
-        ...params,
+      
+      // Calculate offset for pagination
+      const offset = (currentPage - 1) * pageSize;
+      
+      // Use new getCampaigns endpoint
+      const response = await campaignService.getCampaigns({
+        limit: pageSize,
+        offset: offset,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        search: searchQuery.trim() || undefined,
         skipCache: true,
       });
 
-      const campaignsData = (response.data as CampaignDisplay[]) || [];
+      // Transform backend campaigns to display format
+      const campaignsData: CampaignDisplay[] = response.data.map((campaign) => ({
+        id: campaign.id,
+        name: campaign.name,
+        description: campaign.description || undefined,
+        status: campaign.status,
+        category_id: campaign.category_id || undefined,
+        objective: campaign.objective,
+        startDate: campaign.start_date || undefined,
+        endDate: campaign.end_date || undefined,
+      }));
 
       // Helper function to generate consistent random values based on campaign ID
       const seededRandom = (seed: number, min: number, max: number) => {
@@ -294,7 +293,7 @@ export default function CampaignsPage() {
       setTotalCampaigns(
         selectedStatus === "all"
           ? finalCampaigns.length
-          : response.meta?.total || campaignsData.length
+          : response.pagination?.total || campaignsData.length
       );
     } catch (error) {
       console.error("Failed to fetch campaigns:", error);
@@ -744,21 +743,23 @@ export default function CampaignsPage() {
                           >
                             {campaign.name}
                           </div>
+                          {campaign.description && (
+                            <div className="mt-1 text-sm text-gray-500 truncate">
+                              {campaign.description}
+                            </div>
+                          )}
                           <div className="mt-2 flex items-center space-x-2">
                             <span
-                              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border"
                               style={{
-                                backgroundColor: "#E9D5FF",
-                                color: "#8B5CF6",
+                                backgroundColor: "#F0FDF4",
+                                color: "#16A34A",
+                                borderColor: "#BBF7D0"
                               }}
                             >
                               <span className="capitalize">
                                 {campaign.objective || "Acquisition"}
                               </span>
-                            </span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-sm text-gray-600">
-                              {campaign.type || "Multiple Target"}
                             </span>
                           </div>
                         </div>
@@ -819,9 +820,36 @@ export default function CampaignsPage() {
                     </td>
                     <td className="px-6 py-3 hidden xl:table-cell">
                       <div
-                        className={`text-sm ${tw.textPrimary} whitespace-nowrap`}
+                        className={`text-sm ${tw.textPrimary}`}
                       >
-                        {campaign.startDate} - {campaign.endDate}
+                        {campaign.startDate ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-1">
+                              <span className="text-gray-500 text-xs">Start:</span>
+                              <span className="font-medium">
+                                {new Date(campaign.startDate).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                            {campaign.endDate && (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-gray-500 text-xs">End:</span>
+                                <span className="font-medium">
+                                  {new Date(campaign.endDate).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Not scheduled</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-3">
@@ -903,6 +931,100 @@ export default function CampaignsPage() {
                                 zIndex: 9999,
                               }}
                             >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCampaignToExecute({ id: campaign.id, name: campaign.name });
+                                  setShowExecuteModal(true);
+                                  setShowActionMenu(null);
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Play
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: color.primary.accent }}
+                                />
+                                Execute Campaign
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCampaignToApprove({ id: campaign.id, name: campaign.name });
+                                  setShowApproveModal(true);
+                                  setShowActionMenu(null);
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <CheckCircle
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#10B981' }}
+                                />
+                                Approve Campaign
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCampaignToReject({ id: campaign.id, name: campaign.name });
+                                  setShowRejectModal(true);
+                                  setShowActionMenu(null);
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Trash2
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#EF4444' }}
+                                />
+                                Reject Campaign
+                              </button>
+
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setShowActionMenu(null);
+                                  try {
+                                    await campaignService.activateCampaign(campaign.id);
+                                    showToast('success', `Campaign "${campaign.name}" activated successfully!`);
+                                    fetchCampaigns();
+                                  } catch (error) {
+                                    console.error('Error activating campaign:', error);
+                                    showToast('error', 'Failed to activate campaign');
+                                  }
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Play
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#10B981' }}
+                                />
+                                Activate Campaign
+                              </button>
+
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setShowActionMenu(null);
+                                  try {
+                                    await campaignService.pauseCampaign(campaign.id);
+                                    showToast('success', `Campaign "${campaign.name}" paused successfully!`);
+                                    fetchCampaigns();
+                                  } catch (error) {
+                                    console.error('Error pausing campaign:', error);
+                                    showToast('error', 'Failed to pause campaign');
+                                  }
+                                }}
+                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
+                              >
+                                <Pause
+                                  className="w-4 h-4 mr-4"
+                                  style={{ color: '#F59E0B' }}
+                                />
+                                Pause Campaign
+                              </button>
+
+                              <div className="border-t border-gray-200 my-2"></div>
+
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -1255,6 +1377,54 @@ export default function CampaignsPage() {
         confirmText="Delete Campaign"
         cancelText="Cancel"
       />
+
+      {/* Execute Campaign Modal */}
+      {campaignToExecute && (
+        <ExecuteCampaignModal
+          isOpen={showExecuteModal}
+          onClose={() => {
+            setShowExecuteModal(false);
+            setCampaignToExecute(null);
+          }}
+          campaignId={campaignToExecute.id}
+          campaignName={campaignToExecute.name}
+          onSuccess={() => {
+            fetchCampaigns();
+          }}
+        />
+      )}
+
+      {/* Approve Campaign Modal */}
+      {campaignToApprove && (
+        <ApproveCampaignModal
+          isOpen={showApproveModal}
+          onClose={() => {
+            setShowApproveModal(false);
+            setCampaignToApprove(null);
+          }}
+          campaignId={campaignToApprove.id}
+          campaignName={campaignToApprove.name}
+          onSuccess={() => {
+            fetchCampaigns();
+          }}
+        />
+      )}
+
+      {/* Reject Campaign Modal */}
+      {campaignToReject && (
+        <RejectCampaignModal
+          isOpen={showRejectModal}
+          onClose={() => {
+            setShowRejectModal(false);
+            setCampaignToReject(null);
+          }}
+          campaignId={campaignToReject.id}
+          campaignName={campaignToReject.name}
+          onSuccess={() => {
+            fetchCampaigns();
+          }}
+        />
+      )}
     </div>
   );
 }

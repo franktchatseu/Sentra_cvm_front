@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Users, Plus, Edit, Trash2, Settings, GripVertical, AlertCircle, Award, TestTube, RotateCw, Layers, ChevronDown } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Settings, GripVertical, Award, TestTube, RotateCw, Layers, ChevronDown } from 'lucide-react';
 import { CreateCampaignRequest, CampaignSegment, SegmentControlGroupConfig, ControlGroup } from '../../types/campaign';
 import { Segment } from '../../../segments/types/segment';
 import ChampionChallengerDisplay from '../displays/ChampionChallengerDisplay';
 import ABTestDisplay from '../displays/ABTestDisplay';
 import SequentialCampaignDisplay from '../displays/SequentialCampaignDisplay';
-import { tw, components } from '../../../../shared/utils/utils';
+import { tw, components, color } from '../../../../shared/utils/utils';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
 
 interface AvailableControlGroup {
@@ -193,26 +193,37 @@ export default function AudienceConfigurationStep({
   const getControlGroupColor = (config?: SegmentControlGroupConfig) => {
     if (!config || config.type === 'none') return 'bg-gray-100 text-gray-700';
     if (config.type === 'with_control_group') {
-      if (config.control_group_method === 'fixed_percentage') return 'bg-blue-100 text-blue-700';
-      if (config.control_group_method === 'fixed_number') return 'bg-green-100 text-green-700';
-      if (config.control_group_method === 'advanced_parameters') return 'bg-orange-100 text-orange-700';
-      return 'bg-blue-100 text-blue-700';
+      if (config.control_group_method === 'fixed_percentage') return `text-white`;
+      if (config.control_group_method === 'fixed_number') return `text-white`;
+      if (config.control_group_method === 'advanced_parameters') return `text-white`;
+      return `text-white`;
     }
-    if (config.type === 'multiple_control_group') return 'bg-purple-100 text-purple-700';
+    if (config.type === 'multiple_control_group') return `text-white`;
     return 'bg-gray-100 text-gray-700';
+  };
+
+  const getControlGroupBgColor = (config?: SegmentControlGroupConfig) => {
+    if (!config || config.type === 'none') return '#f3f4f6';
+    if (config.type === 'with_control_group') {
+      if (config.control_group_method === 'fixed_percentage') return color.primary.accent;
+      if (config.control_group_method === 'fixed_number') return color.status.success;
+      if (config.control_group_method === 'advanced_parameters') return color.status.warning;
+      return color.primary.accent;
+    }
+    if (config.type === 'multiple_control_group') return color.tertiary.tag1;
+    return '#f3f4f6';
   };
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
      
 
       {/* Campaign Type Selection */}
-      <div className={`${components.card.surface} space-y-4`}>
+      <div className={`${components.card.surface} space-y-3`}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className={`${tw.cardTitle} ${tw.textPrimary}`}>Campaign Type</h3>
-            <p className={`${tw.caption} ${tw.textSecondary} mt-1`}>Select the type of campaign you want to create</p>
           </div>
         </div>
         
@@ -283,7 +294,7 @@ export default function AudienceConfigurationStep({
 
       {/* Mutually Exclusive Segments Checkbox */}
       {selectedSegments.length > 1 && (
-        <div className="rounded-lg p-4">
+        <div className="rounded-lg p-3">
           <label className="flex items-start space-x-3 cursor-pointer">
             <input
               type="checkbox"
@@ -297,7 +308,8 @@ export default function AudienceConfigurationStep({
                 }));
                 setSelectedSegments(updatedSegments);
               }}
-              className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157] rounded"
+              className="mt-1 w-4 h-4 border-gray-300 rounded"
+              style={{ accentColor: color.primary.accent }}
             />
             <div>
               <div className="font-medium text-gray-900">Mutually Exclusive Segments</div>
@@ -308,20 +320,21 @@ export default function AudienceConfigurationStep({
       )}
 
       {/* Selected Segments - Adapted by Campaign Type */}
-      <div className={`${components.card.surface} space-y-4`}>
+      <div className={`${components.card.surface} space-y-3`}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className={`${tw.cardTitle} ${tw.textPrimary}`}>
               {formData.campaign_type === 'champion_challenger' && 'Champion & Challengers'}
-              {formData.campaign_type === 'ab_test' && 'A/B Test Segments'}
-              {formData.campaign_type === 'round_robin' && 'Target Segment'}
-              {formData.campaign_type === 'multiple_level' && 'Target Segment'}
+              {formData.campaign_type === 'ab_test' && 'A/B Test Variants'}
+              {formData.campaign_type === 'round_robin' && 'Round Robin Target'}
+              {formData.campaign_type === 'multiple_level' && 'Multiple Level Target'}
               {formData.campaign_type === 'multiple_target_group' && 'Selected Segments'}
             </h3>
-            <p className={`${tw.caption} ${tw.textSecondary} mt-1`}>
-              {selectedSegments.length > 1 && formData.campaign_type === 'multiple_target_group' && 'Drag rows to reorder priority'}
+            <p className={`${tw.caption} ${tw.textSecondary}`}>
               {formData.campaign_type === 'champion_challenger' && 'Define champion segment and its challengers'}
-              {formData.campaign_type === 'ab_test' && 'Create exactly two segments for A/B testing'}
+              {formData.campaign_type === 'ab_test' && 'Configure A and B variants for testing'}
+              {formData.campaign_type === 'round_robin' && 'Define single target segment for rotating offers'}
+              {formData.campaign_type === 'multiple_level' && 'Define single target segment for sequential offers'}
               {(formData.campaign_type === 'round_robin' || formData.campaign_type === 'multiple_level') && 'Define single target segment for sequential offers'}
             </p>
           </div>
@@ -333,7 +346,10 @@ export default function AudienceConfigurationStep({
               (formData.campaign_type === 'multiple_level' && selectedSegments.length === 0)) && (
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className={`${tw.button} flex items-center gap-2`}
+                  className="flex items-center gap-2 px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                  style={{ backgroundColor: color.primary.action }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${color.primary.action}cc`}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = color.primary.action}
                 >
                   <Plus className="w-4 h-4" />
                   {formData.campaign_type === 'champion_challenger' && selectedSegments.length === 0 ? 'Champion' :
@@ -371,7 +387,6 @@ export default function AudienceConfigurationStep({
           <ABTestDisplay
             variantA={selectedSegments[0] || null}
             variantB={selectedSegments[1] || null}
-            onAddVariant={() => setIsModalOpen(true)}
             onRemoveSegment={handleRemoveSegment}
             onConfigureControlGroup={(segmentId) => {
               setEditingControlGroup(segmentId);
@@ -385,7 +400,6 @@ export default function AudienceConfigurationStep({
           <SequentialCampaignDisplay
             campaignType={formData.campaign_type}
             segment={selectedSegments[0] || null}
-            onAddSegment={() => setIsModalOpen(true)}
             onRemoveSegment={handleRemoveSegment}
             onConfigureControlGroup={(segmentId) => {
               setEditingControlGroup(segmentId);
@@ -396,13 +410,13 @@ export default function AudienceConfigurationStep({
 
         {/* Standard Display for Multiple Target Group */}
         {formData.campaign_type === 'multiple_target_group' && selectedSegments.length === 0 && (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-            <div className="flex items-center justify-center gap-4">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-gray-400" />
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Users className="w-4 h-4 text-gray-400" />
               </div>
               <div className="text-center">
-                <h3 className={`${tw.body} ${tw.textPrimary} font-medium mb-1`}>No Segments Selected</h3>
+                <h3 className={`${tw.body} ${tw.textPrimary} font-medium`}>No Segments Selected</h3>
                 <p className={`${tw.caption} ${tw.textSecondary}`}>
                   Select target audience segments for your campaign
                 </p>
@@ -449,15 +463,21 @@ export default function AudienceConfigurationStep({
                         {selectedSegments.length > 1 && (
                           <GripVertical className="w-4 h-4 text-gray-400" />
                         )}
-                        <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 text-xs font-semibold rounded">
+                        <span 
+                          className="inline-flex items-center justify-center w-6 h-6 text-xs font-semibold rounded text-white"
+                          style={{ backgroundColor: color.primary.accent }}
+                        >
                           #{index + 1}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                          <Users className="w-4 h-4 text-blue-600" />
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${color.primary.accent}20` }}
+                        >
+                          <Users className="w-4 h-4" style={{ color: color.primary.accent }} />
                         </div>
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-gray-900 truncate">{segment.name}</div>
@@ -472,7 +492,10 @@ export default function AudienceConfigurationStep({
                       <div className="text-xs text-gray-500">customers</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getControlGroupColor(segment.control_group_config)}`}>
+                      <span 
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getControlGroupColor(segment.control_group_config)}`}
+                        style={{ backgroundColor: getControlGroupBgColor(segment.control_group_config) }}
+                      >
                         {getControlGroupLabel(segment.control_group_config)}
                       </span>
                     </td>
@@ -514,20 +537,6 @@ export default function AudienceConfigurationStep({
         )}
       </div>
 
-      {/* Segment Overlap Warning */}
-      {selectedSegments.length > 1 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <div className="flex items-start space-x-2">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-medium text-amber-900">Segment Overlap Detection</h4>
-              <p className="text-sm text-amber-700 mt-1">
-                Multiple segments selected. Please verify there's no significant overlap to avoid duplicate messaging.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* Segment Selection Modal */}

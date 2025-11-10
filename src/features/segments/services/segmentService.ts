@@ -61,6 +61,10 @@ import {
   // Size Estimation
   SizeEstimateRequest,
   SizeEstimateResponse,
+  // Segmentation Fields API
+  SegmentationFieldsResponse,
+  GenerateQueryPreviewRequest,
+  GenerateQueryPreviewResponse,
 } from "../types/segment";
 import {
   API_CONFIG,
@@ -1444,6 +1448,63 @@ class SegmentService {
     return this.request<ApiSuccessResponse<ExportStatusResponse>>(
       `/${segmentId}/export-status/${jobId}`
     );
+  }
+
+  // ==================== SEGMENTATION FIELDS (2 endpoints) ====================
+
+  /**
+   * GET /segmentation-fields/profile - Get all available fields and operators for segmentation
+   * This endpoint returns the field configuration that users can use to build segment conditions
+   */
+  async getSegmentationFields(
+    skipCache: boolean = false
+  ): Promise<SegmentationFieldsResponse> {
+    const queryString = this.buildQueryParams({ skipCache });
+    const url = `${buildApiUrl("/segmentation-fields")}/profile${queryString}`;
+
+    const response = await fetch(url, {
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * POST /segments/generate-query/preview - Generate SQL query preview from conditions
+   * This endpoint takes the user's segment conditions and returns the generated SQL queries
+   */
+  async generateSegmentQueryPreview(
+    request: GenerateQueryPreviewRequest
+  ): Promise<GenerateQueryPreviewResponse> {
+    const url = `${buildApiUrl("/segments")}/generate-query/preview`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
   }
 }
 

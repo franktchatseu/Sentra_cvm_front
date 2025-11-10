@@ -1,5 +1,84 @@
 export type CampaignType = 'multiple_target_group' | 'champion_challenger' | 'ab_test' | 'round_robin' | 'multiple_level';
 
+// Backend Campaign Response Types
+export interface BackendCampaignType {
+  id: number;
+  campaign_uuid: string;
+  name: string;
+  code: string;
+  description: string | null;
+  objective: string;
+  category_id: number | null;
+  program_id: number | null;
+  status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled' | 'scheduled';
+  approval_status: 'pending' | 'approved' | 'rejected';
+  start_date: string | null;
+  end_date: string | null;
+  timezone: string | null;
+  budget_allocated: string | null;
+  budget_spent: string | null;
+  max_participants: number | null;
+  current_participants: number | null;
+  target_reach: number | null;
+  target_conversion_rate: string | null;
+  target_revenue: string | null;
+  owner_team: string | null;
+  campaign_manager_id: number | null;
+  approved_by: number | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
+  control_group_enabled: boolean;
+  control_group_percentage: string | null;
+  tenant_id: number | null;
+  client_id: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  updated_by: number | null;
+  deleted_at: string | null;
+  deleted_by: number | null;
+  metadata: Record<string, any> | null;
+  tags: string[];
+  attribution_model_id: number | null;
+}
+
+export interface GetCampaignsResponse {
+  success: boolean;
+  data: BackendCampaignType[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+  source: string;
+}
+
+// Campaign Category Types
+export interface CampaignCategory {
+  id: number;
+  name: string;
+  description: string | null;
+  parent_category_id: number | null;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface GetCampaignCategoriesResponse {
+  success: boolean;
+  data: CampaignCategory[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+  source: string;
+}
+
 // Base Campaign Interface
 interface CampaignBase {
   id: string;

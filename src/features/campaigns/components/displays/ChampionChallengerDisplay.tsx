@@ -24,75 +24,55 @@ export default function ChampionChallengerDisplay({
     challengers.reduce((sum, c) => sum + c.customer_count, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Overview Stats */}
-      {totalAudience > 0 && (
-        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-bold text-[#588157]">
-                {totalAudience.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-600">Total Audience</div>
-            </div>
-            <div className="text-right">
-              <div className="text-lg font-semibold text-gray-900">
-                1 Champion + {challengers.length} Challenger{challengers.length !== 1 ? 's' : ''}
-              </div>
-              <div className="text-sm text-gray-500">Test Configuration</div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="space-y-4">
 
       {/* Champion Section */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center space-x-2">
           <Award className="w-5 h-5 text-[#588157]" />
-          <h3 className="text-lg font-semibold text-gray-900">Champion Segment</h3>
+          <h3 className="text-base font-semibold text-gray-900">Champion Segment</h3>
         </div>
 
         {champion ? (
-          <div className=" border border-[#588157] rounded-xl p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-4 flex-1">
-                <div className="w-14 h-14  rounded-xl flex items-center justify-center flex-shrink-0 ">
-                  <Award className="w-7 h-7 text-[#588157]" />
+          <div className="border border-[#588157] rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                  <Award className="w-5 h-5" style={{ color: color.primary.accent }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h4 className="text-lg font-bold text-gray-900">{champion.name}</h4>
-                    <span className="px-3 py-1  text-white text-xs font-bold rounded-full shadow-sm">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <h4 className="text-base font-semibold text-gray-900">{champion.name}</h4>
+                    <span className="px-2 py-0.5 text-white text-xs font-medium rounded-full" style={{ backgroundColor: color.primary.accent }}>
                       🏆 CHAMPION
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">{champion.description}</p>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-[#588157]" />
-                      <span className="text-sm font-semibold text-gray-900">
+                  <div className="flex items-center space-x-4 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-600 font-medium">
                         {champion.customer_count.toLocaleString()} customers
                       </span>
                     </div>
                     {champion.control_group_config && champion.control_group_config.type !== 'none' && (
-                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                        Control Group Active
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${color.primary.accent}15`, color: color.primary.accent }}>
+                        Control Group
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 ml-4">
+              <div className="flex items-center space-x-1">
                 <button
                   onClick={() => onConfigureControlGroup(champion.id)}
-                  className="p-2 text-gray-400 hover:text-[#588157] hover:/10 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
                   title="Configure Control Group"
                 >
                   <Settings className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onRemoveSegment(champion.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
                   title="Remove Champion"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -119,11 +99,11 @@ export default function ChampionChallengerDisplay({
 
       {/* Challengers Section */}
       {champion && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Target className="w-5 h-5 text-[#588157]" />
-              <h3 className="text-lg font-semibold text-gray-900">Challenger Segments</h3>
+              <h3 className="text-base font-semibold text-gray-900">Challenger Segments</h3>
               <span className="text-sm text-gray-500">({challengers.length})</span>
             </div>
             <button
@@ -143,60 +123,95 @@ export default function ChampionChallengerDisplay({
           </div>
 
           {challengers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {challengers.map((challenger, index) => (
-                <div
-                  key={challenger.id}
-                  className="bg-white border border-[#A3B18A] rounded-xl p-5 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3 flex-1">
-                      <div className="w-10 h-10 border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-[#344E41] font-bold text-sm">C{index + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="font-semibold text-gray-900">{challenger.name}</h4>
-                          <span className="px-2 py-0.5  text-white text-xs font-medium rounded-full" style={{ backgroundColor: color.primary.action }}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                      #
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Challenger Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      Customers
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      Control Group
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {challengers.map((challenger, index) => (
+                    <tr key={challenger.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center">
+                          <span 
+                            className="inline-flex items-center justify-center w-6 h-6 text-xs font-semibold rounded text-white"
+                            style={{ backgroundColor: color.primary.action }}
                           >
-                            Challenger
+                            C{index + 1}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 mb-2">{challenger.description}</p>
-                        <div className="flex items-center space-x-3 text-xs">
-                          <div className="flex items-center space-x-1">
-                            <Users className="w-3 h-3 text-gray-400" />
-                            <span className="text-gray-600 font-medium">
-                              {challenger.customer_count.toLocaleString()}
-                            </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${color.primary.accent}20` }}
+                          >
+                            <Target className="w-4 h-4" style={{ color: color.primary.accent }} />
                           </div>
-                          {challenger.control_group_config && challenger.control_group_config.type !== 'none' && (
-                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded text-xs">
-                              CG
-                            </span>
-                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{challenger.name}</div>
+                            <div className="text-xs text-gray-500">{challenger.description}</div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col space-y-1 ml-2">
-                      <button
-                        onClick={() => onConfigureControlGroup(challenger.id)}
-                        className="p-1.5 text-gray-400 hover:text-[#588157] hover:/10 rounded transition-colors"
-                        title="Configure Control Group"
-                      >
-                        <Settings className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => onRemoveSegment(challenger.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                        title="Remove"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-1">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {challenger.customer_count.toLocaleString()}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {challenger.control_group_config && challenger.control_group_config.type !== 'none' ? (
+                          <span className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: `${color.primary.accent}15`, color: color.primary.accent }}>
+                            Active
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
+                            None
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end space-x-1">
+                          <button
+                            onClick={() => onConfigureControlGroup(challenger.id)}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                            title="Configure Control Group"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => onRemoveSegment(challenger.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"
+                            title="Remove"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className=" border border-gray-300 rounded-xl p-8">

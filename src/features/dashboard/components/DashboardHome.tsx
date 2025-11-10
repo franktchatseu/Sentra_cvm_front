@@ -19,6 +19,7 @@ import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import { offerService } from "../../offers/services/offerService";
 import { segmentService } from "../../segments/services/segmentService";
 import { productService } from "../../products/services/productService";
+import { campaignService } from "../../campaigns/services/campaignService";
 import {
   PieChart,
   Pie,
@@ -56,6 +57,7 @@ export default function DashboardHome() {
   useClickOutside(dropdownRef, () => setIsFilterDropdownOpen(false));
 
   // State for latest items data
+  const [recentCampaigns, setRecentCampaigns] = useState<any[]>([]);
   const [recentOffers, setRecentOffers] = useState<
     Array<{
       id: number;
@@ -99,16 +101,22 @@ export default function DashboardHome() {
   const [productsStats, setProductsStats] = useState<{
     total: number;
   } | null>(null);
+  const [campaignsStats, setCampaignsStats] = useState<{
+    total: number;
+    active: number;
+  } | null>(null);
 
   // State for percentage changes
   const [percentageChanges, setPercentageChanges] = useState<{
     offers: number | null;
     segments: number | null;
     products: number | null;
+    campaigns: number | null;
   }>({
     offers: null,
     segments: null,
     products: null,
+    campaigns: null,
   });
 
   // State for segment type distribution
@@ -312,6 +320,28 @@ export default function DashboardHome() {
       } catch {
         setProductsStats({ total: 0 });
       }
+
+      try {
+        // Fetch campaigns stats
+        const campaignsResponse = await campaignService.getCampaigns({ 
+          limit: 1,
+          skipCache: true 
+        });
+        const total = campaignsResponse.pagination?.total || 0;
+        
+        // Get active campaigns count
+        const activeCampaignsResponse = await campaignService.getCampaigns({ 
+          limit: 1,
+          status: 'active',
+          skipCache: true 
+        });
+        const active = activeCampaignsResponse.pagination?.total || 0;
+        
+        setCampaignsStats({ total, active });
+      } catch (error) {
+        console.error("Failed to fetch campaigns stats:", error);
+        setCampaignsStats({ total: 0, active: 0 });
+      }
     };
 
     fetchStats();
@@ -426,8 +456,39 @@ export default function DashboardHome() {
             );
           setRecentProducts(formattedProducts);
         }
-      } catch {
-        // Error fetching products
+      } catch (error) {}
+
+      try {
+        // Fetch latest campaigns
+        const campaignsResponse = await campaignService.getCampaigns({ 
+          limit: 3,
+          skipCache: true 
+        });
+        if (
+          campaignsResponse.success &&
+          campaignsResponse.data &&
+          campaignsResponse.data.length > 0
+        ) {
+          const formattedCampaigns = campaignsResponse.data
+            .slice(0, 3)
+            .map((campaign: any) => {
+              return {
+                id: campaign.id,
+                name: campaign.name,
+                status: campaign.status?.toLowerCase() || "draft",
+                segment: campaign.metadata?.channel || "Unknown",
+                performance: {
+                  response: campaign.current_participants || 0,
+                  delivered: campaign.current_participants || 0,
+                  converted: Math.floor((campaign.current_participants || 0) * 0.15),
+                },
+                created_at: campaign.created_at,
+              };
+            });
+          setRecentCampaigns(formattedCampaigns);
+        }
+      } catch (error) {
+        console.error("Failed to fetch campaigns:", error);
       }
     };
 
@@ -738,13 +799,23 @@ export default function DashboardHome() {
     }
   }, [offersStats, segmentsStats, productsStats]);
 
-  // Stats data - campaigns hardcoded, others use real data
+  // Stats data - using real data from API
   const stats = [
     {
       name: "Active Campaigns",
-      value: "10", // Hardcoded as per user request
-      change: "+12%",
-      changeType: "positive" as const,
+      value: campaignsStats?.active?.toLocaleString() || "0",
+      change:
+        percentageChanges.campaigns !== null
+          ? `${
+              percentageChanges.campaigns >= 0 ? "+" : ""
+            }${percentageChanges.campaigns.toFixed(1)}%`
+          : "N/A",
+      changeType:
+        percentageChanges.campaigns !== null
+          ? percentageChanges.campaigns >= 0
+            ? "positive"
+            : "negative"
+          : "positive",
       icon: Target,
     },
     {
@@ -1308,7 +1379,7 @@ export default function DashboardHome() {
               <div className="space-y-4">
                 {/* Campaigns */}
                 {latestItemsFilter === "campaigns" &&
-                  campaigns.slice(0, 3).map((campaign) => (
+                  recentCampaigns.slice(0, 3).map((campaign) => (
                     <div
                       key={campaign.id}
                       className="flex items-center gap-4 p-5 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
@@ -1482,7 +1553,7 @@ export default function DashboardHome() {
 
                 {/* Empty State */}
                 {((latestItemsFilter === "campaigns" &&
-                  campaigns.length === 0) ||
+                  recentCampaigns.length === 0) ||
                   (latestItemsFilter === "offers" &&
                     recentOffers.length === 0) ||
                   (latestItemsFilter === "segments" &&
