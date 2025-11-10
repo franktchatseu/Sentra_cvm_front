@@ -26,6 +26,7 @@ import {
   List,
   Building2,
   Upload,
+  Fingerprint
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
@@ -79,7 +80,8 @@ interface NavigationItem {
     | "segments"
     | "users"
     | "analytics"
-    | "configuration";
+    | "configuration"
+    | "customers";
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -274,6 +276,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       icon: Cog,
       type: "single",
       entity: "configuration",
+    },
+    {
+      name: "Customer Identity",
+      href: "/dashboard/customer-identity",
+      icon: Fingerprint,
+      type: "single",
+      entity: "customers",
     },
   ];
 

@@ -205,7 +205,6 @@ interface SegmentsModalProps {
   onClose: () => void;
   category: SegmentCategory | null;
   onRefreshCategories: () => Promise<void> | void;
-  onRefreshCounts: () => Promise<void> | void;
 }
 
 function SegmentsModal({
@@ -213,7 +212,6 @@ function SegmentsModal({
   onClose,
   category,
   onRefreshCategories,
-  onRefreshCounts,
 }: SegmentsModalProps) {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
@@ -339,7 +337,7 @@ function SegmentsModal({
 
     // Refresh segments list and counts
     loadCategorySegments();
-    onRefreshCounts();
+    onRefreshCategories();
 
     return { success, failed, errors };
   };
@@ -383,7 +381,6 @@ function SegmentsModal({
       });
       showToast("Segment removed from catalog");
       await loadCategorySegments();
-      await onRefreshCounts();
       await onRefreshCategories();
     } catch (err) {
       showError(
@@ -1120,8 +1117,7 @@ export default function SegmentCategoriesPage() {
           setSelectedCategory(null);
         }}
         category={selectedCategory}
-        onRefreshCategories={loadCategories}
-        onRefreshCounts={() => loadSegmentCounts(categories)}
+        onRefreshCategories={() => loadCategories(true)}
       />
     </div>
   );

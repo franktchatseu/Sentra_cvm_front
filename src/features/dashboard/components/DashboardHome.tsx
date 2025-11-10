@@ -891,12 +891,14 @@ export default function DashboardHome() {
             ? "Draft offers ready for review and activation"
             : "All offers are published or archived",
         icon: Clock,
+        valueColor: color.primary.accent,
       },
       {
         label: "Largest segment",
         value: "High Value Customers",
         description: "18,240 members • Growth +4.2% MoM",
         icon: Users,
+        valueColor: color.primary.accent,
       },
       {
         label: "Product catalog",
@@ -906,12 +908,14 @@ export default function DashboardHome() {
             ? `Total products ready for offer creation`
             : "No products synced yet",
         icon: Package,
+        valueColor: color.primary.accent,
       },
       {
         label: "Upcoming campaign launch",
         value: "Holiday Rewards Blast",
         description: "Scheduled Nov 15 • Campaign setup complete",
         icon: ArrowRight,
+        valueColor: color.primary.accent,
       },
     ];
   }, [offersStats, productsStats]);
@@ -1238,7 +1242,16 @@ export default function DashboardHome() {
                     <p className="text-xs uppercase tracking-wide text-black font-medium mb-1">
                       {insight.label}
                     </p>
-                    <p className="text-base font-semibold text-gray-900 leading-tight">
+                    <p
+                      className={`text-base font-semibold leading-tight ${
+                        insight.valueColor ? "" : "text-gray-900"
+                      }`}
+                      style={
+                        insight.valueColor
+                          ? { color: insight.valueColor }
+                          : undefined
+                      }
+                    >
                       {insight.value}
                     </p>
                   </div>

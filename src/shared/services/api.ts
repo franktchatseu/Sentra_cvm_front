@@ -3,16 +3,10 @@
 // Default: http://localhost:8080/api/database-service
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "http://cvm.groupngs.com:8080/api/database-service";
-
-const isProduction =
-  window.location.hostname !== "localhost" &&
-  window.location.hostname !== "127.0.0.1";
+  `${window.location.protocol}//${window.location.host}/api/database-service`;
 
 export const API_CONFIG = {
-  // Use proxy in production, direct API in development
-  // BASE_URL is now configurable via VITE_API_BASE_URL environment variable
-  BASE_URL: isProduction ? "/api/proxy" : API_BASE_URL,
+  BASE_URL: API_BASE_URL,
   ENDPOINTS: {
     OFFERS: "/offers",
     PRODUCTS: "/products",

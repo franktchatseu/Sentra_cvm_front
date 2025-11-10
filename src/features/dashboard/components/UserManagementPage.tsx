@@ -465,13 +465,10 @@ export default function UserManagementPage() {
 
     try {
       if (onboardingRequestId) {
-        await accountService.rejectAccountRequest(onboardingRequestId, {
-          reason: "Rejected by administrator",
-        });
+        await accountService.rejectAccountRequest(onboardingRequestId);
       } else if (userId) {
         await userService.deactivateUser(userId, {
           updated_by: authUser?.user_id ?? undefined,
-          reason: "Rejected during onboarding",
         });
       }
 

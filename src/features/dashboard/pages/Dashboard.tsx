@@ -40,6 +40,8 @@ import LineOfBusinessPage from "../../campaigns/pages/LineOfBusinessPage";
 import AssignItemsPage from "../../../shared/pages/AssignItemsPage";
 import OfferCreativeDetailsPage from "../../offers/pages/OfferCreativeDetailsPage";
 import QuickListsPage from "../../quicklists/pages/QuickListsPage";
+import CustomerIdentityPage from "../../customer/pages/CustomerIdentityPage";
+import CustomerIdentityFieldDetailsPage from "../../customer/pages/CustomerIdentityFieldDetailsPage";
 
 export default function Dashboard() {
   return (
@@ -121,6 +123,11 @@ export default function Dashboard() {
         <Route
           path="/configuration/:id"
           element={<ConfigurationDetailsPage />}
+        />
+        <Route path="/customer-identity" element={<CustomerIdentityPage />} />
+        <Route
+          path="/customer-identity/fields/:id"
+          element={<CustomerIdentityFieldDetailsPage />}
         />
       </Routes>
     </DashboardLayout>
