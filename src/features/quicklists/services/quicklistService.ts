@@ -1,14 +1,20 @@
-import { API_CONFIG, getAuthHeaders } from '../../../shared/services/api';
+import { API_CONFIG, getAuthHeaders } from "../../../shared/services/api";
 import {
   QuickListResponse,
   SingleQuickListResponse,
-  QuickListDataResponse,
+  QuickListDataResponseUnion,
   ImportLogsResponse,
-  UploadTypesResponse,
+  UploadTypesResponseUnion,
   CreateQuickListRequest,
   UpdateQuickListRequest,
-  QuickListStatsResponse,
-} from '../types/quicklist';
+  QuickListStatsResponseUnion,
+  UploadTypeSchemaResponseUnion,
+  TableMappingsResponseUnion,
+  SingleTableMappingResponse,
+  CreateQuickListResponseUnion,
+  UpdateQuickListResponseUnion,
+  DeleteQuickListResponseUnion,
+} from "../types/quicklist";
 
 const BASE_URL = `${API_CONFIG.BASE_URL}/quicklists`;
 
@@ -27,18 +33,37 @@ class QuickListService {
       },
     });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('API Error Response:', {
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // If response is not JSON, treat as error
+      console.error("API Error Response (non-JSON):", {
         status: response.status,
         statusText: response.statusText,
-        body: errorBody,
+        body: text,
         url,
       });
-      throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${text}`
+      );
     }
 
-    return response.json();
+    // Check if response is an error response
+    if (!response.ok || ("success" in data && !data.success)) {
+      const errorMessage =
+        "error" in data ? data.error : `HTTP error! status: ${response.status}`;
+      console.error("API Error Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: data,
+        url,
+      });
+      throw new Error(errorMessage);
+    }
+
+    return data;
   }
 
   // QuickList Management
@@ -50,18 +75,22 @@ class QuickListService {
   }): Promise<QuickListResponse> {
     const queryParams = new URLSearchParams();
     // Always skip cache by default
-    queryParams.append('skipCache', 'true');
+    queryParams.append("skipCache", "true");
     if (params) {
-      if (params.upload_type) queryParams.append('upload_type', params.upload_type);
-      if (params.limit) queryParams.append('limit', String(params.limit));
-      if (params.offset) queryParams.append('offset', String(params.offset));
+      if (params.upload_type)
+        queryParams.append("upload_type", params.upload_type);
+      if (params.limit) queryParams.append("limit", String(params.limit));
+      if (params.offset) queryParams.append("offset", String(params.offset));
     }
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
     return this.request<QuickListResponse>(`${query}`);
   }
 
-  async getQuickListById(id: number, skipCache: boolean = true): Promise<SingleQuickListResponse> {
-    const query = skipCache ? '?skipCache=true' : '';
+  async getQuickListById(
+    id: number,
+    skipCache: boolean = true
+  ): Promise<SingleQuickListResponse> {
+    const query = skipCache ? "?skipCache=true" : "";
     return this.request<SingleQuickListResponse>(`/${id}${query}`);
   }
 
@@ -72,114 +101,109 @@ class QuickListService {
       offset?: number;
       skipCache?: boolean;
     }
-  ): Promise<QuickListDataResponse> {
+  ): Promise<QuickListDataResponseUnion> {
     const queryParams = new URLSearchParams();
     // Always skip cache by default
-    queryParams.append('skipCache', 'true');
+    queryParams.append("skipCache", "true");
     if (params) {
-      if (params.limit) queryParams.append('limit', String(params.limit));
-      if (params.offset) queryParams.append('offset', String(params.offset));
+      if (params.limit) queryParams.append("limit", String(params.limit));
+      if (params.offset) queryParams.append("offset", String(params.offset));
     }
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.request<QuickListDataResponse>(`/${id}/data${query}`);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    return this.request<QuickListDataResponseUnion>(`/${id}/data${query}`);
   }
 
   async getImportLogs(
     id: number,
     params?: {
-      status?: 'success' | 'failed' | 'skipped';
+      status?: "success" | "failed" | "skipped";
       limit?: number;
       offset?: number;
+      skipCache?: boolean;
     }
   ): Promise<ImportLogsResponse> {
     const queryParams = new URLSearchParams();
     // Always skip cache by default
-    queryParams.append('skipCache', 'true');
+    queryParams.append("skipCache", "true");
     if (params) {
-      if (params.status) queryParams.append('status', params.status);
-      if (params.limit) queryParams.append('limit', String(params.limit));
-      if (params.offset) queryParams.append('offset', String(params.offset));
+      if (params.status) queryParams.append("status", params.status);
+      if (params.limit) queryParams.append("limit", String(params.limit));
+      if (params.offset) queryParams.append("offset", String(params.offset));
     }
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
     return this.request<ImportLogsResponse>(`/${id}/logs${query}`);
   }
 
-  async createQuickList(request: CreateQuickListRequest): Promise<SingleQuickListResponse> {
+  async createQuickList(
+    request: CreateQuickListRequest
+  ): Promise<CreateQuickListResponseUnion> {
     const formData = new FormData();
-    formData.append('file', request.file);
-    formData.append('upload_type', request.upload_type);
-    formData.append('name', request.name);
-    if (request.description) {
-      formData.append('description', request.description);
+    formData.append("file", request.file);
+    formData.append("upload_type", request.upload_type);
+    formData.append("name", request.name);
+    if (request.description !== undefined) {
+      formData.append("description", request.description || "");
     }
-    formData.append('created_by', request.created_by);
-
-    // Try multiple possible endpoints until we find the right one
-    const possibleEndpoints = [
-      `${API_CONFIG.BASE_URL}/quicklists`,           // Standard REST endpoint
-      `${API_CONFIG.BASE_URL}/quicklists/upload`,    // Specific upload endpoint
-      `${API_CONFIG.BASE_URL}/upload`,               // General upload endpoint
-      `${API_CONFIG.BASE_URL}/quicklists/create`,    // Alternative create endpoint
-    ];
-
-    // Debug logging
-    console.log('FormData contents:');
-    for (const [key, value] of formData.entries()) {
-      console.log(key + ':', value);
-    }
-    console.log('Request headers:', getAuthHeaders(false));
-
-    let lastError: Error | null = null;
-
-    for (const url of possibleEndpoints) {
-      try {
-        console.log('Trying URL:', url);
-        
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData,
-          headers: getAuthHeaders(false), // Don't include Content-Type for multipart
-        });
-
-        if (response.ok) {
-          console.log('✅ Success with URL:', url);
-          return response.json();
-        } else if (response.status !== 404) {
-          // If it's not a 404, this might be the right endpoint but with a different error
-          const errorBody = await response.text();
-          console.error('API Error Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorBody,
-            url,
-          });
-          throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`);
-        } else {
-          console.log('❌ 404 for URL:', url);
-        }
-      } catch (error) {
-        console.log('❌ Error for URL:', url, error);
-        lastError = error as Error;
-      }
+    if (request.created_by) {
+      formData.append("created_by", request.created_by);
     }
 
-    // If we get here, none of the endpoints worked
-    throw new Error(`All endpoints failed. Last error: ${lastError?.message || 'Unknown error'}`);
+    const url = `${BASE_URL}`;
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+      headers: getAuthHeaders(false), // Don't include Content-Type for multipart/form-data
+    });
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // If response is not JSON, treat as error
+      console.error("API Error Response (non-JSON):", {
+        status: response.status,
+        statusText: response.statusText,
+        body: text,
+        url,
+      });
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${text}`
+      );
+    }
+
+    // Check if response is an error response
+    if (!response.ok || ("success" in data && !data.success)) {
+      const errorMessage =
+        "error" in data ? data.error : `HTTP error! status: ${response.status}`;
+      console.error("API Error Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: data,
+        url,
+      });
+      throw new Error(errorMessage);
+    }
+
+    return data;
   }
 
-  async updateQuickList(id: number, request: UpdateQuickListRequest): Promise<SingleQuickListResponse> {
-    return this.request<SingleQuickListResponse>(`/${id}`, {
-      method: 'PATCH',
+  async updateQuickList(
+    id: number,
+    request: UpdateQuickListRequest
+  ): Promise<UpdateQuickListResponseUnion> {
+    return this.request<UpdateQuickListResponseUnion>(`/${id}`, {
+      method: "PATCH",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(request),
     });
   }
 
-  async deleteQuickList(id: number): Promise<{ success: boolean; message?: string }> {
-    return this.request<{ success: boolean; message?: string }>(`/${id}`, {
-      method: 'DELETE',
+  async deleteQuickList(id: number): Promise<DeleteQuickListResponseUnion> {
+    return this.request<DeleteQuickListResponseUnion>(`/${id}`, {
+      method: "DELETE",
     });
   }
 
@@ -194,25 +218,42 @@ class QuickListService {
   }): Promise<QuickListResponse> {
     const queryParams = new URLSearchParams();
     // Always skip cache by default
-    queryParams.append('skipCache', 'true');
-    queryParams.append('q', params.q);
-    if (params.upload_type) queryParams.append('upload_type', params.upload_type);
-    if (params.created_by) queryParams.append('created_by', params.created_by);
-    if (params.limit) queryParams.append('limit', String(params.limit));
-    if (params.offset) queryParams.append('offset', String(params.offset));
+    queryParams.append("skipCache", "true");
+    queryParams.append("q", params.q);
+    if (params.upload_type)
+      queryParams.append("upload_type", params.upload_type);
+    if (params.created_by) queryParams.append("created_by", params.created_by);
+    if (params.limit) queryParams.append("limit", String(params.limit));
+    if (params.offset) queryParams.append("offset", String(params.offset));
 
     return this.request<QuickListResponse>(`/search?${queryParams.toString()}`);
   }
 
   // Export
-  async exportQuickList(id: number, format: 'csv' | 'json' = 'csv'): Promise<Blob> {
-    const url = `${BASE_URL}/${id}/export?format=${format}&skipCache=true`;
+  async exportQuickList(
+    id: number,
+    format: "csv" | "json" = "csv"
+  ): Promise<Blob> {
+    const url = `${BASE_URL}/${id}/export?format=${format}`;
     const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
-      throw new Error(`Export failed: ${response.statusText}`);
+      const errorText = await response.text();
+      let errorMessage = `Export failed: ${response.statusText}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error) {
+          errorMessage = errorJson.error;
+        }
+      } catch (e) {
+        // If error is not JSON, use the text as-is
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      }
+      throw new Error(errorMessage);
     }
 
     return response.blob();
@@ -222,15 +263,26 @@ class QuickListService {
   async getUploadTypes(params?: {
     activeOnly?: boolean;
     skipCache?: boolean;
-  }): Promise<UploadTypesResponse> {
+  }): Promise<UploadTypesResponseUnion> {
     const queryParams = new URLSearchParams();
     // Always skip cache by default
-    queryParams.append('skipCache', 'true');
+    queryParams.append("skipCache", "true");
     if (params) {
-      if (params.activeOnly !== undefined) queryParams.append('activeOnly', String(params.activeOnly));
+      if (params.activeOnly !== undefined)
+        queryParams.append("activeOnly", String(params.activeOnly));
     }
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.request<UploadTypesResponse>(`/upload-types${query}`);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    return this.request<UploadTypesResponseUnion>(`/upload-types${query}`);
+  }
+
+  async getUploadTypeSchema(
+    uploadType: string,
+    skipCache: boolean = true
+  ): Promise<UploadTypeSchemaResponseUnion> {
+    const query = skipCache ? "?skipCache=true" : "";
+    return this.request<UploadTypeSchemaResponseUnion>(
+      `/upload-types/${encodeURIComponent(uploadType)}/schema${query}`
+    );
   }
 
   // Statistics
@@ -240,18 +292,46 @@ class QuickListService {
     start_date?: string;
     end_date?: string;
     skipCache?: boolean;
-  }): Promise<QuickListStatsResponse> {
+  }): Promise<QuickListStatsResponseUnion> {
     const queryParams = new URLSearchParams();
     // Always skip cache by default
-    queryParams.append('skipCache', 'true');
+    queryParams.append("skipCache", "true");
     if (params) {
-      if (params.upload_type) queryParams.append('upload_type', params.upload_type);
-      if (params.created_by) queryParams.append('created_by', params.created_by);
-      if (params.start_date) queryParams.append('start_date', params.start_date);
-      if (params.end_date) queryParams.append('end_date', params.end_date);
+      if (params.upload_type)
+        queryParams.append("upload_type", params.upload_type);
+      if (params.created_by)
+        queryParams.append("created_by", params.created_by);
+      if (params.start_date)
+        queryParams.append("start_date", params.start_date);
+      if (params.end_date) queryParams.append("end_date", params.end_date);
     }
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return this.request<QuickListStatsResponse>(`/stats${query}`);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    return this.request<QuickListStatsResponseUnion>(`/stats${query}`);
+  }
+
+  // Table Mappings
+  async getTableMappings(params?: {
+    activeOnly?: boolean;
+    skipCache?: boolean;
+  }): Promise<TableMappingsResponseUnion> {
+    const queryParams = new URLSearchParams();
+    const skipCache = params?.skipCache !== false; // Default to true
+    queryParams.append("skipCache", String(skipCache));
+    if (params?.activeOnly !== undefined) {
+      queryParams.append("activeOnly", String(params.activeOnly));
+    }
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    return this.request<TableMappingsResponseUnion>(`/mappings${query}`);
+  }
+
+  async getTableMappingByUploadType(
+    uploadType: string,
+    skipCache: boolean = true
+  ): Promise<SingleTableMappingResponse> {
+    const query = skipCache ? "?skipCache=true" : "";
+    return this.request<SingleTableMappingResponse>(
+      `/mappings/${encodeURIComponent(uploadType)}${query}`
+    );
   }
 }
 

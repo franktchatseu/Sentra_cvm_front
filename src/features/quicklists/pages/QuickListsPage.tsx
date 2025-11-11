@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Upload,
   Search,
@@ -7,19 +7,23 @@ import {
   Download,
   Trash2,
   Eye,
-  Filter,
-  ArrowLeft,
   Send,
-} from 'lucide-react';
-import { color, tw } from '../../../shared/utils/utils';
-import { useToast } from '../../../contexts/ToastContext';
-import { useConfirm } from '../../../contexts/ConfirmContext';
-import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
-import { quicklistService } from '../services/quicklistService';
-import { QuickList, UploadType } from '../types/quicklist';
-import CreateQuickListModal from '../components/CreateQuickListModal';
-import QuickListDetailsModal from '../components/QuickListDetailsModal';
-import CreateCommunicationModal from '../../communications/components/CreateCommunicationModal';
+  Plus,
+  Database,
+  CheckCircle,
+  XCircle,
+  Edit,
+} from "lucide-react";
+import { color, tw, components } from "../../../shared/utils/utils";
+import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import { quicklistService } from "../services/quicklistService";
+import { QuickList, UploadType, QuickListStats } from "../types/quicklist";
+import CreateQuickListModal from "../components/CreateQuickListModal";
+import CreateCommunicationModal from "../../communications/components/CreateCommunicationModal";
+import EditQuickListModal from "../components/EditQuickListModal";
 
 export default function QuickListsPage() {
   const navigate = useNavigate();
@@ -29,127 +33,207 @@ export default function QuickListsPage() {
   const [quicklists, setQuicklists] = useState<QuickList[]>([]);
   const [uploadTypes, setUploadTypes] = useState<UploadType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUploadType, setSelectedUploadType] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUploadType, setSelectedUploadType] = useState<string>("");
+  const [stats, setStats] = useState<QuickListStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    hasMore: false,
+  });
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedQuickList, setSelectedQuickList] = useState<QuickList | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCommunicateModalOpen, setIsCommunicateModalOpen] = useState(false);
-  const [communicateQuickList, setCommunicateQuickList] = useState<QuickList | null>(null);
+  const [communicateQuickList, setCommunicateQuickList] =
+    useState<QuickList | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editQuickList, setEditQuickList] = useState<QuickList | null>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     loadInitialData();
+    loadStats();
   }, []);
 
   useEffect(() => {
-    loadQuickLists();
+    // Skip the first render to avoid double loading
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Reset to page 1 and reload when search/filter changes
+    loadQuickLists(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedUploadType]);
 
+  useEffect(() => {
+    // Load quicklists when page changes (skip initial mount)
+    if (!isInitialMount.current && pagination.page > 0) {
+      loadQuickLists(pagination.page);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page]);
+
+  const loadStats = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await quicklistService.getStats({ skipCache: true });
+      if (response.success) {
+        setStats(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to load stats:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   const loadInitialData = async () => {
     try {
-      const [quicklistsRes, uploadTypesRes] = await Promise.all([
-        quicklistService.getAllQuickLists({ limit: 100 }),
+      setLoading(true);
+      const initialLimit = 10;
+      // Load upload types and quicklists
+      const [uploadTypesRes, quicklistsRes] = await Promise.all([
         quicklistService.getUploadTypes({ activeOnly: true }),
+        quicklistService.getAllQuickLists({
+          limit: initialLimit,
+          offset: 0,
+        }),
       ]);
-      setQuicklists(quicklistsRes.data || []);
-      setUploadTypes(uploadTypesRes.data || []);
+
+      if (uploadTypesRes.success) {
+        setUploadTypes(uploadTypesRes.data || []);
+      }
+
+      if (quicklistsRes.success) {
+        setQuicklists(quicklistsRes.data || []);
+        if (quicklistsRes.pagination) {
+          setPagination({
+            page: 1,
+            limit: quicklistsRes.pagination.limit || initialLimit,
+            total: quicklistsRes.pagination.total,
+            hasMore: quicklistsRes.pagination.hasMore,
+          });
+        }
+      }
     } catch (err) {
-      console.error('Failed to load initial data:', err);
-      showError('Failed to load QuickLists');
+      console.error("Failed to load initial data:", err);
+      showError("Failed to load QuickLists");
     } finally {
       setLoading(false);
     }
   };
 
-  const loadQuickLists = async () => {
+  const loadQuickLists = async (page: number = pagination.page) => {
     try {
       setLoading(true);
+      const offset = (page - 1) * pagination.limit;
       let response;
       if (searchTerm) {
         response = await quicklistService.searchQuickLists({
           q: searchTerm,
           upload_type: selectedUploadType || undefined,
-          limit: 100,
+          limit: pagination.limit,
+          offset,
         });
       } else {
         response = await quicklistService.getAllQuickLists({
           upload_type: selectedUploadType || undefined,
-          limit: 100,
+          limit: pagination.limit,
+          offset,
         });
       }
-      
-      // Enrich quicklists with full details to get row_count and file_size
-      const enrichedQuicklists = await Promise.all(
-        (response.data || []).map(async (ql) => {
-          try {
-            const detailsResponse = await quicklistService.getQuickListById(ql.id, true);
-            return detailsResponse.data;
-          } catch (err) {
-            console.error(`Failed to load details for quicklist ${ql.id}:`, err);
-            return ql; // Fallback to original data
-          }
-        })
-      );
-      
-      setQuicklists(enrichedQuicklists);
+
+      if (response.success) {
+        setQuicklists(response.data || []);
+        if (response.pagination) {
+          setPagination({
+            page,
+            limit: response.pagination.limit,
+            total: response.pagination.total,
+            hasMore: response.pagination.hasMore,
+          });
+        }
+      } else {
+        throw new Error(
+          "error" in response ? response.error : "Failed to load QuickLists"
+        );
+      }
     } catch (err) {
-      console.error('Failed to load quicklists:', err);
-      showError('Failed to load QuickLists');
+      console.error("Failed to load quicklists:", err);
+      showError("Failed to load QuickLists");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateQuickList = async (file: File, uploadType: string, name: string, description?: string) => {
+  const handleCreateQuickList = async (request: {
+    file: File;
+    upload_type: string;
+    name: string;
+    description?: string | null;
+    created_by?: string | null;
+  }) => {
     try {
-      const request = {
-        file,
-        upload_type: uploadType,
-        name,
-        description,
-        created_by: 'user@example.com', // TODO: Get from auth context
-      };
-
       const response = await quicklistService.createQuickList(request);
-      showToast('QuickList created successfully!');
-      setIsCreateModalOpen(false);
-      
-      // Wait a bit for backend processing, then reload
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await loadQuickLists();
-      
-      // Open the details modal with the newly created QuickList
-      if (response.data) {
-        // Fetch the complete QuickList with all details
-        try {
-          const detailsResponse = await quicklistService.getQuickListById(response.data.id, true);
-          setSelectedQuickList(detailsResponse.data);
-          setIsDetailsModalOpen(true);
-        } catch (detailsErr) {
-          console.error('Failed to load quicklist details:', detailsErr);
-        }
+
+      if (!response.success) {
+        throw new Error(
+          "error" in response ? response.error : "Failed to create QuickList"
+        );
       }
+
+      // Check for validation errors even if upload was successful
+      if (response.data.has_errors || response.data.rows_failed > 0) {
+        const errorCount =
+          response.data.errors?.length || response.data.rows_failed;
+        const errorDetails =
+          response.data.errors
+            ?.slice(0, 5)
+            .map((e) => `Row ${e.row_number}: ${e.error}`)
+            .join("\n") || "";
+
+        showError(
+          `QuickList created but ${errorCount} row(s) failed validation. ${
+            errorDetails ? `\n\nFirst few errors:\n${errorDetails}` : ""
+          }`
+        );
+      } else {
+        showToast("QuickList created successfully!");
+      }
+
+      setIsCreateModalOpen(false);
+
+      // Reload stats and quicklists
+      await loadStats();
+      // Reload the quicklists list to show the new one
+      // Small delay to allow backend to process the file
+      setTimeout(async () => {
+        await loadQuickLists(pagination.page);
+      }, 1500);
     } catch (err) {
-      console.error('Failed to create quicklist:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create QuickList';
+      console.error("Failed to create quicklist:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create QuickList";
       showError(errorMessage);
+      throw err; // Re-throw so the modal can handle it
     }
   };
 
   const handleViewDetails = (quicklist: QuickList) => {
-    setSelectedQuickList(quicklist);
-    setIsDetailsModalOpen(true);
+    navigate(`/dashboard/quicklists/${quicklist.id}`);
   };
 
   const handleDelete = async (quicklist: QuickList) => {
     const confirmed = await confirm({
-      title: 'Delete QuickList',
+      title: "Delete QuickList",
       message: `Are you sure you want to delete "${quicklist.name}"? This action cannot be undone.`,
-      type: 'danger',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      type: "danger",
+      confirmText: "Delete",
+      cancelText: "Cancel",
     });
 
     if (!confirmed) return;
@@ -159,17 +243,18 @@ export default function QuickListsPage() {
       showToast(`QuickList "${quicklist.name}" deleted successfully!`);
       await loadQuickLists();
     } catch (err) {
-      console.error('Failed to delete quicklist:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete QuickList';
+      console.error("Failed to delete quicklist:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete QuickList";
       showError(errorMessage);
     }
   };
 
-  const handleExport = async (quicklist: QuickList, format: 'csv' | 'json') => {
+  const handleExport = async (quicklist: QuickList, format: "csv" | "json") => {
     try {
       const blob = await quicklistService.exportQuickList(quicklist.id, format);
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `${quicklist.name}.${format}`;
       document.body.appendChild(a);
@@ -178,8 +263,8 @@ export default function QuickListsPage() {
       window.URL.revokeObjectURL(url);
       showToast(`QuickList exported as ${format.toUpperCase()}`);
     } catch (err) {
-      console.error('Failed to export quicklist:', err);
-      showError('Failed to export QuickList');
+      console.error("Failed to export quicklist:", err);
+      showError("Failed to export QuickList");
     }
   };
 
@@ -188,108 +273,183 @@ export default function QuickListsPage() {
     setIsCommunicateModalOpen(true);
   };
 
-  const filteredQuicklists = quicklists;
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  const handleEdit = (quicklist: QuickList) => {
+    setEditQuickList(quicklist);
+    setIsEditModalOpen(true);
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleUpdateQuickList = async (request: {
+    name: string;
+    description?: string | null;
+  }) => {
+    if (!editQuickList) return;
+
+    try {
+      const response = await quicklistService.updateQuickList(
+        editQuickList.id,
+        request
+      );
+      if (response.success) {
+        showToast("QuickList updated successfully");
+        setIsEditModalOpen(false);
+        setEditQuickList(null);
+        await loadQuickLists(pagination.page);
+        await loadStats();
+      }
+    } catch (err) {
+      showError(
+        "Error updating quicklist",
+        err instanceof Error ? err.message : "Failed to update QuickList"
+      );
+      throw err;
+    }
   };
+
+  const quicklistStatsCards = [
+    {
+      name: "Total QuickLists",
+      value: statsLoading
+        ? "..."
+        : (stats?.overall.total_quicklists || 0).toLocaleString(),
+      icon: Database,
+      color: color.tertiary.tag1,
+    },
+    {
+      name: "Rows Imported",
+      value: statsLoading
+        ? "..."
+        : (stats?.overall.total_rows_imported || 0).toLocaleString(),
+      icon: CheckCircle,
+      color: color.tertiary.tag4,
+    },
+    {
+      name: "Rows Failed",
+      value: statsLoading
+        ? "..."
+        : (stats?.overall.total_rows_failed || 0).toLocaleString(),
+      icon: XCircle,
+      color: color.tertiary.tag2,
+    },
+    {
+      name: "Upload Types",
+      value: statsLoading
+        ? "..."
+        : (stats?.overall.unique_upload_types || 0).toLocaleString(),
+      icon: FileText,
+      color: color.tertiary.tag3,
+    },
+  ];
+
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>QuickLists</h1>
-            <p className={`${tw.textSecondary} mt-2 text-sm`}>
-              Upload and manage customer data lists for quick communication
-            </p>
-          </div>
+        <div>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>QuickLists</h1>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>
+            Upload and manage customer data lists for quick communication
+          </p>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-          style={{ backgroundColor: color.primary.action }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-          }}
-        >
-          <Upload className="w-4 h-4" />
-          Upload QuickList
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className={`${tw.button} flex items-center gap-2`}
+          >
+            <Plus className="w-4 h-4" />
+            Upload QuickList
+          </button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border p-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search quicklists by name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Upload Type Filter */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <select
-              value={selectedUploadType}
-              onChange={(e) => setSelectedUploadType(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {quicklistStatsCards.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.name}
+              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
-              <option value="">All Upload Types</option>
-              {uploadTypes.map((type) => (
-                <option key={type.upload_type} value={type.upload_type}>
-                  {type.upload_type}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: stat.color }}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-3xl font-bold text-black">
+                        {stat.value}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {stat.name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search
+            className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${tw.textMuted}`}
+          />
+          <input
+            type="text"
+            placeholder="Search quicklists by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full pl-10 pr-4 py-3 text-sm ${components.input.default}`}
+          />
+        </div>
+
+        <div className="flex gap-3 flex-shrink-0">
+          <HeadlessSelect
+            options={[
+              { value: "", label: "All Upload Types" },
+              ...uploadTypes.map((type) => ({
+                value: type.upload_type,
+                label: type.upload_type,
+              })),
+            ]}
+            value={selectedUploadType}
+            onChange={(value) => setSelectedUploadType(value as string)}
+            placeholder="Select upload type"
+            className="w-full sm:w-auto sm:min-w-[220px]"
+          />
         </div>
       </div>
 
       {/* QuickLists Table */}
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div
+        className={`bg-white border border-gray-200 rounded-lg p-6 overflow-hidden`}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <LoadingSpinner variant="modern" size="lg" color="primary" className="mr-3" />
+            <LoadingSpinner
+              variant="modern"
+              size="lg"
+              color="primary"
+              className="mr-3"
+            />
             <span className={`${tw.textSecondary}`}>Loading quicklists...</span>
           </div>
-        ) : filteredQuicklists.length === 0 ? (
+        ) : quicklists.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p className={`${tw.textMuted} mb-6`}>
               {searchTerm
-                ? 'No quicklists match your search.'
-                : 'No quicklists yet. Upload your first list to get started.'}
+                ? "No quicklists match your search."
+                : "No quicklists yet. Upload your first list to get started."}
             </p>
             {!searchTerm && (
               <button
@@ -303,92 +463,148 @@ export default function QuickListsPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-6 -mt-6">
             <table className="w-full">
-              <thead className="bg-gray-800 border-b border-gray-700">
+              <thead
+                className={`border-b ${tw.borderDefault}`}
+                style={{ background: color.surface.tableHeader }}
+              >
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th
+                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th
+                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Upload Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th
+                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Rows
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    File Size
+                  <th
+                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Created
+                  <th
+                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Created At
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">
+                  <th
+                    className={`px-6 py-4 text-right text-sm font-medium uppercase tracking-wider`}
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {filteredQuicklists.map((quicklist, index) => (
-                  <tr 
-                    key={quicklist.id} 
-                    className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+              <tbody className="bg-white divide-y divide-gray-200">
+                {quicklists.map((quicklist) => (
+                  <tr
+                    key={quicklist.id}
+                    className="hover:bg-gray-50/30 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-semibold text-gray-900">{quicklist.name}</div>
+                        <button
+                          type="button"
+                          onClick={() => handleViewDetails(quicklist)}
+                          className="text-base font-semibold text-black transition-colors hover:opacity-80"
+                        >
+                          {quicklist.name}
+                        </button>
                         {quicklist.description && (
-                          <div className="text-xs text-gray-500 mt-1">{quicklist.description}</div>
+                          <div className={`text-sm ${tw.textMuted} mt-1`}>
+                            {quicklist.description}
+                          </div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                      >
                         {quicklist.upload_type}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">
-                        {quicklist.row_count != null ? quicklist.row_count.toLocaleString() : 'N/A'}
+                      <span className={`text-sm ${tw.textPrimary}`}>
+                        {quicklist.rows_imported != null
+                          ? quicklist.rows_imported.toLocaleString()
+                          : "N/A"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">
-                        {quicklist.file_size != null ? formatFileSize(quicklist.file_size) : 'N/A'}
+                      <span
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white"
+                        style={{ backgroundColor: color.primary.accent }}
+                      >
+                        {quicklist.processing_status
+                          ? quicklist.processing_status
+                              .charAt(0)
+                              .toUpperCase() +
+                            quicklist.processing_status.slice(1)
+                          : "N/A"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{formatDate(quicklist.created_at)}</div>
-                      <div className="text-xs text-gray-500">{quicklist.created_by}</div>
+                      <div className={`text-sm ${tw.textSecondary}`}>
+                        {new Date(quicklist.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-1">
                         <button
                           onClick={() => handleCommunicate(quicklist)}
-                          className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                          className="p-2 text-gray-600 rounded-md"
                           title="Send Communication"
                         >
                           <Send className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => handleEdit(quicklist)}
+                          className="p-2 text-gray-600 rounded-md"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleViewDetails(quicklist)}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          className="p-2 text-gray-600 rounded-md"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleExport(quicklist, 'csv')}
-                          className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                          onClick={() => handleExport(quicklist, "csv")}
+                          className="p-2 text-gray-600 rounded-md"
                           title="Export"
                         >
                           <Download className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(quicklist)}
-                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          className="p-2 rounded-md"
                           title="Delete"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </button>
                       </div>
                     </td>
@@ -400,6 +616,57 @@ export default function QuickListsPage() {
         )}
       </div>
 
+      {/* Pagination - Outside table container */}
+      {!loading && pagination.total > 0 && (
+        <div
+          className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div
+              className={`text-base ${tw.textSecondary} text-center sm:text-left`}
+            >
+              Showing{" "}
+              {Math.min(
+                (pagination.page - 1) * pagination.limit + 1,
+                pagination.total
+              )}{" "}
+              to{" "}
+              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+              of {pagination.total.toLocaleString()} quicklists
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <button
+                onClick={() =>
+                  setPagination((prev) => ({
+                    ...prev,
+                    page: Math.max(1, prev.page - 1),
+                  }))
+                }
+                disabled={pagination.page <= 1}
+                className={`px-3 py-2 text-base border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+              >
+                Previous
+              </button>
+              <span className={`text-base ${tw.textSecondary} px-2`}>
+                Page {pagination.page} of {totalPages || 1}
+              </span>
+              <button
+                onClick={() =>
+                  setPagination((prev) => ({
+                    ...prev,
+                    page: prev.page + 1,
+                  }))
+                }
+                disabled={pagination.page >= totalPages}
+                className={`px-3 py-2 text-base border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       <CreateQuickListModal
         isOpen={isCreateModalOpen}
@@ -407,22 +674,6 @@ export default function QuickListsPage() {
         onSubmit={handleCreateQuickList}
         uploadTypes={uploadTypes}
       />
-
-      {selectedQuickList && (
-        <QuickListDetailsModal
-          isOpen={isDetailsModalOpen}
-          onClose={() => {
-            setIsDetailsModalOpen(false);
-            setSelectedQuickList(null);
-          }}
-          quicklist={selectedQuickList}
-          onExport={handleExport}
-          onCommunicate={(ql) => {
-            setIsDetailsModalOpen(false);
-            handleCommunicate(ql);
-          }}
-        />
-      )}
 
       {communicateQuickList && (
         <CreateCommunicationModal
@@ -433,10 +684,26 @@ export default function QuickListsPage() {
           }}
           quicklist={communicateQuickList}
           onSuccess={(result) => {
-            showToast(`Communication sent successfully! ${result.total_messages_sent} messages sent.`);
+            showToast(
+              `Communication sent successfully! ${result.total_messages_sent} messages sent.`
+            );
             setIsCommunicateModalOpen(false);
             setCommunicateQuickList(null);
           }}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && editQuickList && (
+        <EditQuickListModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditQuickList(null);
+          }}
+          onSubmit={handleUpdateQuickList}
+          initialName={editQuickList.name}
+          initialDescription={editQuickList.description || null}
         />
       )}
     </div>

@@ -330,12 +330,26 @@ export type ValidatePasswordResetTokenRequest = {
   email?: string;
 };
 
+export type Permission = {
+  id: number;
+  name: string;
+  code: string;
+  description: string | null;
+  resource_id: number | null;
+};
+
 export type UserPermissionsResponse = {
   success: true;
-  user_id: number;
-  permissions: string[];
-  roles: string[];
-  data_access_level?: string;
+  data: {
+    permissions: Permission[];
+    roles: Array<{
+      id: number;
+      name: string;
+      code: string;
+      [key: string]: unknown;
+    }>;
+  };
+  source?: string;
 };
 
 export type UserPermissionsCheckResponse = {
@@ -347,11 +361,22 @@ export type UserPermissionsCheckResponse = {
 
 export type UserPermissionsSummaryResponse = {
   success: true;
-  user_id: number;
-  total_permissions: number;
-  permissions_by_category: Record<string, number>;
-  roles: string[];
-  data_access_level?: string;
+  data: {
+    totalPermissions: number;
+    sensitivePermissions: number;
+    mfaRequiredPermissions: number;
+    roles: number;
+    permissionsByAction: {
+      admin?: number;
+      create?: number;
+      delete?: number;
+      execute?: number;
+      read?: number;
+      update?: number;
+      [key: string]: number | undefined;
+    };
+  };
+  source?: string;
 };
 
 export type ChangeUserPasswordRequest = {

@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import { components } from "../../utils/utils";
 
 interface SelectOption {
   value: string | number;
@@ -42,17 +43,17 @@ export default function HeadlessSelect({
   return (
     <div className={`relative ${className}`}>
       <Listbox value={value} onChange={onChange} disabled={disabled}>
-        <div className="relative">
+        <div className="relative w-full">
           <Listbox.Button
             className={`
-            relative w-full cursor-default rounded-lg bg-white py-3 pl-3 pr-10 text-left shadow-sm border transition-all duration-200
-            ${error ? "border-red-300" : "border-gray-300"}
+            relative w-full cursor-default py-3 pl-3 pr-10 text-left transition-all duration-200 text-sm
+            ${error ? components.input.error : components.input.default}
             ${
               disabled
-                ? "bg-gray-50 text-gray-500 cursor-not-allowed"
-                : "hover:border-gray-400"
+                ? "bg-gray-50 text-gray-500 cursor-not-allowed opacity-50"
+                : ""
             }
-            focus:outline-none focus:ring-0 focus:border-gray-300
+            focus:outline-none focus:ring-0
           `}
           >
             {" "}
@@ -77,7 +78,7 @@ export default function HeadlessSelect({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Listbox.Options className="absolute z-[9999] mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+            <Listbox.Options className="absolute z-[9999] mt-1 max-h-60 w-full min-w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm">
               {searchable && (
                 <div className="px-3 py-2 border-b border-gray-200">
                   <input

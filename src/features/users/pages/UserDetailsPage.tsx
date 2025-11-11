@@ -11,7 +11,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { userService } from "../services/userService";
-import { UserType } from "../types/user";
+import {
+  UserType,
+  UserPermissionsResponse,
+  Permission,
+  UserPermissionsSummaryResponse,
+} from "../types/user";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
@@ -34,22 +39,10 @@ export default function UserDetailsPage() {
   const [directReports, setDirectReports] = useState<UserType[]>([]);
   const [allReports, setAllReports] = useState<UserType[]>([]);
   const [managerChain, setManagerChain] = useState<UserType[]>([]);
-  const [permissions, setPermissions] = useState<{
-    success?: boolean;
-    data?: {
-      permissions?: string[];
-      roles?: Array<string | { name?: string; code?: string; id?: number }>;
-    };
-    total_permissions?: number;
-    permissions_by_category?: Record<string, number>;
-    roles?: string[];
-  } | null>(null);
-  const [permissionsSummary, setPermissionsSummary] = useState<{
-    total_permissions?: number;
-    permissions_by_category?: Record<string, number>;
-    roles?: string[];
-    data_access_level?: string;
-  } | null>(null);
+  const [permissions, setPermissions] =
+    useState<UserPermissionsResponse | null>(null);
+  const [permissionsSummary, setPermissionsSummary] =
+    useState<UserPermissionsSummaryResponse | null>(null);
   const [canLogin, setCanLogin] = useState<{
     can_login: boolean;
     reason?: string;
@@ -121,12 +114,7 @@ export default function UserDetailsPage() {
         if (chain.success) setManagerChain(chain.data || []);
         if (perms) setPermissions(perms);
         if (permsSummary && permsSummary.success) {
-          setPermissionsSummary({
-            total_permissions: permsSummary.total_permissions,
-            permissions_by_category: permsSummary.permissions_by_category,
-            roles: permsSummary.roles,
-            data_access_level: permsSummary.data_access_level,
-          });
+          setPermissionsSummary(permsSummary);
         }
         if (login && login.success) {
           // Normalize canLogin response - handle both camelCase and snake_case
@@ -524,16 +512,22 @@ export default function UserDetailsPage() {
           <div className="p-6">
             {permissions && permissions.data ? (
               (() => {
-                const hasPermissions =
-                  permissions.data.permissions &&
-                  permissions.data.permissions.length > 0;
-                const hasRoles =
-                  permissions.data.roles && permissions.data.roles.length > 0;
-                const hasCategories =
-                  permissions.permissions_by_category &&
-                  Object.keys(permissions.permissions_by_category).length > 0;
+                const permissionsList = permissions.data.permissions || [];
+                const rolesList = permissions.data.roles || [];
+                const hasPermissions = permissionsList.length > 0;
+                const hasRoles = rolesList.length > 0;
 
-                if (!hasPermissions && !hasRoles && !hasCategories) {
+                // Group permissions by category (extract from code, e.g., "campaigns.create" -> "campaigns")
+                const permissionsByCategory = permissionsList.reduce(
+                  (acc, perm) => {
+                    const category = perm.code.split(".")[0] || "other";
+                    acc[category] = (acc[category] || 0) + 1;
+                    return acc;
+                  },
+                  {} as Record<string, number>
+                );
+
+                if (!hasPermissions && !hasRoles) {
                   return (
                     <div className="text-center py-12">
                       <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -549,105 +543,226 @@ export default function UserDetailsPage() {
 
                 return (
                   <div className="space-y-6">
-                    {/* Use permissions summary if available, otherwise fall back to permissions data */}
-                    {(permissionsSummary?.total_permissions !== undefined ||
-                      permissions.total_permissions !== undefined) && (
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">
-                              Total Permissions
-                            </p>
-                            <p
-                              className="text-3xl font-bold"
-                              style={{ color: color.primary.accent }}
-                            >
-                              {permissionsSummary?.total_permissions ??
-                                permissions.total_permissions}
-                            </p>
+                    {/* Summary Stat Cards */}
+                    {permissionsSummary?.data ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag1,
+                                  }}
+                                >
+                                  <Shield className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.totalPermissions.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    Total Permissions
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <Shield className="w-8 h-8 text-gray-400" />
                         </div>
-                        {permissionsSummary?.data_access_level && (
-                          <div className="mt-3 pt-3 border-t border-gray-200">
-                            <p className="text-xs text-gray-600 mb-1">
-                              Data Access Level
-                            </p>
-                            <p className="text-sm font-medium text-gray-900 capitalize">
-                              {permissionsSummary.data_access_level}
-                            </p>
+
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag3,
+                                  }}
+                                >
+                                  <Shield className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.sensitivePermissions.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    Sensitive Permissions
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        )}
+                        </div>
+
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag2,
+                                  }}
+                                >
+                                  <Shield className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.mfaRequiredPermissions.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    MFA Required
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag4,
+                                  }}
+                                >
+                                  <Users className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.roles.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    Total Roles
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="p-2 rounded-full flex items-center justify-center"
+                                style={{ backgroundColor: color.tertiary.tag1 }}
+                              >
+                                <Shield className="h-5 w-5 text-white" />
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-3xl font-bold text-black">
+                                  {permissionsList.length.toLocaleString()}
+                                </p>
+                                <p
+                                  className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                >
+                                  Total Permissions
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
-                    {(hasCategories ||
-                      (permissionsSummary?.permissions_by_category &&
-                        Object.keys(permissionsSummary.permissions_by_category)
-                          .length > 0)) && (
+
+                    {/* Permissions by Category */}
+                    {Object.keys(permissionsByCategory).length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-3">
                           Permissions by Category
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {(permissionsSummary?.permissions_by_category ||
-                            permissions.permissions_by_category ||
-                            {}) &&
-                            Object.entries(
-                              permissionsSummary?.permissions_by_category ||
-                                permissions.permissions_by_category ||
-                                {}
-                            ).map(([category, count]) => (
+                          {Object.entries(permissionsByCategory)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([category, count]) => (
                               <div
                                 key={category}
-                                className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                                className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-sm transition-shadow"
                               >
-                                <p className="text-xs text-gray-600 mb-1 capitalize">
+                                <p className="text-xs text-gray-600 mb-2 capitalize font-medium">
                                   {category.replace(/_/g, " ")}
                                 </p>
-                                <p
-                                  className="text-xl font-bold"
-                                  style={{ color: color.primary.accent }}
-                                >
-                                  {count as number}
+                                <p className="text-2xl font-bold text-black">
+                                  {count}
                                 </p>
                               </div>
                             ))}
                         </div>
                       </div>
                     )}
-                    {((hasRoles && permissions.data?.roles) ||
-                      (permissionsSummary?.roles &&
-                        permissionsSummary.roles.length > 0)) && (
+
+                    {/* All Permissions List */}
+                    {hasPermissions && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                          Assigned Roles
+                          All Permissions ({permissionsList.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                          {permissionsList.map((perm) => (
+                            <div
+                              key={perm.id}
+                              className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:bg-gray-100 transition-colors"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {perm.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1 font-mono">
+                                    {perm.code}
+                                  </p>
+                                  {perm.description && (
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {perm.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <CheckCircle
+                                  className="w-4 h-4 flex-shrink-0 mt-0.5"
+                                  style={{ color: color.status.success }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Assigned Roles */}
+                    {hasRoles && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                          Assigned Roles ({rolesList.length})
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {(
-                            permissionsSummary?.roles ||
-                            permissions.data?.roles ||
-                            []
-                          ).map(
-                            (
-                              role:
-                                | string
-                                | { name?: string; code?: string; id?: number },
-                              idx: number
-                            ) => (
-                              <span
-                                key={idx}
-                                className="px-3 py-1.5 rounded-md text-sm font-medium"
-                                style={{
-                                  backgroundColor: `${color.primary.accent}15`,
-                                  color: color.primary.accent,
-                                }}
-                              >
-                                {typeof role === "string"
-                                  ? role
-                                  : role.name || role.code || `Role ${idx + 1}`}
-                              </span>
-                            )
-                          )}
+                          {rolesList.map((role) => (
+                            <span
+                              key={role.id}
+                              className="px-3 py-1.5 rounded-md text-sm font-medium"
+                              style={{
+                                backgroundColor: `${color.primary.accent}15`,
+                                color: color.primary.accent,
+                              }}
+                            >
+                              {role.name || role.code || `Role ${role.id}`}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}

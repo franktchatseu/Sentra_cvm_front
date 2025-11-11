@@ -1162,7 +1162,7 @@ export default function UserManagementPage() {
                               <button
                                 type="button"
                                 onClick={() => handleViewUser(user)}
-                                className="text-base font-semibold text-black transition-colors hover:underline"
+                                className="text-base font-semibold text-black transition-colors hover:opacity-80"
                               >
                                 {user.first_name} {user.last_name}
                               </button>
@@ -1311,7 +1311,7 @@ export default function UserManagementPage() {
                           <button
                             type="button"
                             onClick={() => handleViewUser(user)}
-                            className="text-black hover:underline"
+                            className="text-black hover:opacity-80"
                           >
                             {user.first_name} {user.last_name}
                           </button>

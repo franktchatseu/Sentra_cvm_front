@@ -40,6 +40,7 @@ import LineOfBusinessPage from "../../campaigns/pages/LineOfBusinessPage";
 import AssignItemsPage from "../../../shared/pages/AssignItemsPage";
 import OfferCreativeDetailsPage from "../../offers/pages/OfferCreativeDetailsPage";
 import QuickListsPage from "../../quicklists/pages/QuickListsPage";
+import QuickListDetailsPage from "../../quicklists/pages/QuickListDetailsPage";
 import CustomerIdentityPage from "../../customer/pages/CustomerIdentityPage";
 import CustomerIdentityFieldDetailsPage from "../../customer/pages/CustomerIdentityFieldDetailsPage";
 
@@ -119,6 +120,7 @@ export default function Dashboard() {
         <Route path="/segment-types" element={<SegmentTypesPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/quicklists" element={<QuickListsPage />} />
+        <Route path="/quicklists/:id" element={<QuickListDetailsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
         <Route
           path="/configuration/:id"
