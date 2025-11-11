@@ -66,6 +66,11 @@ export default function OffersPage() {
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const dropdownMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    maxHeight: number;
+  } | null>(null);
 
   // Loading states for individual offers
   const [loadingAction, setLoadingAction] = useState<{
@@ -317,11 +322,86 @@ export default function OffersPage() {
   };
 
   // Calculate dropdown position
-  const handleActionMenuToggle = (offerId: number) => {
+  const handleActionMenuToggle = (
+    offerId: number,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
     if (showActionMenu === offerId) {
       setShowActionMenu(null);
+      setDropdownPosition(null);
     } else {
       setShowActionMenu(offerId);
+      
+      // Calculate position from the clicked button
+      if (event && event.currentTarget) {
+        const buttonRect = event.currentTarget.getBoundingClientRect();
+        const dropdownWidth = 288; // w-72 = 288px
+        const spacing = 4;
+        const padding = 8;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const estimatedDropdownContentHeight = 600;
+
+        const spaceBelow = viewportHeight - buttonRect.bottom - padding;
+        const spaceAbove = buttonRect.top - padding;
+
+        let top: number;
+        let maxHeight: number;
+
+        if (
+          spaceBelow >= 250 ||
+          (spaceBelow > spaceAbove && spaceBelow >= 200)
+        ) {
+          top = buttonRect.bottom + spacing;
+          maxHeight = viewportHeight - top - padding;
+        } else if (
+          spaceAbove >= 250 ||
+          (spaceAbove > spaceBelow && spaceAbove >= 200)
+        ) {
+          maxHeight = Math.min(
+            estimatedDropdownContentHeight,
+            spaceAbove - spacing
+          );
+          top = buttonRect.top - maxHeight - spacing;
+          if (top < padding) {
+            top = padding;
+            maxHeight = buttonRect.top - padding - spacing;
+          }
+        } else {
+          if (spaceBelow >= spaceAbove) {
+            top = buttonRect.bottom + spacing;
+            maxHeight = Math.max(200, spaceBelow - spacing);
+          } else {
+            maxHeight = Math.max(200, spaceAbove - spacing);
+            top = buttonRect.top - maxHeight - spacing;
+            if (top < padding) {
+              top = padding;
+              maxHeight = Math.max(200, buttonRect.top - padding - spacing);
+            }
+          }
+        }
+
+        maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
+        maxHeight = Math.max(maxHeight, 200);
+
+        if (top + maxHeight > viewportHeight - padding) {
+          top = viewportHeight - maxHeight - padding;
+        }
+        if (top < padding) {
+          top = padding;
+          maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
+        }
+
+        let left = buttonRect.right - dropdownWidth;
+        if (left + dropdownWidth > viewportWidth - padding) {
+          left = viewportWidth - dropdownWidth - padding;
+        }
+        if (left < padding) {
+          left = padding;
+        }
+
+        setDropdownPosition({ top, left, maxHeight });
+      }
     }
   };
 

@@ -100,6 +100,11 @@ export default function CampaignsPage() {
   } | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const dropdownMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    maxHeight: number;
+  } | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
   const [allCampaignsUnfiltered, setAllCampaignsUnfiltered] = useState<
     CampaignDisplay[]
@@ -123,11 +128,86 @@ export default function CampaignsPage() {
     enabled: showAdvancedFilters,
   });
 
-  const handleActionMenuToggle = (campaignId: number) => {
+  const handleActionMenuToggle = (
+    campaignId: number,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
     if (showActionMenu === campaignId) {
       setShowActionMenu(null);
+      setDropdownPosition(null);
     } else {
       setShowActionMenu(campaignId);
+
+      // Calculate position from the clicked button
+      if (event && event.currentTarget) {
+        const buttonRect = event.currentTarget.getBoundingClientRect();
+        const dropdownWidth = 256; // w-64 = 256px
+        const spacing = 4;
+        const padding = 8;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const estimatedDropdownContentHeight = 600;
+
+        const spaceBelow = viewportHeight - buttonRect.bottom - padding;
+        const spaceAbove = buttonRect.top - padding;
+
+        let top: number;
+        let maxHeight: number;
+
+        if (
+          spaceBelow >= 250 ||
+          (spaceBelow > spaceAbove && spaceBelow >= 200)
+        ) {
+          top = buttonRect.bottom + spacing;
+          maxHeight = viewportHeight - top - padding;
+        } else if (
+          spaceAbove >= 250 ||
+          (spaceAbove > spaceBelow && spaceAbove >= 200)
+        ) {
+          maxHeight = Math.min(
+            estimatedDropdownContentHeight,
+            spaceAbove - spacing
+          );
+          top = buttonRect.top - maxHeight - spacing;
+          if (top < padding) {
+            top = padding;
+            maxHeight = buttonRect.top - padding - spacing;
+          }
+        } else {
+          if (spaceBelow >= spaceAbove) {
+            top = buttonRect.bottom + spacing;
+            maxHeight = Math.max(200, spaceBelow - spacing);
+          } else {
+            maxHeight = Math.max(200, spaceAbove - spacing);
+            top = buttonRect.top - maxHeight - spacing;
+            if (top < padding) {
+              top = padding;
+              maxHeight = Math.max(200, buttonRect.top - padding - spacing);
+            }
+          }
+        }
+
+        maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
+        maxHeight = Math.max(maxHeight, 200);
+
+        if (top + maxHeight > viewportHeight - padding) {
+          top = viewportHeight - maxHeight - padding;
+        }
+        if (top < padding) {
+          top = padding;
+          maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
+        }
+
+        let left = buttonRect.right - dropdownWidth;
+        if (left + dropdownWidth > viewportWidth - padding) {
+          left = viewportWidth - dropdownWidth - padding;
+        }
+        if (left < padding) {
+          left = padding;
+        }
+
+        setDropdownPosition({ top, left, maxHeight });
+      }
     }
   };
 
@@ -473,6 +553,7 @@ export default function CampaignsPage() {
       // Only close if clicked outside both button and dropdown
       if (!clickedInsideButton && !clickedInsideDropdown) {
         setShowActionMenu(null);
+        setDropdownPosition(null);
       }
     };
 
@@ -1244,7 +1325,9 @@ export default function CampaignsPage() {
                           }}
                         >
                           <button
-                            onClick={() => handleActionMenuToggle(campaign.id)}
+                            onClick={(e) =>
+                              handleActionMenuToggle(campaign.id, e)
+                            }
                             className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.action}]/10 transition-all duration-300`}
                           >
                             <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
@@ -1257,109 +1340,7 @@ export default function CampaignsPage() {
 
                 {/* Render dropdown menus via portal outside the table */}
                 {filteredCampaigns.map((campaign) => {
-                  if (
-                    showActionMenu === campaign.id &&
-                    actionMenuRefs.current[campaign.id]
-                  ) {
-                    const buttonRect =
-                      actionMenuRefs.current[
-                        campaign.id
-                      ]!.getBoundingClientRect();
-
-                    // Smart positioning to prevent cutoff
-                    const dropdownWidth = 256; // w-64 = 256px
-                    const spacing = 4;
-                    const padding = 8; // Padding from viewport edges
-                    const viewportWidth = window.innerWidth;
-                    const viewportHeight = window.innerHeight;
-                    const estimatedDropdownContentHeight = 600; // Estimated full content height
-
-                    // Calculate available space from button position
-                    const spaceBelow =
-                      viewportHeight - buttonRect.bottom - padding;
-                    const spaceAbove = buttonRect.top - padding;
-
-                    // Determine vertical position (above or below)
-                    let top: number;
-                    let maxHeight: number;
-
-                    // Strategy: Show below by default, but flip to above if not enough space
-                    // and there's more space above
-                    if (
-                      spaceBelow >= 250 ||
-                      (spaceBelow > spaceAbove && spaceBelow >= 200)
-                    ) {
-                      // Enough space below - show below button
-                      top = buttonRect.bottom + spacing;
-                      // Calculate max height to fit in viewport
-                      maxHeight = viewportHeight - top - padding;
-                    } else if (
-                      spaceAbove >= 250 ||
-                      (spaceAbove > spaceBelow && spaceAbove >= 200)
-                    ) {
-                      // More space above - show above button
-                      // Calculate how much height we can use
-                      maxHeight = Math.min(
-                        estimatedDropdownContentHeight,
-                        spaceAbove - spacing
-                      );
-                      top = buttonRect.top - maxHeight - spacing;
-
-                      // If calculated top is above viewport, adjust
-                      if (top < padding) {
-                        top = padding;
-                        maxHeight = buttonRect.top - padding - spacing;
-                      }
-                    } else {
-                      // Very little space - use the side with more space
-                      if (spaceBelow >= spaceAbove) {
-                        top = buttonRect.bottom + spacing;
-                        maxHeight = Math.max(200, spaceBelow - spacing);
-                      } else {
-                        maxHeight = Math.max(200, spaceAbove - spacing);
-                        top = buttonRect.top - maxHeight - spacing;
-                        if (top < padding) {
-                          top = padding;
-                          maxHeight = Math.max(
-                            200,
-                            buttonRect.top - padding - spacing
-                          );
-                        }
-                      }
-                    }
-
-                    // Ensure maxHeight doesn't exceed viewport and is reasonable
-                    maxHeight = Math.min(
-                      maxHeight,
-                      viewportHeight - padding * 2
-                    );
-                    maxHeight = Math.max(maxHeight, 200);
-
-                    // Final top position check - ensure it fits in viewport
-                    if (top + maxHeight > viewportHeight - padding) {
-                      top = viewportHeight - maxHeight - padding;
-                    }
-                    if (top < padding) {
-                      top = padding;
-                      maxHeight = Math.min(
-                        maxHeight,
-                        viewportHeight - padding * 2
-                      );
-                    }
-
-                    // Calculate horizontal position (align to right edge of button)
-                    let left = buttonRect.right - dropdownWidth;
-
-                    // Ensure dropdown doesn't overflow on the right
-                    if (left + dropdownWidth > viewportWidth - padding) {
-                      left = viewportWidth - dropdownWidth - padding;
-                    }
-
-                    // Ensure dropdown doesn't overflow on the left
-                    if (left < padding) {
-                      left = padding;
-                    }
-
+                  if (showActionMenu === campaign.id && dropdownPosition) {
                     return createPortal(
                       <div
                         ref={(el) => {
@@ -1367,11 +1348,11 @@ export default function CampaignsPage() {
                         }}
                         className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-3 w-64"
                         style={{
-                          maxHeight: `${maxHeight}px`,
+                          maxHeight: `${dropdownPosition.maxHeight}px`,
                           overflowY: "auto",
                           zIndex: 99999,
-                          top: `${top}px`,
-                          left: `${left}px`,
+                          top: `${dropdownPosition.top}px`,
+                          left: `${dropdownPosition.left}px`,
                         }}
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
@@ -1694,10 +1675,6 @@ export default function CampaignsPage() {
                       </div>,
                       document.body
                     );
-                  }
-                  // Clean up ref when dropdown is closed
-                  if (dropdownMenuRefs.current[campaign.id]) {
-                    dropdownMenuRefs.current[campaign.id] = null;
                   }
                   return null;
                 })}
