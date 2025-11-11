@@ -196,9 +196,6 @@ export default function ConfigurationDetailsPage() {
             >
               {config.category}
             </span>
-            <span className={`text-sm ${tw.textMuted}`}>
-              Modified: {config.lastModified}
-            </span>
           </div>
         </div>
       </div>
@@ -225,7 +222,7 @@ export default function ConfigurationDetailsPage() {
         </p>
       </div>
 
-      {/* Sub-configurations Grid */}
+      {/* Sub-configurations Table */}
       {filteredSubConfigs.length === 0 ? (
         <div className={`${components.card.default} text-center py-12`}>
           <Settings className={`w-12 h-12 ${tw.textMuted} mx-auto mb-4`} />
@@ -241,66 +238,89 @@ export default function ConfigurationDetailsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredSubConfigs.map((subConfig, index) => {
-            const route = subConfigRoutes[subConfig];
-            return (
-              <div
-                key={index}
-                onClick={() => {
-                  if (route) {
-                    navigate(route);
-                  }
-                }}
-                className={`group ${
-                  components.card.default
-                } hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 ${
-                  route ? "cursor-pointer" : "cursor-default"
-                } flex flex-col h-full`}
-                style={{
-                  animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
-                  opacity: 0,
-                  transform: "translateY(20px)",
-                }}
-              >
-                <div className="flex flex-col h-full">
-                  {/* Icon/Header */}
-                  <div className="mb-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-                      style={{
-                        background: `linear-gradient(135deg, ${color.primary.accent}20 0%, ${color.primary.accent}10 100%)`,
-                      }}
-                    >
-                      <Settings
-                        className="w-6 h-6"
-                        style={{ color: color.primary.accent }}
-                      />
-                    </div>
-                    <h3
-                      className={`text-lg font-bold ${tw.textPrimary} leading-tight`}
-                    >
-                      {subConfig}
-                    </h3>
-                  </div>
-
-                  {/* Footer */}
-                  <div
-                    className={`flex items-center justify-between pt-4 border-t ${tw.borderDefault} mt-auto`}
+        <div className="overflow-x-auto rounded-lg border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <thead
+              className={`border-b ${tw.borderDefault}`}
+              style={{ background: color.surface.tableHeader }}
+            >
+              <tr>
+                <th
+                  className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                  style={{ color: color.surface.tableHeaderText }}
+                >
+                  Configuration Name
+                </th>
+                <th
+                  className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                  style={{ color: color.surface.tableHeaderText }}
+                >
+                  Status
+                </th>
+                <th
+                  className={`px-6 py-4 text-right text-sm font-medium uppercase tracking-wider`}
+                  style={{ color: color.surface.tableHeaderText }}
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredSubConfigs.map((subConfig, index) => {
+                const route = subConfigRoutes[subConfig];
+                return (
+                  <tr
+                    key={index}
+                    className={`hover:bg-gray-50/30 transition-colors ${
+                      route ? "cursor-pointer" : ""
+                    }`}
+                    onClick={() => {
+                      if (route) {
+                        navigate(route);
+                      }
+                    }}
                   >
-                    <span className={`text-sm ${tw.textMuted}`}>
-                      {route ? "Click to configure" : "Coming soon"}
-                    </span>
-                    {route && (
-                      <ChevronRight
-                        className={`w-5 h-5 ${tw.textMuted} group-hover:text-[${color.primary.accent}] transition-colors duration-200`}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`text-sm font-medium ${tw.textPrimary} ${
+                          route
+                            ? "hover:text-[color:var(--primary-accent)] transition-colors"
+                            : ""
+                        }`}
+                      >
+                        {subConfig}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          route
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {route ? "Available" : "Coming Soon"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      {route ? (
+                        <div className="flex items-center justify-end">
+                          <span
+                            className={`text-sm ${tw.textMuted} mr-2 group-hover:${tw.textPrimary}`}
+                          >
+                            View
+                          </span>
+                          <ChevronRight className={`w-4 h-4 ${tw.textMuted}`} />
+                        </div>
+                      ) : (
+                        <span className={`text-sm ${tw.textMuted}`}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

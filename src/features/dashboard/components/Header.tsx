@@ -1,14 +1,113 @@
 import { Bell, Search, User, LogOut, Menu } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import logo from "../../../assets/Effortel_logo.svg";
 import { User as UserType } from "../../../features/auth/types/auth";
 import { color } from "../../../shared/utils/utils";
+import { userService } from "../../users/services/userService";
+import { roleService } from "../../roles/services/roleService";
+import { Role } from "../../roles/types/role";
+import { UserType as FullUserType } from "../../users/types/user";
+
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
+  const [currentUserRole, setCurrentUserRole] = useState<string>("User");
+  const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
+  const [isLoadingRole, setIsLoadingRole] = useState<boolean>(true);
+
+  const loadCurrentUserRole = useCallback(async () => {
+    if (!user?.email) {
+      setIsLoadingRole(false);
+      return;
+    }
+
+    setIsLoadingRole(true);
+    try {
+      // Load roles for lookup first (same as user management)
+      const { roles } = await roleService.listRoles({
+        limit: 100,
+        offset: 0,
+      });
+      const mappedRoles: Record<number, Role> = {};
+      roles.forEach((role) => {
+        mappedRoles[role.id] = role;
+      });
+      setRoleLookup(mappedRoles);
+
+      // Try to get user by email first (more reliable)
+      let fullUser: FullUserType | null = null;
+      try {
+        const userResponseByEmail = await userService.getUserByEmail(
+          user.email,
+          true
+        );
+        if (userResponseByEmail.success && userResponseByEmail.data) {
+          fullUser = userResponseByEmail.data as FullUserType;
+        }
+      } catch (emailErr) {
+        console.log("Failed to get user by email, trying by ID:", emailErr);
+      }
+
+      // Fallback to user_id if email lookup failed
+      if (!fullUser && user?.user_id) {
+        try {
+          const userResponseById = await userService.getUserById(user.user_id);
+          if (userResponseById.success && userResponseById.data) {
+            fullUser = userResponseById.data as FullUserType;
+          }
+        } catch (idErr) {
+          console.log("Failed to get user by ID:", idErr);
+        }
+      }
+
+      if (fullUser) {
+        // Resolve role name using the same logic as user management
+        const primaryRoleId = fullUser.primary_role_id ?? fullUser.role_id;
+        const resolvedRoleName =
+          primaryRoleId != null ? mappedRoles[primaryRoleId]?.name : undefined;
+        const fallbackRoleName = fullUser.role_name;
+
+        const finalRoleName = resolvedRoleName ?? fallbackRoleName ?? "User";
+        console.log("Current user role:", {
+          email: user.email,
+          user_id: user.user_id,
+          fullUser_id: fullUser.id,
+          primary_role_id: primaryRoleId,
+          role_name: fallbackRoleName,
+          resolvedRoleName,
+          finalRoleName,
+          mappedRoles,
+        });
+        setCurrentUserRole(finalRoleName);
+      } else {
+        console.warn("Could not fetch current user details, using fallback");
+        setCurrentUserRole(
+          user?.role
+            ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+            : "User"
+        );
+      }
+    } catch (err) {
+      console.error("Failed to load current user role:", err);
+      // Fallback to simple role from auth context
+      setCurrentUserRole(
+        user?.role
+          ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+          : "User"
+      );
+    } finally {
+      setIsLoadingRole(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadCurrentUserRole();
+  }, [loadCurrentUserRole]);
 
   return (
     <header
@@ -53,12 +152,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <div className="w-10 h-10 rounded-full flex items-center justify-center">
                 <User className="w-6 h-6 text-white" />
               </div>
-              <div className="hidden sm:block">
+              <div>
                 <div className="text-sm font-medium text-white">
                   {user?.email || "User"}
                 </div>
                 <div className="text-xs font-medium leading-[140%] tracking-[0.05em] text-white/70">
-                  Administrator
+                  {currentUserRole}
                 </div>
               </div>
             </div>
@@ -95,6 +194,7 @@ export function GuestHeader({
   variant = "default",
 }: GuestHeaderProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     if (onLogout) {
@@ -131,7 +231,10 @@ export function GuestHeader({
         <div className="flex justify-between items-center h-20 lg:h-24">
           {showLogo && (
             <div className="flex items-center">
-              <div className="w-32 h-32  flex items-center justify-center">
+              <div
+                className="w-32 h-32 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate("/dashboard")}
+              >
                 <img
                   src={logo}
                   alt="Sentra Logo"

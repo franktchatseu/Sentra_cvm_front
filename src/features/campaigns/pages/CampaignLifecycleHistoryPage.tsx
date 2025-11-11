@@ -36,26 +36,17 @@ export default function CampaignLifecycleHistoryPage() {
           campaignService.getCampaignById(id, true), // Skip cache
         ]);
 
-        console.log("Lifecycle history data:", historyData);
-        console.log("Campaign data:", campaignData);
+        // Service method now returns array directly (handles unwrapping internally)
+        setHistory(historyData as unknown as LifecycleHistoryEntry[]);
 
-        // Extract data from API response structure
-        const historyArray =
-          (
-            historyData as unknown as {
-              success: boolean;
-              data: LifecycleHistoryEntry[];
-            }
-          )?.data || [];
-        const campaignInfo = (
-          campaignData as unknown as {
-            success: boolean;
-            data: { name: string };
-          }
-        )?.data;
-
-        setHistory(historyArray);
-        setCampaignName(campaignInfo?.name || `Campaign ${id}`);
+        // Handle campaign data - may be wrapped or unwrapped
+        const campaignName =
+          ((campaignData as unknown as Record<string, unknown>)
+            ?.name as string) ||
+          (campaignData as unknown as { data?: { name?: string } })?.data
+            ?.name ||
+          `Campaign ${id}`;
+        setCampaignName(campaignName);
       } catch (error) {
         console.error("Failed to fetch lifecycle history:", error);
         const message =

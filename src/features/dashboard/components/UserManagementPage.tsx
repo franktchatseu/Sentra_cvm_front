@@ -54,6 +54,7 @@ export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "requests">("users");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
   >("all");
@@ -627,6 +628,29 @@ export default function UserManagementPage() {
     )
   ).sort((a, b) => a.localeCompare(b));
 
+  // Get unique roles from users
+  const getUserRoleName = useCallback(
+    (user: UserType): string => {
+      const primaryRoleId = user.primary_role_id ?? user.role_id;
+      if (primaryRoleId != null) {
+        const resolvedRole = roleLookup[primaryRoleId];
+        if (resolvedRole?.name) {
+          return resolvedRole.name;
+        }
+      }
+      return user.role_name || "N/A";
+    },
+    [roleLookup]
+  );
+
+  const uniqueRoles = Array.from(
+    new Set(
+      users
+        .map((user) => getUserRoleName(user))
+        .filter((role): role is string => Boolean(role && role !== "N/A"))
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
   const aggregateCounts = users.reduce(
     (acc, user) => {
       const status = normalizeStatus(user);
@@ -700,12 +724,15 @@ export default function UserManagementPage() {
     const matchesDepartment =
       filterDepartment === "all" ||
       (user.department || "").toLowerCase() === filterDepartment.toLowerCase();
+    const matchesRole =
+      filterRole === "all" ||
+      getUserRoleName(user).toLowerCase() === filterRole.toLowerCase();
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" && normalizedStatus === "active") ||
       (filterStatus === "inactive" && normalizedStatus !== "active");
 
-    return matchesSearch && matchesDepartment && matchesStatus;
+    return matchesSearch && matchesDepartment && matchesRole && matchesStatus;
   });
 
   const filteredRequests = accountRequests.filter((request) => {
@@ -897,6 +924,20 @@ export default function UserManagementPage() {
 
             <HeadlessSelect
               options={[
+                { value: "all", label: "All Roles" },
+                ...uniqueRoles.map((role) => ({
+                  value: role.toLowerCase(),
+                  label: role,
+                })),
+              ]}
+              value={filterRole}
+              onChange={(value) => setFilterRole(value as string)}
+              placeholder="Select role"
+              className="min-w-[160px]"
+            />
+
+            <HeadlessSelect
+              options={[
                 { value: "all", label: "All Status" },
                 { value: "active", label: "Active" },
                 { value: "inactive", label: "Inactive" },
@@ -994,6 +1035,12 @@ export default function UserManagementPage() {
                         className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
                         style={{ color: color.surface.tableHeaderText }}
                       >
+                        Role
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        style={{ color: color.surface.tableHeaderText }}
+                      >
                         Status
                       </th>
                       <th
@@ -1041,6 +1088,13 @@ export default function UserManagementPage() {
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
                             >
                               {user.department || "N/A"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                            >
+                              {getUserRoleName(user)}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -1182,6 +1236,11 @@ export default function UserManagementPage() {
                             className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
                           >
                             {user.department || "N/A"}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                          >
+                            {getUserRoleName(user)}
                           </span>
                           <span
                             className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${

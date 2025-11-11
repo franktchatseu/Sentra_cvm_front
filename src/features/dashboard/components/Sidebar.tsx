@@ -26,7 +26,7 @@ import {
   List,
   Building2,
   Upload,
-  Fingerprint
+  Fingerprint,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
@@ -140,20 +140,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           name: "Campaign Catalogs",
           href: "/dashboard/campaign-catalogs",
           icon: Folder,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
-          name: "Line of Business",
-          href: "/dashboard/line-of-business",
-          icon: Briefcase,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
-          name: "Campaign Communication Policy",
-          href: "/dashboard/campaign-communication-policy",
-          icon: Bell,
           type: "single",
           entity: "campaigns",
         },

@@ -99,6 +99,7 @@ export default function CampaignsPage() {
     name: string;
   } | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const dropdownMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
   const [allCampaignsUnfiltered, setAllCampaignsUnfiltered] = useState<
     CampaignDisplay[]
@@ -236,7 +237,7 @@ export default function CampaignsPage() {
           };
         }
 
-        // Add dummy dates if not present
+        // Add dummy dates if not present (store as ISO strings for consistency)
         if (!campaign.startDate || !campaign.endDate) {
           const now = new Date();
           const daysAgo = seededRandom(campaign.id * 6, 1, 30);
@@ -248,16 +249,9 @@ export default function CampaignsPage() {
           const endDate = new Date(startDate);
           endDate.setDate(endDate.getDate() + campaignDuration);
 
-          campaign.startDate = startDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          });
-          campaign.endDate = endDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          });
+          // Store as ISO strings for consistent parsing
+          campaign.startDate = startDate.toISOString();
+          campaign.endDate = endDate.toISOString();
         }
 
         // Add dummy segment if not present (consistent based on campaign ID)
@@ -465,19 +459,33 @@ export default function CampaignsPage() {
   // Close action menus when clicking outside
   useEffect(() => {
     const handleClickOutsideActionMenus = (event: MouseEvent) => {
-      const clickedOutsideActionMenus = Object.values(
-        actionMenuRefs.current
-      ).every((ref) => ref && !ref.contains(event.target as Node));
-      if (clickedOutsideActionMenus) {
+      const target = event.target as Node;
+      // Check if click is inside any action menu button
+      const clickedInsideButton = Object.values(actionMenuRefs.current).some(
+        (ref) => ref && ref.contains(target)
+      );
+
+      // Check if click is inside any dropdown menu (portal)
+      const clickedInsideDropdown = Object.values(
+        dropdownMenuRefs.current
+      ).some((ref) => ref && ref.contains(target));
+
+      // Only close if clicked outside both button and dropdown
+      if (!clickedInsideButton && !clickedInsideDropdown) {
         setShowActionMenu(null);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutsideActionMenus);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutsideActionMenus);
-    };
-  }, []);
+    if (showActionMenu !== null) {
+      document.addEventListener("mousedown", handleClickOutsideActionMenus);
+      return () => {
+        document.removeEventListener(
+          "mousedown",
+          handleClickOutsideActionMenus
+        );
+      };
+    }
+  }, [showActionMenu]);
 
   const statusOptions = [
     { value: "all", label: "All Campaigns", count: totalCampaigns },
@@ -567,10 +575,38 @@ export default function CampaignsPage() {
   };
 
   // Action handlers using service layer
-  const handleDuplicateCampaign = (campaign: CampaignDisplay) => {
-    // Navigate to create page with duplicateId to pre-fill form
-    setShowActionMenu(null);
-    navigate(`/dashboard/campaigns/create?duplicateId=${campaign.id}`);
+  const handleDuplicateCampaign = async (campaign: CampaignDisplay) => {
+    try {
+      const newName = `${campaign.name} (Copy)`;
+      const response = await campaignService.duplicateCampaign(campaign.id, {
+        newName,
+      });
+      showToast("success", "Campaign duplicated successfully!");
+      fetchCampaigns(); // Refresh campaigns list
+
+      // Optionally navigate to the duplicated campaign's edit page if response contains ID
+      // The response might have different field names depending on backend implementation
+      if (response && typeof response === "object") {
+        const clonedId =
+          (
+            response as {
+              clonedCampaignId?: number;
+              id?: number;
+              campaign_id?: number;
+            }
+          ).clonedCampaignId ||
+          (response as { id?: number }).id ||
+          (response as { campaign_id?: number }).campaign_id;
+        if (clonedId) {
+          navigate(`/dashboard/campaigns/${clonedId}/edit`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to duplicate campaign:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to duplicate campaign";
+      showToast("error", errorMessage);
+    }
   };
 
   const handleCloneWithChanges = async (campaign: CampaignDisplay) => {
@@ -913,8 +949,8 @@ export default function CampaignsPage() {
             </p>
           </div>
         ) : filteredCampaigns.length > 0 ? (
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="min-w-full">
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="min-w-full divide-y divide-gray-200">
               <thead
                 className={`border-b ${tw.borderDefault}`}
                 style={{ background: color.surface.tableHeader }}
@@ -924,7 +960,7 @@ export default function CampaignsPage() {
                     className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
                     style={{ color: color.surface.tableHeaderText }}
                   >
-                    Campaign
+                    Campaign name
                   </th>
                   <th
                     className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
@@ -945,7 +981,7 @@ export default function CampaignsPage() {
                     Performance
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell`}
+                    className={`px-3 sm:px-4 py-3 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell`}
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Dates
@@ -966,16 +1002,17 @@ export default function CampaignsPage() {
                     key={campaign.id}
                     className={`group hover:bg-gray-50/30 transition-all duration-300 relative`}
                   >
-                    <td className="px-6 py-3">
+                    <td className="px-3 sm:px-4 md:px-6 py-3 min-w-[200px]">
                       <div
-                        className={`font-semibold text-base ${tw.textPrimary} truncate`}
+                        className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                        title={campaign.name}
                       >
                         {campaign.name}
                       </div>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-3 sm:px-4 md:px-6 py-3">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusBadge(
                           campaign.status
                         )}`}
                       >
@@ -1026,43 +1063,118 @@ export default function CampaignsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-3 hidden xl:table-cell">
-                      <div className={`text-sm ${tw.textPrimary}`}>
+                    <td className="px-3 sm:px-4 py-3 hidden lg:table-cell min-w-[160px] max-w-[200px]">
+                      <div className={`text-xs sm:text-sm ${tw.textPrimary}`}>
                         {campaign.startDate ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-1">
-                              <span className="text-gray-500 text-xs">
-                                Start:
-                              </span>
-                              <span className="font-medium">
-                                {new Date(
-                                  campaign.startDate
-                                ).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
-                              </span>
-                            </div>
-                            {campaign.endDate && (
-                              <div className="flex items-center space-x-1">
-                                <span className="text-gray-500 text-xs">
-                                  End:
+                          (() => {
+                            // Parse date - handle both ISO strings and formatted strings
+                            let startDate: Date;
+                            let endDate: Date | null = null;
+
+                            try {
+                              startDate = new Date(campaign.startDate);
+                              if (campaign.endDate) {
+                                endDate = new Date(campaign.endDate);
+                              }
+                            } catch {
+                              return (
+                                <span className="text-gray-400 text-xs">
+                                  Invalid date
                                 </span>
-                                <span className="font-medium">
-                                  {new Date(
-                                    campaign.endDate
-                                  ).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })}
+                              );
+                            }
+
+                            // Check if dates are valid
+                            if (isNaN(startDate.getTime())) {
+                              return (
+                                <span className="text-gray-400 text-xs">
+                                  Not scheduled
                                 </span>
+                              );
+                            }
+
+                            // Format dates compactly
+                            const formatDateCompact = (date: Date) => {
+                              return date.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              });
+                            };
+
+                            const formatDateWithYear = (date: Date) => {
+                              return date.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              });
+                            };
+
+                            // Format start date
+                            let startDateDisplay =
+                              formatDateWithYear(startDate);
+                            if (endDate && !isNaN(endDate.getTime())) {
+                              const sameMonth =
+                                startDate.getMonth() === endDate.getMonth();
+                              const sameYear =
+                                startDate.getFullYear() ===
+                                endDate.getFullYear();
+
+                              if (sameMonth && sameYear) {
+                                // Same month and year: "Nov 10"
+                                startDateDisplay = formatDateCompact(startDate);
+                              } else if (sameYear) {
+                                // Same year, different month: "Nov 10"
+                                startDateDisplay = formatDateCompact(startDate);
+                              }
+                            }
+
+                            // Format end date
+                            let endDateDisplay =
+                              endDate && !isNaN(endDate.getTime())
+                                ? formatDateWithYear(endDate)
+                                : null;
+
+                            if (endDate && !isNaN(endDate.getTime())) {
+                              const sameMonth =
+                                startDate.getMonth() === endDate.getMonth();
+                              const sameYear =
+                                startDate.getFullYear() ===
+                                endDate.getFullYear();
+
+                              if (sameMonth && sameYear) {
+                                // Same month and year: "Nov 15, 2025"
+                                endDateDisplay = `${endDate.getDate()}, ${endDate.getFullYear()}`;
+                              } else if (sameYear) {
+                                // Same year, different month: "Dec 15, 2025"
+                                endDateDisplay = formatDateWithYear(endDate);
+                              }
+                            }
+
+                            return (
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-500 text-xs whitespace-nowrap">
+                                    Start:
+                                  </span>
+                                  <span className="font-medium truncate">
+                                    {startDateDisplay}
+                                  </span>
+                                </div>
+                                {endDateDisplay && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500 text-xs whitespace-nowrap">
+                                      End:
+                                    </span>
+                                    <span className="font-medium truncate">
+                                      {endDateDisplay}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
+                            );
+                          })()
                         ) : (
-                          <span className="text-gray-400 text-sm">
+                          <span className="text-gray-400 text-xs">
                             Not scheduled
                           </span>
                         )}
@@ -1137,373 +1249,458 @@ export default function CampaignsPage() {
                           >
                             <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           </button>
-
-                          {showActionMenu === campaign.id && (
-                            <div
-                              className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3"
-                              style={{
-                                maxHeight: "80vh",
-                                overflowY: "auto",
-                                zIndex: 99999,
-                                position: "absolute",
-                              }}
-                            >
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCampaignToExecute({
-                                    id: campaign.id,
-                                    name: campaign.name,
-                                  });
-                                  setShowExecuteModal(true);
-                                  setShowActionMenu(null);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Play
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: color.primary.accent }}
-                                />
-                                Execute Campaign
-                              </button>
-
-                              {/* Request Approval - Only for draft campaigns */}
-                              {campaign.status === "draft" && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setShowActionMenu(null);
-                                    try {
-                                      await campaignService.submitForApproval(
-                                        campaign.id
-                                      );
-                                      showToast(
-                                        "success",
-                                        `Campaign "${campaign.name}" submitted for approval!`
-                                      );
-                                      fetchCampaigns();
-                                    } catch (error) {
-                                      console.error(
-                                        "Error submitting campaign for approval:",
-                                        error
-                                      );
-
-                                      // Extract error message from backend response
-                                      let errorMessage =
-                                        "Failed to submit campaign for approval";
-
-                                      if (error instanceof Error) {
-                                        const match =
-                                          error.message.match(
-                                            /details: ({.*})/
-                                          );
-                                        if (match) {
-                                          try {
-                                            const errorData = JSON.parse(
-                                              match[1]
-                                            );
-                                            errorMessage =
-                                              errorData.error ||
-                                              errorData.message ||
-                                              errorMessage;
-                                          } catch {
-                                            errorMessage = error.message;
-                                          }
-                                        } else {
-                                          errorMessage = error.message;
-                                        }
-                                      }
-
-                                      showToast("error", errorMessage);
-                                    }
-                                  }}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                                >
-                                  <Send
-                                    className="w-4 h-4 mr-4"
-                                    style={{ color: "#3B82F6" }}
-                                  />
-                                  Request Approval
-                                </button>
-                              )}
-
-                              {/* Approve - Only for pending_approval campaigns */}
-                              {campaign.status === "pending_approval" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCampaignToApprove({
-                                      id: campaign.id,
-                                      name: campaign.name,
-                                    });
-                                    setShowApproveModal(true);
-                                    setShowActionMenu(null);
-                                  }}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                                >
-                                  <CheckCircle
-                                    className="w-4 h-4 mr-4"
-                                    style={{ color: "#10B981" }}
-                                  />
-                                  Approve Campaign
-                                </button>
-                              )}
-
-                              {/* Reject - Only for pending_approval campaigns */}
-                              {campaign.status === "pending_approval" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCampaignToReject({
-                                      id: campaign.id,
-                                      name: campaign.name,
-                                    });
-                                    setShowRejectModal(true);
-                                    setShowActionMenu(null);
-                                  }}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-4 text-red-600" />
-                                  Reject Campaign
-                                </button>
-                              )}
-
-                              {/* Activate - Only for approved campaigns */}
-                              {campaign.status === "approved" && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setShowActionMenu(null);
-                                    try {
-                                      await campaignService.activateCampaign(
-                                        campaign.id
-                                      );
-                                      showToast(
-                                        "success",
-                                        `Campaign "${campaign.name}" activated successfully!`
-                                      );
-                                      fetchCampaigns();
-                                    } catch (error) {
-                                      console.error(
-                                        "Error activating campaign:",
-                                        error
-                                      );
-
-                                      // Extract error message from backend response
-                                      let errorMessage =
-                                        "Failed to activate campaign";
-
-                                      if (error instanceof Error) {
-                                        const match =
-                                          error.message.match(
-                                            /details: ({.*})/
-                                          );
-                                        if (match) {
-                                          try {
-                                            const errorData = JSON.parse(
-                                              match[1]
-                                            );
-                                            errorMessage =
-                                              errorData.error ||
-                                              errorData.message ||
-                                              errorMessage;
-                                          } catch {
-                                            errorMessage = error.message;
-                                          }
-                                        } else {
-                                          errorMessage = error.message;
-                                        }
-                                      }
-
-                                      showToast("error", errorMessage);
-                                    }
-                                  }}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                                >
-                                  <Play
-                                    className="w-4 h-4 mr-4"
-                                    style={{ color: "#10B981" }}
-                                  />
-                                  Activate Campaign
-                                </button>
-                              )}
-
-                              {/* Pause - Only for active campaigns */}
-                              {campaign.status === "active" && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setShowActionMenu(null);
-                                    try {
-                                      await campaignService.pauseCampaign(
-                                        campaign.id
-                                      );
-                                      showToast(
-                                        "success",
-                                        `Campaign "${campaign.name}" paused successfully!`
-                                      );
-                                      fetchCampaigns();
-                                    } catch (error) {
-                                      console.error(
-                                        "Error pausing campaign:",
-                                        error
-                                      );
-
-                                      // Extract error message from backend response
-                                      let errorMessage =
-                                        "Failed to pause campaign";
-
-                                      if (error instanceof Error) {
-                                        const match =
-                                          error.message.match(
-                                            /details: ({.*})/
-                                          );
-                                        if (match) {
-                                          try {
-                                            const errorData = JSON.parse(
-                                              match[1]
-                                            );
-                                            errorMessage =
-                                              errorData.error ||
-                                              errorData.message ||
-                                              errorMessage;
-                                          } catch {
-                                            errorMessage = error.message;
-                                          }
-                                        } else {
-                                          errorMessage = error.message;
-                                        }
-                                      }
-
-                                      showToast("error", errorMessage);
-                                    }
-                                  }}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                                >
-                                  <Pause
-                                    className="w-4 h-4 mr-4"
-                                    style={{ color: "#F59E0B" }}
-                                  />
-                                  Pause Campaign
-                                </button>
-                              )}
-
-                              <div className="border-t border-gray-200 my-2"></div>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDuplicateCampaign(campaign);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Copy
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: color.primary.action }}
-                                />
-                                Duplicate Campaign
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCloneWithChanges(campaign);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Copy
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: color.primary.action }}
-                                />
-                                Clone with Changes
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleArchiveCampaign(campaign.id);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Archive
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: color.primary.action }}
-                                />
-                                Archive Campaign
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // handleViewAnalytics(campaign.id);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                View Analytics
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleExportCampaign(campaign.id);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <Download
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: color.primary.action }}
-                                />
-                                Export Data
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewApprovalHistory(campaign.id);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <CheckCircle
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: color.primary.action }}
-                                />
-                                Approval History
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewLifecycleHistory(campaign.id);
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-#f9fafb transition-colors"
-                              >
-                                <History
-                                  className="w-4 h-4 mr-4"
-                                  style={{ color: color.primary.action }}
-                                />
-                                Lifecycle History
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCampaign(
-                                    campaign.id,
-                                    campaign.name
-                                  );
-                                }}
-                                className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-red-50 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4 mr-4 text-red-600" />
-                                Delete Campaign
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </td>
                   </tr>
                 ))}
+
+                {/* Render dropdown menus via portal outside the table */}
+                {filteredCampaigns.map((campaign) => {
+                  if (
+                    showActionMenu === campaign.id &&
+                    actionMenuRefs.current[campaign.id]
+                  ) {
+                    const buttonRect =
+                      actionMenuRefs.current[
+                        campaign.id
+                      ]!.getBoundingClientRect();
+
+                    // Smart positioning to prevent cutoff
+                    const dropdownWidth = 256; // w-64 = 256px
+                    const spacing = 4;
+                    const padding = 8; // Padding from viewport edges
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    const estimatedDropdownContentHeight = 600; // Estimated full content height
+
+                    // Calculate available space from button position
+                    const spaceBelow =
+                      viewportHeight - buttonRect.bottom - padding;
+                    const spaceAbove = buttonRect.top - padding;
+
+                    // Determine vertical position (above or below)
+                    let top: number;
+                    let maxHeight: number;
+
+                    // Strategy: Show below by default, but flip to above if not enough space
+                    // and there's more space above
+                    if (
+                      spaceBelow >= 250 ||
+                      (spaceBelow > spaceAbove && spaceBelow >= 200)
+                    ) {
+                      // Enough space below - show below button
+                      top = buttonRect.bottom + spacing;
+                      // Calculate max height to fit in viewport
+                      maxHeight = viewportHeight - top - padding;
+                    } else if (
+                      spaceAbove >= 250 ||
+                      (spaceAbove > spaceBelow && spaceAbove >= 200)
+                    ) {
+                      // More space above - show above button
+                      // Calculate how much height we can use
+                      maxHeight = Math.min(
+                        estimatedDropdownContentHeight,
+                        spaceAbove - spacing
+                      );
+                      top = buttonRect.top - maxHeight - spacing;
+
+                      // If calculated top is above viewport, adjust
+                      if (top < padding) {
+                        top = padding;
+                        maxHeight = buttonRect.top - padding - spacing;
+                      }
+                    } else {
+                      // Very little space - use the side with more space
+                      if (spaceBelow >= spaceAbove) {
+                        top = buttonRect.bottom + spacing;
+                        maxHeight = Math.max(200, spaceBelow - spacing);
+                      } else {
+                        maxHeight = Math.max(200, spaceAbove - spacing);
+                        top = buttonRect.top - maxHeight - spacing;
+                        if (top < padding) {
+                          top = padding;
+                          maxHeight = Math.max(
+                            200,
+                            buttonRect.top - padding - spacing
+                          );
+                        }
+                      }
+                    }
+
+                    // Ensure maxHeight doesn't exceed viewport and is reasonable
+                    maxHeight = Math.min(
+                      maxHeight,
+                      viewportHeight - padding * 2
+                    );
+                    maxHeight = Math.max(maxHeight, 200);
+
+                    // Final top position check - ensure it fits in viewport
+                    if (top + maxHeight > viewportHeight - padding) {
+                      top = viewportHeight - maxHeight - padding;
+                    }
+                    if (top < padding) {
+                      top = padding;
+                      maxHeight = Math.min(
+                        maxHeight,
+                        viewportHeight - padding * 2
+                      );
+                    }
+
+                    // Calculate horizontal position (align to right edge of button)
+                    let left = buttonRect.right - dropdownWidth;
+
+                    // Ensure dropdown doesn't overflow on the right
+                    if (left + dropdownWidth > viewportWidth - padding) {
+                      left = viewportWidth - dropdownWidth - padding;
+                    }
+
+                    // Ensure dropdown doesn't overflow on the left
+                    if (left < padding) {
+                      left = padding;
+                    }
+
+                    return createPortal(
+                      <div
+                        ref={(el) => {
+                          dropdownMenuRefs.current[campaign.id] = el;
+                        }}
+                        className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-3 w-64"
+                        style={{
+                          maxHeight: `${maxHeight}px`,
+                          overflowY: "auto",
+                          zIndex: 99999,
+                          top: `${top}px`,
+                          left: `${left}px`,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCampaignToExecute({
+                              id: campaign.id,
+                              name: campaign.name,
+                            });
+                            setShowExecuteModal(true);
+                            setShowActionMenu(null);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <Play
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.accent }}
+                          />
+                          Execute Campaign
+                        </button>
+
+                        {campaign.status === "draft" && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              setShowActionMenu(null);
+                              try {
+                                await campaignService.submitForApproval(
+                                  campaign.id
+                                );
+                                showToast(
+                                  "success",
+                                  `Campaign "${campaign.name}" submitted for approval!`
+                                );
+                                fetchCampaigns();
+                              } catch (error) {
+                                let errorMessage =
+                                  "Failed to submit campaign for approval";
+                                if (error instanceof Error) {
+                                  const match =
+                                    error.message.match(/details: ({.*})/);
+                                  if (match) {
+                                    try {
+                                      const errorData = JSON.parse(match[1]);
+                                      errorMessage =
+                                        errorData.error ||
+                                        errorData.message ||
+                                        errorMessage;
+                                    } catch {
+                                      errorMessage = error.message;
+                                    }
+                                  } else {
+                                    errorMessage = error.message;
+                                  }
+                                }
+                                showToast("error", errorMessage);
+                              }
+                            }}
+                            className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                          >
+                            <Send
+                              className="w-4 h-4 mr-4"
+                              style={{ color: "#3B82F6" }}
+                            />
+                            Request Approval
+                          </button>
+                        )}
+
+                        {campaign.status === "pending_approval" && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCampaignToApprove({
+                                  id: campaign.id,
+                                  name: campaign.name,
+                                });
+                                setShowApproveModal(true);
+                                setShowActionMenu(null);
+                              }}
+                              className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                            >
+                              <CheckCircle
+                                className="w-4 h-4 mr-4"
+                                style={{ color: "#10B981" }}
+                              />
+                              Approve Campaign
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCampaignToReject({
+                                  id: campaign.id,
+                                  name: campaign.name,
+                                });
+                                setShowRejectModal(true);
+                                setShowActionMenu(null);
+                              }}
+                              className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4 mr-4 text-red-600" />
+                              Reject Campaign
+                            </button>
+                          </>
+                        )}
+
+                        {campaign.status === "approved" && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              setShowActionMenu(null);
+                              try {
+                                await campaignService.activateCampaign(
+                                  campaign.id
+                                );
+                                showToast(
+                                  "success",
+                                  `Campaign "${campaign.name}" activated successfully!`
+                                );
+                                fetchCampaigns();
+                              } catch (error) {
+                                let errorMessage =
+                                  "Failed to activate campaign";
+                                if (error instanceof Error) {
+                                  const match =
+                                    error.message.match(/details: ({.*})/);
+                                  if (match) {
+                                    try {
+                                      const errorData = JSON.parse(match[1]);
+                                      errorMessage =
+                                        errorData.error ||
+                                        errorData.message ||
+                                        errorMessage;
+                                    } catch {
+                                      errorMessage = error.message;
+                                    }
+                                  } else {
+                                    errorMessage = error.message;
+                                  }
+                                }
+                                showToast("error", errorMessage);
+                              }
+                            }}
+                            className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                          >
+                            <Play
+                              className="w-4 h-4 mr-4"
+                              style={{ color: "#10B981" }}
+                            />
+                            Activate Campaign
+                          </button>
+                        )}
+
+                        {(campaign.status === "active" ||
+                          campaign.status === "running") && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              setShowActionMenu(null);
+                              try {
+                                await campaignService.pauseCampaign(
+                                  campaign.id
+                                );
+                                showToast(
+                                  "success",
+                                  `Campaign "${campaign.name}" paused successfully!`
+                                );
+                                fetchCampaigns();
+                              } catch (error) {
+                                let errorMessage = "Failed to pause campaign";
+                                if (error instanceof Error) {
+                                  errorMessage = error.message;
+                                }
+                                showToast("error", errorMessage);
+                              }
+                            }}
+                            className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                          >
+                            <Pause
+                              className="w-4 h-4 mr-4"
+                              style={{ color: "#F59E0B" }}
+                            />
+                            Pause Campaign
+                          </button>
+                        )}
+
+                        <div className="border-t border-gray-200 my-2"></div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicateCampaign(campaign);
+                            setShowActionMenu(null);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <Copy
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Duplicate Campaign
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCloneWithChanges(campaign);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <Copy
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Clone with Changes
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(
+                              `/dashboard/campaigns/${campaign.id}/edit`
+                            );
+                            setShowActionMenu(null);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <Edit
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Edit Campaign
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleArchiveCampaign(campaign.id);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <Archive
+                            className="w-4 h-4 mr-4"
+                            style={{ color: "#6B7280" }}
+                          />
+                          Archive Campaign
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/dashboard/campaigns/${campaign.id}`);
+                            setShowActionMenu(null);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <Eye
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          View Analytics
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExportCampaign(campaign.id);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <Download
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Export Data
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewApprovalHistory(campaign.id);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <CheckCircle
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Approval History
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewLifecycleHistory(campaign.id);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                        >
+                          <History
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Lifecycle History
+                        </button>
+
+                        <div className="border-t border-gray-200 my-2"></div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCampaign(campaign.id, campaign.name);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 mr-4 text-red-600" />
+                          Delete Campaign
+                        </button>
+                      </div>,
+                      document.body
+                    );
+                  }
+                  // Clean up ref when dropdown is closed
+                  if (dropdownMenuRefs.current[campaign.id]) {
+                    dropdownMenuRefs.current[campaign.id] = null;
+                  }
+                  return null;
+                })}
               </tbody>
             </table>
           </div>

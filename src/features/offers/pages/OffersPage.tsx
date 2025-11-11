@@ -65,6 +65,7 @@ export default function OffersPage() {
   // Dropdown menu state
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
   const actionMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const dropdownMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Loading states for individual offers
   const [loadingAction, setLoadingAction] = useState<{
@@ -326,20 +327,33 @@ export default function OffersPage() {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showActionMenu !== null) {
-        const target = event.target as HTMLElement;
-        const isInsideDropdown = target.closest(".action-dropdown");
-        const isInsideButton = target.closest(".action-button");
+    const handleClickOutsideActionMenus = (event: MouseEvent) => {
+      const target = event.target as Node;
+      // Check if click is inside any action menu button
+      const clickedInsideButton = Object.values(actionMenuRefs.current).some(
+        (ref) => ref && ref.contains(target)
+      );
 
-        if (!isInsideDropdown && !isInsideButton) {
-          setShowActionMenu(null);
-        }
+      // Check if click is inside any dropdown menu (portal)
+      const clickedInsideDropdown = Object.values(
+        dropdownMenuRefs.current
+      ).some((ref) => ref && ref.contains(target));
+
+      // Only close if clicked outside both button and dropdown
+      if (!clickedInsideButton && !clickedInsideDropdown) {
+        setShowActionMenu(null);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    if (showActionMenu !== null) {
+      document.addEventListener("mousedown", handleClickOutsideActionMenus);
+      return () => {
+        document.removeEventListener(
+          "mousedown",
+          handleClickOutsideActionMenus
+        );
+      };
+    }
   }, [showActionMenu]);
 
   const handleDeleteOffer = async (id: number, name: string) => {
@@ -847,8 +861,8 @@ export default function OffersPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="min-w-full divide-y divide-gray-200">
               <thead
                 className={`border-b ${tw.borderDefault}`}
                 style={{ background: color.surface.tableHeader }}
@@ -1051,22 +1065,140 @@ export default function OffersPage() {
                             onClick={() =>
                               offer.id && handleActionMenuToggle(offer.id)
                             }
-                            className={`action-button ${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
+                            className={`${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
                             title="More Actions"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
 
-                          {showActionMenu === offer.id && (
-                            <div
-                              className="action-dropdown absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4 z-[9999]"
-                              style={{
-                                maxHeight: "80vh",
-                                overflowY: "auto",
-                              }}
-                            >
-                              {/* Duplicate Offer */}
-                              {/* TODO: Re-enable when backend duplicate endpoint is available
+                {/* Render dropdown menus via portal outside the table */}
+                {filteredOffers.map((offer) => {
+                  if (
+                    showActionMenu === offer.id &&
+                    actionMenuRefs.current[offer.id!]
+                  ) {
+                    const buttonRect =
+                      actionMenuRefs.current[
+                        offer.id!
+                      ]!.getBoundingClientRect();
+
+                    // Smart positioning to prevent cutoff
+                    const dropdownWidth = 288; // w-72 = 288px
+                    const spacing = 4;
+                    const padding = 8; // Padding from viewport edges
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    const estimatedDropdownContentHeight = 600; // Estimated full content height
+
+                    // Calculate available space from button position
+                    const spaceBelow =
+                      viewportHeight - buttonRect.bottom - padding;
+                    const spaceAbove = buttonRect.top - padding;
+
+                    // Determine vertical position (above or below)
+                    let top: number;
+                    let maxHeight: number;
+
+                    // Strategy: Show below by default, but flip to above if not enough space
+                    // and there's more space above
+                    if (
+                      spaceBelow >= 250 ||
+                      (spaceBelow > spaceAbove && spaceBelow >= 200)
+                    ) {
+                      // Enough space below - show below button
+                      top = buttonRect.bottom + spacing;
+                      // Calculate max height to fit in viewport
+                      maxHeight = viewportHeight - top - padding;
+                    } else if (
+                      spaceAbove >= 250 ||
+                      (spaceAbove > spaceBelow && spaceAbove >= 200)
+                    ) {
+                      // More space above - show above button
+                      // Calculate how much height we can use
+                      maxHeight = Math.min(
+                        estimatedDropdownContentHeight,
+                        spaceAbove - spacing
+                      );
+                      top = buttonRect.top - maxHeight - spacing;
+
+                      // If calculated top is above viewport, adjust
+                      if (top < padding) {
+                        top = padding;
+                        maxHeight = buttonRect.top - padding - spacing;
+                      }
+                    } else {
+                      // Very little space - use the side with more space
+                      if (spaceBelow >= spaceAbove) {
+                        top = buttonRect.bottom + spacing;
+                        maxHeight = Math.max(200, spaceBelow - spacing);
+                      } else {
+                        maxHeight = Math.max(200, spaceAbove - spacing);
+                        top = buttonRect.top - maxHeight - spacing;
+                        if (top < padding) {
+                          top = padding;
+                          maxHeight = Math.max(
+                            200,
+                            buttonRect.top - padding - spacing
+                          );
+                        }
+                      }
+                    }
+
+                    // Ensure maxHeight doesn't exceed viewport and is reasonable
+                    maxHeight = Math.min(
+                      maxHeight,
+                      viewportHeight - padding * 2
+                    );
+                    maxHeight = Math.max(maxHeight, 200);
+
+                    // Final top position check - ensure it fits in viewport
+                    if (top + maxHeight > viewportHeight - padding) {
+                      top = viewportHeight - maxHeight - padding;
+                    }
+                    if (top < padding) {
+                      top = padding;
+                      maxHeight = Math.min(
+                        maxHeight,
+                        viewportHeight - padding * 2
+                      );
+                    }
+
+                    // Calculate horizontal position (align to right edge of button)
+                    let left = buttonRect.right - dropdownWidth;
+
+                    // Ensure dropdown doesn't overflow on the right
+                    if (left + dropdownWidth > viewportWidth - padding) {
+                      left = viewportWidth - dropdownWidth - padding;
+                    }
+
+                    // Ensure dropdown doesn't overflow on the left
+                    if (left < padding) {
+                      left = padding;
+                    }
+
+                    return createPortal(
+                      <div
+                        ref={(el) => {
+                          dropdownMenuRefs.current[offer.id!] = el;
+                        }}
+                        className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4 w-72"
+                        style={{
+                          maxHeight: `${maxHeight}px`,
+                          overflowY: "auto",
+                          zIndex: 99999,
+                          top: `${top}px`,
+                          left: `${left}px`,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        {/* Duplicate Offer */}
+                        {/* TODO: Re-enable when backend duplicate endpoint is available
                               <button
                                 onClick={handleDuplicateOffer}
                                 className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -1076,170 +1208,208 @@ export default function OffersPage() {
                               </button>
                               */}
 
-                              {/* Approved: Activate or Archive only */}
-                              {offer.status === OfferStatusEnum.APPROVED && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      offer.id &&
-                                      handleActivateOffer(Number(offer.id))
-                                    }
-                                    disabled={
-                                      loadingAction?.offerId ===
-                                        Number(offer.id) &&
-                                      loadingAction?.action === "activate"
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    <Play className="w-4 h-4 mr-3 text-green-600" />
-                                    Activate Offer
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      offer.id && handleArchiveOffer(offer.id)
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Archive
-                                      className="w-4 h-4 mr-3"
-                                      style={{ color: color.primary.action }}
-                                    />
-                                    Archive Offer
-                                  </button>
-                                </>
-                              )}
+                        {/* Approved: Activate or Archive only */}
+                        {offer.status === OfferStatusEnum.APPROVED && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleActivateOffer(Number(offer.id));
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              disabled={
+                                loadingAction?.offerId === Number(offer.id) &&
+                                loadingAction?.action === "activate"
+                              }
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Play className="w-4 h-4 mr-3 text-green-600" />
+                              Activate Offer
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleArchiveOffer(offer.id);
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Archive
+                                className="w-4 h-4 mr-3"
+                                style={{ color: color.primary.action }}
+                              />
+                              Archive Offer
+                            </button>
+                          </>
+                        )}
 
-                              {/* Active: Pause, Expire, Archive */}
-                              {/* Note: Deactivate (to draft) is not allowed from active status */}
-                              {offer.status === OfferStatusEnum.ACTIVE && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      offer.id &&
-                                      handlePauseOffer(Number(offer.id))
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Pause className="w-4 h-4 mr-3 text-yellow-600" />
-                                    Pause Offer
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      offer.id && handleExpireOffer(offer.id)
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Clock className="w-4 h-4 mr-3 text-gray-600" />
-                                    Expire Offer
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      offer.id && handleArchiveOffer(offer.id)
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Archive
-                                      className="w-4 h-4 mr-3"
-                                      style={{ color: color.primary.action }}
-                                    />
-                                    Archive Offer
-                                  </button>
-                                </>
-                              )}
+                        {/* Active: Pause, Expire, Archive */}
+                        {/* Note: Deactivate (to draft) is not allowed from active status */}
+                        {offer.status === OfferStatusEnum.ACTIVE && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handlePauseOffer(Number(offer.id));
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Pause className="w-4 h-4 mr-3 text-yellow-600" />
+                              Pause Offer
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleExpireOffer(offer.id);
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Clock className="w-4 h-4 mr-3 text-gray-600" />
+                              Expire Offer
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleArchiveOffer(offer.id);
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Archive
+                                className="w-4 h-4 mr-3"
+                                style={{ color: color.primary.action }}
+                              />
+                              Archive Offer
+                            </button>
+                          </>
+                        )}
 
-                              {/* Paused: Resume, Archive */}
-                              {offer.status === OfferStatusEnum.PAUSED && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      offer.id &&
-                                      handleActivateOffer(Number(offer.id))
-                                    }
-                                    disabled={
-                                      loadingAction?.offerId ===
-                                        Number(offer.id) &&
-                                      loadingAction?.action === "activate"
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    <Play className="w-4 h-4 mr-3 text-green-600" />
-                                    Resume Offer
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      offer.id && handleArchiveOffer(offer.id)
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Archive
-                                      className="w-4 h-4 mr-3"
-                                      style={{ color: color.primary.action }}
-                                    />
-                                    Archive Offer
-                                  </button>
-                                </>
-                              )}
+                        {/* Paused: Resume, Archive */}
+                        {offer.status === OfferStatusEnum.PAUSED && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleActivateOffer(Number(offer.id));
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              disabled={
+                                loadingAction?.offerId === Number(offer.id) &&
+                                loadingAction?.action === "activate"
+                              }
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Play className="w-4 h-4 mr-3 text-green-600" />
+                              Resume Offer
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleArchiveOffer(offer.id);
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Archive
+                                className="w-4 h-4 mr-3"
+                                style={{ color: color.primary.action }}
+                              />
+                              Archive Offer
+                            </button>
+                          </>
+                        )}
 
-                              {/* Draft: Submit for Approval */}
-                              {offer.status === OfferStatusEnum.DRAFT && (
-                                <button
-                                  onClick={() =>
-                                    offer.id && handleRequestApproval(offer.id)
-                                  }
-                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <AlertCircle
-                                    className="w-4 h-4 mr-3"
-                                    style={{ color: color.status.info }}
-                                  />
-                                  Submit for Approval
-                                </button>
-                              )}
+                        {/* Draft: Submit for Approval */}
+                        {offer.status === OfferStatusEnum.DRAFT && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (offer.id) {
+                                handleRequestApproval(offer.id);
+                                setShowActionMenu(null);
+                              }
+                            }}
+                            className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <AlertCircle
+                              className="w-4 h-4 mr-3"
+                              style={{ color: color.status.info }}
+                            />
+                            Submit for Approval
+                          </button>
+                        )}
 
-                              {/* Pending Approval: Approve/Reject */}
-                              {offer.status ===
-                                OfferStatusEnum.PENDING_APPROVAL && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      offer.id && handleApproveOffer(offer.id)
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <CheckCircle className="w-4 h-4 mr-3 text-green-600" />
-                                    Approve Offer
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      offer.id && handleRejectOffer(offer.id)
-                                    }
-                                    className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-3 text-red-600" />
-                                    Reject Offer
-                                  </button>
-                                </>
-                              )}
+                        {/* Pending Approval: Approve/Reject */}
+                        {offer.status === OfferStatusEnum.PENDING_APPROVAL && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleApproveOffer(offer.id);
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-3 text-green-600" />
+                              Approve Offer
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (offer.id) {
+                                  handleRejectOffer(offer.id);
+                                  setShowActionMenu(null);
+                                }
+                              }}
+                              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <XCircle className="w-4 h-4 mr-3 text-red-600" />
+                              Reject Offer
+                            </button>
+                          </>
+                        )}
 
-                              {/* Rejected: Request Approval (to resubmit) */}
-                              {offer.status === OfferStatusEnum.REJECTED && (
-                                <button
-                                  onClick={() =>
-                                    offer.id && handleRequestApproval(offer.id)
-                                  }
-                                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <AlertCircle
-                                    className="w-4 h-4 mr-3"
-                                    style={{ color: color.status.info }}
-                                  />
-                                  Request Approval
-                                </button>
-                              )}
+                        {/* Rejected: Request Approval (to resubmit) */}
+                        {offer.status === OfferStatusEnum.REJECTED && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (offer.id) {
+                                handleRequestApproval(offer.id);
+                                setShowActionMenu(null);
+                              }
+                            }}
+                            className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <AlertCircle
+                              className="w-4 h-4 mr-3"
+                              style={{ color: color.status.info }}
+                            />
+                            Request Approval
+                          </button>
+                        )}
 
-                              {/* History Links */}
-                              {/* TODO: Backend doesn't support these endpoints yet (404 Not Found) */}
-                              {/* <button
+                        {/* History Links */}
+                        {/* TODO: Backend doesn't support these endpoints yet (404 Not Found) */}
+                        {/* <button
                                 onClick={() =>
                                   offer.id &&
                                   handleViewApprovalHistory(offer.id)
@@ -1267,24 +1437,30 @@ export default function OffersPage() {
                                 Lifecycle History
                               </button> */}
 
-                              {/* Delete - Dangerous Action */}
-                              <button
-                                onClick={() =>
-                                  offer.id &&
-                                  handleDeleteOffer(offer.id, offer.name)
-                                }
-                                className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4 mr-3" />
-                                Delete Offer
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        {/* Delete - Dangerous Action */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (offer.id) {
+                              handleDeleteOffer(offer.id, offer.name);
+                              setShowActionMenu(null);
+                            }
+                          }}
+                          className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 mr-3" />
+                          Delete Offer
+                        </button>
+                      </div>,
+                      document.body
+                    );
+                  }
+                  // Clean up ref when dropdown is closed
+                  if (dropdownMenuRefs.current[offer.id!]) {
+                    dropdownMenuRefs.current[offer.id!] = null;
+                  }
+                  return null;
+                })}
               </tbody>
             </table>
           </div>

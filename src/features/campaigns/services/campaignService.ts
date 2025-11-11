@@ -810,9 +810,19 @@ class CampaignService {
     const params = new URLSearchParams();
     if (skipCache) params.append("skipCache", "true");
     const query = params.toString() ? `?${params.toString()}` : "";
-    return this.request<Record<string, unknown>[]>(
-      `/${id}/approval-history${query}`
-    );
+    const response = await this.request<
+      | Record<string, unknown>[]
+      | { success: boolean; data: Record<string, unknown>[] }
+    >(`/${id}/approval-history${query}`);
+
+    // Handle both wrapped and unwrapped responses
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && typeof response === "object" && "data" in response) {
+      return (response as { data: Record<string, unknown>[] }).data || [];
+    }
+    return [];
   }
 
   async getLifecycleHistory(
@@ -822,9 +832,19 @@ class CampaignService {
     const params = new URLSearchParams();
     if (skipCache) params.append("skipCache", "true");
     const query = params.toString() ? `?${params.toString()}` : "";
-    return this.request<Record<string, unknown>[]>(
-      `/${id}/lifecycle-history${query}`
-    );
+    const response = await this.request<
+      | Record<string, unknown>[]
+      | { success: boolean; data: Record<string, unknown>[] }
+    >(`/${id}/lifecycle-history${query}`);
+
+    // Handle both wrapped and unwrapped responses
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && typeof response === "object" && "data" in response) {
+      return (response as { data: Record<string, unknown>[] }).data || [];
+    }
+    return [];
   }
 
   /**

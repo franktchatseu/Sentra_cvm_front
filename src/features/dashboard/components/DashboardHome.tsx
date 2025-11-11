@@ -43,7 +43,7 @@ import { offerService } from "../../offers/services/offerService";
 import { segmentService } from "../../segments/services/segmentService";
 import { productService } from "../../products/services/productService";
 import { campaignService } from "../../campaigns/services/campaignService";
-import { buildApiUrl } from "../../../shared/services/api";
+// import { buildApiUrl } from "../../../shared/services/api";
 import type {
   CampaignStatus,
   CampaignStatsSummary,
@@ -1034,10 +1034,6 @@ export default function DashboardHome() {
             : "negative"
           : "positive",
       icon: Target,
-      extra:
-        campaignsStats?.active != null
-          ? `${campaignsStats.active.toLocaleString()} active`
-          : null,
     },
     {
       name: "Total Offers",
@@ -1352,9 +1348,6 @@ export default function DashboardHome() {
                       <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
                         {stat.name}
                       </p>
-                      {stat.extra && (
-                        <p className="text-xs text-gray-500">{stat.extra}</p>
-                      )}
                     </div>
                   </div>
                 </div>
