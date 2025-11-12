@@ -198,10 +198,8 @@ export default function SegmentDetailsPage() {
         setCategoryName("Uncategorized");
       }
     } catch (err) {
-      showError(
-        "Error loading segment",
-        (err as Error).message || "Failed to load segment details"
-      );
+      console.error("Failed to load segment details:", err);
+      showError("Error loading segment", "Please try again later.");
     } finally {
       setIsLoading(false);
     }

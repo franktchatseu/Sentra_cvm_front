@@ -135,7 +135,9 @@ function ProductsModal({
 
       setProducts(productsForCategory);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load products");
+      console.error("Failed to load products:", err);
+      showError("Failed to load products", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setLoading(false);
     }
@@ -304,13 +306,6 @@ function ProductsModal({
                   {loading ? (
                     <div className="flex justify-center items-center py-8">
                       <LoadingSpinner />
-                    </div>
-                  ) : error ? (
-                    <div className="text-center py-8">
-                      <p className="text-red-600 mb-4">{error}</p>
-                      <button onClick={loadProducts} className={tw.button}>
-                        Try Again
-                      </button>
                     </div>
                   ) : filteredProducts.length === 0 ? (
                     <div className="text-center py-8">
@@ -515,7 +510,7 @@ export default function ProductCatalogsPage() {
 
       setCategoryProductCounts(countsMap);
     } catch (err) {
-      // Failed to load category product counts
+      console.error("Failed to load category product counts:", err);
     }
   };
 
@@ -579,8 +574,8 @@ export default function ProductCatalogsPage() {
 
         setCategoryPerformance(performanceMap);
       }
-    } catch {
-      // Failed to load category performance
+    } catch (err) {
+      console.error("Failed to load category performance:", err);
       setCategoryPerformance({});
     }
   };
@@ -601,10 +596,9 @@ export default function ProductCatalogsPage() {
       // Load product counts separately
       await loadCategoryProductCounts();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load categories";
-      showError("Failed to load categories", message);
-      setError(message);
+      console.error("Failed to load categories:", err);
+      showError("Failed to load categories", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setLoading(false);
     }
@@ -701,10 +695,8 @@ export default function ProductCatalogsPage() {
       setEditDescription("");
       await Promise.all([loadCategories(), loadStats(true)]);
     } catch (err) {
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to update category"
-      );
+      console.error("Failed to update category:", err);
+      showError("Failed to update category", "Please try again later.");
     } finally {
       setIsUpdating(false);
     }
@@ -729,10 +721,8 @@ export default function ProductCatalogsPage() {
       );
       await Promise.all([loadCategories(true), loadStats(true)]);
     } catch (err) {
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to delete category"
-      );
+      console.error("Failed to delete category:", err);
+      showError("Failed to delete category", "Please try again later.");
     }
   };
 
@@ -1132,19 +1122,6 @@ export default function ProductCatalogsPage() {
       )}
 
       {/* Error Message */}
-      {error && (
-        <div
-          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 flex items-center justify-end`}
-        >
-          <button
-            onClick={() => loadCategories(true)}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-            style={{ backgroundColor: color.status.danger }}
-          >
-            Try Again
-          </button>
-        </div>
-      )}
 
       {/* Catalogs */}
       {loading ? (

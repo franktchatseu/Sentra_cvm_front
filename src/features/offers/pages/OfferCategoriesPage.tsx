@@ -140,8 +140,10 @@ function CategoryModal({
 
       await onSave(categoryData); // Wait for save to complete
       onClose(); // Only close after save succeeds
-    } catch {
-      setError(err instanceof Error ? err.message : "Failed to save category");
+    } catch (err) {
+      console.error("Failed to save category:", err);
+      showError("Failed to save category", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setIsLoading(false);
     }
@@ -199,12 +201,6 @@ function CategoryModal({
                   />
                 </div>
               </div>
-
-              {error && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
 
               <div className="flex items-center justify-end space-x-3 mt-6">
                 <button
@@ -323,7 +319,9 @@ function OffersModal({
 
       setOffers(Array.from(combinedOffersMap.values()));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load offers");
+      console.error("Failed to load offers:", err);
+      showError("Failed to load offers", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setLoading(false);
     }
@@ -437,16 +435,6 @@ function OffersModal({
                   {loading ? (
                     <div className="flex justify-center items-center py-8">
                       <LoadingSpinner />
-                    </div>
-                  ) : error ? (
-                    <div className="text-center py-8">
-                      <p className="text-red-600 mb-4">{error}</p>
-                      <button
-                        onClick={loadOffers}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Try Again
-                      </button>
                     </div>
                   ) : filteredOffers.length === 0 ? (
                     <div className="text-center py-8">
@@ -679,8 +667,8 @@ function OfferCategoriesPage() {
           0,
         categoriesWithOffers: parseInt(data.categories_with_description) || 0, // Using categories_with_description as proxy
       });
-    } catch {
-      // Failed to load stats
+    } catch (err) {
+      console.error("Failed to load offer category stats:", err);
       setStats(null);
     }
   };
@@ -694,8 +682,8 @@ function OfferCategoriesPage() {
       if (response.success && response.data) {
         setUnusedCount(response.data.length);
       }
-    } catch {
-      // Failed to load unused categories
+    } catch (err) {
+      console.error("Failed to load unused categories:", err);
       setUnusedCount(0);
     }
   };
@@ -731,8 +719,8 @@ function OfferCategoriesPage() {
           count: Number.isNaN(parsedTotalOffers) ? 0 : parsedTotalOffers,
         });
       }
-    } catch {
-      // Failed to load popular category
+    } catch (err) {
+      console.error("Failed to load popular category:", err);
       setPopularCategory(null);
     }
   };
@@ -759,8 +747,8 @@ function OfferCategoriesPage() {
 
         setCategoryPerformance(performanceMap);
       }
-    } catch {
-      // Failed to load category performance
+    } catch (err) {
+      console.error("Failed to load category performance:", err);
       setCategoryPerformance({});
     }
   };
@@ -965,9 +953,10 @@ function OfferCategoriesPage() {
       // so we need to call it after setting the state, but we'll use the local variable
       // We'll pass categoriesWithCounts to loadAllOfferCounts
       await loadAllOfferCounts(categoriesWithCounts);
-    } catch {
-      // Failed to load categories
-      setError("Error loading categories");
+    } catch (err) {
+      console.error("Failed to load categories:", err);
+      showError("Failed to load categories", "Please try again later.");
+      setError(""); // Clear error state
       setOfferCategories([]);
     } finally {
       setLoading(false);
@@ -1343,23 +1332,6 @@ function OfferCategoriesPage() {
             className="mb-4"
           />
           <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
-        </div>
-      ) : error ? (
-        <div
-          className="rounded-xl shadow-sm border border-gray-200 p-8 text-center"
-          style={{ backgroundColor: color.surface.cards }}
-        >
-          <div
-            className={`bg-red-50 border border-red-200 text-red-700 rounded-xl p-6`}
-          >
-            <p className="font-medium mb-3">{error}</p>
-            <button
-              onClick={() => loadCategories()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-            >
-              Try Again
-            </button>
-          </div>
         </div>
       ) : filteredOfferCategories.length === 0 ? (
         <div

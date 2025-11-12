@@ -584,9 +584,8 @@ export default function SegmentManagementPage() {
       }
       await loadSegments();
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to update segment status";
-      showError("Error", errorMessage);
+      console.error("Failed to update segment status:", err);
+      showError("Failed to update segment status", "Please try again later.");
     }
   };
 

@@ -74,7 +74,8 @@ export default function ProductDetailsPage() {
       setCategory(productCategory || null);
     } catch (err) {
       console.error("Failed to load product:", err);
-      setError(err instanceof Error ? err.message : "Failed to load product");
+      showError("Failed to load product", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setLoading(false);
     }
@@ -118,10 +119,7 @@ export default function ProductDetailsPage() {
       loadProduct(); // Reload to get updated status
     } catch (err) {
       console.error("Failed to toggle product status:", err);
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to update product status"
-      );
+      showError("Failed to update product status", "Please try again later.");
     }
   };
 
@@ -147,10 +145,7 @@ export default function ProductDetailsPage() {
       navigate("/dashboard/products");
     } catch (err) {
       console.error("Failed to delete product:", err);
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to delete product"
-      );
+      showError("Failed to delete product", "Please try again later.");
     }
   };
 
@@ -181,7 +176,9 @@ export default function ProductDetailsPage() {
             {error ? "Error Loading Product" : "Product Not Found"}
           </h3>
           <p className={`${tw.textMuted} mb-6`}>
-            {error || "The product you are looking for does not exist."}
+            {error
+              ? "Please try again later."
+              : "The product you are looking for does not exist."}
           </p>
           <button
             onClick={navigateBack}

@@ -94,7 +94,9 @@ function CategoryModal({
       await onSave(categoryData);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save category");
+      console.error("Failed to save category:", err);
+      showError("Failed to save category", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setIsLoading(false);
     }
@@ -154,12 +156,6 @@ function CategoryModal({
                   />
                 </div>
               </div>
-
-              {error && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
 
               <div className="flex items-center justify-end space-x-3 mt-6">
                 <button
@@ -628,7 +624,7 @@ export default function SegmentCategoriesPage() {
 
       setSegmentCounts(counts);
     } catch (err) {
-      // Failed to load segment counts
+      console.error("Failed to load segment counts:", err);
     }
   };
 

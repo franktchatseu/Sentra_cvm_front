@@ -153,12 +153,6 @@ function CategoryModal({
             </div>
           </div>
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
-
           <div className="flex items-center justify-end space-x-3 mt-6">
             <button
               type="button"
@@ -323,7 +317,7 @@ export default function CampaignCategoriesPage() {
         }
       }
     } catch (err) {
-      console.error("Failed to load stats:", err);
+      console.error("Failed to load campaign category stats:", err);
       setStats(null);
       setUnusedCount(0);
       setPopularCategory(null);
@@ -420,11 +414,12 @@ export default function CampaignCategoriesPage() {
       // Load stats from backend endpoint (not from categories data)
       await loadStats(skipCache);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error loading categories");
+      console.error("Failed to load campaign categories:", err);
       showError(
         "Failed to load campaign categories",
         "Please try again later."
       );
+      setError(""); // Clear error state
       setCampaignCategories([]);
     } finally {
       setLoading(false);
@@ -486,10 +481,8 @@ export default function CampaignCategoriesPage() {
         `"${category.name}" has been deleted successfully.`
       );
     } catch (err) {
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to delete category"
-      );
+      console.error("Failed to delete category:", err);
+      showError("Failed to delete category", "Please try again later.");
     }
   };
 
@@ -813,23 +806,6 @@ export default function CampaignCategoriesPage() {
             className="mb-4"
           />
           <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
-        </div>
-      ) : error ? (
-        <div
-          className="rounded-xl shadow-sm border border-gray-200 p-8 text-center"
-          style={{ backgroundColor: color.surface.cards }}
-        >
-          <div
-            className={`bg-red-50 border border-red-200 text-red-700 rounded-xl p-6`}
-          >
-            <p className="font-medium mb-3">{error}</p>
-            <button
-              onClick={() => loadCategories()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-            >
-              Try Again
-            </button>
-          </div>
         </div>
       ) : filteredCampaignCategories.length === 0 ? (
         <div

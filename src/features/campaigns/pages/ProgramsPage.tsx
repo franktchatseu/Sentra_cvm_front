@@ -251,10 +251,8 @@ export default function ProgramsPage() {
       await loadPrograms(true);
       await loadStats();
     } catch (err) {
-      console.error("Error deleting program:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to delete program";
-      showError(errorMessage);
+      console.error("Failed to delete program:", err);
+      showError("Failed to delete program", "Please try again later.");
     }
   };
 
@@ -275,9 +273,7 @@ export default function ProgramsPage() {
       await loadStats();
     } catch (err) {
       console.error("Error toggling program status:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to toggle program status";
-      showError(errorMessage);
+      showError("Failed to toggle program status", "Please try again later.");
     }
   };
 
@@ -347,9 +343,7 @@ export default function ProgramsPage() {
       await loadStats(); // Reload stats after creating/updating
     } catch (err) {
       console.error("Failed to save program:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to save program";
-      showError(errorMessage);
+      showError("Failed to save program", "Please try again later.");
     } finally {
       setIsSaving(false);
     }
