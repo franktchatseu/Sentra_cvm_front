@@ -459,7 +459,7 @@ function SegmentsModal({
                         className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex-1">
-                          <h3 className={`${tw.subHeading} text-gray-900`}>
+                          <h3 className="font-medium text-gray-900">
                             {segment.name}
                           </h3>
                           {segment.description && (

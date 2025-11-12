@@ -470,23 +470,13 @@ function OffersModal({
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                style={{
-                                  backgroundColor: color.primary.accent,
-                                }}
-                              >
-                                <MessageSquare className="w-5 h-5 text-white" />
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {offer?.name || "Unknown Offer"}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {offer?.description || "No description"}
-                                </p>
-                              </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {offer?.name || "Unknown Offer"}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {offer?.description || "No description"}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

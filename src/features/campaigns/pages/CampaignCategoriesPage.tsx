@@ -255,125 +255,170 @@ export default function CampaignCategoriesPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const loadStats = async (categories?: CampaignCategory[]) => {
+  const loadStats = async (skipCache = false) => {
     try {
-      const cats = categories || campaignCategories;
-      // Calculate stats from categories
-      const totalCategories = cats.length;
-      const activeCategories = cats.filter((c) => c.is_active).length;
-      const inactiveCategories = totalCategories - activeCategories;
-      const categoriesWithCampaigns = cats.filter(
-        (c) => (c.campaign_count || 0) > 0
-      ).length;
-
-      setStats({
-        totalCategories,
-        activeCategories,
-        inactiveCategories,
-        categoriesWithCampaigns,
-      });
-    } catch (err) {
-      setStats(null);
-    }
-  };
-
-  const loadUnusedCategories = async (categories?: CampaignCategory[]) => {
-    try {
-      const cats = categories || campaignCategories;
-      // Count categories with no campaigns
-      const unused = cats.filter(
-        (c) => !c.campaign_count || c.campaign_count === 0
-      ).length;
-      setUnusedCount(unused);
-    } catch (err) {
-      setUnusedCount(0);
-    }
-  };
-
-  const loadPopularCategory = async (categories?: CampaignCategory[]) => {
-    try {
-      const cats = categories || campaignCategories;
-      // Find category with most campaigns
-      const sorted = [...cats].sort(
-        (a, b) => (b.campaign_count || 0) - (a.campaign_count || 0)
+      // Use backend endpoint for stats instead of calculating manually
+      const statsResponse = await campaignService.getCampaignCategoryStats(
+        skipCache
       );
-      if (sorted.length > 0 && (sorted[0].campaign_count || 0) > 0) {
-        setPopularCategory({
-          name: sorted[0].name,
-          count: sorted[0].campaign_count || 0,
+
+      if (statsResponse.success && statsResponse.data) {
+        const data = statsResponse.data as {
+          total_categories?: string | number;
+          active_categories?: string | number;
+          inactive_categories?: string | number;
+          root_categories?: string | number;
+          categories_with_children?: string | number;
+          categories_with_campaigns?: string | number;
+          categories_without_campaigns?: string | number;
+          avg_display_order?: string | number;
+          most_used_category?: {
+            id: number;
+            name: string;
+            campaign_count: number;
+          };
+        };
+
+        // Parse string values to numbers
+        const totalCategories = Number(data.total_categories) || 0;
+        const activeCategories = Number(data.active_categories) || 0;
+        const inactiveCategories = Number(data.inactive_categories) || 0;
+        const categoriesWithCampaigns =
+          Number(data.categories_with_campaigns) || 0;
+
+        setStats({
+          totalCategories,
+          activeCategories,
+          inactiveCategories:
+            inactiveCategories || totalCategories - activeCategories,
+          categoriesWithCampaigns,
         });
-      } else {
-        setPopularCategory(null);
+
+        // Set unused count from backend (categories without campaigns)
+        const unusedCount = Number(data.categories_without_campaigns) || 0;
+        setUnusedCount(unusedCount);
+
+        // Set popular category from backend if available
+        if (
+          data.most_used_category &&
+          data.most_used_category.campaign_count > 0
+        ) {
+          setPopularCategory({
+            name: data.most_used_category.name,
+            count: data.most_used_category.campaign_count,
+          });
+        } else {
+          // Fallback: find popular category from loaded categories
+          const sorted = [...campaignCategories].sort(
+            (a, b) => (b.campaign_count || 0) - (a.campaign_count || 0)
+          );
+          if (sorted.length > 0 && (sorted[0].campaign_count || 0) > 0) {
+            setPopularCategory({
+              name: sorted[0].name,
+              count: sorted[0].campaign_count || 0,
+            });
+          } else {
+            setPopularCategory(null);
+          }
+        }
       }
     } catch (err) {
+      console.error("Failed to load stats:", err);
+      setStats(null);
+      setUnusedCount(0);
       setPopularCategory(null);
     }
   };
 
-  // Note: loadAllCampaigns removed - not used here anymore
-  // getAllCampaigns is only used in AssignItemsPage for campaigns
+  // Helper function to count campaigns for a category (checking both category_id AND tags)
+  // Same logic as segments - supports multi-catalog assignment via tags
+  const getCampaignCountForCategory = (
+    categoryId: number,
+    campaigns: BackendCampaignType[]
+  ) => {
+    const catalogTag = buildCatalogTag(categoryId);
+    return campaigns.filter((campaign) => {
+      // Check if category_id matches (handle string/number conversion like segments)
+      const campaignCategoryId =
+        typeof campaign.category_id === "string"
+          ? parseInt(campaign.category_id, 10)
+          : campaign.category_id;
+      const matchesPrimary =
+        campaignCategoryId !== null &&
+        campaignCategoryId !== undefined &&
+        !isNaN(campaignCategoryId) &&
+        Number(campaignCategoryId) === categoryId;
 
-  // Note: getCampaignCountForCategory removed - not used anymore
-  // We now use getCampaignsByCategory endpoint directly for counts
+      // Check if tags include the catalog tag
+      const tags = Array.isArray(campaign.tags) ? campaign.tags : [];
+      const matchesTag = tags.includes(catalogTag);
+
+      return matchesPrimary || matchesTag;
+    }).length;
+  };
 
   const loadCategories = async (skipCache = false) => {
     try {
       setLoading(true);
-      const response = await campaignService.getCampaignCategories({
-        search: debouncedSearchTerm || undefined,
-        skipCache: skipCache,
-      });
+
+      // Use searchCampaignCategories endpoint when there's a search term,
+      // otherwise use getCampaignCategories
+      let response;
+      if (debouncedSearchTerm.trim()) {
+        response = await campaignService.searchCampaignCategories(
+          debouncedSearchTerm,
+          {
+            skipCache: skipCache,
+          }
+        );
+      } else {
+        response = await campaignService.getCampaignCategories({
+          skipCache: skipCache,
+        });
+      }
 
       // Handle new response structure with success and data properties
       const categoriesData =
         response.success && response.data ? response.data : [];
 
-      // Fetch campaign count for each category using the same endpoint as the modal
-      // This ensures consistency between the count on cards and campaigns in modal
-      const categoriesWithCounts = await Promise.all(
-        categoriesData.map(async (category) => {
-          try {
-            // Use getCampaignsByCategory with limit: 1 to get just the total count
-            const countResponse = await campaignService.getCampaignsByCategory(
-              category.id,
-              {
-                limit: 1,
-                offset: 0,
-                skipCache: skipCache,
-              }
-            );
+      // Fetch all campaigns once to calculate counts (checking both category_id AND tags)
+      // This ensures campaigns assigned via tags are counted correctly
+      let allCampaigns: BackendCampaignType[] = [];
+      let offset = 0;
+      const limit = 100;
+      let hasMore = true;
 
-            // Extract total from pagination (same endpoint used in handleViewCampaigns)
-            const count =
-              countResponse.success && countResponse.pagination
-                ? countResponse.pagination.total
-                : 0;
+      while (hasMore) {
+        const campaignsResponse = await campaignService.getCampaigns({
+          limit: limit,
+          offset: offset,
+          skipCache: skipCache,
+        });
 
-            return {
-              ...category,
-              campaign_count: count,
-            };
-          } catch (err) {
-            // If fetching count fails, default to 0
-            console.error(
-              `Failed to fetch count for category ${category.id}:`,
-              err
-            );
-            return {
-              ...category,
-              campaign_count: 0,
-            };
-          }
-        })
-      );
+        const campaigns = (campaignsResponse.data ||
+          []) as BackendCampaignType[];
+        allCampaigns = [...allCampaigns, ...campaigns];
+
+        const total = campaignsResponse.meta?.total || 0;
+        hasMore = allCampaigns.length < total && campaigns.length === limit;
+        offset += limit;
+      }
+
+      // Calculate count for each category by checking both category_id AND tags
+      // (same logic as offers/segments - supports multi-catalog assignment)
+      const categoriesWithCounts = categoriesData.map((category) => {
+        const count = getCampaignCountForCategory(category.id, allCampaigns);
+        return {
+          ...category,
+          campaign_count: count,
+        };
+      });
 
       setCampaignCategories(categoriesWithCounts);
       setError("");
 
-      // Load stats and analytics after categories are loaded
-      await loadStats(categoriesWithCounts);
-      await loadUnusedCategories(categoriesWithCounts);
-      await loadPopularCategory(categoriesWithCounts);
+      // Load stats from backend endpoint (not from categories data)
+      await loadStats(skipCache);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error loading categories");
       showError(
@@ -389,6 +434,27 @@ export default function CampaignCategoriesPage() {
   useEffect(() => {
     loadCategories(true);
   }, [debouncedSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh when page becomes visible (e.g., when navigating back from assign page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadCategories(true);
+      }
+    };
+
+    const handleFocus = () => {
+      loadCategories(true);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateCategory = () => {
     setEditingCategory(undefined);
@@ -468,36 +534,51 @@ export default function CampaignCategoriesPage() {
       setIsCampaignsModalOpen(true);
       setCampaignsLoading(true);
 
-      // Use the same endpoint as loadCategories for consistency
-      // Fetch campaigns for this category using getCampaignsByCategory
+      // Fetch all campaigns and filter by category_id OR tags (same logic as count)
+      // This ensures campaigns assigned via tags are shown correctly
       let allCampaigns: BackendCampaignType[] = [];
       let offset = 0;
       const limit = 100;
       let hasMore = true;
 
       while (hasMore) {
-        const response = await campaignService.getCampaignsByCategory(
-          categoryId,
-          {
-            limit: limit,
-            offset: offset,
-            skipCache: true,
-          }
-        );
+        const response = await campaignService.getCampaigns({
+          limit: limit,
+          offset: offset,
+          skipCache: true,
+        });
 
-        if (response.success && response.data) {
-          const campaigns = response.data as BackendCampaignType[];
-          allCampaigns = [...allCampaigns, ...campaigns];
+        const campaigns = (response.data || []) as BackendCampaignType[];
+        allCampaigns = [...allCampaigns, ...campaigns];
 
-          const total = response.pagination?.total || 0;
-          hasMore = allCampaigns.length < total && campaigns.length === limit;
-          offset += limit;
-        } else {
-          hasMore = false;
-        }
+        const total = response.meta?.total || 0;
+        hasMore = allCampaigns.length < total && campaigns.length === limit;
+        offset += limit;
       }
 
-      const formattedCampaigns = allCampaigns.map((campaign) => ({
+      // Filter campaigns by category_id OR tags (same logic as getCampaignCountForCategory)
+      // Same logic as segments - supports multi-catalog assignment via tags
+      const catalogTag = buildCatalogTag(categoryId);
+      const categoryCampaigns = allCampaigns.filter((campaign) => {
+        // Check if category_id matches (handle string/number conversion like segments)
+        const campaignCategoryId =
+          typeof campaign.category_id === "string"
+            ? parseInt(campaign.category_id, 10)
+            : campaign.category_id;
+        const matchesPrimary =
+          campaignCategoryId !== null &&
+          campaignCategoryId !== undefined &&
+          !isNaN(campaignCategoryId) &&
+          Number(campaignCategoryId) === categoryId;
+
+        // Check if tags include the catalog tag
+        const tags = Array.isArray(campaign.tags) ? campaign.tags : [];
+        const matchesTag = tags.includes(catalogTag);
+
+        return matchesPrimary || matchesTag;
+      });
+
+      const formattedCampaigns = categoryCampaigns.map((campaign) => ({
         id: String(campaign.id),
         name: campaign.name,
         description: campaign.description || undefined,
@@ -696,7 +777,7 @@ export default function CampaignCategoriesPage() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
           />
         </div>
-        <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-1">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode("grid")}
             className={`p-2 rounded transition-colors ${
@@ -1016,23 +1097,13 @@ export default function CampaignCategoriesPage() {
                             className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                           >
                             <div className="flex-1">
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                  style={{
-                                    backgroundColor: color.primary.accent,
-                                  }}
-                                >
-                                  <MessageSquare className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="font-medium text-gray-900">
-                                    {campaign.name || "Unknown Campaign"}
-                                  </h4>
-                                  <p className="text-sm text-gray-600">
-                                    {campaign.description || "No description"}
-                                  </p>
-                                </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  {campaign.name || "Unknown Campaign"}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {campaign.description || "No description"}
+                                </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">

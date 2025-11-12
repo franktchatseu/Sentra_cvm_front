@@ -595,25 +595,30 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
               const existingTags = Array.isArray(campaign?.tags)
                 ? campaign?.tags ?? []
                 : [];
-
-              // Remove any existing catalog tags (campaigns can only have one catalog)
-              const filteredTags = existingTags.filter(
-                (tag) => !tag.startsWith("catalog:")
-              );
-
-              // Add the new catalog tag
-              const updatedTags = [...filteredTags, catalogTag];
+              const updatedTagsSet = new Set(existingTags);
+              updatedTagsSet.add(catalogTag);
+              const updatedTags = Array.from(updatedTagsSet);
 
               const updatePayload: Partial<BackendCampaignType> = {};
 
-              // Campaigns can only have ONE catalog, so always update category_id
-              // to match the catalog being assigned to
-              if (!Number.isNaN(catalogIdNumber)) {
+              // Only set category_id if it doesn't exist (same as offers/segments)
+              if (!campaign?.category_id && !Number.isNaN(catalogIdNumber)) {
                 updatePayload.category_id = catalogIdNumber;
               }
 
-              // Always update tags to ensure only one catalog tag exists
-              updatePayload.tags = updatedTags;
+              // Update tags if they changed
+              if (
+                updatedTags.length !== existingTags.length ||
+                (!campaign?.tags && updatedTags.length > 0)
+              ) {
+                updatePayload.tags = updatedTags;
+              }
+
+              if (Object.keys(updatePayload).length === 0) {
+                success++;
+                successfulAssignments.push(itemId);
+                continue;
+              }
 
               await campaignService.updateCampaign(
                 Number(itemId),
