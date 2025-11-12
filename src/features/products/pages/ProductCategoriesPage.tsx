@@ -291,9 +291,13 @@ function ProductsModal({
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          navigate(
-                            `/dashboard/products/catalogs/${category.id}/assign`
-                          );
+                          // TODO: Uncomment when assign functionality is available
+                          // navigate(
+                          //   `/dashboard/products/catalogs/${category.id}/assign`
+                          // );
+
+                          // Temporary: Show toast until assign functionality is implemented
+                          showToast("info", "Can't access this action");
                         }}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >

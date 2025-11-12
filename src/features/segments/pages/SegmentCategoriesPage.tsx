@@ -214,6 +214,7 @@ function SegmentsModal({
   onRefreshCategories,
 }: SegmentsModalProps) {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [filteredSegments, setFilteredSegments] = useState<Segment[]>([]);
@@ -343,6 +344,39 @@ function SegmentsModal({
   };
 
   const handleRemoveSegment = async (segmentId: number | string) => {
+    // TODO: Uncomment and implement when remove functionality is available
+    // const confirmed = await confirm({
+    //   title: "Remove Segment",
+    //   message: `Are you sure you want to remove this segment from "${category?.name}"?`,
+    //   type: "warning",
+    //   confirmText: "Remove",
+    //   cancelText: "Cancel",
+    // });
+    // if (!confirmed) return;
+    // try {
+    //   setRemovingSegmentId(segmentId);
+    //   // Get segment to update its tags/category
+    //   const segment = await segmentService.getSegmentById(Number(segmentId));
+    //   const updatedTags = (segment.tags || []).filter(
+    //     (tag) => tag !== buildSegmentCatalogTag(category?.id || 0)
+    //   );
+    //   // Update segment to remove catalog tag
+    //   await segmentService.updateSegment(Number(segmentId), {
+    //     tags: updatedTags,
+    //     // If category matches, set to null or another category
+    //     category: segment.category === category?.id ? null : segment.category,
+    //   });
+    //   // Refresh segments list
+    //   await loadCategorySegments();
+    //   await onRefreshCategories();
+    //   showToast("Segment removed from catalog successfully");
+    // } catch (err) {
+    //   showError("Failed to remove segment", err instanceof Error ? err.message : "Please try again");
+    // } finally {
+    //   setRemovingSegmentId(null);
+    // }
+
+    // Temporary: Show toast until remove functionality is implemented
     showToast("info", "Can't access this action");
   };
 

@@ -241,18 +241,8 @@ export default function CampaignCategoriesPage() {
     number | string | null
   >(null);
   const [campaignSearchTerm, setCampaignSearchTerm] = useState("");
-  const [allCampaigns, setAllCampaigns] = useState<
-    Array<{
-      id: string;
-      name: string;
-      description?: string;
-      status?: string;
-      approval_status?: string;
-      start_date?: string;
-      end_date?: string;
-      category_id?: number;
-    }>
-  >([]);
+  // Note: allCampaigns state removed - not used here anymore
+  // getAllCampaigns is only used in AssignItemsPage for campaigns
 
   // Campaign assignment state
 
@@ -320,80 +310,11 @@ export default function CampaignCategoriesPage() {
     }
   };
 
-  const loadAllCampaigns = async () => {
-    try {
-      // Fetch all campaigns in batches (backend limit is 100)
-      let allCampaigns: BackendCampaignType[] = [];
-      let page = 1;
-      const limit = 100;
-      let hasMore = true;
+  // Note: loadAllCampaigns removed - not used here anymore
+  // getAllCampaigns is only used in AssignItemsPage for campaigns
 
-      while (hasMore) {
-        const response = await campaignService.getAllCampaigns({
-          page: page,
-          pageSize: limit,
-          skipCache: true,
-        });
-
-        const campaigns = (response.data as BackendCampaignType[]) || [];
-        allCampaigns = [...allCampaigns, ...campaigns];
-
-        const total = response.meta?.total || 0;
-        hasMore = allCampaigns.length < total && campaigns.length === limit;
-        page += 1;
-      }
-
-      const transformedCampaigns = allCampaigns.map((campaign) => ({
-        id: String(campaign.id),
-        name: campaign.name,
-        description: campaign.description || undefined,
-        status: campaign.status,
-        approval_status: campaign.approval_status,
-        start_date: campaign.start_date || undefined,
-        end_date: campaign.end_date || undefined,
-        category_id: campaign.category_id || undefined,
-        tags: campaign.tags || [],
-      }));
-
-      setAllCampaigns(transformedCampaigns);
-      return transformedCampaigns;
-    } catch (err) {
-      setAllCampaigns([]);
-      return [];
-    }
-  };
-
-  const getCampaignCountForCategory = (
-    categoryId: number,
-    campaigns: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      status?: string;
-      approval_status?: string;
-      start_date?: string;
-      end_date?: string;
-      category_id?: number;
-      tags?: string[];
-    }>
-  ) => {
-    const catalogTag = buildCatalogTag(categoryId);
-    const matchingCampaigns = campaigns.filter((campaign) => {
-      const campaignCategoryId = (campaign as { category_id?: number | string })
-        .category_id;
-      const matchesPrimary =
-        campaignCategoryId === categoryId ||
-        campaignCategoryId === String(categoryId) ||
-        Number(campaignCategoryId) === categoryId;
-
-      const tags = Array.isArray(campaign.tags) ? campaign.tags : [];
-      const matchesTag = tags.includes(catalogTag);
-
-      return matchesPrimary || matchesTag;
-    });
-
-    return matchingCampaigns.length;
-  };
+  // Note: getCampaignCountForCategory removed - not used anymore
+  // We now use getCampaignsByCategory endpoint directly for counts
 
   const loadCategories = async (skipCache = false) => {
     try {
@@ -598,6 +519,40 @@ export default function CampaignCategoriesPage() {
   };
 
   const handleRemoveCampaign = async (campaignId: number | string) => {
+    // TODO: Uncomment and implement when remove functionality is available
+    // const confirmed = await confirm({
+    //   title: "Remove Campaign",
+    //   message: `Are you sure you want to remove this campaign from "${selectedCategory?.name}"?`,
+    //   type: "warning",
+    //   confirmText: "Remove",
+    //   cancelText: "Cancel",
+    // });
+    // if (!confirmed) return;
+    // try {
+    //   setRemovingCampaignId(campaignId);
+    //   // Get campaign to update its tags/category_id
+    //   const campaign = await campaignService.getCampaignById(Number(campaignId));
+    //   const updatedTags = (campaign.tags || []).filter(
+    //     (tag) => tag !== buildCatalogTag(selectedCategory?.id || 0)
+    //   );
+    //   // Update campaign to remove catalog tag
+    //   await campaignService.updateCampaign(Number(campaignId), {
+    //     tags: updatedTags,
+    //     // If category_id matches, set to null or another category
+    //     category_id: campaign.category_id === selectedCategory?.id ? null : campaign.category_id,
+    //   });
+    //   // Refresh campaigns list
+    //   if (selectedCategory) {
+    //     await handleViewCampaigns(selectedCategory);
+    //   }
+    //   showToast("Campaign removed from catalog successfully");
+    // } catch (err) {
+    //   showError("Failed to remove campaign", err instanceof Error ? err.message : "Please try again");
+    // } finally {
+    //   setRemovingCampaignId(null);
+    // }
+
+    // Temporary: Show toast until remove functionality is implemented
     showToast("info", "Can't access this action");
   };
 

@@ -191,7 +191,28 @@ class CampaignService {
   }): Promise<CampaignResponse> {
     const queryParams = new URLSearchParams();
     if (params) {
+      // Define allowed parameters to prevent sending invalid ones like 'id' or 'limit'
+      const allowedParams = [
+        "search",
+        "status",
+        "approvalStatus",
+        "categoryId",
+        "programId",
+        "startDateFrom",
+        "startDateTo",
+        "sortBy",
+        "sortDirection",
+        "page",
+        "pageSize",
+        "skipCache",
+      ];
+
       Object.entries(params).forEach(([key, value]) => {
+        // Skip 'id' and other disallowed parameters
+        if (key === "id" || !allowedParams.includes(key)) {
+          return;
+        }
+
         if (value !== undefined && value !== null) {
           // Skip empty strings
           if (typeof value === "string" && value.trim() === "") {

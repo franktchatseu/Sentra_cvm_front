@@ -330,6 +330,39 @@ function OffersModal({
   };
 
   const handleRemoveOffer = async (offerId: number | string) => {
+    // TODO: Uncomment and implement when remove functionality is available
+    // const confirmed = await confirm({
+    //   title: "Remove Offer",
+    //   message: `Are you sure you want to remove this offer from "${category?.name}"?`,
+    //   type: "warning",
+    //   confirmText: "Remove",
+    //   cancelText: "Cancel",
+    // });
+    // if (!confirmed) return;
+    // try {
+    //   setRemovingOfferId(offerId);
+    //   // Get offer to update its tags/category_id
+    //   const offer = await offerService.getOfferById(Number(offerId));
+    //   const updatedTags = (offer.tags || []).filter(
+    //     (tag) => tag !== buildCatalogTag(category?.id || 0)
+    //   );
+    //   // Update offer to remove catalog tag
+    //   await offerService.updateOffer(Number(offerId), {
+    //     tags: updatedTags,
+    //     // If category_id matches, set to null or another category
+    //     category_id: offer.category_id === category?.id ? null : offer.category_id,
+    //   });
+    //   // Refresh offers list
+    //   await loadOffers();
+    //   await onRefreshCounts();
+    //   showSuccess("Offer removed from catalog successfully");
+    // } catch (err) {
+    //   showError("Failed to remove offer", err instanceof Error ? err.message : "Please try again");
+    // } finally {
+    //   setRemovingOfferId(null);
+    // }
+
+    // Temporary: Show toast until remove functionality is implemented
     showSuccess("Can't access this action");
   };
 
