@@ -11,6 +11,8 @@ import {
   Users,
   Eye,
   UserPlus,
+  BarChart3,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../../users/services/userService";
@@ -52,8 +54,11 @@ export default function UserManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorState, setErrorState] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "requests">("users");
+  const [activeTab, setActiveTab] = useState<
+    "users" | "requests" | "analytics"
+  >("users");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "inactive"
   >("all");
@@ -86,6 +91,13 @@ export default function UserManagementPage() {
   const { confirm } = useConfirm();
   const { user: authUser } = useAuth();
   const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [departmentCounts, setDepartmentCounts] = useState<
+    Record<string, number>
+  >({});
+  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
   const activateColor = color.tertiary.tag4;
   const deactivateColor = color.configStatus.inactive;
@@ -240,6 +252,74 @@ export default function UserManagementPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    // Load reports after roles are loaded (needed for role name resolution)
+    if (Object.keys(roleLookup).length > 0 || isLoading === false) {
+      loadReports();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleLookup]);
+
+  const loadReports = async () => {
+    try {
+      setReportsLoading(true);
+      const [status, dept, role] = await Promise.all([
+        userService
+          .getStatusCounts()
+          .catch(() => ({ success: false, data: {} })),
+        userService
+          .getDepartmentCounts()
+          .catch(() => ({ success: false, data: {} })),
+        userService.getRoleCounts().catch(() => ({ success: false, data: {} })),
+      ]);
+
+      // Transform array format to object format if needed
+      const transformToObject = (
+        data:
+          | Record<string, number>
+          | Array<{ [key: string]: unknown; count: number }>,
+        isRoleCount = false
+      ): Record<string, number> => {
+        if (Array.isArray(data)) {
+          const result: Record<string, number> = {};
+          data.forEach((item) => {
+            if (item.count === undefined) return;
+
+            if (isRoleCount && item.role_id !== undefined) {
+              // For role counts, resolve role_id to role name
+              const roleId = item.role_id as number;
+              const roleName = roleLookup[roleId]?.name || `Role ID: ${roleId}`;
+              result[roleName] = item.count;
+            } else {
+              // Find the key (could be department, status, etc.)
+              const key = Object.keys(item).find(
+                (k) =>
+                  k !== "count" &&
+                  (typeof item[k] === "string" || typeof item[k] === "number")
+              );
+              if (key) {
+                const value = item[key];
+                const displayKey =
+                  typeof value === "string" ? value : String(value);
+                result[displayKey] = item.count;
+              }
+            }
+          });
+          return result;
+        }
+        return data;
+      };
+
+      if (status.success) setStatusCounts(transformToObject(status.data || {}));
+      if (dept.success) setDepartmentCounts(transformToObject(dept.data || {}));
+      if (role.success) setRoleCounts(transformToObject(role.data || {}, true));
+    } catch (err) {
+      console.error("Error loading reports:", err);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -627,6 +707,29 @@ export default function UserManagementPage() {
     )
   ).sort((a, b) => a.localeCompare(b));
 
+  // Get unique roles from users
+  const getUserRoleName = useCallback(
+    (user: UserType): string => {
+      const primaryRoleId = user.primary_role_id ?? user.role_id;
+      if (primaryRoleId != null) {
+        const resolvedRole = roleLookup[primaryRoleId];
+        if (resolvedRole?.name) {
+          return resolvedRole.name;
+        }
+      }
+      return user.role_name || "N/A";
+    },
+    [roleLookup]
+  );
+
+  const uniqueRoles = Array.from(
+    new Set(
+      users
+        .map((user) => getUserRoleName(user))
+        .filter((role): role is string => Boolean(role && role !== "N/A"))
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
   const aggregateCounts = users.reduce(
     (acc, user) => {
       const status = normalizeStatus(user);
@@ -700,12 +803,15 @@ export default function UserManagementPage() {
     const matchesDepartment =
       filterDepartment === "all" ||
       (user.department || "").toLowerCase() === filterDepartment.toLowerCase();
+    const matchesRole =
+      filterRole === "all" ||
+      getUserRoleName(user).toLowerCase() === filterRole.toLowerCase();
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" && normalizedStatus === "active") ||
       (filterStatus === "inactive" && normalizedStatus !== "active");
 
-    return matchesSearch && matchesDepartment && matchesStatus;
+    return matchesSearch && matchesDepartment && matchesRole && matchesStatus;
   });
 
   const filteredRequests = accountRequests.filter((request) => {
@@ -752,16 +858,25 @@ export default function UserManagementPage() {
             Manage users and account requests
           </p>
         </div>
-        <button
-          onClick={() => {
-            setSelectedUser(null);
-            setIsModalOpen(true);
-          }}
-          className={`${tw.button} flex items-center gap-2`}
-        >
-          <Plus className="w-4 h-4" />
-          Add User
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsAnalyticsModalOpen(true)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            View Analytics
+          </button>
+          <button
+            onClick={() => {
+              setSelectedUser(null);
+              setIsModalOpen(true);
+            }}
+            className={`${tw.button} flex items-center gap-2`}
+          >
+            <Plus className="w-4 h-4" />
+            Add User
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -803,83 +918,83 @@ export default function UserManagementPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-6 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-gray-200">
         <button
           onClick={() => setActiveTab("users")}
-          className={`px-6 py-3 text-base font-medium border-b-2 transition-colors text-black`}
-          style={{
-            borderBottomColor:
-              activeTab === "users"
-                ? color.primary.accent
-                : color.border.default,
-          }}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative ${
+            activeTab === "users"
+              ? "text-black"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
         >
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            <span>Users</span>
-            <span
-              className="px-2 py-0.5 rounded-full text-xs text-white"
-              style={{
-                backgroundColor:
-                  activeTab === "users"
-                    ? color.primary.accent
-                    : color.text.muted,
-                color: "white",
-              }}
-            >
-              {users.length}
-            </span>
-          </div>
+          <Users className="w-4 h-4" />
+          <span>Users</span>
+          <span
+            className="px-2 py-0.5 rounded-full text-xs text-white"
+            style={{
+              backgroundColor:
+                activeTab === "users" ? color.primary.accent : color.text.muted,
+            }}
+          >
+            {users.length}
+          </span>
+          {activeTab === "users" && (
+            <div
+              className="absolute bottom-0 left-0 right-0 h-0.5"
+              style={{ backgroundColor: color.primary.accent }}
+            />
+          )}
         </button>
         <button
           onClick={() => setActiveTab("requests")}
-          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors text-black`}
-          style={{
-            borderBottomColor:
-              activeTab === "requests"
-                ? color.primary.accent
-                : color.border.default,
-          }}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative ${
+            activeTab === "requests"
+              ? "text-black"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
         >
-          <div className="flex items-center gap-2">
-            <span>Pending Requests</span>
-            <span
-              className="px-2 py-0.5 rounded-full text-xs text-white"
-              style={{
-                backgroundColor:
-                  activeTab === "requests"
-                    ? color.primary.accent
-                    : color.text.muted,
-                color: "white",
-              }}
-            >
-              {accountRequests.length}
-            </span>
-          </div>
+          <span>Pending Requests</span>
+          <span
+            className="px-2 py-0.5 rounded-full text-xs text-white"
+            style={{
+              backgroundColor:
+                activeTab === "requests"
+                  ? color.primary.accent
+                  : color.text.muted,
+            }}
+          >
+            {accountRequests.length}
+          </span>
+          {activeTab === "requests" && (
+            <div
+              className="absolute bottom-0 left-0 right-0 h-0.5"
+              style={{ backgroundColor: color.primary.accent }}
+            />
+          )}
         </button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search
-            className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${tw.textMuted}`}
-          />
-          <input
-            type="text"
-            placeholder={`Search ${activeTab}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && activeTab === "users") {
-                handleSearch();
-              }
-            }}
-            className={`w-full pl-10 pr-4 py-3 text-sm ${components.input.default}`}
-          />
-        </div>
+      {/* Search and Filters - Only show on Users tab */}
+      {activeTab === "users" && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search
+              className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${tw.textMuted}`}
+            />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSearch();
+                }
+              }}
+              className={`w-full pl-10 pr-4 py-3 text-sm ${components.input.default}`}
+            />
+          </div>
 
-        {activeTab === "users" && (
           <div className="flex gap-3">
             <HeadlessSelect
               options={[
@@ -897,6 +1012,20 @@ export default function UserManagementPage() {
 
             <HeadlessSelect
               options={[
+                { value: "all", label: "All Roles" },
+                ...uniqueRoles.map((role) => ({
+                  value: role.toLowerCase(),
+                  label: role,
+                })),
+              ]}
+              value={filterRole}
+              onChange={(value) => setFilterRole(value as string)}
+              placeholder="Select role"
+              className="min-w-[160px]"
+            />
+
+            <HeadlessSelect
+              options={[
                 { value: "all", label: "All Status" },
                 { value: "active", label: "Active" },
                 { value: "inactive", label: "Inactive" },
@@ -909,8 +1038,8 @@ export default function UserManagementPage() {
               className="min-w-[140px]"
             />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Content */}
       <div
@@ -994,6 +1123,12 @@ export default function UserManagementPage() {
                         className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
                         style={{ color: color.surface.tableHeaderText }}
                       >
+                        Role
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        style={{ color: color.surface.tableHeaderText }}
+                      >
                         Status
                       </th>
                       <th
@@ -1027,7 +1162,7 @@ export default function UserManagementPage() {
                               <button
                                 type="button"
                                 onClick={() => handleViewUser(user)}
-                                className="text-base font-semibold text-black transition-colors hover:underline"
+                                className="text-base font-semibold text-black transition-colors hover:opacity-80"
                               >
                                 {user.first_name} {user.last_name}
                               </button>
@@ -1041,6 +1176,13 @@ export default function UserManagementPage() {
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
                             >
                               {user.department || "N/A"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                            >
+                              {getUserRoleName(user)}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -1169,7 +1311,7 @@ export default function UserManagementPage() {
                           <button
                             type="button"
                             onClick={() => handleViewUser(user)}
-                            className="text-black hover:underline"
+                            className="text-black hover:opacity-80"
                           >
                             {user.first_name} {user.last_name}
                           </button>
@@ -1182,6 +1324,11 @@ export default function UserManagementPage() {
                             className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
                           >
                             {user.department || "N/A"}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                          >
+                            {getUserRoleName(user)}
                           </span>
                           <span
                             className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
@@ -1562,6 +1709,140 @@ export default function UserManagementPage() {
           loadData({ skipCache: true }); // Skip cache to get fresh data
         }}
       />
+
+      {/* Analytics Modal */}
+      {isAnalyticsModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                User Analytics
+              </h2>
+              <button
+                onClick={() => setIsAnalyticsModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6">
+              {reportsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <LoadingSpinner
+                    variant="modern"
+                    size="lg"
+                    color="primary"
+                    className="mr-3"
+                  />
+                  <span className={`${tw.textSecondary}`}>
+                    Loading analytics...
+                  </span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {Object.keys(statusCounts).length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                        Users by Status
+                      </h3>
+                      <div className="space-y-2">
+                        {Object.entries(statusCounts)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([status, count]) => (
+                            <div
+                              key={status}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                            >
+                              <span className="text-sm text-gray-600 capitalize">
+                                {status.replace(/_/g, " ")}
+                              </span>
+                              <span
+                                className="text-sm font-bold"
+                                style={{ color: color.primary.accent }}
+                              >
+                                {count}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {Object.keys(departmentCounts).length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                        Users by Department
+                      </h3>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {Object.entries(departmentCounts)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([dept, count]) => (
+                            <div
+                              key={dept}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                            >
+                              <span className="text-sm text-gray-600">
+                                {dept}
+                              </span>
+                              <span
+                                className="text-sm font-bold"
+                                style={{ color: color.primary.accent }}
+                              >
+                                {count}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {Object.keys(roleCounts).length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                        Users by Role
+                      </h3>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {Object.entries(roleCounts)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([role, count]) => (
+                            <div
+                              key={role}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                            >
+                              <span className="text-sm text-gray-600">
+                                {role}
+                              </span>
+                              <span
+                                className="text-sm font-bold"
+                                style={{ color: color.primary.accent }}
+                              >
+                                {count}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {Object.keys(statusCounts).length === 0 &&
+                    Object.keys(departmentCounts).length === 0 &&
+                    Object.keys(roleCounts).length === 0 && (
+                      <div className="col-span-3 text-center py-12">
+                        <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-base font-medium text-gray-900 mb-1">
+                          No Analytics Data
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Analytics data will appear here once available.
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

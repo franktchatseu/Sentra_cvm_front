@@ -557,13 +557,13 @@ export default function ConfigurationPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3
-                          className={`text-sm sm:text-base font-bold ${tw.textPrimary} group-hover:${tw.textSecondary} transition-colors duration-300`}
+                          className={`${tw.cardHeading} ${tw.textPrimary} group-hover:${tw.textSecondary} transition-colors duration-300`}
                         >
                           {config.name}
                         </h3>
                       </div>
                       <p
-                        className={`${tw.textSecondary} text-sm sm:text-base mb-2`}
+                        className={`${tw.cardSubHeading} ${tw.textSecondary} mb-2`}
                       >
                         {config.description}
                       </p>

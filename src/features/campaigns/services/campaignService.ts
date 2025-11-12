@@ -27,16 +27,6 @@ import {
   CreateCampaignRequest,
   CreateCampaignResponse,
 } from "../types/createCampaign";
-import {
-  RunCampaignRequest,
-  RunCampaignResponse,
-  ValidateCampaignRequest,
-  ValidateCampaignResponse,
-  CloneCampaignWithModificationsRequest,
-  CloneCampaignWithModificationsResponse,
-  CloneCampaignRequest,
-  CloneCampaignResponse,
-} from "../types";
 
 export interface CampaignResponse {
   success: boolean;
@@ -168,8 +158,6 @@ class CampaignService {
   async getCampaigns(params?: {
     limit?: number;
     offset?: number;
-    status?: string;
-    search?: string;
     skipCache?: boolean;
   }): Promise<GetCampaignsResponse> {
     const queryParams = new URLSearchParams();
@@ -182,13 +170,6 @@ class CampaignService {
     queryParams.append("limit", String(limit));
     queryParams.append("offset", String(offset));
     queryParams.append("skipCache", String(skipCache));
-
-    if (params?.status) {
-      queryParams.append("status", params.status);
-    }
-    if (params?.search) {
-      queryParams.append("search", params.search);
-    }
 
     const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
     return this.request<GetCampaignsResponse>(`/${query}`);
@@ -210,16 +191,59 @@ class CampaignService {
   }): Promise<CampaignResponse> {
     const queryParams = new URLSearchParams();
     if (params) {
+      // Define allowed parameters to prevent sending invalid ones like 'id' or 'limit'
+      const allowedParams = [
+        "search",
+        "status",
+        "approvalStatus",
+        "categoryId",
+        "programId",
+        "startDateFrom",
+        "startDateTo",
+        "sortBy",
+        "sortDirection",
+        "page",
+        "pageSize",
+        "skipCache",
+      ];
+
       Object.entries(params).forEach(([key, value]) => {
+        // Skip 'id' and other disallowed parameters
+        if (key === "id" || !allowedParams.includes(key)) {
+          return;
+        }
+
         if (value !== undefined && value !== null) {
+          // Skip empty strings
+          if (typeof value === "string" && value.trim() === "") {
+            return;
+          }
+
           // Convert boolean to string "true"/"false"
           if (typeof value === "boolean") {
             queryParams.append(key, value ? "true" : "false");
           }
-          // Keep numbers as strings (backend will parse)
-          // Keep strings as strings
-          else {
+          // Ensure numeric parameters (categoryId, programId, page, pageSize) are valid numbers
+          else if (
+            (key === "categoryId" ||
+              key === "programId" ||
+              key === "page" ||
+              key === "pageSize") &&
+            typeof value === "number" &&
+            !isNaN(value) &&
+            isFinite(value)
+          ) {
             queryParams.append(key, String(value));
+          }
+          // For other numeric values, ensure they're valid numbers
+          else if (typeof value === "number") {
+            if (!isNaN(value) && isFinite(value)) {
+              queryParams.append(key, String(value));
+            }
+          }
+          // Keep strings as strings
+          else if (typeof value === "string") {
+            queryParams.append(key, value);
           }
         }
       });
@@ -393,22 +417,6 @@ class CampaignService {
     );
   }
 
-  async runCampaign(request: RunCampaignRequest): Promise<RunCampaignResponse> {
-    return this.request<RunCampaignResponse>("/run", {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
-  }
-
-  async validateCampaign(
-    request: ValidateCampaignRequest
-  ): Promise<ValidateCampaignResponse> {
-    return this.request<ValidateCampaignResponse>("/validate", {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
-  }
-
   async submitForApproval(
     id: number,
     updatedBy: number = 1
@@ -424,9 +432,13 @@ class CampaignService {
 
   async approveCampaign(
     id: number,
-    approvedBy: number = 1
+    payload: { approved_by?: number; comments?: string } | number = 1
   ): Promise<CampaignDetail> {
-    console.log("Approving campaign:", { id, approvedBy });
+    // Support both old signature (number) and new signature (object)
+    const approvedBy =
+      typeof payload === "number" ? payload : payload.approved_by ?? 1;
+
+    console.log("Approving campaign:", { id, approved_by: approvedBy });
     return this.request<CampaignDetail>(`/${id}/approve`, {
       method: "PATCH",
       body: JSON.stringify({
@@ -438,15 +450,41 @@ class CampaignService {
 
   async rejectCampaign(
     id: number,
-    rejectedBy: number,
-    rejectionReason: string
+    payload:
+      | { rejected_by?: number; comments?: string; rejection_reason?: string }
+      | number,
+    rejectionReason?: string
   ): Promise<CampaignDetail> {
-    console.log("Rejecting campaign:", { id, rejectedBy, rejectionReason });
+    // Support multiple signatures:
+    // 1. rejectCampaign(id, { comments: "...", rejected_by: 1 })
+    // 2. rejectCampaign(id, rejectedBy, rejectionReason) - old signature
+    let rejectedBy: number;
+    let reason: string;
+
+    if (typeof payload === "number") {
+      // Old signature: rejectCampaign(id, rejectedBy, rejectionReason)
+      rejectedBy = payload;
+      reason = rejectionReason || "";
+    } else {
+      // New signature: rejectCampaign(id, { comments, rejected_by })
+      rejectedBy = payload.rejected_by ?? 1;
+      reason = payload.comments || payload.rejection_reason || "";
+    }
+
+    if (!reason.trim()) {
+      throw new Error("Rejection reason or comments is required");
+    }
+
+    console.log("Rejecting campaign:", {
+      id,
+      rejected_by: rejectedBy,
+      rejection_reason: reason,
+    });
     return this.request<CampaignDetail>(`/${id}/reject`, {
       method: "PATCH",
       body: JSON.stringify({
         rejected_by: rejectedBy,
-        rejection_reason: rejectionReason,
+        rejection_reason: reason,
         rejected_at: new Date().toISOString(),
       }),
     });
@@ -494,9 +532,16 @@ class CampaignService {
     });
   }
 
-  async resumeCampaign(id: number): Promise<CampaignDetail> {
-    return this.request<CampaignDetail>(`/${id}/resume`, {
-      method: "PUT",
+  async resumeCampaign(
+    id: number,
+    updatedBy: number = 1
+  ): Promise<CampaignDetail> {
+    // Resume by updating status to "active" or using activate endpoint
+    return this.request<CampaignDetail>(`/${id}/activate`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        updated_by: updatedBy,
+      }),
     });
   }
 
@@ -537,12 +582,12 @@ class CampaignService {
 
   async updateCampaignSpentBudget(
     id: number,
-    amount: number,
+    budget_spent: number,
     updatedBy: number = 1
   ): Promise<CampaignDetail> {
     return this.request<CampaignDetail>(`/${id}/spent-budget`, {
       method: "PATCH",
-      body: JSON.stringify({ amount, updated_by: updatedBy }),
+      body: JSON.stringify({ budget_spent, updated_by: updatedBy }),
     });
   }
 
@@ -559,12 +604,16 @@ class CampaignService {
 
   async updateControlGroup(
     id: number,
-    payload: { enabled: boolean; percentage?: number; updated_by?: number }
+    payload: {
+      control_group_enabled: boolean;
+      control_group_percentage?: number;
+      updated_by?: number;
+    }
   ): Promise<CampaignDetail> {
     const body = {
       updated_by: payload.updated_by ?? 1,
-      enabled: payload.enabled,
-      percentage: payload.percentage,
+      control_group_enabled: payload.control_group_enabled,
+      control_group_percentage: payload.control_group_percentage,
     };
     return this.request<CampaignDetail>(`/${id}/control-group`, {
       method: "PATCH",
@@ -584,39 +633,6 @@ class CampaignService {
     return this.request<Record<string, unknown>>(`/${id}/segments`, {
       method: "POST",
       body: JSON.stringify(payload),
-    });
-  }
-
-  async cloneCampaign(
-    id: number,
-    request: CloneCampaignRequest
-  ): Promise<CloneCampaignResponse> {
-    return this.request<CloneCampaignResponse>(`/${id}/clone`, {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
-  }
-
-  async cloneCampaignWithModifications(
-    id: number,
-    request: CloneCampaignWithModificationsRequest
-  ): Promise<CloneCampaignWithModificationsResponse> {
-    return this.request<CloneCampaignWithModificationsResponse>(
-      `/${id}/clone-with-modifications`,
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
-  }
-
-  async duplicateCampaign(
-    id: number,
-    request: { newName: string }
-  ): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(`/${id}/duplicate`, {
-      method: "POST",
-      body: JSON.stringify(request),
     });
   }
 
@@ -777,54 +793,246 @@ class CampaignService {
     // DELETE may not return a body, so we don't try to parse JSON
   }
 
-  async linkCampaignToOffer(
-    campaignId: number,
-    request: { offer_id: number; created_by: number }
+  /**
+   * Get campaign category by ID
+   */
+  async getCampaignCategoryById(
+    id: number,
+    skipCache: boolean = false
   ): Promise<Record<string, unknown>> {
-    return this.request<Record<string, unknown>>(
-      `/link-to-offer/${campaignId}`,
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
-  }
+    const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories/${id}${
+      skipCache ? "?skipCache=true" : ""
+    }`;
 
-  async exportCampaign(id: number): Promise<Blob> {
-    const response = await fetch(`${BASE_URL}/${id}/export`, {
+    const response = await fetch(categoriesUrl, {
       method: "GET",
       headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorBody = await response.text();
+      console.error("API Error Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        url: categoriesUrl,
+      });
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
     }
 
-    return response.blob();
+    return response.json();
   }
 
-  async getApprovalHistory(
-    id: number,
-    skipCache?: boolean
-  ): Promise<Record<string, unknown>[]> {
-    const params = new URLSearchParams();
-    if (skipCache) params.append("skipCache", "true");
-    const query = params.toString() ? `?${params.toString()}` : "";
-    return this.request<Record<string, unknown>[]>(
-      `/${id}/approval-history${query}`
-    );
+  /**
+   * Get campaign category tree
+   */
+  async getCampaignCategoryTree(
+    skipCache: boolean = false
+  ): Promise<Record<string, unknown>> {
+    const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories/tree${
+      skipCache ? "?skipCache=true" : ""
+    }`;
+
+    const response = await fetch(categoriesUrl, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("API Error Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        url: categoriesUrl,
+      });
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
+    }
+
+    return response.json();
   }
 
-  async getLifecycleHistory(
+  /**
+   * Get category children
+   */
+  async getCampaignCategoryChildren(
     id: number,
-    skipCache?: boolean
-  ): Promise<Record<string, unknown>[]> {
-    const params = new URLSearchParams();
-    if (skipCache) params.append("skipCache", "true");
-    const query = params.toString() ? `?${params.toString()}` : "";
-    return this.request<Record<string, unknown>[]>(
-      `/${id}/lifecycle-history${query}`
-    );
+    skipCache: boolean = false
+  ): Promise<Record<string, unknown>> {
+    const categoriesUrl = `${
+      API_CONFIG.BASE_URL
+    }/campaign-categories/${id}/children${skipCache ? "?skipCache=true" : ""}`;
+
+    const response = await fetch(categoriesUrl, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("API Error Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        url: categoriesUrl,
+      });
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get active campaign categories
+   */
+  async getActiveCampaignCategories(params?: {
+    limit?: number;
+    offset?: number;
+    skipCache?: boolean;
+  }): Promise<Record<string, unknown>> {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    if (params?.offset) queryParams.append("offset", String(params.offset));
+    if (params?.skipCache) queryParams.append("skipCache", "true");
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories/active${query}`;
+
+    const response = await fetch(categoriesUrl, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get root campaign categories
+   */
+  async getRootCampaignCategories(params?: {
+    limit?: number;
+    offset?: number;
+    skipCache?: boolean;
+  }): Promise<Record<string, unknown>> {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    if (params?.offset) queryParams.append("offset", String(params.offset));
+    if (params?.skipCache) queryParams.append("skipCache", "true");
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories/roots${query}`;
+
+    const response = await fetch(categoriesUrl, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Search campaign categories
+   */
+  async searchCampaignCategories(
+    searchTerm: string,
+    params?: {
+      limit?: number;
+      offset?: number;
+      skipCache?: boolean;
+    }
+  ): Promise<Record<string, unknown>> {
+    const queryParams = new URLSearchParams();
+    queryParams.append("searchTerm", searchTerm);
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    if (params?.offset) queryParams.append("offset", String(params.offset));
+    if (params?.skipCache) queryParams.append("skipCache", "true");
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories/search${query}`;
+
+    const response = await fetch(categoriesUrl, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get campaign category statistics
+   */
+  async getCampaignCategoryStats(
+    skipCache: boolean = false
+  ): Promise<Record<string, unknown>> {
+    const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories/stats${
+      skipCache ? "?skipCache=true" : ""
+    }`;
+
+    const response = await fetch(categoriesUrl, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get campaign category by name
+   */
+  async getCampaignCategoryByName(
+    name: string,
+    skipCache: boolean = false
+  ): Promise<Record<string, unknown>> {
+    const categoriesUrl = `${
+      API_CONFIG.BASE_URL
+    }/campaign-categories/name/${encodeURIComponent(name)}${
+      skipCache ? "?skipCache=true" : ""
+    }`;
+
+    const response = await fetch(categoriesUrl, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
+    }
+
+    return response.json();
   }
 
   /**

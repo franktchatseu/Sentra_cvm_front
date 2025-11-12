@@ -59,7 +59,13 @@ export default function SegmentManagementPage() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<number | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    maxHeight: number;
+  } | null>(null);
   const actionMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const dropdownMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Analytics state
   const [analyticsData, setAnalyticsData] = useState<{
@@ -109,11 +115,115 @@ export default function SegmentManagementPage() {
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
 
-  const handleActionMenuToggle = (segmentId: number) => {
+  const handleActionMenuToggle = (
+    segmentId: number,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
     if (showActionMenu === segmentId) {
       setShowActionMenu(null);
+      setDropdownPosition(null);
     } else {
       setShowActionMenu(segmentId);
+
+      // Calculate position from the clicked button - always display below
+      if (event && event.currentTarget) {
+        const button = event.currentTarget;
+        const buttonRect = button.getBoundingClientRect();
+        const dropdownWidth = 256; // w-64 = 256px
+        const spacing = 4;
+        const padding = 8;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Estimate dropdown content height (approximate max height needed)
+        const estimatedDropdownHeight = 450;
+        const requiredSpaceBelow = estimatedDropdownHeight + spacing + padding;
+
+        // Check if we need to scroll to show dropdown fully
+        const spaceBelow = viewportHeight - buttonRect.bottom - padding;
+
+        // Find the table row containing this button
+        const tableRow = button.closest("tr");
+
+        if (spaceBelow < requiredSpaceBelow && tableRow) {
+          // Calculate target position: we want the row positioned so dropdown fits below
+          // Add extra buffer to ensure dropdown is fully visible
+          const buffer = 50; // Extra pixels for safety
+          const targetButtonBottom =
+            viewportHeight - requiredSpaceBelow - buffer;
+          const currentButtonBottom = buttonRect.bottom;
+          const scrollOffset = currentButtonBottom - targetButtonBottom;
+
+          // Scroll the window/page to position row correctly
+          if (scrollOffset > 0) {
+            // Get current scroll position
+            const currentScrollY = window.scrollY || window.pageYOffset || 0;
+            const newScrollY = currentScrollY + scrollOffset;
+
+            // Get max scroll position
+            const documentHeight = Math.max(
+              document.documentElement.scrollHeight,
+              document.body.scrollHeight
+            );
+            const maxScrollY = Math.max(0, documentHeight - window.innerHeight);
+            const finalScrollY = Math.min(newScrollY, maxScrollY);
+
+            // Scroll to the calculated position
+            window.scrollTo({
+              top: finalScrollY,
+              behavior: "smooth",
+            });
+          }
+
+          // After scroll completes, recalculate position
+          // Use longer timeout to ensure scroll animation completes
+          setTimeout(() => {
+            const updatedButtonRect = button.getBoundingClientRect();
+            const updatedSpaceBelow =
+              window.innerHeight - updatedButtonRect.bottom - padding;
+
+            // Position dropdown below button
+            const top = updatedButtonRect.bottom + spacing;
+
+            // Calculate left position (right-align with button)
+            let left = updatedButtonRect.right - dropdownWidth;
+            if (left + dropdownWidth > window.innerWidth - padding) {
+              left = window.innerWidth - dropdownWidth - padding;
+            }
+            if (left < padding) {
+              left = padding;
+            }
+
+            // Use large maxHeight to show all options
+            // After scrolling, we should have enough space
+            const maxHeight = Math.max(
+              estimatedDropdownHeight,
+              updatedSpaceBelow + 100
+            );
+
+            setDropdownPosition({ top, left, maxHeight });
+          }, 400); // Wait longer for smooth scroll animation to complete
+        } else {
+          // Enough space - position normally without scrolling
+          const top = buttonRect.bottom + spacing;
+
+          // Calculate left position (right-align with button)
+          let left = buttonRect.right - dropdownWidth;
+          if (left + dropdownWidth > viewportWidth - padding) {
+            left = viewportWidth - dropdownWidth - padding;
+          }
+          if (left < padding) {
+            left = padding;
+          }
+
+          // Use full estimated height since we have enough space (no scrolling needed)
+          setDropdownPosition({
+            top,
+            left,
+            maxHeight: estimatedDropdownHeight,
+          });
+        }
+      }
     }
   };
 
@@ -127,20 +237,33 @@ export default function SegmentManagementPage() {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showActionMenu !== null) {
-        const target = event.target as HTMLElement;
-        const isInsideMenu = Object.values(actionMenuRefs.current).some((ref) =>
-          ref?.contains(target)
-        );
-        if (!isInsideMenu) {
-          setShowActionMenu(null);
-        }
+    const handleClickOutsideActionMenus = (event: MouseEvent) => {
+      const target = event.target as Node;
+      // Check if click is inside any action menu button
+      const clickedInsideButton = Object.values(actionMenuRefs.current).some(
+        (ref) => ref && ref.contains(target)
+      );
+
+      // Check if click is inside any dropdown menu (portal)
+      const clickedInsideDropdown = Object.values(
+        dropdownMenuRefs.current
+      ).some((ref) => ref && ref.contains(target));
+
+      // Only close if clicked outside both button and dropdown
+      if (!clickedInsideButton && !clickedInsideDropdown) {
+        setShowActionMenu(null);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    if (showActionMenu !== null) {
+      document.addEventListener("mousedown", handleClickOutsideActionMenus);
+      return () => {
+        document.removeEventListener(
+          "mousedown",
+          handleClickOutsideActionMenus
+        );
+      };
+    }
   }, [showActionMenu]);
 
   // Debounce search term
@@ -800,8 +923,8 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-hidden rounded-lg">
-              <table className="w-full">
+            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead
                   className={`border-b ${tw.borderDefault}`}
                   style={{ background: color.surface.tableHeader }}
@@ -994,74 +1117,13 @@ export default function SegmentManagementPage() {
                             }}
                           >
                             <button
-                              onClick={() => handleActionMenuToggle(segment.id)}
+                              onClick={(e) =>
+                                handleActionMenuToggle(segment.id, e)
+                              }
                               className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
-
-                            {showActionMenu === segment.id && (
-                              <div
-                                className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl py-3"
-                                style={{
-                                  maxHeight: "80vh",
-                                  overflowY: "auto",
-                                  zIndex: 9999,
-                                }}
-                              >
-                                <button
-                                  onClick={() =>
-                                    handleDuplicateSegment(segment)
-                                  }
-                                  disabled={duplicatingSegment === segment.id}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {duplicatingSegment === segment.id ? (
-                                    <>
-                                      <div className="w-4 h-4 mr-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-                                      Duplicating...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy
-                                        className="w-4 h-4 mr-4"
-                                        style={{ color: color.primary.action }}
-                                      />
-                                      Duplicate Segment
-                                    </>
-                                  )}
-                                </button>
-
-                                <button
-                                  onClick={() => handleComputeSegment(segment)}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                >
-                                  <RefreshCw className="w-4 h-4 mr-4" />
-                                  Compute Segment
-                                </button>
-
-                                <button
-                                  onClick={() => handleExportSegment(segment)}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                >
-                                  <Download className="w-4 h-4 mr-4" />
-                                  Export Segment
-                                </button>
-
-                                <div className="border-t border-gray-200 my-1"></div>
-
-                                <button
-                                  onClick={() => handleDeleteSegment(segment)}
-                                  className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                                >
-                                  <Trash2
-                                    className="w-4 h-4 mr-4"
-                                    style={{ color: color.status.danger }}
-                                  />
-                                  Delete Segment
-                                </button>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -1070,6 +1132,101 @@ export default function SegmentManagementPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Render dropdown menus via portal outside the table */}
+            {filteredSegments.map((segment) => {
+              if (showActionMenu === segment.id && dropdownPosition) {
+                return createPortal(
+                  <div
+                    ref={(el) => {
+                      dropdownMenuRefs.current[segment.id] = el;
+                    }}
+                    className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-3 w-64"
+                    style={{
+                      zIndex: 99999,
+                      top: `${dropdownPosition.top}px`,
+                      left: `${dropdownPosition.left}px`,
+                      maxHeight: `${dropdownPosition.maxHeight}px`,
+                      overflowY: "auto",
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDuplicateSegment(segment);
+                        setShowActionMenu(null);
+                      }}
+                      disabled={duplicatingSegment === segment.id}
+                      className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {duplicatingSegment === segment.id ? (
+                        <>
+                          <div className="w-4 h-4 mr-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                          Duplicating...
+                        </>
+                      ) : (
+                        <>
+                          <Copy
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Duplicate Segment
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleComputeSegment(segment);
+                        setShowActionMenu(null);
+                      }}
+                      className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-4" />
+                      Compute Segment
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExportSegment(segment);
+                        setShowActionMenu(null);
+                      }}
+                      className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                    >
+                      <Download className="w-4 h-4 mr-4" />
+                      Export Segment
+                    </button>
+
+                    <div className="border-t border-gray-200 my-1"></div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSegment(segment);
+                        setShowActionMenu(null);
+                      }}
+                      className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                    >
+                      <Trash2
+                        className="w-4 h-4 mr-4"
+                        style={{ color: color.status.danger }}
+                      />
+                      Delete Segment
+                    </button>
+                  </div>,
+                  document.body
+                );
+              }
+              // Clean up ref when dropdown is closed
+              if (dropdownMenuRefs.current[segment.id]) {
+                dropdownMenuRefs.current[segment.id] = null;
+              }
+              return null;
+            })}
 
             {/* Mobile Cards */}
             <div className="lg:hidden space-y-4 p-4">
@@ -1122,7 +1279,7 @@ export default function SegmentManagementPage() {
                         }}
                       >
                         <button
-                          onClick={() => handleActionMenuToggle(segment.id)}
+                          onClick={(e) => handleActionMenuToggle(segment.id, e)}
                           className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
                         >
                           <MoreHorizontal className="w-4 h-4" />

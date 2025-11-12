@@ -4,11 +4,10 @@ import DashboardHome from "../components/DashboardHome";
 import CampaignsPage from "../../campaigns/pages/CampaignsPage";
 import CampaignDetailsPage from "../../campaigns/pages/CampaignDetailsPage";
 import CreateCampaignPage from "../../campaigns/pages/CreateCampaignPage";
-import CampaignApprovalHistoryPage from "../../campaigns/pages/CampaignApprovalHistoryPage";
-import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycleHistoryPage";
 import CampaignCategoriesPage from "../../campaigns/pages/CampaignCategoriesPage";
 import CampaignObjectivesPage from "../../campaigns/pages/CampaignObjectivesPage";
 import ProgramsPage from "../../campaigns/pages/ProgramsPage";
+import ProgramDetailsPage from "../../campaigns/pages/ProgramDetailsPage";
 import CommunicationPolicyPage from "../../campaigns/pages/CommunicationPolicyPage";
 import OffersPage from "../../offers/pages/OffersPage";
 import OfferDetailsPage from "../../offers/pages/OfferDetailsPage";
@@ -40,8 +39,11 @@ import LineOfBusinessPage from "../../campaigns/pages/LineOfBusinessPage";
 import AssignItemsPage from "../../../shared/pages/AssignItemsPage";
 import OfferCreativeDetailsPage from "../../offers/pages/OfferCreativeDetailsPage";
 import QuickListsPage from "../../quicklists/pages/QuickListsPage";
+import QuickListDetailsPage from "../../quicklists/pages/QuickListDetailsPage";
 import CustomerIdentityPage from "../../customer/pages/CustomerIdentityPage";
 import CustomerIdentityFieldDetailsPage from "../../customer/pages/CustomerIdentityFieldDetailsPage";
+import CampaignApprovalHistoryPage from "../../campaigns/pages/CampaignApprovalHistoryPage";
+import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycleHistoryPage";
 
 export default function Dashboard() {
   return (
@@ -51,6 +53,8 @@ export default function Dashboard() {
         <Route path="/campaigns" element={<CampaignsPage />} />
         <Route path="/campaigns/:id" element={<CampaignDetailsPage />} />
         <Route path="/campaigns/:id/edit" element={<CreateCampaignPage />} />
+        <Route path="/campaigns/create" element={<CreateCampaignPage />} />
+        {/* Campaign history pages - placeholder for future use when backend endpoints are implemented */}
         <Route
           path="/campaigns/:id/approval-history"
           element={<CampaignApprovalHistoryPage />}
@@ -59,8 +63,11 @@ export default function Dashboard() {
           path="/campaigns/:id/lifecycle-history"
           element={<CampaignLifecycleHistoryPage />}
         />
-        <Route path="/campaigns/create" element={<CreateCampaignPage />} />
         <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
+        <Route
+          path="/campaign-catalogs/:catalogId/assign"
+          element={<AssignItemsPage itemType="campaigns" />}
+        />
         <Route
           path="/campaign-objectives"
           element={<CampaignObjectivesPage />}
@@ -68,6 +75,7 @@ export default function Dashboard() {
         <Route path="/departments" element={<DepartmentPage />} />
         <Route path="/line-of-business" element={<LineOfBusinessPage />} />
         <Route path="/programs" element={<ProgramsPage />} />
+        <Route path="/programs/:id" element={<ProgramDetailsPage />} />
         <Route
           path="/campaign-communication-policy"
           element={<CommunicationPolicyPage />}
@@ -119,6 +127,7 @@ export default function Dashboard() {
         <Route path="/segment-types" element={<SegmentTypesPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/quicklists" element={<QuickListsPage />} />
+        <Route path="/quicklists/:id" element={<QuickListDetailsPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
         <Route
           path="/configuration/:id"

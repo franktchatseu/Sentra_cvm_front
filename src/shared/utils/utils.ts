@@ -82,8 +82,8 @@ export const tw = {
   // Typography classes using Satoshi Variable and Impact fonts
   // Main headings - Satoshi Variable, weight 800, 87.552px, line-height 110%, letter-spacing -4%
   mainHeading: `font-['Satoshi_Variable',sans-serif] text-[2rem] font-[800] leading-[110%] tracking-[-0.04em]`,
-  // Sub-headings - Impact, weight 400, 17.5104px, letter-spacing -8%
-  subHeading: `font-['Impact',sans-serif] text-[1.0944rem] font-normal leading-normal tracking-[-0.08em]`,
+  // Sub-headings - sans-serif, weight 400, 17.5104px, letter-spacing -8%
+  subHeading: `font-sans text-[1.0944rem] font-normal leading-normal tracking-[-0.08em]`,
   // Card headings - sans-serif, weight 600, 18px
   cardHeading: `font-sans text-[1.125rem] font-semibold leading-normal`,
   // Card sub-headings - sans-serif, weight 400, 14px

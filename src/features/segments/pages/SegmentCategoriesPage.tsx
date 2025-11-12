@@ -214,6 +214,7 @@ function SegmentsModal({
   onRefreshCategories,
 }: SegmentsModalProps) {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [filteredSegments, setFilteredSegments] = useState<Segment[]>([]);
@@ -343,54 +344,40 @@ function SegmentsModal({
   };
 
   const handleRemoveSegment = async (segmentId: number | string) => {
-    if (!category) return;
+    // TODO: Uncomment and implement when remove functionality is available
+    // const confirmed = await confirm({
+    //   title: "Remove Segment",
+    //   message: `Are you sure you want to remove this segment from "${category?.name}"?`,
+    //   type: "warning",
+    //   confirmText: "Remove",
+    //   cancelText: "Cancel",
+    // });
+    // if (!confirmed) return;
+    // try {
+    //   setRemovingSegmentId(segmentId);
+    //   // Get segment to update its tags/category
+    //   const segment = await segmentService.getSegmentById(Number(segmentId));
+    //   const updatedTags = (segment.tags || []).filter(
+    //     (tag) => tag !== buildSegmentCatalogTag(category?.id || 0)
+    //   );
+    //   // Update segment to remove catalog tag
+    //   await segmentService.updateSegment(Number(segmentId), {
+    //     tags: updatedTags,
+    //     // If category matches, set to null or another category
+    //     category: segment.category === category?.id ? null : segment.category,
+    //   });
+    //   // Refresh segments list
+    //   await loadCategorySegments();
+    //   await onRefreshCategories();
+    //   showToast("Segment removed from catalog successfully");
+    // } catch (err) {
+    //   showError("Failed to remove segment", err instanceof Error ? err.message : "Please try again");
+    // } finally {
+    //   setRemovingSegmentId(null);
+    // }
 
-    try {
-      setRemovingSegmentId(segmentId);
-      const segmentResponse = await segmentService.getSegmentById(
-        Number(segmentId),
-        true
-      );
-      const segmentData = segmentResponse.data as Segment | undefined;
-      if (!segmentData) {
-        showError("Segment details not found");
-        return;
-      }
-
-      const catalogTag = buildSegmentCatalogTag(category.id);
-      const primaryCategoryId = Number(segmentData.category);
-      if (
-        !Number.isNaN(primaryCategoryId) &&
-        primaryCategoryId === Number(category.id)
-      ) {
-        showError(
-          "Cannot remove this segment because this catalog is its primary category"
-        );
-        return;
-      }
-
-      const tags = Array.isArray(segmentData.tags) ? segmentData.tags : [];
-      if (!tags.includes(catalogTag)) {
-        showError("Segment is not tagged with this catalog");
-        return;
-      }
-
-      const updatedTags = tags.filter((tag) => tag !== catalogTag);
-      await segmentService.updateSegment(Number(segmentId), {
-        tags: updatedTags,
-      });
-      showToast("Segment removed from catalog");
-      await loadCategorySegments();
-      await onRefreshCategories();
-    } catch (err) {
-      showError(
-        err instanceof Error
-          ? err.message
-          : "Failed to remove segment from catalog"
-      );
-    } finally {
-      setRemovingSegmentId(null);
-    }
+    // Temporary: Show toast until remove functionality is implemented
+    showToast("info", "Can't access this action");
   };
 
   return (
@@ -1058,7 +1045,7 @@ export default function SegmentCategoriesPage() {
                   <h3 className={`${tw.cardHeading} text-gray-900`}>
                     {category.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-0.5">
+                  <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
                     {segmentCounts[category.id] || 0} segment
                     {segmentCounts[category.id] !== 1 ? "s" : ""}
                   </p>

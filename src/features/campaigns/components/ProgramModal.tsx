@@ -1,0 +1,263 @@
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
+import { color } from "../../../shared/utils/utils";
+import { Program } from "../types/program";
+
+interface ProgramModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  program?: Program;
+  onSave: (program: {
+    name: string;
+    code: string;
+    description?: string;
+    budget_total?: number;
+    start_date?: string | null;
+    end_date?: string | null;
+  }) => Promise<void>;
+  isSaving?: boolean;
+}
+
+export default function ProgramModal({
+  isOpen,
+  onClose,
+  program,
+  onSave,
+  isSaving = false,
+}: ProgramModalProps) {
+  const [formData, setFormData] = useState({
+    name: "",
+    code: "",
+    description: "",
+    budget_total: "",
+    start_date: "",
+    end_date: "",
+  });
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (program) {
+      setFormData({
+        name: program.name,
+        code: program.code,
+        description: program.description || "",
+        budget_total: program.budget_total || "",
+        start_date: program.start_date
+          ? new Date(program.start_date).toISOString().split("T")[0]
+          : "",
+        end_date: program.end_date
+          ? new Date(program.end_date).toISOString().split("T")[0]
+          : "",
+      });
+    } else {
+      setFormData({
+        name: "",
+        code: "",
+        description: "",
+        budget_total: "",
+        start_date: "",
+        end_date: "",
+      });
+    }
+    setError("");
+  }, [program, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      setError("Program name is required");
+      return;
+    }
+
+    if (!formData.code.trim()) {
+      setError("Program code is required");
+      return;
+    }
+
+    if (formData.name.length > 128) {
+      setError("Program name must be 128 characters or less");
+      return;
+    }
+
+    setError("");
+
+    const programData = {
+      name: formData.name.trim(),
+      code: formData.code.trim(),
+      description: formData.description.trim() || undefined,
+      budget_total: formData.budget_total
+        ? parseFloat(formData.budget_total)
+        : undefined,
+      start_date: formData.start_date || undefined,
+      end_date: formData.end_date || undefined,
+    };
+
+    await onSave(programData);
+  };
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {program ? "Edit Program" : "Create New Program"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Program Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Enter program name"
+                maxLength={128}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Program Code *
+              </label>
+              <input
+                type="text"
+                value={formData.code}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, code: e.target.value }))
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Enter program code (e.g., PROG-Q4-2024)"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Budget Total
+              </label>
+              <input
+                type="number"
+                value={formData.budget_total}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    budget_total: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Enter budget amount"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Enter program description"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      start_date: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      end_date: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = color.primary.action;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = color.primary.action;
+              }}
+            >
+              {isSaving
+                ? "Saving..."
+                : program
+                ? "Update Program"
+                : "Create Program"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+}

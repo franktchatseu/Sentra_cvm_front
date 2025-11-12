@@ -5,20 +5,23 @@ import {
   User,
   Building2,
   Shield,
-  Clock,
   CheckCircle,
   XCircle,
   Users,
-  Eye,
-  EyeOff,
-  Key,
   ChevronRight,
 } from "lucide-react";
 import { userService } from "../services/userService";
-import { UserType } from "../types/user";
+import {
+  UserType,
+  UserPermissionsResponse,
+  Permission,
+  UserPermissionsSummaryResponse,
+} from "../types/user";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
+import { roleService } from "../../roles/services/roleService";
+import { Role } from "../../roles/types/role";
 
 export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,21 +37,17 @@ export default function UserDetailsPage() {
 
   // Additional data
   const [directReports, setDirectReports] = useState<UserType[]>([]);
+  const [allReports, setAllReports] = useState<UserType[]>([]);
   const [managerChain, setManagerChain] = useState<UserType[]>([]);
-  const [permissions, setPermissions] = useState<{
-    success?: boolean;
-    data?: {
-      permissions?: string[];
-      roles?: Array<string | { name?: string; code?: string; id?: number }>;
-    };
-    total_permissions?: number;
-    permissions_by_category?: Record<string, number>;
-    roles?: string[];
-  } | null>(null);
+  const [permissions, setPermissions] =
+    useState<UserPermissionsResponse | null>(null);
+  const [permissionsSummary, setPermissionsSummary] =
+    useState<UserPermissionsSummaryResponse | null>(null);
   const [canLogin, setCanLogin] = useState<{
     can_login: boolean;
     reason?: string;
   } | null>(null);
+  const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
 
   useEffect(() => {
     if (id) {
@@ -56,6 +55,27 @@ export default function UserDetailsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    loadRoles();
+  }, []);
+
+  const loadRoles = async () => {
+    try {
+      const { roles } = await roleService.listRoles({
+        limit: 100,
+      });
+      const lookup: Record<number, Role> = {};
+      roles.forEach((role) => {
+        if (role.id != null) {
+          lookup[role.id] = role;
+        }
+      });
+      setRoleLookup(lookup);
+    } catch (err) {
+      console.error("Error loading roles:", err);
+    }
+  };
 
   const loadUserData = async () => {
     if (!id) return;
@@ -73,21 +93,41 @@ export default function UserDetailsPage() {
 
       // Load additional data in parallel
       try {
-        const [reports, chain, perms, login] = await Promise.all([
-          userService
-            .getDirectReports(userId)
-            .catch(() => ({ success: false, data: [] })),
-          userService
-            .getManagerChain(userId)
-            .catch(() => ({ success: false, data: [] })),
-          userService.getUserPermissions(userId).catch(() => null),
-          userService.canUserLogin(userId).catch(() => null),
-        ]);
+        const [reports, allReportsData, chain, perms, permsSummary, login] =
+          await Promise.all([
+            userService
+              .getDirectReports(userId)
+              .catch(() => ({ success: false, data: [] })),
+            userService
+              .getAllReports(userId)
+              .catch(() => ({ success: false, data: [] })),
+            userService
+              .getManagerChain(userId)
+              .catch(() => ({ success: false, data: [] })),
+            userService.getUserPermissions(userId).catch(() => null),
+            userService.getUserPermissionsSummary(userId).catch(() => null),
+            userService.canUserLogin(userId).catch(() => null),
+          ]);
 
         if (reports.success) setDirectReports(reports.data || []);
+        if (allReportsData.success) setAllReports(allReportsData.data || []);
         if (chain.success) setManagerChain(chain.data || []);
         if (perms) setPermissions(perms);
-        if (login && login.success) setCanLogin(login.data);
+        if (permsSummary && permsSummary.success) {
+          setPermissionsSummary(permsSummary);
+        }
+        if (login && login.success) {
+          // Normalize canLogin response - handle both camelCase and snake_case
+          const loginData = login.data as {
+            canLogin?: boolean;
+            can_login?: boolean;
+            reason?: string;
+          };
+          setCanLogin({
+            can_login: loginData.canLogin ?? loginData.can_login ?? false,
+            reason: loginData.reason,
+          });
+        }
       } catch (err) {
         console.error("Error loading additional user data:", err);
       }
@@ -195,6 +235,17 @@ export default function UserDetailsPage() {
       background: `${color.status.danger}20`,
       text: color.status.danger,
     };
+  };
+
+  const getUserRoleName = (user: UserType): string => {
+    const primaryRoleId = user.primary_role_id ?? user.role_id;
+    if (primaryRoleId != null) {
+      const resolvedRole = roleLookup[primaryRoleId];
+      if (resolvedRole?.name) {
+        return resolvedRole.name;
+      }
+    }
+    return user.role_name || "N/A";
   };
 
   const normalizedStatus = normalizeStatus(user);
@@ -334,23 +385,24 @@ export default function UserDetailsPage() {
                         </span>
                       </div>
                     )}
-                    {user.job_title && (
-                      <div className="flex justify-between items-start py-2 ">
-                        <span className="text-sm text-gray-600">Job Title</span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {user.job_title}
-                        </span>
-                      </div>
-                    )}
                     <div className="flex justify-between items-start py-2 ">
                       <span className="text-sm text-gray-600">Role</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {user.role_name ||
-                          (user.primary_role_id
-                            ? `Role ID: ${user.primary_role_id}`
-                            : "N/A")}
+                        {getUserRoleName(user)}
                       </span>
                     </div>
+                    {user.job_title &&
+                      user.job_title.toLowerCase() !==
+                        getUserRoleName(user).toLowerCase() && (
+                        <div className="flex justify-between items-start py-2 ">
+                          <span className="text-sm text-gray-600">
+                            Job Title
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {user.job_title}
+                          </span>
+                        </div>
+                      )}
                     {user.data_access_level && (
                       <div className="flex justify-between items-start py-2">
                         <span className="text-sm text-gray-600">
@@ -375,49 +427,22 @@ export default function UserDetailsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">Status</span>
-                      <div className="flex items-center gap-2">
-                        {userIsActive ? (
-                          <CheckCircle
-                            className="w-4 h-4"
-                            style={{ color: statusColors.text }}
-                          />
-                        ) : (
-                          <XCircle
-                            className="w-4 h-4"
-                            style={{ color: statusColors.text }}
-                          />
-                        )}
-                        <span className="text-sm font-medium text-gray-900 capitalize">
-                          {statusLabel}
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium text-gray-900 capitalize">
+                        {statusLabel}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">MFA</span>
-                      <div className="flex items-center gap-2">
-                        {user.mfa_enabled ? (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <XCircle className="w-4 h-4 text-gray-400" />
-                        )}
-                        <span className="text-sm font-medium text-gray-900">
-                          {user.mfa_enabled ? "Enabled" : "Disabled"}
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {user.mfa_enabled ? "Enabled" : "Disabled"}
+                      </span>
                     </div>
                     {canLogin && (
                       <div className="flex justify-between items-center py-2 ">
                         <span className="text-sm text-gray-600">Can Login</span>
-                        <div className="flex items-center gap-2">
-                          {canLogin.can_login ? (
-                            <Eye className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <EyeOff className="w-4 h-4 text-red-600" />
-                          )}
-                          <span className="text-sm font-medium text-gray-900">
-                            {canLogin.can_login ? "Yes" : "No"}
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {canLogin.can_login ? "Yes" : "No"}
+                        </span>
                       </div>
                     )}
                     {user.can_access_pii !== undefined && (
@@ -425,19 +450,9 @@ export default function UserDetailsPage() {
                         <span className="text-sm text-gray-600">
                           PII Access
                         </span>
-                        <div className="flex items-center gap-2">
-                          {user.can_access_pii ? (
-                            <Key
-                              className="w-4 h-4"
-                              style={{ color: color.primary.accent }}
-                            />
-                          ) : (
-                            <Key className="w-4 h-4 text-gray-400" />
-                          )}
-                          <span className="text-sm font-medium text-gray-900">
-                            {user.can_access_pii ? "Allowed" : "Restricted"}
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {user.can_access_pii ? "Allowed" : "Restricted"}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -451,19 +466,13 @@ export default function UserDetailsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">Created</span>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900">
-                          {new Date(user.created_at).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {new Date(user.created_at).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">Updated</span>
@@ -503,16 +512,22 @@ export default function UserDetailsPage() {
           <div className="p-6">
             {permissions && permissions.data ? (
               (() => {
-                const hasPermissions =
-                  permissions.data.permissions &&
-                  permissions.data.permissions.length > 0;
-                const hasRoles =
-                  permissions.data.roles && permissions.data.roles.length > 0;
-                const hasCategories =
-                  permissions.permissions_by_category &&
-                  Object.keys(permissions.permissions_by_category).length > 0;
+                const permissionsList = permissions.data.permissions || [];
+                const rolesList = permissions.data.roles || [];
+                const hasPermissions = permissionsList.length > 0;
+                const hasRoles = rolesList.length > 0;
 
-                if (!hasPermissions && !hasRoles && !hasCategories) {
+                // Group permissions by category (extract from code, e.g., "campaigns.create" -> "campaigns")
+                const permissionsByCategory = permissionsList.reduce(
+                  (acc, perm) => {
+                    const category = perm.code.split(".")[0] || "other";
+                    acc[category] = (acc[category] || 0) + 1;
+                    return acc;
+                  },
+                  {} as Record<string, number>
+                );
+
+                if (!hasPermissions && !hasRoles) {
                   return (
                     <div className="text-center py-12">
                       <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -528,79 +543,226 @@ export default function UserDetailsPage() {
 
                 return (
                   <div className="space-y-6">
-                    {permissions.total_permissions !== undefined && (
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">
-                              Total Permissions
-                            </p>
-                            <p
-                              className="text-3xl font-bold"
-                              style={{ color: color.primary.accent }}
-                            >
-                              {permissions.total_permissions}
-                            </p>
+                    {/* Summary Stat Cards */}
+                    {permissionsSummary?.data ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag1,
+                                  }}
+                                >
+                                  <Shield className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.totalPermissions.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    Total Permissions
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <Shield className="w-8 h-8 text-gray-400" />
+                        </div>
+
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag3,
+                                  }}
+                                >
+                                  <Shield className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.sensitivePermissions.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    Sensitive Permissions
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag2,
+                                  }}
+                                >
+                                  <Shield className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.mfaRequiredPermissions.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    MFA Required
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="p-2 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: color.tertiary.tag4,
+                                  }}
+                                >
+                                  <Users className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-3xl font-bold text-black">
+                                    {permissionsSummary.data.roles.toLocaleString()}
+                                  </p>
+                                  <p
+                                    className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                  >
+                                    Total Roles
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="p-2 rounded-full flex items-center justify-center"
+                                style={{ backgroundColor: color.tertiary.tag1 }}
+                              >
+                                <Shield className="h-5 w-5 text-white" />
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-3xl font-bold text-black">
+                                  {permissionsList.length.toLocaleString()}
+                                </p>
+                                <p
+                                  className={`${tw.cardSubHeading} ${tw.textSecondary}`}
+                                >
+                                  Total Permissions
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
-                    {hasCategories && (
+
+                    {/* Permissions by Category */}
+                    {Object.keys(permissionsByCategory).length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-3">
                           Permissions by Category
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {permissions.permissions_by_category &&
-                            Object.entries(
-                              permissions.permissions_by_category
-                            ).map(([category, count]) => (
+                          {Object.entries(permissionsByCategory)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([category, count]) => (
                               <div
                                 key={category}
-                                className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                                className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-sm transition-shadow"
                               >
-                                <p className="text-xs text-gray-600 mb-1 capitalize">
+                                <p className="text-xs text-gray-600 mb-2 capitalize font-medium">
                                   {category.replace(/_/g, " ")}
                                 </p>
-                                <p
-                                  className="text-xl font-bold"
-                                  style={{ color: color.primary.accent }}
-                                >
-                                  {count as number}
+                                <p className="text-2xl font-bold text-black">
+                                  {count}
                                 </p>
                               </div>
                             ))}
                         </div>
                       </div>
                     )}
-                    {hasRoles && permissions.data?.roles && (
+
+                    {/* All Permissions List */}
+                    {hasPermissions && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                          Assigned Roles
+                          All Permissions ({permissionsList.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                          {permissionsList.map((perm) => (
+                            <div
+                              key={perm.id}
+                              className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:bg-gray-100 transition-colors"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {perm.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1 font-mono">
+                                    {perm.code}
+                                  </p>
+                                  {perm.description && (
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {perm.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <CheckCircle
+                                  className="w-4 h-4 flex-shrink-0 mt-0.5"
+                                  style={{ color: color.status.success }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Assigned Roles */}
+                    {hasRoles && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                          Assigned Roles ({rolesList.length})
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {permissions.data.roles.map(
-                            (
-                              role:
-                                | string
-                                | { name?: string; code?: string; id?: number },
-                              idx: number
-                            ) => (
-                              <span
-                                key={idx}
-                                className="px-3 py-1.5 rounded-md text-sm font-medium"
-                                style={{
-                                  backgroundColor: `${color.primary.accent}15`,
-                                  color: color.primary.accent,
-                                }}
-                              >
-                                {typeof role === "string"
-                                  ? role
-                                  : role.name || role.code || `Role ${idx + 1}`}
-                              </span>
-                            )
-                          )}
+                          {rolesList.map((role) => (
+                            <span
+                              key={role.id}
+                              className="px-3 py-1.5 rounded-md text-sm font-medium"
+                              style={{
+                                backgroundColor: `${color.primary.accent}15`,
+                                color: color.primary.accent,
+                              }}
+                            >
+                              {role.name || role.code || `Role ${role.id}`}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -659,6 +821,66 @@ export default function UserDetailsPage() {
                       <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {allReports.length > directReports.length && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  All Reports - Full Hierarchy ({allReports.length})
+                </h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  Includes direct reports and all indirect reports in the
+                  hierarchy
+                </p>
+                <div className="space-y-2">
+                  {allReports.map((report) => {
+                    const isDirectReport = directReports.some(
+                      (dr) => dr.id === report.id
+                    );
+                    return (
+                      <div
+                        key={report.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer ${
+                          isDirectReport
+                            ? "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                            : "bg-blue-50 border-blue-200 hover:bg-blue-100"
+                        }`}
+                        onClick={() =>
+                          navigate(`/dashboard/user-management/${report.id}`, {
+                            state: { returnTo },
+                          })
+                        }
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                            style={{ backgroundColor: color.primary.accent }}
+                          >
+                            {getInitials(report.first_name, report.last_name)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-gray-900">
+                                {report.first_name} {report.last_name}
+                              </p>
+                              {isDirectReport && (
+                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700">
+                                  Direct
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600">
+                              {report.email_address || report.email}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
