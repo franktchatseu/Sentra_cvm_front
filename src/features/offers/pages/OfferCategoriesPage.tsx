@@ -330,54 +330,7 @@ function OffersModal({
   };
 
   const handleRemoveOffer = async (offerId: number | string) => {
-    if (!category) return;
-
-    try {
-      setRemovingOfferId(offerId);
-      const offerResponse = await offerService.getOfferById(
-        Number(offerId),
-        true
-      );
-      const offerData = offerResponse.data;
-      const catalogTag = buildCatalogTag(category.id);
-
-      if (!offerData) {
-        showError("Offer details not found");
-        return;
-      }
-
-      const primaryCategoryId = Number(offerData.category_id);
-      if (
-        !Number.isNaN(primaryCategoryId) &&
-        primaryCategoryId === Number(category.id)
-      ) {
-        showError(
-          "Cannot remove this offer because this catalog is its primary category"
-        );
-        return;
-      }
-
-      const tags = Array.isArray(offerData.tags) ? offerData.tags : [];
-      if (!tags.includes(catalogTag)) {
-        showError("Offer is not tagged with this catalog");
-        return;
-      }
-
-      const updatedTags = tags.filter((tag) => tag !== catalogTag);
-      await offerService.updateOffer(Number(offerId), { tags: updatedTags });
-      showSuccess("Offer removed from catalog");
-      await loadOffers();
-      await onRefreshCounts();
-      await onRefreshCategories();
-    } catch (err) {
-      showError(
-        err instanceof Error
-          ? err.message
-          : "Failed to remove offer from catalog"
-      );
-    } finally {
-      setRemovingOfferId(null);
-    }
+    showSuccess("Can't access this action");
   };
 
   // const handleCreateOffer = () => {
@@ -1466,10 +1419,10 @@ function OfferCategoriesPage() {
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
-                  <h3 className={`${tw.subHeading} text-gray-900 truncate`}>
+                  <h3 className={`${tw.cardHeading} text-gray-900 truncate`}>
                     {category.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-0.5">
+                  <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
                     {(() => {
                       const categoryId =
                         typeof category.id === "string"

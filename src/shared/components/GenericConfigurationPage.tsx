@@ -393,16 +393,8 @@ export default function GenericConfigurationPage({
         <div className="flex items-center gap-3">
           <button
             onClick={handleCreateItem}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-lg font-semibold flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.interactive.hover;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
           >
             <Plus className="w-4 h-4" />
             {config.createButtonText}
@@ -456,7 +448,7 @@ export default function GenericConfigurationPage({
             {!searchTerm && (
               <button
                 onClick={handleCreateItem}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
+                className="px-4 py-2 rounded-lg font-semibold flex items-center gap-2 mx-auto text-sm text-white"
                 style={{ backgroundColor: color.primary.action }}
               >
                 <Plus className="w-4 h-4" />

@@ -343,54 +343,7 @@ function SegmentsModal({
   };
 
   const handleRemoveSegment = async (segmentId: number | string) => {
-    if (!category) return;
-
-    try {
-      setRemovingSegmentId(segmentId);
-      const segmentResponse = await segmentService.getSegmentById(
-        Number(segmentId),
-        true
-      );
-      const segmentData = segmentResponse.data as Segment | undefined;
-      if (!segmentData) {
-        showError("Segment details not found");
-        return;
-      }
-
-      const catalogTag = buildSegmentCatalogTag(category.id);
-      const primaryCategoryId = Number(segmentData.category);
-      if (
-        !Number.isNaN(primaryCategoryId) &&
-        primaryCategoryId === Number(category.id)
-      ) {
-        showError(
-          "Cannot remove this segment because this catalog is its primary category"
-        );
-        return;
-      }
-
-      const tags = Array.isArray(segmentData.tags) ? segmentData.tags : [];
-      if (!tags.includes(catalogTag)) {
-        showError("Segment is not tagged with this catalog");
-        return;
-      }
-
-      const updatedTags = tags.filter((tag) => tag !== catalogTag);
-      await segmentService.updateSegment(Number(segmentId), {
-        tags: updatedTags,
-      });
-      showToast("Segment removed from catalog");
-      await loadCategorySegments();
-      await onRefreshCategories();
-    } catch (err) {
-      showError(
-        err instanceof Error
-          ? err.message
-          : "Failed to remove segment from catalog"
-      );
-    } finally {
-      setRemovingSegmentId(null);
-    }
+    showToast("info", "Can't access this action");
   };
 
   return (
@@ -1058,7 +1011,7 @@ export default function SegmentCategoriesPage() {
                   <h3 className={`${tw.cardHeading} text-gray-900`}>
                     {category.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-0.5">
+                  <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
                     {segmentCounts[category.id] || 0} segment
                     {segmentCounts[category.id] !== 1 ? "s" : ""}
                   </p>

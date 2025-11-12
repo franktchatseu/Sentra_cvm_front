@@ -78,7 +78,10 @@ export default function HeadlessSelect({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Listbox.Options className="absolute z-[9999] mt-1 max-h-60 w-full min-w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm">
+            <Listbox.Options
+              className="absolute z-[9999] mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm"
+              style={{ minWidth: "100%" }}
+            >
               {searchable && (
                 <div className="px-3 py-2 border-b border-gray-200">
                   <input
@@ -93,7 +96,7 @@ export default function HeadlessSelect({
               )}
 
               {filteredOptions.length === 0 ? (
-                <div className="relative cursor-default select-none py-2.5 pl-10 pr-4 text-gray-500">
+                <div className="relative cursor-default select-none py-2.5 pl-10 pr-6 text-gray-500 whitespace-nowrap">
                   No options found.
                 </div>
               ) : (
@@ -103,7 +106,7 @@ export default function HeadlessSelect({
                     value={option.value}
                     disabled={option.disabled}
                     className={({ active, disabled }) =>
-                      `relative cursor-default select-none py-2.5 pl-10 pr-4 transition-colors duration-150 ${
+                      `relative cursor-default select-none py-2.5 pl-10 pr-6 transition-colors duration-150 whitespace-nowrap ${
                         active ? "bg-gray-100 text-gray-900" : "text-gray-900"
                       } ${
                         disabled

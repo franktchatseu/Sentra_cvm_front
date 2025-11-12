@@ -18,6 +18,7 @@ import { productService } from "../../features/products/services/productService"
 import { segmentService } from "../../features/segments/services/segmentService";
 import { offerCategoryService } from "../../features/offers/services/offerCategoryService";
 import { productCategoryService } from "../../features/products/services/productCategoryService";
+import { campaignService } from "../../features/campaigns/services/campaignService";
 import {
   Offer,
   OfferStatusEnum,
@@ -29,13 +30,14 @@ import {
   Segment,
   UpdateSegmentRequest,
 } from "../../features/segments/types/segment";
+import { BackendCampaignType } from "../../features/campaigns/types/campaign";
 
 const CATALOG_TAG_PREFIX = "catalog:";
 
 const buildCatalogTag = (categoryId: number | string) =>
   `${CATALOG_TAG_PREFIX}${categoryId}`;
 
-type ItemType = "offers" | "products" | "segments";
+type ItemType = "offers" | "products" | "segments" | "campaigns";
 
 interface AssignItemsPageProps {
   itemType: ItemType;
@@ -46,7 +48,9 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
   const { catalogId } = useParams<{ catalogId: string }>();
   const { success: showSuccess, error: showError } = useToast();
 
-  const [items, setItems] = useState<(Offer | Product | Segment)[]>([]);
+  const [items, setItems] = useState<
+    (Offer | Product | Segment | BackendCampaignType)[]
+  >([]);
   const [assignedItemIds, setAssignedItemIds] = useState<(number | string)[]>(
     []
   );
@@ -57,7 +61,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
   const [assigning, setAssigning] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState<
-    (Offer | Product | Segment)[]
+    (Offer | Product | Segment | BackendCampaignType)[]
   >([]);
   const [catalogName, setCatalogName] = useState("");
 
@@ -91,6 +95,13 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
           plural: "segments",
           icon: <Users className="w-5 h-5" />,
           title: "Assign Segments",
+        };
+      case "campaigns":
+        return {
+          singular: "campaign",
+          plural: "campaigns",
+          icon: <MessageSquare className="w-5 h-5" />,
+          title: "Assign Campaigns",
         };
     }
   };
@@ -126,6 +137,17 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
             );
             setCatalogName(catalog.data?.name || "");
             break;
+          case "campaigns":
+            const campaignCatalog =
+              await campaignService.getCampaignCategoryById(
+                Number(catalogId),
+                true
+              );
+            setCatalogName(
+              (campaignCatalog as { data?: { name?: string } })?.data?.name ||
+                ""
+            );
+            break;
         }
       } catch {
         // Failed to load catalog name
@@ -141,7 +163,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
       try {
         setLoading(true);
         let response;
-        let itemsData: (Offer | Product | Segment)[] = [];
+        let itemsData: (Offer | Product | Segment | BackendCampaignType)[] = [];
 
         switch (itemType) {
           case "offers":
@@ -177,6 +199,13 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
             } else {
               itemsData = [];
             }
+            break;
+          case "campaigns":
+            response = await campaignService.getAllCampaigns({
+              pageSize: 100,
+              skipCache: true,
+            });
+            itemsData = (response.data || []) as BackendCampaignType[];
             break;
         }
 
@@ -289,6 +318,51 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                   }
                 }
                 break;
+              case "campaigns": {
+                // Get campaigns by category
+                try {
+                  const campaignsResponse =
+                    await campaignService.getCampaignsByCategory(
+                      Number(catalogId),
+                      { limit: 100, skipCache: true }
+                    );
+                  const campaigns = (campaignsResponse.data ||
+                    []) as BackendCampaignType[];
+                  const assignedSet = new Set<number | string>(
+                    campaigns.map((campaign) => campaign.id)
+                  );
+                  const catalogTag = buildCatalogTag(catalogId);
+                  (itemsData as BackendCampaignType[]).forEach((campaign) => {
+                    if (
+                      Array.isArray(campaign.tags) &&
+                      campaign.tags.includes(catalogTag)
+                    ) {
+                      assignedSet.add(campaign.id);
+                    }
+                    // Also check if category_id matches
+                    if (
+                      campaign.category_id &&
+                      Number(campaign.category_id) === Number(catalogId)
+                    ) {
+                      assignedSet.add(campaign.id);
+                    }
+                  });
+                  assigned = Array.from(assignedSet);
+                } catch {
+                  // Fallback: check tags on all campaigns
+                  const catalogTag = buildCatalogTag(catalogId);
+                  assigned = (itemsData as BackendCampaignType[])
+                    .filter(
+                      (campaign) =>
+                        (campaign.category_id &&
+                          Number(campaign.category_id) === Number(catalogId)) ||
+                        (Array.isArray(campaign.tags) &&
+                          campaign.tags.includes(catalogTag))
+                    )
+                    .map((campaign) => campaign.id);
+                }
+                break;
+              }
             }
             setAssignedItemIds(assigned);
             setSelectedItemIds(new Set());
@@ -493,6 +567,42 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
               await segmentService.updateSegment(Number(itemId), updatePayload);
               break;
             }
+            case "campaigns": {
+              const campaign = items.find((item) => item.id === itemId) as
+                | BackendCampaignType
+                | undefined;
+              const existingTags = Array.isArray(campaign?.tags)
+                ? campaign?.tags ?? []
+                : [];
+              const updatedTagsSet = new Set(existingTags);
+              updatedTagsSet.add(catalogTag);
+              const updatedTags = Array.from(updatedTagsSet);
+
+              const updatePayload: Partial<BackendCampaignType> = {};
+
+              if (!campaign?.category_id && !Number.isNaN(catalogIdNumber)) {
+                updatePayload.category_id = catalogIdNumber;
+              }
+
+              if (
+                updatedTags.length !== existingTags.length ||
+                (!campaign?.tags && updatedTags.length > 0)
+              ) {
+                updatePayload.tags = updatedTags;
+              }
+
+              if (Object.keys(updatePayload).length === 0) {
+                success++;
+                successfulAssignments.push(itemId);
+                continue;
+              }
+
+              await campaignService.updateCampaign(
+                Number(itemId),
+                updatePayload
+              );
+              break;
+            }
           }
           success++;
           successfulAssignments.push(itemId);
@@ -544,13 +654,18 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
   };
 
   // Get status display
-  const getStatusDisplay = (item: Offer | Product | Segment) => {
+  const getStatusDisplay = (
+    item: Offer | Product | Segment | BackendCampaignType
+  ) => {
     if (itemType === "offers") {
       const offer = item as Offer;
       return offer.status || "unknown";
     } else if (itemType === "products") {
       const product = item as Product;
       return product.is_active ? "active" : "inactive";
+    } else if (itemType === "campaigns") {
+      const campaign = item as BackendCampaignType;
+      return campaign.status || "unknown";
     } else {
       const segment = item as Segment;
       return segment.is_active ? "active" : "inactive";
@@ -558,12 +673,17 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
   };
 
   // Get type display
-  const getTypeDisplay = (item: Offer | Product | Segment) => {
+  const getTypeDisplay = (
+    item: Offer | Product | Segment | BackendCampaignType
+  ) => {
     if (itemType === "offers") {
       const offer = item as Offer;
       return offer.offer_type || "N/A";
     } else if (itemType === "products") {
       return "N/A"; // Products don't have a type field
+    } else if (itemType === "campaigns") {
+      const campaign = item as BackendCampaignType;
+      return campaign.campaign_type || "N/A";
     } else {
       const segment = item as Segment;
       return segment.type || "N/A";
@@ -571,11 +691,14 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
   };
 
   // Get created at display
-  const getCreatedAtDisplay = (item: Offer | Product | Segment) => {
+  const getCreatedAtDisplay = (
+    item: Offer | Product | Segment | BackendCampaignType
+  ) => {
     const createdAt =
       (item as Offer).created_at ||
       (item as Product).created_at ||
-      (item as Segment).created_at;
+      (item as Segment).created_at ||
+      (item as BackendCampaignType).created_at;
     return createdAt ? new Date(createdAt).toLocaleDateString() : "N/A";
   };
 
@@ -875,12 +998,20 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                   >
                     Status
                   </th>
-                  {itemType !== "products" && (
+                  {itemType !== "products" && itemType !== "campaigns" && (
                     <th
                       className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Type
+                    </th>
+                  )}
+                  {itemType === "campaigns" && (
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Campaign Type
                     </th>
                   )}
                   <th
@@ -954,7 +1085,14 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                       <td className="px-6 py-4">
                         {getStatusBadge(getStatusDisplay(item))}
                       </td>
-                      {itemType !== "products" && (
+                      {itemType !== "products" && itemType !== "campaigns" && (
+                        <td className="px-6 py-4">
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">
+                            {getTypeDisplay(item)}
+                          </span>
+                        </td>
+                      )}
+                      {itemType === "campaigns" && (
                         <td className="px-6 py-4">
                           <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">
                             {getTypeDisplay(item)}

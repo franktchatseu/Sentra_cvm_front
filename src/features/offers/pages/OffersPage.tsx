@@ -331,76 +331,105 @@ export default function OffersPage() {
       setDropdownPosition(null);
     } else {
       setShowActionMenu(offerId);
-      
-      // Calculate position from the clicked button
+
+      // Calculate position from the clicked button - always display below
       if (event && event.currentTarget) {
-        const buttonRect = event.currentTarget.getBoundingClientRect();
+        const button = event.currentTarget;
+        const buttonRect = button.getBoundingClientRect();
         const dropdownWidth = 288; // w-72 = 288px
         const spacing = 4;
         const padding = 8;
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        const estimatedDropdownContentHeight = 600;
 
+        // Estimate dropdown content height (approximate max height needed)
+        const estimatedDropdownHeight = 450;
+        const requiredSpaceBelow = estimatedDropdownHeight + spacing + padding;
+
+        // Check if we need to scroll to show dropdown fully
         const spaceBelow = viewportHeight - buttonRect.bottom - padding;
-        const spaceAbove = buttonRect.top - padding;
 
-        let top: number;
-        let maxHeight: number;
+        // Find the table row containing this button
+        const tableRow = button.closest("tr");
 
-        if (
-          spaceBelow >= 250 ||
-          (spaceBelow > spaceAbove && spaceBelow >= 200)
-        ) {
-          top = buttonRect.bottom + spacing;
-          maxHeight = viewportHeight - top - padding;
-        } else if (
-          spaceAbove >= 250 ||
-          (spaceAbove > spaceBelow && spaceAbove >= 200)
-        ) {
-          maxHeight = Math.min(
-            estimatedDropdownContentHeight,
-            spaceAbove - spacing
-          );
-          top = buttonRect.top - maxHeight - spacing;
-          if (top < padding) {
-            top = padding;
-            maxHeight = buttonRect.top - padding - spacing;
+        if (spaceBelow < requiredSpaceBelow && tableRow) {
+          // Calculate target position: we want the row positioned so dropdown fits below
+          // Add extra buffer to ensure dropdown is fully visible
+          const buffer = 50; // Extra pixels for safety
+          const targetButtonBottom =
+            viewportHeight - requiredSpaceBelow - buffer;
+          const currentButtonBottom = buttonRect.bottom;
+          const scrollOffset = currentButtonBottom - targetButtonBottom;
+
+          // Scroll the window/page to position row correctly
+          if (scrollOffset > 0) {
+            // Get current scroll position
+            const currentScrollY = window.scrollY || window.pageYOffset || 0;
+            const newScrollY = currentScrollY + scrollOffset;
+
+            // Get max scroll position
+            const documentHeight = Math.max(
+              document.documentElement.scrollHeight,
+              document.body.scrollHeight
+            );
+            const maxScrollY = Math.max(0, documentHeight - window.innerHeight);
+            const finalScrollY = Math.min(newScrollY, maxScrollY);
+
+            // Scroll to the calculated position
+            window.scrollTo({
+              top: finalScrollY,
+              behavior: "smooth",
+            });
           }
-        } else {
-          if (spaceBelow >= spaceAbove) {
-            top = buttonRect.bottom + spacing;
-            maxHeight = Math.max(200, spaceBelow - spacing);
-          } else {
-            maxHeight = Math.max(200, spaceAbove - spacing);
-            top = buttonRect.top - maxHeight - spacing;
-            if (top < padding) {
-              top = padding;
-              maxHeight = Math.max(200, buttonRect.top - padding - spacing);
+
+          // After scroll completes, recalculate position
+          // Use longer timeout to ensure scroll animation completes
+          setTimeout(() => {
+            const updatedButtonRect = button.getBoundingClientRect();
+            const updatedSpaceBelow =
+              window.innerHeight - updatedButtonRect.bottom - padding;
+
+            // Position dropdown below button
+            const top = updatedButtonRect.bottom + spacing;
+
+            // Calculate left position (right-align with button)
+            let left = updatedButtonRect.right - dropdownWidth;
+            if (left + dropdownWidth > window.innerWidth - padding) {
+              left = window.innerWidth - dropdownWidth - padding;
             }
+            if (left < padding) {
+              left = padding;
+            }
+
+            // Use large maxHeight to show all options
+            // After scrolling, we should have enough space
+            const maxHeight = Math.max(
+              estimatedDropdownHeight,
+              updatedSpaceBelow + 100
+            );
+
+            setDropdownPosition({ top, left, maxHeight });
+          }, 400); // Wait longer for smooth scroll animation to complete
+        } else {
+          // Enough space - position normally without scrolling
+          const top = buttonRect.bottom + spacing;
+
+          // Calculate left position (right-align with button)
+          let left = buttonRect.right - dropdownWidth;
+          if (left + dropdownWidth > viewportWidth - padding) {
+            left = viewportWidth - dropdownWidth - padding;
           }
-        }
+          if (left < padding) {
+            left = padding;
+          }
 
-        maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
-        maxHeight = Math.max(maxHeight, 200);
-
-        if (top + maxHeight > viewportHeight - padding) {
-          top = viewportHeight - maxHeight - padding;
+          // Use full estimated height since we have enough space (no scrolling needed)
+          setDropdownPosition({
+            top,
+            left,
+            maxHeight: estimatedDropdownHeight,
+          });
         }
-        if (top < padding) {
-          top = padding;
-          maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
-        }
-
-        let left = buttonRect.right - dropdownWidth;
-        if (left + dropdownWidth > viewportWidth - padding) {
-          left = viewportWidth - dropdownWidth - padding;
-        }
-        if (left < padding) {
-          left = padding;
-        }
-
-        setDropdownPosition({ top, left, maxHeight });
       }
     }
   };
@@ -1142,8 +1171,8 @@ export default function OffersPage() {
                           }}
                         >
                           <button
-                            onClick={() =>
-                              offer.id && handleActionMenuToggle(offer.id)
+                            onClick={(e) =>
+                              offer.id && handleActionMenuToggle(offer.id, e)
                             }
                             className={`${tw.textMuted} hover:${tw.textPrimary} p-1 rounded`}
                             title="More Actions"
@@ -1158,109 +1187,7 @@ export default function OffersPage() {
 
                 {/* Render dropdown menus via portal outside the table */}
                 {filteredOffers.map((offer) => {
-                  if (
-                    showActionMenu === offer.id &&
-                    actionMenuRefs.current[offer.id!]
-                  ) {
-                    const buttonRect =
-                      actionMenuRefs.current[
-                        offer.id!
-                      ]!.getBoundingClientRect();
-
-                    // Smart positioning to prevent cutoff
-                    const dropdownWidth = 288; // w-72 = 288px
-                    const spacing = 4;
-                    const padding = 8; // Padding from viewport edges
-                    const viewportWidth = window.innerWidth;
-                    const viewportHeight = window.innerHeight;
-                    const estimatedDropdownContentHeight = 600; // Estimated full content height
-
-                    // Calculate available space from button position
-                    const spaceBelow =
-                      viewportHeight - buttonRect.bottom - padding;
-                    const spaceAbove = buttonRect.top - padding;
-
-                    // Determine vertical position (above or below)
-                    let top: number;
-                    let maxHeight: number;
-
-                    // Strategy: Show below by default, but flip to above if not enough space
-                    // and there's more space above
-                    if (
-                      spaceBelow >= 250 ||
-                      (spaceBelow > spaceAbove && spaceBelow >= 200)
-                    ) {
-                      // Enough space below - show below button
-                      top = buttonRect.bottom + spacing;
-                      // Calculate max height to fit in viewport
-                      maxHeight = viewportHeight - top - padding;
-                    } else if (
-                      spaceAbove >= 250 ||
-                      (spaceAbove > spaceBelow && spaceAbove >= 200)
-                    ) {
-                      // More space above - show above button
-                      // Calculate how much height we can use
-                      maxHeight = Math.min(
-                        estimatedDropdownContentHeight,
-                        spaceAbove - spacing
-                      );
-                      top = buttonRect.top - maxHeight - spacing;
-
-                      // If calculated top is above viewport, adjust
-                      if (top < padding) {
-                        top = padding;
-                        maxHeight = buttonRect.top - padding - spacing;
-                      }
-                    } else {
-                      // Very little space - use the side with more space
-                      if (spaceBelow >= spaceAbove) {
-                        top = buttonRect.bottom + spacing;
-                        maxHeight = Math.max(200, spaceBelow - spacing);
-                      } else {
-                        maxHeight = Math.max(200, spaceAbove - spacing);
-                        top = buttonRect.top - maxHeight - spacing;
-                        if (top < padding) {
-                          top = padding;
-                          maxHeight = Math.max(
-                            200,
-                            buttonRect.top - padding - spacing
-                          );
-                        }
-                      }
-                    }
-
-                    // Ensure maxHeight doesn't exceed viewport and is reasonable
-                    maxHeight = Math.min(
-                      maxHeight,
-                      viewportHeight - padding * 2
-                    );
-                    maxHeight = Math.max(maxHeight, 200);
-
-                    // Final top position check - ensure it fits in viewport
-                    if (top + maxHeight > viewportHeight - padding) {
-                      top = viewportHeight - maxHeight - padding;
-                    }
-                    if (top < padding) {
-                      top = padding;
-                      maxHeight = Math.min(
-                        maxHeight,
-                        viewportHeight - padding * 2
-                      );
-                    }
-
-                    // Calculate horizontal position (align to right edge of button)
-                    let left = buttonRect.right - dropdownWidth;
-
-                    // Ensure dropdown doesn't overflow on the right
-                    if (left + dropdownWidth > viewportWidth - padding) {
-                      left = viewportWidth - dropdownWidth - padding;
-                    }
-
-                    // Ensure dropdown doesn't overflow on the left
-                    if (left < padding) {
-                      left = padding;
-                    }
-
+                  if (showActionMenu === offer.id && dropdownPosition) {
                     return createPortal(
                       <div
                         ref={(el) => {
@@ -1268,11 +1195,11 @@ export default function OffersPage() {
                         }}
                         className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4 w-72"
                         style={{
-                          maxHeight: `${maxHeight}px`,
-                          overflowY: "auto",
                           zIndex: 99999,
-                          top: `${top}px`,
-                          left: `${left}px`,
+                          top: `${dropdownPosition.top}px`,
+                          left: `${dropdownPosition.left}px`,
+                          maxHeight: `${dropdownPosition.maxHeight}px`,
+                          overflowY: "auto",
                         }}
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}

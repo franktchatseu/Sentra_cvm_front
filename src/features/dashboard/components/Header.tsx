@@ -21,7 +21,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const [isLoadingRole, setIsLoadingRole] = useState<boolean>(true);
 
   const loadCurrentUserRole = useCallback(async () => {
-    if (!user?.email) {
+    if (!user?.user_id) {
       setIsLoadingRole(false);
       return;
     }
@@ -39,29 +39,16 @@ export default function Header({ onMenuClick }: HeaderProps) {
       });
       setRoleLookup(mappedRoles);
 
-      // Try to get user by email first (more reliable)
+      // Get user by ID
       let fullUser: FullUserType | null = null;
-      try {
-        const userResponseByEmail = await userService.getUserByEmail(
-          user.email,
-          true
-        );
-        if (userResponseByEmail.success && userResponseByEmail.data) {
-          fullUser = userResponseByEmail.data as FullUserType;
-        }
-      } catch (emailErr) {
-        console.log("Failed to get user by email, trying by ID:", emailErr);
-      }
-
-      // Fallback to user_id if email lookup failed
-      if (!fullUser && user?.user_id) {
+      if (user?.user_id) {
         try {
           const userResponseById = await userService.getUserById(user.user_id);
           if (userResponseById.success && userResponseById.data) {
             fullUser = userResponseById.data as FullUserType;
           }
         } catch (idErr) {
-          console.log("Failed to get user by ID:", idErr);
+          // Silently handle error and use fallback
         }
       }
 
@@ -73,19 +60,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
         const fallbackRoleName = fullUser.role_name;
 
         const finalRoleName = resolvedRoleName ?? fallbackRoleName ?? "User";
-        console.log("Current user role:", {
-          email: user.email,
-          user_id: user.user_id,
-          fullUser_id: fullUser.id,
-          primary_role_id: primaryRoleId,
-          role_name: fallbackRoleName,
-          resolvedRoleName,
-          finalRoleName,
-          mappedRoles,
-        });
         setCurrentUserRole(finalRoleName);
       } else {
-        console.warn("Could not fetch current user details, using fallback");
         setCurrentUserRole(
           user?.role
             ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
@@ -93,7 +69,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
         );
       }
     } catch (err) {
-      console.error("Failed to load current user role:", err);
       // Fallback to simple role from auth context
       setCurrentUserRole(
         user?.role
@@ -203,7 +178,7 @@ export function GuestHeader({
       try {
         await logout();
       } catch (error) {
-        console.error("Logout failed:", error);
+        // Silently handle logout error
       }
     }
   };

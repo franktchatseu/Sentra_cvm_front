@@ -1,4 +1,4 @@
-import { API_CONFIG, getAuthHeaders } from '../../../shared/services/api';
+import { API_CONFIG, getAuthHeaders } from "../../../shared/services/api";
 
 const BASE_URL = `${API_CONFIG.BASE_URL}/campaign-segment-offers`;
 
@@ -53,28 +53,27 @@ class CampaignSegmentOfferService {
   async createMapping(
     mapping: CampaignSegmentOfferMapping
   ): Promise<CampaignSegmentOfferResponse> {
-    console.log('Creating campaign-segment-offer mapping:', { mapping, url: BASE_URL });
-
     const response = await fetch(BASE_URL, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(mapping),
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('API Error Response:', {
+      console.error("API Error Response:", {
         status: response.status,
         statusText: response.statusText,
         body: errorBody,
         url: BASE_URL,
         mapping,
       });
-      throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
     }
 
     const result = await response.json();
-    console.log('Mapping created:', result);
     return result;
   }
 
@@ -84,8 +83,6 @@ class CampaignSegmentOfferService {
   async createBatchMappings(
     mappings: CampaignSegmentOfferMapping[]
   ): Promise<CampaignSegmentOfferResponse[]> {
-    console.log('Creating batch mappings:', { count: mappings.length });
-
     const results: CampaignSegmentOfferResponse[] = [];
 
     for (const mapping of mappings) {
@@ -93,36 +90,38 @@ class CampaignSegmentOfferService {
         const result = await this.createMapping(mapping);
         results.push(result);
       } catch (error) {
-        console.error('Error creating mapping:', { mapping, error });
+        console.error("Error creating mapping:", { mapping, error });
         throw error;
       }
     }
 
-    console.log('Batch mappings created successfully:', results.length);
     return results;
   }
 
   /**
    * Get all mappings for a specific segment
    */
-  async getMappingsBySegment(segmentId: string | number): Promise<GetSegmentMappingsResponse> {
+  async getMappingsBySegment(
+    segmentId: string | number
+  ): Promise<GetSegmentMappingsResponse> {
     const url = `${BASE_URL}/segment/${segmentId}`;
-    console.log('Fetching mappings for segment:', { segmentId, url });
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('API Error Response:', {
+      console.error("API Error Response:", {
         status: response.status,
         statusText: response.statusText,
         body: errorBody,
         url,
       });
-      throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
     }
 
     return response.json();
@@ -131,24 +130,27 @@ class CampaignSegmentOfferService {
   /**
    * Get all mappings for a specific campaign
    */
-  async getMappingsByCampaign(campaignId: string | number): Promise<GetSegmentMappingsResponse> {
+  async getMappingsByCampaign(
+    campaignId: string | number
+  ): Promise<GetSegmentMappingsResponse> {
     const url = `${BASE_URL}/campaign/${campaignId}`;
-    console.log('Fetching mappings for campaign:', { campaignId, url });
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('API Error Response:', {
+      console.error("API Error Response:", {
         status: response.status,
         statusText: response.statusText,
         body: errorBody,
         url,
       });
-      throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
     }
 
     return response.json();
@@ -159,22 +161,23 @@ class CampaignSegmentOfferService {
    */
   async deleteMapping(id: number): Promise<void> {
     const url = `${BASE_URL}/${id}`;
-    console.log('Deleting mapping:', { id, url });
 
     const response = await fetch(url, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('API Error Response:', {
+      console.error("API Error Response:", {
         status: response.status,
         statusText: response.statusText,
         body: errorBody,
         url,
       });
-      throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, details: ${errorBody}`
+      );
     }
   }
 }

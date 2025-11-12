@@ -13,11 +13,8 @@ import {
   Play,
   Pause,
   Edit,
-  Copy,
   Archive,
   Trash2,
-  Download,
-  History,
   CheckCircle,
   Send,
   ChevronLeft,
@@ -25,11 +22,12 @@ import {
   Target,
   Clock,
   AlertCircle,
+  History,
+  Copy,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { campaignService } from "../services/campaignService";
-import { useFileDownload } from "../../../shared/hooks/useFileDownload";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
@@ -50,6 +48,9 @@ interface CampaignDisplay {
   objective?: string;
   startDate?: string;
   endDate?: string;
+  approval_status?: string;
+  code?: string;
+  created_at?: string;
   performance?: {
     sent: number;
     delivered: number;
@@ -61,7 +62,6 @@ interface CampaignDisplay {
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
-  const { downloadBlob } = useFileDownload();
   const { showToast } = useToast();
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
@@ -138,75 +138,104 @@ export default function CampaignsPage() {
     } else {
       setShowActionMenu(campaignId);
 
-      // Calculate position from the clicked button
+      // Calculate position from the clicked button - always display below
       if (event && event.currentTarget) {
-        const buttonRect = event.currentTarget.getBoundingClientRect();
+        const button = event.currentTarget;
+        const buttonRect = button.getBoundingClientRect();
         const dropdownWidth = 256; // w-64 = 256px
         const spacing = 4;
         const padding = 8;
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        const estimatedDropdownContentHeight = 600;
 
+        // Estimate dropdown content height (approximate max height needed)
+        const estimatedDropdownHeight = 450;
+        const requiredSpaceBelow = estimatedDropdownHeight + spacing + padding;
+
+        // Check if we need to scroll to show dropdown fully
         const spaceBelow = viewportHeight - buttonRect.bottom - padding;
-        const spaceAbove = buttonRect.top - padding;
 
-        let top: number;
-        let maxHeight: number;
+        // Find the table row containing this button
+        const tableRow = button.closest("tr");
 
-        if (
-          spaceBelow >= 250 ||
-          (spaceBelow > spaceAbove && spaceBelow >= 200)
-        ) {
-          top = buttonRect.bottom + spacing;
-          maxHeight = viewportHeight - top - padding;
-        } else if (
-          spaceAbove >= 250 ||
-          (spaceAbove > spaceBelow && spaceAbove >= 200)
-        ) {
-          maxHeight = Math.min(
-            estimatedDropdownContentHeight,
-            spaceAbove - spacing
-          );
-          top = buttonRect.top - maxHeight - spacing;
-          if (top < padding) {
-            top = padding;
-            maxHeight = buttonRect.top - padding - spacing;
+        if (spaceBelow < requiredSpaceBelow && tableRow) {
+          // Calculate target position: we want the row positioned so dropdown fits below
+          // Add extra buffer to ensure dropdown is fully visible
+          const buffer = 50; // Extra pixels for safety
+          const targetButtonBottom =
+            viewportHeight - requiredSpaceBelow - buffer;
+          const currentButtonBottom = buttonRect.bottom;
+          const scrollOffset = currentButtonBottom - targetButtonBottom;
+
+          // Scroll the window/page to position row correctly
+          if (scrollOffset > 0) {
+            // Get current scroll position
+            const currentScrollY = window.scrollY || window.pageYOffset || 0;
+            const newScrollY = currentScrollY + scrollOffset;
+
+            // Get max scroll position
+            const documentHeight = Math.max(
+              document.documentElement.scrollHeight,
+              document.body.scrollHeight
+            );
+            const maxScrollY = Math.max(0, documentHeight - window.innerHeight);
+            const finalScrollY = Math.min(newScrollY, maxScrollY);
+
+            // Scroll to the calculated position
+            window.scrollTo({
+              top: finalScrollY,
+              behavior: "smooth",
+            });
           }
-        } else {
-          if (spaceBelow >= spaceAbove) {
-            top = buttonRect.bottom + spacing;
-            maxHeight = Math.max(200, spaceBelow - spacing);
-          } else {
-            maxHeight = Math.max(200, spaceAbove - spacing);
-            top = buttonRect.top - maxHeight - spacing;
-            if (top < padding) {
-              top = padding;
-              maxHeight = Math.max(200, buttonRect.top - padding - spacing);
+
+          // After scroll completes, recalculate position
+          // Use longer timeout to ensure scroll animation completes
+          setTimeout(() => {
+            const updatedButtonRect = button.getBoundingClientRect();
+            const updatedSpaceBelow =
+              window.innerHeight - updatedButtonRect.bottom - padding;
+
+            // Position dropdown below button
+            const top = updatedButtonRect.bottom + spacing;
+
+            // Calculate left position (right-align with button)
+            let left = updatedButtonRect.right - dropdownWidth;
+            if (left + dropdownWidth > window.innerWidth - padding) {
+              left = window.innerWidth - dropdownWidth - padding;
             }
+            if (left < padding) {
+              left = padding;
+            }
+
+            // Use large maxHeight or no constraint to show all options
+            // After scrolling, we should have enough space
+            const maxHeight = Math.max(
+              estimatedDropdownHeight,
+              updatedSpaceBelow + 100
+            );
+
+            setDropdownPosition({ top, left, maxHeight });
+          }, 400); // Wait longer for smooth scroll animation to complete
+        } else {
+          // Enough space - position normally without scrolling
+          const top = buttonRect.bottom + spacing;
+
+          // Calculate left position (right-align with button)
+          let left = buttonRect.right - dropdownWidth;
+          if (left + dropdownWidth > viewportWidth - padding) {
+            left = viewportWidth - dropdownWidth - padding;
           }
-        }
+          if (left < padding) {
+            left = padding;
+          }
 
-        maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
-        maxHeight = Math.max(maxHeight, 200);
-
-        if (top + maxHeight > viewportHeight - padding) {
-          top = viewportHeight - maxHeight - padding;
+          // Use estimated height when we have enough space
+          setDropdownPosition({
+            top,
+            left,
+            maxHeight: estimatedDropdownHeight,
+          });
         }
-        if (top < padding) {
-          top = padding;
-          maxHeight = Math.min(maxHeight, viewportHeight - padding * 2);
-        }
-
-        let left = buttonRect.right - dropdownWidth;
-        if (left + dropdownWidth > viewportWidth - padding) {
-          left = viewportWidth - dropdownWidth - padding;
-        }
-        if (left < padding) {
-          left = padding;
-        }
-
-        setDropdownPosition({ top, left, maxHeight });
       }
     }
   };
@@ -215,7 +244,6 @@ export default function CampaignsPage() {
   const fetchCategories = useCallback(async () => {
     try {
       const response = await campaignService.getCampaignCategories();
-      console.log("Categories fetched:", response);
       type CategoryRecord = {
         id: number;
         name: string;
@@ -232,7 +260,6 @@ export default function CampaignsPage() {
         }>
       );
     } catch (error) {
-      console.error("Failed to fetch categories:", error);
       showToast(
         "error",
         "Failed to load campaign categories. Please try again."
@@ -246,21 +273,125 @@ export default function CampaignsPage() {
     try {
       setIsLoading(true);
 
-      // Calculate offset for pagination
-      const offset = (currentPage - 1) * pageSize;
+      // Check if we have any filters applied
+      const hasFilters =
+        (filters.categoryId && filters.categoryId !== "all") ||
+        (filters.approvalStatus && filters.approvalStatus !== "all") ||
+        filters.startDateFrom ||
+        filters.startDateTo ||
+        (selectedStatus && selectedStatus !== "all") ||
+        searchQuery.trim();
 
-      // Use new getCampaigns endpoint
-      const response = await campaignService.getCampaigns({
-        limit: pageSize,
-        offset: offset,
-        status: selectedStatus !== "all" ? selectedStatus : undefined,
-        search: searchQuery.trim() || undefined,
-        skipCache: true,
-      });
+      let response;
+      const MAX_LIMIT = 100;
 
-      // Transform backend campaigns to display format
-      const campaignsData: CampaignDisplay[] = response.data.map(
-        (campaign) => ({
+      if (hasFilters) {
+        // Use superSearchCampaigns for complex filtering
+        const superSearchParams: any = {
+          limit: MAX_LIMIT,
+          offset: 0,
+          skipCache: true,
+        };
+
+        if (searchQuery.trim()) {
+          superSearchParams.name = searchQuery.trim();
+        }
+
+        if (selectedStatus && selectedStatus !== "all") {
+          superSearchParams.status = selectedStatus;
+        }
+
+        if (filters.approvalStatus && filters.approvalStatus !== "all") {
+          superSearchParams.approvalStatus = filters.approvalStatus;
+        }
+
+        if (filters.categoryId && filters.categoryId !== "all") {
+          superSearchParams.categoryId = parseInt(filters.categoryId);
+        }
+
+        if (filters.startDateFrom) {
+          superSearchParams.startDateFrom = filters.startDateFrom;
+        }
+
+        if (filters.startDateTo) {
+          superSearchParams.startDateTo = filters.startDateTo;
+        }
+
+        response = await campaignService.superSearchCampaigns(
+          superSearchParams
+        );
+      } else {
+        // Fetch campaigns in batches of 100 (max allowed by backend)
+        let allCampaignsData: CampaignDisplay[] = [];
+        let offset = 0;
+        let hasMore = true;
+        let totalCampaignsFromAPI = 0;
+
+        while (hasMore) {
+          const batchResponse = await campaignService.getCampaigns({
+            limit: MAX_LIMIT,
+            offset: offset,
+            skipCache: true,
+          });
+
+          // Transform backend campaigns to display format
+          const campaignsData: CampaignDisplay[] = batchResponse.data.map(
+            (campaign) => ({
+              id: campaign.id,
+              name: campaign.name,
+              description: campaign.description || undefined,
+              status: campaign.status,
+              category_id: campaign.category_id || undefined,
+              objective: campaign.objective,
+              startDate: campaign.start_date || undefined,
+              endDate: campaign.end_date || undefined,
+              approval_status: campaign.approval_status,
+              code: campaign.code,
+              created_at: campaign.created_at,
+            })
+          );
+
+          allCampaignsData = [...allCampaignsData, ...campaignsData];
+
+          // Check if there are more campaigns to fetch
+          const pagination = batchResponse.pagination;
+          if (pagination) {
+            // Get total from first response
+            if (totalCampaignsFromAPI === 0 && pagination.total) {
+              totalCampaignsFromAPI = pagination.total;
+            }
+
+            // Check if we've fetched all campaigns
+            hasMore = pagination.hasMore || false;
+
+            // Safety check: stop if we've fetched all campaigns
+            if (
+              totalCampaignsFromAPI > 0 &&
+              allCampaignsData.length >= totalCampaignsFromAPI
+            ) {
+              hasMore = false;
+            }
+
+            // Also stop if we got fewer campaigns than requested (last page)
+            if (campaignsData.length < MAX_LIMIT) {
+              hasMore = false;
+            }
+
+            offset += MAX_LIMIT;
+          } else {
+            // If no pagination info, stop if we got less than MAX_LIMIT
+            hasMore = campaignsData.length === MAX_LIMIT;
+            offset += MAX_LIMIT;
+          }
+        }
+
+        response = { data: allCampaignsData, pagination: undefined };
+      }
+
+      // Transform response data to display format
+      let campaignsData: CampaignDisplay[] = [];
+      if (hasFilters && response) {
+        campaignsData = response.data.map((campaign) => ({
           id: campaign.id,
           name: campaign.name,
           description: campaign.description || undefined,
@@ -269,8 +400,13 @@ export default function CampaignsPage() {
           objective: campaign.objective,
           startDate: campaign.start_date || undefined,
           endDate: campaign.end_date || undefined,
-        })
-      );
+          approval_status: campaign.approval_status,
+          code: campaign.code,
+          created_at: campaign.created_at,
+        }));
+      } else if (response) {
+        campaignsData = response.data;
+      }
 
       // Helper function to generate consistent random values based on campaign ID
       const seededRandom = (seed: number, min: number, max: number) => {
@@ -382,16 +518,52 @@ export default function CampaignsPage() {
 
       setAllCampaignsUnfiltered(campaignsWithDummyData);
 
-      const finalCampaigns =
-        selectedStatus === "all"
-          ? campaignsWithDummyData.filter((c) => c.status !== "archived")
-          : campaignsWithDummyData;
+      // Apply client-side filtering only for status "all" (exclude archived)
+      let filtered = campaignsWithDummyData;
+      if (selectedStatus === "all") {
+        filtered = filtered.filter((c) => c.status !== "archived");
+      }
 
-      setCampaigns(finalCampaigns);
-      const total = response.pagination?.total || finalCampaigns.length;
-      setTotalCampaigns(total);
+      // Sort campaigns
+      if (filters.sortBy) {
+        filtered.sort((a, b) => {
+          let aValue: any;
+          let bValue: any;
+
+          switch (filters.sortBy) {
+            case "created_at":
+              aValue = new Date(a.created_at || 0).getTime();
+              bValue = new Date(b.created_at || 0).getTime();
+              break;
+            case "name":
+              aValue = a.name.toLowerCase();
+              bValue = b.name.toLowerCase();
+              break;
+            case "status":
+              aValue = a.status.toLowerCase();
+              bValue = b.status.toLowerCase();
+              break;
+            default:
+              return 0;
+          }
+
+          if (filters.sortDirection === "ASC") {
+            return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+          } else {
+            return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+          }
+        });
+      }
+
+      // Apply pagination after filtering
+      const totalFiltered = filtered.length;
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedCampaigns = filtered.slice(startIndex, endIndex);
+
+      setCampaigns(paginatedCampaigns);
+      setTotalCampaigns(totalFiltered);
     } catch (error) {
-      console.error("Failed to fetch campaigns:", error);
       showToast(
         "error",
         "Failed to load campaigns. Please try again in a moment."
@@ -481,7 +653,6 @@ export default function CampaignsPage() {
           }
         }
       } catch (error) {
-        console.error("Failed to fetch campaign stats:", error);
         // Fallback: calculate from all campaigns
         try {
           const campaignsResponse = await campaignService.getCampaigns({
@@ -656,68 +827,6 @@ export default function CampaignsPage() {
   };
 
   // Action handlers using service layer
-  const handleDuplicateCampaign = async (campaign: CampaignDisplay) => {
-    try {
-      const newName = `${campaign.name} (Copy)`;
-      const response = await campaignService.duplicateCampaign(campaign.id, {
-        newName,
-      });
-      showToast("success", "Campaign duplicated successfully!");
-      fetchCampaigns(); // Refresh campaigns list
-
-      // Optionally navigate to the duplicated campaign's edit page if response contains ID
-      // The response might have different field names depending on backend implementation
-      if (response && typeof response === "object") {
-        const clonedId =
-          (
-            response as {
-              clonedCampaignId?: number;
-              id?: number;
-              campaign_id?: number;
-            }
-          ).clonedCampaignId ||
-          (response as { id?: number }).id ||
-          (response as { campaign_id?: number }).campaign_id;
-        if (clonedId) {
-          navigate(`/dashboard/campaigns/${clonedId}/edit`);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to duplicate campaign:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to duplicate campaign";
-      showToast("error", errorMessage);
-    }
-  };
-
-  const handleCloneWithChanges = async (campaign: CampaignDisplay) => {
-    // TODO: Open a modal to collect modifications
-    // For now, navigate to edit page of the cloned campaign
-    try {
-      const newName = `Clone of ${campaign.name}`;
-      const response = await campaignService.cloneCampaignWithModifications(
-        campaign.id,
-        {
-          newName,
-          modifications: {}, // Empty modifications - user will edit in the edit page
-        }
-      );
-      showToast("success", "Campaign cloned successfully");
-      setShowActionMenu(null);
-
-      // Navigate to edit page of the newly cloned campaign
-      if (response.clonedCampaignId) {
-        navigate(`/dashboard/campaigns/${response.clonedCampaignId}/edit`);
-      } else {
-        fetchCampaigns(); // Fallback: just refresh list
-      }
-    } catch (error) {
-      console.error("Failed to clone campaign with modifications:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to clone campaign";
-      showToast("error", errorMessage);
-    }
-  };
 
   const handleArchiveCampaign = async (campaignId: number) => {
     try {
@@ -728,8 +837,6 @@ export default function CampaignsPage() {
       setShowActionMenu(null);
       fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
-      console.error("Failed to archive campaign:", error);
-
       // Extract error message from backend response
       let errorMessage = "Failed to archive campaign";
 
@@ -773,8 +880,6 @@ export default function CampaignsPage() {
       setCampaignToDelete(null);
       fetchCampaigns(); // Refresh campaigns list
     } catch (error) {
-      console.error("Failed to delete campaign:", error);
-
       // Extract error message from backend response
       let errorMessage = "Failed to delete campaign";
 
@@ -803,16 +908,6 @@ export default function CampaignsPage() {
     setCampaignToDelete(null);
   };
 
-  const handleExportCampaign = async (campaignId: number) => {
-    try {
-      const blob = await campaignService.exportCampaign(campaignId);
-      downloadBlob(blob, `campaign-${campaignId}-data.csv`);
-      setShowActionMenu(null);
-    } catch (error) {
-      console.error("Failed to export campaign:", error);
-    }
-  };
-
   const handlePauseCampaign = async (campaignId: number) => {
     try {
       const pauseResponse = await campaignService.pauseCampaign(campaignId);
@@ -835,7 +930,6 @@ export default function CampaignsPage() {
 
       showToast("success", "Campaign paused successfully");
     } catch (error) {
-      console.error("Failed to pause campaign:", error);
       showToast("error", "Failed to pause campaign");
     }
   };
@@ -862,19 +956,8 @@ export default function CampaignsPage() {
 
       showToast("success", "Campaign resumed successfully");
     } catch (error) {
-      console.error("Failed to resume campaign:", error);
       showToast("error", "Failed to resume campaign");
     }
-  };
-
-  const handleViewApprovalHistory = (campaignId: number) => {
-    navigate(`/dashboard/campaigns/${campaignId}/approval-history`);
-    setShowActionMenu(null);
-  };
-
-  const handleViewLifecycleHistory = (campaignId: number) => {
-    navigate(`/dashboard/campaigns/${campaignId}/lifecycle-history`);
-    setShowActionMenu(null);
   };
 
   const filteredCampaigns = campaigns;
@@ -933,7 +1016,7 @@ export default function CampaignsPage() {
         </div>
         <button
           onClick={() => navigate("/dashboard/campaigns/create")}
-          className="inline-flex items-center px-4 py-2 font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 text-sm whitespace-nowrap text-white"
+          className="inline-flex items-center px-4 py-2 font-semibold rounded-lg shadow-sm text-sm whitespace-nowrap text-white"
           style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-5 w-5 mr-2" />
@@ -997,7 +1080,7 @@ export default function CampaignsPage() {
         <HeadlessSelect
           options={statusOptions.map((option) => ({
             value: option.value,
-            label: `${option.label} (${option.count})`,
+            label: option.label,
           }))}
           value={selectedStatus}
           onChange={(value) => setSelectedStatus(value as string)}
@@ -1084,11 +1167,21 @@ export default function CampaignsPage() {
                     className={`group hover:bg-gray-50/30 transition-all duration-300 relative`}
                   >
                     <td className="px-3 sm:px-4 md:px-6 py-3 min-w-[200px]">
-                      <div
-                        className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
-                        title={campaign.name}
-                      >
-                        {campaign.name}
+                      <div>
+                        <div
+                          className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                          title={campaign.name}
+                        >
+                          {campaign.name}
+                        </div>
+                        {campaign.description && (
+                          <div
+                            className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                            title={campaign.description}
+                          >
+                            {campaign.description}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-3 sm:px-4 md:px-6 py-3">
@@ -1270,22 +1363,16 @@ export default function CampaignsPage() {
                           className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.action}]/10 transition-all duration-300`}
                           title="View Details"
                         >
-                          <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          <Eye className="w-4 h-4" />
                         </button>
                         {/* Only show pause/resume for campaigns that can be paused/resumed */}
                         {campaign.status === "paused" ? (
                           <button
                             onClick={() => handleResumeCampaign(campaign.id)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300`}
-                            style={{ backgroundColor: "transparent" }}
-                            onMouseLeave={(e) => {
-                              (
-                                e.target as HTMLButtonElement
-                              ).style.backgroundColor = "transparent";
-                            }}
+                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-gray-100 transition-all duration-300`}
                             title="Resume Campaign"
                           >
-                            <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            <Play className="w-4 h-4" />
                           </button>
                         ) : campaign.status === "active" ||
                           campaign.status === "running" ? (
@@ -1300,23 +1387,17 @@ export default function CampaignsPage() {
                             }}
                             title="Pause Campaign"
                           >
-                            <Pause className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            <Pause className="w-4 h-4" />
                           </button>
                         ) : null}
                         <button
                           onClick={() =>
                             navigate(`/dashboard/campaigns/${campaign.id}/edit`)
                           }
-                          className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-800 transition-all duration-300`}
-                          style={{ backgroundColor: "transparent" }}
-                          onMouseLeave={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = "transparent";
-                          }}
+                          className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-gray-100 transition-all duration-300`}
                           title="Edit"
                         >
-                          <Edit className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          <Edit className="w-4 h-4" />
                         </button>
                         <div
                           className="relative"
@@ -1330,7 +1411,7 @@ export default function CampaignsPage() {
                             }
                             className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.action}]/10 transition-all duration-300`}
                           >
-                            <MoreHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -1348,11 +1429,11 @@ export default function CampaignsPage() {
                         }}
                         className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-3 w-64"
                         style={{
-                          maxHeight: `${dropdownPosition.maxHeight}px`,
-                          overflowY: "auto",
                           zIndex: 99999,
                           top: `${dropdownPosition.top}px`,
                           left: `${dropdownPosition.left}px`,
+                          maxHeight: `${dropdownPosition.maxHeight}px`,
+                          overflowY: "auto",
                         }}
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
@@ -1367,7 +1448,7 @@ export default function CampaignsPage() {
                             setShowExecuteModal(true);
                             setShowActionMenu(null);
                           }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
                           <Play
                             className="w-4 h-4 mr-4"
@@ -1413,7 +1494,7 @@ export default function CampaignsPage() {
                                 showToast("error", errorMessage);
                               }
                             }}
-                            className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center px-4 py-3 text-sm text-black"
                           >
                             <Send
                               className="w-4 h-4 mr-4"
@@ -1435,7 +1516,7 @@ export default function CampaignsPage() {
                                 setShowApproveModal(true);
                                 setShowActionMenu(null);
                               }}
-                              className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              className="w-full flex items-center px-4 py-3 text-sm text-black"
                             >
                               <CheckCircle
                                 className="w-4 h-4 mr-4"
@@ -1453,7 +1534,7 @@ export default function CampaignsPage() {
                                 setShowRejectModal(true);
                                 setShowActionMenu(null);
                               }}
-                              className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                              className="w-full flex items-center px-4 py-3 text-sm text-black"
                             >
                               <Trash2 className="w-4 h-4 mr-4 text-red-600" />
                               Reject Campaign
@@ -1498,7 +1579,7 @@ export default function CampaignsPage() {
                                 showToast("error", errorMessage);
                               }
                             }}
-                            className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center px-4 py-3 text-sm text-black"
                           >
                             <Play
                               className="w-4 h-4 mr-4"
@@ -1531,7 +1612,7 @@ export default function CampaignsPage() {
                                 showToast("error", errorMessage);
                               }
                             }}
-                            className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center px-4 py-3 text-sm text-black"
                           >
                             <Pause
                               className="w-4 h-4 mr-4"
@@ -1541,37 +1622,6 @@ export default function CampaignsPage() {
                           </button>
                         )}
 
-                        <div className="border-t border-gray-200 my-2"></div>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDuplicateCampaign(campaign);
-                            setShowActionMenu(null);
-                          }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                        >
-                          <Copy
-                            className="w-4 h-4 mr-4"
-                            style={{ color: color.primary.action }}
-                          />
-                          Duplicate Campaign
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCloneWithChanges(campaign);
-                          }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                        >
-                          <Copy
-                            className="w-4 h-4 mr-4"
-                            style={{ color: color.primary.action }}
-                          />
-                          Clone with Changes
-                        </button>
-
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1580,7 +1630,7 @@ export default function CampaignsPage() {
                             );
                             setShowActionMenu(null);
                           }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
                           <Edit
                             className="w-4 h-4 mr-4"
@@ -1594,7 +1644,7 @@ export default function CampaignsPage() {
                             e.stopPropagation();
                             handleArchiveCampaign(campaign.id);
                           }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
                           <Archive
                             className="w-4 h-4 mr-4"
@@ -1606,52 +1656,13 @@ export default function CampaignsPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/dashboard/campaigns/${campaign.id}`);
                             setShowActionMenu(null);
+                            showToast(
+                              "info",
+                              "Can't access this functionality"
+                            );
                           }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                        >
-                          <Eye
-                            className="w-4 h-4 mr-4"
-                            style={{ color: color.primary.action }}
-                          />
-                          View Analytics
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExportCampaign(campaign.id);
-                          }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                        >
-                          <Download
-                            className="w-4 h-4 mr-4"
-                            style={{ color: color.primary.action }}
-                          />
-                          Export Data
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewApprovalHistory(campaign.id);
-                          }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
-                        >
-                          <CheckCircle
-                            className="w-4 h-4 mr-4"
-                            style={{ color: color.primary.action }}
-                          />
-                          Approval History
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewLifecycleHistory(campaign.id);
-                          }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-black hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
                           <History
                             className="w-4 h-4 mr-4"
@@ -1660,14 +1671,48 @@ export default function CampaignsPage() {
                           Lifecycle History
                         </button>
 
-                        <div className="border-t border-gray-200 my-2"></div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowActionMenu(null);
+                            showToast(
+                              "info",
+                              "Can't access this functionality"
+                            );
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black"
+                        >
+                          <Copy
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Clone Campaign
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowActionMenu(null);
+                            showToast(
+                              "info",
+                              "Can't access this functionality"
+                            );
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-black"
+                        >
+                          <Copy
+                            className="w-4 h-4 mr-4"
+                            style={{ color: color.primary.action }}
+                          />
+                          Duplicate Campaign
+                        </button>
 
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteCampaign(campaign.id, campaign.name);
                           }}
-                          className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          className="w-full flex items-center px-4 py-3 text-sm text-red-600"
                         >
                           <Trash2 className="w-4 h-4 mr-4 text-red-600" />
                           Delete Campaign
@@ -1883,8 +1928,8 @@ export default function CampaignsPage() {
                             }
                             className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${
                               filters.sortDirection === "ASC"
-                                ? "bg-[#3b8169] text-white border-[#3b8169]"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-#f9fafb"
+                                ? `${tw.button} border-transparent`
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                             }`}
                           >
                             ↑ Ascending
@@ -1895,8 +1940,8 @@ export default function CampaignsPage() {
                             }
                             className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${
                               filters.sortDirection === "DESC"
-                                ? "bg-[#3b8169] text-white border-[#3b8169]"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-#f9fafb"
+                                ? `${tw.button} border-transparent`
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                             }`}
                           >
                             ↓ Descending
@@ -1928,7 +1973,7 @@ export default function CampaignsPage() {
                     </button>
                     <button
                       onClick={() => setShowAdvancedFilters(false)}
-                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#3b8169] rounded-lg hover:bg-[#2d5f4a] transition-colors"
+                      className={`${tw.button} flex-1 px-4 py-2 text-sm`}
                     >
                       Apply Filters
                     </button>
