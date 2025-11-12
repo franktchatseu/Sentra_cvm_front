@@ -29,6 +29,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import SegmentModal from "../components/SegmentModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 
 export default function SegmentManagementPage() {
@@ -44,7 +45,14 @@ export default function SegmentManagementPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<
-    "static" | "dynamic" | "trigger" | "all"
+    | "static"
+    | "dynamic"
+    | "predictive"
+    | "behavioral"
+    | "demographic"
+    | "geographic"
+    | "transactional"
+    | "all"
   >("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -293,7 +301,7 @@ export default function SegmentManagementPage() {
         segmentService.getTypeDistribution(),
         segmentService.getCategoryDistribution(),
         segmentService.getLargestSegments(5),
-        segmentService.getStaleSegments(7),
+        segmentService.getStaleSegments(),
         segmentService.getSegmentStats(true),
       ]);
 
@@ -347,16 +355,10 @@ export default function SegmentManagementPage() {
       let segmentData: Segment[] = [];
 
       // Use searchSegments endpoint if there's a search term, otherwise use getSegments
+      // Note: Type filtering is done client-side only (backend doesn't support type parameter)
       if (debouncedSearchTerm) {
         const searchResponse = await segmentService.searchSegments({
           q: debouncedSearchTerm,
-          type:
-            typeFilter !== "all" &&
-            (typeFilter === "static" ||
-              typeFilter === "dynamic" ||
-              typeFilter === "trigger")
-              ? typeFilter
-              : undefined,
           skipCache: true,
         });
         segmentData = searchResponse.data || [];
@@ -364,14 +366,6 @@ export default function SegmentManagementPage() {
         const filters: SegmentFilters = {
           skipCache: true,
         };
-        if (
-          typeFilter !== "all" &&
-          (typeFilter === "static" ||
-            typeFilter === "dynamic" ||
-            typeFilter === "trigger")
-        ) {
-          filters.type = typeFilter;
-        }
         const response = await segmentService.getSegments(filters);
         segmentData = response.data || [];
       }
@@ -613,7 +607,9 @@ export default function SegmentManagementPage() {
       selectedTags.length === 0 ||
       selectedTags.some((tag) => (segment.tags || []).includes(tag));
 
-    return matchesSearch && matchesTags;
+    const matchesType = typeFilter === "all" || segment.type === typeFilter;
+
+    return matchesSearch && matchesTags && matchesType;
   });
 
   // Calculate statistics - use analytics data if available, otherwise fallback to client-side calculation
@@ -732,13 +728,6 @@ export default function SegmentManagementPage() {
                 <p className={`text-sm ${tw.textMuted} mt-1`}>
                   Active Segments
                 </p>
-                <p className={`text-xs ${tw.textMuted} mt-2`}>
-                  {stats.totalSegments > 0
-                    ? `${Math.round(
-                        (stats.activeSegments / stats.totalSegments) * 100
-                      )}% of total`
-                    : "0% of total"}
-                </p>
               </div>
             </div>
           </div>
@@ -757,10 +746,7 @@ export default function SegmentManagementPage() {
                   {stats.totalCustomers.toLocaleString()}
                 </p>
                 <p className={`text-sm ${tw.textMuted} mt-1`}>
-                  Total Customers
-                </p>
-                <p className={`text-xs ${tw.textMuted} mt-2`}>
-                  Across all segments
+                  Total customers in all segments
                 </p>
               </div>
             </div>
@@ -791,13 +777,14 @@ export default function SegmentManagementPage() {
                   )}
                 </p>
                 <p className={`text-sm ${tw.textMuted} mt-1`}>Top Segment</p>
-                <p className={`text-xs ${tw.textMuted} mt-2`}>
-                  {stats.largestSegments.length > 0
-                    ? `${(
-                        stats.largestSegments[0]?.member_count || 0
-                      ).toLocaleString()} members`
-                    : "No data available"}
-                </p>
+                {stats.largestSegments.length > 0 && (
+                  <p className={`text-xs ${tw.textMuted} mt-2`}>
+                    {(
+                      stats.largestSegments[0]?.member_count || 0
+                    ).toLocaleString()}{" "}
+                    members
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -822,6 +809,34 @@ export default function SegmentManagementPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
+            <HeadlessSelect
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "static", label: "Static" },
+                { value: "dynamic", label: "Dynamic" },
+                { value: "predictive", label: "Predictive" },
+                { value: "behavioral", label: "Behavioral" },
+                { value: "demographic", label: "Demographic" },
+                { value: "geographic", label: "Geographic" },
+                { value: "transactional", label: "Transactional" },
+              ]}
+              value={typeFilter}
+              onChange={(value) =>
+                setTypeFilter(
+                  (value as
+                    | "all"
+                    | "static"
+                    | "dynamic"
+                    | "predictive"
+                    | "behavioral"
+                    | "demographic"
+                    | "geographic"
+                    | "transactional") || "all"
+                )
+              }
+              placeholder="Filter by type"
+              className="min-w-[160px]"
+            />
             <button
               onClick={() => setShowAdvancedFilters(true)}
               className={`flex items-center px-4 py-2.5  rounded-lg bg-gray-50 transition-colors text-base font-medium`}
@@ -833,22 +848,11 @@ export default function SegmentManagementPage() {
         </div>
 
         {/* Active Filters Display */}
-        {(selectedTags.length > 0 || typeFilter !== "all") && (
+        {selectedTags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
             <span className={`text-sm font-medium ${tw.textPrimary} py-2`}>
               Active filters:
             </span>
-            {typeFilter !== "all" && (
-              <span className="inline-flex items-center px-3 py-1.5 text-sm bg-purple-50 text-purple-700 rounded-full border border-purple-200">
-                Type: {typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}
-                <button
-                  onClick={() => setTypeFilter("all")}
-                  className="ml-2 hover:text-purple-900"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
             {selectedTags.map((tag) => (
               <span
                 key={tag}
@@ -1443,76 +1447,33 @@ export default function SegmentManagementPage() {
                   >
                     Segment Type
                   </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="type"
-                        value="all"
-                        checked={typeFilter === "all"}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          setTypeFilter("all");
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="mr-3 text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className={`text-sm ${tw.textSecondary}`}>
-                        All Types
-                      </span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="type"
-                        value="dynamic"
-                        checked={typeFilter === "dynamic"}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          setTypeFilter("dynamic");
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="mr-3 text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className={`text-sm ${tw.textSecondary}`}>
-                        Dynamic
-                      </span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="type"
-                        value="static"
-                        checked={typeFilter === "static"}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          setTypeFilter("static");
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="mr-3 text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className={`text-sm ${tw.textSecondary}`}>
-                        Static
-                      </span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="type"
-                        value="trigger"
-                        checked={typeFilter === "trigger"}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          setTypeFilter("trigger");
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="mr-3 text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className={`text-sm ${tw.textSecondary}`}>
-                        Trigger
-                      </span>
-                    </label>
-                  </div>
+                  <HeadlessSelect
+                    options={[
+                      { value: "all", label: "All Types" },
+                      { value: "static", label: "Static" },
+                      { value: "dynamic", label: "Dynamic" },
+                      { value: "predictive", label: "Predictive" },
+                      { value: "behavioral", label: "Behavioral" },
+                      { value: "demographic", label: "Demographic" },
+                      { value: "geographic", label: "Geographic" },
+                      { value: "transactional", label: "Transactional" },
+                    ]}
+                    value={typeFilter}
+                    onChange={(value) =>
+                      setTypeFilter(
+                        (value as
+                          | "all"
+                          | "static"
+                          | "dynamic"
+                          | "predictive"
+                          | "behavioral"
+                          | "demographic"
+                          | "geographic"
+                          | "transactional") || "all"
+                      )
+                    }
+                    placeholder="Select segment type"
+                  />
                 </div>
 
                 {/* Tags Filter */}
@@ -1552,7 +1513,7 @@ export default function SegmentManagementPage() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                <div className="flex space-x-3 pt-4">
                   <button
                     onClick={() => {
                       setTypeFilter("all");

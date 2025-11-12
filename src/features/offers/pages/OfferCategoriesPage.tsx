@@ -572,6 +572,15 @@ function OfferCategoriesPage() {
     name: string;
     count: number;
   } | null>(null);
+  const [categoryPerformance, setCategoryPerformance] = useState<
+    Record<
+      number,
+      {
+        totalRevenue: number;
+        conversionRate: number;
+      }
+    >
+  >({});
 
   // Filter states
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -639,6 +648,7 @@ function OfferCategoriesPage() {
       // Load analytics data
       await loadUnusedCategories();
       await loadPopularCategory();
+      await loadCategoryPerformance();
       // Load offers first, then categories (to avoid race condition)
       await loadAllOffers();
       await loadCategories(true); // Always skip cache for fresh data
@@ -724,6 +734,34 @@ function OfferCategoriesPage() {
     } catch {
       // Failed to load popular category
       setPopularCategory(null);
+    }
+  };
+
+  const loadCategoryPerformance = async () => {
+    try {
+      const response = await offerService.getCategoryPerformance(true);
+      if (response.success && response.data) {
+        const performanceMap: Record<
+          number,
+          {
+            totalRevenue: number;
+            conversionRate: number;
+          }
+        > = {};
+
+        (response.data || []).forEach((item) => {
+          const categoryId = item.categoryId;
+          performanceMap[categoryId] = {
+            totalRevenue: item.totalRevenue || 0,
+            conversionRate: item.conversionRate || 0,
+          };
+        });
+
+        setCategoryPerformance(performanceMap);
+      }
+    } catch {
+      // Failed to load category performance
+      setCategoryPerformance({});
     }
   };
 
@@ -1394,58 +1432,9 @@ function OfferCategoriesPage() {
                 </p>
               )}
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <span className="text-sm text-gray-600">
-                  {(() => {
-                    const categoryId =
-                      typeof category.id === "string"
-                        ? parseInt(category.id, 10)
-                        : category.id;
-                    const count = categoryOfferCounts[categoryId];
-                    return count ? (
-                      <>
-                        {count.totalOffers} offer
-                        {count.totalOffers !== 1 ? "s" : ""}
-                        {count.activeOffers > 0 && (
-                          <span className="text-green-600 ml-1">
-                            ({count.activeOffers} active)
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {category.offer_count || 0} offer
-                        {category.offer_count !== 1 ? "s" : ""}
-                      </>
-                    );
-                  })()}
-                </span>
-                <button
-                  onClick={() => handleViewOffers(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
-                  title="View & Assign Offers"
-                >
-                  View Offers
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredOfferCategories.map((category) => (
-            <div
-              key={category.id}
-              className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
-              style={{ backgroundColor: color.surface.cards }}
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex-1">
-                  <h3 className={`${tw.cardHeading} text-gray-900 truncate`}>
-                    {category.name}
-                  </h3>
-                  <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
+              <div className="space-y-3 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
                     {(() => {
                       const categoryId =
                         typeof category.id === "string"
@@ -1469,42 +1458,168 @@ function OfferCategoriesPage() {
                         </>
                       );
                     })()}
-                  </p>
+                  </span>
+                  <button
+                    onClick={() => handleViewOffers(category)}
+                    className="px-3 py-1.5 text-sm font-medium transition-colors"
+                    style={{ color: color.primary.accent }}
+                    title="View & Assign Offers"
+                  >
+                    View Offers
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleViewOffers(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
-                  title="View & Assign Offers"
-                >
-                  View Offers
-                </button>
+                {(() => {
+                  const categoryId =
+                    typeof category.id === "string"
+                      ? parseInt(category.id, 10)
+                      : category.id;
+                  const performance = categoryPerformance[categoryId];
+                  if (
+                    performance &&
+                    (performance.totalRevenue > 0 ||
+                      performance.conversionRate > 0)
+                  ) {
+                    return (
+                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                        <div>
+                          <p className="text-xs text-gray-500">Revenue</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            $
+                            {performance.totalRevenue.toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Conversion</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {performance.conversionRate.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
-              <div className="flex items-center gap-2">
-                {/* <button
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredOfferCategories.map((category) => {
+            const categoryId =
+              typeof category.id === "string"
+                ? parseInt(category.id, 10)
+                : category.id;
+            const performance = categoryPerformance[categoryId];
+            return (
+              <div
+                key={category.id}
+                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all"
+                style={{ backgroundColor: color.surface.cards }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="flex-1">
+                      <h3
+                        className={`${tw.cardHeading} text-gray-900 truncate`}
+                      >
+                        {category.name}
+                      </h3>
+                      <p
+                        className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}
+                      >
+                        {(() => {
+                          const count = categoryOfferCounts[categoryId];
+                          return count ? (
+                            <>
+                              {count.totalOffers} offer
+                              {count.totalOffers !== 1 ? "s" : ""}
+                              {count.activeOffers > 0 && (
+                                <span className="text-green-600 ml-1">
+                                  ({count.activeOffers} active)
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {category.offer_count || 0} offer
+                              {category.offer_count !== 1 ? "s" : ""}
+                            </>
+                          );
+                        })()}
+                      </p>
+                      {performance &&
+                        (performance.totalRevenue > 0 ||
+                          performance.conversionRate > 0) && (
+                          <div className="flex items-center gap-4 mt-2">
+                            <div>
+                              <span className="text-xs text-gray-500">
+                                Revenue:{" "}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                $
+                                {performance.totalRevenue.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">
+                                Conversion:{" "}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                {performance.conversionRate.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleViewOffers(category)}
+                    className="px-3 py-1.5 text-sm font-medium transition-colors"
+                    style={{ color: color.primary.accent }}
+                    title="View & Assign Offers"
+                  >
+                    View Offers
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* <button
                   onClick={() => handleViewDetails(category)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="View Details"
                 >
                   <Eye className="w-4 h-4 text-gray-600" />
                 </button> */}
-                <button
-                  onClick={() => handleEditCategory(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Edit"
-                >
-                  <Edit className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleDeleteCategory(category)}
-                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
+                  <button
+                    onClick={() => handleEditCategory(category)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Edit"
+                  >
+                    <Edit className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCategory(category)}
+                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
