@@ -201,11 +201,32 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
             }
             break;
           case "campaigns":
-            response = await campaignService.getAllCampaigns({
-              pageSize: 100,
-              skipCache: true,
-            });
-            itemsData = (response.data || []) as BackendCampaignType[];
+            // Use getCampaigns with pagination (same as CampaignsPage)
+            // Fetch all campaigns in batches of 100
+            let allCampaigns: BackendCampaignType[] = [];
+            let offset = 0;
+            const limit = 100;
+            let hasMore = true;
+
+            while (hasMore) {
+              const batchResponse = await campaignService.getCampaigns({
+                limit: limit,
+                offset: offset,
+                skipCache: true,
+              });
+
+              const campaigns = (batchResponse.data ||
+                []) as BackendCampaignType[];
+              allCampaigns = [...allCampaigns, ...campaigns];
+
+              // Check if there are more campaigns to fetch
+              const total = batchResponse.meta?.total || 0;
+              hasMore =
+                allCampaigns.length < total && campaigns.length === limit;
+              offset += limit;
+            }
+
+            itemsData = allCampaigns;
             break;
         }
 
