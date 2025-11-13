@@ -94,7 +94,9 @@ function CategoryModal({
       await onSave(categoryData);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save category");
+      console.error("Failed to save category:", err);
+      showError("Failed to save category", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setIsLoading(false);
     }
@@ -154,12 +156,6 @@ function CategoryModal({
                   />
                 </div>
               </div>
-
-              {error && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
 
               <div className="flex items-center justify-end space-x-3 mt-6">
                 <button
@@ -253,7 +249,7 @@ function SegmentsModal({
       setSegments(categorySegments);
       setFilteredSegments(categorySegments);
     } catch (err) {
-      console.error("Failed to load segments:", err);
+      // Failed to load segments
       setSegments([]);
       setFilteredSegments([]);
     } finally {
@@ -294,7 +290,7 @@ function SegmentsModal({
       const segmentsData = (response.data || []) as Segment[];
       setAllSegments(segmentsData);
     } catch (err) {
-      console.error("Failed to load all segments:", err);
+      // Failed to load all segments
       setAllSegments([]);
     } finally {
       setLoadingAllSegments(false);
@@ -332,7 +328,6 @@ function SegmentsModal({
             ? err.message
             : `Failed to assign segment ${segmentId}`;
         errors.push(errorMsg);
-        console.error(`Failed to assign segment ${segmentId}:`, err);
       }
     }
 
@@ -459,7 +454,7 @@ function SegmentsModal({
                         className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex-1">
-                          <h3 className={`${tw.subHeading} text-gray-900`}>
+                          <h3 className="font-medium text-gray-900">
                             {segment.name}
                           </h3>
                           {segment.description && (
@@ -516,6 +511,7 @@ export default function SegmentCategoriesPage() {
   const [categories, setCategories] = useState<SegmentCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState<SegmentCategory | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -532,16 +528,17 @@ export default function SegmentCategoriesPage() {
   const loadCategories = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log(
-        "[SegmentCatalogs] Fetching categories from /segment-categories?skipCache=true"
-      );
-      const response = await segmentService.getSegmentCategories(
-        undefined,
-        true
-      );
-      console.log("Raw response:", response);
+      let response;
+      // Use searchSegmentCategories when there's a search term, otherwise use getSegmentCategories
+      if (debouncedSearchTerm.trim()) {
+        response = await segmentService.searchSegmentCategories(
+          debouncedSearchTerm,
+          true
+        );
+      } else {
+        response = await segmentService.getSegmentCategories(undefined, true);
+      }
       const categoriesData = response.data || [];
-      console.log("Categories data:", categoriesData);
 
       // Ensure all category IDs are numbers
       const validCategoriesData = categoriesData.map(
@@ -551,10 +548,6 @@ export default function SegmentCategoriesPage() {
         })
       );
 
-      console.log(
-        "Valid categories data (after ID conversion):",
-        validCategoriesData
-      );
       setCategories(validCategoriesData);
 
       // Load segment counts for each category
@@ -568,23 +561,26 @@ export default function SegmentCategoriesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [showError]);
+  }, [showError, debouncedSearchTerm]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     loadCategories();
-  }, [loadCategories]);
+  }, [loadCategories, debouncedSearchTerm]);
 
   const loadSegmentCounts = async (cats: SegmentCategory[]) => {
     try {
-      console.log("Loading segments for counts...");
-      console.log(
-        "[SegmentCatalogs] Fetching segments from /segments?skipCache=true"
-      );
       const response = await segmentService.getSegments({ skipCache: true });
-      console.log("Segments API response:", response);
       const segmentsData = ((response as { data?: Segment[] }).data ||
         []) as Segment[];
-      console.log("Segments data:", segmentsData);
 
       const counts: Record<number, number> = {};
       const categoriesIndex = new Map<number, boolean>();
@@ -760,17 +756,12 @@ export default function SegmentCategoriesPage() {
       value: formatNumber(totalCategories),
       icon: FolderOpen,
       color: color.tertiary.tag1,
-      description: `${formatNumber(totalSegments)} segments total`,
     },
     {
       name: "Active Catalogs",
       value: formatNumber(activeCategories),
       icon: CheckCircle,
       color: color.tertiary.tag4,
-      description:
-        averageSegments > 0
-          ? `${averageSegments.toFixed(1)} avg segments/catalog`
-          : undefined,
     },
     {
       name: "Inactive Catalogs",
@@ -783,14 +774,12 @@ export default function SegmentCategoriesPage() {
       value: formatNumber(emptyCategoriesCount),
       icon: Archive,
       color: color.tertiary.tag2,
-      description: `${formatNumber(categoriesWithSegmentsCount)} with segments`,
     },
     {
       name: "Most Popular",
       value: mostPopularCategory?.name || "None",
       icon: Star,
       color: color.primary.accent,
-      description: `${formatNumber(mostPopularCategory?.count ?? 0)} segments`,
       title: mostPopularCategory?.name || undefined,
       valueClass: "text-xl",
       loading: false,

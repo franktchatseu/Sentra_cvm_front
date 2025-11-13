@@ -140,8 +140,10 @@ function CategoryModal({
 
       await onSave(categoryData); // Wait for save to complete
       onClose(); // Only close after save succeeds
-    } catch {
-      setError(err instanceof Error ? err.message : "Failed to save category");
+    } catch (err) {
+      console.error("Failed to save category:", err);
+      showError("Failed to save category", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setIsLoading(false);
     }
@@ -199,12 +201,6 @@ function CategoryModal({
                   />
                 </div>
               </div>
-
-              {error && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
 
               <div className="flex items-center justify-end space-x-3 mt-6">
                 <button
@@ -323,7 +319,9 @@ function OffersModal({
 
       setOffers(Array.from(combinedOffersMap.values()));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load offers");
+      console.error("Failed to load offers:", err);
+      showError("Failed to load offers", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setLoading(false);
     }
@@ -438,16 +436,6 @@ function OffersModal({
                     <div className="flex justify-center items-center py-8">
                       <LoadingSpinner />
                     </div>
-                  ) : error ? (
-                    <div className="text-center py-8">
-                      <p className="text-red-600 mb-4">{error}</p>
-                      <button
-                        onClick={loadOffers}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Try Again
-                      </button>
-                    </div>
                   ) : filteredOffers.length === 0 ? (
                     <div className="text-center py-8">
                       <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -470,23 +458,13 @@ function OffersModal({
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                style={{
-                                  backgroundColor: color.primary.accent,
-                                }}
-                              >
-                                <MessageSquare className="w-5 h-5 text-white" />
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {offer?.name || "Unknown Offer"}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {offer?.description || "No description"}
-                                </p>
-                              </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {offer?.name || "Unknown Offer"}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {offer?.description || "No description"}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -582,6 +560,15 @@ function OfferCategoriesPage() {
     name: string;
     count: number;
   } | null>(null);
+  const [categoryPerformance, setCategoryPerformance] = useState<
+    Record<
+      number,
+      {
+        totalRevenue: number;
+        conversionRate: number;
+      }
+    >
+  >({});
 
   // Filter states
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -649,6 +636,7 @@ function OfferCategoriesPage() {
       // Load analytics data
       await loadUnusedCategories();
       await loadPopularCategory();
+      await loadCategoryPerformance();
       // Load offers first, then categories (to avoid race condition)
       await loadAllOffers();
       await loadCategories(true); // Always skip cache for fresh data
@@ -679,8 +667,8 @@ function OfferCategoriesPage() {
           0,
         categoriesWithOffers: parseInt(data.categories_with_description) || 0, // Using categories_with_description as proxy
       });
-    } catch {
-      // Failed to load stats
+    } catch (err) {
+      console.error("Failed to load offer category stats:", err);
       setStats(null);
     }
   };
@@ -694,8 +682,8 @@ function OfferCategoriesPage() {
       if (response.success && response.data) {
         setUnusedCount(response.data.length);
       }
-    } catch {
-      // Failed to load unused categories
+    } catch (err) {
+      console.error("Failed to load unused categories:", err);
       setUnusedCount(0);
     }
   };
@@ -731,9 +719,37 @@ function OfferCategoriesPage() {
           count: Number.isNaN(parsedTotalOffers) ? 0 : parsedTotalOffers,
         });
       }
-    } catch {
-      // Failed to load popular category
+    } catch (err) {
+      console.error("Failed to load popular category:", err);
       setPopularCategory(null);
+    }
+  };
+
+  const loadCategoryPerformance = async () => {
+    try {
+      const response = await offerService.getCategoryPerformance(true);
+      if (response.success && response.data) {
+        const performanceMap: Record<
+          number,
+          {
+            totalRevenue: number;
+            conversionRate: number;
+          }
+        > = {};
+
+        (response.data || []).forEach((item) => {
+          const categoryId = item.categoryId;
+          performanceMap[categoryId] = {
+            totalRevenue: item.totalRevenue || 0,
+            conversionRate: item.conversionRate || 0,
+          };
+        });
+
+        setCategoryPerformance(performanceMap);
+      }
+    } catch (err) {
+      console.error("Failed to load category performance:", err);
+      setCategoryPerformance({});
     }
   };
 
@@ -937,9 +953,10 @@ function OfferCategoriesPage() {
       // so we need to call it after setting the state, but we'll use the local variable
       // We'll pass categoriesWithCounts to loadAllOfferCounts
       await loadAllOfferCounts(categoriesWithCounts);
-    } catch {
-      // Failed to load categories
-      setError("Error loading categories");
+    } catch (err) {
+      console.error("Failed to load categories:", err);
+      showError("Failed to load categories", "Please try again later.");
+      setError(""); // Clear error state
       setOfferCategories([]);
     } finally {
       setLoading(false);
@@ -1316,23 +1333,6 @@ function OfferCategoriesPage() {
           />
           <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
         </div>
-      ) : error ? (
-        <div
-          className="rounded-xl shadow-sm border border-gray-200 p-8 text-center"
-          style={{ backgroundColor: color.surface.cards }}
-        >
-          <div
-            className={`bg-red-50 border border-red-200 text-red-700 rounded-xl p-6`}
-          >
-            <p className="font-medium mb-3">{error}</p>
-            <button
-              onClick={() => loadCategories()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
       ) : filteredOfferCategories.length === 0 ? (
         <div
           className="rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4"
@@ -1404,58 +1404,9 @@ function OfferCategoriesPage() {
                 </p>
               )}
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <span className="text-sm text-gray-600">
-                  {(() => {
-                    const categoryId =
-                      typeof category.id === "string"
-                        ? parseInt(category.id, 10)
-                        : category.id;
-                    const count = categoryOfferCounts[categoryId];
-                    return count ? (
-                      <>
-                        {count.totalOffers} offer
-                        {count.totalOffers !== 1 ? "s" : ""}
-                        {count.activeOffers > 0 && (
-                          <span className="text-green-600 ml-1">
-                            ({count.activeOffers} active)
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {category.offer_count || 0} offer
-                        {category.offer_count !== 1 ? "s" : ""}
-                      </>
-                    );
-                  })()}
-                </span>
-                <button
-                  onClick={() => handleViewOffers(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
-                  title="View & Assign Offers"
-                >
-                  View Offers
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredOfferCategories.map((category) => (
-            <div
-              key={category.id}
-              className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
-              style={{ backgroundColor: color.surface.cards }}
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex-1">
-                  <h3 className={`${tw.cardHeading} text-gray-900 truncate`}>
-                    {category.name}
-                  </h3>
-                  <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
+              <div className="space-y-3 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
                     {(() => {
                       const categoryId =
                         typeof category.id === "string"
@@ -1479,42 +1430,168 @@ function OfferCategoriesPage() {
                         </>
                       );
                     })()}
-                  </p>
+                  </span>
+                  <button
+                    onClick={() => handleViewOffers(category)}
+                    className="px-3 py-1.5 text-sm font-medium transition-colors"
+                    style={{ color: color.primary.accent }}
+                    title="View & Assign Offers"
+                  >
+                    View Offers
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleViewOffers(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
-                  title="View & Assign Offers"
-                >
-                  View Offers
-                </button>
+                {(() => {
+                  const categoryId =
+                    typeof category.id === "string"
+                      ? parseInt(category.id, 10)
+                      : category.id;
+                  const performance = categoryPerformance[categoryId];
+                  if (
+                    performance &&
+                    (performance.totalRevenue > 0 ||
+                      performance.conversionRate > 0)
+                  ) {
+                    return (
+                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                        <div>
+                          <p className="text-xs text-gray-500">Revenue</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            $
+                            {performance.totalRevenue.toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Conversion</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {performance.conversionRate.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
-              <div className="flex items-center gap-2">
-                {/* <button
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredOfferCategories.map((category) => {
+            const categoryId =
+              typeof category.id === "string"
+                ? parseInt(category.id, 10)
+                : category.id;
+            const performance = categoryPerformance[categoryId];
+            return (
+              <div
+                key={category.id}
+                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all"
+                style={{ backgroundColor: color.surface.cards }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="flex-1">
+                      <h3
+                        className={`${tw.cardHeading} text-gray-900 truncate`}
+                      >
+                        {category.name}
+                      </h3>
+                      <p
+                        className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}
+                      >
+                        {(() => {
+                          const count = categoryOfferCounts[categoryId];
+                          return count ? (
+                            <>
+                              {count.totalOffers} offer
+                              {count.totalOffers !== 1 ? "s" : ""}
+                              {count.activeOffers > 0 && (
+                                <span className="text-green-600 ml-1">
+                                  ({count.activeOffers} active)
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {category.offer_count || 0} offer
+                              {category.offer_count !== 1 ? "s" : ""}
+                            </>
+                          );
+                        })()}
+                      </p>
+                      {performance &&
+                        (performance.totalRevenue > 0 ||
+                          performance.conversionRate > 0) && (
+                          <div className="flex items-center gap-4 mt-2">
+                            <div>
+                              <span className="text-xs text-gray-500">
+                                Revenue:{" "}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                $
+                                {performance.totalRevenue.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">
+                                Conversion:{" "}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                {performance.conversionRate.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleViewOffers(category)}
+                    className="px-3 py-1.5 text-sm font-medium transition-colors"
+                    style={{ color: color.primary.accent }}
+                    title="View & Assign Offers"
+                  >
+                    View Offers
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* <button
                   onClick={() => handleViewDetails(category)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title="View Details"
                 >
                   <Eye className="w-4 h-4 text-gray-600" />
                 </button> */}
-                <button
-                  onClick={() => handleEditCategory(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Edit"
-                >
-                  <Edit className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleDeleteCategory(category)}
-                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
+                  <button
+                    onClick={() => handleEditCategory(category)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Edit"
+                  >
+                    <Edit className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCategory(category)}
+                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

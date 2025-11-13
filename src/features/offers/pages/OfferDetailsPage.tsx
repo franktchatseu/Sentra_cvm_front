@@ -202,7 +202,9 @@ export default function OfferDetailsPage() {
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load offer");
+        console.error("Failed to load offer:", err);
+        showError("Failed to load offer", "Please try again later.");
+        setError(""); // Clear error state
       } finally {
         setLoading(false);
       }
@@ -404,10 +406,8 @@ export default function OfferDetailsPage() {
       setIsEditCreativeModalOpen(false);
       loadCreatives(true); // Reload with skipCache
     } catch (err) {
-      // Failed to update creative
-      showError(
-        err instanceof Error ? err.message : "Failed to update creative"
-      );
+      console.error("Failed to update creative:", err);
+      showError("Failed to update creative", "Please try again later.");
     } finally {
       setIsSavingCreative(false);
     }
@@ -429,10 +429,8 @@ export default function OfferDetailsPage() {
       success("Creative Deleted", "Creative has been deleted successfully");
       loadCreatives(true); // Reload with skipCache
     } catch (err) {
-      // Failed to delete creative
-      showError(
-        err instanceof Error ? err.message : "Failed to delete creative"
-      );
+      console.error("Failed to delete creative:", err);
+      showError("Failed to delete creative", "Please try again later.");
     }
   };
 
@@ -508,9 +506,8 @@ export default function OfferDetailsPage() {
       resetNewCreativeForm();
       loadCreatives(true);
     } catch (err) {
-      showError(
-        err instanceof Error ? err.message : "Failed to create creative"
-      );
+      console.error("Failed to create creative:", err);
+      showError("Failed to create creative", "Please try again later.");
     } finally {
       setIsCreatingCreative(false);
     }
@@ -646,8 +643,8 @@ export default function OfferDetailsPage() {
       // Refresh products list
       loadProducts(true);
     } catch (err) {
-      // Failed to link products
-      showError(err instanceof Error ? err.message : "Failed to link products");
+      console.error("Failed to link products:", err);
+      showError("Failed to link products", "Please try again later.");
     } finally {
       setIsLinkingProducts(false);
     }

@@ -226,9 +226,8 @@ export default function ProductsPage() {
       }
       loadProducts();
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to update product status";
-      showError("Error", errorMessage);
+      console.error("Failed to update product status:", err);
+      showError("Failed to update product status", "Please try again later.");
     }
   };
 

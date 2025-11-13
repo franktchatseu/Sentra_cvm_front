@@ -1406,16 +1406,36 @@ export default function CreateOfferPage() {
 
       // Handle Error objects (from service)
       if (err instanceof Error) {
-        errorMessage = err.message;
+        // Filter out HTTP error messages
+        if (
+          err.message.includes("HTTP error") ||
+          err.message.includes("status:")
+        ) {
+          errorMessage = "Failed to create offer";
+        } else {
+          errorMessage = err.message;
+        }
       } else if (err && typeof err === "object") {
         // Handle response objects
         if (hasResponseData(err)) {
           const errorResponse = err.response;
 
           if (errorResponse?.data?.message) {
-            errorMessage = errorResponse.data.message;
+            const msg = errorResponse.data.message;
+            // Filter out HTTP errors
+            if (msg.includes("HTTP error") || msg.includes("status:")) {
+              errorMessage = "Failed to create offer";
+            } else {
+              errorMessage = msg;
+            }
           } else if (errorResponse?.data?.error) {
-            errorMessage = errorResponse.data.error;
+            const errMsg = errorResponse.data.error;
+            // Filter out HTTP errors
+            if (errMsg.includes("HTTP error") || errMsg.includes("status:")) {
+              errorMessage = "Failed to create offer";
+            } else {
+              errorMessage = errMsg;
+            }
           } else if (errorResponse?.data?.details) {
             // Handle validation errors from API
             const details = errorResponse.data.details;
@@ -1435,13 +1455,26 @@ export default function CreateOfferPage() {
           }
         } else if (hasErrorString(err)) {
           // Handle direct error objects
-          errorMessage = err.error;
+          const errMsg = err.error;
+          // Filter out HTTP errors
+          if (errMsg.includes("HTTP error") || errMsg.includes("status:")) {
+            errorMessage = "Failed to create offer";
+          } else {
+            errorMessage = errMsg;
+          }
         } else if (hasMessageString(err)) {
-          errorMessage = err.message;
+          const msg = err.message;
+          // Filter out HTTP errors
+          if (msg.includes("HTTP error") || msg.includes("status:")) {
+            errorMessage = "Failed to create offer";
+          } else {
+            errorMessage = msg;
+          }
         }
       }
 
       // Show error to user
+      console.error("Failed to create/update offer:", err);
       showError("Error", errorMessage);
       setError(errorMessage);
     } finally {

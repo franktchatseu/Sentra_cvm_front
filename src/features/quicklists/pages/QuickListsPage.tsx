@@ -218,7 +218,12 @@ export default function QuickListsPage() {
       console.error("Failed to create quicklist:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create QuickList";
-      showError(errorMessage);
+      // Filter out HTTP errors
+      const userMessage =
+        errorMessage.includes("HTTP error") || errorMessage.includes("status:")
+          ? "Failed to create QuickList"
+          : errorMessage;
+      showError("Failed to create QuickList", userMessage);
       throw err; // Re-throw so the modal can handle it
     }
   };
@@ -244,9 +249,7 @@ export default function QuickListsPage() {
       await loadQuickLists();
     } catch (err) {
       console.error("Failed to delete quicklist:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to delete QuickList";
-      showError(errorMessage);
+      showError("Failed to delete QuickList", "Please try again later.");
     }
   };
 
@@ -297,10 +300,15 @@ export default function QuickListsPage() {
         await loadStats();
       }
     } catch (err) {
-      showError(
-        "Error updating quicklist",
-        err instanceof Error ? err.message : "Failed to update QuickList"
-      );
+      console.error("Failed to update QuickList:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update QuickList";
+      // Filter out HTTP errors
+      const userMessage =
+        errorMessage.includes("HTTP error") || errorMessage.includes("status:")
+          ? "Please try again later."
+          : errorMessage;
+      showError("Error updating quicklist", userMessage);
       throw err;
     }
   };

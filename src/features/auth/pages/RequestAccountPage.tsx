@@ -127,7 +127,13 @@ export default function RequestAccountPage() {
           general:
             "Failed to submit account request. Please try again or contact support.",
         });
-        showError("Request Failed", errorMessage);
+        // Filter out HTTP errors
+        const userMessage =
+          errorMessage.includes("HTTP error") ||
+          errorMessage.includes("status:")
+            ? "Failed to submit account request. Please try again or contact support."
+            : errorMessage;
+        showError("Request Failed", userMessage);
       }
     } finally {
       setIsSubmitting(false);

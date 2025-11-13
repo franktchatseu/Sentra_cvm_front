@@ -500,14 +500,11 @@ class SegmentService {
   /**
    * GET /segments/stats/stale - Get stale segments
    */
-  async getStaleSegments(
-    daysThreshold: number = 7
-  ): Promise<ApiSuccessResponse<StaleSegmentsResponse[]>> {
-    const queryString = this.buildQueryParams({
-      days_threshold: daysThreshold,
-    });
+  async getStaleSegments(): Promise<
+    ApiSuccessResponse<StaleSegmentsResponse[]>
+  > {
     return this.request<ApiSuccessResponse<StaleSegmentsResponse[]>>(
-      `/stats/stale${queryString}`
+      `/stats/stale`
     );
   }
 
@@ -653,8 +650,8 @@ class SegmentService {
       method: "PATCH",
       body: JSON.stringify({}),
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
   }
 

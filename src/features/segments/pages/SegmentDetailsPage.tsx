@@ -198,10 +198,8 @@ export default function SegmentDetailsPage() {
         setCategoryName("Uncategorized");
       }
     } catch (err) {
-      showError(
-        "Error loading segment",
-        (err as Error).message || "Failed to load segment details"
-      );
+      console.error("Failed to load segment details:", err);
+      showError("Error loading segment", "Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -322,10 +320,14 @@ export default function SegmentDetailsPage() {
       // Only show error if it's not a 404 (endpoint might not exist)
       const error = err as Error & { status?: number };
       if (error.status !== 404) {
-        showError(
-          "Error loading members",
-          error.message || "Failed to load segment members"
-        );
+        console.error("Failed to load segment members:", err);
+        // Filter out HTTP errors
+        const errorMsg = error.message || "";
+        const userMessage =
+          errorMsg.includes("HTTP error") || errorMsg.includes("status:")
+            ? "Please try again later."
+            : errorMsg || "Please try again later.";
+        showError("Error loading members", userMessage);
       }
       setMembers([]);
       setMembersTotalPages(1);
@@ -374,10 +376,8 @@ export default function SegmentDetailsPage() {
       );
       navigate("/dashboard/segments");
     } catch (err) {
-      showError(
-        "Error deleting segment",
-        (err as Error).message || "Failed to delete segment"
-      );
+      console.error("Failed to delete segment:", err);
+      showError("Error deleting segment", "Please try again later.");
     }
   };
 
@@ -405,10 +405,8 @@ export default function SegmentDetailsPage() {
       );
       setShowExportModal(false);
     } catch (err) {
-      showError(
-        "Export failed",
-        (err as Error).message || "Failed to export segment"
-      );
+      console.error("Failed to export segment:", err);
+      showError("Export failed", "Please try again later.");
     } finally {
       setIsExporting(false);
     }
@@ -443,10 +441,8 @@ export default function SegmentDetailsPage() {
       await loadMembersCount();
       await loadMembers();
     } catch (err) {
-      showError(
-        "Error adding members",
-        (err as Error).message || "Failed to add members"
-      );
+      console.error("Failed to add members:", err);
+      showError("Error adding members", "Please try again later.");
     }
   };
 
@@ -477,10 +473,8 @@ export default function SegmentDetailsPage() {
       await loadMembersCount();
       await loadMembers();
     } catch (err) {
-      showError(
-        "Error removing members",
-        (err as Error).message || "Failed to remove members"
-      );
+      console.error("Failed to remove members:", err);
+      showError("Error removing members", "Please try again later.");
     }
   };
 
@@ -1281,9 +1275,10 @@ export default function SegmentDetailsPage() {
                         setSelectedCustomers([]);
                         await loadMembersCount();
                       } catch (err) {
+                        console.error("Failed to add members:", err);
                         showError(
                           "Error adding members",
-                          (err as Error).message || "Failed to add members"
+                          "Please try again later."
                         );
                       }
                     }}

@@ -133,16 +133,11 @@ function ProductsModal({
         (product: Product) => Number(product.category_id) === categoryId
       );
 
-      console.log(
-        "[ProductsModal] Products derived from all-products snapshot:",
-        productsForCategory.length,
-        productsForCategory
-      );
-
       setProducts(productsForCategory);
     } catch (err) {
       console.error("Failed to load products:", err);
-      setError(err instanceof Error ? err.message : "Failed to load products");
+      showError("Failed to load products", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setLoading(false);
     }
@@ -185,7 +180,6 @@ function ProductsModal({
             ? err.message
             : `Failed to assign product ${productId}`;
         errors.push(errorMsg);
-        console.error(`Failed to assign product ${productId}:`, err);
       }
     }
 
@@ -313,13 +307,6 @@ function ProductsModal({
                     <div className="flex justify-center items-center py-8">
                       <LoadingSpinner />
                     </div>
-                  ) : error ? (
-                    <div className="text-center py-8">
-                      <p className="text-red-600 mb-4">{error}</p>
-                      <button onClick={loadProducts} className={tw.button}>
-                        Try Again
-                      </button>
-                    </div>
                   ) : filteredProducts.length === 0 ? (
                     <div className="text-center py-8">
                       <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
@@ -430,6 +417,15 @@ export default function ProductCatalogsPage() {
       }
     >
   >({});
+  const [categoryPerformance, setCategoryPerformance] = useState<
+    Record<
+      number,
+      {
+        totalValue: number;
+        averagePrice: number;
+      }
+    >
+  >({});
   const [stats, setStats] = useState<CategoryStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
@@ -490,9 +486,6 @@ export default function ProductCatalogsPage() {
 
   const loadCategoryProductCounts = async () => {
     try {
-      console.log(
-        "[ProductCatalogs] Fetching counts from /product-categories/analytics/product-count?skipCache=true"
-      );
       const response = await productCategoryService.getProductCountByCategory({
         limit: 100,
         skipCache: true,
@@ -524,14 +517,13 @@ export default function ProductCatalogsPage() {
   const loadStats = async (skipCache = false) => {
     try {
       setStatsLoading(true);
-      console.log(
-        "[ProductCatalogs] Fetching stats from /product-categories/stats",
-        { skipCache }
-      );
       const response = await productCategoryService.getStats(skipCache);
       const data = response.data as CategoryStats | undefined;
 
       if (data) {
+        // Check if empty_categories exists in the backend response
+        const hasEmptyCategoriesField = "empty_categories" in data;
+
         const parsed: CategoryStats = {
           total_categories: Number(data.total_categories) || 0,
           active_categories: Number(data.active_categories) || 0,
@@ -539,7 +531,10 @@ export default function ProductCatalogsPage() {
           root_categories: Number(data.root_categories) || 0,
           max_depth: Number(data.max_depth) || 0,
           categories_with_products: Number(data.categories_with_products) || 0,
-          empty_categories: Number(data.empty_categories) || 0,
+          // Only use backend value if the field actually exists, otherwise set to undefined
+          empty_categories: hasEmptyCategoriesField
+            ? Number(data.empty_categories) || 0
+            : undefined,
           average_products_per_category:
             Number(data.average_products_per_category) || 0,
         };
@@ -548,10 +543,40 @@ export default function ProductCatalogsPage() {
         setStats(null);
       }
     } catch (err) {
-      console.error("Failed to load product catalog stats:", err);
+      // Failed to load product catalog stats
       setStats(null);
     } finally {
       setStatsLoading(false);
+    }
+  };
+
+  const loadCategoryPerformance = async () => {
+    try {
+      const response = await productService.getCategoryPerformance({
+        skipCache: true,
+      });
+      if (response.success && response.data) {
+        const performanceMap: Record<
+          number,
+          {
+            totalValue: number;
+            averagePrice: number;
+          }
+        > = {};
+
+        (response.data || []).forEach((item) => {
+          const categoryId = item.category_id;
+          performanceMap[categoryId] = {
+            totalValue: item.total_value || 0,
+            averagePrice: item.average_price || 0,
+          };
+        });
+
+        setCategoryPerformance(performanceMap);
+      }
+    } catch (err) {
+      console.error("Failed to load category performance:", err);
+      setCategoryPerformance({});
     }
   };
 
@@ -560,10 +585,6 @@ export default function ProductCatalogsPage() {
       setLoading(true);
       setError(null);
 
-      console.log(
-        "[ProductCatalogs] Fetching categories from /product-categories",
-        { skipCache }
-      );
       // Always load all categories for client-side filtering
       const response = await productCategoryService.getAllCategories({
         limit: 100,
@@ -576,10 +597,8 @@ export default function ProductCatalogsPage() {
       await loadCategoryProductCounts();
     } catch (err) {
       console.error("Failed to load categories:", err);
-      const message =
-        err instanceof Error ? err.message : "Failed to load categories";
-      showError("Failed to load categories", message);
-      setError(message);
+      showError("Failed to load categories", "Please try again later.");
+      setError(""); // Clear error state
     } finally {
       setLoading(false);
     }
@@ -588,6 +607,7 @@ export default function ProductCatalogsPage() {
   useEffect(() => {
     const loadData = async () => {
       await Promise.all([loadStats(true), loadCategories(true)]); // Always skip cache for fresh data
+      await loadCategoryPerformance();
       await loadAllProducts(); // Still load products for assignment modal
     };
     loadData();
@@ -634,7 +654,7 @@ export default function ProductCatalogsPage() {
       setCategoryProductCounts((prev) => ({ ...prev, ...aggregatedCounts }));
       return products;
     } catch (err) {
-      console.error("Failed to load products for assignment:", err);
+      // Failed to load products for assignment
       setAllProducts([]);
       return [];
     }
@@ -676,10 +696,7 @@ export default function ProductCatalogsPage() {
       await Promise.all([loadCategories(), loadStats(true)]);
     } catch (err) {
       console.error("Failed to update category:", err);
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to update category"
-      );
+      showError("Failed to update category", "Please try again later.");
     } finally {
       setIsUpdating(false);
     }
@@ -705,10 +722,7 @@ export default function ProductCatalogsPage() {
       await Promise.all([loadCategories(true), loadStats(true)]);
     } catch (err) {
       console.error("Failed to delete category:", err);
-      showError(
-        "Error",
-        err instanceof Error ? err.message : "Failed to delete category"
-      );
+      showError("Failed to delete category", "Please try again later.");
     }
   };
 
@@ -793,11 +807,11 @@ export default function ProductCatalogsPage() {
     categories.filter((cat) => cat.is_active).length;
   const inactiveCatalogs =
     stats?.inactive_categories ?? Math.max(0, totalCatalogs - activeCatalogs);
-  const unusedCatalogs =
-    stats?.empty_categories ??
-    categories.filter(
-      (cat) => (categoryProductCounts[cat.id]?.total_products || 0) === 0
-    ).length;
+  const clientSideUnusedCount = categories.filter(
+    (cat) => (categoryProductCounts[cat.id]?.total_products || 0) === 0
+  ).length;
+
+  const unusedCatalogs = stats?.empty_categories ?? clientSideUnusedCount;
 
   const mostPopulatedCategoryRaw = categories.reduce<{
     name: string;
@@ -972,22 +986,9 @@ export default function ProductCatalogsPage() {
 
         <button
           onClick={() => setShowAdvancedFilters(true)}
-          className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm border"
-          style={{
-            borderColor: color.border.default,
-            color: color.text.primary,
-            backgroundColor: "transparent",
-          }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor =
-              color.interactive.hover;
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor =
-              "transparent";
-          }}
+          className="flex items-center px-4 py-2 rounded-lg bg-gray-50 transition-colors text-sm font-medium"
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="h-4 w-4 mr-2" />
           Filters
         </button>
 
@@ -1121,19 +1122,6 @@ export default function ProductCatalogsPage() {
       )}
 
       {/* Error Message */}
-      {error && (
-        <div
-          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 flex items-center justify-end`}
-        >
-          <button
-            onClick={() => loadCategories(true)}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-            style={{ backgroundColor: color.status.danger }}
-          >
-            Try Again
-          </button>
-        </div>
-      )}
 
       {/* Catalogs */}
       {loading ? (
@@ -1210,24 +1198,62 @@ export default function ProductCatalogsPage() {
                 </p>
               )}
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <div className="text-sm text-gray-600">
-                  <div className="font-medium">
-                    {categoryProductCounts[category.id]?.total_products || 0}{" "}
-                    products
+              <div className="space-y-3 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    <div className="font-medium">
+                      {categoryProductCounts[category.id]?.total_products || 0}{" "}
+                      products
+                    </div>
                   </div>
+                  <button
+                    onClick={() => handleViewProducts(category)}
+                    className="px-3 py-1 rounded-lg text-sm font-medium"
+                    style={{
+                      color: color.primary.accent,
+                      backgroundColor: "transparent",
+                    }}
+                    title="View & Assign Products"
+                  >
+                    View Products
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleViewProducts(category)}
-                  className="px-3 py-1 rounded-lg text-sm font-medium"
-                  style={{
-                    color: color.primary.accent,
-                    backgroundColor: "transparent",
-                  }}
-                  title="View & Assign Products"
-                >
-                  View Products
-                </button>
+                {(() => {
+                  const performance = categoryPerformance[category.id];
+                  if (
+                    performance &&
+                    (performance.totalValue > 0 || performance.averagePrice > 0)
+                  ) {
+                    return (
+                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                        <div>
+                          <p className="text-xs text-gray-500">Total Value</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            $
+                            {performance.totalValue.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Avg Price</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            $
+                            {performance.averagePrice.toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           ))}
@@ -1250,6 +1276,50 @@ export default function ProductCatalogsPage() {
                       products
                     </div>
                   </div>
+                  {(() => {
+                    const performance = categoryPerformance[category.id];
+                    if (
+                      performance &&
+                      (performance.totalValue > 0 ||
+                        performance.averagePrice > 0)
+                    ) {
+                      return (
+                        <div className="flex items-center gap-4 mt-2">
+                          <div>
+                            <span className="text-xs text-gray-500">
+                              Total Value:{" "}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              $
+                              {performance.totalValue.toLocaleString(
+                                undefined,
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }
+                              )}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-500">
+                              Avg Price:{" "}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              $
+                              {performance.averagePrice.toLocaleString(
+                                undefined,
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
               <div className="flex items-center gap-2">

@@ -5,11 +5,10 @@ import {
   Segment,
   CreateSegmentRequest,
   SegmentConditionGroup,
-  PreviewResponse,
 } from "../types/segment";
 import SegmentConditionsBuilder from "./SegmentConditionsBuilder";
 import { segmentService } from "../services/segmentService";
-import { color, tw, button } from "../../../shared/utils/utils";
+import { color, tw } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 interface SegmentModalProps {
@@ -134,7 +133,7 @@ export default function SegmentModal({
 
       // Process each condition group
       for (const group of formData.conditions) {
-        if (group.conditionType !== 'rule') {
+        if (group.conditionType !== "rule") {
           continue; // Skip non-rule condition types for now
         }
 
@@ -147,7 +146,9 @@ export default function SegmentModal({
               value: condition.value,
             });
           } else {
-            throw new Error(`Missing field_id or operator_id for condition. Please reload the page.`);
+            throw new Error(
+              `Missing field_id or operator_id for condition. Please reload the page.`
+            );
           }
         }
       }
@@ -165,23 +166,25 @@ export default function SegmentModal({
         filters: {
           logic: "AND" as const,
           groups: formData.conditions
-            .filter(group => group.conditionType === 'rule')
-            .map(group => ({
+            .filter((group) => group.conditionType === "rule")
+            .map((group) => ({
               logic: group.operator,
               conditions: group.conditions
-                .filter(c => c.field_id && c.operator_id)
-                .map(c => ({
+                .filter((c) => c.field_id && c.operator_id)
+                .map((c) => ({
                   field_id: c.field_id!,
                   operator_id: c.operator_id!,
                   value: c.value,
-                }))
-            }))
+                })),
+            })),
         },
         limit: 100, // Preview limit
       };
 
       // Call the query generation preview API
-      const response = await segmentService.generateSegmentQueryPreview(queryRequest);
+      const response = await segmentService.generateSegmentQueryPreview(
+        queryRequest
+      );
 
       if (response.success && response.data) {
         setPreviewQuery(response.data.segment_query);
@@ -208,15 +211,18 @@ export default function SegmentModal({
   const generateSegmentCode = (name: string): string => {
     return name
       .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
+      .replace(/[^A-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
       .substring(0, 50); // Limit to 50 chars
   };
 
   /**
    * Generate SQL query from conditions
    */
-  const generateQueryFromConditions = async (): Promise<{segment_query: string, count_query: string} | null> => {
+  const generateQueryFromConditions = async (): Promise<{
+    segment_query: string;
+    count_query: string;
+  } | null> => {
     if (formData.conditions.length === 0) {
       return null;
     }
@@ -224,10 +230,10 @@ export default function SegmentModal({
     try {
       // Extract all unique field IDs from conditions
       const fieldIds = new Set<number>();
-      
+
       // Process each condition group
       for (const group of formData.conditions) {
-        if (group.conditionType !== 'rule') {
+        if (group.conditionType !== "rule") {
           continue; // Skip non-rule condition types for now
         }
 
@@ -235,7 +241,9 @@ export default function SegmentModal({
           if (condition.field_id && condition.operator_id) {
             fieldIds.add(condition.field_id);
           } else {
-            throw new Error(`Missing field_id or operator_id for condition. Please reload the page.`);
+            throw new Error(
+              `Missing field_id or operator_id for condition. Please reload the page.`
+            );
           }
         }
       }
@@ -250,34 +258,38 @@ export default function SegmentModal({
         filters: {
           logic: "AND" as const,
           groups: formData.conditions
-            .filter(group => group.conditionType === 'rule')
-            .map(group => ({
+            .filter((group) => group.conditionType === "rule")
+            .map((group) => ({
               logic: group.operator,
               conditions: group.conditions
-                .filter(c => c.field_id && c.operator_id)
-                .map(c => ({
+                .filter((c) => c.field_id && c.operator_id)
+                .map((c) => ({
                   field_id: c.field_id!,
                   operator_id: c.operator_id!,
                   value: c.value,
-                }))
-            }))
+                })),
+            })),
         },
         // Don't set limit for production query
       };
 
       // Call the query generation API
-      const response = await segmentService.generateSegmentQueryPreview(queryRequest);
+      const response = await segmentService.generateSegmentQueryPreview(
+        queryRequest
+      );
 
       if (response.success && response.data) {
         return {
           segment_query: response.data.segment_query,
-          count_query: response.data.count_query
+          count_query: response.data.count_query,
         };
       } else {
         throw new Error("Failed to generate query");
       }
     } catch (err) {
-      throw new Error((err as Error).message || "Failed to generate query from conditions");
+      throw new Error(
+        (err as Error).message || "Failed to generate query from conditions"
+      );
     }
   };
 
@@ -299,7 +311,7 @@ export default function SegmentModal({
     try {
       // Generate SQL query from conditions
       const queries = await generateQueryFromConditions();
-      
+
       if (!queries) {
         setError("Failed to generate query from conditions");
         return;
@@ -324,9 +336,12 @@ export default function SegmentModal({
         });
 
         // Extract segment from response
+        const updateResult = updateResponse as { data?: Segment } | Segment;
         savedSegment =
-          (updateResponse as any).data ||
-          (updateResponse as any);
+          (typeof updateResult === "object" &&
+            "data" in updateResult &&
+            updateResult.data) ||
+          (updateResult as Segment);
       } else {
         // Create new segment with query
         const createRequest: CreateSegmentRequest = {
@@ -341,16 +356,32 @@ export default function SegmentModal({
           is_active: true,
           visibility: "private",
         };
-        
-        const createResponse = await segmentService.createSegment(createRequest);
+
+        const createResponse = await segmentService.createSegment(
+          createRequest
+        );
 
         // Extract segment from response - backend returns {success: true, data: [segment]}
-        if ((createResponse as any).success && Array.isArray((createResponse as any).data)) {
-          savedSegment = (createResponse as any).data[0];
+        const response = createResponse as
+          | { success: boolean; data?: Segment[] | Segment }
+          | Segment;
+        if (
+          typeof response === "object" &&
+          "success" in response &&
+          response.success &&
+          Array.isArray(response.data)
+        ) {
+          savedSegment = response.data[0];
+        } else if (
+          typeof response === "object" &&
+          "data" in response &&
+          response.data
+        ) {
+          savedSegment = Array.isArray(response.data)
+            ? response.data[0]
+            : (response.data as Segment);
         } else {
-          savedSegment =
-            (createResponse as any).data ||
-            (createResponse as any);
+          savedSegment = response as Segment;
         }
       }
 
@@ -445,11 +476,13 @@ export default function SegmentModal({
                         options={[
                           { value: "", label: "No catalog (Uncategorized)" },
                           ...categories.map((cat) => ({
-                            value: cat.id,
+                            value: String(cat.id),
                             label: cat.name,
                           })),
                         ]}
-                        value={formData.category || ""}
+                        value={
+                          formData.category ? String(formData.category) : ""
+                        }
                         onChange={(value) =>
                           setFormData((prev) => ({
                             ...prev,
@@ -520,17 +553,9 @@ export default function SegmentModal({
                                 }
                               }
                             }}
-                            className="transition-colors text-sm"
+                            className="inline-flex items-center px-4  text-sm text-white rounded-lg transition-colors"
                             style={{
-                              backgroundColor:
-                                button.secondaryAction.background,
-                              color: button.secondaryAction.color,
-                              border: button.secondaryAction.border,
-                              borderRadius: button.secondaryAction.borderRadius,
-                              paddingTop: button.secondaryAction.paddingY,
-                              paddingBottom: button.secondaryAction.paddingY,
-                              paddingLeft: button.secondaryAction.paddingX,
-                              paddingRight: button.secondaryAction.paddingX,
+                              backgroundColor: color.primary.action,
                             }}
                           >
                             Add
@@ -599,16 +624,9 @@ export default function SegmentModal({
                           disabled={
                             isPreviewLoading || formData.conditions.length === 0
                           }
-                          className={`inline-flex items-center text-sm transition-colors`}
+                          className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{
-                            backgroundColor: button.secondaryAction.background,
-                            color: button.secondaryAction.color,
-                            border: button.secondaryAction.border,
-                            borderRadius: button.secondaryAction.borderRadius,
-                            paddingTop: button.secondaryAction.paddingY,
-                            paddingBottom: button.secondaryAction.paddingY,
-                            paddingLeft: button.secondaryAction.paddingX,
-                            paddingRight: button.secondaryAction.paddingX,
+                            backgroundColor: color.primary.action,
                           }}
                         >
                           {isPreviewLoading ? "Loading..." : "Preview"}
