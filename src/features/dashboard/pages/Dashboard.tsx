@@ -44,6 +44,7 @@ import CustomerIdentityPage from "../../customer/pages/CustomerIdentityPage";
 import CustomerIdentityFieldDetailsPage from "../../customer/pages/CustomerIdentityFieldDetailsPage";
 import CampaignApprovalHistoryPage from "../../campaigns/pages/CampaignApprovalHistoryPage";
 import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycleHistoryPage";
+import SearchResultsPage from "../../../shared/pages/SearchResultsPage";
 
 export default function Dashboard() {
   return (
@@ -138,6 +139,7 @@ export default function Dashboard() {
           path="/customer-identity/fields/:id"
           element={<CustomerIdentityFieldDetailsPage />}
         />
+        <Route path="/search" element={<SearchResultsPage />} />
       </Routes>
     </DashboardLayout>
   );

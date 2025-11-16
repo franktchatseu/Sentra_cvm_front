@@ -220,13 +220,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "segments",
         },
         {
-          name: "Segment List",
-          href: "/dashboard/segment-list",
-          icon: List,
-          type: "single",
-          entity: "segments",
-        },
-        {
           name: "Segment Types",
           href: "/dashboard/segment-types",
           icon: Layers,

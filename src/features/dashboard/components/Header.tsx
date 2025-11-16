@@ -1,4 +1,4 @@
-import { Bell, Search, User, LogOut, Menu } from "lucide-react";
+import { Bell, User, LogOut, Menu } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -9,6 +9,7 @@ import { userService } from "../../users/services/userService";
 import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
 import { UserType as FullUserType } from "../../users/types/user";
+import GlobalSearch from "../../../shared/components/GlobalSearch";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -100,15 +101,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </button>
 
-          <div className="relative flex-1 max-w-xs sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70" />
-            <input
-              className="w-full pl-10 pr-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60"
-              placeholder="Search campaigns, products, users..."
-              type="search"
-              style={{ outline: "none" }}
-            />
-          </div>
+          <GlobalSearch />
         </div>
 
         <div className="flex items-center gap-x-4">
