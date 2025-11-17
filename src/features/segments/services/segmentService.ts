@@ -477,11 +477,15 @@ class SegmentService {
   /**
    * GET /segments/stats/category-distribution - Get category distribution
    */
-  async getCategoryDistribution(): Promise<
-    ApiSuccessResponse<CategoryDistributionResponse[]>
-  > {
+  async getCategoryDistribution(
+    skipCache: boolean = false
+  ): Promise<ApiSuccessResponse<CategoryDistributionResponse[]>> {
+    const endpoint = `/stats/category-distribution${
+      skipCache ? "?skipCache=true" : ""
+    }`;
+    console.log("[segmentService] Calling", `${BASE_URL}${endpoint}`);
     return this.request<ApiSuccessResponse<CategoryDistributionResponse[]>>(
-      "/stats/category-distribution"
+      endpoint
     );
   }
 

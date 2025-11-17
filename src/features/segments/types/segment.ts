@@ -346,10 +346,11 @@ export type TypeDistributionResponse = {
 };
 
 export type CategoryDistributionResponse = {
-  category_id: number;
+  category_id?: number;
   category_name: string;
-  segment_count: number;
-  percentage: number;
+  segment_count?: number | string;
+  count?: number | string;
+  percentage?: number;
 };
 
 export type LargestSegmentsResponse = {
