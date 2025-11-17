@@ -122,7 +122,7 @@ function CategoryDistributionChartComponent({
                 />
                 <Tooltip
                   formatter={(value: number) =>
-                    `${value.toLocaleString()} segments`
+                    `${value.toLocaleString()} items`
                   }
                   contentStyle={{
                     backgroundColor: "white",
@@ -154,4 +154,3 @@ export const CategoryDistributionChart = memo(
 );
 
 export default CategoryDistributionChart;
-

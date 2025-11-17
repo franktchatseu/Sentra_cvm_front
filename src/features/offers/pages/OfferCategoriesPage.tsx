@@ -108,7 +108,7 @@ function CategoryModal({
     description: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (category) {
@@ -119,18 +119,18 @@ function CategoryModal({
     } else {
       setFormData({ name: "", description: "" });
     }
-    setError("");
+    setFormError("");
   }, [category, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      setError("Catalog name is required");
+      setFormError("Catalog name is required");
       return;
     }
 
     setIsLoading(true);
-    setError("");
+    setFormError("");
 
     try {
       const categoryData = {
@@ -142,8 +142,7 @@ function CategoryModal({
       onClose(); // Only close after save succeeds
     } catch (err) {
       console.error("Failed to save category:", err);
-      showError("Failed to save category", "Please try again later.");
-      setError(""); // Clear error state
+      setFormError("Failed to save category. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -202,6 +201,10 @@ function CategoryModal({
                 </div>
               </div>
 
+              {formError && (
+                <p className="text-sm text-red-600 mt-4">{formError}</p>
+              )}
+
               <div className="flex items-center justify-end space-x-3 mt-6">
                 <button
                   type="button"
@@ -250,7 +253,7 @@ function OffersModal({
   const { success: showSuccess, error: showError } = useToast();
   const [offers, setOffers] = useState<BasicOffer[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredOffers, setFilteredOffers] = useState<BasicOffer[]>([]);
   const [removingOfferId, setRemovingOfferId] = useState<
@@ -282,7 +285,7 @@ function OffersModal({
 
     try {
       setLoading(true);
-      setError(null);
+      setModalError(null);
       const catalogTag = buildCatalogTag(category.id);
 
       const [primaryResponse, allOffers] = await Promise.all([
@@ -321,7 +324,7 @@ function OffersModal({
     } catch (err) {
       console.error("Failed to load offers:", err);
       showError("Failed to load offers", "Please try again later.");
-      setError(""); // Clear error state
+      setModalError("Failed to load offers. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -360,8 +363,14 @@ function OffersModal({
     //   setRemovingOfferId(null);
     // }
 
-    // Temporary: Show toast until remove functionality is implemented
-    showSuccess("Can't access this action");
+    setRemovingOfferId(offerId);
+    try {
+      showSuccess("Can't access this action");
+      await Promise.resolve(onRefreshCounts());
+      await Promise.resolve(onRefreshCategories());
+    } finally {
+      setTimeout(() => setRemovingOfferId(null), 500);
+    }
   };
 
   // const handleCreateOffer = () => {
@@ -432,6 +441,9 @@ function OffersModal({
 
                 {/* Content */}
                 <div className="p-6 max-h-96 overflow-y-auto">
+                  {modalError && (
+                    <p className="text-sm text-red-600 mb-4">{modalError}</p>
+                  )}
                   {loading ? (
                     <div className="flex justify-center items-center py-8">
                       <LoadingSpinner />
@@ -524,7 +536,7 @@ function OfferCategoriesPage() {
     OfferCategoryWithCount[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [pageError, setPageError] = useState("");
   const [categoryOfferCounts, setCategoryOfferCounts] = useState<
     Record<
       number,
@@ -715,7 +727,7 @@ function OfferCategoriesPage() {
             ? Number(topCategory.offer_count)
             : topCategory.offerCount ?? 0;
         setPopularCategory({
-          name: topCategory.name,
+          name: topCategory.name ?? "Unknown",
           count: Number.isNaN(parsedTotalOffers) ? 0 : parsedTotalOffers,
         });
       }
@@ -738,7 +750,10 @@ function OfferCategoriesPage() {
         > = {};
 
         (response.data || []).forEach((item) => {
-          const categoryId = item.categoryId;
+          const categoryId = Number(item.categoryId);
+          if (!Number.isFinite(categoryId)) {
+            return;
+          }
           performanceMap[categoryId] = {
             totalRevenue: item.totalRevenue || 0,
             conversionRate: item.conversionRate || 0,
@@ -783,33 +798,36 @@ function OfferCategoriesPage() {
           }
         > = {};
 
-        response.data.forEach(
-          (item: { category_name: string; offer_count: string | number }) => {
-            // Find the category by name to get its ID
-            const matchingCategory = categoriesToMatch.find(
-              (cat) => cat.name === item.category_name
-            );
+        const offerCountEntries = ((response.data as unknown) ?? []) as Array<{
+          category_name: string;
+          offer_count: string | number;
+        }>;
 
-            if (matchingCategory) {
-              const categoryId =
-                typeof matchingCategory.id === "string"
-                  ? parseInt(matchingCategory.id, 10)
-                  : matchingCategory.id;
-              const offerCount =
-                typeof item.offer_count === "string"
-                  ? parseInt(item.offer_count, 10)
-                  : item.offer_count || 0;
+        offerCountEntries.forEach((item) => {
+          // Find the category by name to get its ID
+          const matchingCategory = categoriesToMatch.find(
+            (cat) => cat.name === item.category_name
+          );
 
-              countsMap[categoryId] = {
-                totalOffers: offerCount,
-                activeOffers: 0, // Backend doesn't provide this breakdown
-                expiredOffers: 0,
-                draftOffers: 0,
-                pendingOffers: 0,
-              };
-            }
+          if (matchingCategory) {
+            const categoryId =
+              typeof matchingCategory.id === "string"
+                ? parseInt(matchingCategory.id, 10)
+                : matchingCategory.id;
+            const offerCount =
+              typeof item.offer_count === "string"
+                ? parseInt(item.offer_count, 10)
+                : item.offer_count || 0;
+
+            countsMap[categoryId] = {
+              totalOffers: offerCount,
+              activeOffers: 0, // Backend doesn't provide this breakdown
+              expiredOffers: 0,
+              draftOffers: 0,
+              pendingOffers: 0,
+            };
           }
-        );
+        });
 
         if (Array.isArray(allOffers)) {
           const categoriesIndex = new Map<number, boolean>();
@@ -946,7 +964,7 @@ function OfferCategoriesPage() {
       }
 
       setOfferCategories(categoriesWithCounts);
-      setError("");
+      setPageError("");
 
       // Load offer counts for all categories at once
       // Note: loadAllOfferCounts needs offerCategories to match by name,
@@ -956,7 +974,7 @@ function OfferCategoriesPage() {
     } catch (err) {
       console.error("Failed to load categories:", err);
       showError("Failed to load categories", "Please try again later.");
-      setError(""); // Clear error state
+      setPageError("Failed to load offer catalogs. Please try again later.");
       setOfferCategories([]);
     } finally {
       setLoading(false);
@@ -996,7 +1014,7 @@ function OfferCategoriesPage() {
         "Category Deleted",
         `"${category.name}" has been deleted successfully.`
       );
-    } catch {
+    } catch (err) {
       // Error"Error deleting category:", err);
       showError(
         "Error",
@@ -1037,8 +1055,8 @@ function OfferCategoriesPage() {
 
       setIsModalOpen(false);
       setEditingCategory(undefined);
-    } catch {
-      // Error"Failed to save category:", err);
+    } catch (err) {
+      console.error("Failed to save category:", err);
       showError("Failed to save category", "Please try again later.");
     }
   };
@@ -1119,6 +1137,12 @@ function OfferCategoriesPage() {
           </button>
         </div>
       </div>
+
+      {pageError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {pageError}
+        </div>
+      )}
 
       {/* Stats Cards */}
       {stats && (
