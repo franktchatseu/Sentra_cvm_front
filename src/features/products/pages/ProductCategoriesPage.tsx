@@ -25,6 +25,10 @@ import { Product } from "../types/product";
 import { productCategoryService } from "../services/productCategoryService";
 import { productService } from "../services/productService";
 import { color, tw } from "../../../shared/utils/utils";
+import {
+  buildCatalogTag,
+  parseCatalogTag,
+} from "../../../shared/utils/catalogTags";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -35,10 +39,102 @@ interface ProductsModalProps {
   onClose: () => void;
   category: ProductCategory | null;
   onRefreshCategories: () => void;
-  onRefreshProductCounts: () => void;
+  onRefreshProductCounts: () => Promise<void> | void;
   allProducts: Product[];
   refreshAllProducts: () => Promise<Product[]>;
 }
+
+type CategoryCountMap = Record<
+  string,
+  {
+    total_products: number;
+    active_products: number;
+    inactive_products: number;
+  }
+>;
+
+const parseCountValue = (value?: number | string | null): number => {
+  if (typeof value === "number") {
+    return Number.isNaN(value) ? 0 : value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+const mergeTagCountsFromSnapshot = (
+  baseCounts: CategoryCountMap,
+  categoriesList: ProductCategory[],
+  productsSnapshot: Product[]
+): CategoryCountMap => {
+  if (!categoriesList.length || !productsSnapshot.length) {
+    return baseCounts;
+  }
+
+  const allowedCategoryIds = new Set(
+    categoriesList
+      .map((category) => Number(category.id))
+      .filter((id) => Number.isFinite(id))
+  );
+
+  const updatedCounts: CategoryCountMap = { ...baseCounts };
+
+  productsSnapshot.forEach((product) => {
+    if (!Array.isArray(product.tags) || product.tags.length === 0) {
+      return;
+    }
+
+    const primaryCategoryId = Number(product.category_id);
+    const uniqueTaggedCatalogs = Array.from(
+      new Set(
+        product.tags
+          .map((tag) => parseCatalogTag(tag))
+          .filter(
+            (catalogId): catalogId is number =>
+              typeof catalogId === "number" && allowedCategoryIds.has(catalogId)
+          )
+      )
+    );
+
+    uniqueTaggedCatalogs.forEach((catalogId) => {
+      if (!Number.isNaN(primaryCategoryId) && primaryCategoryId === catalogId) {
+        return;
+      }
+
+      const key = String(catalogId);
+      if (!updatedCounts[key]) {
+        updatedCounts[key] = {
+          total_products: 0,
+          active_products: 0,
+          inactive_products: 0,
+        };
+      }
+
+      updatedCounts[key].total_products += 1;
+      if (product.is_active) {
+        updatedCounts[key].active_products += 1;
+      } else {
+        updatedCounts[key].inactive_products += 1;
+      }
+
+      if (catalogId === 8) {
+        console.log(
+          "[ProductCatalogsPage] merge snapshot -> found tagged product for catalog 8:",
+          {
+            productId: product.id,
+            tags: product.tags,
+            primaryCategoryId,
+            updatedCounts: updatedCounts[key],
+          }
+        );
+      }
+    });
+  });
+
+  return updatedCounts;
+};
 
 const fetchAllProductsByCategory = async (
   categoryId: number
@@ -52,6 +148,35 @@ const fetchAllProductsByCategory = async (
       limit: pageSize,
       offset,
       skipCache: true,
+    });
+
+    const batch = (response.data || []) as Product[];
+    collected.push(...batch);
+
+    const hasMore =
+      batch.length === pageSize &&
+      (response.pagination?.hasMore ?? batch.length === pageSize);
+
+    if (!hasMore) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return collected;
+};
+
+const fetchProductsByTag = async (tag: string): Promise<Product[]> => {
+  const pageSize = 100;
+  let offset = 0;
+  const collected: Product[] = [];
+
+  while (true) {
+    const response = await productService.getProductsByTag({
+      tag,
+      limit: pageSize,
+      offset,
     });
 
     const batch = (response.data || []) as Product[];
@@ -94,15 +219,10 @@ function ProductsModal({
 
   useEffect(() => {
     if (isOpen && category) {
-      // Make sure we fetch a fresh snapshot before deriving modal data
-      const ensureDataAndLoad = async () => {
-        await refreshAllProducts();
-        loadProducts();
-        setSearchTerm("");
-      };
-      ensureDataAndLoad();
+      loadProducts();
+      setSearchTerm("");
     }
-  }, [isOpen, category, refreshAllProducts]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, category]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (searchTerm) {
@@ -129,11 +249,31 @@ function ProductsModal({
         : await refreshAllProducts();
 
       const categoryId = Number(category.id);
+      const catalogTag = buildCatalogTag(category.id);
+
       const productsForCategory = snapshot.filter(
         (product: Product) => Number(product.category_id) === categoryId
       );
 
-      setProducts(productsForCategory);
+      let taggedProducts: Product[] = [];
+      try {
+        const taggedResponse = await productService.getProductsByTag({
+          tag: catalogTag,
+          limit: 500,
+        });
+        taggedProducts = taggedResponse.data || [];
+      } catch (tagErr) {
+        console.error("Failed to load catalog-tagged products:", tagErr);
+      }
+
+      const mergedProducts = new Map<number, Product>();
+      [...productsForCategory, ...taggedProducts].forEach((product) => {
+        if (product && typeof product.id === "number") {
+          mergedProducts.set(product.id, product);
+        }
+      });
+
+      setProducts(Array.from(mergedProducts.values()));
     } catch (err) {
       console.error("Failed to load products:", err);
       showError("Failed to load products", "Please try again later.");
@@ -166,12 +306,43 @@ function ProductsModal({
     let failed = 0;
     const errors: string[] = [];
 
+    const catalogTag = buildCatalogTag(category.id);
+    const categoryId = Number(category.id);
+
     // Assign each product individually
     for (const productId of productIds) {
       try {
-        await productService.updateProduct(Number(productId), {
-          category_id: Number(category.id),
-        });
+        const productSnapshot = products.find(
+          (product) => product.id === Number(productId)
+        );
+
+        const updates: Promise<unknown>[] = [];
+
+        if (
+          (!productSnapshot || !productSnapshot.category_id) &&
+          !Number.isNaN(categoryId)
+        ) {
+          updates.push(
+            productService.updateProduct(Number(productId), {
+              category_id: categoryId,
+            })
+          );
+        }
+
+        const hasTag =
+          Array.isArray(productSnapshot?.tags) &&
+          productSnapshot.tags?.includes(catalogTag);
+
+        if (!hasTag) {
+          updates.push(
+            productService.addProductTag(Number(productId), catalogTag)
+          );
+        }
+
+        if (updates.length > 0) {
+          await Promise.all(updates);
+        }
+
         success++;
       } catch (err) {
         failed++;
@@ -185,7 +356,7 @@ function ProductsModal({
 
     // Refresh products list and counts
     loadProducts();
-    onRefreshProductCounts();
+    await onRefreshProductCounts();
 
     return { success, failed, errors };
   };
@@ -207,6 +378,11 @@ function ProductsModal({
       }
 
       const primaryCategoryId = Number(productData.category_id);
+      const catalogTag = buildCatalogTag(category.id);
+      const hasCatalogTag =
+        Array.isArray(productData.tags) &&
+        productData.tags.includes(catalogTag);
+
       if (
         !Number.isNaN(primaryCategoryId) &&
         primaryCategoryId === Number(category.id)
@@ -217,13 +393,16 @@ function ProductsModal({
         return;
       }
 
-      await productService.updateProduct(Number(productId), {
-        category_id: null,
-      });
-      showToast("Product removed from catalog");
-      onRefreshCategories();
-      onRefreshProductCounts();
-      await loadProducts();
+      if (hasCatalogTag) {
+        await productService.removeProductTag(Number(productId), catalogTag);
+        showToast("Product removed from catalog");
+        await refreshAllProducts();
+        onRefreshCategories();
+        await onRefreshProductCounts();
+        await loadProducts();
+      } else {
+        showError("Product is not tagged to this catalog");
+      }
     } catch (err) {
       showError(
         err instanceof Error
@@ -284,15 +463,11 @@ function ProductsModal({
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => {
-                          // TODO: Uncomment when assign functionality is available
-                          // navigate(
-                          //   `/dashboard/products/catalogs/${category.id}/assign`
-                          // );
-
-                          // Temporary: Show toast until assign functionality is implemented
-                          showToast("info", "Can't access this action");
-                        }}
+                        onClick={() =>
+                          navigate(
+                            `/dashboard/products/catalogs/${category.id}/assign`
+                          )
+                        }
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >
                         Add products to this catalog
@@ -407,16 +582,8 @@ export default function ProductCatalogsPage() {
     useState<ProductCategory | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [categoryProductCounts, setCategoryProductCounts] = useState<
-    Record<
-      number,
-      {
-        total_products: number;
-        active_products: number;
-        inactive_products: number;
-      }
-    >
-  >({});
+  const [categoryProductCounts, setCategoryProductCounts] =
+    useState<CategoryCountMap>({});
   const [categoryPerformance, setCategoryPerformance] = useState<
     Record<
       number,
@@ -491,27 +658,54 @@ export default function ProductCatalogsPage() {
         skipCache: true,
       });
 
-      const countsMap: Record<
-        number,
-        {
-          total_products: number;
-          active_products: number;
-          inactive_products: number;
-        }
-      > = {};
+      const countsMap: CategoryCountMap = {};
 
       (response.data || []).forEach((item: ProductCountByCategory) => {
-        countsMap[item.category_id] = {
-          total_products: item.product_count || 0,
+        if (item.category_id === undefined || item.category_id === null) {
+          return;
+        }
+        const key = String(item.category_id);
+        countsMap[key] = {
+          total_products: parseCountValue(item.product_count),
           active_products: 0, // This endpoint doesn't provide active/inactive breakdown
           inactive_products: 0,
         };
       });
 
       setCategoryProductCounts(countsMap);
+      return countsMap;
     } catch (err) {
       console.error("Failed to load category product counts:", err);
+      return {};
     }
+  };
+
+  const refreshCategoryProductCounts = async (
+    categoriesOverride?: ProductCategory[],
+    productsSnapshotOverride?: Product[]
+  ) => {
+    const baseCounts = await loadCategoryProductCounts();
+    const targetCategories = categoriesOverride ?? categories;
+    let finalCounts = baseCounts;
+
+    if (targetCategories.length) {
+      const productsSnapshot =
+        productsSnapshotOverride ??
+        (allProducts.length > 0 ? allProducts : await loadAllProducts());
+
+      finalCounts = mergeTagCountsFromSnapshot(
+        baseCounts,
+        targetCategories,
+        productsSnapshot
+      );
+    }
+
+    setCategoryProductCounts(finalCounts);
+    console.log(
+      "[ProductCatalogsPage] Final category product counts state:",
+      finalCounts
+    );
+    return finalCounts;
   };
 
   const loadStats = async (skipCache = false) => {
@@ -580,7 +774,10 @@ export default function ProductCatalogsPage() {
     }
   };
 
-  const loadCategories = async (skipCache = false) => {
+  const loadCategories = async (
+    skipCache = false,
+    productsSnapshotOverride?: Product[]
+  ) => {
     try {
       setLoading(true);
       setError(null);
@@ -591,10 +788,18 @@ export default function ProductCatalogsPage() {
         skipCache: skipCache,
       });
 
-      setCategories(response.data || []);
+      const categoryList = response.data || [];
+      setCategories(categoryList);
 
-      // Load product counts separately
-      await loadCategoryProductCounts();
+      // Load product counts (including tag-based assignments)
+      console.log(
+        "[ProductCatalogsPage] Loaded categories:",
+        categoryList.length
+      );
+      const productsSnapshot =
+        productsSnapshotOverride ??
+        (allProducts.length > 0 ? allProducts : await loadAllProducts());
+      await refreshCategoryProductCounts(categoryList, productsSnapshot);
     } catch (err) {
       console.error("Failed to load categories:", err);
       showError("Failed to load categories", "Please try again later.");
@@ -606,9 +811,10 @@ export default function ProductCatalogsPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([loadStats(true), loadCategories(true)]); // Always skip cache for fresh data
+      await loadStats(true);
+      const productsSnapshot = await loadAllProducts();
+      await loadCategories(true, productsSnapshot);
       await loadCategoryPerformance();
-      await loadAllProducts(); // Still load products for assignment modal
     };
     loadData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -622,36 +828,6 @@ export default function ProductCatalogsPage() {
       const products = response.data || [];
       setAllProducts(products);
 
-      const aggregatedCounts: Record<
-        number,
-        {
-          total_products: number;
-          active_products: number;
-          inactive_products: number;
-        }
-      > = {};
-
-      products.forEach((product: Product) => {
-        const categoryId = Number(product.category_id);
-        if (Number.isNaN(categoryId)) {
-          return;
-        }
-        if (!aggregatedCounts[categoryId]) {
-          aggregatedCounts[categoryId] = {
-            total_products: 0,
-            active_products: 0,
-            inactive_products: 0,
-          };
-        }
-        aggregatedCounts[categoryId].total_products += 1;
-        if (product.is_active) {
-          aggregatedCounts[categoryId].active_products += 1;
-        } else {
-          aggregatedCounts[categoryId].inactive_products += 1;
-        }
-      });
-
-      setCategoryProductCounts((prev) => ({ ...prev, ...aggregatedCounts }));
       return products;
     } catch (err) {
       // Failed to load products for assignment
@@ -767,13 +943,13 @@ export default function ProductCatalogsPage() {
     if (advancedSearch.productCountMin !== "") {
       const minCount = parseInt(advancedSearch.productCountMin);
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesProductCount = matchesProductCount && categoryCount >= minCount;
     }
     if (advancedSearch.productCountMax !== "") {
       const maxCount = parseInt(advancedSearch.productCountMax);
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesProductCount = matchesProductCount && categoryCount <= maxCount;
     }
 
@@ -785,11 +961,11 @@ export default function ProductCatalogsPage() {
       matchesFilterType = category.is_active === false;
     } else if (filterType === "with_products") {
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesFilterType = categoryCount > 0;
     } else if (filterType === "empty") {
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesFilterType = categoryCount === 0;
     }
 
@@ -808,7 +984,7 @@ export default function ProductCatalogsPage() {
   const inactiveCatalogs =
     stats?.inactive_categories ?? Math.max(0, totalCatalogs - activeCatalogs);
   const clientSideUnusedCount = categories.filter(
-    (cat) => (categoryProductCounts[cat.id]?.total_products || 0) === 0
+    (cat) => (categoryProductCounts[String(cat.id)]?.total_products || 0) === 0
   ).length;
 
   const unusedCatalogs = stats?.empty_categories ?? clientSideUnusedCount;
@@ -817,7 +993,8 @@ export default function ProductCatalogsPage() {
     name: string;
     count: number;
   } | null>((acc, category) => {
-    const count = categoryProductCounts[category.id]?.total_products || 0;
+    const count =
+      categoryProductCounts[String(category.id)]?.total_products || 0;
     if (!acc || count > acc.count) {
       return {
         name: category.name,
@@ -1202,7 +1379,13 @@ export default function ProductCatalogsPage() {
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     <div className="font-medium">
-                      {categoryProductCounts[category.id]?.total_products || 0}{" "}
+                      {category.id === 8 &&
+                        console.log(
+                          "[ProductCatalogsPage] Rendering card for catalog 8 with counts:",
+                          categoryProductCounts[String(category.id)]
+                        )}
+                      {categoryProductCounts[String(category.id)]
+                        ?.total_products || 0}{" "}
                       products
                     </div>
                   </div>
@@ -1272,7 +1455,13 @@ export default function ProductCatalogsPage() {
                   </h3>
                   <div className="text-sm text-gray-600 mt-0.5">
                     <div className="font-medium">
-                      {categoryProductCounts[category.id]?.total_products || 0}{" "}
+                      {category.id === 8 &&
+                        console.log(
+                          "[ProductCatalogsPage] Rendering list card for catalog 8 with counts:",
+                          categoryProductCounts[String(category.id)]
+                        )}
+                      {categoryProductCounts[String(category.id)]
+                        ?.total_products || 0}{" "}
                       products
                     </div>
                   </div>
@@ -1462,7 +1651,7 @@ export default function ProductCatalogsPage() {
         }}
         category={selectedCategory}
         onRefreshCategories={loadCategories}
-        onRefreshProductCounts={loadCategoryProductCounts}
+        onRefreshProductCounts={refreshCategoryProductCounts}
         allProducts={allProducts}
         refreshAllProducts={loadAllProducts}
       />

@@ -45,6 +45,13 @@ import CustomerIdentityFieldDetailsPage from "../../customer/pages/CustomerIdent
 import CampaignApprovalHistoryPage from "../../campaigns/pages/CampaignApprovalHistoryPage";
 import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycleHistoryPage";
 import SearchResultsPage from "../../../shared/pages/SearchResultsPage";
+import OverallDashboardPerformancePage from "./OverallDashboardPerformancePage";
+import PerformanceReportsPage from "./PerformanceReportsPage";
+import CustomerProfileReportsPage from "./CustomerProfileReportsPage";
+import CampaignReportsPage from "./CampaignReportsPage";
+import OfferPerformanceReportsPage from "./OfferPerformanceReportsPage";
+import SegmentLevelReportsPage from "./SegmentLevelReportsPage";
+import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
 
 export default function Dashboard() {
   return (
@@ -140,6 +147,25 @@ export default function Dashboard() {
           element={<CustomerIdentityFieldDetailsPage />}
         />
         <Route path="/search" element={<SearchResultsPage />} />
+        <Route
+          path="/reports/overview"
+          element={<OverallDashboardPerformancePage />}
+        />
+        <Route
+          path="/reports/performance"
+          element={<PerformanceReportsPage />}
+        />
+        <Route
+          path="/reports/customer-profiles"
+          element={<CustomerProfileReportsPage />}
+        />
+        <Route path="/reports/campaigns" element={<CampaignReportsPage />} />
+        <Route
+          path="/reports/offers"
+          element={<OfferPerformanceReportsPage />}
+        />
+        <Route path="/reports/segments" element={<SegmentLevelReportsPage />} />
+        <Route path="/reports/delivery" element={<DeliverySMSReportsPage />} />
       </Routes>
     </DashboardLayout>
   );

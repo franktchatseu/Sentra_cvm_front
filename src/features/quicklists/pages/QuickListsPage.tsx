@@ -315,7 +315,7 @@ export default function QuickListsPage() {
 
   const quicklistStatsCards = [
     {
-      name: "Total QuickLists",
+      name: "Total Manual Broadcasts",
       value: statsLoading
         ? "..."
         : (stats?.overall.total_quicklists || 0).toLocaleString(),
@@ -355,7 +355,9 @@ export default function QuickListsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>QuickLists</h1>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+            Manual Broadcast
+          </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
             Upload and manage customer data lists for quick communication
           </p>
@@ -366,7 +368,7 @@ export default function QuickListsPage() {
             className={`${tw.button} flex items-center gap-2`}
           >
             <Plus className="w-4 h-4" />
-            Upload QuickList
+            Create Manual Broadcast
           </button>
         </div>
       </div>
@@ -413,7 +415,7 @@ export default function QuickListsPage() {
           />
           <input
             type="text"
-            placeholder="Search quicklists by name..."
+            placeholder="Search manual broadcasts by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={`w-full pl-10 pr-4 py-3 text-sm ${components.input.default}`}
@@ -449,15 +451,17 @@ export default function QuickListsPage() {
               color="primary"
               className="mr-3"
             />
-            <span className={`${tw.textSecondary}`}>Loading quicklists...</span>
+            <span className={`${tw.textSecondary}`}>
+              Loading manual broadcasts...
+            </span>
           </div>
         ) : quicklists.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p className={`${tw.textMuted} mb-6`}>
               {searchTerm
-                ? "No quicklists match your search."
-                : "No quicklists yet. Upload your first list to get started."}
+                ? "No manual broadcasts match your search."
+                : "No manual broadcasts yet. Upload your first list to get started."}
             </p>
             {!searchTerm && (
               <button
@@ -466,7 +470,7 @@ export default function QuickListsPage() {
                 style={{ backgroundColor: color.primary.action }}
               >
                 <Upload className="w-4 h-4" />
-                Upload QuickList
+                Create Manual Broadcast
               </button>
             )}
           </div>

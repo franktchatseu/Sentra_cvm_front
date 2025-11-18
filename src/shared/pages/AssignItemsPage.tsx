@@ -19,6 +19,7 @@ import { segmentService } from "../../features/segments/services/segmentService"
 import { offerCategoryService } from "../../features/offers/services/offerCategoryService";
 import { productCategoryService } from "../../features/products/services/productCategoryService";
 import { campaignService } from "../../features/campaigns/services/campaignService";
+import { buildCatalogTag } from "../utils/catalogTags";
 import {
   Offer,
   OfferStatusEnum,
@@ -31,11 +32,6 @@ import {
   UpdateSegmentRequest,
 } from "../../features/segments/types/segment";
 import { BackendCampaignType } from "../../features/campaigns/types/campaign";
-
-const CATALOG_TAG_PREFIX = "catalog:";
-
-const buildCatalogTag = (categoryId: number | string) =>
-  `${CATALOG_TAG_PREFIX}${categoryId}`;
 
 type ItemType = "offers" | "products" | "segments" | "campaigns";
 
@@ -262,14 +258,31 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                 break;
               }
               case "products": {
-                const productsResponse =
-                  await productService.getProductsByCategory(
-                    Number(catalogId),
-                    { limit: 100, skipCache: true }
-                  );
-                assigned = (productsResponse.data || []).map(
-                  (product: Product) => product.id
-                );
+                const catalogTag = buildCatalogTag(catalogId);
+                const [productsResponse, taggedResponse] = await Promise.all([
+                  productService.getProductsByCategory(Number(catalogId), {
+                    limit: 100,
+                    skipCache: true,
+                  }),
+                  productService.getProductsByTag({
+                    tag: catalogTag,
+                    limit: 500,
+                  }),
+                ]);
+
+                const assignedSet = new Set<number | string>();
+                (productsResponse.data || []).forEach((product: Product) => {
+                  if (product?.id !== undefined) {
+                    assignedSet.add(product.id);
+                  }
+                });
+                (taggedResponse.data || []).forEach((product: Product) => {
+                  if (product?.id !== undefined) {
+                    assignedSet.add(product.id);
+                  }
+                });
+
+                assigned = Array.from(assignedSet);
                 break;
               }
               case "segments":
@@ -549,11 +562,38 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
               await offerService.updateOffer(Number(itemId), updatePayload);
               break;
             }
-            case "products":
-              await productService.updateProduct(Number(itemId), {
-                category_id: Number(catalogId),
-              });
+            case "products": {
+              const product = items.find((item) => item.id === itemId) as
+                | Product
+                | undefined;
+              const operations: Promise<unknown>[] = [];
+
+              if (
+                (!product?.category_id || product.category_id === null) &&
+                !Number.isNaN(catalogIdNumber)
+              ) {
+                operations.push(
+                  productService.updateProduct(Number(itemId), {
+                    category_id: catalogIdNumber,
+                  })
+                );
+              }
+
+              const hasTag =
+                Array.isArray(product?.tags) &&
+                product.tags?.includes(catalogTag);
+
+              if (!hasTag) {
+                operations.push(
+                  productService.addProductTag(Number(itemId), catalogTag)
+                );
+              }
+
+              if (operations.length > 0) {
+                await Promise.all(operations);
+              }
               break;
+            }
             case "segments": {
               const segment = items.find((item) => item.id === itemId) as
                 | Segment

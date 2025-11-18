@@ -57,10 +57,6 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
-import CategoryDistributionChart, {
-  CategoryView,
-  CategoryChartPoint,
-} from "./CategoryDistributionChart";
 
 export default function DashboardHome() {
   const { user } = useAuth();
@@ -216,61 +212,6 @@ export default function DashboardHome() {
       color: string;
     }>
   >([]);
-  const [categoryView, setCategoryView] = useState<CategoryView>("segments");
-  const [categoryChartData, setCategoryChartData] = useState<
-    CategoryChartPoint[]
-  >([]);
-  const [categoryChartLoading, setCategoryChartLoading] = useState(false);
-  const defaultCategoryData = useMemo<
-    Record<CategoryView, CategoryChartPoint[]>
-  >(
-    () => ({
-      segments: [],
-      offers: [
-        { label: "Voice Bundles", value: 7 },
-        { label: "Data Packs", value: 10 },
-        { label: "SMS Boosters", value: 4 },
-      ],
-      campaigns: [
-        { label: "Acquisition", value: 2 },
-        { label: "Retention", value: 4 },
-        { label: "Upsell", value: 3 },
-      ],
-      products: [
-        { label: "Phones", value: 10 },
-        { label: "Accessories", value: 6 },
-        { label: "Tablets", value: 9 },
-      ],
-    }),
-    []
-  );
-  const parseCountValue = useCallback(
-    (value: unknown): number => Math.max(0, parseMetricValue(value)),
-    []
-  );
-  const categoryViewMeta = useMemo<
-    Record<CategoryView, { title: string; subtitle: string }>
-  >(
-    () => ({
-      segments: {
-        title: "Segment Categories",
-        subtitle: "Segment count per category",
-      },
-      offers: {
-        title: "Offer Categories",
-        subtitle: "Offer count per category",
-      },
-      campaigns: {
-        title: "Campaign Categories",
-        subtitle: "Category utilization",
-      },
-      products: {
-        title: "Product Categories",
-        subtitle: "Product count per category",
-      },
-    }),
-    []
-  );
 
   // State for top performing offers
   // const [topOffers, setTopOffers] = useState<
@@ -626,12 +567,10 @@ export default function DashboardHome() {
           setRecentSegments([]);
         }
       } catch {
-        // Error fetching segments
         setRecentSegments([]);
       }
 
       try {
-        // Fetch latest products
         const productsResponse = await productService.getAllProducts({
           limit: 3,
         });
@@ -851,84 +790,6 @@ export default function DashboardHome() {
 
     fetchSegmentTypeDistribution();
   }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchCategoryChartData = async () => {
-      try {
-        setCategoryChartLoading(true);
-        let dataset: CategoryChartPoint[] = [];
-
-        if (categoryView === "segments") {
-          const response = await segmentService.getCategoryDistribution(true);
-          if (response.success && response.data) {
-            const raw = Array.isArray(response.data) ? response.data : [];
-            dataset = raw
-              .map((item, index) => ({
-                label:
-                  item.category_name ||
-                  `Category ${item.category_id ?? index + 1}`,
-                value: parseCountValue(item.segment_count ?? item.count ?? 0),
-              }))
-              .filter((item) => item.value > 0);
-          }
-        } else if (categoryView === "products") {
-          const response = await productService.getStats(true);
-          if (response.success && response.data) {
-            const raw = Array.isArray(response.data.products_by_category)
-              ? response.data.products_by_category
-              : [];
-            dataset = raw
-              .map((item, index) => ({
-                label: item.category_name || `Category ${index + 1}`,
-                value: parseCountValue(item.product_count),
-              }))
-              .filter((item) => item.value > 0);
-          }
-        } else if (categoryView === "campaigns") {
-          const response = await campaignService.getCampaignCategoryStats(true);
-          if (response.success && response.data) {
-            const data = response.data as {
-              categories_with_campaigns?: unknown;
-              categories_without_campaigns?: unknown;
-            };
-            dataset = [
-              {
-                label: "With Campaigns",
-                value: parseCountValue(data.categories_with_campaigns),
-              },
-              {
-                label: "Without Campaigns",
-                value: parseCountValue(data.categories_without_campaigns),
-              },
-            ].filter((item) => item.value > 0);
-          }
-        }
-
-        if (isMounted) {
-          const finalData =
-            dataset.length > 0 ? dataset : defaultCategoryData[categoryView];
-          setCategoryChartData(finalData);
-        }
-      } catch (error) {
-        console.error("Failed to load category distribution:", error);
-        if (isMounted) {
-          setCategoryChartData(defaultCategoryData[categoryView]);
-        }
-      } finally {
-        if (isMounted) {
-          setCategoryChartLoading(false);
-        }
-      }
-    };
-
-    fetchCategoryChartData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [categoryView, parseCountValue, defaultCategoryData]);
 
   // Calculate percentage changes (vs last month)
   useEffect(() => {
@@ -1941,18 +1802,6 @@ export default function DashboardHome() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Category Distribution Chart */}
-      <div className="mb-6">
-        <CategoryDistributionChart
-          title={categoryViewMeta[categoryView].title}
-          subtitle={categoryViewMeta[categoryView].subtitle}
-          data={categoryChartData}
-          loading={categoryChartLoading}
-          selectedView={categoryView}
-          onViewChange={setCategoryView}
-        />
       </div>
 
       {/* Charts Section */}

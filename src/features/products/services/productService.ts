@@ -602,6 +602,90 @@ class ProductService {
       }
     );
   }
+
+  // 7. Tag Management
+
+  async addProductTag(id: number, tag: string): Promise<ApiResponse<Product>> {
+    return this.request<ApiResponse<Product>>(`/${id}/tags/add`, {
+      method: "POST",
+      body: JSON.stringify({ tag }),
+    });
+  }
+
+  async removeProductTag(
+    id: number,
+    tag: string
+  ): Promise<ApiResponse<Product>> {
+    return this.request<ApiResponse<Product>>(`/${id}/tags/remove`, {
+      method: "POST",
+      body: JSON.stringify({ tag }),
+    });
+  }
+
+  async setProductTags(
+    id: number,
+    tags: string[]
+  ): Promise<ApiResponse<Product>> {
+    return this.request<ApiResponse<Product>>(`/${id}/tags`, {
+      method: "PUT",
+      body: JSON.stringify({ tags }),
+    });
+  }
+
+  async clearProductTags(id: number): Promise<ApiResponse<Product>> {
+    return this.request<ApiResponse<Product>>(`/${id}/tags`, {
+      method: "DELETE",
+    });
+  }
+
+  async getAllProductTags(
+    params: { skipCache?: boolean } = {}
+  ): Promise<ApiResponse<string[]>> {
+    const queryParams = new URLSearchParams();
+    if (params.skipCache) queryParams.append("skipCache", "true");
+    const query = queryParams.toString();
+    return this.request<ApiResponse<string[]>>(
+      `/tags/all${query ? `?${query}` : ""}`
+    );
+  }
+
+  async getProductsByTags(params: {
+    tags: string[] | string;
+    match_all?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<PaginatedResponse<Product>> {
+    const queryParams = new URLSearchParams();
+    if (Array.isArray(params.tags)) {
+      params.tags.forEach((tag) => queryParams.append("tags", tag));
+    } else {
+      queryParams.append("tags", params.tags);
+    }
+    if (params.match_all !== undefined) {
+      queryParams.append("match_all", String(params.match_all));
+    }
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+
+    return this.request<PaginatedResponse<Product>>(
+      `/tags/search?${queryParams}`
+    );
+  }
+
+  async getProductsByTag(params: {
+    tag: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<PaginatedResponse<Product>> {
+    const queryParams = new URLSearchParams();
+    queryParams.append("tag", params.tag);
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.offset) queryParams.append("offset", params.offset.toString());
+
+    return this.request<PaginatedResponse<Product>>(
+      `/tag/search?${queryParams}`
+    );
+  }
 }
 
 export const productService = new ProductService();

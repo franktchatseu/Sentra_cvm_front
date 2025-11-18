@@ -165,7 +165,7 @@ export const campaignObjectivesConfig: ConfigurationPageConfig = {
   configType: "campaignObjectives",
 
   // Navigation
-  backPath: "/dashboard/campaigns",
+  backPath: "/dashboard/configuration",
 
   // UI
   icon: Flag,
@@ -211,7 +211,7 @@ export const departmentsConfig: ConfigurationPageConfig = {
   configType: "departments",
 
   // Navigation
-  backPath: "/dashboard/campaigns",
+  backPath: "/dashboard/configuration",
 
   // UI
   icon: Building2,
@@ -256,7 +256,7 @@ export const teamRolesConfig: ConfigurationPageConfig = {
   entityNamePlural: "roles",
 
   // Navigation
-  backPath: "/dashboard/campaigns",
+  backPath: "/dashboard/configuration",
 
   // UI
   icon: Users,
@@ -302,7 +302,7 @@ export const lineOfBusinessConfig: ConfigurationPageConfig = {
   configType: "lineOfBusiness",
 
   // Navigation
-  backPath: "/dashboard/configuration/campaign-1",
+  backPath: "/dashboard/configuration",
 
   // UI
   icon: Briefcase,
@@ -348,7 +348,7 @@ export function createConfigurationPageConfig(
     subtitle: "Manage configuration items",
     entityName: "item",
     entityNamePlural: "items",
-    backPath: "/dashboard/campaigns",
+    backPath: "/dashboard/configuration",
     icon: Flag,
     searchPlaceholder: "Search items...",
     initialData: [],

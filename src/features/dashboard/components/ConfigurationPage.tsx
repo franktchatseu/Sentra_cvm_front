@@ -1,29 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Grid3X3, List, Eye, Edit, Settings } from "lucide-react";
+import { Search, Grid3X3, List, Eye, Settings } from "lucide-react";
 import { color, tw, components } from "../../../shared/utils/utils";
-import { ConfigurationModal } from "../../../shared/components/GenericConfigurationPage";
-import type { ConfigurationPageConfig } from "../../../shared/components/GenericConfigurationPage";
 
 interface ConfigurationItem {
   id: string;
   name: string;
   description: string;
-  type:
-    | "campaign"
-    | "offer"
-    | "product"
-    | "segment"
-    | "user"
-    | "config"
-    | "control-group";
+  type: "campaign" | "offer" | "product" | "segment" | "user" | "control-group";
   category: string;
-  subConfigs?: string[];
-  lastModified: string;
   status: "active" | "inactive" | "draft";
-  color: string;
-  gradient: string;
   navigationPath: string;
+  icon?: string;
 }
 
 export default function ConfigurationPage() {
@@ -32,157 +20,137 @@ export default function ConfigurationPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [configurations, setConfigurations] = useState<ConfigurationItem[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [editingConfig, setEditingConfig] = useState<
-    ConfigurationItem | undefined
-  >();
 
-  // Modal configuration
-  const modalConfig: ConfigurationPageConfig = {
-    title: "Configuration Management",
-    subtitle: "Manage and configure all system settings and parameters",
-    entityName: "configuration",
-    entityNamePlural: "configurations",
-    backPath: "/dashboard/configurations",
-    icon: Settings,
-    searchPlaceholder: "Search configurations...",
-    initialData: [],
-    createButtonText: "Add Configuration",
-    modalTitle: {
-      create: "Add Configuration",
-      edit: "Edit Configuration",
-    },
-    nameLabel: "Name",
-    nameRequired: true,
-    descriptionLabel: "Description",
-    descriptionRequired: false,
-    nameMaxLength: 100,
-    descriptionMaxLength: 500,
-    deleteConfirmTitle: "Delete Configuration",
-    deleteConfirmMessage: (name: string) =>
-      `Are you sure you want to delete "${name}"?`,
-    deleteSuccessMessage: (name: string) =>
-      `Configuration "${name}" deleted successfully`,
-    createSuccessMessage: "Configuration created successfully",
-    updateSuccessMessage: "Configuration updated successfully",
-    deleteErrorMessage: "Failed to delete configuration",
-    saveErrorMessage: "Failed to save configuration",
-  };
-
-  // Mock data - replace with actual API call
+  // All individual configurations - flat list
   useEffect(() => {
-    const mockConfigurations: ConfigurationItem[] = [
+    const allConfigurations: ConfigurationItem[] = [
+      // Campaign-related configs
       {
-        id: "campaign-1",
-        name: "Campaign Management",
-        description: "Manage and configure all campaign settings and templates",
+        id: "line-of-business",
+        name: "Line of Business",
+        description: "Define and manage your business lines and services",
         type: "campaign",
-        category: "Management",
-        subConfigs: [
-          "Line of Business",
-          "Campaign Communication Policy",
-          "Campaign Objective",
-          "Department",
-          "Programs",
-        ],
-        lastModified: "2025-01-20",
+        category: "Campaign Configuration",
         status: "active",
-        color: "campaigns",
-        gradient: `from-[${color.primary.accent}] to-[${color.primary.accent}]80`,
-        navigationPath: "/dashboard/campaigns",
+        navigationPath: "/dashboard/line-of-business",
       },
       {
-        id: "offer-1",
-        name: "Offer Configuration",
+        id: "campaign-communication-policy",
+        name: "Campaign Communication Policy",
+        description: "Configure communication policies for campaigns",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/campaign-communication-policy",
+      },
+      {
+        id: "campaign-objectives",
+        name: "Campaign Objectives",
+        description: "Define and manage your campaign objectives",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/campaign-objectives",
+      },
+      {
+        id: "departments",
+        name: "Departments",
+        description: "Define and manage your departments",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/departments",
+      },
+      {
+        id: "programs",
+        name: "Programs",
+        description: "Manage campaign programs and initiatives",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/programs",
+      },
+      {
+        id: "campaign-catalogs",
+        name: "Campaign Categories",
+        description: "Manage campaign categories and catalogs",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/campaign-catalogs",
+      },
+      // Offer-related configs
+      {
+        id: "offer-types",
+        name: "Offer Types",
         description: "Configure different types of offers and promotions",
         type: "offer",
-        category: "Configuration",
-        subConfigs: ["Offer Types", "Offer Catalogs", "Discount Rules"],
-        lastModified: "2025-01-19",
+        category: "Offer Configuration",
         status: "active",
-        color: "offers",
-        gradient: `from-[${color.primary.accent}] to-[${color.primary.accent}]80`,
-        navigationPath: "/dashboard/offers",
+        navigationPath: "/dashboard/offer-types",
       },
       {
-        id: "product-1",
-        name: "Product Management",
-        description: "Manage product catalog, categories, and types",
+        id: "offer-catalogs",
+        name: "Offer Categories",
+        description: "Manage offer categories and catalogs",
+        type: "offer",
+        category: "Offer Configuration",
+        status: "active",
+        navigationPath: "/dashboard/offer-catalogs",
+      },
+      // Product-related configs
+      {
+        id: "product-types",
+        name: "Product Types",
+        description: "Manage product types and classifications",
         type: "product",
-        category: "Management",
-        subConfigs: ["Product Catalogs", "Product Types", "Product Catalog"],
-        lastModified: "2025-01-18",
+        category: "Product Configuration",
         status: "active",
-        color: "products",
-        gradient: `from-[${color.primary.accent}] to-[${color.primary.accent}]80`,
-        navigationPath: "/dashboard/products",
+        navigationPath: "/dashboard/product-types",
       },
       {
-        id: "segment-1",
-        name: "Segment Management",
-        description: "Configure customer segmentation and targeting rules",
+        id: "product-catalogs",
+        name: "Product Categories",
+        description: "Manage product categories and catalogs",
+        type: "product",
+        category: "Product Configuration",
+        status: "active",
+        navigationPath: "/dashboard/products/catalogs",
+      },
+      // Segment-related configs
+      {
+        id: "segment-catalogs",
+        name: "Segment Categories",
+        description: "Manage segment categories and classifications",
         type: "segment",
-        category: "Management",
-        subConfigs: [
-          "Segment Rules",
-          "Targeting Criteria",
-          "Customer Segments",
-        ],
-        lastModified: "2025-01-16",
+        category: "Segment Configuration",
         status: "active",
-        color: "segments",
-        gradient: `from-[${color.primary.accent}] to-[${color.primary.accent}]80`,
-        navigationPath: "/dashboard/segments",
+        navigationPath: "/dashboard/segment-catalogs",
       },
+      // User-related configs
       {
-        id: "user-1",
+        id: "user-management",
         name: "User Management",
         description: "Manage user accounts, roles, and permissions",
         type: "user",
-        category: "Management",
-        subConfigs: ["User Roles", "Permissions", "Account Settings"],
-        lastModified: "2025-01-15",
+        category: "User Configuration",
         status: "active",
-        color: "users",
-        gradient: `from-[${color.primary.accent}] to-[${color.primary.accent}]80`,
         navigationPath: "/dashboard/user-management",
       },
+      // Control group configs
       {
-        id: "control-group-1",
+        id: "control-groups",
         name: "Universal Control Groups",
         description:
           "Configure and manage universal control groups for campaigns",
         type: "control-group",
-        category: "Configuration",
-        subConfigs: [
-          "Control Group Templates",
-          "Customer Base Rules",
-          "Scheduling Settings",
-        ],
-        lastModified: "2025-01-22",
+        category: "Campaign Configuration",
         status: "active",
-        color: "campaigns",
-        gradient: `from-[${color.primary.accent}] to-[${color.primary.accent}]80`,
         navigationPath: "/dashboard/control-groups",
       },
-      // {
-      //   id: 'config-1',
-      //   name: 'System Configuration',
-      //   description: 'Global system settings and configuration parameters',
-      //   type: 'config',
-      //   category: 'System',
-      //   subConfigs: ['API Settings', 'Email Templates', 'Notification Rules', 'System Preferences'],
-      //   lastModified: '2025-01-14',
-      //   status: 'active',
-      //   icon: Cog,
-      //   color: 'slate',
-      //   gradient: 'from-slate-500 to-gray-600'
-      // }
     ];
 
-    // Set configurations immediately since it's mock data
-    setConfigurations(mockConfigurations);
+    setConfigurations(allConfigurations);
   }, []);
 
   const categories = [
@@ -217,11 +185,6 @@ export default function ConfigurationPage() {
       name: "Control Group",
       count: configurations.filter((c) => c.type === "control-group").length,
     },
-    {
-      id: "config",
-      name: "Configuration",
-      count: configurations.filter((c) => c.type === "config").length,
-    },
   ];
 
   const filteredConfigurations = configurations.filter((config) => {
@@ -236,83 +199,8 @@ export default function ConfigurationPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const getStatusStyle = () => {
-    // Return black text with black border for all statuses
-    return {
-      color: "#000000",
-      backgroundColor: "transparent",
-      borderColor: "#000000",
-      border: "1px solid",
-    };
-  };
-
   const handleConfigurationClick = (config: ConfigurationItem) => {
-    // Navigation removed - will be used for expandable view later
-    // navigate(config.navigationPath);
-  };
-
-  const handleViewDetails = (config: ConfigurationItem) => {
-    // Navigate to a details page showing all sub-configurations
-    // For now, we'll navigate to the main page - we can create a details page later
-    navigate(`/dashboard/configuration/${config.id}`);
-  };
-
-  const handleAddConfiguration = () => {
-    setEditingConfig(undefined);
-    setIsModalOpen(true);
-  };
-
-  const handleEditConfiguration = (config: ConfigurationItem) => {
-    setEditingConfig(config);
-    setIsModalOpen(true);
-  };
-
-  const handleSaveConfiguration = async (itemData: {
-    name: string;
-    description?: string;
-  }) => {
-    try {
-      setIsSaving(true);
-
-      if (editingConfig) {
-        // Update existing configuration
-        setConfigurations(
-          configurations.map((config) =>
-            config.id === editingConfig.id
-              ? {
-                  ...config,
-                  name: itemData.name,
-                  description: itemData.description || "",
-                  lastModified: new Date().toISOString().split("T")[0],
-                }
-              : config
-          )
-        );
-      } else {
-        // Create new configuration
-        const newConfig: ConfigurationItem = {
-          id: `config-${Date.now()}`,
-          name: itemData.name,
-          description: itemData.description || "",
-          type: "config",
-          category: "Configuration",
-          subConfigs: [],
-          lastModified: new Date().toISOString().split("T")[0],
-          status: "active",
-          color: "config",
-          gradient: `from-[${color.primary.accent}] to-[${color.primary.accent}]80`,
-          navigationPath: "/dashboard/configurations",
-        };
-        setConfigurations([...configurations, newConfig]);
-      }
-
-      setIsModalOpen(false);
-      setEditingConfig(undefined);
-    } catch (error) {
-      console.error("Failed to save configuration:", error);
-    } finally {
-      setIsSaving(false);
-    }
+    navigate(config.navigationPath);
   };
 
   return (
@@ -379,38 +267,28 @@ export default function ConfigurationPage() {
 
         {/* Category Filters */}
         <div className="flex flex-wrap gap-2 mt-4 sm:mt-6">
-          {categories.map(
-            (category) =>
-              category.id !== "config" && (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    selectedCategory === category.id
-                      ? `bg-[#5F6F77] text-white`
-                      : `bg-white ${tw.textSecondary} hover:bg-gray-50 border border-gray-300`
-                  }`}
-                >
-                  {category.name} ({category.count})
-                </button>
-              )
-          )}
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                selectedCategory === category.id
+                  ? `bg-[#5F6F77] text-white`
+                  : `bg-white ${tw.textSecondary} hover:bg-gray-50 border border-gray-300`
+              }`}
+            >
+              {category.name} ({category.count})
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Results Count */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 mb-6">
+      <div className="mb-6">
         <p className={`${tw.textSecondary} text-sm`}>
           Showing {filteredConfigurations.length} of {configurations.length}{" "}
-          configurations
+          configuration{configurations.length !== 1 ? "s" : ""}
         </p>
-        <button
-          onClick={handleAddConfiguration}
-          className={`${tw.button} flex items-center space-x-2 hover:scale-105 text-sm whitespace-nowrap`}
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add Configuration</span>
-        </button>
       </div>
 
       {/* Configurations Grid/List */}
@@ -420,7 +298,8 @@ export default function ConfigurationPage() {
             return (
               <div
                 key={config.id}
-                className={`group ${components.card.default} hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 flex flex-col h-full`}
+                onClick={() => handleConfigurationClick(config)}
+                className={`group ${components.card.default} hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-500 flex flex-col h-full cursor-pointer`}
                 style={{
                   animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
                   opacity: 0,
@@ -431,11 +310,16 @@ export default function ConfigurationPage() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3
-                        className={`text-lg font-bold ${tw.textPrimary} mb-2 leading-tight`}
-                      >
-                        {config.name}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 rounded-lg flex items-center justify-center bg-neutral-100">
+                          <Settings className={`h-5 w-5 ${tw.textPrimary}`} />
+                        </div>
+                        <h3
+                          className={`text-lg font-bold ${tw.textPrimary} leading-tight`}
+                        >
+                          {config.name}
+                        </h3>
+                      </div>
                       <p
                         className={`text-sm ${tw.textSecondary} leading-relaxed`}
                       >
@@ -445,92 +329,15 @@ export default function ConfigurationPage() {
                   </div>
 
                   {/* Category */}
-                  <div className="mb-4">
+                  <div className="mb-4 flex items-center justify-between gap-3">
                     <span
                       className={`bg-neutral-100 px-3 py-1 rounded-full text-sm font-medium ${tw.textSecondary}`}
                     >
                       {config.category}
                     </span>
-                  </div>
-
-                  {/* Sub-configurations */}
-                  <div className="mb-6">
-                    <p
-                      className={`text-sm font-semibold ${tw.textPrimary} mb-3`}
-                    >
-                      Sub-configurations:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {config.subConfigs && config.subConfigs.length > 0 ? (
-                        <>
-                          {config.subConfigs
-                            .slice(0, 2)
-                            .map((subConfig, idx) => (
-                              <span
-                                key={idx}
-                                className={`text-sm bg-neutral-100 ${tw.textSecondary} px-3 py-1 rounded-full`}
-                              >
-                                {subConfig}
-                              </span>
-                            ))}
-                          {config.subConfigs.length > 2 && (
-                            <span
-                              className={`text-sm ${tw.textMuted} px-3 py-1 bg-gray-50 rounded-full`}
-                            >
-                              +{config.subConfigs.length - 2} more
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span
-                          className={`text-sm ${tw.textMuted} px-3 py-1 bg-gray-50 rounded-full`}
-                        >
-                          No sub-configurations
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div
-                    className={`flex items-center justify-between pt-4 border-t ${tw.borderDefault}`}
-                  >
-                    <span className={`text-sm ${tw.textMuted}`}>
-                      Modified: {config.lastModified}
-                    </span>
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewDetails(config);
-                        }}
-                        className={`p-2 ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 rounded-lg transition-all duration-200`}
-                        style={{
-                          "&:hover": { color: color.primary.accent },
-                        }}
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4 hover:text-[${color.primary.accent}]" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditConfiguration(config);
-                        }}
-                        className={`p-2 ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 rounded-lg transition-all duration-200`}
-                        style={{
-                          "&:hover": { color: color.primary.accent },
-                        }}
-                        title="Edit Configuration"
-                      >
-                        <Edit className="h-4 w-4 hover:text-[${color.primary.accent}]" />
-                      </button>
-                      <span
-                        className={`text-sm ${tw.textMuted} group-hover:text-[${color.primary.accent}] transition-colors duration-200 ml-1`}
-                      >
-                        →
-                      </span>
-                    </div>
+                    <Eye
+                      className={`h-5 w-5 ${tw.textMuted} group-hover:text-[${color.primary.accent}] transition-colors duration-200`}
+                    />
                   </div>
                 </div>
               </div>
@@ -544,7 +351,8 @@ export default function ConfigurationPage() {
               return (
                 <div
                   key={config.id}
-                  className={`group p-4 sm:p-6 hover:bg-neutral-100/50 transition-all duration-300`}
+                  onClick={() => handleConfigurationClick(config)}
+                  className={`group p-4 sm:p-6 hover:bg-neutral-100/50 transition-all duration-300 cursor-pointer`}
                   style={{
                     animation: `fadeInUp 0.6s ease-out forwards ${
                       index * 0.1
@@ -554,6 +362,9 @@ export default function ConfigurationPage() {
                   }}
                 >
                   <div className="flex items-center space-x-4">
+                    <div className="p-3 rounded-lg flex items-center justify-center flex-shrink-0 bg-neutral-100">
+                      <Settings className={`h-5 w-5 ${tw.textPrimary}`} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3
@@ -568,48 +379,17 @@ export default function ConfigurationPage() {
                         {config.description}
                       </p>
                       <div
-                        className={`flex items-center space-x-4 text-sm sm:text-base ${tw.textMuted}`}
+                        className={`flex items-center justify-between gap-3 text-sm sm:text-base ${tw.textMuted}`}
                       >
                         <span
                           className={`bg-neutral-100 px-2 py-1 rounded-full`}
                         >
                           {config.category}
                         </span>
-                        <span>Modified: {config.lastModified}</span>
-                        {config.subConfigs && (
-                          <span>
-                            {config.subConfigs.length} sub-configurations
-                          </span>
-                        )}
+                        <Eye
+                          className={`h-5 w-5 ${tw.textMuted} group-hover:text-[${color.primary.accent}] transition-colors duration-200 flex-shrink-0`}
+                        />
                       </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewDetails(config);
-                        }}
-                        className={`p-2 ${tw.textMuted} hover:text-primary hover:bg-primary/10 rounded-lg transition-all duration-200`}
-                        title="View Details"
-                      >
-                        <Eye className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditConfiguration(config);
-                        }}
-                        className={`p-2 ${tw.textMuted} hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-all duration-200`}
-                        title="Edit Configuration"
-                      >
-                        <Edit className="h-5 w-5" />
-                      </button>
-                      <span
-                        className={`text-sm ${tw.textMuted} group-hover:${tw.textSecondary} transition-colors duration-200`}
-                      >
-                        →
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -618,27 +398,6 @@ export default function ConfigurationPage() {
           </div>
         </div>
       )}
-
-      {/* Configuration Modal */}
-      <ConfigurationModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingConfig(undefined);
-        }}
-        item={
-          editingConfig
-            ? {
-                id: Number(editingConfig.id.replace("config-", "")),
-                name: editingConfig.name,
-                description: editingConfig.description,
-              }
-            : undefined
-        }
-        onSave={handleSaveConfiguration}
-        isSaving={isSaving}
-        config={modalConfig}
-      />
 
       {/* Empty State */}
       {filteredConfigurations.length === 0 && (
@@ -658,7 +417,13 @@ export default function ConfigurationPage() {
               ? "Try adjusting your search terms"
               : "No configurations match the selected category"}
           </p>
-          <button className={`${tw.button} text-sm whitespace-nowrap`}>
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setSelectedCategory("all");
+            }}
+            className={`${tw.button} text-sm whitespace-nowrap`}
+          >
             Clear Filters
           </button>
         </div>

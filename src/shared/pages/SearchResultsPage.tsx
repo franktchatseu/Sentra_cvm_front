@@ -46,6 +46,9 @@ export default function SearchResultsPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<
+    "all" | "campaign" | "offer" | "product" | "segment" | "program"
+  >("all");
 
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -199,6 +202,76 @@ export default function SearchResultsPage() {
     }
   }, [query, performSearch]);
 
+  // Category filter buttons (similar to config page)
+  const categories = [
+    {
+      id: "all" as const,
+      name: "All Results",
+      count:
+        results.campaigns.length +
+        results.offers.length +
+        results.products.length +
+        results.segments.length +
+        results.programs.length,
+    },
+    {
+      id: "campaign" as const,
+      name: "Campaigns",
+      count: results.campaigns.length,
+    },
+    {
+      id: "offer" as const,
+      name: "Offers",
+      count: results.offers.length,
+    },
+    {
+      id: "product" as const,
+      name: "Products",
+      count: results.products.length,
+    },
+    {
+      id: "segment" as const,
+      name: "Segments",
+      count: results.segments.length,
+    },
+    {
+      id: "program" as const,
+      name: "Programs",
+      count: results.programs.length,
+    },
+  ];
+
+  // Filter results by selected category
+  const getFilteredResults = (): SearchResults => {
+    if (selectedCategory === "all") {
+      return results;
+    }
+
+    const filtered: SearchResults = {
+      campaigns: [],
+      offers: [],
+      products: [],
+      segments: [],
+      programs: [],
+    };
+
+    if (selectedCategory === "campaign") {
+      filtered.campaigns = results.campaigns;
+    } else if (selectedCategory === "offer") {
+      filtered.offers = results.offers;
+    } else if (selectedCategory === "product") {
+      filtered.products = results.products;
+    } else if (selectedCategory === "segment") {
+      filtered.segments = results.segments;
+    } else if (selectedCategory === "program") {
+      filtered.programs = results.programs;
+    }
+
+    return filtered;
+  };
+
+  const filteredResults = getFilteredResults();
+
   const getTypeInfo = (type: SearchResult["type"]) => {
     const types = {
       campaign: {
@@ -226,11 +299,11 @@ export default function SearchResultsPage() {
   };
 
   const totalResults =
-    results.campaigns.length +
-    results.offers.length +
-    results.products.length +
-    results.segments.length +
-    results.programs.length;
+    filteredResults.campaigns.length +
+    filteredResults.offers.length +
+    filteredResults.products.length +
+    filteredResults.segments.length +
+    filteredResults.programs.length;
 
   const renderResultsSection = (
     title: string,
@@ -296,13 +369,13 @@ export default function SearchResultsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-8">
         <div>
           <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
             Search Results
           </h1>
           {query && (
-            <p className={`${tw.textSecondary} mt-1`}>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>
               {isLoading
                 ? "Searching..."
                 : totalResults > 0
@@ -312,6 +385,25 @@ export default function SearchResultsPage() {
                 : `No results found for "${query}"`}
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Category Filters (similar to config page) */}
+      <div className="mb-8">
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                selectedCategory === category.id
+                  ? `bg-[#5F6F77] text-white`
+                  : `bg-white ${tw.textSecondary} hover:bg-gray-50 border border-gray-300`
+              }`}
+            >
+              {category.name} ({category.count})
+            </button>
+          ))}
         </div>
       </div>
 
@@ -345,11 +437,27 @@ export default function SearchResultsPage() {
             </div>
           ) : (
             <div className="space-y-8">
-              {renderResultsSection("Campaigns", results.campaigns, "campaign")}
-              {renderResultsSection("Offers", results.offers, "offer")}
-              {renderResultsSection("Products", results.products, "product")}
-              {renderResultsSection("Segments", results.segments, "segment")}
-              {renderResultsSection("Programs", results.programs, "program")}
+              {renderResultsSection(
+                "Campaigns",
+                filteredResults.campaigns,
+                "campaign"
+              )}
+              {renderResultsSection("Offers", filteredResults.offers, "offer")}
+              {renderResultsSection(
+                "Products",
+                filteredResults.products,
+                "product"
+              )}
+              {renderResultsSection(
+                "Segments",
+                filteredResults.segments,
+                "segment"
+              )}
+              {renderResultsSection(
+                "Programs",
+                filteredResults.programs,
+                "program"
+              )}
             </div>
           )}
         </>

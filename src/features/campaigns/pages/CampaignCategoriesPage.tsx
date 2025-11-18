@@ -886,8 +886,8 @@ export default function CampaignCategoriesPage() {
                 </span>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction} hover:opacity-90`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View & Assign Campaigns"
                 >
                   View Campaigns
@@ -924,8 +924,8 @@ export default function CampaignCategoriesPage() {
                 </div>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction} hover:opacity-90`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View & Assign Campaigns"
                 >
                   View Campaigns

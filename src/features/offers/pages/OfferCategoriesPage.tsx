@@ -1457,8 +1457,8 @@ function OfferCategoriesPage() {
                   </span>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className="px-3 py-1.5 text-sm font-medium transition-colors"
-                    style={{ color: color.primary.accent }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction} hover:opacity-90`}
+                    style={{ backgroundColor: color.primary.action }}
                     title="View & Assign Offers"
                   >
                     View Offers
@@ -1583,8 +1583,8 @@ function OfferCategoriesPage() {
                   </div>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className="px-3 py-1.5 text-sm font-medium transition-colors"
-                    style={{ color: color.primary.accent }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction} hover:opacity-90`}
+                    style={{ backgroundColor: color.primary.action }}
                     title="View & Assign Offers"
                   >
                     View Offers
