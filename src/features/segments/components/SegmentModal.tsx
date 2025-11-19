@@ -404,7 +404,7 @@ export default function SegmentModal({
               onClick={onClose}
             />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="relative bg-white rounded-md shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
               <div
                 className={`flex items-center justify-between p-6 border-b border-[${tw.borderDefault}] bg-gradient-to-r from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 flex-shrink-0`}
@@ -419,7 +419,7 @@ export default function SegmentModal({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                 >
                   <X className="w-5 h-5 text-black" />
                 </button>
@@ -435,7 +435,7 @@ export default function SegmentModal({
                   {/* Error Message */}
                   {error && (
                     <div
-                      className={`p-4 bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-lg`}
+                      className={`p-4 bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-md`}
                     >
                       <p className={`text-sm text-[${color.status.danger}]`}>
                         {error}
@@ -461,7 +461,7 @@ export default function SegmentModal({
                           }))
                         }
                         placeholder="Enter segment name"
-                        className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
+                        className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-md focus:outline-none text-sm`}
                         required
                       />
                     </div>
@@ -533,7 +533,7 @@ export default function SegmentModal({
                               handleAddTag(e);
                             }}
                             placeholder="Type tags separated by commas (e.g., premium, high-value)"
-                            className={`flex-1 px-4 py-3 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
+                            className={`flex-1 px-4 py-3 border border-[${tw.borderDefault}] rounded-md focus:outline-none text-sm`}
                           />
                           <button
                             type="button"
@@ -553,7 +553,7 @@ export default function SegmentModal({
                                 }
                               }
                             }}
-                            className="inline-flex items-center px-4  text-sm text-white rounded-lg transition-colors"
+                            className="inline-flex items-center px-4  text-sm text-white rounded-md transition-colors"
                             style={{
                               backgroundColor: color.primary.action,
                             }}
@@ -600,7 +600,7 @@ export default function SegmentModal({
                       }
                       placeholder="Describe this segment..."
                       rows={3}
-                      className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-lg text-sm`}
+                      className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-md text-sm`}
                     />
                   </div>
 
@@ -624,7 +624,7 @@ export default function SegmentModal({
                           disabled={
                             isPreviewLoading || formData.conditions.length === 0
                           }
-                          className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{
                             backgroundColor: color.primary.action,
                           }}
@@ -635,7 +635,7 @@ export default function SegmentModal({
                     </div>
 
                     <div
-                      className={`border border-[${tw.borderDefault}] rounded-lg p-4 bg-[${color.surface.cards}]`}
+                      className={`border border-[${tw.borderDefault}] rounded-md p-4 bg-[${color.surface.cards}]`}
                     >
                       <SegmentConditionsBuilder
                         conditions={formData.conditions}
@@ -647,7 +647,7 @@ export default function SegmentModal({
 
                     {/* Query Preview Section */}
                     {previewQuery && (
-                      <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="text-sm font-medium text-gray-700">
                             Generated SQL Query
@@ -678,7 +678,7 @@ export default function SegmentModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${tw.borderDefault}] rounded-lg hover:bg-[${color.surface.cards}] transition-colors text-sm`}
+                  className={`px-6 py-2 ${tw.textSecondary} bg-white border border-[${tw.borderDefault}] rounded-md hover:bg-[${color.surface.cards}] transition-colors text-sm`}
                 >
                   Cancel
                 </button>
@@ -686,7 +686,7 @@ export default function SegmentModal({
                   type="submit"
                   form="segment-form"
                   disabled={isLoading}
-                  className="inline-flex items-center px-6 py-2 text-white rounded-lg transition-colors text-sm"
+                  className="inline-flex items-center px-6 py-2 text-white rounded-md transition-colors text-sm"
                   style={{
                     backgroundColor: isLoading
                       ? color.text.muted

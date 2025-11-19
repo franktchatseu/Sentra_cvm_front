@@ -151,7 +151,7 @@ export default function ControlGroupsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/configuration")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -176,10 +176,10 @@ export default function ControlGroupsPage() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center">
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.primary.action}10` }}
             >
               <Shield
@@ -198,10 +198,10 @@ export default function ControlGroupsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center">
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.primary.action}10` }}
             >
               <Users
@@ -218,9 +218,9 @@ export default function ControlGroupsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-100">
+            <div className="p-3 rounded-md bg-blue-100">
               <Percent className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
@@ -252,7 +252,7 @@ export default function ControlGroupsPage() {
               placeholder="Search control groups..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -273,7 +273,7 @@ export default function ControlGroupsPage() {
       </div>
 
       {/* Control Groups Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -314,7 +314,7 @@ export default function ControlGroupsPage() {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         <div
-                          className="h-10 w-10 rounded-lg flex items-center justify-center"
+                          className="h-10 w-10 rounded-md flex items-center justify-center"
                           style={{
                             backgroundColor: `${color.primary.action}10`,
                           }}
@@ -444,7 +444,7 @@ export default function ControlGroupsPage() {
       {showCreateModal &&
         createPortal(
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-md shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>

@@ -107,7 +107,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-x-4">
           <button
             type="button"
-            className="relative p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="relative p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors"
           >
             <Bell className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-600 text-white rounded-full text-xs flex items-center justify-center font-medium">
@@ -132,7 +132,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
             <button
               onClick={logout}
-              className="p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors"
               title="Sign out"
             >
               <LogOut className="h-4 w-4" />

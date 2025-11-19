@@ -167,11 +167,11 @@ export default function UserDetailsPage() {
   if (!user && !isLoading) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-md p-6 text-center">
           <p className="text-red-600">User not found</p>
           <button
             onClick={navigateBack}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
           >
             Back to User Management
           </button>
@@ -260,7 +260,7 @@ export default function UserDetailsPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={navigateBack}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -326,14 +326,14 @@ export default function UserDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
         {activeSection === "overview" && (
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-6">
                 {/* Personal Information */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">
                     Personal Information
                   </h3>
@@ -370,7 +370,7 @@ export default function UserDetailsPage() {
                 </div>
 
                 {/* Work Information */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">
                     Work Information
                   </h3>
@@ -420,7 +420,7 @@ export default function UserDetailsPage() {
               {/* Right Column */}
               <div className="space-y-6">
                 {/* Security & Access */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">
                     Security & Access
                   </h3>
@@ -459,7 +459,7 @@ export default function UserDetailsPage() {
                 </div>
 
                 {/* Activity Timeline */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">
                     Activity Timeline
                   </h3>
@@ -546,7 +546,7 @@ export default function UserDetailsPage() {
                     {/* Summary Stat Cards */}
                     {permissionsSummary?.data ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
                           <div className="space-y-4">
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-3">
@@ -573,7 +573,7 @@ export default function UserDetailsPage() {
                           </div>
                         </div>
 
-                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
                           <div className="space-y-4">
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-3">
@@ -600,7 +600,7 @@ export default function UserDetailsPage() {
                           </div>
                         </div>
 
-                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
                           <div className="space-y-4">
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-3">
@@ -627,7 +627,7 @@ export default function UserDetailsPage() {
                           </div>
                         </div>
 
-                        <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
                           <div className="space-y-4">
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-3">
@@ -655,7 +655,7 @@ export default function UserDetailsPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                      <div className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300">
                         <div className="space-y-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -693,7 +693,7 @@ export default function UserDetailsPage() {
                             .map(([category, count]) => (
                               <div
                                 key={category}
-                                className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-sm transition-shadow"
+                                className="bg-white rounded-md p-4 border border-gray-200 hover:shadow-sm transition-shadow"
                               >
                                 <p className="text-xs text-gray-600 mb-2 capitalize font-medium">
                                   {category.replace(/_/g, " ")}
@@ -717,7 +717,7 @@ export default function UserDetailsPage() {
                           {permissionsList.map((perm) => (
                             <div
                               key={perm.id}
-                              className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:bg-gray-100 transition-colors"
+                              className="bg-gray-50 rounded-md p-3 border border-gray-200 hover:bg-gray-100 transition-colors"
                             >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -795,7 +795,7 @@ export default function UserDetailsPage() {
                   {directReports.map((report) => (
                     <div
                       key={report.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() =>
                         navigate(`/dashboard/user-management/${report.id}`, {
                           state: { returnTo },
@@ -843,7 +843,7 @@ export default function UserDetailsPage() {
                     return (
                       <div
                         key={report.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer ${
+                        className={`flex items-center justify-between p-3 rounded-md border transition-colors cursor-pointer ${
                           isDirectReport
                             ? "bg-gray-50 border-gray-200 hover:bg-gray-100"
                             : "bg-blue-50 border-blue-200 hover:bg-blue-100"
@@ -895,7 +895,7 @@ export default function UserDetailsPage() {
                   {managerChain.map((manager) => (
                     <div
                       key={manager.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() =>
                         navigate(`/dashboard/user-management/${manager.id}`, {
                           state: { returnTo },

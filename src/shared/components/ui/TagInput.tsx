@@ -1,5 +1,5 @@
-import React, { useState, useRef, KeyboardEvent } from 'react';
-import { X, Plus } from 'lucide-react';
+import React, { useState, useRef, KeyboardEvent } from "react";
+import { X, Plus } from "lucide-react";
 
 interface TagInputProps {
   value: string[];
@@ -19,17 +19,17 @@ export default function TagInput({
   label,
   error,
   disabled = false,
-  className = '',
-  maxTags
+  className = "",
+  maxTags,
 }: TagInputProps) {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
+    if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       addTag();
-    } else if (e.key === 'Backspace' && inputValue === '' && value.length > 0) {
+    } else if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
       removeTag(value.length - 1);
     }
   };
@@ -39,7 +39,7 @@ export default function TagInput({
     if (trimmedValue && !value.includes(trimmedValue)) {
       if (!maxTags || value.length < maxTags) {
         onChange([...value, trimmedValue]);
-        setInputValue('');
+        setInputValue("");
       }
     }
   };
@@ -62,13 +62,13 @@ export default function TagInput({
           {label}
         </label>
       )}
-      
+
       <div
         className={`
-          min-h-[42px] w-full px-3 py-2 border rounded-lg bg-white
+          min-h-[42px] w-full px-3 py-2 border rounded-md bg-white
           transition-all duration-200 focus-within:border-blue-500
-          ${error ? 'border-red-300' : 'border-gray-300'}
-          ${disabled ? 'bg-gray-50 cursor-not-allowed' : 'cursor-text'}
+          ${error ? "border-red-300" : "border-gray-300"}
+          ${disabled ? "bg-gray-50 cursor-not-allowed" : "cursor-text"}
         `}
         onClick={() => inputRef.current?.focus()}
       >
@@ -93,7 +93,7 @@ export default function TagInput({
               )}
             </span>
           ))}
-          
+
           {(!maxTags || value.length < maxTags) && !disabled && (
             <div className="flex items-center flex-1 min-w-[120px]">
               <input
@@ -103,7 +103,7 @@ export default function TagInput({
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleInputBlur}
-                placeholder={value.length === 0 ? placeholder : ''}
+                placeholder={value.length === 0 ? placeholder : ""}
                 className="flex-1 outline-none bg-transparent text-sm placeholder-gray-500"
                 disabled={disabled}
               />
@@ -127,9 +127,7 @@ export default function TagInput({
         </p>
       )}
 
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

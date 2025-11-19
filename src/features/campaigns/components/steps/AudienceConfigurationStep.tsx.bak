@@ -226,7 +226,7 @@ export default function AudienceConfigurationStep({
           </button>
           
           {isCampaignTypeDropdownOpen && (
-            <div className={`absolute z-50 w-full mt-1 ${tw.surfaceBackground} border ${tw.borderDefault} rounded-lg shadow-lg max-h-60 overflow-y-auto`}>
+            <div className={`absolute z-50 w-full mt-1 ${tw.surfaceBackground} border ${tw.borderDefault} rounded-md shadow-lg max-h-60 overflow-y-auto`}>
               {campaignTypeOptions.map((option) => (
                 <button
                   key={option.value}
@@ -243,7 +243,7 @@ export default function AudienceConfigurationStep({
       </div>
 
       {/* Audience Overview */}
-      <div className={`grid grid-cols-3 gap-4 p-4 ${tw.surfaceCards} rounded-lg border ${tw.borderMuted}`}>
+      <div className={`grid grid-cols-3 gap-4 p-4 ${tw.surfaceCards} rounded-md border ${tw.borderMuted}`}>
         <div className="text-center">
           <div className={`${tw.heading} ${tw.textPrimary}`}>
             {totalAudience.toLocaleString()}
@@ -286,7 +286,7 @@ export default function AudienceConfigurationStep({
         </div>
 
         {selectedSegments.length === 0 ? (
-          <div className={`p-6 text-center ${tw.surfaceCards} rounded-lg border-2 border-dashed ${tw.borderMuted}`}>
+          <div className={`p-6 text-center ${tw.surfaceCards} rounded-md border-2 border-dashed ${tw.borderMuted}`}>
             <Users className={`w-8 h-8 ${tw.textMuted} mx-auto mb-2`} />
             <div className={`${tw.body} ${tw.textSecondary} mb-1`}>
               No Segments Selected
@@ -302,7 +302,7 @@ export default function AudienceConfigurationStep({
             </button>
           </div>
         ) : (
-          <div className={`${tw.surfaceBackground} rounded-lg border ${tw.borderDefault} overflow-hidden`}>
+          <div className={`${tw.surfaceBackground} rounded-md border ${tw.borderDefault} overflow-hidden`}>
             <table className="w-full">
               <thead className={`${tw.tableHeader} border-b ${tw.borderDefault}`}>
                 <tr>
@@ -390,7 +390,7 @@ export default function AudienceConfigurationStep({
 
         {/* Segment Overlap Detection */}
         {selectedSegments.length > 1 && (
-          <div className={`flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg`}>
+          <div className={`flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-md`}>
             <AlertCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
             <div>
               <div className={`${tw.caption} font-medium text-orange-800`}>
@@ -433,13 +433,13 @@ export default function AudienceConfigurationStep({
               setFormData({ ...formData, campaign_type: 'multiple_target_group' });
               setSelectedSegments([]);
             }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_target_group'
+            className={`p-4 rounded-md border-2 transition-all text-left ${formData.campaign_type === 'multiple_target_group'
               ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-md flex items-center justify-center">
                 <Users className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Multiple Target</div>
@@ -453,13 +453,13 @@ export default function AudienceConfigurationStep({
               setFormData({ ...formData, campaign_type: 'champion_challenger' });
               setSelectedSegments([]);
             }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'champion_challenger'
+            className={`p-4 rounded-md border-2 transition-all text-left ${formData.campaign_type === 'champion_challenger'
               ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-md flex items-center justify-center">
                 <Award className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Champion-Challenger</div>
@@ -473,13 +473,13 @@ export default function AudienceConfigurationStep({
               setFormData({ ...formData, campaign_type: 'ab_test' });
               setSelectedSegments([]);
             }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'ab_test'
+            className={`p-4 rounded-md border-2 transition-all text-left ${formData.campaign_type === 'ab_test'
               ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-md flex items-center justify-center">
                 <TestTube className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">A/B Test</div>
@@ -493,13 +493,13 @@ export default function AudienceConfigurationStep({
               setFormData({ ...formData, campaign_type: 'round_robin' });
               setSelectedSegments([]);
             }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'round_robin'
+            className={`p-4 rounded-md border-2 transition-all text-left ${formData.campaign_type === 'round_robin'
               ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-md flex items-center justify-center">
                 <RotateCw className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Round Robin</div>
@@ -513,13 +513,13 @@ export default function AudienceConfigurationStep({
               setFormData({ ...formData, campaign_type: 'multiple_level' });
               setSelectedSegments([]);
             }}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${formData.campaign_type === 'multiple_level'
+            className={`p-4 rounded-md border-2 transition-all text-left ${formData.campaign_type === 'multiple_level'
               ? 'border-gray-300'
               : 'border-gray-200 hover:border-[#A3B18A]'
               }`}
           >
             <div className="flex flex-col items-center text-center space-y-2">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-md flex items-center justify-center">
                 <Layers className="w-6 h-6 text-gray-600" />
               </div>
               <div className="font-semibold text-sm text-gray-900">Multiple Level</div>
@@ -531,7 +531,7 @@ export default function AudienceConfigurationStep({
 
       {/* Audience Overview */}
       {selectedSegments.length > 0 && (
-        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6">
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Audience Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -552,7 +552,7 @@ export default function AudienceConfigurationStep({
 
       {/* Mutually Exclusive Segments Checkbox */}
       {selectedSegments.length > 1 && (
-        <div className="rounded-lg p-4">
+        <div className="rounded-md p-4">
           <label className="flex items-start space-x-3 cursor-pointer">
             <input
               type="checkbox"
@@ -676,7 +676,7 @@ export default function AudienceConfigurationStep({
 
         {/* Standard Display for Multiple Target Group */}
         {formData.campaign_type === 'multiple_target_group' && selectedSegments.length === 0 && (
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-md p-12">
             <div className="flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
                 <Users className="w-8 h-8 text-gray-400" />
@@ -713,7 +713,7 @@ export default function AudienceConfigurationStep({
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, segment.id)}
                 onDragEnd={handleDragEnd}
-                className={`bg-white border border-gray-200 rounded-xl p-4 transition-all ${selectedSegments.length > 1 ? 'cursor-move' : ''
+                className={`bg-white border border-gray-200 rounded-md p-4 transition-all ${selectedSegments.length > 1 ? 'cursor-move' : ''
                   } ${draggedSegment === segment.id ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center justify-between">
@@ -726,7 +726,7 @@ export default function AudienceConfigurationStep({
                         </div>
                       </div>
                     )}
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color.primary.accent}20` }}>
+                    <div className="w-10 h-10 rounded-md flex items-center justify-center" style={{ backgroundColor: `${color.primary.accent}20` }}>
                       <Users className="w-5 h-5" style={{ color: color.primary.accent }} />
                     </div>
                     <div>
@@ -785,7 +785,7 @@ export default function AudienceConfigurationStep({
 
       {/* Segment Overlap Warning */}
       {selectedSegments.length > 1 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
           <div className="flex items-start space-x-2">
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
             <div>
@@ -920,7 +920,7 @@ function ControlGroupConfigModal({
         height: '100vh'
       }}
     >
-      <div className="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-300">
+      <div className="bg-white rounded-md max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-300">
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Configure Control Group</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -985,7 +985,7 @@ function ControlGroupConfigModal({
 
           {/* Control Group Method Selection */}
           {config.type === 'with_control_group' && (
-            <div className="space-y-4 p-4 rounded-lg">
+            <div className="space-y-4 p-4 rounded-md">
               <h4 className="font-medium text-gray-900">Control Group Configuration Method</h4>
 
               <div className="space-y-3">
@@ -1039,7 +1039,7 @@ function ControlGroupConfigModal({
 
           {/* Fixed Percentage Configuration */}
           {config.type === 'with_control_group' && config.control_group_method === 'fixed_percentage' && (
-            <div className="space-y-4 p-4 rounded-lg">
+            <div className="space-y-4 p-4 rounded-md">
               <h4 className="font-medium text-gray-900">Fixed Percentage Configuration</h4>
 
               <div className="space-y-4">
@@ -1054,7 +1054,7 @@ function ControlGroupConfigModal({
                     step="0.1"
                     value={config.percentage || 23}
                     onChange={(e) => setConfig({ ...config, percentage: Number(e.target.value) })}
-                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {calculateControlGroupSize().toLocaleString()} customers will be in control group
@@ -1091,7 +1091,7 @@ function ControlGroupConfigModal({
                         min="0"
                         value={config.lower_limit || ''}
                         onChange={(e) => setConfig({ ...config, lower_limit: Number(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
                         placeholder="Lower limit"
                       />
                     </div>
@@ -1104,7 +1104,7 @@ function ControlGroupConfigModal({
                         min="0"
                         value={config.upper_limit || ''}
                         onChange={(e) => setConfig({ ...config, upper_limit: Number(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
                         placeholder="Upper limit"
                       />
                     </div>
@@ -1116,7 +1116,7 @@ function ControlGroupConfigModal({
 
           {/* Fixed Number Configuration */}
           {config.type === 'with_control_group' && config.control_group_method === 'fixed_number' && (
-            <div className="space-y-4 p-4 rounded-lg">
+            <div className="space-y-4 p-4 rounded-md">
               <h4 className="font-medium text-gray-900">Fixed Number Configuration</h4>
 
               <div>
@@ -1129,7 +1129,7 @@ function ControlGroupConfigModal({
                   max={segment.customer_count}
                   value={config.fixed_number || 10000}
                   onChange={(e) => setConfig({ ...config, fixed_number: Number(e.target.value) })}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {((config.fixed_number || 10000) / segment.customer_count * 100).toFixed(1)}% of total segment
@@ -1143,18 +1143,18 @@ function ControlGroupConfigModal({
             <div className="space-y-4 p-4">
               <h4 className="font-medium text-gray-900">Select Universal Control Group</h4>
 
-              <div className="border border-gray-300 rounded-lg p-4 space-y-3">
+              <div className="border border-gray-300 rounded-md p-4 space-y-3">
                 <input
                   type="text"
                   placeholder="Search universal control groups..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
                 />
 
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {filteredControlGroups.map((group) => (
-                    <label key={group.id} className="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-white cursor-pointer">
+                    <label key={group.id} className="flex items-start space-x-3 p-3 border border-gray-200 rounded-md hover:bg-white cursor-pointer">
                       <input
                         type="radio"
                         name="selectedControlGroup"
@@ -1179,7 +1179,7 @@ function ControlGroupConfigModal({
 
           {/* Advanced Parameters Configuration */}
           {config.type === 'with_control_group' && config.control_group_method === 'advanced_parameters' && (
-            <div className="space-y-4 p-4 rounded-lg">
+            <div className="space-y-4 p-4 rounded-md">
               <h4 className="font-medium text-gray-900">Advanced Parameters</h4>
 
               <div className="space-y-4">
@@ -1226,7 +1226,7 @@ function ControlGroupConfigModal({
 
           {/* Summary */}
           {config.type !== 'none' && (
-            <div className="rounded-lg p-4">
+            <div className="rounded-md p-4">
               <h4 className="font-medium text-gray-900 mb-2">Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>

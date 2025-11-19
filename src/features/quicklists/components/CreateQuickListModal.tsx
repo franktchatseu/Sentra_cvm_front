@@ -193,7 +193,7 @@ export default function CreateQuickListModal({
       }}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-md shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -208,7 +208,7 @@ export default function CreateQuickListModal({
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
             disabled={isSubmitting}
           >
             <X className="w-5 h-5 text-gray-500" />
@@ -256,7 +256,7 @@ export default function CreateQuickListModal({
                     : "N/A";
 
                   return (
-                    <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                    <div className="mt-2 p-3 bg-blue-50 rounded-md">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <p className="text-xs text-blue-800 mb-2">
@@ -285,7 +285,7 @@ export default function CreateQuickListModal({
               {uploadType ? (
                 <label
                   htmlFor="quicklist-file-upload"
-                  className={`block border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors ${
+                  className={`block border-2 border-dashed border-gray-300 rounded-md p-6 text-center transition-colors ${
                     isSubmitting
                       ? "cursor-not-allowed opacity-50"
                       : "cursor-pointer hover:border-gray-400"
@@ -370,7 +370,7 @@ export default function CreateQuickListModal({
                   )}
                 </label>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center opacity-50 cursor-not-allowed">
+                <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center opacity-50 cursor-not-allowed">
                   <Upload className="w-12 h-12 mx-auto text-gray-400" />
                   <div className="space-y-3 mt-3">
                     <p className="text-sm font-medium text-gray-900">
@@ -393,7 +393,7 @@ export default function CreateQuickListModal({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter a descriptive name"
                 required
                 disabled={isSubmitting}
@@ -408,7 +408,7 @@ export default function CreateQuickListModal({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Add a description for this QuickList"
                 rows={3}
                 disabled={isSubmitting}
@@ -418,7 +418,7 @@ export default function CreateQuickListModal({
 
           {/* Error Message */}
           {error && (
-            <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-2">
+            <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-md flex items-start space-x-2">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-700">{error}</p>
             </div>
@@ -429,7 +429,7 @@ export default function CreateQuickListModal({
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors text-sm font-medium"
               disabled={isSubmitting}
             >
               Cancel
@@ -437,7 +437,7 @@ export default function CreateQuickListModal({
             <button
               type="submit"
               disabled={isSubmitting || !file || !uploadType || !name.trim()}
-              className="px-4 py-2 text-white rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-white rounded-md transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}
             >
               {isSubmitting ? "Uploading..." : "Upload QuickList"}

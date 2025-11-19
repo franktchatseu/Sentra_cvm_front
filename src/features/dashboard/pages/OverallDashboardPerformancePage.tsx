@@ -710,7 +710,7 @@ export default function OverallDashboardPerformancePage() {
           return (
             <div
               key={kpi.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-xl transition-all duration-300"
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-xl transition-all duration-300"
             >
               <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
                 <Icon className="w-full h-full" style={{ color: "#d1d5db" }} />
@@ -719,7 +719,7 @@ export default function OverallDashboardPerformancePage() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className="p-3 rounded-xl flex items-center justify-center shadow-sm"
+                      className="p-3 rounded-md flex items-center justify-center shadow-sm"
                       style={{ backgroundColor: color.surface.background }}
                     >
                       <Icon
@@ -776,7 +776,7 @@ export default function OverallDashboardPerformancePage() {
 
       {/* Offer & Segment Distribution Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
             <h2 className={tw.cardHeading}>Offer Type Distribution</h2>
             <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -841,7 +841,7 @@ export default function OverallDashboardPerformancePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
             <h2 className={tw.cardHeading}>Segment Type Distribution</h2>
             <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -908,7 +908,7 @@ export default function OverallDashboardPerformancePage() {
       </div>
 
       {/* Trends Over Time - Line Chart */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -1029,7 +1029,7 @@ export default function OverallDashboardPerformancePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Session Types Distribution */}
         {sessionsStats && sessionsStats.byType.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Session Types</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -1074,7 +1074,7 @@ export default function OverallDashboardPerformancePage() {
 
         {/* Device Types Distribution */}
         {sessionsStats && sessionsStats.byDevice.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Device Types</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -1120,10 +1120,10 @@ export default function OverallDashboardPerformancePage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-2 rounded-lg"
+              className="p-2 rounded-md"
               style={{ backgroundColor: color.surface.background }}
             >
               <Target className="h-5 w-5" style={{ color: accentColor }} />
@@ -1142,10 +1142,10 @@ export default function OverallDashboardPerformancePage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-2 rounded-lg"
+              className="p-2 rounded-md"
               style={{ backgroundColor: color.surface.background }}
             >
               <Package className="h-5 w-5" style={{ color: accentColor }} />
@@ -1162,10 +1162,10 @@ export default function OverallDashboardPerformancePage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-2 rounded-lg"
+              className="p-2 rounded-md"
               style={{ backgroundColor: color.surface.background }}
             >
               <Activity className="h-5 w-5" style={{ color: accentColor }} />

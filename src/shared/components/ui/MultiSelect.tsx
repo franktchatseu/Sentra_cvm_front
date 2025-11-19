@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { ChevronDown, X, Check } from "lucide-react";
 
 interface Option {
   id: string | number;
@@ -26,41 +26,46 @@ export default function MultiSelect({
   label,
   error,
   disabled = false,
-  className = ''
+  className = "",
 }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filteredOptions = options.filter(option =>
+  const filteredOptions = options.filter((option) =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedOptions = options.filter(option => value.includes(option.value));
+  const selectedOptions = options.filter((option) =>
+    value.includes(option.value)
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
-        setSearchTerm('');
+        setSearchTerm("");
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleToggleOption = (optionValue: string | number) => {
     if (value.includes(optionValue)) {
-      onChange(value.filter(v => v !== optionValue));
+      onChange(value.filter((v) => v !== optionValue));
     } else {
       onChange([...value, optionValue]);
     }
   };
 
   const handleRemoveOption = (optionValue: string | number) => {
-    onChange(value.filter(v => v !== optionValue));
+    onChange(value.filter((v) => v !== optionValue));
   };
 
   const handleClearAll = () => {
@@ -74,20 +79,22 @@ export default function MultiSelect({
           {label}
         </label>
       )}
-      
+
       <div ref={dropdownRef} className="relative">
         <div
           className={`
-            relative min-h-[42px] w-full px-3 py-2 border rounded-lg bg-white cursor-pointer
+            relative min-h-[42px] w-full px-3 py-2 border rounded-md bg-white cursor-pointer
             transition-all duration-200 focus-within:border-blue-500
-            ${error ? 'border-red-300' : 'border-gray-300 hover:border-gray-400'}
-            ${disabled ? 'bg-gray-50 cursor-not-allowed' : ''}
+            ${
+              error ? "border-red-300" : "border-gray-300 hover:border-gray-400"
+            }
+            ${disabled ? "bg-gray-50 cursor-not-allowed" : ""}
           `}
           onClick={() => !disabled && setIsOpen(!isOpen)}
         >
           <div className="flex flex-wrap gap-1 items-center">
             {selectedOptions.length > 0 ? (
-              selectedOptions.map(option => (
+              selectedOptions.map((option) => (
                 <span
                   key={option.id}
                   className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-md"
@@ -111,7 +118,7 @@ export default function MultiSelect({
               <span className="text-gray-500 text-sm">{placeholder}</span>
             )}
           </div>
-          
+
           <div className="absolute inset-y-0 right-0 flex items-center pr-2">
             {selectedOptions.length > 0 && !disabled && (
               <button
@@ -125,12 +132,16 @@ export default function MultiSelect({
                 <X className="w-4 h-4" />
               </button>
             )}
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
           </div>
         </div>
 
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden">
             <div className="p-2 border-b border-gray-100">
               <input
                 ref={inputRef}
@@ -141,10 +152,10 @@ export default function MultiSelect({
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none "
               />
             </div>
-            
+
             <div className="max-h-48 overflow-y-auto">
               {filteredOptions.length > 0 ? (
-                filteredOptions.map(option => {
+                filteredOptions.map((option) => {
                   const isSelected = value.includes(option.value);
                   return (
                     <div
@@ -152,11 +163,17 @@ export default function MultiSelect({
                       onClick={() => handleToggleOption(option.value)}
                       className={`
                         flex items-center justify-between px-3 py-2 text-sm cursor-pointer transition-colors
-                        ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}
+                        ${
+                          isSelected
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }
                       `}
                     >
                       <span>{option.label}</span>
-                      {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-blue-600" />
+                      )}
                     </div>
                   );
                 })
@@ -170,9 +187,7 @@ export default function MultiSelect({
         )}
       </div>
 
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

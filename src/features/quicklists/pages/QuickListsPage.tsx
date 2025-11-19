@@ -380,7 +380,7 @@ export default function QuickListsPage() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -441,7 +441,7 @@ export default function QuickListsPage() {
 
       {/* QuickLists Table */}
       <div
-        className={`bg-white border border-gray-200 rounded-lg p-6 overflow-hidden`}
+        className={`bg-white border border-gray-200 rounded-md p-6 overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -466,7 +466,7 @@ export default function QuickListsPage() {
             {!searchTerm && (
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
+                className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
                 style={{ backgroundColor: color.primary.action }}
               >
                 <Upload className="w-4 h-4" />
@@ -631,7 +631,7 @@ export default function QuickListsPage() {
       {/* Pagination - Outside table container */}
       {!loading && pagination.total > 0 && (
         <div
-          className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+          className={`bg-white rounded-md shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div

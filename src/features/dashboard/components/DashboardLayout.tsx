@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className={`w-full relative ${tw.primaryBackground}`}>
+    <div className={`w-full relative `}>
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -19,7 +19,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <div className="md:ml-32 xl:ml-80">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="px-5 lg:px-8 py-6">
+        {/* <main className="px-5 lg:px-8 py-6"> */}
+          <main className={`px-5 lg:px-8 py-6 ${tw.primaryBackground}`}>
           {children}
         </main>
       </div>

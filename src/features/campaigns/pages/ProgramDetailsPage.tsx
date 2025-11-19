@@ -356,7 +356,7 @@ export default function ProgramDetailsPage() {
           </p>
           <button
             onClick={() => navigate("/dashboard/programs")}
-            className="px-4 py-2 rounded-lg font-semibold flex items-center gap-2 mx-auto text-base text-white"
+            className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 mx-auto text-base text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -374,7 +374,7 @@ export default function ProgramDetailsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/programs")}
-            className="p-2 text-gray-600 rounded-lg"
+            className="p-2 text-gray-600 rounded-md"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -391,7 +391,7 @@ export default function ProgramDetailsPage() {
           <button
             onClick={handleEdit}
             disabled={isActionLoading}
-            className="rounded-lg font-semibold flex items-center gap-2 text-sm disabled:opacity-50 transition-colors"
+            className="rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 transition-colors"
             style={{
               backgroundColor: button.action.background,
               color: button.action.color,
@@ -409,7 +409,7 @@ export default function ProgramDetailsPage() {
           <button
             onClick={handleToggleActive}
             disabled={isActionLoading}
-            className="px-4 py-2 rounded-lg font-semibold flex items-center gap-2 text-sm disabled:opacity-50 transition-colors bg-white border border-gray-300 text-gray-700"
+            className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 transition-colors bg-white border border-gray-300 text-gray-700"
           >
             {program.is_active ? (
               <PowerOff className="w-4 h-4" />
@@ -421,7 +421,7 @@ export default function ProgramDetailsPage() {
           <button
             onClick={handleDelete}
             disabled={isActionLoading}
-            className="px-4 py-2 rounded-lg font-semibold flex items-center gap-2 text-sm disabled:opacity-50 bg-white text-red-600 border border-red-200"
+            className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 bg-white text-red-600 border border-red-200"
           >
             <Trash2 className="w-4 h-4" />
             Delete
@@ -431,7 +431,7 @@ export default function ProgramDetailsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3">
             <div
               className="p-2 rounded-full flex items-center justify-center"
@@ -451,7 +451,7 @@ export default function ProgramDetailsPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3">
             <div
               className="p-2 rounded-full flex items-center justify-center"
@@ -471,7 +471,7 @@ export default function ProgramDetailsPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3">
             <div
               className="p-2 rounded-full flex items-center justify-center"
@@ -501,7 +501,7 @@ export default function ProgramDetailsPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3">
             <div
               className="p-2 rounded-full flex items-center justify-center"
@@ -526,7 +526,7 @@ export default function ProgramDetailsPage() {
       </div>
 
       {/* Program Information */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-md border border-gray-200 p-6">
         <h2 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
           Program Information
         </h2>
@@ -612,7 +612,7 @@ export default function ProgramDetailsPage() {
 
       {/* Budget Utilization */}
       {budgetUtilization && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className={`text-lg font-semibold ${tw.textPrimary}`}>
               Budget Utilization
@@ -620,7 +620,7 @@ export default function ProgramDetailsPage() {
             <button
               onClick={handleRecalculateBudget}
               disabled={isActionLoading}
-              className="px-3 py-1.5 rounded-lg font-medium flex items-center gap-2 text-sm disabled:opacity-50 bg-white border border-gray-300 text-gray-700"
+              className="px-3 py-1.5 rounded-md font-medium flex items-center gap-2 text-sm disabled:opacity-50 bg-white border border-gray-300 text-gray-700"
             >
               <RefreshCw className="w-4 h-4" />
               Recalculate Budget
@@ -678,7 +678,7 @@ export default function ProgramDetailsPage() {
       )}
 
       {/* Campaigns */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-md border border-gray-200 p-6">
         <h2 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
           Campaigns (
           {activeCampaignCount !== null
@@ -702,7 +702,7 @@ export default function ProgramDetailsPage() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full border border-gray-200 rounded-md overflow-hidden">
               <thead
                 className={`border-b ${tw.borderDefault}`}
                 style={{ background: color.surface.tableHeader }}
@@ -798,7 +798,7 @@ export default function ProgramDetailsPage() {
                           onClick={() =>
                             navigate(`/dashboard/campaigns/${campaign.id}`)
                           }
-                          className="p-2 rounded-lg transition-colors"
+                          className="p-2 rounded-md transition-colors"
                           style={{
                             color: color.primary.action,
                             backgroundColor: "transparent",

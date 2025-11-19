@@ -95,7 +95,7 @@ export default function CustomerIdentityPage() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search fields..."
-            className={`w-full pl-10 pr-4 py-3.5 text-sm rounded-lg border border-[${color.border.default}] focus:outline-none focus:ring-2`}
+            className={`w-full pl-10 pr-4 py-3.5 text-sm rounded-md border border-[${color.border.default}] focus:outline-none focus:ring-2`}
             style={
               {
                 "--tw-ring-color": color.primary.accent,
@@ -124,7 +124,7 @@ export default function CustomerIdentityPage() {
       <div className="space-y-4">
         {(isLoading || error || hasNoFields || hasNoFilteredResults) && (
           <div
-            className={`border rounded-2xl p-6`}
+            className={`border rounded-md p-6`}
             style={{
               borderColor: color.border.default,
               backgroundColor: color.surface.background,
@@ -146,7 +146,7 @@ export default function CustomerIdentityPage() {
                 <button
                   type="button"
                   onClick={loadFields}
-                  className="px-4 py-2 text-sm font-semibold text-white rounded-lg hover:opacity-95 transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-white rounded-md hover:opacity-95 transition-colors"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   Retry
@@ -176,7 +176,7 @@ export default function CustomerIdentityPage() {
 
         {!isLoading && !error && !hasNoFields && !hasNoFilteredResults && (
           <div
-            className="overflow-x-auto border rounded-lg"
+            className="overflow-x-auto border rounded-md"
             style={{ borderColor: color.border.default }}
           >
             <table className="min-w-full bg-white">
@@ -248,7 +248,7 @@ export default function CustomerIdentityPage() {
                             }
                           )
                         }
-                        className="p-2 rounded-lg text-white transition-colors"
+                        className="p-2 rounded-md text-white transition-colors"
                         style={{ backgroundColor: color.primary.accent }}
                         title="View details"
                       >

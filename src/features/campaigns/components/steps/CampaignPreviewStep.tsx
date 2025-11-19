@@ -81,16 +81,10 @@ export default function CampaignPreviewStep({
 
       {/* Campaign Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div
-          className="rounded-lg p-4 border"
-          style={{
-            backgroundColor: `${color.primary.accent}10`,
-            borderColor: `${color.primary.accent}40`,
-          }}
-        >
+        <div className={`${components.card.default} rounded-md p-4`}>
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              className="w-10 h-10 rounded-md flex items-center justify-center"
               style={{ backgroundColor: `${color.primary.accent}20` }}
             >
               <Target
@@ -99,10 +93,7 @@ export default function CampaignPreviewStep({
               />
             </div>
             <div>
-              <div
-                className="text-2xl font-bold"
-                style={{ color: color.primary.accent }}
-              >
+              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {selectedSegments.length}
               </div>
               <div className={`text-xs ${tw.textSecondary}`}>Segments</div>
@@ -110,28 +101,19 @@ export default function CampaignPreviewStep({
           </div>
         </div>
 
-        <div
-          className="rounded-lg p-4 border"
-          style={{
-            backgroundColor: `${color.status.success}10`,
-            borderColor: `${color.status.success}40`,
-          }}
-        >
+        <div className={`${components.card.default} rounded-md p-4`}>
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${color.status.success}20` }}
+              className="w-10 h-10 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}20` }}
             >
               <Users
                 className="w-5 h-5"
-                style={{ color: color.status.success }}
+                style={{ color: color.primary.accent }}
               />
             </div>
             <div>
-              <div
-                className="text-2xl font-bold"
-                style={{ color: color.status.success }}
-              >
+              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {totalAudienceSize.toLocaleString()}
               </div>
               <div className={`text-xs ${tw.textSecondary}`}>Total Reach</div>
@@ -139,28 +121,19 @@ export default function CampaignPreviewStep({
           </div>
         </div>
 
-        <div
-          className="rounded-lg p-4 border"
-          style={{
-            backgroundColor: `${color.tertiary.tag1}10`,
-            borderColor: `${color.tertiary.tag1}40`,
-          }}
-        >
+        <div className={`${components.card.default} rounded-md p-4`}>
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${color.tertiary.tag1}20` }}
+              className="w-10 h-10 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}20` }}
             >
               <Gift
                 className="w-5 h-5"
-                style={{ color: color.tertiary.tag1 }}
+                style={{ color: color.primary.accent }}
               />
             </div>
             <div>
-              <div
-                className="text-2xl font-bold"
-                style={{ color: color.tertiary.tag1 }}
-              >
+              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {selectedOffers.length}
               </div>
               <div className={`text-xs ${tw.textSecondary}`}>Offers</div>
@@ -168,28 +141,19 @@ export default function CampaignPreviewStep({
           </div>
         </div>
 
-        <div
-          className="rounded-lg p-4 border"
-          style={{
-            backgroundColor: `${color.status.warning}10`,
-            borderColor: `${color.status.warning}40`,
-          }}
-        >
+        <div className={`${components.card.default} rounded-md p-4`}>
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${color.status.warning}20` }}
+              className="w-10 h-10 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}20` }}
             >
               <TrendingUp
                 className="w-5 h-5"
-                style={{ color: color.status.warning }}
+                style={{ color: color.primary.accent }}
               />
             </div>
             <div>
-              <div
-                className="text-2xl font-bold"
-                style={{ color: color.status.warning }}
-              >
+              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
                 {estimatedROI.toFixed(0)}%
               </div>
               <div className={`text-xs ${tw.textSecondary}`}>Est. ROI</div>
@@ -269,11 +233,11 @@ export default function CampaignPreviewStep({
                 {selectedSegments.map((segment) => (
                   <div
                     key={segment.id}
-                    className="flex items-center justify-between p-4 rounded-xl border border-gray-100"
+                    className="flex items-center justify-between p-4 rounded-md border border-gray-100"
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                        className="w-10 h-10 rounded-md flex items-center justify-center"
                         style={{ backgroundColor: `${color.primary.accent}20` }}
                       >
                         <Users
@@ -323,7 +287,7 @@ export default function CampaignPreviewStep({
                 {selectedOffers.map((offer) => (
                   <div
                     key={offer.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-gray-100"
+                    className="flex items-center justify-between p-3 rounded-md border border-gray-100"
                   >
                     <div>
                       <div className={`text-sm font-medium ${tw.textPrimary}`}>
@@ -354,7 +318,7 @@ export default function CampaignPreviewStep({
 
         {/* Sidebar */}
         <aside className="space-y-4">
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 space-y-3 text-sm">
+          <div className="rounded-md border border-gray-200 bg-white shadow-sm p-5 space-y-3 text-sm">
             <h3 className="text-sm font-semibold text-gray-900">
               Schedule Overview
             </h3>
@@ -387,7 +351,7 @@ export default function CampaignPreviewStep({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 space-y-3">
+          <div className="rounded-md border border-gray-200 bg-white shadow-sm p-5 space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">
               Launch Checklist
             </h3>

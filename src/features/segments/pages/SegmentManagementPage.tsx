@@ -680,10 +680,10 @@ export default function SegmentManagementPage() {
       {!isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Segments */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag1 }}
               >
                 <Layers className="w-6 h-6 text-white" />
@@ -708,10 +708,10 @@ export default function SegmentManagementPage() {
           </div>
 
           {/* Active Segments */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag4 }}
               >
                 <Activity className="w-6 h-6 text-white" />
@@ -732,10 +732,10 @@ export default function SegmentManagementPage() {
           </div>
 
           {/* Total Customers */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag2 }}
               >
                 <Users className="w-6 h-6 text-white" />
@@ -752,10 +752,10 @@ export default function SegmentManagementPage() {
           </div>
 
           {/* Top Segment */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag3 }}
               >
                 <TrendingUp className="w-6 h-6 text-white" />
@@ -803,7 +803,7 @@ export default function SegmentManagementPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
+              className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-md focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
             />
           </div>
 
@@ -838,7 +838,7 @@ export default function SegmentManagementPage() {
             />
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5  rounded-lg bg-gray-50 transition-colors text-base font-medium`}
+              className={`flex items-center px-4 py-2.5  rounded-md bg-gray-50 transition-colors text-base font-medium`}
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -874,7 +874,7 @@ export default function SegmentManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white rounded-lg border border-[${color.border.default}] `}
+        className={`bg-white rounded-md border border-[${color.border.default}] `}
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -890,10 +890,10 @@ export default function SegmentManagementPage() {
           </div>
         ) : error ? (
           <div className="p-8 text-center">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+            <div className="bg-red-50 border border-red-200 rounded-md p-6">
               <button
                 onClick={loadSegments}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
               >
                 Try Again
               </button>
@@ -902,7 +902,7 @@ export default function SegmentManagementPage() {
         ) : filteredSegments.length === 0 ? (
           <div className="p-8 md:p-16 text-center">
             <div
-              className={`bg-gradient-to-br from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 rounded-xl p-6 md:p-12`}
+              className={`bg-gradient-to-br from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 rounded-md p-6 md:p-12`}
             >
               <h3 className={`${tw.cardHeading} ${tw.textPrimary} mb-1`}>
                 No segments found
@@ -926,7 +926,7 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200">
+            <div className="hidden lg:block overflow-x-auto rounded-md border border-gray-200">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead
                   className={`border-b ${tw.borderDefault}`}
@@ -1088,14 +1088,14 @@ export default function SegmentManagementPage() {
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleViewSegment(segment.id)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            className={`group p-3 rounded-md ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             title="View Details"
                           >
                             <Eye className="w-4 h-4 " />
                           </button>
                           <button
                             onClick={() => handleToggleStatus(segment)}
-                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                             title={
                               segment.is_active ? "Deactivate" : "Activate"
                             }
@@ -1108,7 +1108,7 @@ export default function SegmentManagementPage() {
                           </button>
                           <button
                             onClick={() => handleEditSegment(segment.id)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            className={`group p-3 rounded-md ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             title="Edit"
                           >
                             <Edit className="w-4 h-4 " />
@@ -1123,7 +1123,7 @@ export default function SegmentManagementPage() {
                               onClick={(e) =>
                                 handleActionMenuToggle(segment.id, e)
                               }
-                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                              className={`group p-3 rounded-md ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
@@ -1144,7 +1144,7 @@ export default function SegmentManagementPage() {
                     ref={(el) => {
                       dropdownMenuRefs.current[segment.id] = el;
                     }}
-                    className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-3 w-64"
+                    className="fixed bg-white border border-gray-200 rounded-md shadow-xl py-3 w-64"
                     style={{
                       zIndex: 99999,
                       top: `${dropdownPosition.top}px`,
@@ -1236,7 +1236,7 @@ export default function SegmentManagementPage() {
               {filteredSegments.map((segment) => (
                 <div
                   key={segment.id}
-                  className={`bg-white border ${tw.borderDefault} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}
+                  className={`bg-white border ${tw.borderDefault} rounded-md p-4 shadow-sm hover:shadow-md transition-shadow`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -1252,7 +1252,7 @@ export default function SegmentManagementPage() {
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => handleToggleStatus(segment)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         title={segment.is_active ? "Deactivate" : "Activate"}
                       >
                         {segment.is_active ? (
@@ -1263,14 +1263,14 @@ export default function SegmentManagementPage() {
                       </button>
                       <button
                         onClick={() => handleViewSegment(segment.id)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEditSegment(segment.id)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         title="Edit"
                       >
                         <Edit className="w-4 h-4" />
@@ -1283,7 +1283,7 @@ export default function SegmentManagementPage() {
                       >
                         <button
                           onClick={(e) => handleActionMenuToggle(segment.id, e)}
-                          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                          className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         >
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -1355,7 +1355,7 @@ export default function SegmentManagementPage() {
       {/* Pagination */}
       {!isLoading && !error && filteredSegments.length > 0 && (
         <div
-          className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+          className={`bg-white rounded-md shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div
@@ -1375,7 +1375,7 @@ export default function SegmentManagementPage() {
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -1385,7 +1385,7 @@ export default function SegmentManagementPage() {
               <button
                 onClick={() => setPage(page + 1)}
                 disabled={page >= totalPages}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -1431,7 +1431,7 @@ export default function SegmentManagementPage() {
                   </h3>
                   <button
                     onClick={handleCloseModal}
-                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-md transition-colors`}
                   >
                     ×
                   </button>
@@ -1518,7 +1518,7 @@ export default function SegmentManagementPage() {
                       setTypeFilter("all");
                       setSelectedTags([]);
                     }}
-                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-md hover:bg-gray-50 transition-colors`}
                   >
                     Clear All
                   </button>

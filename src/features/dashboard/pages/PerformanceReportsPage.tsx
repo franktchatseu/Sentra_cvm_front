@@ -276,7 +276,7 @@ export default function PerformanceReportsPage() {
       </div>
 
       {/* Period Selector */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="bg-white rounded-md border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4" />
@@ -289,7 +289,7 @@ export default function PerformanceReportsPage() {
                 <button
                   key={option.id}
                   onClick={() => setSelectedPeriod(option.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium border transition ${
                     isActive
                       ? "bg-gray-900 text-white border-gray-900"
                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
@@ -310,12 +310,12 @@ export default function PerformanceReportsPage() {
           return (
             <div
               key={metric.name}
-              className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-xl transition-all duration-300"
+              className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-xl transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className="p-3 rounded-xl"
+                    className="p-3 rounded-md"
                     style={{ backgroundColor: `${metric.color}15` }}
                   >
                     <Icon className="h-6 w-6" style={{ color: metric.color }} />
@@ -358,7 +358,7 @@ export default function PerformanceReportsPage() {
       </div>
 
       {/* Campaign Performance Trends */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -436,7 +436,7 @@ export default function PerformanceReportsPage() {
       {/* Offer Category Performance */}
       {offerCategoryPerformance.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Offer Category Performance</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -482,7 +482,7 @@ export default function PerformanceReportsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Performance Summary</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -490,7 +490,7 @@ export default function PerformanceReportsPage() {
               </p>
             </div>
             <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
                     Active Campaigns
@@ -501,7 +501,7 @@ export default function PerformanceReportsPage() {
                 </div>
                 <Target className="h-8 w-8 text-gray-400" />
               </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
                     Active Offers
@@ -512,7 +512,7 @@ export default function PerformanceReportsPage() {
                 </div>
                 <Package className="h-8 w-8 text-gray-400" />
               </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
                     Total Segments
@@ -529,10 +529,10 @@ export default function PerformanceReportsPage() {
       )}
 
       {/* Performance Insights */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white rounded-md border border-gray-200 p-6">
         <h2 className={tw.cardHeading}>Performance Insights</h2>
         <div className="mt-4 space-y-3">
-          <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+          <div className="flex items-start gap-3 p-4 bg-green-50 rounded-md border border-green-200">
             <TrendingUp className="h-5 w-5 text-green-600 mt-0.5" />
             <div>
               <p className="font-semibold text-green-900">
@@ -543,7 +543,7 @@ export default function PerformanceReportsPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-md border border-blue-200">
             <Activity className="h-5 w-5 text-blue-600 mt-0.5" />
             <div>
               <p className="font-semibold text-blue-900">
@@ -555,7 +555,7 @@ export default function PerformanceReportsPage() {
             </div>
           </div>
           {segmentPerformance && segmentPerformance.avgEngagement < 70 && (
-            <div className="flex items-start gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="flex items-start gap-3 p-4 bg-yellow-50 rounded-md border border-yellow-200">
               <TrendingDown className="h-5 w-5 text-yellow-600 mt-0.5" />
               <div>
                 <p className="font-semibold text-yellow-900">

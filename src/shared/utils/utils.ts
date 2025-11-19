@@ -100,21 +100,21 @@ export const tw = {
   buttonText: "text-sm font-medium leading-[130%] tracking-[0.02em]",
   label: "text-xs font-medium leading-[120%] tracking-[0.05em] uppercase",
 
-  button: `bg-[#252829] active:bg-[#252829]/80 text-white text-sm font-medium transition-colors px-6 py-2 rounded-lg cursor-pointer`,
+  button: `bg-[#252829] active:bg-[#252829]/80 text-white text-sm font-medium transition-colors px-6 py-2 rounded-md cursor-pointer`,
 };
 
 // Complete component styles - pre-built styles for common UI elements that you can use directly
 export const components = {
   card: {
-    default: `bg-neutral-100 border border-[#E5E7EB] rounded-2xl p-6`,
-    surface: `bg-white border border-[#E5E7EB] rounded-2xl p-6`,
-    elevated: `bg-neutral-100 border border-[#E5E7EB] rounded-2xl p-6`,
+    default: `bg-neutral-100 border border-[#E5E7EB] rounded-md p-6`,
+    surface: `bg-white border border-[#E5E7EB] rounded-md p-6`,
+    elevated: `bg-neutral-100 border border-[#E5E7EB] rounded-md p-6`,
   },
 
   input: {
-    default: `border border-[${colors.border.default}] focus:border-[${colors.interactive.focus}] bg-white text-[${colors.text.primary}] rounded-lg`,
-    error: `border border-[${colors.status.danger}] focus:border-[${colors.status.danger}] bg-white text-[${colors.text.primary}] rounded-lg`,
-    accent: `border border-[${colors.border.accent}] focus:border-[${colors.border.accent}] bg-white text-[${colors.text.primary}] rounded-lg`,
+    default: `border border-[${colors.border.default}] focus:border-[${colors.interactive.focus}] bg-white text-[${colors.text.primary}] rounded-md`,
+    error: `border border-[${colors.status.danger}] focus:border-[${colors.status.danger}] bg-white text-[${colors.text.primary}] rounded-md`,
+    accent: `border border-[${colors.border.accent}] focus:border-[${colors.border.accent}] bg-white text-[${colors.text.primary}] rounded-md`,
   },
 
   badge: {

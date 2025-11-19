@@ -1,5 +1,14 @@
-/* Satoshi Variable Font - Variable font supporting weight range 300-900 */
-@font-face {
+Satoshi
+  Variable
+  Font
+  -
+  Variable
+  font
+  supporting
+  weight
+  range
+  300-900
+  @font-face {
   font-family: "Satoshi Variable";
   src: url("./assets/fonts/Satoshi-Variable.ttf") format("truetype");
   font-weight: 300 900;
@@ -2494,7 +2503,7 @@
 @layer components {
   /* Enhanced Button Styles */
   .btn {
-    @apply inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-md font-semibold transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50;
     transform: translateY(0);
   }
 
@@ -2539,7 +2548,7 @@
 
   /* Enhanced Card Styles */
   .card {
-    @apply bg-white rounded-2xl border border-secondary-200 shadow-sm transition-all duration-300 ease-out;
+    @apply bg-white rounded-md border border-secondary-200 shadow-sm transition-all duration-300 ease-out;
     backdrop-filter: blur(10px);
   }
 
@@ -2558,7 +2567,7 @@
 
   /* Enhanced Input Styles */
   .input {
-    @apply block w-full rounded-lg border border-secondary-300 bg-secondary-50 px-4 py-3 text-secondary-900 placeholder-secondary-500 transition-all duration-200 ease-out  focus:bg-white;
+    @apply block w-full rounded-md border border-secondary-300 bg-secondary-50 px-4 py-3 text-secondary-900 placeholder-secondary-500 transition-all duration-200 ease-out  focus:bg-white;
   }
 
   .input:focus {
@@ -3200,7 +3209,7 @@
   }
 
   .card {
-    @apply rounded-xl;
+    @apply rounded-md;
   }
 }
 

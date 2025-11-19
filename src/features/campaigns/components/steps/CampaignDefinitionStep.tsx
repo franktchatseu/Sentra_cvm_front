@@ -272,7 +272,7 @@ export default function CampaignDefinitionStep({
           campaign
         </p>
       </div>
-      <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
+      <div className="bg-white border border-gray-200 rounded-md p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
         <h3 className="text-base font-medium text-gray-900 mb-4 md:mb-6 px-0">
           Campaign Information
         </h3>
@@ -843,7 +843,7 @@ export default function CampaignDefinitionStep({
             </div>
             {/* Priority Rank - Only shows when priority is selected */}
             {formData.priority && (
-              <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Rank within{" "}
                   {formData.priority.charAt(0).toUpperCase() +
@@ -913,7 +913,7 @@ export default function CampaignDefinitionStep({
             </button>
 
             {isPolicyDropdownOpen && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-hidden">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-64 overflow-hidden">
                 <button
                   type="button"
                   onClick={() => {

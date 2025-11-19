@@ -860,7 +860,7 @@ export default function OffersPage() {
         </div>
         <button
           onClick={() => navigate("/dashboard/offers/create")}
-          className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 text-white"
+          className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-md shadow-sm transition-all duration-200 text-white"
           style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -875,7 +875,7 @@ export default function OffersPage() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -916,7 +916,7 @@ export default function OffersPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch(searchTerm)}
-            className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
+            className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-md focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
           />
         </div>
 
@@ -938,7 +938,7 @@ export default function OffersPage() {
 
         <button
           onClick={() => setShowAdvancedFilters(true)}
-          className={`flex items-center px-4 py-2 rounded-lg bg-gray-50 transition-colors text-sm font-medium`}
+          className={`flex items-center px-4 py-2 rounded-md bg-gray-50 transition-colors text-sm font-medium`}
         >
           <Filter className="h-4 w-4 mr-2" />
           Filters
@@ -947,7 +947,7 @@ export default function OffersPage() {
 
       {/* Offers Table */}
       <div
-        className={`bg-white rounded-lg shadow-sm border border-[${color.border.default}] overflow-hidden`}
+        className={`bg-white rounded-md shadow-sm border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center h-64">
@@ -961,7 +961,7 @@ export default function OffersPage() {
               <p className={`${tw.textSecondary}`}>No offers found</p>
               <button
                 onClick={() => navigate("/dashboard/offers/create")}
-                className="mt-4 inline-flex items-center px-3 py-2 text-base text-white font-semibold rounded-lg shadow-sm transition-all duration-200"
+                className="mt-4 inline-flex items-center px-3 py-2 text-base text-white font-semibold rounded-md shadow-sm transition-all duration-200"
                 style={{ backgroundColor: color.primary.action }}
               >
                 <Plus className="h-5 w-5 mr-2" />
@@ -970,7 +970,7 @@ export default function OffersPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <div className="overflow-x-auto rounded-md border border-gray-200">
             <table className="min-w-full divide-y divide-gray-200">
               <thead
                 className={`border-b ${tw.borderDefault}`}
@@ -1096,7 +1096,7 @@ export default function OffersPage() {
                                   loadingAction?.offerId === Number(offer.id) &&
                                   loadingAction?.action === "activate"
                                 }
-                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                className={`group p-3 rounded-md ${tw.textMuted} hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
                                 style={{ backgroundColor: "transparent" }}
                                 onMouseLeave={(e) => {
                                   (
@@ -1121,7 +1121,7 @@ export default function OffersPage() {
                                   loadingAction?.offerId === Number(offer.id) &&
                                   loadingAction?.action === "pause"
                                 }
-                                className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-orange-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                className={`group p-3 rounded-md ${tw.textMuted} hover:bg-orange-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
                                 style={{ backgroundColor: "transparent" }}
                                 onMouseLeave={(e) => {
                                   (
@@ -1193,7 +1193,7 @@ export default function OffersPage() {
                         ref={(el) => {
                           dropdownMenuRefs.current[offer.id!] = el;
                         }}
-                        className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-2 pb-4 w-72"
+                        className="fixed bg-white border border-gray-200 rounded-md shadow-xl py-2 pb-4 w-72"
                         style={{
                           zIndex: 99999,
                           top: `${dropdownPosition.top}px`,
@@ -1477,7 +1477,7 @@ export default function OffersPage() {
       {/* Pagination */}
       {!loading && filteredOffers.length > 0 && (
         <div
-          className={`bg-white rounded-xl shadow-sm border border-[${color.border.default}] px-4 sm:px-6 py-4`}
+          className={`bg-white rounded-md shadow-sm border border-[${color.border.default}] px-4 sm:px-6 py-4`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div
@@ -1554,7 +1554,7 @@ export default function OffersPage() {
                   </h3>
                   <button
                     onClick={handleCloseModal}
-                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-md transition-colors`}
                   >
                     ×
                   </button>
@@ -1639,7 +1639,7 @@ export default function OffersPage() {
                       setSelectedStatus("all");
                       setSelectedApproval("all");
                     }}
-                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-md hover:bg-gray-50 transition-colors`}
                   >
                     Clear All
                   </button>

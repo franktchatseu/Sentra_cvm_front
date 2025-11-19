@@ -997,7 +997,7 @@ export default function OfferDetailsPage() {
           </p>
           <button
             onClick={() => navigate("/dashboard/offers")}
-            className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200"
+            className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200"
             style={{ backgroundColor: color.primary.action }}
           >
             Back to Offers
@@ -1047,7 +1047,7 @@ export default function OfferDetailsPage() {
             <button
               onClick={handleRequestApproval}
               disabled={isRequestApprovalLoading}
-              className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}
             >
               {isRequestApprovalLoading ? (
@@ -1067,7 +1067,7 @@ export default function OfferDetailsPage() {
               <button
                 onClick={handleApprove}
                 disabled={isApproveLoading}
-                className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
               >
                 {isApproveLoading ? (
@@ -1087,7 +1087,7 @@ export default function OfferDetailsPage() {
               <button
                 onClick={handleActivate}
                 disabled={isActivateLoading}
-                className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
               >
                 {isActivateLoading ? (
@@ -1104,7 +1104,7 @@ export default function OfferDetailsPage() {
             <button
               onClick={handleRequestApproval}
               disabled={isRequestApprovalLoading}
-              className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}
             >
               {isRequestApprovalLoading ? (
@@ -1124,7 +1124,7 @@ export default function OfferDetailsPage() {
                 <button
                   onClick={handleActivate}
                   disabled={isActivateLoading}
-                  className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   {isActivateLoading ? (
@@ -1143,7 +1143,7 @@ export default function OfferDetailsPage() {
                   <button
                     onClick={handlePause}
                     disabled={isPauseLoading}
-                    className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: color.primary.action }}
                   >
                     {isPauseLoading ? (
@@ -1161,7 +1161,7 @@ export default function OfferDetailsPage() {
           {/* Edit Button */}
           <button
             onClick={() => navigate(`/dashboard/offers/${id}/edit`)}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <Edit className="w-4 h-4" />
@@ -1172,12 +1172,12 @@ export default function OfferDetailsPage() {
           <div className="relative" ref={moreMenuRef}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
             >
               <MoreVertical className="w-5 h-5" />
             </button>
             {showMoreMenu && (
-              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
                 {/* Reject - Only for pending offers */}
                 {isPending && (
                   <button
@@ -1241,7 +1241,7 @@ export default function OfferDetailsPage() {
 
       {/* Main Offer Info */}
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+        className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
       >
         <div className="flex items-start space-x-4">
           <div className="flex-1">
@@ -1278,7 +1278,7 @@ export default function OfferDetailsPage() {
 
       {/* Offer Details */}
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-6`}
+        className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
       >
         <h3 className={`${tw.cardHeading} mb-4`}>Offer Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1330,14 +1330,14 @@ export default function OfferDetailsPage() {
 
       {/* Linked Products Section */}
       <section
-        className={`mt-12 bg-white rounded-xl border border-[${color.border.default}] p-6 space-y-4`}
+        className={`mt-12 bg-white rounded-md border border-[${color.border.default}] p-6 space-y-4`}
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${tw.cardHeading}`}>Linked Products</h3>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsAddProductModalOpen(true)}
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
               style={{ backgroundColor: color.primary.action }}
               type="button"
             >
@@ -1352,7 +1352,7 @@ export default function OfferDetailsPage() {
           </div>
         ) : linkedProducts.length > 0 ? (
           <div
-            className={`overflow-x-auto border border-[${color.border.default}] rounded-lg`}
+            className={`overflow-x-auto border border-[${color.border.default}] rounded-md`}
           >
             <table className="w-full">
               <thead
@@ -1516,7 +1516,7 @@ export default function OfferDetailsPage() {
 
       {/* Offer Creatives Section */}
       <section
-        className={`mt-12 bg-white rounded-xl border border-[${color.border.default}] p-6 space-y-4`}
+        className={`mt-12 bg-white rounded-md border border-[${color.border.default}] p-6 space-y-4`}
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
@@ -1526,7 +1526,7 @@ export default function OfferDetailsPage() {
                 resetNewCreativeForm();
                 setIsAddCreativeModalOpen(true);
               }}
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
               style={{ backgroundColor: color.primary.action }}
               type="button"
             >
@@ -1541,7 +1541,7 @@ export default function OfferDetailsPage() {
           </div>
         ) : offerCreatives.length > 0 ? (
           <div
-            className={`overflow-x-auto border border-[${color.border.default}] rounded-lg`}
+            className={`overflow-x-auto border border-[${color.border.default}] rounded-md`}
           >
             <table className="w-full">
               <thead
@@ -1748,7 +1748,7 @@ export default function OfferDetailsPage() {
                 }))
               }
               placeholder="Enter creative title..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -1766,7 +1766,7 @@ export default function OfferDetailsPage() {
               }
               placeholder="Enter text content..."
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">
               Provide at least one of Title, Text Body, or HTML Body.
@@ -1787,7 +1787,7 @@ export default function OfferDetailsPage() {
               }
               placeholder="Enter HTML content..."
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
             />
           </div>
 
@@ -1800,7 +1800,7 @@ export default function OfferDetailsPage() {
               onChange={(e) => setNewCreativeVariables(e.target.value)}
               placeholder='{"variable_name": "value"}'
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
             />
             <div className="text-xs text-gray-500 mt-1">
               Provide key/value pairs for template variables. Example:{" "}
@@ -1837,14 +1837,14 @@ export default function OfferDetailsPage() {
                 resetNewCreativeForm();
               }}
               disabled={isCreatingCreative}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleCreateCreative}
               disabled={isCreatingCreative}
-              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50"
               style={{ backgroundColor: color.primary.action }}
             >
               {isCreatingCreative ? (
@@ -1879,7 +1879,7 @@ export default function OfferDetailsPage() {
                 setEditFormData({ ...editFormData, title: e.target.value })
               }
               placeholder="Enter creative title..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -1895,7 +1895,7 @@ export default function OfferDetailsPage() {
               }
               placeholder="Enter text content..."
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -1916,7 +1916,7 @@ export default function OfferDetailsPage() {
                 }
                 placeholder="Enter HTML content..."
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
               />
             </div>
           )}
@@ -1931,7 +1931,7 @@ export default function OfferDetailsPage() {
               onChange={(e) => setVariablesJson(e.target.value)}
               placeholder='{"variable_name": "value"}'
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
             />
             <div className="text-xs text-gray-500 mt-1">
               {(() => {
@@ -1951,14 +1951,14 @@ export default function OfferDetailsPage() {
             <button
               onClick={() => setIsEditCreativeModalOpen(false)}
               disabled={isSavingCreative}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveCreative}
               disabled={isSavingCreative}
-              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
               style={{ backgroundColor: color.primary.action }}
             >
               {isSavingCreative ? (
@@ -2000,7 +2000,7 @@ export default function OfferDetailsPage() {
                 value={productSearchTerm}
                 onChange={(e) => setProductSearchTerm(e.target.value)}
                 placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -2018,7 +2018,7 @@ export default function OfferDetailsPage() {
           {/* Selected Products Count */}
           {selectedProductsToAdd.length > 0 && (
             <div
-              className="rounded-lg p-3"
+              className="rounded-md p-3"
               style={{ backgroundColor: color.primary.accent }}
             >
               <p className="text-sm text-black font-medium">
@@ -2029,7 +2029,7 @@ export default function OfferDetailsPage() {
           )}
 
           {/* Products List */}
-          <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+          <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
             {productsSearchLoading ? (
               <div className="flex justify-center items-center py-12">
                 <LoadingSpinner />
@@ -2069,7 +2069,7 @@ export default function OfferDetailsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 flex-1">
                           <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            className={`w-10 h-10 rounded-md flex items-center justify-center ${
                               isAlreadyLinked ? "bg-gray-200" : "bg-gray-100"
                             }`}
                           >
@@ -2159,14 +2159,14 @@ export default function OfferDetailsPage() {
                 setProductSearchTerm("");
               }}
               disabled={isLinkingProducts}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirmAddProducts}
               disabled={isLinkingProducts || selectedProductsToAdd.length === 0}
-              className="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50"
               style={{ backgroundColor: color.primary.action }}
             >
               {isLinkingProducts ? (

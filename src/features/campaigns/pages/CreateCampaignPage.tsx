@@ -708,7 +708,7 @@ export default function CreateCampaignPage() {
   return (
     <div className="min-h-screen">
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-4`}
+        className={`bg-white rounded-md border border-[${color.border.default}] p-4`}
       >
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between pb-3">
@@ -738,7 +738,7 @@ export default function CreateCampaignPage() {
                 <button
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   {isSavingDraft ? (
@@ -757,7 +757,7 @@ export default function CreateCampaignPage() {
           {/* Sticky Progress Navigation */}
           <nav
             aria-label="Progress"
-            className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200"
+            className="sticky top-16 z-20 bg-white py-6 border-b border-gray-200"
           >
             {/* Mobile - Simple dots */}
             <div className="md:hidden flex items-center justify-center gap-2">
@@ -867,7 +867,7 @@ export default function CreateCampaignPage() {
           <div className="py-4">{renderStep()}</div>
 
           {/* Sticky Bottom Navigation */}
-          <div className="sticky bottom-0 z-50 bg-white py-4">
+          <div className="sticky bottom-0 z-30 bg-white py-4">
             <div className="flex justify-between items-center">
               <button
                 onClick={handlePrev}
@@ -879,7 +879,7 @@ export default function CreateCampaignPage() {
               <button
                 onClick={currentStep === 4 ? handleSubmit : handleNext}
                 disabled={isLoading || !validateCurrentStep()}
-                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
               >
                 {isLoading ? (

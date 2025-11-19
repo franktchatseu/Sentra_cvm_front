@@ -861,7 +861,7 @@ export default function UserManagementPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsAnalyticsModalOpen(true)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
             <BarChart3 className="w-4 h-4" />
             View Analytics
@@ -885,7 +885,7 @@ export default function UserManagementPage() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -1043,7 +1043,7 @@ export default function UserManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white border border-gray-200 rounded-lg p-6 overflow-hidden`}
+        className={`bg-white border border-gray-200 rounded-md p-6 overflow-hidden`}
       >
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -1060,12 +1060,12 @@ export default function UserManagementPage() {
         ) : errorState ? (
           <div className="p-8 text-center">
             <div
-              className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-xl p-6`}
+              className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-md p-6`}
             >
               <p className="font-medium mb-3">{errorState}</p>
               <button
                 onClick={() => loadData({ skipCache: true })}
-                className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors font-medium"
+                className="px-4 py-2 text-white rounded-md hover:opacity-90 transition-colors font-medium"
                 style={{ backgroundColor: color.status.danger }}
               >
                 Try Again
@@ -1089,7 +1089,7 @@ export default function UserManagementPage() {
                     setSelectedUser(null);
                     setIsModalOpen(true);
                   }}
-                  className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
+                  className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   <Plus className="w-4 h-4" />
@@ -1213,7 +1213,7 @@ export default function UserManagementPage() {
                               <button
                                 onClick={() => handleToggleStatus(user)}
                                 disabled={loadingActions.toggling.has(user.id)}
-                                className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{
                                   color: userIsActive
                                     ? deactivateColor
@@ -1241,7 +1241,7 @@ export default function UserManagementPage() {
                               </button>
                               <button
                                 onClick={() => handleViewUser(user)}
-                                className="p-2 rounded-lg transition-colors"
+                                className="p-2 rounded-md transition-colors"
                                 style={{
                                   color: color.primary.action,
                                   backgroundColor: "transparent",
@@ -1255,7 +1255,7 @@ export default function UserManagementPage() {
                                   setSelectedUser(user);
                                   setIsModalOpen(true);
                                 }}
-                                className="p-2 rounded-lg transition-colors"
+                                className="p-2 rounded-md transition-colors"
                                 style={{
                                   color: color.primary.action,
                                   backgroundColor: "transparent",
@@ -1267,7 +1267,7 @@ export default function UserManagementPage() {
                               <button
                                 onClick={() => handleDeleteUser(user)}
                                 disabled={loadingActions.deleting.has(user.id)}
-                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title={
                                   loadingActions.deleting.has(user.id)
                                     ? "Deleting..."
@@ -1344,7 +1344,7 @@ export default function UserManagementPage() {
                           <button
                             onClick={() => handleToggleStatus(user)}
                             disabled={loadingActions.toggling.has(user.id)}
-                            className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{
                               color: userIsActive
                                 ? deactivateColor
@@ -1372,7 +1372,7 @@ export default function UserManagementPage() {
                           </button>
                           <button
                             onClick={() => handleViewUser(user)}
-                            className="p-2 rounded-lg transition-colors"
+                            className="p-2 rounded-md transition-colors"
                             style={{
                               color: color.primary.action,
                               backgroundColor: "transparent",
@@ -1386,7 +1386,7 @@ export default function UserManagementPage() {
                               setSelectedUser(user);
                               setIsModalOpen(true);
                             }}
-                            className="p-2 rounded-lg transition-colors"
+                            className="p-2 rounded-md transition-colors"
                             style={{
                               color: color.primary.action,
                               backgroundColor: "transparent",
@@ -1398,7 +1398,7 @@ export default function UserManagementPage() {
                           <button
                             onClick={() => handleDeleteUser(user)}
                             disabled={loadingActions.deleting.has(user.id)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title={
                               loadingActions.deleting.has(user.id)
                                 ? "Deleting..."
@@ -1540,7 +1540,7 @@ export default function UserManagementPage() {
                             <button
                               onClick={() => handleApproveRequest(request)}
                               disabled={actionDisabled || approvingLoading}
-                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title={
                                 actionDisabled
                                   ? "Missing request identifier"
@@ -1562,7 +1562,7 @@ export default function UserManagementPage() {
                             <button
                               onClick={() => handleRejectRequest(request)}
                               disabled={actionDisabled || rejectingLoading}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title={
                                 actionDisabled
                                   ? "Missing request identifier"
@@ -1644,7 +1644,7 @@ export default function UserManagementPage() {
                         <button
                           onClick={() => handleApproveRequest(request)}
                           disabled={actionDisabled || approvingLoading}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {approvingLoading ? (
                             <>
@@ -1666,7 +1666,7 @@ export default function UserManagementPage() {
                         <button
                           onClick={() => handleRejectRequest(request)}
                           disabled={actionDisabled || rejectingLoading}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {rejectingLoading ? (
                             <>
@@ -1713,14 +1713,14 @@ export default function UserManagementPage() {
       {/* Analytics Modal */}
       {isAnalyticsModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-md max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
                 User Analytics
               </h2>
               <button
                 onClick={() => setIsAnalyticsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -1751,7 +1751,7 @@ export default function UserManagementPage() {
                           .map(([status, count]) => (
                             <div
                               key={status}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                             >
                               <span className="text-sm text-gray-600 capitalize">
                                 {status.replace(/_/g, " ")}
@@ -1779,7 +1779,7 @@ export default function UserManagementPage() {
                           .map(([dept, count]) => (
                             <div
                               key={dept}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                             >
                               <span className="text-sm text-gray-600">
                                 {dept}
@@ -1807,7 +1807,7 @@ export default function UserManagementPage() {
                           .map(([role, count]) => (
                             <div
                               key={role}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                             >
                               <span className="text-sm text-gray-600">
                                 {role}

@@ -109,7 +109,7 @@ export default function CreateProductPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard/products")}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
             style={{ color: color.text.secondary }}
           >
             <ArrowLeft className="w-5 h-5" />
@@ -128,7 +128,7 @@ export default function CreateProductPage() {
       {/* Error Message */}
       {error && (
         <div
-          className="rounded-lg p-4 flex items-center gap-3"
+          className="rounded-md p-4 flex items-center gap-3"
           style={{
             backgroundColor: `${color.status.danger}20`,
             borderColor: color.status.danger,
@@ -147,7 +147,7 @@ export default function CreateProductPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Product Information Card */}
         <div
-          className="rounded-xl border p-6"
+          className="rounded-md border p-6"
           style={{
             borderColor: color.border.default,
             backgroundColor: color.surface.background,
@@ -169,7 +169,7 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("product_code", e.target.value)
                 }
-                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
                 style={{
                   borderColor: color.border.default,
                   outline: "none",
@@ -199,7 +199,7 @@ export default function CreateProductPage() {
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
                 style={{
                   borderColor: color.border.default,
                   outline: "none",
@@ -230,7 +230,7 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("price", parseFloat(e.target.value) || 0)
                 }
-                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
                 style={{
                   borderColor: color.border.default,
                   outline: "none",
@@ -259,7 +259,7 @@ export default function CreateProductPage() {
                 required
                 value={formData.da_id}
                 onChange={(e) => handleInputChange("da_id", e.target.value)}
-                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all"
+                className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
                 style={{
                   borderColor: color.border.default,
                   outline: "none",
@@ -308,7 +308,7 @@ export default function CreateProductPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                className="w-full px-4 py-2.5 border rounded-lg text-sm transition-all resize-none"
+                className="w-full px-4 py-2.5 border rounded-md text-sm transition-all resize-none"
                 style={{
                   borderColor: color.border.default,
                   outline: "none",
@@ -331,7 +331,7 @@ export default function CreateProductPage() {
             <button
               type="button"
               onClick={() => navigate("/dashboard/products")}
-              className="px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              className="px-6 py-2.5 rounded-md text-sm font-medium transition-colors"
               style={{
                 borderWidth: "1px",
                 borderColor: color.border.default,
@@ -350,7 +350,7 @@ export default function CreateProductPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: color.primary.action,
               }}

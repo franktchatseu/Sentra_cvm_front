@@ -1,57 +1,43 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
+  ArrowLeft,
+  Edit,
+  LucideIcon,
   Plus,
   Search,
-  Edit,
   Trash2,
   X,
-  ArrowLeft,
-  LucideIcon,
 } from "lucide-react";
 import { color, tw } from "../utils/utils";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useToast } from "../../contexts/ToastContext";
 import { configurationDataService } from "../services/configurationDataService";
-import LoadingSpinner from "./ui/LoadingSpinner";
+import type { ConfigurationType } from "../services/configurationDataService";
+import type { ConfigurationItem } from "./GenericConfigurationPage";
 
-export interface ConfigurationItem {
-  id: number;
-  name: string;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-  isActive?: boolean;
+export interface TypeConfigurationItem extends ConfigurationItem {
+  isActive: boolean;
   metadataValue?: number | string;
 }
 
-export interface ConfigurationPageConfig {
-  // Page configuration
+interface MetadataFieldConfig {
+  label: string;
+  type: "text" | "number";
+  placeholder?: string;
+}
+
+export interface TypeConfigurationPageConfig {
   title: string;
   subtitle: string;
-  entityName: string; // "objective", "department", etc.
-  entityNamePlural: string; // "objectives", "departments", etc.
-  configType?:
-    | "lineOfBusiness"
-    | "departments"
-    | "campaignObjectives"
-    | "offerTypes"
-    | "campaignTypes"
-    | "segmentTypes"
-    | "productTypes";
-
-  // Navigation
-  backPath: string;
-
-  // UI
+  entityName: string;
+  entityNamePlural: string;
+  configType: ConfigurationType;
   icon: LucideIcon;
+  backPath: string;
   searchPlaceholder: string;
-
-  // Data
-  initialData: ConfigurationItem[];
-
-  // Labels
+  initialData: TypeConfigurationItem[];
   createButtonText: string;
   modalTitle: {
     create: string;
@@ -61,12 +47,10 @@ export interface ConfigurationPageConfig {
   nameRequired: boolean;
   descriptionLabel: string;
   descriptionRequired: boolean;
-
-  // Validation
   nameMaxLength: number;
   descriptionMaxLength: number;
-
-  // Messages
+  statusLabel?: string;
+  metadataField?: MetadataFieldConfig;
   deleteConfirmTitle: string;
   deleteConfirmMessage: (name: string) => string;
   deleteSuccessMessage: (name: string) => string;
@@ -76,65 +60,74 @@ export interface ConfigurationPageConfig {
   saveErrorMessage: string;
 }
 
-interface ConfigurationModalProps {
+interface TypeConfigurationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  item?: ConfigurationItem;
-  onSave: (item: { name: string; description?: string }) => Promise<void>;
-  isSaving?: boolean;
-  config: ConfigurationPageConfig;
+  item?: TypeConfigurationItem;
+  onSave: (item: {
+    name: string;
+    description?: string;
+    isActive: boolean;
+    metadataValue?: number | string;
+  }) => Promise<void>;
+  isSaving: boolean;
+  config: TypeConfigurationPageConfig;
 }
 
-export function ConfigurationModal({
+function TypeConfigurationModal({
   isOpen,
   onClose,
   item,
   onSave,
-  isSaving = false,
+  isSaving,
   config,
-}: ConfigurationModalProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-  });
+}: TypeConfigurationModalProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [metadataValue, setMetadataValue] = useState<string>("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (item) {
-      setFormData({
-        name: item.name,
-        description: item.description || "",
-      });
+      setName(item.name);
+      setDescription(item.description || "");
+      setIsActive(item.isActive);
+      setMetadataValue(
+        item.metadataValue !== undefined ? String(item.metadataValue) : ""
+      );
     } else {
-      setFormData({ name: "", description: "" });
+      setName("");
+      setDescription("");
+      setIsActive(true);
+      setMetadataValue("");
     }
     setError("");
   }, [item, isOpen]);
 
+  if (!isOpen) return null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (config.nameRequired && !formData.name.trim()) {
+    if (config.nameRequired && !name.trim()) {
       setError(`${config.nameLabel} is required`);
       return;
     }
 
-    if (formData.name.length > config.nameMaxLength) {
+    if (name.length > config.nameMaxLength) {
       setError(
         `${config.nameLabel} must be ${config.nameMaxLength} characters or less`
       );
       return;
     }
 
-    if (config.descriptionRequired && !formData.description.trim()) {
+    if (config.descriptionRequired && !description.trim()) {
       setError(`${config.descriptionLabel} is required`);
       return;
     }
 
-    if (
-      formData.description &&
-      formData.description.length > config.descriptionMaxLength
-    ) {
+    if (description && description.length > config.descriptionMaxLength) {
       setError(
         `${config.descriptionLabel} must be ${config.descriptionMaxLength} characters or less`
       );
@@ -142,20 +135,33 @@ export function ConfigurationModal({
     }
 
     setError("");
-
-    const itemData = {
-      name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
+    const payload = {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      isActive,
+      metadataValue:
+        config.metadataField && metadataValue !== ""
+          ? config.metadataField.type === "number"
+            ? Number(metadataValue)
+            : metadataValue
+          : undefined,
     };
 
-    await onSave(itemData);
-  };
+    if (
+      config.metadataField?.type === "number" &&
+      metadataValue !== "" &&
+      Number.isNaN(payload.metadataValue)
+    ) {
+      setError(`${config.metadataField.label} must be a valid number`);
+      return;
+    }
 
-  if (!isOpen) return null;
+    await onSave(payload);
+  };
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className=" rounded-md shadow-2xl w-full max-w-md">
+      <div className="rounded-md shadow-2xl w-full max-w-md bg-white">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
             {item ? config.modalTitle.edit : config.modalTitle.create}
@@ -163,58 +169,93 @@ export function ConfigurationModal({
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {config.nameLabel} {config.nameRequired && "*"}
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder={`Enter ${config.nameLabel.toLowerCase()}`}
+              maxLength={config.nameMaxLength}
+              required={config.nameRequired}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {config.descriptionLabel} {config.descriptionRequired && "*"}
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder={`Enter ${config.descriptionLabel.toLowerCase()}`}
+              rows={3}
+              maxLength={config.descriptionMaxLength}
+              required={config.descriptionRequired}
+            />
+          </div>
+
+          {config.metadataField && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {config.nameLabel} {config.nameRequired && "*"}
+                {config.metadataField.label}
               </label>
               <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
+                type={config.metadataField.type}
+                value={metadataValue}
+                onChange={(e) => setMetadataValue(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder={`Enter ${config.nameLabel.toLowerCase()}`}
-                maxLength={config.nameMaxLength}
-                required={config.nameRequired}
+                placeholder={config.metadataField.placeholder}
               />
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {config.descriptionLabel} {config.descriptionRequired && "*"}
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder={`Enter ${config.descriptionLabel.toLowerCase()}`}
-                rows={3}
-                maxLength={config.descriptionMaxLength}
-                required={config.descriptionRequired}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">
+              {config.statusLabel || "Status"}
+            </span>
+            <label className="inline-flex items-center cursor-pointer space-x-3">
+              <span className="text-sm text-gray-600">
+                {isActive ? "Active" : "Inactive"}
+              </span>
+              <div
+                className={`w-10 h-5 flex items-center bg-gray-300 rounded-full p-1 transition-colors ${
+                  isActive ? "bg-purple-500" : ""
+                }`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                    isActive ? "translate-x-5" : ""
+                  }`}
+                />
+              </div>
+              <input
+                type="checkbox"
+                className="hidden"
+                checked={isActive}
+                onChange={() => setIsActive((prev) => !prev)}
               />
-            </div>
+            </label>
           </div>
 
           {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
 
-          <div className="flex items-center justify-end space-x-3 mt-6">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
             <button
               type="button"
               onClick={onClose}
@@ -228,11 +269,7 @@ export function ConfigurationModal({
               className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}
             >
-              {isSaving
-                ? "Saving..."
-                : item
-                ? `Update ${config.entityName}`
-                : `Create ${config.entityName}`}
+              {isSaving ? "Saving..." : item ? "Update" : "Create"}
             </button>
           </div>
         </form>
@@ -242,52 +279,65 @@ export function ConfigurationModal({
   );
 }
 
-interface GenericConfigurationPageProps {
-  config: ConfigurationPageConfig;
+interface TypeConfigurationPageProps {
+  config: TypeConfigurationPageConfig;
 }
 
-export default function GenericConfigurationPage({
+export default function TypeConfigurationPage({
   config,
-}: GenericConfigurationPageProps) {
+}: TypeConfigurationPageProps) {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
 
-  const [items, setItems] = useState<ConfigurationItem[]>(config.initialData);
-  const [loading] = useState(false);
+  const [items, setItems] = useState<TypeConfigurationItem[]>(
+    config.initialData
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<
-    ConfigurationItem | undefined
+    TypeConfigurationItem | undefined
   >();
   const [isSaving, setIsSaving] = useState(false);
 
-  // Utiliser le service de données si configType est défini
   useEffect(() => {
     if (config.configType) {
-      // Initialiser les données du service avec les données de config
       configurationDataService.setData(config.configType, config.initialData);
 
-      // S'abonner aux changements
       const unsubscribe = configurationDataService.subscribe(
         config.configType,
-        setItems
+        (data) => {
+          setItems(data as TypeConfigurationItem[]);
+        }
       );
+
       return unsubscribe;
     }
+    return undefined;
   }, [config.configType, config.initialData]);
+
+  const filteredItems = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return (items || []).filter(
+      (item) =>
+        item.name.toLowerCase().includes(term) ||
+        (item.description && item.description.toLowerCase().includes(term))
+    );
+  }, [items, searchTerm]);
+
+  const IconComponent = config.icon;
 
   const handleCreateItem = () => {
     setEditingItem(undefined);
     setIsModalOpen(true);
   };
 
-  const handleEditItem = (item: ConfigurationItem) => {
+  const handleEditItem = (item: TypeConfigurationItem) => {
     setEditingItem(item);
     setIsModalOpen(true);
   };
 
-  const handleDeleteItem = async (item: ConfigurationItem) => {
+  const handleDeleteItem = async (item: TypeConfigurationItem) => {
     const confirmed = await confirm({
       title: config.deleteConfirmTitle,
       message: config.deleteConfirmMessage(item.name),
@@ -299,13 +349,7 @@ export default function GenericConfigurationPage({
     if (!confirmed) return;
 
     try {
-      if (config.configType) {
-        // Utiliser le service de données
-        configurationDataService.deleteItem(config.configType, item.id);
-      } else {
-        // Fallback pour les configurations sans configType
-        setItems((prev) => prev.filter((i) => i.id !== item.id));
-      }
+      configurationDataService.deleteItem(config.configType, item.id);
       showToast(
         config.deleteConfirmTitle,
         config.deleteSuccessMessage(item.name)
@@ -322,40 +366,20 @@ export default function GenericConfigurationPage({
   const handleItemSaved = async (itemData: {
     name: string;
     description?: string;
+    isActive: boolean;
+    metadataValue?: number | string;
   }) => {
     try {
       setIsSaving(true);
       if (editingItem) {
-        // Update existing item
-        if (config.configType) {
-          configurationDataService.updateItem(
-            config.configType,
-            editingItem.id,
-            itemData
-          );
-        } else {
-          setItems((prev) =>
-            prev.map((item) =>
-              item.id === editingItem.id
-                ? { ...item, ...itemData, updated_at: new Date().toISOString() }
-                : item
-            )
-          );
-        }
+        configurationDataService.updateItem(
+          config.configType,
+          editingItem.id,
+          itemData
+        );
         showToast(config.updateSuccessMessage);
       } else {
-        // Create new item
-        if (config.configType) {
-          configurationDataService.addItem(config.configType, itemData);
-        } else {
-          const newItem: ConfigurationItem = {
-            id: Math.max(...items.map((i) => i.id)) + 1,
-            ...itemData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          setItems((prev) => [...prev, newItem]);
-        }
+        configurationDataService.addItem(config.configType, itemData);
         showToast(config.createSuccessMessage);
       }
       setIsModalOpen(false);
@@ -368,15 +392,6 @@ export default function GenericConfigurationPage({
     }
   };
 
-  const filteredItems = (items || []).filter(
-    (item) =>
-      item?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item?.description &&
-        item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const IconComponent = config.icon;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -384,6 +399,7 @@ export default function GenericConfigurationPage({
           <button
             onClick={() => navigate(config.backPath)}
             className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+            aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -408,7 +424,7 @@ export default function GenericConfigurationPage({
         </div>
       </div>
 
-      <div className={` my-5`}>
+      <div className="my-5">
         <div className="relative w-full">
           <Search
             className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[${color.text.muted}]`}
@@ -424,21 +440,9 @@ export default function GenericConfigurationPage({
       </div>
 
       <div
-        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
+        className={`rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner
-              variant="modern"
-              size="lg"
-              color="primary"
-              className="mr-3"
-            />
-            <span className={`${tw.textSecondary}`}>
-              Loading {config.entityNamePlural}...
-            </span>
-          </div>
-        ) : filteredItems.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <IconComponent className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
@@ -490,6 +494,26 @@ export default function GenericConfigurationPage({
                     >
                       Description
                     </th>
+                    {config.metadataField && (
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        {config.metadataField.label}
+                      </th>
+                    )}
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{
+                        color: color.surface.tableHeaderText,
+                        backgroundColor: color.surface.tableHeader,
+                      }}
+                    >
+                      {config.statusLabel || "Status"}
+                    </th>
                     <th
                       className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider"
                       style={{
@@ -506,7 +530,6 @@ export default function GenericConfigurationPage({
                 <tbody>
                   {filteredItems.map((item) => (
                     <tr key={item.id} className="transition-colors">
-                      {/* NAME + ID */}
                       <td
                         className="px-6 py-4"
                         style={{
@@ -528,8 +551,6 @@ export default function GenericConfigurationPage({
                           </div>
                         </div>
                       </td>
-
-                      {/* DESCRIPTION */}
                       <td
                         className="px-6 py-4"
                         style={{ backgroundColor: color.surface.tablebodybg }}
@@ -538,8 +559,32 @@ export default function GenericConfigurationPage({
                           {item.description || "No description"}
                         </div>
                       </td>
-
-                      {/* ACTIONS */}
+                      {config.metadataField && (
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                          }}
+                        >
+                          <div className={`text-sm ${tw.textPrimary}`}>
+                            {item.metadataValue ?? "—"}
+                          </div>
+                        </td>
+                      )}
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            item.isActive
+                              ? `bg-[${color.status.success}] text-white`
+                              : "bg-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {item.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
                       <td
                         className="px-6 py-4 text-right"
                         style={{
@@ -549,7 +594,6 @@ export default function GenericConfigurationPage({
                         }}
                       >
                         <div className="flex items-center justify-end space-x-2">
-                          {/* EDIT BUTTON */}
                           <button
                             onClick={() => handleEditItem(item)}
                             className="p-2 rounded-md transition-colors"
@@ -567,13 +611,11 @@ export default function GenericConfigurationPage({
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-
-                          {/* DELETE BUTTON */}
                           <button
                             onClick={() => handleDeleteItem(item)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                           >
-                            <Trash2 className="w-4 h-4 text-red-600" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -600,33 +642,38 @@ export default function GenericConfigurationPage({
                       <div className={`text-sm ${tw.textSecondary} mb-2`}>
                         {item.description || "No description"}
                       </div>
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleEditItem(item)}
-                          className="p-2 rounded-md transition-colors"
-                          style={{
-                            color: color.primary.action,
-                            backgroundColor: "transparent",
-                          }}
-                          onMouseEnter={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = `${color.primary.action}10`;
-                          }}
-                          onMouseLeave={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = "transparent";
-                          }}
+                      {config.metadataField && (
+                        <div className={`text-xs ${tw.textMuted} mb-2`}>
+                          {config.metadataField.label}:{" "}
+                          <span className={tw.textPrimary}>
+                            {item.metadataValue ?? "—"}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            item.isActive
+                              ? `bg-[${color.status.success}] text-white`
+                              : "bg-gray-200 text-gray-700"
+                          }`}
                         >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
+                          {item.isActive ? "Active" : "Inactive"}
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(item)}
+                            className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-md hover:bg-red-50 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -637,7 +684,7 @@ export default function GenericConfigurationPage({
         )}
       </div>
 
-      <ConfigurationModal
+      <TypeConfigurationModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);

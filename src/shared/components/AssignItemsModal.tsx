@@ -166,12 +166,12 @@ function AssignItemsModal<T extends Item>({
         onClick={onClose}
       ></div>
       <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-100">
+        <div className="relative bg-white rounded-md shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-100">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
             <div className="flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                className="w-10 h-10 rounded-md flex items-center justify-center"
                 style={{ backgroundColor: color.primary.accent + "20" }}
               >
                 <div style={{ color: color.primary.accent }}>
@@ -188,7 +188,7 @@ function AssignItemsModal<T extends Item>({
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
               title="Close"
             >
               <X className="w-5 h-5 text-gray-500" />
@@ -204,7 +204,7 @@ function AssignItemsModal<T extends Item>({
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
               />
               {searchTerm && (
                 <button
@@ -267,7 +267,7 @@ function AssignItemsModal<T extends Item>({
                       onClick={() =>
                         !isAssigned && handleToggleSelection(item.id)
                       }
-                      className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-4 p-4 rounded-md border-2 transition-all cursor-pointer ${
                         isAssigned
                           ? "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
                           : isSelected
@@ -277,7 +277,7 @@ function AssignItemsModal<T extends Item>({
                     >
                       {/* Icon */}
                       <div
-                        className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                        className={`w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
                           isSelected
                             ? "bg-blue-100"
                             : isAssigned
@@ -397,7 +397,7 @@ function AssignItemsModal<T extends Item>({
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-md font-semibold transition-all hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                 disabled={assigning}
               >
                 Cancel
@@ -405,7 +405,7 @@ function AssignItemsModal<T extends Item>({
               <button
                 onClick={handleAssignSelected}
                 disabled={assigning || selectedItemIds.size === 0}
-                className="px-5 py-2.5 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg disabled:hover:shadow-md"
+                className="px-5 py-2.5 text-white rounded-md font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg disabled:hover:shadow-md"
                 style={{
                   backgroundColor:
                     assigning || selectedItemIds.size === 0

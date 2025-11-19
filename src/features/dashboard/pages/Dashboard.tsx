@@ -5,6 +5,7 @@ import CampaignsPage from "../../campaigns/pages/CampaignsPage";
 import CampaignDetailsPage from "../../campaigns/pages/CampaignDetailsPage";
 import CreateCampaignPage from "../../campaigns/pages/CreateCampaignPage";
 import CampaignCategoriesPage from "../../campaigns/pages/CampaignCategoriesPage";
+import CampaignTypesPage from "../../campaigns/pages/CampaignTypesPage";
 import CampaignObjectivesPage from "../../campaigns/pages/CampaignObjectivesPage";
 import ProgramsPage from "../../campaigns/pages/ProgramsPage";
 import ProgramDetailsPage from "../../campaigns/pages/ProgramDetailsPage";
@@ -72,6 +73,7 @@ export default function Dashboard() {
           element={<CampaignLifecycleHistoryPage />}
         />
         <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
+        <Route path="/campaign-types" element={<CampaignTypesPage />} />
         <Route
           path="/campaign-catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="campaigns" />}

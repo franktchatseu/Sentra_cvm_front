@@ -364,11 +364,11 @@ export default function QuickListDetailsPage() {
   if (!quicklist && !isLoading) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-md p-6 text-center">
           <p className="text-red-600">QuickList not found</p>
           <button
             onClick={navigateBack}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
           >
             Back to QuickLists
           </button>
@@ -392,7 +392,7 @@ export default function QuickListDetailsPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={navigateBack}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -410,14 +410,14 @@ export default function QuickListDetailsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleEdit}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
             <Edit className="w-4 h-4" />
             Edit
           </button>
           <button
             onClick={handleCommunicate}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center gap-2"
             style={{ backgroundColor: color.primary.action }}
           >
             <Send className="w-4 h-4" />
@@ -427,13 +427,13 @@ export default function QuickListDetailsPage() {
           <div className="relative" ref={moreMenuRef}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
             >
               <MoreVertical className="w-4 h-4" />
               More
             </button>
             {showMoreMenu && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
                 <button
                   onClick={() => {
                     handleDelete();
@@ -502,13 +502,13 @@ export default function QuickListDetailsPage() {
 
       {/* Content */}
       {activeSection === "overview" && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-6">
                 {/* QuickList Information */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">
                     QuickList Information
                   </h3>
@@ -557,7 +557,7 @@ export default function QuickListDetailsPage() {
                 </div>
 
                 {/* File Information */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">
                     File Information
                   </h3>
@@ -656,7 +656,7 @@ export default function QuickListDetailsPage() {
 
                 {/* Commented out - Table Mapping Information */}
                 {/* {tableMapping && (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                     <h3 className="text-base font-semibold text-gray-900 mb-3">
                       Table Mapping
                     </h3>
@@ -701,7 +701,7 @@ export default function QuickListDetailsPage() {
 
                 {/* Commented out - Upload Type Schema */}
                 {/* {uploadTypeSchema && (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                     <h3 className="text-base font-semibold text-gray-900 mb-3">
                       Upload Type Schema
                     </h3>
@@ -792,14 +792,14 @@ export default function QuickListDetailsPage() {
               <div className="space-y-6">
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                     <p className="text-xs text-gray-500">Upload Type</p>
                     <p className="text-sm font-semibold text-gray-900">
                       {quicklist.upload_type}
                     </p>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                     <p className="text-xs text-gray-500">Rows Imported</p>
                     <p className="text-sm font-semibold text-gray-900">
                       {quicklist.rows_imported != null
@@ -808,7 +808,7 @@ export default function QuickListDetailsPage() {
                     </p>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                     <p className="text-xs text-gray-500">Created</p>
                     <p className="text-sm font-semibold text-gray-900">
                       {formatDate(quicklist.created_at)}
@@ -817,7 +817,7 @@ export default function QuickListDetailsPage() {
                 </div>
 
                 {/* Activity Timeline */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
                   <h3 className="text-base font-semibold text-gray-900 mb-3">
                     Activity Timeline
                   </h3>
@@ -875,7 +875,7 @@ export default function QuickListDetailsPage() {
                   </p>
                 </div>
               )}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 rounded-md overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead
@@ -964,7 +964,7 @@ export default function QuickListDetailsPage() {
                   </p>
                 </div>
               )}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 rounded-md overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead

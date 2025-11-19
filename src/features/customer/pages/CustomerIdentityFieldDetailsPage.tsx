@@ -79,7 +79,7 @@ export default function CustomerIdentityFieldDetailsPage() {
         <button
           type="button"
           onClick={handleBack}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-md hover:bg-gray-100 transition-colors"
         >
           <ArrowLeft className="h-5 w-5 text-gray-700" />
         </button>
@@ -97,11 +97,11 @@ export default function CustomerIdentityFieldDetailsPage() {
       </div>
 
       {isLoading ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-12 flex items-center justify-center">
+        <div className="bg-white border border-gray-200 rounded-md p-12 flex items-center justify-center">
           <LoadingSpinner variant="modern" size="lg" color="primary" />
         </div>
       ) : error ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center space-y-3">
+        <div className="bg-white border border-gray-200 rounded-md p-8 text-center space-y-3">
           <h3 className="text-lg font-semibold text-gray-900">
             Unable to load field
           </h3>
@@ -109,7 +109,7 @@ export default function CustomerIdentityFieldDetailsPage() {
           <button
             type="button"
             onClick={loadField}
-            className="px-4 py-2 text-sm font-semibold text-white rounded-lg hover:opacity-95 transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-white rounded-md hover:opacity-95 transition-colors"
             style={{ backgroundColor: color.primary.action }}
           >
             Retry
@@ -117,7 +117,7 @@ export default function CustomerIdentityFieldDetailsPage() {
         </div>
       ) : field ? (
         <div className="space-y-6">
-          <section className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <section className="bg-white border border-gray-200 rounded-md p-6 space-y-4">
             <h2 className={`${tw.cardHeading} text-gray-900`}>
               Field Overview
             </h2>
@@ -177,10 +177,10 @@ export default function CustomerIdentityFieldDetailsPage() {
             </div>
           </section>
 
-          <section className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <section className="bg-white border border-gray-200 rounded-md p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div
-                className="p-2 rounded-lg"
+                className="p-2 rounded-md"
                 style={{ backgroundColor: color.primary.accent }}
               >
                 <ListChecks className="h-5 w-5 text-white" />
@@ -195,7 +195,7 @@ export default function CustomerIdentityFieldDetailsPage() {
               </p>
             ) : (
               <div
-                className="overflow-x-auto border rounded-lg"
+                className="overflow-x-auto border rounded-md"
                 style={{ borderColor: color.border.default }}
               >
                 <table className="min-w-full bg-white">
@@ -267,10 +267,10 @@ type InfoCardProps = {
 
 function InfoCard({ icon, title, items }: InfoCardProps) {
   return (
-    <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+    <div className="border border-gray-200 rounded-md p-4 space-y-3">
       <div className="flex items-center gap-3">
         <div
-          className="p-2 rounded-lg"
+          className="p-2 rounded-md"
           style={{ backgroundColor: color.primary.accent }}
         >
           {icon}

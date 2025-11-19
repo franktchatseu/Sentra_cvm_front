@@ -273,7 +273,7 @@ export default function ProductsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate("/dashboard/products/create")}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
               (e.target as HTMLButtonElement).style.backgroundColor =
@@ -293,7 +293,7 @@ export default function ProductsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Total Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -308,7 +308,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag1}20` }}
             >
               <Package
@@ -320,7 +320,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Active Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -335,7 +335,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag4}20` }}
             >
               <TrendingUp
@@ -347,7 +347,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Inactive Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -362,7 +362,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag3}20` }}
             >
               <XCircle
@@ -374,7 +374,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Average Price Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -391,7 +391,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag2}20` }}
             >
               <DollarSign
@@ -403,7 +403,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Top Selling Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -423,7 +423,7 @@ export default function ProductsPage() {
               )}
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag1}20` }}
             >
               <BarChart3
@@ -448,7 +448,7 @@ export default function ProductsPage() {
               placeholder="Search products..."
               value={filters.search || ""}
               onChange={(e) => handleSearch(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 text-sm  border border-[${tw.borderDefault}] rounded-lg focus:outline-none`}
+              className={`w-full pl-10 pr-4 py-3 text-sm  border border-[${tw.borderDefault}] rounded-md focus:outline-none`}
             />
           </div>
 
@@ -519,11 +519,11 @@ export default function ProductsPage() {
       {/* Error Message */}
       {error && (
         <div
-          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 mb-6 flex items-center justify-end`}
+          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-md p-4 mb-6 flex items-center justify-end`}
         >
           <button
             onClick={() => loadProducts()}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
             style={{ backgroundColor: color.status.danger }}
           >
             Try Again
@@ -533,7 +533,7 @@ export default function ProductsPage() {
 
       {/* Products Table */}
       <div
-        className={`bg-white rounded-lg shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
+        className={`bg-white rounded-md shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -555,7 +555,7 @@ export default function ProductsPage() {
             </p>
             <button
               onClick={() => navigate("/dashboard/products/create")}
-              className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
+              className="px-4 py-2 rounded-md font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
               style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
                 (e.target as HTMLButtonElement).style.backgroundColor =
@@ -680,7 +680,7 @@ export default function ProductsPage() {
                               onClick={() =>
                                 navigate(`/dashboard/products/${product.id}`)
                               }
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
@@ -691,14 +691,14 @@ export default function ProductsPage() {
                                   `/dashboard/products/${product.id}/edit`
                                 )
                               }
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                               title="Edit Product"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleToggleStatus(product)}
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                               title={
                                 product.is_active ? "Deactivate" : "Activate"
                               }
@@ -711,7 +711,7 @@ export default function ProductsPage() {
                             </button>
                             <button
                               onClick={() => handleDelete(product.id)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
                               title="Delete Product"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -731,7 +731,7 @@ export default function ProductsPage() {
       {/* Pagination */}
       {!loading && !error && (products.length > 0 || total > 0) && (
         <div
-          className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+          className={`bg-white rounded-md shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div
@@ -755,7 +755,7 @@ export default function ProductsPage() {
               <button
                 onClick={() => handlePageChange((filters.page || 1) - 1)}
                 disabled={filters.page === 1}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -765,7 +765,7 @@ export default function ProductsPage() {
               <button
                 onClick={() => handlePageChange((filters.page || 1) + 1)}
                 disabled={(filters.page || 1) >= (totalPages || 1)}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
-import { colors as color } from '../../utils/tokens';
+import React from "react";
+import { LucideIcon } from "lucide-react";
+import { colors as color } from "../../utils/tokens";
 
 interface FormSectionProps {
   title: string;
@@ -15,7 +15,7 @@ export default function FormSection({
   description,
   icon: Icon,
   children,
-  className = ''
+  className = "",
 }: FormSectionProps) {
   return (
     <div className={`space-y-6 ${className}`}>
@@ -23,7 +23,7 @@ export default function FormSection({
         {Icon && (
           <div className="flex-shrink-0">
             <div
-              className="flex items-center justify-center w-10 h-10 rounded-lg"
+              className="flex items-center justify-center w-10 h-10 rounded-md"
               style={{ backgroundColor: color.primary.action }}
             >
               <Icon className="w-5 h-5 text-white" />
@@ -37,9 +37,7 @@ export default function FormSection({
           )}
         </div>
       </div>
-      <div className="space-y-4">
-        {children}
-      </div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }

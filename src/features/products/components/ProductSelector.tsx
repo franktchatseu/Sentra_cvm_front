@@ -136,7 +136,7 @@ export default function ProductSelector({
             {showAddButtonInline && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white transition-all duration-200"
                 style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
                   (e.target as HTMLButtonElement).style.backgroundColor =
@@ -156,10 +156,10 @@ export default function ProductSelector({
             {selectedProducts.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-md"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-md flex items-center justify-center">
                     {getCategoryIcon()}
                   </div>
                   <div>
@@ -181,7 +181,7 @@ export default function ProductSelector({
                 </div>
                 <button
                   onClick={() => handleRemoveProduct(product.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 hover:border-red-300 transition-colors duration-200"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md border border-red-200 hover:border-red-300 transition-colors duration-200"
                   title="Remove product"
                 >
                   <X className="w-4 h-4" />
@@ -192,7 +192,7 @@ export default function ProductSelector({
           </div>
         </div>
       ) : (
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-12">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-md p-12">
           <div className="flex flex-col items-center justify-center">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
               <Package className="w-8 h-8 text-gray-400" />
@@ -229,7 +229,7 @@ export default function ProductSelector({
         <div className="flex justify-center">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2 text-gray-700 hover:text-gray-900 text-sm"
+            className="px-4 py-2 bg-white border border-gray-200 rounded-md hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2 text-gray-700 hover:text-gray-900 text-sm"
           >
             <Plus className="w-5 h-5" />
             <span className="font-medium">Add More Products</span>
@@ -241,7 +241,7 @@ export default function ProductSelector({
       {isModalOpen &&
         createPortal(
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
+            <div className="bg-white rounded-md w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
               {/* Modal Header */}
               <div className="p-6 border-b border-gray-200 bg-white">
                 <div className="flex items-center justify-between">
@@ -255,7 +255,7 @@ export default function ProductSelector({
                   </div>
                   <button
                     onClick={() => setIsModalOpen(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors duration-200"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -327,7 +327,7 @@ export default function ProductSelector({
                         <div
                           key={product.id}
                           onClick={() => handleProductToggle(product)}
-                          className={`relative p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
+                          className={`relative p-4 border rounded-md cursor-pointer transition-all duration-200 ${
                             isSelected ? "" : "border-gray-200"
                           }`}
                           style={
@@ -351,7 +351,7 @@ export default function ProductSelector({
 
                           <div className="flex items-start space-x-4 pr-8">
                             {/* Product Icon */}
-                            <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <div className="w-14 h-14 rounded-md flex items-center justify-center flex-shrink-0">
                               {getCategoryIcon()}
                             </div>
 
@@ -423,13 +423,13 @@ export default function ProductSelector({
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm font-medium"
+                      className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200 text-sm font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={() => setIsModalOpen(false)}
-                      className="px-6 py-2 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+                      className="px-6 py-2 text-white rounded-md transition-colors duration-200 text-sm font-medium"
                       style={{ backgroundColor: color.primary.action }}
                       onMouseEnter={(e) => {
                         (e.target as HTMLButtonElement).style.backgroundColor =

@@ -151,14 +151,14 @@ function CategoryModal({
   return isOpen
     ? createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className={`${tw.subHeading} text-gray-900`}>
                 {category ? "Edit Offer Catalog" : "Create New Offer Catalog"}
               </h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -176,7 +176,7 @@ function CategoryModal({
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                     placeholder="Enter offer catalog name"
                     required
                   />
@@ -194,7 +194,7 @@ function CategoryModal({
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                     placeholder="Enter offer catalog description"
                     rows={3}
                   />
@@ -209,14 +209,14 @@ function CategoryModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   {isLoading
@@ -390,7 +390,7 @@ function OffersModal({
               onClick={onClose}
             ></div>
             <div className="relative min-h-screen flex items-center justify-center p-4">
-              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              <div className="relative bg-white rounded-md shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                   <div>
@@ -404,7 +404,7 @@ function OffersModal({
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   >
                     <X className="w-5 h-5 text-gray-500" />
                   </button>
@@ -420,7 +420,7 @@ function OffersModal({
                         placeholder="Search offers..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                     <div className="flex gap-2">
@@ -430,7 +430,7 @@ function OffersModal({
                             `/dashboard/offer-catalogs/${category.id}/assign`
                           );
                         }}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >
                         <Plus className="w-4 h-4" />
                         Add offers to this catalog
@@ -467,7 +467,7 @@ function OffersModal({
                       {filteredOffers.map((offer: BasicOffer, index) => (
                         <div
                           key={offer?.id || index}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex-1">
                             <div>
@@ -497,7 +497,7 @@ function OffersModal({
                                   navigate(`/dashboard/offers/${offer.id}`);
                                 }
                               }}
-                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors text-sm font-medium"
                             >
                               View
                             </button>
@@ -506,7 +506,7 @@ function OffersModal({
                                 offer?.id && handleRemoveOffer(offer.id)
                               }
                               disabled={removingOfferId === offer?.id}
-                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm font-medium disabled:opacity-50"
                             >
                               {removingOfferId === offer?.id
                                 ? "Removing..."
@@ -1113,7 +1113,7 @@ function OfferCategoriesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/offers")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -1129,7 +1129,7 @@ function OfferCategoriesPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleCreateCategory}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
@@ -1139,7 +1139,7 @@ function OfferCategoriesPage() {
       </div>
 
       {pageError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {pageError}
         </div>
       )}
@@ -1155,7 +1155,7 @@ function OfferCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
@@ -1204,13 +1204,13 @@ function OfferCategoriesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
           />
         </div>
         <div className="flex items-center gap-2 p-1">
           <button
             onClick={() => setShowAdvancedFilters(true)}
-            className="flex items-center px-4 py-2 rounded-lg bg-gray-50 transition-colors text-sm font-medium"
+            className="flex items-center px-4 py-2 rounded-md bg-gray-50 transition-colors text-sm font-medium"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
@@ -1359,7 +1359,7 @@ function OfferCategoriesPage() {
         </div>
       ) : filteredOfferCategories.length === 0 ? (
         <div
-          className="rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4"
+          className="rounded-md shadow-sm border border-gray-200 text-center py-16 px-4"
           style={{ backgroundColor: color.surface.cards }}
         >
           <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -1374,7 +1374,7 @@ function OfferCategoriesPage() {
           {!searchTerm && (
             <button
               onClick={handleCreateCategory}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -1387,7 +1387,7 @@ function OfferCategoriesPage() {
           {filteredOfferCategories.map((category) => (
             <div
               key={category.id}
-              className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              className="border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
               style={{ backgroundColor: color.surface.cards }}
             >
               <div className="flex items-start justify-between mb-2">
@@ -1399,21 +1399,21 @@ function OfferCategoriesPage() {
                 <div className="flex items-center space-x-1">
                   {/* <button
                     onClick={() => handleViewDetails(category)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="View Details"
                   >
                     <Eye className="w-4 h-4 text-gray-600" />
                   </button> */}
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -1516,7 +1516,7 @@ function OfferCategoriesPage() {
             return (
               <div
                 key={category.id}
-                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all"
+                className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-all"
                 style={{ backgroundColor: color.surface.cards }}
               >
                 <div className="flex items-center justify-between">
@@ -1593,21 +1593,21 @@ function OfferCategoriesPage() {
                 <div className="flex items-center gap-2">
                   {/* <button
                   onClick={() => handleViewDetails(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   title="View Details"
                 >
                   <Eye className="w-4 h-4 text-gray-600" />
                 </button> */}
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -1666,7 +1666,7 @@ function OfferCategoriesPage() {
                   </h3>
                   <button
                     onClick={handleCloseModal}
-                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-md transition-colors`}
                   >
                     ×
                   </button>
@@ -1739,7 +1739,7 @@ function OfferCategoriesPage() {
                           }))
                         }
                         placeholder="Enter exact category name..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -1766,7 +1766,7 @@ function OfferCategoriesPage() {
                             isActive: value,
                           }));
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">All Status</option>
                         <option value="true">Active Only</option>
@@ -1791,7 +1791,7 @@ function OfferCategoriesPage() {
                               createdAfter: e.target.value,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
@@ -1809,7 +1809,7 @@ function OfferCategoriesPage() {
                               createdBefore: e.target.value,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
@@ -1823,7 +1823,7 @@ function OfferCategoriesPage() {
                       setFilterType("all");
                       clearAdvancedSearch();
                     }}
-                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-md hover:bg-gray-50 transition-colors`}
                   >
                     Clear All
                   </button>

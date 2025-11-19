@@ -166,7 +166,7 @@ export default function SegmentListPage() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
+          className="inline-flex items-center px-4 py-2 text-white rounded-md text-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
           style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -183,13 +183,13 @@ export default function SegmentListPage() {
             placeholder="Search lists by name, description, or tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${color.primary.accent}] focus:border-[${color.primary.accent}]"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[${color.primary.accent}] focus:border-[${color.primary.accent}]"
           />
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-2 rounded-md transition-colors ${
               viewMode === "grid"
                 ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
                 : `bg-gray-100 text-gray-600 hover:bg-gray-200`
@@ -199,7 +199,7 @@ export default function SegmentListPage() {
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-2 rounded-md transition-colors ${
               viewMode === "list"
                 ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
                 : `bg-gray-100 text-gray-600 hover:bg-gray-200`
@@ -225,7 +225,7 @@ export default function SegmentListPage() {
           {!searchQuery && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-colors"
               style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -244,7 +244,7 @@ export default function SegmentListPage() {
           {filteredLists.map((list) => (
             <div
               key={list.list_id}
-              className={`bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow ${
+              className={`bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow ${
                 viewMode === "list" ? "flex items-center justify-between" : ""
               }`}
             >
@@ -306,21 +306,21 @@ export default function SegmentListPage() {
                   <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                     <button
                       onClick={() => handleViewList(list)}
-                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                       title="View List"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleEditList(list)}
-                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                       title="Edit List"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteList(list.list_id)}
-                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
                       title="Delete List"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -372,21 +372,21 @@ export default function SegmentListPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleViewList(list)}
-                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                       title="View List"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleEditList(list)}
-                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                       title="Edit List"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteList(list.list_id)}
-                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
                       title="Delete List"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -402,7 +402,7 @@ export default function SegmentListPage() {
       {/* Create/Edit Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-md max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>

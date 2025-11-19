@@ -224,7 +224,7 @@ export default function OfferPerformanceReportsPage() {
       </div>
 
       {/* Period Selector */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="bg-white rounded-md border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4" />
@@ -237,7 +237,7 @@ export default function OfferPerformanceReportsPage() {
                 <button
                   key={option.id}
                   onClick={() => setSelectedPeriod(option.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium border transition ${
                     isActive
                       ? "bg-gray-900 text-white border-gray-900"
                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
@@ -253,10 +253,10 @@ export default function OfferPerformanceReportsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.charts.offers.discount}15` }}
             >
               <Package
@@ -273,10 +273,10 @@ export default function OfferPerformanceReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#10b98115" }}
             >
               <TrendingUp className="h-6 w-6" style={{ color: "#10b981" }} />
@@ -292,10 +292,10 @@ export default function OfferPerformanceReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.primary.accent}15` }}
             >
               <Users
@@ -312,10 +312,10 @@ export default function OfferPerformanceReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.charts.offers.cashback}15` }}
             >
               <Gift
@@ -334,7 +334,7 @@ export default function OfferPerformanceReportsPage() {
       </div>
 
       {/* Offer Trends */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className={tw.cardHeading}>Offer Activity Trends</h2>
           <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -400,7 +400,7 @@ export default function OfferPerformanceReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Offer Type Distribution */}
         {offerStats && offerStats.byType.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Offer Type Distribution</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -451,7 +451,7 @@ export default function OfferPerformanceReportsPage() {
 
         {/* Category Performance */}
         {offerStats && offerStats.byCategory.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Category Performance</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -500,12 +500,12 @@ export default function OfferPerformanceReportsPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white rounded-md border border-gray-200 p-6">
         <h2 className={tw.cardHeading}>Quick Actions</h2>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
             onClick={() => navigate("/dashboard/offers")}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
           >
             <div className="flex items-center gap-3">
               <Package className="h-5 w-5 text-gray-600" />
@@ -515,7 +515,7 @@ export default function OfferPerformanceReportsPage() {
           </button>
           <button
             onClick={() => navigate("/dashboard/offers/create")}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
           >
             <div className="flex items-center gap-3">
               <Award className="h-5 w-5 text-gray-600" />
@@ -529,7 +529,7 @@ export default function OfferPerformanceReportsPage() {
             onClick={() =>
               navigate("/dashboard/offers?status=pending_approval")
             }
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
           >
             <div className="flex items-center gap-3">
               <TrendingUp className="h-5 w-5 text-gray-600" />

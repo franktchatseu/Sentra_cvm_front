@@ -1,17 +1,20 @@
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X, Send, CheckCircle, XCircle } from 'lucide-react';
-import { color } from '../../../shared/utils/utils';
-import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
-import ChannelSelector from './ChannelSelector';
-import MessageEditor from './MessageEditor';
-import PreviewPanel from './PreviewPanel';
-import TemplateSelector from './TemplateSelector';
-import { MessageTemplate } from '../types/template';
-import { communicationService } from '../services/communicationService';
-import { quicklistService } from '../../quicklists/services/quicklistService';
-import { CommunicationChannel, CommunicationResult } from '../types/communication';
-import { QuickList } from '../../quicklists/types/quicklist';
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X, Send, CheckCircle, XCircle } from "lucide-react";
+import { color } from "../../../shared/utils/utils";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import ChannelSelector from "./ChannelSelector";
+import MessageEditor from "./MessageEditor";
+import PreviewPanel from "./PreviewPanel";
+import TemplateSelector from "./TemplateSelector";
+import { MessageTemplate } from "../types/template";
+import { communicationService } from "../services/communicationService";
+import { quicklistService } from "../../quicklists/services/quicklistService";
+import {
+  CommunicationChannel,
+  CommunicationResult,
+} from "../types/communication";
+import { QuickList } from "../../quicklists/types/quicklist";
 
 interface CreateCommunicationModalProps {
   isOpen: boolean;
@@ -32,9 +35,10 @@ export default function CreateCommunicationModal({
   const [result, setResult] = useState<CommunicationResult | null>(null);
 
   // Form state
-  const [selectedChannel, setSelectedChannel] = useState<CommunicationChannel>('EMAIL');
-  const [messageTitle, setMessageTitle] = useState('');
-  const [messageBody, setMessageBody] = useState('');
+  const [selectedChannel, setSelectedChannel] =
+    useState<CommunicationChannel>("EMAIL");
+  const [messageTitle, setMessageTitle] = useState("");
+  const [messageBody, setMessageBody] = useState("");
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
   const [isRichText, setIsRichText] = useState(false);
   const [showTemplates, setShowTemplates] = useState(true);
@@ -45,9 +49,9 @@ export default function CreateCommunicationModal({
     } else {
       // Reset form when modal closes
       setResult(null);
-      setMessageTitle('');
-      setMessageBody('');
-      setSelectedChannel('EMAIL');
+      setMessageTitle("");
+      setMessageBody("");
+      setSelectedChannel("EMAIL");
       setIsRichText(false);
       setShowTemplates(true);
     }
@@ -57,7 +61,10 @@ export default function CreateCommunicationModal({
     try {
       setLoading(true);
       // Load sample data (first row) for preview
-      const dataResponse = await quicklistService.getQuickListData(quicklist.id, { limit: 1 });
+      const dataResponse = await quicklistService.getQuickListData(
+        quicklist.id,
+        { limit: 1 }
+      );
       if (dataResponse.data && dataResponse.data.length > 0) {
         const firstRow = dataResponse.data[0];
         // Remove metadata fields
@@ -65,14 +72,14 @@ export default function CreateCommunicationModal({
         setSampleData(cleanData);
       }
     } catch (error) {
-      console.error('Failed to load sample data:', error);
+      console.error("Failed to load sample data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSelectTemplate = (template: MessageTemplate) => {
-    setMessageTitle(template.subject || '');
+    setMessageTitle(template.subject || "");
     setMessageBody(template.body);
     setIsRichText(template.isRichText);
     setShowTemplates(false);
@@ -84,9 +91,10 @@ export default function CreateCommunicationModal({
 
   const handleSend = async () => {
     // Strip HTML tags if sending to non-EMAIL channels
-    const cleanBody = selectedChannel !== 'EMAIL' && isRichText 
-      ? messageBody.replace(/<[^>]*>/g, '')
-      : messageBody;
+    const cleanBody =
+      selectedChannel !== "EMAIL" && isRichText
+        ? messageBody.replace(/<[^>]*>/g, "")
+        : messageBody;
 
     if (!cleanBody.trim()) {
       return;
@@ -97,11 +105,13 @@ export default function CreateCommunicationModal({
       setResult(null);
 
       const response = await communicationService.sendCommunication({
-        source_type: 'quicklist',
+        source_type: "quicklist",
         source_id: quicklist.id,
         channels: [selectedChannel],
         message_template: {
-          ...(messageTitle && selectedChannel === 'EMAIL' ? { title: messageTitle } : {}),
+          ...(messageTitle && selectedChannel === "EMAIL"
+            ? { title: messageTitle }
+            : {}),
           body: messageBody,
         },
         filters: {
@@ -119,7 +129,7 @@ export default function CreateCommunicationModal({
         }
       }
     } catch (error) {
-      console.error('Failed to send communication:', error);
+      console.error("Failed to send communication:", error);
     } finally {
       setSending(false);
     }
@@ -147,7 +157,7 @@ export default function CreateCommunicationModal({
 
     return createPortal(
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="bg-white rounded-md shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
@@ -159,7 +169,9 @@ export default function CreateCommunicationModal({
                 )}
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    {isSuccess ? 'Communication Sent Successfully!' : 'Communication Completed with Errors'}
+                    {isSuccess
+                      ? "Communication Sent Successfully!"
+                      : "Communication Completed with Errors"}
                   </h2>
                   <p className="text-sm text-gray-500 mt-1">
                     Execution ID: {result.execution_id}
@@ -168,7 +180,7 @@ export default function CreateCommunicationModal({
               </div>
               <button
                 onClick={handleClose}
-                className="p-2 hover:bg-white rounded-lg transition-colors"
+                className="p-2 hover:bg-white rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -178,33 +190,60 @@ export default function CreateCommunicationModal({
           {/* Stats */}
           <div className="flex-1 overflow-auto p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-xs text-gray-500 font-medium mb-1">Total Recipients</p>
-                <p className="text-2xl font-bold text-gray-900">{result.total_recipients}</p>
+              <div className="bg-gray-50 rounded-md p-4">
+                <p className="text-xs text-gray-500 font-medium mb-1">
+                  Total Recipients
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {result.total_recipients}
+                </p>
               </div>
-              <div className="bg-green-50 rounded-lg p-4">
-                <p className="text-xs text-green-600 font-medium mb-1">Messages Sent</p>
-                <p className="text-2xl font-bold text-green-700">{result.total_messages_sent}</p>
+              <div className="bg-green-50 rounded-md p-4">
+                <p className="text-xs text-green-600 font-medium mb-1">
+                  Messages Sent
+                </p>
+                <p className="text-2xl font-bold text-green-700">
+                  {result.total_messages_sent}
+                </p>
               </div>
-              <div className="bg-red-50 rounded-lg p-4">
-                <p className="text-xs text-red-600 font-medium mb-1">Messages Failed</p>
-                <p className="text-2xl font-bold text-red-700">{result.total_messages_failed}</p>
+              <div className="bg-red-50 rounded-md p-4">
+                <p className="text-xs text-red-600 font-medium mb-1">
+                  Messages Failed
+                </p>
+                <p className="text-2xl font-bold text-red-700">
+                  {result.total_messages_failed}
+                </p>
               </div>
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-xs text-blue-600 font-medium mb-1">Execution Time</p>
-                <p className="text-2xl font-bold text-blue-700">{result.execution_time_ms}ms</p>
+              <div className="bg-blue-50 rounded-md p-4">
+                <p className="text-xs text-blue-600 font-medium mb-1">
+                  Execution Time
+                </p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {result.execution_time_ms}ms
+                </p>
               </div>
             </div>
 
             {/* Channel Breakdown */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700">Channel Breakdown</h3>
+              <h3 className="text-sm font-semibold text-gray-700">
+                Channel Breakdown
+              </h3>
               {result.channel_summaries.map((summary) => (
-                <div key={summary.channel} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700">{summary.channel}</span>
+                <div
+                  key={summary.channel}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                >
+                  <span className="text-sm font-medium text-gray-700">
+                    {summary.channel}
+                  </span>
                   <div className="flex items-center space-x-4 text-sm">
-                    <span className="text-green-600">✓ {summary.messages_sent} sent</span>
-                    <span className="text-red-600">✗ {summary.messages_failed} failed</span>
+                    <span className="text-green-600">
+                      ✓ {summary.messages_sent} sent
+                    </span>
+                    <span className="text-red-600">
+                      ✗ {summary.messages_failed} failed
+                    </span>
                   </div>
                 </div>
               ))}
@@ -215,13 +254,13 @@ export default function CreateCommunicationModal({
           <div className="p-6 border-t border-gray-200 flex items-center justify-end space-x-3">
             <button
               onClick={handleClose}
-              className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             >
               Close
             </button>
             <button
               onClick={() => setResult(null)}
-              className="px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+              className="px-6 py-2 text-sm font-medium text-white rounded-md transition-colors"
               style={{ backgroundColor: color.primary.action }}
             >
               Send Another
@@ -236,20 +275,25 @@ export default function CreateCommunicationModal({
   // Main form
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">Send Communication</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Send Communication
+            </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Sending to: <span className="font-semibold text-gray-700">{quicklist.name}</span> (
-              {quicklist.row_count || 0} recipients)
+              Sending to:{" "}
+              <span className="font-semibold text-gray-700">
+                {quicklist.name}
+              </span>{" "}
+              ({quicklist.row_count || 0} recipients)
             </p>
           </div>
           <button
             onClick={handleClose}
             disabled={sending}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+            className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50"
           >
             <X className="w-5 h-5 text-gray-600" />
           </button>
@@ -267,7 +311,10 @@ export default function CreateCommunicationModal({
               <div className="lg:col-span-2 space-y-6">
                 {/* Channel Selection */}
                 <div>
-                  <ChannelSelector selectedChannel={selectedChannel} onChannelChange={setSelectedChannel} />
+                  <ChannelSelector
+                    selectedChannel={selectedChannel}
+                    onChannelChange={setSelectedChannel}
+                  />
                 </div>
 
                 {/* Template Selection */}
@@ -287,7 +334,9 @@ export default function CreateCommunicationModal({
                     title={messageTitle}
                     body={messageBody}
                     channel={selectedChannel}
-                    availableVariables={quicklist.columns || Object.keys(sampleData)}
+                    availableVariables={
+                      quicklist.columns || Object.keys(sampleData)
+                    }
                     onTitleChange={setMessageTitle}
                     onBodyChange={setMessageBody}
                     isRichText={isRichText}
@@ -326,14 +375,14 @@ export default function CreateCommunicationModal({
           <button
             onClick={handleClose}
             disabled={sending}
-            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSend}
             disabled={sending || !messageBody.trim()}
-            className="px-8 py-2.5 text-sm font-semibold text-white rounded-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-2.5 text-sm font-semibold text-white rounded-md transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: color.primary.action }}
           >
             {sending ? (

@@ -105,7 +105,7 @@ function CategoryModal({
   return isOpen
     ? createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className={`${tw.subHeading} text-gray-900`}>
                 {category
@@ -114,7 +114,7 @@ function CategoryModal({
               </h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -132,7 +132,7 @@ function CategoryModal({
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
                     placeholder="e.g., Marketing Segments, Retention Campaigns"
                     required
                   />
@@ -151,7 +151,7 @@ function CategoryModal({
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
                     placeholder="Optional description for this segment catalog"
                   />
                 </div>
@@ -161,14 +161,14 @@ function CategoryModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
                     if (!e.currentTarget.disabled) {
@@ -381,7 +381,7 @@ function SegmentsModal({
         <>
           {/* Main Segments Modal */}
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+            <div className="bg-white rounded-md shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">
@@ -394,7 +394,7 @@ function SegmentsModal({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
@@ -410,7 +410,7 @@ function SegmentsModal({
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search segments..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
                     />
                   </div>
                   <button
@@ -419,7 +419,7 @@ function SegmentsModal({
                         `/dashboard/segment-catalogs/${category.id}/assign`
                       );
                     }}
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                   >
                     <Plus className="w-4 h-4" />
                     Add segments to this catalog
@@ -451,7 +451,7 @@ function SegmentsModal({
                     {filteredSegments.map((segment) => (
                       <div
                         key={segment.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex-1">
                           <h3 className="font-medium text-gray-900">
@@ -474,14 +474,14 @@ function SegmentsModal({
                             onClick={() =>
                               navigate(`/dashboard/segments/${segment.id}`)
                             }
-                            className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                            className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors text-sm font-medium"
                           >
                             View
                           </button>
                           <button
                             onClick={() => handleRemoveSegment(segment.id)}
                             disabled={removingSegmentId === segment.id}
-                            className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+                            className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm font-medium disabled:opacity-50"
                           >
                             {removingSegmentId === segment.id
                               ? "Removing..."
@@ -793,7 +793,7 @@ export default function SegmentCategoriesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/segments")}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
@@ -812,7 +812,7 @@ export default function SegmentCategoriesPage() {
             setSelectedCategory(null);
             setIsCategoryModalOpen(true);
           }}
-          className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+          className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
           style={{ backgroundColor: color.primary.action }}
           onMouseEnter={(e) => {
             (e.target as HTMLButtonElement).style.backgroundColor =
@@ -841,7 +841,7 @@ export default function SegmentCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
@@ -890,7 +890,7 @@ export default function SegmentCategoriesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
           />
         </div>
         <div className="flex items-center gap-2  p-1">
@@ -931,7 +931,7 @@ export default function SegmentCategoriesPage() {
           <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
         </div>
       ) : filteredCategories.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 text-center py-16 px-4">
           <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
@@ -947,7 +947,7 @@ export default function SegmentCategoriesPage() {
                 setSelectedCategory(null);
                 setIsCategoryModalOpen(true);
               }}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
                 (e.target as HTMLButtonElement).style.backgroundColor =
@@ -968,7 +968,7 @@ export default function SegmentCategoriesPage() {
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              className="bg-white border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between mb-2">
                 <h3 className={`${tw.cardHeading} text-gray-900`}>
@@ -980,14 +980,14 @@ export default function SegmentCategoriesPage() {
                       setSelectedCategory(category);
                       setIsCategoryModalOpen(true);
                     }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -1027,7 +1027,7 @@ export default function SegmentCategoriesPage() {
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
@@ -1057,14 +1057,14 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsCategoryModalOpen(true);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   title="Edit"
                 >
                   <Edit className="w-4 h-4 text-gray-600" />
                 </button>
                 <button
                   onClick={() => handleDeleteCategory(category)}
-                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />

@@ -108,7 +108,7 @@ export default function ConfirmModal({
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ${
+          className={`relative w-full max-w-md transform overflow-hidden rounded-md bg-white shadow-2xl transition-all duration-300 ${
             isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
           }`}
         >
@@ -138,7 +138,7 @@ export default function ConfirmModal({
               </div>
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -154,13 +154,13 @@ export default function ConfirmModal({
           <div className="px-6 pb-6 flex space-x-3 justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
             >
               {cancelText}
             </button>
             <button
               onClick={handleConfirm}
-              className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-0 transition-colors ${
+              className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-0 transition-colors ${
                 config.confirmButtonColor || ""
               }`}
               style={

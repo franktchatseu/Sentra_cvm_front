@@ -79,6 +79,16 @@ export default function ConfigurationPage() {
         status: "active",
         navigationPath: "/dashboard/campaign-catalogs",
       },
+      {
+        id: "campaign-types",
+        name: "Campaign Types",
+        description:
+          "Configure available campaign strategies like Round Robin or Champion Challenger",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/campaign-types",
+      },
       // Offer-related configs
       {
         id: "offer-types",
@@ -126,6 +136,15 @@ export default function ConfigurationPage() {
         category: "Segment Configuration",
         status: "active",
         navigationPath: "/dashboard/segment-catalogs",
+      },
+      {
+        id: "segment-types",
+        name: "Segment Types",
+        description: "Manage the different segment methodologies available",
+        type: "segment",
+        category: "Segment Configuration",
+        status: "active",
+        navigationPath: "/dashboard/segment-types",
       },
       // User-related configs
       {
@@ -209,7 +228,7 @@ export default function ConfigurationPage() {
       <div className="mb-8">
         <div className="flex items-center mb-4">
           <div
-            className="rounded-xl"
+            className="rounded-md"
             style={{ backgroundColor: color.primary.accent }}
           ></div>
           <div>
@@ -236,7 +255,7 @@ export default function ConfigurationPage() {
               placeholder="Search configurations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-4 ${components.input.default} rounded-xl focus:outline-none transition-all duration-200 text-sm`}
+              className={`w-full pl-10 pr-4 py-4 ${components.input.default} rounded-md focus:outline-none transition-all duration-200 text-sm`}
             />
           </div>
 
@@ -244,7 +263,7 @@ export default function ConfigurationPage() {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-lg transition-all duration-200 ${
+              className={`p-2 rounded-md transition-all duration-200 ${
                 viewMode === "grid"
                   ? ` text-[${color.primary.action}]`
                   : `${tw.textMuted} hover:${tw.textSecondary}`
@@ -254,7 +273,7 @@ export default function ConfigurationPage() {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2 rounded-lg transition-all duration-200 ${
+              className={`p-2 rounded-md transition-all duration-200 ${
                 viewMode === "list"
                   ? `text-[${color.primary.action}]`
                   : `${tw.textMuted} hover:${tw.textSecondary}`
@@ -311,7 +330,7 @@ export default function ConfigurationPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 rounded-lg flex items-center justify-center bg-neutral-100">
+                        <div className="p-2 rounded-md flex items-center justify-center bg-neutral-100">
                           <Settings className={`h-5 w-5 ${tw.textPrimary}`} />
                         </div>
                         <h3
@@ -362,7 +381,7 @@ export default function ConfigurationPage() {
                   }}
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 rounded-lg flex items-center justify-center flex-shrink-0 bg-neutral-100">
+                    <div className="p-3 rounded-md flex items-center justify-center flex-shrink-0 bg-neutral-100">
                       <Settings className={`h-5 w-5 ${tw.textPrimary}`} />
                     </div>
                     <div className="flex-1 min-w-0">

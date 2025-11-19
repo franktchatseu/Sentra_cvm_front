@@ -148,7 +148,7 @@ export default function OfferSelectionModal({
         height: "100vh",
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
@@ -177,7 +177,7 @@ export default function OfferSelectionModal({
                 placeholder="Search offers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
               />
             </div>
             <div className="w-48">
@@ -194,7 +194,11 @@ export default function OfferSelectionModal({
             </div>
             <button
               onClick={onCreateNew}
-              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] text-white rounded-lg text-sm font-medium hover:bg-[#2f4a35] transition-colors whitespace-nowrap"
+              className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap"
+              style={{
+                backgroundColor: color.primary.action,
+                color: "white",
+              }}
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New
@@ -204,7 +208,7 @@ export default function OfferSelectionModal({
           {/* Selection Summary */}
           {tempSelectedOffers.length > 0 && (
             <div
-              className="rounded-lg p-4 border"
+              className="rounded-md p-4 border"
               style={{
                 backgroundColor: `${color.primary.accent}15`,
                 borderColor: `${color.primary.accent}40`,
@@ -247,7 +251,7 @@ export default function OfferSelectionModal({
                 <p className="text-red-600 mb-4">{error}</p>
                 <button
                   onClick={loadOffers}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                 >
                   Retry
                 </button>
@@ -266,8 +270,14 @@ export default function OfferSelectionModal({
               </div>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden" style={{ borderColor: color.border.default }}>
-              <table className="min-w-full divide-y" style={{ borderColor: color.border.default }}>
+            <div
+              className="border rounded-md overflow-hidden"
+              style={{ borderColor: color.border.default }}
+            >
+              <table
+                className="min-w-full divide-y"
+                style={{ borderColor: color.border.default }}
+              >
                 <thead style={{ backgroundColor: color.surface.cards }}>
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
@@ -287,7 +297,10 @@ export default function OfferSelectionModal({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y" style={{ borderColor: color.border.default }}>
+                <tbody
+                  className="bg-white divide-y"
+                  style={{ borderColor: color.border.default }}
+                >
                   {filteredOffers.map((offer) => {
                     const isSelected = tempSelectedOffers.some(
                       (o) => o.id === offer.id
@@ -299,33 +312,49 @@ export default function OfferSelectionModal({
                         onClick={() => handleOfferToggle(offer)}
                         className="cursor-pointer transition-colors"
                         style={{
-                          backgroundColor: isSelected ? `${color.primary.accent}10` : 'white'
+                          backgroundColor: isSelected
+                            ? `${color.primary.accent}10`
+                            : "white",
                         }}
                         onMouseEnter={(e) => {
-                          if (!isSelected) e.currentTarget.style.backgroundColor = color.surface.cards;
+                          if (!isSelected)
+                            e.currentTarget.style.backgroundColor =
+                              color.surface.cards;
                         }}
                         onMouseLeave={(e) => {
-                          if (!isSelected) e.currentTarget.style.backgroundColor = 'white';
+                          if (!isSelected)
+                            e.currentTarget.style.backgroundColor = "white";
                         }}
                       >
                         <td className="px-4 py-3">
                           <div
                             className="w-5 h-5 rounded border-2 flex items-center justify-center"
                             style={{
-                              borderColor: isSelected ? color.primary.accent : '#d1d5db',
-                              backgroundColor: isSelected ? color.primary.accent : 'transparent'
+                              borderColor: isSelected
+                                ? color.primary.accent
+                                : "#d1d5db",
+                              backgroundColor: isSelected
+                                ? color.primary.accent
+                                : "transparent",
                             }}
                           >
-                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                            {isSelected && (
+                              <Check className="w-3 h-3 text-white" />
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center space-x-3">
                             <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                              style={{ backgroundColor: `${color.primary.accent}20` }}
+                              className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+                              style={{
+                                backgroundColor: `${color.primary.accent}20`,
+                              }}
                             >
-                              <Gift className="w-4 h-4" style={{ color: color.primary.accent }} />
+                              <Gift
+                                className="w-4 h-4"
+                                style={{ color: color.primary.accent }}
+                              />
                             </div>
                             <div className="min-w-0">
                               <div className="text-sm font-medium text-gray-900 truncate">
@@ -350,8 +379,14 @@ export default function OfferSelectionModal({
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center space-x-1">
-                            <DollarSign className="w-4 h-4" style={{ color: color.primary.accent }} />
-                            <span className="text-sm font-medium" style={{ color: color.primary.accent }}>
+                            <DollarSign
+                              className="w-4 h-4"
+                              style={{ color: color.primary.accent }}
+                            />
+                            <span
+                              className="text-sm font-medium"
+                              style={{ color: color.primary.accent }}
+                            >
                               {offer.reward_value}
                             </span>
                           </div>
@@ -389,11 +424,17 @@ export default function OfferSelectionModal({
             <button
               onClick={handleConfirm}
               disabled={tempSelectedOffers.length === 0}
-              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
-                tempSelectedOffers.length > 0
-                  ? "bg-[#3A5A40] text-white hover:bg-[#2f4a35]"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              className={`px-5 py-2 rounded-md text-sm font-medium ${
+                tempSelectedOffers.length === 0 ? "cursor-not-allowed" : ""
               }`}
+              style={{
+                backgroundColor:
+                  tempSelectedOffers.length > 0
+                    ? color.primary.action
+                    : color.interactive.disabled,
+                color:
+                  tempSelectedOffers.length === 0 ? color.text.muted : "white",
+              }}
             >
               Confirm Selection
             </button>

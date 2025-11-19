@@ -336,7 +336,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder="Search campaigns, offers, products..."
-          className="w-full pl-11 pr-10 py-2.5 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm"
+          className="w-full pl-11 pr-10 py-2.5 bg-white/20 border border-white/30 rounded-md text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm"
         />
         {searchTerm && (
           <button
@@ -345,7 +345,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
               setSuggestions([]);
               inputRef.current?.focus();
             }}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 text-white/70 hover:text-white rounded-md hover:bg-white/10 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -356,7 +356,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
       {showSuggestions && (
         <div
           ref={suggestionsRef}
-          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[600px] overflow-y-auto z-50 w-[500px]"
+          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 max-h-[600px] overflow-y-auto z-50 w-[500px]"
           style={{ maxWidth: "calc(100vw - 2rem)" }}
         >
           {isLoading ? (

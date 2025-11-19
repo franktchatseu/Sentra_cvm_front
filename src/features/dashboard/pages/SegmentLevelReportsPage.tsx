@@ -211,7 +211,7 @@ export default function SegmentLevelReportsPage() {
       </div>
 
       {/* Period Selector */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="bg-white rounded-md border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4" />
@@ -224,7 +224,7 @@ export default function SegmentLevelReportsPage() {
                 <button
                   key={option.id}
                   onClick={() => setSelectedPeriod(option.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium border transition ${
                     isActive
                       ? "bg-gray-900 text-white border-gray-900"
                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
@@ -240,10 +240,10 @@ export default function SegmentLevelReportsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.charts.segments.dynamic}15` }}
             >
               <Layers
@@ -260,10 +260,10 @@ export default function SegmentLevelReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#10b98115" }}
             >
               <Users className="h-6 w-6" style={{ color: "#10b981" }} />
@@ -277,10 +277,10 @@ export default function SegmentLevelReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.primary.accent}15` }}
             >
               <TrendingUp
@@ -297,10 +297,10 @@ export default function SegmentLevelReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#8b5cf615" }}
             >
               <Activity className="h-6 w-6" style={{ color: "#8b5cf6" }} />
@@ -316,7 +316,7 @@ export default function SegmentLevelReportsPage() {
       </div>
 
       {/* Segment Trends */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className={tw.cardHeading}>Segment Activity Trends</h2>
           <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -393,7 +393,7 @@ export default function SegmentLevelReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Segment Type Distribution */}
         {segmentStats && segmentStats.byType.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Segment Type Distribution</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -444,7 +444,7 @@ export default function SegmentLevelReportsPage() {
 
         {/* Category Distribution */}
         {segmentStats && segmentStats.byCategory.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Category Distribution</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -492,12 +492,12 @@ export default function SegmentLevelReportsPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white rounded-md border border-gray-200 p-6">
         <h2 className={tw.cardHeading}>Quick Actions</h2>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
             onClick={() => navigate("/dashboard/segments")}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
           >
             <div className="flex items-center gap-3">
               <Layers className="h-5 w-5 text-gray-600" />
@@ -509,7 +509,7 @@ export default function SegmentLevelReportsPage() {
           </button>
           <button
             onClick={() => navigate("/dashboard/segments?action=create")}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
           >
             <div className="flex items-center gap-3">
               <Database className="h-5 w-5 text-gray-600" />
@@ -521,7 +521,7 @@ export default function SegmentLevelReportsPage() {
           </button>
           <button
             onClick={() => navigate("/dashboard/segment-catalogs")}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
           >
             <div className="flex items-center gap-3">
               <Activity className="h-5 w-5 text-gray-600" />
@@ -536,3 +536,4 @@ export default function SegmentLevelReportsPage() {
     </div>
   );
 }
+

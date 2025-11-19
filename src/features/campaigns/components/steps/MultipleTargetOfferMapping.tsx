@@ -111,7 +111,7 @@ export default function MultipleTargetOfferMapping({
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      className="w-10 h-10 rounded-md flex items-center justify-center"
                       style={{ backgroundColor: `${color.primary.accent}20` }}
                     >
                       <Users
@@ -131,8 +131,11 @@ export default function MultipleTargetOfferMapping({
                   </div>
                   <button
                     onClick={() => handleAddOffer(segment.id)}
-                    className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg ${tw.primaryAction} hover:opacity-90`}
-                    style={{ backgroundColor: color.primary.action }}
+                    className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md`}
+                    style={{
+                      backgroundColor: color.primary.action,
+                      color: "white",
+                    }}
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Add Offer
@@ -148,7 +151,7 @@ export default function MultipleTargetOfferMapping({
                   </div>
                   {mappedOffers.length === 0 ? (
                     <div
-                      className="text-center py-4 border-2 border-dashed rounded-lg"
+                      className="text-center py-4 border-2 border-dashed rounded-md"
                       style={{ borderColor: color.border.default }}
                     >
                       <p className={`text-xs ${tw.textSecondary}`}>
@@ -160,12 +163,12 @@ export default function MultipleTargetOfferMapping({
                       {mappedOffers.map((offer) => (
                         <div
                           key={offer.id}
-                          className="flex items-center justify-between p-3 rounded-lg"
+                          className="flex items-center justify-between p-3 rounded-md"
                           style={{ backgroundColor: color.surface.cards }}
                         >
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center"
+                              className="w-8 h-8 rounded-md flex items-center justify-center"
                               style={{
                                 backgroundColor: `${color.tertiary.tag1}20`,
                               }}
@@ -194,7 +197,7 @@ export default function MultipleTargetOfferMapping({
                                 parseInt(offer.id)
                               )
                             }
-                            className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                            className="p-1.5 rounded-md"
                           >
                             <X className="w-4 h-4 text-red-600" />
                           </button>

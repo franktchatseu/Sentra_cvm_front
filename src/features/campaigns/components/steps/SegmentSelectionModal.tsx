@@ -136,7 +136,7 @@ export default function SegmentSelectionModal({
         height: "100vh",
       }}
     >
-      <div className="bg-white rounded-2xl  w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-md  w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
@@ -163,7 +163,7 @@ export default function SegmentSelectionModal({
                 placeholder="Search segments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg "
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md "
               />
             </div>
             <div className="w-48">
@@ -180,8 +180,11 @@ export default function SegmentSelectionModal({
             </div>
             <button
               onClick={onCreateNew}
-              className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${tw.primaryAction} hover:opacity-90`}
-              style={{ backgroundColor: color.primary.action }}
+              className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap`}
+              style={{
+                backgroundColor: color.primary.action,
+                color: "white",
+              }}
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New
@@ -190,7 +193,7 @@ export default function SegmentSelectionModal({
 
           {tempSelectedSegments.length > 0 && (
             <div
-              className="rounded-lg p-4 border"
+              className="rounded-md p-4 border"
               style={{
                 backgroundColor: `${color.primary.accent}15`,
                 borderColor: `${color.primary.accent}40`,
@@ -318,7 +321,7 @@ export default function SegmentSelectionModal({
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-3">
                             <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                              className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
                               style={{
                                 backgroundColor: `${color.primary.accent}20`,
                               }}
@@ -377,9 +380,7 @@ export default function SegmentSelectionModal({
               onClick={handleConfirm}
               disabled={tempSelectedSegments.length === 0}
               className={`px-5 py-2 rounded-md text-sm font-medium ${
-                tempSelectedSegments.length > 0
-                  ? `${tw.primaryAction} hover:opacity-90`
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                tempSelectedSegments.length === 0 ? "cursor-not-allowed" : ""
               }`}
               style={{
                 backgroundColor:

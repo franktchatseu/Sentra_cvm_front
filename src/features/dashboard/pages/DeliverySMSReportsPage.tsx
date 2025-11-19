@@ -175,7 +175,7 @@ export default function DeliverySMSReportsPage() {
       </div>
 
       {/* Period Selector */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="bg-white rounded-md border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4" />
@@ -188,7 +188,7 @@ export default function DeliverySMSReportsPage() {
                 <button
                   key={option.id}
                   onClick={() => setSelectedPeriod(option.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium border transition ${
                     isActive
                       ? "bg-gray-900 text-white border-gray-900"
                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
@@ -204,10 +204,10 @@ export default function DeliverySMSReportsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.primary.accent}15` }}
             >
               <Send
@@ -224,10 +224,10 @@ export default function DeliverySMSReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#10b98115" }}
             >
               <CheckCircle className="h-6 w-6" style={{ color: "#10b981" }} />
@@ -241,10 +241,10 @@ export default function DeliverySMSReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#ef444415" }}
             >
               <XCircle className="h-6 w-6" style={{ color: "#ef4444" }} />
@@ -258,10 +258,10 @@ export default function DeliverySMSReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#8b5cf615" }}
             >
               <TrendingUp className="h-6 w-6" style={{ color: "#8b5cf6" }} />
@@ -277,7 +277,7 @@ export default function DeliverySMSReportsPage() {
       </div>
 
       {/* Delivery Trends */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className={tw.cardHeading}>Delivery Trends</h2>
           <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -343,7 +343,7 @@ export default function DeliverySMSReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Delivery Status */}
         {deliveryStats && deliveryStats.byStatus.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Delivery Status</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -394,7 +394,7 @@ export default function DeliverySMSReportsPage() {
 
         {/* Channel Performance */}
         {deliveryStats && deliveryStats.byChannel.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Channel Performance</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -449,10 +449,10 @@ export default function DeliverySMSReportsPage() {
       {/* SMS Specific Metrics */}
       {smsStats && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="bg-white rounded-md border border-gray-200 p-6">
             <h2 className={tw.cardHeading}>SMS Performance</h2>
             <div className="mt-4 space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
                     SMS Delivery Rate
@@ -463,7 +463,7 @@ export default function DeliverySMSReportsPage() {
                 </div>
                 <MessageSquare className="h-8 w-8 text-gray-400" />
               </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
                     Avg Delivery Time
@@ -478,7 +478,7 @@ export default function DeliverySMSReportsPage() {
           </div>
 
           {smsStats.byCarrier.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100">
                 <h2 className={tw.cardHeading}>SMS by Carrier</h2>
                 <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -524,7 +524,7 @@ export default function DeliverySMSReportsPage() {
       )}
 
       {/* Note */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
         <p className="text-sm text-yellow-800">
           <strong>Note:</strong> This page uses sample data structure. Connect
           to actual delivery and SMS reporting endpoints when available.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -23,7 +23,6 @@ import {
   Users,
   Activity,
   ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 import { tw, color } from "../../../shared/utils/utils";
 import campaignService from "../../campaigns/services/campaignService";
@@ -197,7 +196,7 @@ export default function CampaignReportsPage() {
       </div>
 
       {/* Period Selector */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="bg-white rounded-md border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4" />
@@ -210,7 +209,7 @@ export default function CampaignReportsPage() {
                 <button
                   key={option.id}
                   onClick={() => setSelectedPeriod(option.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium border transition ${
                     isActive
                       ? "bg-gray-900 text-white border-gray-900"
                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
@@ -226,10 +225,10 @@ export default function CampaignReportsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.charts.campaigns.active}15` }}
             >
               <Target
@@ -246,10 +245,10 @@ export default function CampaignReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#10b98115" }}
             >
               <TrendingUp className="h-6 w-6" style={{ color: "#10b981" }} />
@@ -263,10 +262,10 @@ export default function CampaignReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: "#8b5cf615" }}
             >
               <DollarSign className="h-6 w-6" style={{ color: "#8b5cf6" }} />
@@ -280,10 +279,10 @@ export default function CampaignReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="p-3 rounded-xl"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.primary.accent}15` }}
             >
               <Users
@@ -302,7 +301,7 @@ export default function CampaignReportsPage() {
       </div>
 
       {/* Campaign Trends */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className={tw.cardHeading}>Campaign Activity Trends</h2>
           <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -378,7 +377,7 @@ export default function CampaignReportsPage() {
       {/* Status Distribution */}
       {campaignStats && campaignStats.byStatus.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Campaign Status Distribution</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -426,12 +425,12 @@ export default function CampaignReportsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="bg-white rounded-md border border-gray-200 p-6">
             <h2 className={tw.cardHeading}>Quick Actions</h2>
             <div className="mt-4 space-y-3">
               <button
                 onClick={() => navigate("/dashboard/campaigns")}
-                className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
               >
                 <div className="flex items-center gap-3">
                   <Target className="h-5 w-5 text-gray-600" />
@@ -443,7 +442,7 @@ export default function CampaignReportsPage() {
               </button>
               <button
                 onClick={() => navigate("/dashboard/campaigns/create")}
-                className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
               >
                 <div className="flex items-center gap-3">
                   <Award className="h-5 w-5 text-gray-600" />
@@ -457,7 +456,7 @@ export default function CampaignReportsPage() {
                 onClick={() =>
                   navigate("/dashboard/campaigns?status=pending_approval")
                 }
-                className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-md hover:bg-gray-100 transition"
               >
                 <div className="flex items-center gap-3">
                   <Activity className="h-5 w-5 text-gray-600" />

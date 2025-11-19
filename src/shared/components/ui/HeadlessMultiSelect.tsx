@@ -1,6 +1,10 @@
-import { Fragment, useState } from 'react';
-import { Listbox, Transition } from '@headlessui/react';
-import { CheckIcon, ChevronUpDownIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import { Fragment, useState } from "react";
+import { Listbox, Transition } from "@headlessui/react";
+import {
+  CheckIcon,
+  ChevronUpDownIcon,
+  XMarkIcon,
+} from "@heroicons/react/20/solid";
 
 interface SelectOption {
   value: string | number;
@@ -29,25 +33,27 @@ export default function HeadlessMultiSelect({
   error = false,
   className = "",
   searchable = false,
-  maxDisplayed = 3
+  maxDisplayed = 3,
 }: HeadlessMultiSelectProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const selectedOptions = options.filter(option => value.includes(option.value));
+  const selectedOptions = options.filter((option) =>
+    value.includes(option.value)
+  );
 
   const filteredOptions = searchable
-    ? options.filter(option =>
-      option.label.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    ? options.filter((option) =>
+        option.label.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     : options;
 
   const handleRemove = (optionValue: string | number) => {
-    onChange(value.filter(v => v !== optionValue));
+    onChange(value.filter((v) => v !== optionValue));
   };
 
   const handleToggle = (optionValue: string | number) => {
     if (value.includes(optionValue)) {
-      onChange(value.filter(v => v !== optionValue));
+      onChange(value.filter((v) => v !== optionValue));
     } else {
       onChange([...value, optionValue]);
     }
@@ -59,29 +65,36 @@ export default function HeadlessMultiSelect({
     }
 
     if (selectedOptions.length <= maxDisplayed) {
-      return selectedOptions.map(option => option.label).join(', ');
+      return selectedOptions.map((option) => option.label).join(", ");
     }
 
-    return `${selectedOptions.slice(0, maxDisplayed).map(option => option.label).join(', ')} +${selectedOptions.length - maxDisplayed} more`;
+    return `${selectedOptions
+      .slice(0, maxDisplayed)
+      .map((option) => option.label)
+      .join(", ")} +${selectedOptions.length - maxDisplayed} more`;
   };
 
   return (
     <div className={`relative ${className}`}>
       <Listbox value={value} onChange={onChange} disabled={disabled} multiple>
         <div className="relative">
-          <Listbox.Button className={`
-            relative w-full cursor-default rounded-lg bg-white py-3 pl-4 pr-10 text-left shadow-sm border transition-all duration-200
-            ${error
-              ? 'border-red-300'
-              : 'border-gray-300'
-            }
-            ${disabled
-              ? 'bg-gray-50 text-gray-500 cursor-not-allowed'
-              : 'hover:border-gray-400'
+          <Listbox.Button
+            className={`
+            relative w-full cursor-default rounded-md bg-white py-3 pl-4 pr-10 text-left shadow-sm border transition-all duration-200
+            ${error ? "border-red-300" : "border-gray-300"}
+            ${
+              disabled
+                ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                : "hover:border-gray-400"
             }
             focus:outline-none focus:ring-0 focus:border-gray-300
-          `}>
-            <span className={`block truncate ${selectedOptions.length > 0 ? 'text-gray-900' : 'text-gray-500'}`}>
+          `}
+          >
+            <span
+              className={`block truncate ${
+                selectedOptions.length > 0 ? "text-gray-900" : "text-gray-500"
+              }`}
+            >
               {displayText()}
             </span>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -119,7 +132,7 @@ export default function HeadlessMultiSelect({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+            <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {searchable && (
                 <div className="px-3 py-2 border-b border-gray-200">
                   <input
@@ -146,22 +159,30 @@ export default function HeadlessMultiSelect({
                       value={option.value}
                       disabled={option.disabled}
                       className={({ active, disabled }) =>
-                        `relative cursor-default select-none py-2 pl-10 pr-4 transition-colors duration-150 ${active ? 'bg-gray-100 text-gray-900' : 'text-gray-900'
-                        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        `relative cursor-default select-none py-2 pl-10 pr-4 transition-colors duration-150 ${
+                          active ? "bg-gray-100 text-gray-900" : "text-gray-900"
+                        } ${
+                          disabled
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
                         }`
                       }
                     >
                       {({ selected }) => (
                         <>
                           <span
-                            className={`block truncate ${selected ? 'font-medium' : 'font-normal'
-                              }`}
+                            className={`block truncate ${
+                              selected ? "font-medium" : "font-normal"
+                            }`}
                           >
                             {option.label}
                           </span>
                           {selected ? (
                             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#3b8169]">
-                              <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                              <CheckIcon
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                              />
                             </span>
                           ) : null}
                         </>

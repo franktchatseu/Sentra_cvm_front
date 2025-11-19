@@ -101,14 +101,14 @@ function CategoryModal({
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
             {category ? "Edit Campaign Catalog" : "Create New Campaign Catalog"}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
+            className="p-2 rounded-md transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -126,7 +126,7 @@ function CategoryModal({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Enter campaign catalog name"
                 maxLength={64}
                 required
@@ -145,7 +145,7 @@ function CategoryModal({
                     description: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Enter campaign catalog description"
                 rows={3}
                 maxLength={500}
@@ -157,14 +157,14 @@ function CategoryModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}
             >
               {isSaving
@@ -682,7 +682,7 @@ export default function CampaignCategoriesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/campaigns")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -698,7 +698,7 @@ export default function CampaignCategoriesPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleCreateCategory}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
@@ -718,7 +718,7 @@ export default function CampaignCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
@@ -767,7 +767,7 @@ export default function CampaignCategoriesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -809,7 +809,7 @@ export default function CampaignCategoriesPage() {
         </div>
       ) : filteredCampaignCategories.length === 0 ? (
         <div
-          className="rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4"
+          className="rounded-md shadow-sm border border-gray-200 text-center py-16 px-4"
           style={{ backgroundColor: color.surface.cards }}
         >
           <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -824,7 +824,7 @@ export default function CampaignCategoriesPage() {
           {!searchTerm && (
             <button
               onClick={handleCreateCategory}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -837,7 +837,7 @@ export default function CampaignCategoriesPage() {
           {filteredCampaignCategories.map((category) => (
             <div
               key={category.id}
-              className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              className="border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
               style={{ backgroundColor: color.surface.cards }}
             >
               <div className="flex items-start justify-between mb-2">
@@ -849,14 +849,14 @@ export default function CampaignCategoriesPage() {
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 rounded-lg transition-colors"
+                    className="p-2 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 rounded-lg transition-colors"
+                    className="p-2 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -901,7 +901,7 @@ export default function CampaignCategoriesPage() {
           {filteredCampaignCategories.map((category) => (
             <div
               key={category.id}
-              className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
               style={{ backgroundColor: color.surface.cards }}
             >
               <div className="flex items-center gap-4 flex-1">
@@ -934,14 +934,14 @@ export default function CampaignCategoriesPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleEditCategory(category)}
-                  className="p-2 rounded-lg transition-colors"
+                  className="p-2 rounded-md transition-colors"
                   title="Edit"
                 >
                   <Edit className="w-4 h-4 text-gray-600" />
                 </button>
                 <button
                   onClick={() => handleDeleteCategory(category)}
-                  className="p-2 rounded-lg transition-colors"
+                  className="p-2 rounded-md transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
@@ -978,7 +978,7 @@ export default function CampaignCategoriesPage() {
               }}
             ></div>
             <div className="relative min-h-screen flex items-center justify-center p-4">
-              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              <div className="relative bg-white rounded-md shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                   <div>
@@ -997,7 +997,7 @@ export default function CampaignCategoriesPage() {
                       setCampaigns([]);
                       setCampaignSearchTerm("");
                     }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   >
                     <X className="w-5 h-5 text-gray-500" />
                   </button>
@@ -1013,7 +1013,7 @@ export default function CampaignCategoriesPage() {
                         placeholder="Search campaigns..."
                         value={campaignSearchTerm}
                         onChange={(e) => setCampaignSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                     <div className="flex gap-2">
@@ -1023,7 +1023,7 @@ export default function CampaignCategoriesPage() {
                             `/dashboard/campaign-catalogs/${selectedCategory.id}/assign`
                           );
                         }}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
                       >
                         <Plus className="w-4 h-4" />
                         Add campaigns to this catalog
@@ -1070,7 +1070,7 @@ export default function CampaignCategoriesPage() {
                         .map((campaign, index) => (
                           <div
                             key={campaign.id || index}
-                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                           >
                             <div className="flex-1">
                               <div>
@@ -1101,7 +1101,7 @@ export default function CampaignCategoriesPage() {
                                     `/dashboard/campaigns/${campaign.id}`
                                   );
                                 }}
-                                className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                                className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors text-sm font-medium"
                               >
                                 View
                               </button>
@@ -1111,7 +1111,7 @@ export default function CampaignCategoriesPage() {
                                   handleRemoveCampaign(campaign.id)
                                 }
                                 disabled={removingCampaignId === campaign?.id}
-                                className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+                                className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm font-medium disabled:opacity-50"
                               >
                                 {removingCampaignId === campaign?.id
                                   ? "Removing..."

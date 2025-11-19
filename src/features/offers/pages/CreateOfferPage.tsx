@@ -689,7 +689,7 @@ function ReviewStep({
       <div className="space-y-6">
         {/* Offer Summary */}
         <div
-          className="rounded-2xl p-6"
+          className="rounded-md p-6"
           style={{ backgroundColor: `${color.primary.action}10` }}
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
@@ -743,7 +743,7 @@ function ReviewStep({
 
           {/* Offer Creative Summary */}
           <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-md border border-gray-200 p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Offer Creatives
               </h3>
@@ -774,7 +774,7 @@ function ReviewStep({
 
           {/* Tracking Summary */}
           <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-md border border-gray-200 p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Tracking Configuration
               </h3>
@@ -804,7 +804,7 @@ function ReviewStep({
 
           {/* Rewards Summary */}
           <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-md border border-gray-200 p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Offer Rewards
               </h3>
@@ -836,12 +836,12 @@ function ReviewStep({
 
           {/* Selected Product */}
           <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-md border border-gray-200 p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Selected Product
               </h3>
               {formData.primary_product_id ? (
-                <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-gray-50 rounded-md">
                   <span className="text-sm text-gray-700">
                     Product ID: {formData.primary_product_id}
                   </span>
@@ -1604,7 +1604,7 @@ export default function CreateOfferPage() {
   return (
     <div className="min-h-screen">
       <div
-        className={`bg-white rounded-xl border border-[${color.border.default}] p-4`}
+        className={`bg-white rounded-md border border-[${color.border.default}] p-4`}
       >
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center pb-6 min-h-[48px]">
@@ -1620,7 +1620,7 @@ export default function CreateOfferPage() {
                 <button
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
                     if (!isSavingDraft)
@@ -1776,7 +1776,7 @@ export default function CreateOfferPage() {
           </nav>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
               <p className="text-red-700">{error}</p>
             </div>
           )}
@@ -1815,7 +1815,7 @@ export default function CreateOfferPage() {
                     ? isLoading || !validateCurrentStep()
                     : !validateCurrentStep()
                 }
-                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-lg text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
                   if (

@@ -24,7 +24,7 @@ type RecentCampaign = {
 import {
   ArrowUpRight,
   ArrowDownRight,
-  Clock,
+  // Clock,
   ArrowRight,
   Users,
   Target,
@@ -33,6 +33,9 @@ import {
   ShoppingBag,
   ChevronDown,
   TrendingUp,
+  Pause,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -1094,25 +1097,18 @@ export default function DashboardHome() {
   ];
 
   const quickInsights = useMemo(() => {
-    const pendingApprovalCount = offersStats?.pendingApproval ?? 0;
-    const productTotal = productsStats?.total ?? 0;
     const activeCampaignsCount = campaignsStats?.active ?? 0;
+    const completedCampaignsCount = campaignsStats?.completed ?? 0;
     const pendingApprovalCampaigns =
       campaignStatusDistribution.find(
         (item) => item.status === formatStatusLabel("pending_approval")
       )?.count ?? 0;
+    const pausedCampaigns =
+      campaignStatusDistribution.find(
+        (item) => item.status === formatStatusLabel("paused")
+      )?.count ?? 0;
 
     return [
-      {
-        label: "Offers in draft",
-        value: pendingApprovalCount.toLocaleString(),
-        description:
-          pendingApprovalCount > 0
-            ? "Draft offers ready for review and activation"
-            : "All offers are published or archived",
-        icon: Clock,
-        valueColor: color.primary.accent,
-      },
       {
         label: "Active campaigns",
         value: activeCampaignsCount.toLocaleString(),
@@ -1130,27 +1126,31 @@ export default function DashboardHome() {
           pendingApprovalCampaigns > 0
             ? "Campaigns awaiting approval decisions"
             : "No campaigns are pending approval",
-        icon: Users,
+        icon: AlertCircle,
         valueColor: color.primary.accent,
       },
       {
-        label: "Product catalog",
-        value: productTotal.toLocaleString(),
+        label: "Completed campaigns",
+        value: completedCampaignsCount.toLocaleString(),
         description:
-          productTotal > 0
-            ? `Total products ready for offer creation`
-            : "No products synced yet",
-        icon: Package,
+          completedCampaignsCount > 0
+            ? "Successfully finished campaigns"
+            : "No completed campaigns yet",
+        icon: CheckCircle,
+        valueColor: color.primary.accent,
+      },
+      {
+        label: "Paused campaigns",
+        value: pausedCampaigns.toLocaleString(),
+        description:
+          pausedCampaigns > 0
+            ? "Campaigns temporarily stopped, may need attention"
+            : "No paused campaigns",
+        icon: Pause,
         valueColor: color.primary.accent,
       },
     ];
-  }, [
-    offersStats,
-    productsStats,
-    campaignsStats,
-    campaignStatusDistribution,
-    formatStatusLabel,
-  ]);
+  }, [campaignsStats, campaignStatusDistribution, formatStatusLabel]);
 
   // CVM-relevant metrics: Top Performing Campaigns
   const topCampaigns = [
@@ -1304,16 +1304,17 @@ export default function DashboardHome() {
   };
 
   return (
-    <div className="space-y-8 pb-8">
+    // <div className="space-y-8 pb-8">
+    <div className={`space-y-8 pb-8 ${tw.primaryBackground}`}>
       {/* Header Section */}
       <div className="space-y-2">
         <h1
           className={`${tw.mainHeading} ${tw.textPrimary} flex items-center gap-3`}
         >
           Welcome back, {getFirstName()}
-          <span className="text-3xl">👋</span>
         </h1>
-        <p className={`${tw.textSecondary} ${tw.body}`}>
+        {/* <p className={`${tw.textSecondary} ${tw.body}`}> */}
+        <p className="text-gray-900 text-base">
           Here's what's happening with your campaigns today. Your performance is
           looking great!
         </p>
@@ -1326,7 +1327,7 @@ export default function DashboardHome() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -1340,7 +1341,9 @@ export default function DashboardHome() {
                       <Icon className="h-5 w-5 text-white" />
                     </div>
                     <div className="space-y-1">
-                      <p className={`text-3xl font-bold ${tw.textPrimary}`}>
+                      <p
+                        className={`text-2xl sm:text-3xl font-bold ${tw.textPrimary}`}
+                      >
                         {stat.value}
                       </p>
                       <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
@@ -1376,62 +1379,64 @@ export default function DashboardHome() {
       </div>
 
       {/* Quick insights */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Quick Insights
-            </h2>
-            <p className={`${tw.textSecondary} text-sm`}>
-              Instant highlights from offers, segments, products, and campaigns.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {quickInsights.map((insight) => {
-            const InsightIcon = insight.icon;
-            return (
-              <div
-                key={insight.label}
-                className="rounded-xl border border-gray-200 p-5 transition-colors flex flex-col gap-4"
-                style={{ backgroundColor: color.surface.background }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-white shadow-sm">
-                    <InsightIcon className="h-5 w-5 text-gray-700" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs uppercase tracking-wide text-black font-medium mb-1">
-                      {insight.label}
-                    </p>
-                    <p
-                      className={`text-base font-semibold leading-tight ${
-                        insight.valueColor ? "" : "text-gray-900"
-                      }`}
-                      style={
-                        insight.valueColor
-                          ? { color: insight.valueColor }
-                          : undefined
-                      }
+      <div className="space-y-2">
+        {/* <h2 className={`${tw.mainHeading} ${tw.textPrimary}`}> */}
+        <h2 className="text-2xl font-semibold text-black">Quick Insights</h2>
+        {/* <p className={`${tw.textSecondary} ${tw.body}`}> */}
+        <p className="text-gray-900 text-base ">
+          Instant highlights from campaigns.
+        </p>
+      </div>
+
+      {/* Quick Insights Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {quickInsights.map((insight) => {
+          const InsightIcon = insight.icon;
+          return (
+            <div
+              key={insight.label}
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: color.primary.accent,
+                      }}
                     >
-                      {insight.value}
-                    </p>
+                      <InsightIcon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p
+                        className={`text-2xl sm:text-3xl font-bold ${tw.textPrimary}`}
+                      >
+                        {insight.value}
+                      </p>
+                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
+                        {insight.label}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <p className={`${tw.textSecondary} text-xs leading-relaxed`}>
-                  {insight.description}
-                </p>
+
+                <div className="pt-2 border-t border-gray-100">
+                  <p className={`${tw.textSecondary} text-sm`}>
+                    {insight.description}
+                  </p>
+                </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Recently Added and Quick Actions - Side by Side */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recently Added - Takes 2 columns */}
-        <div className="xl:col-span-2">
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full">
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden h-full">
             <div className="px-6 py-4 border-b border-gray-100">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
@@ -1443,14 +1448,14 @@ export default function DashboardHome() {
 
                 {/* Filter Dropdown - Mobile/Tablet */}
                 <div
-                  className="xl:hidden relative w-full sm:w-auto"
+                  className="lg:hidden relative w-full sm:w-auto"
                   ref={dropdownRef}
                 >
                   <button
                     onClick={() =>
                       setIsFilterDropdownOpen(!isFilterDropdownOpen)
                     }
-                    className="w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all border border-gray-200"
+                    className="w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all border border-gray-200"
                   >
                     <span>
                       {[
@@ -1469,7 +1474,7 @@ export default function DashboardHome() {
                   </button>
 
                   {isFilterDropdownOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10">
                       {[
                         { key: "campaigns", label: "Campaigns" },
                         { key: "offers", label: "Offers" },
@@ -1505,8 +1510,8 @@ export default function DashboardHome() {
                   )}
                 </div>
 
-                {/* Filter Tabs - Desktop (xl and above) */}
-                <div className="hidden xl:flex gap-2">
+                {/* Filter Tabs - Desktop (lg and above) */}
+                <div className="hidden lg:flex gap-2">
                   {[
                     { key: "campaigns", label: "Campaigns" },
                     { key: "offers", label: "Offers" },
@@ -1524,7 +1529,7 @@ export default function DashboardHome() {
                             | "products"
                         )
                       }
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                         latestItemsFilter === tab.key
                           ? "bg-gray-900 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -1555,7 +1560,7 @@ export default function DashboardHome() {
                   recentCampaigns.slice(0, 3).map((campaign) => (
                     <div
                       key={campaign.id}
-                      className="flex items-center gap-4 p-5 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() =>
                         navigate(`/dashboard/campaigns/${campaign.id}`)
@@ -1608,7 +1613,7 @@ export default function DashboardHome() {
                   recentOffers.slice(0, 3).map((offer) => (
                     <div
                       key={offer.id}
-                      className="flex items-center gap-4 p-5 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() => navigate(`/dashboard/offers/${offer.id}`)}
                     >
@@ -1649,7 +1654,7 @@ export default function DashboardHome() {
                   recentSegments.slice(0, 3).map((segment) => (
                     <div
                       key={segment.id}
-                      className="flex items-center gap-4 p-5 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() =>
                         navigate(`/dashboard/segments/${segment.id}`)
@@ -1690,7 +1695,7 @@ export default function DashboardHome() {
                   recentProducts.slice(0, 3).map((product) => (
                     <div
                       key={product.id}
-                      className="flex items-center gap-4 p-5 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() =>
                         navigate(`/dashboard/products/${product.id}`)
@@ -1768,7 +1773,7 @@ export default function DashboardHome() {
 
         {/* Quick Actions - Takes 1 column */}
         <div>
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden h-full">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Quick Actions</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -1782,7 +1787,7 @@ export default function DashboardHome() {
                   <button
                     key={action.name}
                     onClick={() => navigate(action.href)}
-                    className="w-full flex items-center gap-3 p-4 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all"
+                    className="w-full flex items-center gap-3 p-4 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all"
                     style={{ backgroundColor: color.surface.background }}
                   >
                     <div
@@ -1805,11 +1810,11 @@ export default function DashboardHome() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Offer Type Distribution */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100">
                 <h2 className={tw.cardHeading}>Offer Type Distribution</h2>
                 <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -1882,7 +1887,7 @@ export default function DashboardHome() {
             </div>
 
             {/* Segment Type Distribution */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100">
                 <h2 className={tw.cardHeading}>Segment Type Distribution</h2>
                 <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -1953,7 +1958,7 @@ export default function DashboardHome() {
           {/* Top Performers - CVM Focus */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top Performing Campaigns */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100">
                 <h2 className={tw.cardHeading}>Top Performing Campaigns</h2>
                 <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -1965,7 +1970,7 @@ export default function DashboardHome() {
                   {topCampaigns.map((campaign, index) => (
                     <div
                       key={campaign.id}
-                      className="flex items-center justify-between p-5 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-center justify-between p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() =>
                         navigate(`/dashboard/campaigns/${campaign.id}`)
@@ -2013,7 +2018,7 @@ export default function DashboardHome() {
             </div>
 
             {/* Top Performing Offers */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100">
                 <h2 className={tw.cardHeading}>Top Performing Offers</h2>
                 <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -2025,7 +2030,7 @@ export default function DashboardHome() {
                   {topOffers.map((offer, index) => (
                     <div
                       key={offer.id}
-                      className="flex items-center justify-between p-5 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-center justify-between p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() => navigate(`/dashboard/offers/${offer.id}`)}
                     >
@@ -2081,7 +2086,7 @@ export default function DashboardHome() {
         {/* Right Sidebar */}
         <div className="space-y-6">
           {/* Campaign Status Distribution */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Campaign Status</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -2145,7 +2150,7 @@ export default function DashboardHome() {
           </div>
 
           {/* Requires Attention */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className={tw.cardHeading}>Requires Attention</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
@@ -2156,7 +2161,7 @@ export default function DashboardHome() {
               {requiresAttention.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl p-5 border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="rounded-md p-5 border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">

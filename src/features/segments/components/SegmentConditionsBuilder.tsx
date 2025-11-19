@@ -227,7 +227,7 @@ export default function SegmentConditionsBuilder({
 
         return (
           <div className="min-w-[200px]">
-            <div className="border border-gray-300 rounded-lg p-2 max-h-40 overflow-y-auto bg-white">
+            <div className="border border-gray-300 rounded-md p-2 max-h-40 overflow-y-auto bg-white">
               {distinctValues.map((val, idx) => {
                 const isChecked = selectedValues.includes(val);
                 return (
@@ -310,7 +310,7 @@ export default function SegmentConditionsBuilder({
             });
           }}
           placeholder="Enter values separated by commas"
-          className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
+          className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-md focus:outline-none text-sm`}
         />
       );
     }
@@ -327,7 +327,7 @@ export default function SegmentConditionsBuilder({
           updateFunction(groupId, condition.id, { value, type: fieldType });
         }}
         placeholder="Enter value"
-        className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
+        className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-md focus:outline-none text-sm`}
       />
     );
   };
@@ -420,7 +420,7 @@ export default function SegmentConditionsBuilder({
         <button
           type="button"
           onClick={addConditionGroup}
-          className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors"
+          className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors"
           style={{
             backgroundColor: color.primary.action,
           }}
@@ -437,7 +437,7 @@ export default function SegmentConditionsBuilder({
       {conditions.map((group, groupIndex) => (
         <div
           key={group.id}
-          className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+          className="border border-gray-200 rounded-md p-4 bg-gray-50"
         >
           {/* Group Header */}
           <div className="flex items-center justify-between mb-4">
@@ -687,7 +687,7 @@ export default function SegmentConditionsBuilder({
           {/* Segments Selection */}
           {group.conditionType === "segments" && (
             <div
-              className="p-4 rounded-lg border border-gray-200"
+              className="p-4 rounded-md border border-gray-200"
               style={{ backgroundColor: `${color.primary.accent}10` }}
             >
               <h4 className={`font-medium ${tw.textPrimary} mb-2`}>
@@ -696,7 +696,7 @@ export default function SegmentConditionsBuilder({
               <p className={`text-sm ${tw.textSecondary} mb-3`}>
                 Choose existing segments to include in this condition group.
               </p>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none">
                 <option value="">Select a segment...</option>
                 {/* This would be populated with actual segments from the backend */}
               </select>
@@ -706,7 +706,7 @@ export default function SegmentConditionsBuilder({
           {/* 360 Profile */}
           {group.conditionType === "360" && (
             <div
-              className="p-4 rounded-lg border border-gray-200"
+              className="p-4 rounded-md border border-gray-200"
               style={{ backgroundColor: `${color.primary.accent}10` }}
             >
               <h4 className={`font-medium ${tw.textPrimary} mb-2`}>
@@ -726,7 +726,7 @@ export default function SegmentConditionsBuilder({
                     <button
                       type="button"
                       onClick={() => addProfileCondition(group.id)}
-                      className="inline-flex items-center px-3 py-2 text-sm text-white rounded-lg transition-colors"
+                      className="inline-flex items-center px-3 py-2 text-sm text-white rounded-md transition-colors"
                       style={{ backgroundColor: color.primary.action }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -780,7 +780,7 @@ export default function SegmentConditionsBuilder({
                                 value: fieldType === "number" ? 0 : "",
                               });
                             }}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none min-w-[200px]"
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none min-w-[200px]"
                             style={{
                               borderColor: tw.borderDefault,
                             }}
@@ -808,7 +808,7 @@ export default function SegmentConditionsBuilder({
                                   | "not_in",
                               })
                             }
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                             style={{
                               borderColor: tw.borderDefault,
                             }}
@@ -845,7 +845,7 @@ export default function SegmentConditionsBuilder({
                     <button
                       type="button"
                       onClick={() => addProfileCondition(group.id)}
-                      className="inline-flex items-center px-3 py-2 text-sm text-white rounded-lg transition-colors"
+                      className="inline-flex items-center px-3 py-2 text-sm text-white rounded-md transition-colors"
                       style={{
                         backgroundColor: color.primary.action,
                       }}
@@ -864,7 +864,7 @@ export default function SegmentConditionsBuilder({
             <button
               type="button"
               onClick={() => addCondition(group.id)}
-              className="mt-3 inline-flex items-center px-3 py-2 text-sm text-white rounded-lg transition-colors"
+              className="mt-3 inline-flex items-center px-3 py-2 text-sm text-white rounded-md transition-colors"
               style={{
                 backgroundColor: color.primary.action,
               }}
@@ -880,7 +880,7 @@ export default function SegmentConditionsBuilder({
       <button
         type="button"
         onClick={addConditionGroup}
-        className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors"
+        className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors"
         style={{ backgroundColor: color.primary.action }}
       >
         <Plus className="w-4 h-4 mr-2" />
