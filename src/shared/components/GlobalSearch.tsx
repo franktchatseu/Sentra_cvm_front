@@ -65,7 +65,6 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -222,29 +221,6 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
     };
   }, [searchTerm, fetchSuggestions]);
 
-  // Show dropdown on hover or focus
-  useEffect(() => {
-    if (isHovered || inputRef.current === document.activeElement) {
-      setShowSuggestions(true);
-    }
-  }, [isHovered]);
-
-  // Handle mouse enter/leave
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    setShowSuggestions(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    // Don't hide if input is focused
-    if (inputRef.current !== document.activeElement) {
-      setTimeout(() => {
-        setShowSuggestions(false);
-      }, 200);
-    }
-  };
-
   // Handle input focus
   const handleFocus = () => {
     setShowSuggestions(true);
@@ -253,9 +229,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
   // Handle input blur
   const handleBlur = () => {
     setTimeout(() => {
-      if (!isHovered) {
-        setShowSuggestions(false);
-      }
+      setShowSuggestions(false);
     }, 200);
   };
 
@@ -319,12 +293,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
   const showQuickSearches = !searchTerm.trim() || searchTerm.trim().length < 2;
 
   return (
-    <div
-      ref={containerRef}
-      className="relative flex-1 max-w-xs sm:max-w-md"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div ref={containerRef} className="relative flex-1 max-w-xs sm:max-w-md">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
         <input

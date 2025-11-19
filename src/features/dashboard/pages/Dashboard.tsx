@@ -51,7 +51,6 @@ import PerformanceReportsPage from "./PerformanceReportsPage";
 import CustomerProfileReportsPage from "./CustomerProfileReportsPage";
 import CampaignReportsPage from "./CampaignReportsPage";
 import OfferPerformanceReportsPage from "./OfferPerformanceReportsPage";
-import SegmentLevelReportsPage from "./SegmentLevelReportsPage";
 import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
 
 export default function Dashboard() {
@@ -166,7 +165,6 @@ export default function Dashboard() {
           path="/reports/offers"
           element={<OfferPerformanceReportsPage />}
         />
-        <Route path="/reports/segments" element={<SegmentLevelReportsPage />} />
         <Route path="/reports/delivery" element={<DeliverySMSReportsPage />} />
       </Routes>
     </DashboardLayout>

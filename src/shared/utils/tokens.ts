@@ -10,11 +10,11 @@ export const colors = {
   surface: {
     cards: "#F5F5F5", // Cards and table headers (neutral-100)
     background: "#FFFFFF",
-    tableHeader: "#6b7280",
+    tableHeader: "#FFFFFF",
       // "linear-gradient(to bottom, #394247 0%, #1F2223 70%, #2A2F31 100%)",
     tableHeaderText: 
-    // "#000000",
-    "#FFFFFF",
+    "#000000",
+    // "#FFFFFF",
     tablebodybg: "#FFFFFF"
   },
 

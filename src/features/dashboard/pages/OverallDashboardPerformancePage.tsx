@@ -1,1187 +1,1213 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMemo, useState } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
+  ResponsiveContainer,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  LineChart,
+  Line,
+  ComposedChart,
 } from "recharts";
-import {
-  TrendingUp,
-  Target,
-  Package,
-  Users,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  Calendar,
-  BarChart3,
-} from "lucide-react";
-import { tw, color } from "../../../shared/utils/utils";
-import CategoryDistributionChart, {
-  CategoryView,
-  CategoryChartPoint,
-} from "../components/CategoryDistributionChart";
-import { offerService } from "../../offers/services/offerService";
-import { segmentService } from "../../segments/services/segmentService";
-import { productService } from "../../products/services/productService";
-import { campaignService } from "../../campaigns/services/campaignService";
-import type { CampaignStatsSummary } from "../../campaigns/types/campaign";
-import { sessionService } from "../../sessions/services/sessionService";
-import { quicklistService } from "../../quicklists/services/quicklistService";
-import dashboardService from "../services/dashboardService";
+import type { TooltipProps } from "recharts";
+import { Eye, MousePointerClick, Target, TrendingUp } from "lucide-react";
+import { colors } from "../../../shared/utils/tokens";
 
-type SessionStatDatum = {
-  session_type?: string;
-  type?: string;
-  key?: string;
-  device_type?: string;
-  device?: string;
-  count?: number | string;
+type RangeOption = "7d" | "30d" | "90d" | "3m";
+type ChannelFilter = "All Channels" | "SMS" | "Email" | "Push" | "Social";
+
+type ReachMetrics = {
+  reach: number;
 };
 
-type SegmentCategoryDistributionItem = {
-  category_name?: string;
-  category_id?: number;
-  segment_count?: number | string;
-  count?: number | string;
+type EngagementMetrics = {
+  clicks: number;
+  ctr: number; // Click-Through Rate
+  openRate: number; // Email/SMS Open Rate
+  engagementRate: number; // Social Media Engagement
 };
 
-type ProductCategoryStat = {
-  category_name?: string;
-  product_count?: number | string;
+type ConversionMetrics = {
+  conversions: number;
+  cvr: number; // Conversion Rate
+  cpc: number; // Cost Per Click
+  cpl: number; // Cost Per Lead
+  cpa: number; // Cost Per Acquisition
+  roas: number; // Return on Ad Spend
+  revenue: number;
+  spend: number;
 };
 
-type OfferCategoryPerformanceItem = {
-  category_name?: string;
-  offer_count?: number | string;
-  count?: number | string;
+type ChannelData = {
+  channel: string;
+  reach: number;
+  clicks: number;
+  opens: number;
+  conversions: number;
+  revenue: number;
+  spend: number;
+  ctr: number;
+  openRate: number;
+  cvr: number;
+  cpc: number;
+  cpl: number;
+  cpa: number;
+  roas: number;
+  engagementRate: number;
 };
 
-const parseMetricValue = (value: unknown): number => {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const parsed = parseInt(value, 10);
-    return Number.isNaN(parsed) ? 0 : parsed;
+type SMSDeliveryData = {
+  date: string;
+  sent: number;
+  delivered: number;
+  converted: number;
+};
+
+type PerformanceSnapshot = {
+  reach: ReachMetrics;
+  engagement: EngagementMetrics;
+  conversion: ConversionMetrics;
+  channels: ChannelData[];
+  smsDelivery: SMSDeliveryData[];
+  timeSeries: {
+    date: string;
+    reach: number;
+    clicks: number;
+    conversions: number;
+    revenue: number;
+  }[];
+};
+
+const timeRangeOptions: RangeOption[] = ["7d", "30d", "90d", "3m"];
+
+const channelOptions: ChannelFilter[] = [
+  "All Channels",
+  "SMS",
+  "Email",
+  "Push",
+  "Social",
+];
+
+const channelColors: Record<string, string> = {
+  SMS: "#3b82f6",
+  Email: "#8b5cf6",
+  Push: "#10b981",
+  Social: "#f59e0b",
+};
+
+const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
+  "7d": {
+    reach: {
+      reach: 125_000,
+    },
+    engagement: {
+      clicks: 12_500,
+      ctr: 10.0,
+      openRate: 68.5,
+      engagementRate: 12.3,
+    },
+    conversion: {
+      conversions: 925,
+      cvr: 7.4,
+      cpc: 0.45,
+      cpl: 6.2,
+      cpa: 18.5,
+      roas: 4.2,
+      revenue: 74_000,
+      spend: 17_625,
+    },
+    channels: [
+      {
+        channel: "SMS",
+        reach: 45_000,
+        clicks: 4_500,
+        opens: 31_500,
+        conversions: 360,
+        revenue: 28_800,
+        spend: 6_750,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 8.0,
+        cpc: 0.5,
+        cpl: 6.25,
+        cpa: 18.75,
+        roas: 4.3,
+        engagementRate: 0,
+      },
+      {
+        channel: "Email",
+        reach: 35_000,
+        clicks: 3_500,
+        opens: 23_100,
+        conversions: 262,
+        revenue: 20_960,
+        spend: 5_250,
+        ctr: 10.0,
+        openRate: 66.0,
+        cvr: 7.5,
+        cpc: 0.4,
+        cpl: 6.0,
+        cpa: 20.0,
+        roas: 4.0,
+        engagementRate: 0,
+      },
+      {
+        channel: "Push",
+        reach: 25_000,
+        clicks: 2_500,
+        opens: 17_500,
+        conversions: 180,
+        revenue: 14_400,
+        spend: 3_750,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 7.2,
+        cpc: 0.5,
+        cpl: 6.5,
+        cpa: 20.83,
+        roas: 3.8,
+        engagementRate: 0,
+      },
+      {
+        channel: "Social",
+        reach: 20_000,
+        clicks: 2_000,
+        opens: 0,
+        conversions: 114,
+        revenue: 9_120,
+        spend: 1_600,
+        ctr: 10.0,
+        openRate: 0,
+        cvr: 5.7,
+        cpc: 0.8,
+        cpl: 7.0,
+        cpa: 13.95,
+        roas: 5.7,
+        engagementRate: 15.0,
+      },
+    ],
+    smsDelivery: [
+      {
+        date: "Day 1",
+        sent: 12_500,
+        delivered: 11_800,
+        converted: 945,
+      },
+      {
+        date: "Day 2",
+        sent: 12_200,
+        delivered: 11_500,
+        converted: 920,
+      },
+      {
+        date: "Day 3",
+        sent: 12_800,
+        delivered: 12_100,
+        converted: 968,
+      },
+      {
+        date: "Day 4",
+        sent: 12_400,
+        delivered: 11_700,
+        converted: 936,
+      },
+      {
+        date: "Day 5",
+        sent: 12_600,
+        delivered: 11_900,
+        converted: 952,
+      },
+      {
+        date: "Day 6",
+        sent: 12_100,
+        delivered: 11_400,
+        converted: 912,
+      },
+      {
+        date: "Day 7",
+        sent: 12_300,
+        delivered: 11_600,
+        converted: 928,
+      },
+    ],
+    timeSeries: [
+      {
+        date: "Day 1",
+        reach: 18_000,
+        clicks: 1_800,
+        conversions: 133,
+        revenue: 10_640,
+      },
+      {
+        date: "Day 2",
+        reach: 17_500,
+        clicks: 1_750,
+        conversions: 130,
+        revenue: 10_400,
+      },
+      {
+        date: "Day 3",
+        reach: 18_500,
+        clicks: 1_850,
+        conversions: 137,
+        revenue: 10_960,
+      },
+      {
+        date: "Day 4",
+        reach: 18_200,
+        clicks: 1_820,
+        conversions: 135,
+        revenue: 10_800,
+      },
+      {
+        date: "Day 5",
+        reach: 18_800,
+        clicks: 1_880,
+        conversions: 139,
+        revenue: 11_120,
+      },
+      {
+        date: "Day 6",
+        reach: 17_800,
+        clicks: 1_780,
+        conversions: 132,
+        revenue: 10_560,
+      },
+      {
+        date: "Day 7",
+        reach: 18_000,
+        clicks: 1_800,
+        conversions: 133,
+        revenue: 10_640,
+      },
+    ],
+  },
+  "30d": {
+    reach: {
+      reach: 540_000,
+    },
+    engagement: {
+      clicks: 54_000,
+      ctr: 10.0,
+      openRate: 68.2,
+      engagementRate: 12.5,
+    },
+    conversion: {
+      conversions: 3_996,
+      cvr: 7.4,
+      cpc: 0.44,
+      cpl: 6.15,
+      cpa: 18.3,
+      roas: 4.3,
+      revenue: 319_680,
+      spend: 74_250,
+    },
+    channels: [
+      {
+        channel: "SMS",
+        reach: 195_000,
+        clicks: 19_500,
+        opens: 136_500,
+        conversions: 1_560,
+        revenue: 124_800,
+        spend: 29_250,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 8.0,
+        cpc: 0.5,
+        cpl: 6.25,
+        cpa: 18.75,
+        roas: 4.3,
+        engagementRate: 0,
+      },
+      {
+        channel: "Email",
+        reach: 150_000,
+        clicks: 15_000,
+        opens: 99_000,
+        conversions: 1_125,
+        revenue: 90_000,
+        spend: 22_500,
+        ctr: 10.0,
+        openRate: 66.0,
+        cvr: 7.5,
+        cpc: 0.4,
+        cpl: 6.0,
+        cpa: 20.0,
+        roas: 4.0,
+        engagementRate: 0,
+      },
+      {
+        channel: "Push",
+        reach: 105_000,
+        clicks: 10_500,
+        opens: 73_500,
+        conversions: 756,
+        revenue: 60_480,
+        spend: 15_750,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 7.2,
+        cpc: 0.5,
+        cpl: 6.5,
+        cpa: 20.83,
+        roas: 3.8,
+        engagementRate: 0,
+      },
+      {
+        channel: "Social",
+        reach: 90_000,
+        clicks: 9_000,
+        opens: 0,
+        conversions: 513,
+        revenue: 41_040,
+        spend: 7_200,
+        ctr: 10.0,
+        openRate: 0,
+        cvr: 5.7,
+        cpc: 0.8,
+        cpl: 7.0,
+        cpa: 13.95,
+        roas: 5.7,
+        engagementRate: 15.2,
+      },
+    ],
+    smsDelivery: [
+      {
+        date: "Week 1",
+        sent: 52_000,
+        delivered: 49_000,
+        converted: 3_920,
+      },
+      {
+        date: "Week 2",
+        sent: 54_000,
+        delivered: 51_000,
+        converted: 4_080,
+      },
+      {
+        date: "Week 3",
+        sent: 53_000,
+        delivered: 50_000,
+        converted: 4_000,
+      },
+      {
+        date: "Week 4",
+        sent: 55_000,
+        delivered: 52_000,
+        converted: 4_160,
+      },
+    ],
+    timeSeries: [
+      {
+        date: "Week 1",
+        reach: 135_000,
+        clicks: 13_500,
+        conversions: 999,
+        revenue: 79_920,
+      },
+      {
+        date: "Week 2",
+        reach: 135_000,
+        clicks: 13_500,
+        conversions: 999,
+        revenue: 79_920,
+      },
+      {
+        date: "Week 3",
+        reach: 135_000,
+        clicks: 13_500,
+        conversions: 999,
+        revenue: 79_920,
+      },
+      {
+        date: "Week 4",
+        reach: 135_000,
+        clicks: 13_500,
+        conversions: 999,
+        revenue: 79_920,
+      },
+    ],
+  },
+  "90d": {
+    reach: {
+      reach: 1_620_000,
+    },
+    engagement: {
+      clicks: 162_000,
+      ctr: 10.0,
+      openRate: 68.0,
+      engagementRate: 12.7,
+    },
+    conversion: {
+      conversions: 11_988,
+      cvr: 7.4,
+      cpc: 0.43,
+      cpl: 6.1,
+      cpa: 18.0,
+      roas: 4.4,
+      revenue: 959_040,
+      spend: 222_750,
+    },
+    channels: [
+      {
+        channel: "SMS",
+        reach: 585_000,
+        clicks: 58_500,
+        opens: 409_500,
+        conversions: 4_680,
+        revenue: 374_400,
+        spend: 87_750,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 8.0,
+        cpc: 0.5,
+        cpl: 6.25,
+        cpa: 18.75,
+        roas: 4.3,
+        engagementRate: 0,
+      },
+      {
+        channel: "Email",
+        reach: 450_000,
+        clicks: 45_000,
+        opens: 297_000,
+        conversions: 3_375,
+        revenue: 270_000,
+        spend: 67_500,
+        ctr: 10.0,
+        openRate: 66.0,
+        cvr: 7.5,
+        cpc: 0.4,
+        cpl: 6.0,
+        cpa: 20.0,
+        roas: 4.0,
+        engagementRate: 0,
+      },
+      {
+        channel: "Push",
+        reach: 315_000,
+        clicks: 31_500,
+        opens: 220_500,
+        conversions: 2_268,
+        revenue: 181_440,
+        spend: 47_250,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 7.2,
+        cpc: 0.5,
+        cpl: 6.5,
+        cpa: 20.83,
+        roas: 3.8,
+        engagementRate: 0,
+      },
+      {
+        channel: "Social",
+        reach: 270_000,
+        clicks: 27_000,
+        opens: 0,
+        conversions: 1_539,
+        revenue: 123_120,
+        spend: 21_600,
+        ctr: 10.0,
+        openRate: 0,
+        cvr: 5.7,
+        cpc: 0.8,
+        cpl: 7.0,
+        cpa: 13.95,
+        roas: 5.7,
+        engagementRate: 15.5,
+      },
+    ],
+    smsDelivery: [
+      {
+        date: "Month 1",
+        sent: 156_000,
+        delivered: 147_000,
+        converted: 11_760,
+      },
+      {
+        date: "Month 2",
+        sent: 162_000,
+        delivered: 153_000,
+        converted: 12_240,
+      },
+      {
+        date: "Month 3",
+        sent: 159_000,
+        delivered: 150_000,
+        converted: 12_000,
+      },
+    ],
+    timeSeries: [
+      {
+        date: "Month 1",
+        reach: 405_000,
+        clicks: 40_500,
+        conversions: 2_997,
+        revenue: 239_760,
+      },
+      {
+        date: "Month 2",
+        reach: 405_000,
+        clicks: 40_500,
+        conversions: 2_997,
+        revenue: 239_760,
+      },
+      {
+        date: "Month 3",
+        reach: 405_000,
+        clicks: 40_500,
+        conversions: 2_997,
+        revenue: 239_760,
+      },
+    ],
+  },
+  "3m": {
+    reach: {
+      reach: 1_620_000,
+    },
+    engagement: {
+      clicks: 162_000,
+      ctr: 10.0,
+      openRate: 68.0,
+      engagementRate: 12.7,
+    },
+    conversion: {
+      conversions: 11_988,
+      cvr: 7.4,
+      cpc: 0.43,
+      cpl: 6.1,
+      cpa: 18.0,
+      roas: 4.4,
+      revenue: 959_040,
+      spend: 222_750,
+    },
+    channels: [
+      {
+        channel: "SMS",
+        reach: 585_000,
+        clicks: 58_500,
+        opens: 409_500,
+        conversions: 4_680,
+        revenue: 374_400,
+        spend: 87_750,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 8.0,
+        cpc: 0.5,
+        cpl: 6.25,
+        cpa: 18.75,
+        roas: 4.3,
+        engagementRate: 0,
+      },
+      {
+        channel: "Email",
+        reach: 450_000,
+        clicks: 45_000,
+        opens: 297_000,
+        conversions: 3_375,
+        revenue: 270_000,
+        spend: 67_500,
+        ctr: 10.0,
+        openRate: 66.0,
+        cvr: 7.5,
+        cpc: 0.4,
+        cpl: 6.0,
+        cpa: 20.0,
+        roas: 4.0,
+        engagementRate: 0,
+      },
+      {
+        channel: "Push",
+        reach: 315_000,
+        clicks: 31_500,
+        opens: 220_500,
+        conversions: 2_268,
+        revenue: 181_440,
+        spend: 47_250,
+        ctr: 10.0,
+        openRate: 70.0,
+        cvr: 7.2,
+        cpc: 0.5,
+        cpl: 6.5,
+        cpa: 20.83,
+        roas: 3.8,
+        engagementRate: 0,
+      },
+      {
+        channel: "Social",
+        reach: 270_000,
+        clicks: 27_000,
+        opens: 0,
+        conversions: 1_539,
+        revenue: 123_120,
+        spend: 21_600,
+        ctr: 10.0,
+        openRate: 0,
+        cvr: 5.7,
+        cpc: 0.8,
+        cpl: 7.0,
+        cpa: 13.95,
+        roas: 5.7,
+        engagementRate: 15.5,
+      },
+    ],
+    smsDelivery: [
+      {
+        date: "Month 1",
+        sent: 156_000,
+        delivered: 147_000,
+        converted: 11_760,
+      },
+      {
+        date: "Month 2",
+        sent: 162_000,
+        delivered: 153_000,
+        converted: 12_240,
+      },
+      {
+        date: "Month 3",
+        sent: 159_000,
+        delivered: 150_000,
+        converted: 12_000,
+      },
+    ],
+    timeSeries: [
+      {
+        date: "Month 1",
+        reach: 405_000,
+        clicks: 40_500,
+        conversions: 2_997,
+        revenue: 239_760,
+      },
+      {
+        date: "Month 2",
+        reach: 405_000,
+        clicks: 40_500,
+        conversions: 2_997,
+        revenue: 239_760,
+      },
+      {
+        date: "Month 3",
+        reach: 405_000,
+        clicks: 40_500,
+        conversions: 2_997,
+        revenue: 239_760,
+      },
+    ],
+  },
+};
+
+const formatNumber = (value: number) => {
+  return value.toLocaleString("en-US");
+};
+
+const formatCurrency = (value: number) => {
+  if (value >= 1_000) {
+    return `$${(value / 1_000).toFixed(1)}K`;
   }
-  return 0;
+  return `$${value.toFixed(2)}`;
+};
+
+const chartColors = {
+  clicks: colors.status.info,
+  conversions: colors.status.success,
+  ctr: colors.status.warning,
+  cvr: colors.status.danger,
+  sent: colors.primary.accent,
+  delivered: colors.status.info,
+  converted: colors.status.success,
+};
+
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: TooltipProps<number, string>) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+      <p className="mb-2 text-sm font-semibold text-gray-900">{label}</p>
+      {payload.map((entry, idx) => (
+        <div
+          key={idx}
+          className="flex items-center justify-between gap-4 text-sm"
+        >
+          <span className="flex items-center gap-2">
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-gray-600">{entry.name}</span>
+          </span>
+          <span className="font-semibold text-gray-900">
+            {typeof entry.value === "number"
+              ? formatNumber(entry.value)
+              : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 export default function OverallDashboardPerformancePage() {
-  const [loading, setLoading] = useState(true);
-  const [categoryView, setCategoryView] = useState<CategoryView>("segments");
-  const [categoryChartData, setCategoryChartData] = useState<
-    CategoryChartPoint[]
-  >([]);
-  const [categoryChartLoading, setCategoryChartLoading] = useState(false);
+  // Independent filter states for each chart
+  const [channelChartRange, setChannelChartRange] =
+    useState<RangeOption>("30d");
+  const [channelFilter, setChannelFilter] =
+    useState<ChannelFilter>("All Channels");
+  const [smsDeliveryChartRange, setSmsDeliveryChartRange] =
+    useState<RangeOption>("30d");
+  const [timeSeriesChartRange, setTimeSeriesChartRange] =
+    useState<RangeOption>("30d");
 
-  // Stats state
-  const [dashboardStats, setDashboardStats] = useState<{
-    totalOffers: number;
-    totalSegments: number;
-    activeCampaigns: number;
-    conversionRate: number;
-  } | null>(null);
+  // Stat cards always use 30d snapshot (fixed)
+  const kpiSnapshot = mockPerformanceSnapshots["30d"];
+  // Each chart uses its own range
+  const channelSnapshot = mockPerformanceSnapshots[channelChartRange];
+  const smsDeliverySnapshot = mockPerformanceSnapshots[smsDeliveryChartRange];
+  const timeSeriesSnapshot = mockPerformanceSnapshots[timeSeriesChartRange];
 
-  const [offersStats, setOffersStats] = useState<{
-    total: number;
-    active: number;
-    pendingApproval: number;
-  } | null>(null);
-
-  const [campaignsStats, setCampaignsStats] = useState<{
-    total: number;
-    active: number;
-    completed: number;
-  } | null>(null);
-
-  const [sessionsStats, setSessionsStats] = useState<{
-    active: number;
-    byType: Array<{ type: string; count: number }>;
-    byDevice: Array<{ device: string; count: number }>;
-  } | null>(null);
-
-  const [quicklistStats, setQuicklistStats] = useState<{
-    total: number;
-    recent: number;
-  } | null>(null);
-
-  // Time series data for trends
-  const [trendData, setTrendData] = useState<
-    Array<{
-      date: string;
-      campaigns: number;
-      offers: number;
-      segments: number;
-      products: number;
-    }>
-  >([]);
-  const [offerTypeDistribution, setOfferTypeDistribution] = useState<
-    Array<{ name: string; value: number; color: string }>
-  >([]);
-  const [offerDistributionLoading, setOfferDistributionLoading] =
-    useState(true);
-  const [segmentTypeDistribution, setSegmentTypeDistribution] = useState<
-    Array<{
-      type: string;
-      count: number;
-      percentage: number;
-      color: string;
-    }>
-  >([]);
-  const [selectedTrendRange, setSelectedTrendRange] = useState("7d");
-  const trendRangeOptions = [
-    { id: "7d", label: "7 days" },
-    { id: "14d", label: "14 days" },
-    { id: "30d", label: "30 days" },
-    { id: "90d", label: "90 days" },
-  ];
-
-  const parseCountValue = useCallback(
-    (value: unknown): number => Math.max(0, parseMetricValue(value)),
-    []
-  );
-
-  const accentColor = color.primary.accent;
-  const trendColorTokens = useMemo(
-    () => ({
-      campaigns: color.charts.campaigns.active,
-      offers: color.charts.offers.discount,
-      segments: color.charts.segments.dynamic,
-      products: color.charts.products.color1,
-    }),
-    []
-  );
-  const getDayCountForRange = useCallback((rangeId: string) => {
-    const numeric = parseInt(rangeId.replace("d", ""), 10);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      return numeric;
+  const filteredChannels = useMemo(() => {
+    if (channelFilter === "All Channels") {
+      return channelSnapshot.channels;
     }
-    return 7;
-  }, []);
-  const isTrendDataMock = true;
-
-  const categoryViewMeta = useMemo<
-    Record<CategoryView, { title: string; subtitle: string }>
-  >(
-    () => ({
-      segments: {
-        title: "Segment Categories",
-        subtitle: "Segment count per category",
-      },
-      offers: {
-        title: "Offer Categories",
-        subtitle: "Offer count per category",
-      },
-      campaigns: {
-        title: "Campaign Categories",
-        subtitle: "Category utilization",
-      },
-      products: {
-        title: "Product Categories",
-        subtitle: "Product count per category",
-      },
-    }),
-    []
-  );
-
-  // Fetch all dashboard data
-  useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        // Fetch main dashboard stats
-        const stats = await dashboardService.getDashboardStats();
-        setDashboardStats(stats);
-
-        // Fetch offers stats
-        try {
-          const offersResponse = await offerService.getStats(true);
-          const parseMetric = (value: unknown): number => {
-            if (typeof value === "number") return value;
-            if (typeof value === "string") {
-              const parsed = parseInt(value, 10);
-              return Number.isNaN(parsed) ? 0 : parsed;
-            }
-            return 0;
-          };
-
-          let total = 0;
-          let active = 0;
-          let pendingApproval = 0;
-
-          if (offersResponse.success && offersResponse.data) {
-            const data = offersResponse.data as Record<string, unknown>;
-            total = parseMetric(
-              data.totalOffers ?? data.total_offers ?? data.total
-            );
-            active = parseMetric(
-              data.activeOffers ?? data.active_offers ?? data.active
-            );
-            pendingApproval = parseMetric(
-              data.in_draft ?? data.inDraft ?? data.draft
-            );
-          }
-
-          setOffersStats({ total, active, pendingApproval });
-        } catch {
-          setOffersStats({ total: 0, active: 0, pendingApproval: 0 });
-        }
-
-        // Fetch campaigns stats
-        try {
-          const campaignsStatsResponse = await campaignService.getCampaignStats(
-            true
-          );
-          if (campaignsStatsResponse.success && campaignsStatsResponse.data) {
-            const statsData =
-              campaignsStatsResponse.data as CampaignStatsSummary;
-            const total = parseMetricValue(statsData.total_campaigns);
-            const active = parseMetricValue(
-              statsData.active_campaigns ?? statsData.currently_active
-            );
-            const completed = parseMetricValue(statsData.completed);
-
-            setCampaignsStats({ total, active, completed });
-          }
-        } catch {
-          setCampaignsStats({ total: 0, active: 0, completed: 0 });
-        }
-
-        // Fetch sessions stats
-        try {
-          const [activeCount, byType, byDevice] = await Promise.all([
-            sessionService.getActiveCount(),
-            sessionService.getStatsBySessionType(),
-            sessionService.getStatsByDeviceType(),
-          ]);
-
-          setSessionsStats({
-            active:
-              activeCount.success && activeCount.data
-                ? parseMetricValue(activeCount.data.count)
-                : 0,
-            byType:
-              byType.success && Array.isArray(byType.data)
-                ? byType.data.map((item) => {
-                    const datum = item as SessionStatDatum;
-                    return {
-                      type:
-                        datum.session_type ||
-                        datum.type ||
-                        datum.key ||
-                        "Unknown",
-                      count: parseMetricValue(datum.count),
-                    };
-                  })
-                : [],
-            byDevice:
-              byDevice.success && Array.isArray(byDevice.data)
-                ? byDevice.data.map((item) => {
-                    const datum = item as SessionStatDatum;
-                    return {
-                      device:
-                        datum.device_type || datum.device || datum.key || "N/A",
-                      count: parseMetricValue(datum.count),
-                    };
-                  })
-                : [],
-          });
-        } catch {
-          setSessionsStats({ active: 0, byType: [], byDevice: [] });
-        }
-
-        // Fetch quicklist stats
-        try {
-          const quicklistResponse = await quicklistService.getStats({
-            skipCache: true,
-          });
-          if (quicklistResponse.success && quicklistResponse.data) {
-            const data = quicklistResponse.data as {
-              total?: number | string;
-              total_quicklists?: number | string;
-              recent?: number | string;
-            };
-            setQuicklistStats({
-              total: parseMetricValue(data.total || data.total_quicklists),
-              recent: parseMetricValue(data.recent || 0),
-            });
-          }
-        } catch {
-          setQuicklistStats({ total: 0, recent: 0 });
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard performance data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllData();
-  }, []);
-
-  useEffect(() => {
-    const dayCount = getDayCountForRange(selectedTrendRange);
-    const now = new Date();
-    const generated: Array<{
-      date: string;
-      campaigns: number;
-      offers: number;
-      segments: number;
-      products: number;
-    }> = [];
-
-    for (let i = dayCount - 1; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      generated.push({
-        date: date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        campaigns: Math.floor(Math.random() * 20) + 10,
-        offers: Math.floor(Math.random() * 30) + 15,
-        segments: Math.floor(Math.random() * 15) + 8,
-        products: Math.floor(Math.random() * 25) + 12,
-      });
-    }
-
-    setTrendData(generated);
-  }, [selectedTrendRange, getDayCountForRange]);
-
-  // Fetch category chart data
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchCategoryChartData = async () => {
-      try {
-        setCategoryChartLoading(true);
-        let dataset: CategoryChartPoint[] = [];
-
-        if (categoryView === "segments") {
-          const response = await segmentService.getCategoryDistribution(true);
-          if (response.success && response.data) {
-            const raw: SegmentCategoryDistributionItem[] = Array.isArray(
-              response.data
-            )
-              ? (response.data as SegmentCategoryDistributionItem[])
-              : [];
-            dataset = raw
-              .map((item, index) => ({
-                label:
-                  item.category_name ||
-                  `Category ${item.category_id ?? index + 1}`,
-                value: parseCountValue(item.segment_count ?? item.count ?? 0),
-              }))
-              .filter((item) => item.value > 0);
-          }
-        } else if (categoryView === "products") {
-          const response = await productService.getStats(true);
-          if (response.success && response.data) {
-            const productStatsData = response.data as {
-              products_by_category?: ProductCategoryStat[];
-            };
-            const raw = Array.isArray(productStatsData.products_by_category)
-              ? productStatsData.products_by_category
-              : [];
-            dataset = raw
-              .map((item, index) => ({
-                label: item.category_name || `Category ${index + 1}`,
-                value: parseCountValue(item.product_count ?? 0),
-              }))
-              .filter((item) => item.value > 0);
-          }
-        } else if (categoryView === "campaigns") {
-          const response = await campaignService.getCampaignCategoryStats(true);
-          if (response.success && response.data) {
-            const data = response.data as {
-              categories_with_campaigns?: unknown;
-              categories_without_campaigns?: unknown;
-            };
-            dataset = [
-              {
-                label: "With Campaigns",
-                value: parseCountValue(data.categories_with_campaigns),
-              },
-              {
-                label: "Without Campaigns",
-                value: parseCountValue(data.categories_without_campaigns),
-              },
-            ].filter((item) => item.value > 0);
-          }
-        } else if (categoryView === "offers") {
-          const response = await offerService.getCategoryPerformance(true);
-          if (response.success && response.data) {
-            const raw: OfferCategoryPerformanceItem[] = Array.isArray(
-              response.data
-            )
-              ? (response.data as OfferCategoryPerformanceItem[])
-              : [];
-            dataset = raw
-              .map((item, index: number) => ({
-                label: item.category_name || `Category ${index + 1}`,
-                value: parseCountValue(item.offer_count ?? item.count ?? 0),
-              }))
-              .filter((item) => item.value > 0);
-          }
-        }
-
-        if (isMounted) {
-          setCategoryChartData(dataset);
-        }
-      } catch (error) {
-        console.error("Failed to load category distribution:", error);
-        if (isMounted) {
-          setCategoryChartData([]);
-        }
-      } finally {
-        if (isMounted) {
-          setCategoryChartLoading(false);
-        }
-      }
-    };
-
-    fetchCategoryChartData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [categoryView, parseCountValue]);
-
-  // Fetch Offer Type Distribution
-  useEffect(() => {
-    const fetchOfferTypeDistribution = async () => {
-      try {
-        setOfferDistributionLoading(true);
-        const response = await offerService.getTypeDistribution();
-
-        if (response.success && response.data) {
-          const data = response.data;
-          const typeColorMap: Record<string, string> = {
-            discount: color.charts.offers.discount,
-            cashback: color.charts.offers.cashback,
-            freeShipping: color.charts.offers.freeShipping,
-            buyOneGetOne: color.charts.offers.buyOneGetOne,
-            voucher: color.charts.offers.voucher,
-            data: color.charts.offers.discount,
-            voice: color.charts.offers.cashback,
-            sms: color.charts.offers.freeShipping,
-            combo: color.charts.offers.buyOneGetOne,
-            loyalty: color.charts.offers.voucher,
-            bundle: color.charts.offers.discount,
-            bonus: color.charts.offers.cashback,
-          };
-
-          let chartData: Array<{ name: string; value: number; color: string }> =
-            [];
-
-          if (Array.isArray(data)) {
-            chartData = data
-              .filter((item: { count?: string }) => {
-                const count = parseInt(item.count || "0", 10);
-                return count > 0;
-              })
-              .map((item: { offer_type?: string; count?: string }) => {
-                const offerType = (item.offer_type || "").toLowerCase();
-                const count = parseInt(item.count || "0", 10);
-                return {
-                  name: offerType.charAt(0).toUpperCase() + offerType.slice(1),
-                  value: count,
-                  color:
-                    typeColorMap[offerType] || color.charts.offers.discount,
-                };
-              });
-          } else if (data && typeof data === "object") {
-            chartData = Object.entries(data)
-              .filter(([, value]) => {
-                const numValue =
-                  typeof value === "number"
-                    ? value
-                    : parseInt(String(value), 10);
-                return numValue > 0;
-              })
-              .map(([type, value]) => {
-                const numValue =
-                  typeof value === "number"
-                    ? value
-                    : parseInt(String(value), 10);
-                return {
-                  name: type.charAt(0).toUpperCase() + type.slice(1),
-                  value: numValue,
-                  color:
-                    typeColorMap[type.toLowerCase()] ||
-                    color.charts.offers.discount,
-                };
-              });
-          }
-
-          setOfferTypeDistribution(chartData.length > 0 ? chartData : []);
-        } else {
-          setOfferTypeDistribution([]);
-        }
-      } catch {
-        setOfferTypeDistribution([]);
-      } finally {
-        setOfferDistributionLoading(false);
-      }
-    };
-
-    fetchOfferTypeDistribution();
-  }, []);
-
-  // Fetch Segment Type Distribution
-  useEffect(() => {
-    const fetchSegmentTypeDistribution = async () => {
-      try {
-        const response = await segmentService.getTypeDistribution();
-
-        if (response.success && response.data) {
-          const data = response.data;
-          let distribution: Array<{
-            type: string;
-            count: number;
-            percentage: number;
-            color: string;
-          }> = [];
-
-          if (Array.isArray(data)) {
-            const total = data.reduce((sum, item) => {
-              return sum + parseInt(item.count || "0", 10);
-            }, 0);
-
-            distribution = data
-              .map((item) => {
-                const segmentType = (item.type || "").toLowerCase();
-                const count = parseInt(item.count || "0", 10);
-                const percentage = total > 0 ? (count / total) * 100 : 0;
-                const typeColorMap: Record<string, string> = {
-                  dynamic: color.charts.segments.dynamic,
-                  static: color.charts.segments.static,
-                  trigger: color.charts.segments.trigger,
-                  hybrid: color.charts.segments.hybrid,
-                };
-
-                return {
-                  type:
-                    segmentType.charAt(0).toUpperCase() + segmentType.slice(1),
-                  count,
-                  percentage,
-                  color:
-                    typeColorMap[segmentType] || color.charts.segments.dynamic,
-                };
-              })
-              .filter((item) => item.count > 0);
-          } else if (data && typeof data === "object") {
-            const total =
-              data.total || data.dynamic + data.static + data.trigger || 0;
-
-            distribution = [
-              {
-                type: "Dynamic",
-                count: parseInt(String(data.dynamic || 0), 10),
-                percentage:
-                  total > 0
-                    ? (parseInt(String(data.dynamic || 0), 10) / total) * 100
-                    : 0,
-                color: color.charts.segments.dynamic,
-              },
-              {
-                type: "Static",
-                count: parseInt(String(data.static || 0), 10),
-                percentage:
-                  total > 0
-                    ? (parseInt(String(data.static || 0), 10) / total) * 100
-                    : 0,
-                color: color.charts.segments.static,
-              },
-              {
-                type: "Trigger",
-                count: parseInt(String(data.trigger || 0), 10),
-                percentage:
-                  total > 0
-                    ? (parseInt(String(data.trigger || 0), 10) / total) * 100
-                    : 0,
-                color: color.charts.segments.trigger,
-              },
-            ].filter((item) => item.count > 0);
-          }
-
-          setSegmentTypeDistribution(distribution);
-        } else {
-          setSegmentTypeDistribution([]);
-        }
-      } catch {
-        setSegmentTypeDistribution([]);
-      }
-    };
-
-    fetchSegmentTypeDistribution();
-  }, []);
-
-  const kpiCards = useMemo(() => {
-    if (!dashboardStats) return [];
-    return [
-      {
-        name: "Total Campaigns",
-        value: campaignsStats?.total?.toLocaleString() || "0",
-        icon: Target,
-        trend: "+12.5%",
-        trendUp: true,
-      },
-      {
-        name: "Total Offers",
-        value: offersStats?.total?.toLocaleString() || "0",
-        icon: Package,
-        trend: "+8.3%",
-        trendUp: true,
-      },
-      {
-        name: "Total Segments",
-        value: dashboardStats.totalSegments.toLocaleString(),
-        icon: Users,
-        trend: "+15.2%",
-        trendUp: true,
-      },
-      {
-        name: "Active Sessions",
-        value: sessionsStats?.active?.toLocaleString() || "0",
-        icon: Activity,
-        trend: "+5.7%",
-        trendUp: true,
-      },
-      {
-        name: "Conversion Rate",
-        value: `${dashboardStats.conversionRate.toFixed(1)}%`,
-        icon: TrendingUp,
-        trend: "+2.1%",
-        trendUp: true,
-      },
-      {
-        name: "Quicklists",
-        value: quicklistStats?.total?.toLocaleString() || "0",
-        icon: BarChart3,
-        trend: "+3.4%",
-        trendUp: true,
-      },
-    ];
-  }, [
-    dashboardStats,
-    campaignsStats,
-    offersStats,
-    sessionsStats,
-    quicklistStats,
-  ]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-sm text-gray-600">Loading performance data...</p>
-        </div>
-      </div>
+    return channelSnapshot.channels.filter(
+      (channel) => channel.channel === channelFilter
     );
-  }
+  }, [channelFilter, channelSnapshot.channels]);
 
   return (
-    <div className="space-y-8 pb-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+    <div className="space-y-6 p-6">
+      <header>
+        <h1 className="text-3xl font-bold text-gray-900">
           Overall Dashboard Performance
         </h1>
-        <p className={`${tw.textSecondary} ${tw.body}`}>
-          Comprehensive analytics and insights across all platform modules
+        <p className="mt-2 text-sm text-gray-600">
+          System-wide performance metrics and analytics
         </p>
-      </div>
+      </header>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {kpiCards.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <div
-              key={kpi.name}
-              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-xl transition-all duration-300"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
-                <Icon className="w-full h-full" style={{ color: "#d1d5db" }} />
-              </div>
-              <div className="relative space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="p-3 rounded-md flex items-center justify-center shadow-sm"
-                      style={{ backgroundColor: color.surface.background }}
-                    >
-                      <Icon
-                        className="h-6 w-6"
-                        style={{ color: accentColor }}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <p className={`text-3xl font-bold ${tw.textPrimary}`}>
-                        {kpi.value}
-                      </p>
-                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
-                        {kpi.name}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <div
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
-                      kpi.trendUp
-                        ? "bg-green-50 text-green-700"
-                        : "bg-red-50 text-red-700"
-                    }`}
-                  >
-                    {kpi.trendUp ? (
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowDownRight className="h-3.5 w-3.5" />
-                    )}
-                    {kpi.trend}
-                  </div>
-                  <span className={`text-xs ${tw.textMuted}`}>
-                    vs last month
-                  </span>
-                </div>
-              </div>
+      {/* Performance Metrics */}
+      <section>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Eye
+                className="h-5 w-5"
+                style={{ color: colors.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">Reach</p>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Category Distribution Chart - Enhanced */}
-      <div className="mb-6">
-        <CategoryDistributionChart
-          title={categoryViewMeta[categoryView].title}
-          subtitle={categoryViewMeta[categoryView].subtitle}
-          data={categoryChartData}
-          loading={categoryChartLoading}
-          selectedView={categoryView}
-          onViewChange={setCategoryView}
-        />
-      </div>
-
-      {/* Offer & Segment Distribution Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className={tw.cardHeading}>Offer Type Distribution</h2>
-            <p className={`${tw.cardSubHeading} text-black mt-1`}>
-              Breakdown by offer type
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {formatNumber(kpiSnapshot.reach.reach)}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Number of unique users who received your message
             </p>
           </div>
-          <div className="p-6">
-            {offerDistributionLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                  <p className="text-sm text-black">Loading distribution...</p>
-                </div>
-              </div>
-            ) : offerTypeDistribution.length === 0 ? (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-sm text-black">
-                  No offer type data available
-                </p>
-              </div>
-            ) : (
-              <div className="h-64 w-full min-h-[256px]">
-                <ResponsiveContainer width="100%" height={256}>
-                  <PieChart>
-                    <Pie
-                      data={offerTypeDistribution}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={80}
-                      dataKey="value"
-                      isAnimationActive={true}
-                      animationDuration={300}
-                    >
-                      {offerTypeDistribution.map((entry, index) => (
-                        <Cell key={`offer-cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number) => value.toLocaleString()}
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "8px",
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      formatter={(value) => (
-                        <span style={{ fontSize: "12px", color: "#000000" }}>
-                          {value}
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className={tw.cardHeading}>Segment Type Distribution</h2>
-            <p className={`${tw.cardSubHeading} text-black mt-1`}>
-              Breakdown by segment type
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <MousePointerClick
+                className="h-5 w-5"
+                style={{ color: colors.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">Clicks</p>
+            </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {formatNumber(kpiSnapshot.engagement.clicks)}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Total number of users who clicked on links in your campaigns
             </p>
           </div>
-          <div className="p-6">
-            {segmentTypeDistribution.length === 0 ? (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-sm text-black">
-                  No segment type data available
-                </p>
-              </div>
-            ) : (
-              <div className="h-64 w-full min-h-[256px]">
-                <ResponsiveContainer width="100%" height={256}>
-                  <PieChart>
-                    <Pie
-                      data={segmentTypeDistribution.map((item) => ({
-                        name: item.type,
-                        value: item.count,
-                        color: item.color,
-                      }))}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={80}
-                      dataKey="value"
-                      isAnimationActive={true}
-                      animationDuration={300}
-                    >
-                      {segmentTypeDistribution.map((entry, index) => (
-                        <Cell
-                          key={`segment-cell-${index}`}
-                          fill={entry.color}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number) => value.toLocaleString()}
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "8px",
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      formatter={(value) => (
-                        <span style={{ fontSize: "12px", color: "#000000" }}>
-                          {value}
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Trends Over Time - Line Chart */}
-      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className={tw.cardHeading}>Performance Trends</h2>
-              <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                Activity over selectable time ranges
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <TrendingUp
+                className="h-5 w-5"
+                style={{ color: colors.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">
+                Click-Through Rate (CTR)
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  {
-                    trendRangeOptions.find(
-                      (option) => option.id === selectedTrendRange
-                    )?.label
-                  }
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {trendRangeOptions.map((option) => {
-                  const isActive = selectedTrendRange === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      onClick={() => setSelectedTrendRange(option.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-                        isActive
-                          ? "bg-gray-900 text-white border-gray-900"
-                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {kpiSnapshot.engagement.ctr.toFixed(1)}%
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Percentage of messages that resulted in clicks
+            </p>
+          </div>
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <MousePointerClick
+                className="h-5 w-5"
+                style={{ color: colors.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">Open Rate</p>
             </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {kpiSnapshot.engagement.openRate.toFixed(1)}%
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Percentage of recipients who opened your email or SMS message
+            </p>
+          </div>
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Target
+                className="h-5 w-5"
+                style={{ color: colors.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">Conversions</p>
+            </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {formatNumber(kpiSnapshot.conversion.conversions)}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Total number of users who completed a desired action (purchase,
+              sign-up, download, etc.)
+            </p>
+          </div>
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <TrendingUp
+                className="h-5 w-5"
+                style={{ color: colors.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">
+                Conversion Rate (CVR)
+              </p>
+            </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {kpiSnapshot.conversion.cvr.toFixed(1)}%
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Percentage of clicks that resulted in conversions - measures
+              campaign effectiveness
+            </p>
           </div>
         </div>
-        <div className="p-6">
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={trendData}
-                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+      </section>
+
+      {/* Channel Performance Comparison */}
+      <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Performance by Channel
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Compare metrics across SMS, Email, Push, and Social channels
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {timeRangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setChannelChartRange(option)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  channelChartRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: "#6B7280", fontSize: 12 }}
-                  axisLine={{ stroke: "#E5E7EB" }}
-                  tickLine={{ stroke: "#E5E7EB" }}
-                />
-                <YAxis
-                  tick={{ fill: "#6B7280", fontSize: 12 }}
-                  axisLine={{ stroke: "#E5E7EB" }}
-                  tickLine={{ stroke: "#E5E7EB" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    padding: "12px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                  }}
-                />
-                <Legend wrapperStyle={{ paddingTop: "20px" }} iconType="line" />
-                <Line
-                  type="monotone"
-                  dataKey="campaigns"
-                  stroke={trendColorTokens.campaigns}
-                  strokeWidth={3}
-                  dot={{ fill: trendColorTokens.campaigns, r: 4 }}
-                  activeDot={{ r: 6 }}
-                  name="Campaigns"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="offers"
-                  stroke={trendColorTokens.offers}
-                  strokeWidth={3}
-                  dot={{ fill: trendColorTokens.offers, r: 4 }}
-                  activeDot={{ r: 6 }}
-                  name="Offers"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="segments"
-                  stroke={trendColorTokens.segments}
-                  strokeWidth={3}
-                  dot={{ fill: trendColorTokens.segments, r: 4 }}
-                  activeDot={{ r: 6 }}
-                  name="Segments"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="products"
-                  stroke={trendColorTokens.products}
-                  strokeWidth={3}
-                  dot={{ fill: trendColorTokens.products, r: 4 }}
-                  activeDot={{ r: 6 }}
-                  name="Products"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+                {option.toUpperCase()}
+              </button>
+            ))}
           </div>
-          <p className="text-xs text-gray-500 mt-4">
-            {isTrendDataMock
-              ? "Using sample data until time-series APIs are wired up. Planned sources: campaignService.getCampaignsByDateRange, offerService.getOffersByDateRange, segmentService.getSegments, productService.getStats."
-              : "Powered by live campaign, offer, segment, and product activity APIs."}
-          </p>
         </div>
-      </div>
-
-      {/* Additional Metrics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Session Types Distribution */}
-        {sessionsStats && sessionsStats.byType.length > 0 && (
-          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className={tw.cardHeading}>Session Types</h2>
-              <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                Distribution by session type
-              </p>
-            </div>
-            <div className="p-6">
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sessionsStats.byType}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis
-                      dataKey="type"
-                      tick={{ fill: "#6B7280", fontSize: 12 }}
-                      axisLine={{ stroke: "#E5E7EB" }}
-                      tickLine={{ stroke: "#E5E7EB" }}
-                    />
-                    <YAxis
-                      tick={{ fill: "#6B7280", fontSize: 12 }}
-                      axisLine={{ stroke: "#E5E7EB" }}
-                      tickLine={{ stroke: "#E5E7EB" }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "8px",
-                      }}
-                    />
-                    <Bar
-                      dataKey="count"
-                      fill={color.primary.accent}
-                      radius={[8, 8, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Device Types Distribution */}
-        {sessionsStats && sessionsStats.byDevice.length > 0 && (
-          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className={tw.cardHeading}>Device Types</h2>
-              <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                Distribution by device type
-              </p>
-            </div>
-            <div className="p-6">
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sessionsStats.byDevice}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis
-                      dataKey="device"
-                      tick={{ fill: "#6B7280", fontSize: 12 }}
-                      axisLine={{ stroke: "#E5E7EB" }}
-                      tickLine={{ stroke: "#E5E7EB" }}
-                    />
-                    <YAxis
-                      tick={{ fill: "#6B7280", fontSize: 12 }}
-                      axisLine={{ stroke: "#E5E7EB" }}
-                      tickLine={{ stroke: "#E5E7EB" }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "8px",
-                      }}
-                    />
-                    <Bar
-                      dataKey="count"
-                      fill={accentColor}
-                      radius={[8, 8, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-md border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="p-2 rounded-md"
-              style={{ backgroundColor: color.surface.background }}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {channelOptions.map((option) => (
+            <button
+              key={option}
+              onClick={() => setChannelFilter(option)}
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                channelFilter === option
+                  ? "border-[#252829] bg-[#252829] text-white"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+              }`}
             >
-              <Target className="h-5 w-5" style={{ color: accentColor }} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Active Campaigns
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {campaignsStats?.active?.toLocaleString() || "0"}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500">
-            {campaignsStats?.completed || 0} completed this month
-          </p>
+              {option}
+            </button>
+          ))}
         </div>
-
-        <div className="bg-white rounded-md border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="p-2 rounded-md"
-              style={{ backgroundColor: color.surface.background }}
+        <div className="h-96">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={filteredChannels}
+              margin={{ top: 20, right: 30, left: 24, bottom: 0 }}
+              barCategoryGap="25%"
+              barGap={8}
             >
-              <Package className="h-5 w-5" style={{ color: accentColor }} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Offers</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {offersStats?.active?.toLocaleString() || "0"}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500">
-            {offersStats?.pendingApproval || 0} pending approval
-          </p>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="channel"
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+              />
+              <YAxis
+                yAxisId="left"
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+                label={{ value: "Volume", angle: -90, position: "insideLeft" }}
+                width={90}
+                tickFormatter={(value) => formatNumber(value)}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+                label={{
+                  value: "Rate (%)",
+                  angle: 90,
+                  position: "insideRight",
+                }}
+                width={60}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "transparent" }}
+              />
+              <Legend
+                wrapperStyle={{ paddingTop: "20px", gap: "20px" }}
+                iconType="circle"
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="clicks"
+                fill={chartColors.clicks}
+                name="Clicks"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="conversions"
+                fill={chartColors.conversions}
+                name="Conversions"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="ctr"
+                stroke={chartColors.ctr}
+                strokeWidth={2.5}
+                name="CTR (%)"
+                dot={{ fill: chartColors.ctr, r: 4 }}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="cvr"
+                stroke={chartColors.cvr}
+                strokeWidth={2.5}
+                name="CVR (%)"
+                dot={{ fill: chartColors.cvr, r: 4 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
+      </section>
 
-        <div className="bg-white rounded-md border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="p-2 rounded-md"
-              style={{ backgroundColor: color.surface.background }}
-            >
-              <Activity className="h-5 w-5" style={{ color: accentColor }} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Active Sessions
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {sessionsStats?.active?.toLocaleString() || "0"}
-              </p>
-            </div>
+      {/* SMS Delivery */}
+      <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              SMS Delivery Performance
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Track SMS sent, delivered, and conversion metrics
+            </p>
           </div>
-          <p className="text-xs text-gray-500">Real-time user activity</p>
+          <div className="flex flex-wrap gap-2">
+            {timeRangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setSmsDeliveryChartRange(option)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  smsDeliveryChartRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {option.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+        <div className="h-96">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={smsDeliverySnapshot.smsDelivery}
+              margin={{ top: 20, right: 30, left: 24, bottom: 0 }}
+              barCategoryGap="25%"
+              barGap={8}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+              />
+              <YAxis
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+                label={{ value: "Volume", angle: -90, position: "insideLeft" }}
+                width={90}
+                tickFormatter={(value) => formatNumber(value)}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "transparent" }}
+              />
+              <Legend
+                wrapperStyle={{ paddingTop: "20px", gap: "20px" }}
+                iconType="circle"
+              />
+              <Bar
+                dataKey="sent"
+                fill={chartColors.sent}
+                name="Sent"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Bar
+                dataKey="delivered"
+                fill={chartColors.delivered}
+                name="Delivered"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Bar
+                dataKey="converted"
+                fill={chartColors.converted}
+                name="Converted"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* Time Series Trend */}
+      <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Performance Trends Over Time
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Track key metrics across the selected time period
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {timeRangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setTimeSeriesChartRange(option)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  timeSeriesChartRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {option.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="h-96">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={timeSeriesSnapshot.timeSeries}
+              margin={{ top: 20, right: 30, left: 24, bottom: 0 }}
+              barCategoryGap="25%"
+              barGap={8}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+              />
+              <YAxis
+                yAxisId="left"
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+                label={{ value: "Volume", angle: -90, position: "insideLeft" }}
+                width={90}
+                tickFormatter={(value) => formatNumber(value)}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fill: "#6b7280" }}
+                axisLine={{ stroke: "#e5e7eb" }}
+                label={{
+                  value: "Revenue ($)",
+                  angle: 90,
+                  position: "insideRight",
+                }}
+                width={60}
+                tickFormatter={(value) => formatCurrency(value)}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "transparent" }}
+              />
+              <Legend
+                wrapperStyle={{ paddingTop: "20px", gap: "20px" }}
+                iconType="circle"
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="reach"
+                fill={chartColors.clicks}
+                name="Reach"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="clicks"
+                fill={chartColors.clicks}
+                name="Clicks"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="conversions"
+                fill={chartColors.conversions}
+                name="Conversions"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="revenue"
+                stroke={chartColors.cvr}
+                strokeWidth={2.5}
+                name="Revenue"
+                dot={{ fill: chartColors.cvr, r: 4 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
     </div>
   );
 }

@@ -294,13 +294,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "analytics",
         },
         {
-          name: "Segment Level Reports",
-          href: "/dashboard/reports/segments",
-          icon: Layers,
-          type: "single",
-          entity: "analytics",
-        },
-        {
           name: "Delivery & SMS Reports",
           href: "/dashboard/reports/delivery",
           icon: MessageSquare,
