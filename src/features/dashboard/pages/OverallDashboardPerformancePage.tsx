@@ -8,15 +8,14 @@ import {
   YAxis,
   Tooltip,
   Legend,
-  LineChart,
+  // LineChart,
   Line,
   ComposedChart,
 } from "recharts";
-import type { TooltipProps } from "recharts";
 import { Eye, MousePointerClick, Target, TrendingUp } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
 
-type RangeOption = "7d" | "30d" | "90d" | "3m";
+type RangeOption = "7d" | "30d" | "90d";
 type ChannelFilter = "All Channels" | "SMS" | "Email" | "Push" | "Social";
 
 type ReachMetrics = {
@@ -81,7 +80,7 @@ type PerformanceSnapshot = {
   }[];
 };
 
-const timeRangeOptions: RangeOption[] = ["7d", "30d", "90d", "3m"];
+const timeRangeOptions: RangeOption[] = ["7d", "30d", "90d"];
 
 const channelOptions: ChannelFilter[] = [
   "All Channels",
@@ -90,13 +89,6 @@ const channelOptions: ChannelFilter[] = [
   "Push",
   "Social",
 ];
-
-const channelColors: Record<string, string> = {
-  SMS: "#3b82f6",
-  Email: "#8b5cf6",
-  Push: "#10b981",
-  Social: "#f59e0b",
-};
 
 const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
   "7d": {
@@ -122,12 +114,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
     channels: [
       {
         channel: "SMS",
-        reach: 45_000,
-        clicks: 4_500,
-        opens: 31_500,
-        conversions: 360,
-        revenue: 28_800,
-        spend: 6_750,
+        reach: 450_000,
+        clicks: 45_000,
+        opens: 315_000,
+        conversions: 36_000,
+        revenue: 288_000,
+        spend: 67_500,
         ctr: 10.0,
         openRate: 70.0,
         cvr: 8.0,
@@ -139,12 +131,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Email",
-        reach: 35_000,
-        clicks: 3_500,
-        opens: 23_100,
-        conversions: 262,
-        revenue: 20_960,
-        spend: 5_250,
+        reach: 350_000,
+        clicks: 35_000,
+        opens: 231_000,
+        conversions: 26_250,
+        revenue: 210_000,
+        spend: 52_500,
         ctr: 10.0,
         openRate: 66.0,
         cvr: 7.5,
@@ -156,12 +148,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Push",
-        reach: 25_000,
-        clicks: 2_500,
-        opens: 17_500,
-        conversions: 180,
-        revenue: 14_400,
-        spend: 3_750,
+        reach: 250_000,
+        clicks: 25_000,
+        opens: 175_000,
+        conversions: 18_000,
+        revenue: 144_000,
+        spend: 37_500,
         ctr: 10.0,
         openRate: 70.0,
         cvr: 7.2,
@@ -173,12 +165,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Social",
-        reach: 20_000,
-        clicks: 2_000,
+        reach: 200_000,
+        clicks: 20_000,
         opens: 0,
-        conversions: 114,
-        revenue: 9_120,
-        spend: 1_600,
+        conversions: 11_400,
+        revenue: 91_200,
+        spend: 16_000,
         ctr: 10.0,
         openRate: 0,
         cvr: 5.7,
@@ -238,49 +230,49 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
         date: "Day 1",
         reach: 18_000,
         clicks: 1_800,
-        conversions: 133,
+        conversions: 1_330,
         revenue: 10_640,
       },
       {
         date: "Day 2",
         reach: 17_500,
         clicks: 1_750,
-        conversions: 130,
+        conversions: 1_300,
         revenue: 10_400,
       },
       {
         date: "Day 3",
         reach: 18_500,
         clicks: 1_850,
-        conversions: 137,
+        conversions: 1_370,
         revenue: 10_960,
       },
       {
         date: "Day 4",
         reach: 18_200,
         clicks: 1_820,
-        conversions: 135,
+        conversions: 1_350,
         revenue: 10_800,
       },
       {
         date: "Day 5",
         reach: 18_800,
         clicks: 1_880,
-        conversions: 139,
+        conversions: 1_390,
         revenue: 11_120,
       },
       {
         date: "Day 6",
         reach: 17_800,
         clicks: 1_780,
-        conversions: 132,
+        conversions: 1_320,
         revenue: 10_560,
       },
       {
         date: "Day 7",
         reach: 18_000,
         clicks: 1_800,
-        conversions: 133,
+        conversions: 1_330,
         revenue: 10_640,
       },
     ],
@@ -308,12 +300,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
     channels: [
       {
         channel: "SMS",
-        reach: 195_000,
-        clicks: 19_500,
-        opens: 136_500,
-        conversions: 1_560,
-        revenue: 124_800,
-        spend: 29_250,
+        reach: 1_950_000,
+        clicks: 195_000,
+        opens: 1_365_000,
+        conversions: 156_000,
+        revenue: 1_248_000,
+        spend: 292_500,
         ctr: 10.0,
         openRate: 70.0,
         cvr: 8.0,
@@ -325,12 +317,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Email",
-        reach: 150_000,
-        clicks: 15_000,
-        opens: 99_000,
-        conversions: 1_125,
-        revenue: 90_000,
-        spend: 22_500,
+        reach: 1_500_000,
+        clicks: 150_000,
+        opens: 990_000,
+        conversions: 112_500,
+        revenue: 900_000,
+        spend: 225_000,
         ctr: 10.0,
         openRate: 66.0,
         cvr: 7.5,
@@ -342,12 +334,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Push",
-        reach: 105_000,
-        clicks: 10_500,
-        opens: 73_500,
-        conversions: 756,
-        revenue: 60_480,
-        spend: 15_750,
+        reach: 1_050_000,
+        clicks: 105_000,
+        opens: 735_000,
+        conversions: 75_600,
+        revenue: 604_800,
+        spend: 157_500,
         ctr: 10.0,
         openRate: 70.0,
         cvr: 7.2,
@@ -359,12 +351,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Social",
-        reach: 90_000,
-        clicks: 9_000,
+        reach: 900_000,
+        clicks: 90_000,
         opens: 0,
-        conversions: 513,
-        revenue: 41_040,
-        spend: 7_200,
+        conversions: 51_300,
+        revenue: 410_400,
+        spend: 72_000,
         ctr: 10.0,
         openRate: 0,
         cvr: 5.7,
@@ -377,25 +369,25 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
     ],
     smsDelivery: [
       {
-        date: "Week 1",
+        date: "Oct 1-7",
         sent: 52_000,
         delivered: 49_000,
         converted: 3_920,
       },
       {
-        date: "Week 2",
+        date: "Oct 8-14",
         sent: 54_000,
         delivered: 51_000,
         converted: 4_080,
       },
       {
-        date: "Week 3",
+        date: "Oct 15-21",
         sent: 53_000,
         delivered: 50_000,
         converted: 4_000,
       },
       {
-        date: "Week 4",
+        date: "Oct 22-28",
         sent: 55_000,
         delivered: 52_000,
         converted: 4_160,
@@ -403,31 +395,31 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
     ],
     timeSeries: [
       {
-        date: "Week 1",
+        date: "Oct 1-7",
         reach: 135_000,
         clicks: 13_500,
-        conversions: 999,
+        conversions: 9_990,
         revenue: 79_920,
       },
       {
-        date: "Week 2",
+        date: "Oct 8-14",
         reach: 135_000,
         clicks: 13_500,
-        conversions: 999,
+        conversions: 9_990,
         revenue: 79_920,
       },
       {
-        date: "Week 3",
+        date: "Oct 15-21",
         reach: 135_000,
         clicks: 13_500,
-        conversions: 999,
+        conversions: 9_990,
         revenue: 79_920,
       },
       {
-        date: "Week 4",
+        date: "Oct 22-28",
         reach: 135_000,
         clicks: 13_500,
-        conversions: 999,
+        conversions: 9_990,
         revenue: 79_920,
       },
     ],
@@ -455,12 +447,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
     channels: [
       {
         channel: "SMS",
-        reach: 585_000,
-        clicks: 58_500,
-        opens: 409_500,
-        conversions: 4_680,
-        revenue: 374_400,
-        spend: 87_750,
+        reach: 5_850_000,
+        clicks: 585_000,
+        opens: 4_095_000,
+        conversions: 468_000,
+        revenue: 3_744_000,
+        spend: 877_500,
         ctr: 10.0,
         openRate: 70.0,
         cvr: 8.0,
@@ -472,12 +464,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Email",
-        reach: 450_000,
-        clicks: 45_000,
-        opens: 297_000,
-        conversions: 3_375,
-        revenue: 270_000,
-        spend: 67_500,
+        reach: 4_500_000,
+        clicks: 450_000,
+        opens: 2_970_000,
+        conversions: 337_500,
+        revenue: 2_700_000,
+        spend: 675_000,
         ctr: 10.0,
         openRate: 66.0,
         cvr: 7.5,
@@ -489,12 +481,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Push",
-        reach: 315_000,
-        clicks: 31_500,
-        opens: 220_500,
-        conversions: 2_268,
-        revenue: 181_440,
-        spend: 47_250,
+        reach: 3_150_000,
+        clicks: 315_000,
+        opens: 2_205_000,
+        conversions: 226_800,
+        revenue: 1_814_400,
+        spend: 472_500,
         ctr: 10.0,
         openRate: 70.0,
         cvr: 7.2,
@@ -506,12 +498,12 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
       },
       {
         channel: "Social",
-        reach: 270_000,
-        clicks: 27_000,
+        reach: 2_700_000,
+        clicks: 270_000,
         opens: 0,
-        conversions: 1_539,
-        revenue: 123_120,
-        spend: 21_600,
+        conversions: 153_900,
+        revenue: 1_231_200,
+        spend: 216_000,
         ctr: 10.0,
         openRate: 0,
         cvr: 5.7,
@@ -524,19 +516,19 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
     ],
     smsDelivery: [
       {
-        date: "Month 1",
+        date: "September",
         sent: 156_000,
         delivered: 147_000,
         converted: 11_760,
       },
       {
-        date: "Month 2",
+        date: "October",
         sent: 162_000,
         delivered: 153_000,
         converted: 12_240,
       },
       {
-        date: "Month 3",
+        date: "November",
         sent: 159_000,
         delivered: 150_000,
         converted: 12_000,
@@ -544,158 +536,24 @@ const mockPerformanceSnapshots: Record<RangeOption, PerformanceSnapshot> = {
     ],
     timeSeries: [
       {
-        date: "Month 1",
+        date: "September",
         reach: 405_000,
         clicks: 40_500,
-        conversions: 2_997,
+        conversions: 29_970,
         revenue: 239_760,
       },
       {
-        date: "Month 2",
+        date: "October",
         reach: 405_000,
         clicks: 40_500,
-        conversions: 2_997,
+        conversions: 29_970,
         revenue: 239_760,
       },
       {
-        date: "Month 3",
+        date: "November",
         reach: 405_000,
         clicks: 40_500,
-        conversions: 2_997,
-        revenue: 239_760,
-      },
-    ],
-  },
-  "3m": {
-    reach: {
-      reach: 1_620_000,
-    },
-    engagement: {
-      clicks: 162_000,
-      ctr: 10.0,
-      openRate: 68.0,
-      engagementRate: 12.7,
-    },
-    conversion: {
-      conversions: 11_988,
-      cvr: 7.4,
-      cpc: 0.43,
-      cpl: 6.1,
-      cpa: 18.0,
-      roas: 4.4,
-      revenue: 959_040,
-      spend: 222_750,
-    },
-    channels: [
-      {
-        channel: "SMS",
-        reach: 585_000,
-        clicks: 58_500,
-        opens: 409_500,
-        conversions: 4_680,
-        revenue: 374_400,
-        spend: 87_750,
-        ctr: 10.0,
-        openRate: 70.0,
-        cvr: 8.0,
-        cpc: 0.5,
-        cpl: 6.25,
-        cpa: 18.75,
-        roas: 4.3,
-        engagementRate: 0,
-      },
-      {
-        channel: "Email",
-        reach: 450_000,
-        clicks: 45_000,
-        opens: 297_000,
-        conversions: 3_375,
-        revenue: 270_000,
-        spend: 67_500,
-        ctr: 10.0,
-        openRate: 66.0,
-        cvr: 7.5,
-        cpc: 0.4,
-        cpl: 6.0,
-        cpa: 20.0,
-        roas: 4.0,
-        engagementRate: 0,
-      },
-      {
-        channel: "Push",
-        reach: 315_000,
-        clicks: 31_500,
-        opens: 220_500,
-        conversions: 2_268,
-        revenue: 181_440,
-        spend: 47_250,
-        ctr: 10.0,
-        openRate: 70.0,
-        cvr: 7.2,
-        cpc: 0.5,
-        cpl: 6.5,
-        cpa: 20.83,
-        roas: 3.8,
-        engagementRate: 0,
-      },
-      {
-        channel: "Social",
-        reach: 270_000,
-        clicks: 27_000,
-        opens: 0,
-        conversions: 1_539,
-        revenue: 123_120,
-        spend: 21_600,
-        ctr: 10.0,
-        openRate: 0,
-        cvr: 5.7,
-        cpc: 0.8,
-        cpl: 7.0,
-        cpa: 13.95,
-        roas: 5.7,
-        engagementRate: 15.5,
-      },
-    ],
-    smsDelivery: [
-      {
-        date: "Month 1",
-        sent: 156_000,
-        delivered: 147_000,
-        converted: 11_760,
-      },
-      {
-        date: "Month 2",
-        sent: 162_000,
-        delivered: 153_000,
-        converted: 12_240,
-      },
-      {
-        date: "Month 3",
-        sent: 159_000,
-        delivered: 150_000,
-        converted: 12_000,
-      },
-    ],
-    timeSeries: [
-      {
-        date: "Month 1",
-        reach: 405_000,
-        clicks: 40_500,
-        conversions: 2_997,
-        revenue: 239_760,
-      },
-      {
-        date: "Month 2",
-        reach: 405_000,
-        clicks: 40_500,
-        conversions: 2_997,
-        revenue: 239_760,
-      },
-      {
-        date: "Month 3",
-        reach: 405_000,
-        clicks: 40_500,
-        conversions: 2_997,
+        conversions: 29_970,
         revenue: 239_760,
       },
     ],
@@ -714,20 +572,35 @@ const formatCurrency = (value: number) => {
 };
 
 const chartColors = {
-  clicks: colors.status.info,
-  conversions: colors.status.success,
-  ctr: colors.status.warning,
-  cvr: colors.status.danger,
-  sent: colors.primary.accent,
-  delivered: colors.status.info,
-  converted: colors.status.success,
+  // Channel Performance
+  clicks: "#3b82f6", // Blue
+  conversions: "#10b981", // Green
+  ctr: "#f59e0b", // Orange
+  cvr: "#ef4444", // Red
+  // SMS Delivery
+  sent: colors.tertiary.tag1, // Purple - initial send
+  delivered: "#3b82f6", // Blue - successful delivery
+  converted: "#15803d", // Dark Green - final conversion success
+  // Time Series
+  reach: "#6366f1", // Indigo
+  timeClicks: colors.tertiary.tag1, // Purple for time series clicks
+  timeConversions: colors.tertiary.tag3, // Yellow/Orange for conversions
+  revenue: colors.status.success, // Green for revenue
 };
 
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: TooltipProps<number, string>) => {
+type ChartTooltipEntry = {
+  color?: string;
+  name?: string;
+  value?: number | string;
+};
+
+type ChartTooltipProps = {
+  active?: boolean;
+  payload?: ChartTooltipEntry[];
+  label?: string;
+};
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
@@ -757,14 +630,13 @@ const CustomTooltip = ({
 
 export default function OverallDashboardPerformancePage() {
   // Independent filter states for each chart
-  const [channelChartRange, setChannelChartRange] =
-    useState<RangeOption>("30d");
+  const [channelChartRange, setChannelChartRange] = useState<RangeOption>("7d");
   const [channelFilter, setChannelFilter] =
     useState<ChannelFilter>("All Channels");
   const [smsDeliveryChartRange, setSmsDeliveryChartRange] =
-    useState<RangeOption>("30d");
+    useState<RangeOption>("7d");
   const [timeSeriesChartRange, setTimeSeriesChartRange] =
-    useState<RangeOption>("30d");
+    useState<RangeOption>("7d");
 
   // Stat cards always use 30d snapshot (fixed)
   const kpiSnapshot = mockPerformanceSnapshots["30d"];
@@ -807,9 +679,7 @@ export default function OverallDashboardPerformancePage() {
             <p className="mt-2 text-3xl font-bold text-gray-900">
               {formatNumber(kpiSnapshot.reach.reach)}
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Number of unique users who received your message
-            </p>
+            <p className="mt-1 text-xs text-gray-500">Users reached</p>
           </div>
           <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
@@ -823,7 +693,7 @@ export default function OverallDashboardPerformancePage() {
               {formatNumber(kpiSnapshot.engagement.clicks)}
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Total number of users who clicked on links in your campaigns
+              Total clicks on campaign links
             </p>
           </div>
           <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
@@ -840,7 +710,7 @@ export default function OverallDashboardPerformancePage() {
               {kpiSnapshot.engagement.ctr.toFixed(1)}%
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Percentage of messages that resulted in clicks
+              Messages clicked vs sent
             </p>
           </div>
           <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
@@ -855,7 +725,7 @@ export default function OverallDashboardPerformancePage() {
               {kpiSnapshot.engagement.openRate.toFixed(1)}%
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Percentage of recipients who opened your email or SMS message
+              Messages opened vs sent
             </p>
           </div>
           <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
@@ -870,8 +740,7 @@ export default function OverallDashboardPerformancePage() {
               {formatNumber(kpiSnapshot.conversion.conversions)}
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Total number of users who completed a desired action (purchase,
-              sign-up, download, etc.)
+              Total completed actions
             </p>
           </div>
           <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
@@ -888,8 +757,7 @@ export default function OverallDashboardPerformancePage() {
               {kpiSnapshot.conversion.cvr.toFixed(1)}%
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Percentage of clicks that resulted in conversions - measures
-              campaign effectiveness
+              Clicks converted to actions
             </p>
           </div>
         </div>
@@ -955,7 +823,11 @@ export default function OverallDashboardPerformancePage() {
                 yAxisId="left"
                 tick={{ fill: "#6b7280" }}
                 axisLine={{ stroke: "#e5e7eb" }}
-                label={{ value: "Volume", angle: -90, position: "insideLeft" }}
+                label={{
+                  value: "Interactions",
+                  angle: -90,
+                  position: "insideLeft",
+                }}
                 width={90}
                 tickFormatter={(value) => formatNumber(value)}
               />
@@ -1063,7 +935,11 @@ export default function OverallDashboardPerformancePage() {
               <YAxis
                 tick={{ fill: "#6b7280" }}
                 axisLine={{ stroke: "#e5e7eb" }}
-                label={{ value: "Volume", angle: -90, position: "insideLeft" }}
+                label={{
+                  value: "Message Count",
+                  angle: -90,
+                  position: "insideLeft",
+                }}
                 width={90}
                 tickFormatter={(value) => formatNumber(value)}
               />
@@ -1146,7 +1022,7 @@ export default function OverallDashboardPerformancePage() {
                 yAxisId="left"
                 tick={{ fill: "#6b7280" }}
                 axisLine={{ stroke: "#e5e7eb" }}
-                label={{ value: "Volume", angle: -90, position: "insideLeft" }}
+                label={{ value: "Users", angle: -90, position: "insideLeft" }}
                 width={90}
                 tickFormatter={(value) => formatNumber(value)}
               />
@@ -1156,11 +1032,12 @@ export default function OverallDashboardPerformancePage() {
                 tick={{ fill: "#6b7280" }}
                 axisLine={{ stroke: "#e5e7eb" }}
                 label={{
-                  value: "Revenue ($)",
+                  value: "Revenue",
                   angle: 90,
                   position: "insideRight",
+                  offset: 10,
                 }}
-                width={60}
+                width={80}
                 tickFormatter={(value) => formatCurrency(value)}
               />
               <Tooltip
@@ -1174,7 +1051,7 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="reach"
-                fill={chartColors.clicks}
+                fill={chartColors.reach}
                 name="Reach"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1182,7 +1059,7 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="clicks"
-                fill={chartColors.clicks}
+                fill={chartColors.timeClicks}
                 name="Clicks"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1190,7 +1067,7 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="conversions"
-                fill={chartColors.conversions}
+                fill={chartColors.timeConversions}
                 name="Conversions"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1199,10 +1076,10 @@ export default function OverallDashboardPerformancePage() {
                 yAxisId="right"
                 type="monotone"
                 dataKey="revenue"
-                stroke={chartColors.cvr}
+                stroke={chartColors.revenue}
                 strokeWidth={2.5}
                 name="Revenue"
-                dot={{ fill: chartColors.cvr, r: 4 }}
+                dot={{ fill: chartColors.revenue, r: 4 }}
               />
             </ComposedChart>
           </ResponsiveContainer>

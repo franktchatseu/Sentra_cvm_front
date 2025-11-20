@@ -1043,19 +1043,19 @@ export default function UserManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white border border-gray-200 rounded-md p-6 overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner
               variant="modern"
-              size="lg"
+              size="xl"
               color="primary"
-              className="mr-3"
+              className="mb-4"
             />
-            <span className={`${tw.textSecondary}`}>
+            <p className={`${tw.textMuted} font-medium text-sm`}>
               Loading {activeTab}...
-            </span>
+            </p>
           </div>
         ) : errorState ? (
           <div className="p-8 text-center">
@@ -1100,52 +1100,52 @@ export default function UserManagementPage() {
           ) : (
             <>
               {/* Desktop Table */}
-              <div className="max-md:hidden overflow-x-auto -mx-6 -mt-6">
-                <table className="w-full">
-                  <thead
-                    className={`border-b ${tw.borderDefault}`}
-                    style={{ background: color.surface.tableHeader }}
-                  >
+              <div className="hidden lg:block overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead style={{ background: color.surface.tableHeader }}>
                     <tr>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         User
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Department
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Role
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Status
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Created
                       </th>
                       <th
-                        className={`px-6 py-4 text-right text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody>
                     {filteredUsers.map((user) => {
                       const normalizedStatus = normalizeStatus(user);
                       const userIsActive = normalizedStatus === "active";
@@ -1153,41 +1153,62 @@ export default function UserManagementPage() {
                       const statusColor = getStatusColorToken(normalizedStatus);
 
                       return (
-                        <tr
-                          key={user.id}
-                          className="hover:bg-gray-50/30 transition-colors"
-                        >
-                          <td className="px-6 py-4">
+                        <tr key={user.id} className="transition-colors">
+                          <td
+                            className="px-6 py-4"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <div>
                               <button
                                 type="button"
                                 onClick={() => handleViewUser(user)}
-                                className="text-base font-semibold text-black transition-colors hover:opacity-80"
+                                className={`font-semibold text-sm sm:text-base ${tw.textPrimary} transition-colors hover:opacity-80 truncate`}
+                                title={`${user.first_name} ${user.last_name}`}
                               >
                                 {user.first_name} {user.last_name}
                               </button>
-                              <div className={`text-sm ${tw.textMuted}`}>
+                              <div
+                                className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                                title={user.email_address || user.email}
+                              >
                                 {user.email_address || user.email}
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td
+                            className="px-6 py-4 hidden lg:table-cell"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                             >
                               {user.department || "N/A"}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td
+                            className="px-6 py-4 hidden xl:table-cell"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                             >
                               {getUserRoleName(user)}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td
+                            className="px-6 py-4"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                                 userIsActive
                                   ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
                                   : `bg-[${statusColor}]/10 text-[${statusColor}]`
@@ -1196,19 +1217,27 @@ export default function UserManagementPage() {
                               {statusLabel}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className={`text-sm ${tw.textSecondary}`}>
-                              {new Date(user.created_at).toLocaleDateString(
-                                "en-US",
-                                {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                }
-                              )}
-                            </div>
+                          <td
+                            className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {new Date(user.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td
+                            className="px-6 py-4 text-sm font-medium"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <div className="flex items-center justify-end space-x-2">
                               <button
                                 onClick={() => handleToggleStatus(user)}
@@ -1436,40 +1465,40 @@ export default function UserManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto -mx-6 -mt-6">
-              <table className="w-full">
-                <thead
-                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
-                  style={{ background: color.surface.tableHeader }}
-                >
+            <div className="hidden lg:block overflow-x-auto">
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+              >
+                <thead style={{ background: color.surface.tableHeader }}>
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Applicant
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested Role
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested
                     </th>
                     <th
-                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {filteredRequests.map((request, index) => {
                     const requestId = resolveAccountRequestId(request);
                     const requestKey =
@@ -1507,35 +1536,46 @@ export default function UserManagementPage() {
                     const requestRole = getPendingRequestRole(request);
 
                     return (
-                      <tr
-                        key={requestKey}
-                        className="hover:bg-gray-50/30 transition-colors"
-                      >
-                        <td className="px-6 py-4">
+                      <tr key={requestKey} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
                           <div>
                             <div
-                              className={`text-base font-semibold ${tw.textPrimary}`}
+                              className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                              title={fullName}
                             >
                               {fullName}
                             </div>
-                            <div className={`text-sm ${tw.textMuted}`}>
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                              title={requestEmail}
+                            >
                               {requestEmail}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td
+                          className="px-6 py-4 hidden lg:table-cell"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                            className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                           >
                             {requestRole}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className={`text-sm ${tw.textSecondary}`}>
-                            {formattedDate}
-                          </div>
+                        <td
+                          className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          {formattedDate}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td
+                          className="px-6 py-4 text-sm font-medium"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => handleApproveRequest(request)}

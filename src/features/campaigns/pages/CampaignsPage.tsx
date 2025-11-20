@@ -240,7 +240,7 @@ export default function CampaignsPage() {
     }
   };
 
-  // Fetch campaign categories from API
+  // Fetch Campaigns catalogs from API
   const fetchCategories = useCallback(async () => {
     try {
       const response = await campaignService.getCampaignCategories();
@@ -262,7 +262,7 @@ export default function CampaignsPage() {
     } catch (error) {
       showToast(
         "error",
-        "Failed to load campaign categories. Please try again."
+        "Failed to load Campaigns catalogs. Please try again."
       );
       setCategories([]);
     }
@@ -1098,7 +1098,7 @@ export default function CampaignsPage() {
       </div>
 
       <div
-        className={`bg-white rounded-md border border-[${color.border.default}]`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -1113,60 +1113,58 @@ export default function CampaignsPage() {
             </p>
           </div>
         ) : filteredCampaigns.length > 0 ? (
-          <div className="overflow-x-auto rounded-md border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead
-                className={`border-b ${tw.borderDefault}`}
-                style={{ background: color.surface.tableHeader }}
-              >
+          <div className="hidden lg:block overflow-x-auto">
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
                 <tr>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Campaign name
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Status
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Segment
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Performance
                   </th>
                   <th
-                    className={`px-3 sm:px-4 py-3 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Dates
                   </th>
                   <th
-                    className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody
-                className={`bg-white divide-y divide-[${color.border.default}]/50`}
-              >
+              <tbody>
                 {filteredCampaigns.map((campaign) => (
-                  <tr
-                    key={campaign.id}
-                    className={`group hover:bg-gray-50/30 transition-all duration-300 relative`}
-                  >
-                    <td className="px-3 sm:px-4 md:px-6 py-3 min-w-[200px]">
+                  <tr key={campaign.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <div>
                         <div
                           className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
@@ -1184,7 +1182,10 @@ export default function CampaignsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-3 sm:px-4 md:px-6 py-3">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <span
                         className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusBadge(
                           campaign.status
@@ -1194,7 +1195,10 @@ export default function CampaignsPage() {
                           campaign.status.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-3 hidden lg:table-cell">
+                    <td
+                      className="px-6 py-4 hidden lg:table-cell"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <div className="flex items-center space-x-2">
                         <Users
                           className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`}
@@ -1204,7 +1208,10 @@ export default function CampaignsPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-3 hidden md:table-cell">
+                    <td
+                      className="px-6 py-4 hidden md:table-cell"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       {campaign.performance ? (
                         <div className="space-y-1">
                           <div className="flex justify-between text-sm">
@@ -1237,14 +1244,15 @@ export default function CampaignsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 sm:px-4 py-3 hidden lg:table-cell min-w-[160px] max-w-[200px]">
+                    <td
+                      className="px-6 py-4 hidden lg:table-cell min-w-[160px] max-w-[200px]"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <div className={`text-xs sm:text-sm ${tw.textPrimary}`}>
                         {campaign.startDate ? (
                           (() => {
-                            // Parse date - handle both ISO strings and formatted strings
                             let startDate: Date;
                             let endDate: Date | null = null;
-
                             try {
                               startDate = new Date(campaign.startDate);
                               if (campaign.endDate) {
@@ -1257,8 +1265,6 @@ export default function CampaignsPage() {
                                 </span>
                               );
                             }
-
-                            // Check if dates are valid
                             if (isNaN(startDate.getTime())) {
                               return (
                                 <span className="text-gray-400 text-xs">
@@ -1266,24 +1272,17 @@ export default function CampaignsPage() {
                                 </span>
                               );
                             }
-
-                            // Format dates compactly
-                            const formatDateCompact = (date: Date) => {
-                              return date.toLocaleDateString("en-US", {
+                            const formatDateCompact = (date: Date) =>
+                              date.toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                               });
-                            };
-
-                            const formatDateWithYear = (date: Date) => {
-                              return date.toLocaleDateString("en-US", {
+                            const formatDateWithYear = (date: Date) =>
+                              date.toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
                               });
-                            };
-
-                            // Format start date
                             let startDateDisplay =
                               formatDateWithYear(startDate);
                             if (endDate && !isNaN(endDate.getTime())) {
@@ -1292,38 +1291,28 @@ export default function CampaignsPage() {
                               const sameYear =
                                 startDate.getFullYear() ===
                                 endDate.getFullYear();
-
                               if (sameMonth && sameYear) {
-                                // Same month and year: "Nov 10"
                                 startDateDisplay = formatDateCompact(startDate);
                               } else if (sameYear) {
-                                // Same year, different month: "Nov 10"
                                 startDateDisplay = formatDateCompact(startDate);
                               }
                             }
-
-                            // Format end date
                             let endDateDisplay =
                               endDate && !isNaN(endDate.getTime())
                                 ? formatDateWithYear(endDate)
                                 : null;
-
                             if (endDate && !isNaN(endDate.getTime())) {
                               const sameMonth =
                                 startDate.getMonth() === endDate.getMonth();
                               const sameYear =
                                 startDate.getFullYear() ===
                                 endDate.getFullYear();
-
                               if (sameMonth && sameYear) {
-                                // Same month and year: "Nov 15, 2025"
                                 endDateDisplay = `${endDate.getDate()}, ${endDate.getFullYear()}`;
                               } else if (sameYear) {
-                                // Same year, different month: "Dec 15, 2025"
                                 endDateDisplay = formatDateWithYear(endDate);
                               }
                             }
-
                             return (
                               <div className="space-y-0.5">
                                 <div className="flex items-center gap-1.5">
@@ -1354,7 +1343,10 @@ export default function CampaignsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-3">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() =>
@@ -1365,7 +1357,6 @@ export default function CampaignsPage() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        {/* Only show pause/resume for campaigns that can be paused/resumed */}
                         {campaign.status === "paused" ? (
                           <button
                             onClick={() => handleResumeCampaign(campaign.id)}

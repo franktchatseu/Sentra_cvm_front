@@ -223,7 +223,7 @@ class SegmentService {
     return queryString ? `?${queryString}` : "";
   }
 
-  // ==================== SEGMENT CATEGORIES (8 endpoints) ====================
+  // ==================== segment catalogs (8 endpoints) ====================
 
   /**
    * GET /segment-categories/root - Get all categories

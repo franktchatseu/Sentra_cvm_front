@@ -874,7 +874,7 @@ export default function SegmentManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white rounded-md border border-[${color.border.default}] `}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -926,76 +926,87 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto rounded-md border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead
-                  className={`border-b ${tw.borderDefault}`}
-                  style={{ background: color.surface.tableHeader }}
-                >
+            <div className="hidden lg:block overflow-x-auto">
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+              >
+                <thead style={{ background: color.surface.tableHeader }}>
                   <tr>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Segment
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Type
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Tags
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Customers
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Visibility
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Created
                     </th>
                     <th
-                      className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`bg-white divide-y ${tw.borderDefault}/50`}>
+                <tbody>
                   {filteredSegments.map((segment) => (
-                    <tr
-                      key={segment.id}
-                      className={`group hover:bg-gray-50/30 transition-all duration-300`}
-                    >
-                      <td className="px-6 py-4">
-                        <div
-                          className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.primary.accent}] transition-colors`}
-                        >
-                          {segment.name}
-                        </div>
-                        <div className={`text-sm ${tw.textSecondary} mt-1`}>
-                          {segment.description}
+                    <tr key={segment.id} className="transition-colors">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div>
+                          <div
+                            className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                            title={segment.name}
+                          >
+                            {segment.name}
+                          </div>
+                          {segment.description && (
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                              title={segment.description}
+                            >
+                              {segment.description}
+                            </div>
+                          )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                             segment.type === "dynamic"
                               ? `bg-[${color.primary.accent}]`
                               : segment.type === "static"
@@ -1017,14 +1028,17 @@ export default function SegmentManagementPage() {
                             : "N/A"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4 hidden xl:table-cell"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div className="flex flex-wrap gap-1">
                           {segment.tags && segment.tags.length > 0 ? (
                             <>
                               {segment.tags.slice(0, 2).map((tag) => (
                                 <span
                                   key={tag}
-                                  className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
+                                  className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-xs font-medium rounded-full`}
                                 >
                                   <Tag className="w-3 h-3 mr-1" />
                                   {tag}
@@ -1032,20 +1046,23 @@ export default function SegmentManagementPage() {
                               ))}
                               {segment.tags.length > 2 && (
                                 <span
-                                  className={`inline-flex items-center px-2 py-1 text-sm font-medium ${tw.textMuted}`}
+                                  className={`inline-flex items-center px-2 py-1 text-xs font-medium ${tw.textMuted}`}
                                 >
                                   +{segment.tags.length - 2} more
                                 </span>
                               )}
                             </>
                           ) : (
-                            <span className={`text-sm ${tw.textMuted}`}>
+                            <span className={`text-xs ${tw.textMuted}`}>
                               No tags
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div className="flex items-center space-x-2">
                           <Users
                             className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`}
@@ -1055,9 +1072,12 @@ export default function SegmentManagementPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4 hidden lg:table-cell"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                             segment.visibility === "public"
                               ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
                               : `bg-[${color.status.info}]/10 text-[${color.status.info}]`
@@ -1068,23 +1088,23 @@ export default function SegmentManagementPage() {
                             : "Private"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`text-sm ${tw.textPrimary} font-medium`}
-                          >
-                            {new Date(segment.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </div>
-                        </div>
+                      <td
+                        className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textPrimary}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {new Date(segment.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </td>
-                      <td className="px-6 py-5">
+                      <td
+                        className="px-6 py-4 text-sm font-medium"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleViewSegment(segment.id)}

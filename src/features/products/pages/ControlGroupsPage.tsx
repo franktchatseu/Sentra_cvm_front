@@ -273,151 +273,202 @@ export default function ControlGroupsPage() {
       </div>
 
       {/* Control Groups Table */}
-      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Generation Time
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Percentage
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Member Count
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer Base
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Recurrence
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredGroups.map((group) => (
-                <tr
-                  key={group.id}
-                  className="hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div
-                          className="h-10 w-10 rounded-md flex items-center justify-center"
-                          style={{
-                            backgroundColor: `${color.primary.action}10`,
-                          }}
-                        >
-                          <Shield
-                            className="h-5 w-5"
-                            style={{ color: color.primary.action }}
-                          />
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {group.name}
-                        </div>
-                        {group.description && (
-                          <div className="text-sm text-gray-500">
-                            {group.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${
-                        group.status === "active"
-                          ? ""
-                          : group.status === "inactive"
-                          ? "bg-gray-100 text-gray-800 border-gray-200"
-                          : "bg-red-100 text-red-800 border-red-200"
-                      }`}
-                      style={
-                        group.status === "active"
-                          ? {
-                              backgroundColor: `${color.primary.action}10`,
-                              color: color.primary.action,
-                              borderColor: `${color.primary.action}20`,
-                            }
-                          : undefined
-                      }
-                    >
-                      {group.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      {group.generationTime}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Percent className="h-4 w-4 mr-2 text-gray-400" />
-                      {group.percentage}%
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Users className="h-4 w-4 mr-2 text-gray-400" />
-                      {group.memberCount.toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">
-                      {getCustomerBaseLabel(group.customerBase)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                      {getRecurrenceLabel(group.recurrence)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200"
-                        title="Edit"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-red-600 transition-colors duration-200"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                        title="More options"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+      <div
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
+      >
+        {filteredGroups.length > 0 ? (
+          <div className="hidden lg:block overflow-x-auto">
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Name
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Generation Time
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Percentage
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Member Count
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Customer Base
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Recurrence
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Empty State */}
-        {filteredGroups.length === 0 && (
+              </thead>
+              <tbody>
+                {filteredGroups.map((group) => (
+                  <tr key={group.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div
+                            className="h-10 w-10 rounded-md flex items-center justify-center"
+                            style={{
+                              backgroundColor: `${color.primary.action}10`,
+                            }}
+                          >
+                            <Shield
+                              className="h-5 w-5"
+                              style={{ color: color.primary.action }}
+                            />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div
+                            className={`font-semibold text-sm sm:text-base ${tw.textPrimary}`}
+                          >
+                            {group.name}
+                          </div>
+                          {group.description && (
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                            >
+                              {group.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <span
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${
+                          group.status === "active"
+                            ? ""
+                            : group.status === "inactive"
+                            ? "bg-gray-100 text-gray-800 border-gray-200"
+                            : "bg-red-100 text-red-800 border-red-200"
+                        }`}
+                        style={
+                          group.status === "active"
+                            ? {
+                                backgroundColor: `${color.primary.action}10`,
+                                color: color.primary.action,
+                                borderColor: `${color.primary.action}20`,
+                              }
+                            : undefined
+                        }
+                      >
+                        {group.status}
+                      </span>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                        {group.generationTime}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Percent className="h-4 w-4 mr-2 text-gray-400" />
+                        {group.percentage}%
+                      </div>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-gray-400" />
+                        {group.memberCount.toLocaleString()}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {getCustomerBaseLabel(group.customerBase)}
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                        {getRecurrenceLabel(group.recurrence)}
+                      </div>
+                    </td>
+                    <td
+                      className="px-6 py-4 text-sm font-medium"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                          title="More options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
           <div className="text-center py-12">
             <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">

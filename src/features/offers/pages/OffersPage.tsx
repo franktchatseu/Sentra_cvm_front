@@ -24,6 +24,7 @@ import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
@@ -947,13 +948,19 @@ export default function OffersPage() {
 
       {/* Offers Table */}
       <div
-        className={`bg-white rounded-md shadow-sm border border-[${color.border.default}] overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div
-              className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}
-            ></div>
+          <div className="flex flex-col items-center justify-center py-16">
+            <LoadingSpinner
+              variant="modern"
+              size="xl"
+              color="primary"
+              className="mb-4"
+            />
+            <p className={`${tw.textMuted} font-medium text-sm`}>
+              Loading offers...
+            </p>
           </div>
         ) : filteredOffers.length === 0 ? (
           <div className="flex items-center justify-center h-64">
@@ -970,80 +977,81 @@ export default function OffersPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-md border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead
-                className={`border-b ${tw.borderDefault}`}
-                style={{ background: color.surface.tableHeader }}
-              >
+          <div className="hidden lg:block overflow-x-auto">
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
                 <tr>
                   <th
-                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Offer
                   </th>
                   <th
-                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Category
                   </th>
                   <th
-                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Status
                   </th>
                   <th
-                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Approval
                   </th>
                   <th
-                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Created
                   </th>
                   <th
-                    className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody
-                className={`bg-white divide-y divide-[${color.border.default}]`}
-              >
+              <tbody>
                 {filteredOffers.map((offer) => (
-                  <tr
-                    key={offer.id}
-                    className="hover:bg-gray-50 transition-colors duration-150"
-                  >
-                    <td className="px-6 py-5">
-                      <div className="flex items-center space-x-4">
-                        <div className="min-w-0 flex-1">
-                          <div
-                            className={`font-semibold text-base ${tw.textPrimary} truncate`}
-                          >
-                            {offer.name}
-                          </div>
-                          <div
-                            className={`text-sm ${tw.textSecondary} truncate flex items-center space-x-2 mt-1`}
-                          >
-                            <span className="truncate">
-                              {offer.description}
-                            </span>
-                          </div>
+                  <tr key={offer.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div>
+                        <div
+                          className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                          title={offer.name}
+                        >
+                          {offer.name}
                         </div>
+                        {offer.description && (
+                          <div
+                            className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                            title={offer.description}
+                          >
+                            {offer.description}
+                          </div>
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                           getCategoryName(offer.category_id) === "Data Offers"
                             ? `bg-[${color.status.info}]/10 text-[${color.status.info}]`
                             : getCategoryName(offer.category_id) ===
@@ -1064,10 +1072,16 @@ export default function OffersPage() {
                         {getCategoryName(offer.category_id)}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       {getStatusBadge(offer.status)}
                     </td>
-                    <td className="px-6 py-5">
+                    <td
+                      className="px-6 py-4 hidden lg:table-cell"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       {getApprovalBadge(
                         offer.status === "approved"
                           ? "approved"
@@ -1076,12 +1090,18 @@ export default function OffersPage() {
                           : "pending"
                       )}
                     </td>
-                    <td className={`px-6 py-5 text-sm ${tw.textMuted}`}>
+                    <td
+                      className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       {offer.created_at
                         ? new Date(offer.created_at).toLocaleDateString()
                         : "N/A"}
                     </td>
-                    <td className="px-6 py-5 text-right text-sm font-medium">
+                    <td
+                      className="px-6 py-4 text-sm font-medium"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <div className="flex items-center justify-end space-x-2">
                         {/* Play/Pause buttons - Only show if approved (not draft, not expired/archived) */}
                         {offer.status === OfferStatusEnum.APPROVED && (
@@ -1549,7 +1569,7 @@ export default function OffersPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
+                  <h3 className="text-lg font-semibold text-gray-900">
                     Filter Offers
                   </h3>
                   <button

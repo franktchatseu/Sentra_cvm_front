@@ -670,7 +670,7 @@ class CampaignService {
   }
 
   /**
-   * Get campaign categories from new backend endpoint
+   * Get Campaigns catalogs from new backend endpoint
    */
   async getCampaignCategories(params?: {
     limit?: number;
@@ -922,7 +922,7 @@ class CampaignService {
   }
 
   /**
-   * Get active campaign categories
+   * Get active Campaigns catalogs
    */
   async getActiveCampaignCategories(params?: {
     limit?: number;
@@ -952,7 +952,7 @@ class CampaignService {
   }
 
   /**
-   * Get root campaign categories
+   * Get root Campaigns catalogs
    */
   async getRootCampaignCategories(params?: {
     limit?: number;
@@ -982,7 +982,7 @@ class CampaignService {
   }
 
   /**
-   * Search campaign categories
+   * Search Campaigns catalogs
    */
   async searchCampaignCategories(
     searchTerm: string,

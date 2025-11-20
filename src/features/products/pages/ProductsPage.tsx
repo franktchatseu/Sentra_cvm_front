@@ -22,6 +22,7 @@ import { ProductCategory } from "../types/productCategory";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -533,16 +534,19 @@ export default function ProductsPage() {
 
       {/* Products Table */}
       <div
-        className={`bg-white rounded-md shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div
-              className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}
-            ></div>
-            <span className={`ml-3 ${tw.textSecondary}`}>
+          <div className="flex flex-col items-center justify-center py-16">
+            <LoadingSpinner
+              variant="modern"
+              size="xl"
+              color="primary"
+              className="mb-4"
+            />
+            <p className={`${tw.textMuted} font-medium text-sm`}>
               Loading products...
-            </span>
+            </p>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">
@@ -571,160 +575,180 @@ export default function ProductsPage() {
             </button>
           </div>
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead
-                  className={`border-b ${tw.borderDefault}`}
-                  style={{ background: color.surface.tableHeader }}
-                >
-                  <tr>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Product
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Product ID
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      DA ID
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Category
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Status
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Created
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y divide-[${tw.borderDefault}]`}>
-                  {products.map((product) => {
-                    const categoryName =
-                      categories.find(
-                        (cat) => cat.id === parseInt(product.category_id)
-                      )?.name || "Uncategorized";
-                    const status = product.is_active ? "Active" : "Inactive";
-                    const statusBadge = product.is_active
-                      ? `bg-[${color.status.success}] text-[${color.status.success}]`
-                      : `bg-[${color.surface.cards}] text-[${color.text.primary}]`;
+          <div className="hidden lg:block overflow-x-auto">
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Product
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Product ID
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    DA ID
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Category
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Created
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => {
+                  const categoryName =
+                    categories.find(
+                      (cat) => cat.id === parseInt(product.category_id)
+                    )?.name || "Uncategorized";
+                  const status = product.is_active ? "Active" : "Inactive";
+                  const statusBadge = product.is_active
+                    ? `bg-[${color.status.success}] text-[${color.status.success}]`
+                    : `bg-[${color.surface.cards}] text-[${color.text.primary}]`;
 
-                    return (
-                      <tr
-                        key={product.id}
-                        className="hover:bg-gray-50 transition-colors"
+                  return (
+                    <tr key={product.id} className="transition-colors">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <td className="px-6 py-4">
+                        <div>
                           <div
-                            className={`text-base font-semibold ${tw.textPrimary}`}
+                            className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                            title={product.name}
                           >
                             {product.name}
                           </div>
-                          <div
-                            className={`text-sm ${tw.textMuted} truncate max-w-xs`}
+                          {product.description && (
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                              title={product.description}
+                            >
+                              {product.description || "No description"}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td
+                        className={`px-6 py-4 hidden lg:table-cell text-sm ${tw.textPrimary}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {product.product_id || product.id || "N/A"}
+                      </td>
+                      <td
+                        className={`px-6 py-4 hidden xl:table-cell text-sm ${tw.textPrimary}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {product.da_id || "N/A"}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <span
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                        >
+                          {categoryName}
+                        </span>
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <span
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${statusBadge}`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td
+                        className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {new Date(product.created_at).toLocaleDateString()}
+                      </td>
+                      <td
+                        className="px-6 py-4 text-sm font-medium"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() =>
+                              navigate(`/dashboard/products/${product.id}`)
+                            }
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                            title="View Details"
                           >
-                            {product.description || "No description"}
-                          </div>
-                        </td>
-                        <td className={`px-6 py-4 text-sm ${tw.textPrimary}`}>
-                          {product.product_id || product.id || "N/A"}
-                        </td>
-                        <td className={`px-6 py-4 text-sm ${tw.textPrimary}`}>
-                          {product.da_id || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 text-base">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/dashboard/products/${product.id}/edit`)
+                            }
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                            title="Edit Product"
                           >
-                            {categoryName}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-base">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${statusBadge}`}
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(product)}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                            title={
+                              product.is_active ? "Deactivate" : "Activate"
+                            }
                           >
-                            {status}
-                          </span>
-                        </td>
-                        <td className={`px-6 py-4 text-sm ${tw.textMuted}`}>
-                          {new Date(product.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() =>
-                                navigate(`/dashboard/products/${product.id}`)
-                              }
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/dashboard/products/${product.id}/edit`
-                                )
-                              }
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
-                              title="Edit Product"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleToggleStatus(product)}
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
-                              title={
-                                product.is_active ? "Deactivate" : "Activate"
-                              }
-                            >
-                              {product.is_active ? (
-                                <Pause className="w-4 h-4" />
-                              ) : (
-                                <Play className="w-4 h-4" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
-                              title="Delete Product"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
+                            {product.is_active ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

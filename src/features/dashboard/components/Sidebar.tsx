@@ -88,12 +88,7 @@ interface NavigationItem {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>([
-    "campaign management",
-    "offer management",
-    "product management",
-    "segment management",
-  ]);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const navigation: NavigationItem[] = [
     {
@@ -261,13 +256,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {
           name: "Overall Dashboard Performance",
           href: "/dashboard/reports/overview",
-          icon: LineChart,
-          type: "single",
-          entity: "analytics",
-        },
-        {
-          name: "Performance Reports",
-          href: "/dashboard/reports/performance",
           icon: Activity,
           type: "single",
           entity: "analytics",
@@ -341,31 +329,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     return `text-white/90 group-hover:text-white transition-colors duration-200`;
   };
 
-  const toggleExpanded = (itemName: string) => {
+  const parentItemNames = navigation
+    .filter((item) => item.type === "parent")
+    .map((item) => item.name.toLowerCase());
+
+  const toggleExpanded = (itemName: string, exclusiveItems?: string[]) => {
     setExpandedItems((prev) => {
-      // If clicking the same item, toggle it
       if (prev.includes(itemName)) {
         return prev.filter((item) => item !== itemName);
       }
 
-      // Special case: Management sections should close each other
-      if (
-        itemName === "offer management" ||
-        itemName === "product management" ||
-        itemName === "segment management"
-      ) {
-        // Close the other management sections if they're open, then open this one
-        const filtered = prev.filter(
-          (item) =>
-            item !== "offer management" &&
-            item !== "product management" &&
-            item !== "segment management"
-        );
-        return [...filtered, itemName];
-      }
+      const filtered = exclusiveItems
+        ? prev.filter((item) => !exclusiveItems.includes(item))
+        : prev;
 
-      // For all other items, allow multiple to be open
-      return [...prev, itemName];
+      return [...filtered, itemName];
     });
   };
 
@@ -435,7 +413,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <div key={item.name}>
                         <button
                           onClick={() =>
-                            toggleExpanded(item.name.toLowerCase())
+                            toggleExpanded(
+                              item.name.toLowerCase(),
+                              parentItemNames
+                            )
                           }
                           className={`group w-full flex items-center justify-between rounded-md p-3 text-sm transition-all duration-300 ease-out ${
                             !isActive ? "hover:scale-105 hover:shadow-lg" : ""
@@ -625,7 +606,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       }}
                     >
                       <button
-                        onClick={() => toggleExpanded(item.name.toLowerCase())}
+                        onClick={() =>
+                          toggleExpanded(
+                            item.name.toLowerCase(),
+                            parentItemNames
+                          )
+                        }
                         className={`group w-full flex items-center md:justify-center xl:justify-between rounded-md md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out ${
                           !isActive ? "hover:scale-105 hover:shadow-lg" : ""
                         } ${getItemClasses(isActive)}`}

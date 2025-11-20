@@ -179,7 +179,7 @@ function AssignItemsModal<T extends Item>({
                 </div>
               </div>
               <div>
-                <h2 className={`${tw.subHeading} text-gray-900`}>{title}</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
                 <p className="text-sm text-gray-600 mt-0.5">
                   {allItems.length} {itemName}s available •{" "}
                   {selectedItemIds.size} selected

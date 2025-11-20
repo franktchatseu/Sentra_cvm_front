@@ -154,8 +154,8 @@ export function ConfigurationModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className=" rounded-md shadow-2xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10050] p-4">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
             {item ? config.modalTitle.edit : config.modalTitle.create}
@@ -506,7 +506,6 @@ export default function GenericConfigurationPage({
                 <tbody>
                   {filteredItems.map((item) => (
                     <tr key={item.id} className="transition-colors">
-                      {/* NAME + ID */}
                       <td
                         className="px-6 py-4"
                         style={{
@@ -539,7 +538,6 @@ export default function GenericConfigurationPage({
                         </div>
                       </td>
 
-                      {/* ACTIONS */}
                       <td
                         className="px-6 py-4 text-right"
                         style={{
@@ -549,7 +547,6 @@ export default function GenericConfigurationPage({
                         }}
                       >
                         <div className="flex items-center justify-end space-x-2">
-                          {/* EDIT BUTTON */}
                           <button
                             onClick={() => handleEditItem(item)}
                             className="p-2 rounded-md transition-colors"
@@ -568,7 +565,6 @@ export default function GenericConfigurationPage({
                             <Edit className="w-4 h-4" />
                           </button>
 
-                          {/* DELETE BUTTON */}
                           <button
                             onClick={() => handleDeleteItem(item)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"

@@ -178,7 +178,7 @@ export default function CommunicationPolicyModal({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Start Time
             </label>
             <input
@@ -190,11 +190,11 @@ export default function CommunicationPolicyModal({
                   startTime: e.target.value,
                 }))
               }
-              className={`${components.input.default} w-full px-3 py-2`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
           <div>
-            <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               End Time
             </label>
             <input
@@ -206,12 +206,12 @@ export default function CommunicationPolicyModal({
                   endTime: e.target.value,
                 }))
               }
-              className={`${components.input.default} w-full px-3 py-2`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
         <div>
-          <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Days of Week
           </label>
           <div className="grid grid-cols-4 gap-2">
@@ -253,7 +253,7 @@ export default function CommunicationPolicyModal({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Period Type
             </label>
             <select
@@ -264,7 +264,7 @@ export default function CommunicationPolicyModal({
                   type: e.target.value as "daily" | "weekly" | "monthly",
                 }))
               }
-              className={`${components.input.default} w-full px-3 py-2`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
             >
               <option value="daily">Daily Maximum</option>
               <option value="weekly">Weekly Maximum</option>
@@ -272,7 +272,7 @@ export default function CommunicationPolicyModal({
             </select>
           </div>
           <div>
-            <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Maximum Count
             </label>
             <input
@@ -285,7 +285,7 @@ export default function CommunicationPolicyModal({
                   maxCount: parseInt(e.target.value) || 1,
                 }))
               }
-              className={`${components.input.default} w-full px-3 py-2`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -415,7 +415,7 @@ export default function CommunicationPolicyModal({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Action
             </label>
             <select
@@ -426,14 +426,14 @@ export default function CommunicationPolicyModal({
                   action: e.target.value as "include" | "exclude",
                 }))
               }
-              className={`${components.input.default} w-full px-3 py-2`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
             >
               <option value="include">Include VIP List</option>
               <option value="exclude">Exclude VIP List</option>
             </select>
           </div>
           <div>
-            <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Priority
             </label>
             <input
@@ -446,7 +446,7 @@ export default function CommunicationPolicyModal({
                   priority: parseInt(e.target.value) || 1,
                 }))
               }
-              className={`${components.input.default} w-full px-3 py-2`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -480,54 +480,46 @@ export default function CommunicationPolicyModal({
         <button
           type="button"
           onClick={() => toggleSection(type)}
-          className={`w-full px-6 py-4 flex items-center justify-between transition-all duration-200 ${
-            isExpanded
-              ? "bg-gradient-to-r from-white to-blue-50"
-              : `${tw.hover} bg-white`
+          className={`w-full px-4 py-4 flex items-center justify-between transition-all duration-200 rounded-md ${
+            isExpanded ? "bg-blue-50" : "bg-white hover:bg-gray-50"
           }`}
         >
           <div className="flex items-center gap-3">
             <div
-              className={`p-2 rounded-md transition-all duration-200 ${
-                isExpanded ? "shadow-sm" : tw.accent10
+              className={`p-2.5 rounded-md transition-all duration-200 ${
+                isExpanded ? "shadow-sm" : "bg-gray-100"
               }`}
               style={{
                 backgroundColor: isExpanded ? color.primary.accent : undefined,
-                color: isExpanded ? "white" : undefined,
+                color: isExpanded ? "white" : color.primary.accent,
               }}
             >
               {getTypeIcon(type)}
             </div>
             <div className="text-left">
               <h3
-                className={`${tw.cardTitle} transition-colors duration-200 ${
-                  isExpanded ? "font-semibold" : tw.textPrimary
+                className={`text-base transition-colors duration-200 ${
+                  isExpanded
+                    ? "font-semibold text-gray-900"
+                    : "font-medium text-gray-700"
                 }`}
-                style={{
-                  color: isExpanded ? color.primary.action : undefined,
-                }}
               >
                 {policyType.label}
               </h3>
-              <p className={`${tw.caption} ${tw.textMuted} mt-0.5`}>
+              <p className="text-xs text-gray-500 mt-0.5">
                 {policyType.description}
               </p>
             </div>
           </div>
           {isExpanded ? (
-            <ChevronUp
-              className="w-5 h-5 transition-colors duration-200"
-              style={{
-                color: color.primary.accent,
-              }}
-            />
+            <ChevronUp className="w-5 h-5 transition-colors duration-200 text-gray-600" />
           ) : (
             <ChevronDown className="w-5 h-5 text-gray-400 transition-colors duration-200" />
           )}
         </button>
 
         {isExpanded && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="px-4 py-5 bg-gray-50">
             {type === "timeWindow" && renderTimeWindowConfig()}
             {type === "maximumCommunication" && renderMaxCommunicationConfig()}
             {type === "dnd" && renderDNDConfig()}
@@ -546,63 +538,68 @@ export default function CommunicationPolicyModal({
         className={`${components.card.surface} w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col`}
       >
         {/* Header */}
-        <div
-          className={`flex items-center justify-between p-6 ${tw.borderDefault} border-b`}
-        >
-          <div>
-            <h2 className={`${tw.subtitle} ${tw.textPrimary}`}>
-              {policy
-                ? "Edit Communication Policy"
-                : "Create Communication Policy"}
-            </h2>
-            <p className={`${tw.caption} ${tw.textMuted} mt-1`}>
-              Configure all policy types in one place
-            </p>
+        <div style={{ backgroundColor: color.surface.background }}>
+          <div className="flex items-center justify-between pt-5 pb-3 px-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {policy
+                  ? "Edit Communication Policy"
+                  : "Create Communication Policy"}
+              </h2>
+              <p className={`${tw.caption} ${tw.textMuted} mt-1`}>
+                Configure all policy types in one place
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className={`p-2 ${tw.hover} rounded-md transition-colors hover:bg-gray-100`}
+              title="Close"
+            >
+              <X className={`w-5 h-5 ${tw.textMuted}`} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className={`p-2 ${tw.hover} rounded-md transition-colors`}
-          >
-            <X className={`w-5 h-5 ${tw.textMuted}`} />
-          </button>
         </div>
 
         {/* Scrollable Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto"
+          style={{ backgroundColor: color.surface.background }}
+        >
+          <div className="space-y-6">
             {/* Basic Information */}
-            <div className="space-y-4">
+            <div className="px-4 pt-3 pb-6 space-y-5">
               <div>
-                <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
-                  Policy Name *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Policy Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className={`${components.input.default} w-full px-4 py-2.5`}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="Enter policy name"
                   required
                 />
               </div>
 
               <div>
-                <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className={`${components.input.default} w-full px-4 py-2.5`}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                   placeholder="Enter policy description"
-                  rows={2}
+                  rows={3}
                 />
               </div>
 
               {/* Communication Channels (Multi-select Dropdown) */}
               <div>
-                <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
-                  Communication Channels *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Communication Channels <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <button
@@ -610,7 +607,7 @@ export default function CommunicationPolicyModal({
                     onClick={() =>
                       setIsChannelDropdownOpen(!isChannelDropdownOpen)
                     }
-                    className={`${components.input.default} w-full px-3 py-2 text-left flex items-center justify-between`}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-md text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
                   >
                     <div className="flex items-center space-x-2">
                       {channels.length === 0 ? (
@@ -644,11 +641,11 @@ export default function CommunicationPolicyModal({
                   </button>
 
                   {isChannelDropdownOpen && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-y-auto">
                       {COMMUNICATION_CHANNELS.map((ch) => (
                         <label
                           key={ch.value}
-                          className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          className="flex items-start space-x-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
                         >
                           <input
                             type="checkbox"
@@ -662,16 +659,14 @@ export default function CommunicationPolicyModal({
                                 );
                               }
                             }}
-                            className="rounded"
+                            className="mt-1 rounded"
                             style={{ accentColor: color.primary.accent }}
                           />
-                          <div>
-                            <div
-                              className={`${tw.caption} font-medium ${tw.textPrimary}`}
-                            >
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">
                               {ch.label}
                             </div>
-                            <div className={`text-xs ${tw.textMuted}`}>
+                            <div className="text-xs text-gray-500 mt-0.5">
                               {ch.description}
                             </div>
                           </div>
@@ -680,31 +675,31 @@ export default function CommunicationPolicyModal({
                     </div>
                   )}
                 </div>
-                <p className={`${tw.caption} ${tw.textMuted} mt-2`}>
+                <p className="text-xs text-gray-500 mt-2">
                   Select one or more communication channels for this policy
                 </p>
               </div>
             </div>
 
             {/* All Policy Type Configurations */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className={`${tw.cardTitle} ${tw.textPrimary}`}>
+            <div className="px-4 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">
                   Policy Configurations
                 </h3>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setExpandedSection("timeWindow")}
-                    className={`${tw.caption} ${tw.textSecondary} hover:underline`}
+                    className="text-xs text-gray-600 hover:text-gray-900 hover:underline transition-colors"
                   >
                     Open First
                   </button>
-                  <span className={`${tw.textMuted}`}>|</span>
+                  <span className="text-gray-300">|</span>
                   <button
                     type="button"
                     onClick={() => setExpandedSection(null)}
-                    className={`${tw.caption} ${tw.textSecondary} hover:underline`}
+                    className="text-xs text-gray-600 hover:text-gray-900 hover:underline transition-colors"
                   >
                     Collapse All
                   </button>
@@ -717,7 +712,7 @@ export default function CommunicationPolicyModal({
             </div>
 
             {/* Active Status */}
-            <div className="pt-4 border-t border-gray-200">
+            <div className="px-4 pt-4">
               <label className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -739,7 +734,7 @@ export default function CommunicationPolicyModal({
 
             {error && (
               <div
-                className={`p-4 ${tw.statusDanger10} ${tw.borderDefault} border rounded-md`}
+                className={`px-4 p-4 ${tw.statusDanger10} ${tw.borderDefault} border rounded-md`}
               >
                 <p className={`${tw.caption} ${tw.danger}`}>{error}</p>
               </div>
@@ -748,19 +743,31 @@ export default function CommunicationPolicyModal({
 
           {/* Footer Actions */}
           <div
-            className={`flex items-center justify-end space-x-3 px-6 py-4 ${tw.borderDefault} border-t bg-gray-50`}
+            className="flex items-center justify-end gap-3 px-4 py-4"
+            style={{ backgroundColor: color.surface.background }}
           >
             <button
               type="button"
               onClick={onClose}
-              className={`px-4 py-2 ${tw.textSecondary} ${tw.hover} rounded-md transition-colors ${tw.body}`}
+              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className={`${tw.button} px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className="px-6 py-2.5 text-sm font-medium text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              style={{ backgroundColor: color.primary.action }}
+              onMouseEnter={(e) => {
+                if (!isSaving) {
+                  (e.target as HTMLButtonElement).style.opacity = "0.9";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSaving) {
+                  (e.target as HTMLButtonElement).style.opacity = "1";
+                }
+              }}
             >
               {isSaving
                 ? "Saving..."

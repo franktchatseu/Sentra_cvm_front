@@ -1329,9 +1329,7 @@ export default function OfferDetailsPage() {
       </div>
 
       {/* Linked Products Section */}
-      <section
-        className={`mt-12 bg-white rounded-md border border-[${color.border.default}] p-6 space-y-4`}
-      >
+      <section className="mt-12 space-y-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${tw.cardHeading}`}>Linked Products</h3>
           <div className="flex items-center gap-3">
@@ -1346,178 +1344,210 @@ export default function OfferDetailsPage() {
           </div>
         </div>
 
-        {productsLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <LoadingSpinner />
-          </div>
-        ) : linkedProducts.length > 0 ? (
-          <div
-            className={`overflow-x-auto border border-[${color.border.default}] rounded-md`}
-          >
-            <table className="w-full">
-              <thead
-                className={`border-b ${tw.borderDefault}`}
-                style={{ background: color.surface.tableHeader }}
+        <div
+          className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
+        >
+          {productsLoading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <LoadingSpinner
+                variant="modern"
+                size="xl"
+                color="primary"
+                className="mb-4"
+              />
+              <p className={`${tw.textMuted} font-medium text-sm`}>
+                Loading products...
+              </p>
+            </div>
+          ) : linkedProducts.length > 0 ? (
+            <div className="hidden lg:block overflow-x-auto">
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
               >
-                <tr>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Product
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Description
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Primary
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className={`bg-white divide-y divide-[${color.border.default}]`}
-              >
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {linkedProducts.map((product: any, index: number) => {
-                  const rawProductId = product.product_id ?? product.id;
-                  const productId =
-                    rawProductId !== undefined && rawProductId !== null
-                      ? Number(rawProductId)
-                      : null;
-                  const hasValidProductId =
-                    productId !== null && !Number.isNaN(productId);
-                  const productName =
-                    product.name ||
-                    product.product_code ||
-                    `Product ${hasValidProductId ? productId : index + 1}`;
-                  const isPrimary =
-                    product.is_primary ||
-                    (product.product_id &&
-                      product.product_id === primaryProductId);
-                  const isUnlinking =
-                    product.link_id && unlinkingProductId === product.link_id;
-                  const isSettingPrimary = false; // Feature disabled for now
-
-                  return (
-                    <tr
-                      key={
-                        product.link_id ||
-                        `product-${hasValidProductId ? productId : index}`
-                      }
-                      className="hover:bg-gray-50 transition-colors duration-150"
+                <thead style={{ background: color.surface.tableHeader }}>
+                  <tr>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
                     >
-                      <td className="px-6 py-5 text-sm font-medium text-gray-900">
-                        {hasValidProductId ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigateToProductDetails(productId as number)
-                            }
-                            className="hover:underline text-left"
-                            style={{ color: color.primary.accent }}
-                          >
-                            {productName}
-                          </button>
-                        ) : (
-                          <span>{productName}</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-5 text-sm text-gray-600">
-                        {product.description ? (
-                          <span className="line-clamp-2">
-                            {product.description}
-                          </span>
-                        ) : (
-                          <span className={`text-sm ${tw.textMuted}`}>
-                            No description provided
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-5 text-sm">
-                        {isPrimary ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
-                            Primary
-                          </span>
-                        ) : (
-                          <span className={`text-sm ${tw.textMuted}`}>—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-5 text-sm">
-                        <div className="flex items-center gap-3">
-                          {!isPrimary &&
-                            (product.link_id || hasValidProductId) && (
-                              <button
-                                type="button"
-                                onClick={handleSetPrimaryProduct}
-                                disabled={isSettingPrimary || isUnlinking}
-                                className="text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ color: color.primary.accent }}
-                                title="Set this product as the primary product"
-                              >
-                                Set Primary
-                              </button>
-                            )}
-                          {(product.link_id || hasValidProductId) && (
+                      Product
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Description
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Primary
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {linkedProducts.map((product: any, index: number) => {
+                    const rawProductId = product.product_id ?? product.id;
+                    const productId =
+                      rawProductId !== undefined && rawProductId !== null
+                        ? Number(rawProductId)
+                        : null;
+                    const hasValidProductId =
+                      productId !== null && !Number.isNaN(productId);
+                    const productName =
+                      product.name ||
+                      product.product_code ||
+                      `Product ${hasValidProductId ? productId : index + 1}`;
+                    const isPrimary =
+                      product.is_primary ||
+                      (product.product_id &&
+                        product.product_id === primaryProductId);
+                    const isUnlinking =
+                      product.link_id && unlinkingProductId === product.link_id;
+                    const isSettingPrimary = false; // Feature disabled for now
+
+                    return (
+                      <tr
+                        key={
+                          product.link_id ||
+                          `product-${hasValidProductId ? productId : index}`
+                        }
+                        className="transition-colors"
+                      >
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          {hasValidProductId ? (
                             <button
                               type="button"
-                              onClick={() => {
-                                if (!product.link_id) {
-                                  showError(
-                                    "Cannot unlink: Link ID not available. Product may need to be re-linked."
-                                  );
-                                  return;
-                                }
-                                handleUnlinkProduct(
-                                  product.link_id,
-                                  productName
-                                );
-                              }}
-                              disabled={
-                                isUnlinking ||
-                                isSettingPrimary ||
-                                !product.link_id
+                              onClick={() =>
+                                navigateToProductDetails(productId as number)
                               }
-                              className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                              title={productName}
+                              style={{ color: color.primary.accent }}
                             >
-                              {isUnlinking ? "Unlinking..." : "Unlink"}
+                              {productName}
                             </button>
+                          ) : (
+                            <span
+                              className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                            >
+                              {productName}
+                            </span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className={`text-sm ${tw.textMuted} mb-1`}>
-              No products linked to this offer.
-            </p>
-            <p className={`text-xs ${tw.textMuted}`}>
-              Click "Add Product" above to link products to this offer.
-            </p>
-          </div>
-        )}
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          {product.description ? (
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate`}
+                              title={product.description}
+                            >
+                              {product.description}
+                            </div>
+                          ) : (
+                            <span
+                              className={`text-xs sm:text-sm ${tw.textMuted}`}
+                            >
+                              No description provided
+                            </span>
+                          )}
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          {isPrimary ? (
+                            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800">
+                              Primary
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-xs sm:text-sm ${tw.textMuted}`}
+                            >
+                              —
+                            </span>
+                          )}
+                        </td>
+                        <td
+                          className="px-6 py-4 text-sm font-medium"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <div className="flex items-center gap-3">
+                            {!isPrimary &&
+                              (product.link_id || hasValidProductId) && (
+                                <button
+                                  type="button"
+                                  onClick={handleSetPrimaryProduct}
+                                  disabled={isSettingPrimary || isUnlinking}
+                                  className="text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:underline"
+                                  style={{ color: color.primary.accent }}
+                                  title="Set this product as the primary product"
+                                >
+                                  Set Primary
+                                </button>
+                              )}
+                            {(product.link_id || hasValidProductId) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!product.link_id) {
+                                    showError(
+                                      "Cannot unlink: Link ID not available. Product may need to be re-linked."
+                                    );
+                                    return;
+                                  }
+                                  handleUnlinkProduct(
+                                    product.link_id,
+                                    productName
+                                  );
+                                }}
+                                disabled={
+                                  isUnlinking ||
+                                  isSettingPrimary ||
+                                  !product.link_id
+                                }
+                                className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isUnlinking ? "Unlinking..." : "Unlink"}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className={`text-sm ${tw.textMuted} mb-1`}>
+                No products linked to this offer.
+              </p>
+              <p className={`text-xs ${tw.textMuted}`}>
+                Click "Add Product" above to link products to this offer.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Offer Creatives Section */}
-      <section
-        className={`mt-12 bg-white rounded-md border border-[${color.border.default}] p-6 space-y-4`}
-      >
+      <section className="mt-12 space-y-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${tw.cardHeading}`}>Offer Creatives</h3>
           <div className="flex items-center gap-3">
@@ -1535,156 +1565,201 @@ export default function OfferDetailsPage() {
           </div>
         </div>
 
-        {creativesLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <LoadingSpinner />
-          </div>
-        ) : offerCreatives.length > 0 ? (
-          <div
-            className={`overflow-x-auto border border-[${color.border.default}] rounded-md`}
-          >
-            <table className="w-full">
-              <thead
-                className={`border-b ${tw.borderDefault}`}
-                style={{ background: color.surface.tableHeader }}
+        <div
+          className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
+        >
+          {creativesLoading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <LoadingSpinner
+                variant="modern"
+                size="xl"
+                color="primary"
+                className="mb-4"
+              />
+              <p className={`${tw.textMuted} font-medium text-sm`}>
+                Loading creatives...
+              </p>
+            </div>
+          ) : offerCreatives.length > 0 ? (
+            <div className="hidden lg:block overflow-x-auto">
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
               >
-                <tr>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Name
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Channel
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Locale
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Status
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Updated
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className={`bg-white divide-y divide-[${color.border.default}]`}
-              >
-                {offerCreatives.map(
-                  (creative: OfferCreative, index: number) => {
-                    const creativeId =
-                      creative.id !== undefined && creative.id !== null
-                        ? Number(creative.id)
-                        : null;
-                    const hasCreativeId =
-                      creativeId !== null && !Number.isNaN(creativeId);
-                    const creativeLabel =
-                      creative.title ||
-                      `Creative ${creative.channel}${
-                        creative.locale ? ` (${creative.locale})` : ""
-                      }`;
+                <thead style={{ background: color.surface.tableHeader }}>
+                  <tr>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Name
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Channel
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Locale
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Updated
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{ color: color.surface.tableHeaderText }}
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {offerCreatives.map(
+                    (creative: OfferCreative, index: number) => {
+                      const creativeId =
+                        creative.id !== undefined && creative.id !== null
+                          ? Number(creative.id)
+                          : null;
+                      const hasCreativeId =
+                        creativeId !== null && !Number.isNaN(creativeId);
+                      const creativeLabel =
+                        creative.title ||
+                        `Creative ${creative.channel}${
+                          creative.locale ? ` (${creative.locale})` : ""
+                        }`;
 
-                    return (
-                      <tr
-                        key={`creative-${creative.id || creative.channel}-${
-                          creative.locale
-                        }-${index}`}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <td className="px-6 py-5 text-sm font-medium text-gray-900">
-                          {hasCreativeId ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigateToCreativeDetails(creativeId as number)
-                              }
-                              className="hover:underline"
-                              style={{ color: color.primary.accent }}
-                            >
-                              {creativeLabel}
-                            </button>
-                          ) : (
-                            <span>{creativeLabel}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-5 text-sm text-gray-600">
-                          {creative.channel}
-                        </td>
-                        <td className="px-6 py-5 text-sm text-gray-600">
-                          {creative.locale || "—"}
-                        </td>
-                        <td className="px-6 py-5 text-sm">
-                          {creative.is_active ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-5 text-sm text-gray-600">
-                          {creative.updated_at
-                            ? new Date(creative.updated_at).toLocaleString()
-                            : creative.created_at
-                            ? new Date(creative.created_at).toLocaleString()
-                            : "—"}
-                        </td>
-                        <td className="px-6 py-5 text-sm">
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleEditCreative(creative)}
-                              className="text-sm font-medium hover:underline"
-                              style={{ color: color.primary.accent }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCreative(creative)}
-                              className="text-sm font-medium text-red-600 hover:text-red-700"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className={`text-sm ${tw.textMuted}`}>
-              No creatives created for this offer. Click "Add Creative" above to
-              create one.
-            </p>
-          </div>
-        )}
+                      return (
+                        <tr
+                          key={`creative-${creative.id || creative.channel}-${
+                            creative.locale
+                          }-${index}`}
+                          className="transition-colors"
+                        >
+                          <td
+                            className="px-6 py-4"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {hasCreativeId ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigateToCreativeDetails(
+                                    creativeId as number
+                                  )
+                                }
+                                className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                                title={creativeLabel}
+                                style={{ color: color.primary.accent }}
+                              >
+                                {creativeLabel}
+                              </button>
+                            ) : (
+                              <span
+                                className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                              >
+                                {creativeLabel}
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {creative.channel}
+                          </td>
+                          <td
+                            className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {creative.locale || "—"}
+                          </td>
+                          <td
+                            className="px-6 py-4"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {creative.is_active ? (
+                              <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800">
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-600">
+                                Inactive
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {creative.updated_at
+                              ? new Date(creative.updated_at).toLocaleString()
+                              : creative.created_at
+                              ? new Date(creative.created_at).toLocaleString()
+                              : "—"}
+                          </td>
+                          <td
+                            className="px-6 py-4 text-sm font-medium"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleEditCreative(creative)}
+                                className="text-sm font-medium hover:underline"
+                                style={{ color: color.primary.accent }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCreative(creative)}
+                                className="text-sm font-medium text-red-600 hover:text-red-700"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className={`text-sm ${tw.textMuted}`}>
+                No creatives created for this offer. Click "Add Creative" above
+                to create one.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Add Creative Modal */}

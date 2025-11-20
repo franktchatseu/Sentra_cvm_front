@@ -441,19 +441,19 @@ export default function QuickListsPage() {
 
       {/* QuickLists Table */}
       <div
-        className={`bg-white border border-gray-200 rounded-md p-6 overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner
               variant="modern"
-              size="lg"
+              size="xl"
               color="primary"
-              className="mr-3"
+              className="mb-4"
             />
-            <span className={`${tw.textSecondary}`}>
+            <p className={`${tw.textMuted} font-medium text-sm`}>
               Loading manual broadcasts...
-            </span>
+            </p>
           </div>
         ) : quicklists.length === 0 ? (
           <div className="text-center py-12">
@@ -475,90 +475,101 @@ export default function QuickListsPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-6 -mt-6">
-            <table className="w-full">
-              <thead
-                className={`border-b ${tw.borderDefault}`}
-                style={{ background: color.surface.tableHeader }}
-              >
+          <div className="hidden lg:block overflow-x-auto">
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
                 <tr>
                   <th
-                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Name
                   </th>
                   <th
-                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Upload Type
                   </th>
                   <th
-                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Rows
                   </th>
                   <th
-                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Status
                   </th>
                   <th
-                    className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Created At
                   </th>
                   <th
-                    className={`px-6 py-4 text-right text-sm font-medium uppercase tracking-wider`}
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {quicklists.map((quicklist) => (
-                  <tr
-                    key={quicklist.id}
-                    className="hover:bg-gray-50/30 transition-colors"
-                  >
-                    <td className="px-6 py-4">
+                  <tr key={quicklist.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <div>
                         <button
                           type="button"
                           onClick={() => handleViewDetails(quicklist)}
-                          className="text-base font-semibold text-black transition-colors hover:opacity-80"
+                          className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                          title={quicklist.name}
                         >
                           {quicklist.name}
                         </button>
                         {quicklist.description && (
-                          <div className={`text-sm ${tw.textMuted} mt-1`}>
+                          <div
+                            className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                            title={quicklist.description}
+                          >
                             {quicklist.description}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                       >
                         {quicklist.upload_type}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-sm ${tw.textPrimary}`}>
-                        {quicklist.rows_imported != null
-                          ? quicklist.rows_imported.toLocaleString()
-                          : "N/A"}
-                      </span>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {quicklist.rows_imported != null
+                        ? quicklist.rows_imported.toLocaleString()
+                        : "N/A"}
                     </td>
-                    <td className="px-6 py-4">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <span
-                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white"
+                        className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium text-white"
                         style={{ backgroundColor: color.primary.accent }}
                       >
                         {quicklist.processing_status
@@ -569,54 +580,58 @@ export default function QuickListsPage() {
                           : "N/A"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className={`text-sm ${tw.textSecondary}`}>
-                        {new Date(quicklist.created_at).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          }
-                        )}
-                      </div>
+                    <td
+                      className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {new Date(quicklist.created_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-1">
+                    <td
+                      className="px-6 py-4 text-sm font-medium"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleCommunicate(quicklist)}
-                          className="p-2 text-gray-600 rounded-md"
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                           title="Send Communication"
                         >
                           <Send className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEdit(quicklist)}
-                          className="p-2 text-gray-600 rounded-md"
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleViewDetails(quicklist)}
-                          className="p-2 text-gray-600 rounded-md"
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleExport(quicklist, "csv")}
-                          className="p-2 text-gray-600 rounded-md"
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                           title="Export"
                         >
                           <Download className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(quicklist)}
-                          className="p-2 rounded-md"
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
                           title="Delete"
                         >
-                          <Trash2 className="w-4 h-4 text-red-600" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

@@ -8,13 +8,10 @@ import {
   Trash2,
   X,
   ArrowLeft,
-  Power,
-  PowerOff,
   Database,
   DollarSign,
   TrendingUp,
   CheckCircle,
-  Eye,
   Filter,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
@@ -225,10 +222,6 @@ export default function ProgramsPage() {
     setIsModalOpen(true);
   };
 
-  const handleViewProgram = (program: Program) => {
-    navigate(`/dashboard/programs/${program.id}`);
-  };
-
   const handleEditProgram = (program: Program) => {
     setEditingProgram(program);
     setIsModalOpen(true);
@@ -253,27 +246,6 @@ export default function ProgramsPage() {
     } catch (err) {
       console.error("Failed to delete program:", err);
       showError("Failed to delete program", "Please try again later.");
-    }
-  };
-
-  const handleToggleActive = async (program: Program) => {
-    try {
-      // TODO: Get actual user ID from auth context
-      const userId = 1;
-
-      if (program.is_active) {
-        await programService.deactivateProgram(Number(program.id), userId);
-        showToast(`Program "${program.name}" deactivated successfully!`);
-      } else {
-        await programService.activateProgram(Number(program.id), userId);
-        showToast(`Program "${program.name}" activated successfully!`);
-      }
-
-      await loadPrograms(true);
-      await loadStats();
-    } catch (err) {
-      console.error("Error toggling program status:", err);
-      showError("Failed to toggle program status", "Please try again later.");
     }
   };
 
@@ -475,7 +447,7 @@ export default function ProgramsPage() {
       </div>
 
       <div
-        className={`bg-white rounded-md border border-[${color.border.default}] overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -511,134 +483,77 @@ export default function ProgramsPage() {
         ) : (
           <>
             <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full">
-                <thead
-                  className={`border-b ${tw.borderDefault}`}
-                  style={{ background: color.surface.tableHeader }}
-                >
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+              >
+                <thead style={{ background: color.surface.tableHeader }}>
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Program
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
-                      Code
+                      Description
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Budget
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-center text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Status
                     </th>
                     <th
-                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="">
+                <tbody>
                   {filteredPrograms.map((program) => (
-                    <tr
-                      key={program.id}
-                      className=" transition-colors"
-                    >
-                      <td className="px-6 py-4" >
-                        <div className="flex items-center space-x-3"   style={{ backgroundColor: color.surface.tablebodybg }}>
-                          <div>
-                            <div
-                              className={`text-base font-semibold ${tw.textPrimary}`}
-                            >
-                              {program.name}
-                            </div>
-                            <div className={`text-sm ${tw.textMuted}`}>
-                              {program.description || "No description"}
-                            </div>
+                    <tr key={program.id} className="transition-colors">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="space-y-1">
+                          <div
+                            className={`text-base font-semibold ${tw.textPrimary}`}
+                          >
+                            {program.name}
+                          </div>
+                          <div className={`text-sm ${tw.textMuted}`}>
+                            ID: {program.id ?? "—"}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div className={`text-sm ${tw.textSecondary}`}>
-                          {program.code}
+                          {program.description || "No description"}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className={`text-sm ${tw.textPrimary}`}>
-                          {program.budget_total
-                            ? `$${parseFloat(
-                                program.budget_total
-                              ).toLocaleString()}`
-                            : "-"}
-                        </div>
-                        {program.budget_spent && (
-                          <div className={`text-xs ${tw.textMuted}`}>
-                            Spent: $
-                            {parseFloat(program.budget_spent).toLocaleString()}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span
-                          className="inline-flex px-2 py-1 text-xs font-medium rounded-full text-white"
-                          style={{
-                            backgroundColor: color.primary.accent,
-                          }}
-                        >
+                      <td
+                        className="px-6 py-4 text-center"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <span className={`text-sm ${tw.textPrimary}`}>
                           {program.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td
+                        className="px-6 py-4 text-right"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handleViewProgram(program)}
-                            className="p-2 rounded-md transition-colors"
-                            style={{
-                              color: color.primary.action,
-                              backgroundColor: "transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              (
-                                e.target as HTMLButtonElement
-                              ).style.backgroundColor = `${color.primary.action}10`;
-                            }}
-                            onMouseLeave={(e) => {
-                              (
-                                e.target as HTMLButtonElement
-                              ).style.backgroundColor = "transparent";
-                            }}
-                            title="View Details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleToggleActive(program)}
-                            className={`p-2 rounded-md transition-colors ${
-                              program.is_active
-                                ? "text-orange-600 hover:bg-orange-50"
-                                : "text-green-600 hover:bg-green-50"
-                            }`}
-                            title={
-                              program.is_active ? "Deactivate" : "Activate"
-                            }
-                          >
-                            {program.is_active ? (
-                              <PowerOff className="w-4 h-4" />
-                            ) : (
-                              <Power className="w-4 h-4" />
-                            )}
-                          </button>
                           <button
                             onClick={() => handleEditProgram(program)}
                             className="p-2 rounded-md transition-colors"
@@ -677,7 +592,8 @@ export default function ProgramsPage() {
               {filteredPrograms.map((program) => (
                 <div
                   key={program.id}
-                  className="p-4 border-b border-gray-200 last:border-b-0"
+                  className="p-4 mb-3 last:mb-0 rounded-md"
+                  style={{ backgroundColor: color.surface.tablebodybg }}
                 >
                   <div className="flex flex-col space-y-3">
                     <div className="flex items-start justify-between">
@@ -688,72 +604,19 @@ export default function ProgramsPage() {
                           {program.name}
                         </div>
                         <div className={`text-xs ${tw.textMuted} mb-2`}>
-                          {program.code}
+                          ID: {program.id ?? "—"}
                         </div>
                         <div className={`text-sm ${tw.textSecondary} mb-2`}>
                           {program.description || "No description"}
                         </div>
                       </div>
-                      <span
-                        className="inline-flex px-2 py-1 text-xs font-medium rounded-full text-white"
-                        style={{
-                          backgroundColor: color.primary.accent,
-                        }}
-                      >
-                        {program.is_active ? "Active" : "Inactive"}
-                      </span>
                     </div>
 
-                    {program.budget_total && (
-                      <div className={`text-sm ${tw.textPrimary}`}>
-                        Budget: $
-                        {parseFloat(program.budget_total).toLocaleString()}
-                        {program.budget_spent && (
-                          <span className={`text-xs ${tw.textMuted} ml-2`}>
-                            (Spent: $
-                            {parseFloat(program.budget_spent).toLocaleString()})
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className={`text-sm ${tw.textPrimary}`}>
+                      Status: {program.is_active ? "Active" : "Inactive"}
+                    </div>
 
                     <div className="flex items-center justify-end space-x-2 pt-2 border-t">
-                      <button
-                        onClick={() => handleViewProgram(program)}
-                        className="p-2 rounded-md transition-colors"
-                        style={{
-                          color: color.primary.action,
-                          backgroundColor: "transparent",
-                        }}
-                        onMouseEnter={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = `${color.primary.action}10`;
-                        }}
-                        onMouseLeave={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = "transparent";
-                        }}
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleToggleActive(program)}
-                        className={`p-2 rounded-md transition-colors ${
-                          program.is_active
-                            ? "text-orange-600 hover:bg-orange-50"
-                            : "text-green-600 hover:bg-green-50"
-                        }`}
-                        title={program.is_active ? "Deactivate" : "Activate"}
-                      >
-                        {program.is_active ? (
-                          <PowerOff className="w-4 h-4" />
-                        ) : (
-                          <Power className="w-4 h-4" />
-                        )}
-                      </button>
                       <button
                         onClick={() => handleEditProgram(program)}
                         className="p-2 rounded-md transition-colors"
@@ -821,7 +684,7 @@ export default function ProgramsPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
+                  <h3 className="text-lg font-semibold text-gray-900">
                     Filter Programs
                   </h3>
                   <button

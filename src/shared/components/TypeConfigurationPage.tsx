@@ -18,7 +18,7 @@ import type { ConfigurationType } from "../services/configurationDataService";
 import type { ConfigurationItem } from "./GenericConfigurationPage";
 
 export interface TypeConfigurationItem extends ConfigurationItem {
-  isActive: boolean;
+  isActive?: boolean;
   metadataValue?: number | string;
 }
 
@@ -92,7 +92,7 @@ function TypeConfigurationModal({
     if (item) {
       setName(item.name);
       setDescription(item.description || "");
-      setIsActive(item.isActive);
+      setIsActive(item.isActive ?? true);
       setMetadataValue(
         item.metadataValue !== undefined ? String(item.metadataValue) : ""
       );
@@ -221,34 +221,6 @@ function TypeConfigurationModal({
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">
-              {config.statusLabel || "Status"}
-            </span>
-            <label className="inline-flex items-center cursor-pointer space-x-3">
-              <span className="text-sm text-gray-600">
-                {isActive ? "Active" : "Inactive"}
-              </span>
-              <div
-                className={`w-10 h-5 flex items-center bg-gray-300 rounded-full p-1 transition-colors ${
-                  isActive ? "bg-purple-500" : ""
-                }`}
-              >
-                <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    isActive ? "translate-x-5" : ""
-                  }`}
-                />
-              </div>
-              <input
-                type="checkbox"
-                className="hidden"
-                checked={isActive}
-                onChange={() => setIsActive((prev) => !prev)}
-              />
-            </label>
-          </div>
-
           {error && (
             <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-700 text-sm">{error}</p>
@@ -290,8 +262,14 @@ export default function TypeConfigurationPage({
   const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
 
+  const normalizeItems = (data: TypeConfigurationItem[]) =>
+    (data || []).map((item) => ({
+      ...item,
+      isActive: item.isActive ?? true,
+    }));
+
   const [items, setItems] = useState<TypeConfigurationItem[]>(
-    config.initialData
+    normalizeItems(config.initialData)
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -302,12 +280,15 @@ export default function TypeConfigurationPage({
 
   useEffect(() => {
     if (config.configType) {
-      configurationDataService.setData(config.configType, config.initialData);
+      configurationDataService.setData(
+        config.configType,
+        normalizeItems(config.initialData)
+      );
 
       const unsubscribe = configurationDataService.subscribe(
         config.configType,
         (data) => {
-          setItems(data as TypeConfigurationItem[]);
+          setItems(normalizeItems(data as TypeConfigurationItem[]));
         }
       );
 
@@ -575,14 +556,8 @@ export default function TypeConfigurationPage({
                         className="px-6 py-4"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            item.isActive
-                              ? `bg-[${color.status.success}] text-white`
-                              : "bg-gray-200 text-gray-700"
-                          }`}
-                        >
-                          {item.isActive ? "Active" : "Inactive"}
+                        <span className={`text-sm ${tw.textPrimary}`}>
+                          {item.isActive ?? true ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td
@@ -651,14 +626,8 @@ export default function TypeConfigurationPage({
                         </div>
                       )}
                       <div className="flex items-center justify-between">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            item.isActive
-                              ? `bg-[${color.status.success}] text-white`
-                              : "bg-gray-200 text-gray-700"
-                          }`}
-                        >
-                          {item.isActive ? "Active" : "Inactive"}
+                        <span className={`text-sm ${tw.textPrimary}`}>
+                          {item.isActive ?? true ? "Active" : "Inactive"}
                         </span>
                         <div className="flex items-center space-x-2">
                           <button

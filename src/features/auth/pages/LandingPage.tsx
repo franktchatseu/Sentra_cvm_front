@@ -217,9 +217,7 @@ export default function LandingPage() {
               Transform Your <br />
               <span className="text-[#1a3d2e]">Customer Value Management</span>
             </h1>
-            <p
-              className={`${tw.subHeading} text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed`}
-            >
+            <p className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
               Sentra empowers businesses to create, manage, and optimize
               customer engagement campaigns with precision targeting, real-time
               analytics, and automated personalization at scale.
@@ -249,7 +247,7 @@ export default function LandingPage() {
               Everything you need to maximize{" "}
               <span className="text-[#1a3d2e]">customer value</span>
             </h2>
-            <p className={`${tw.subHeading} text-gray-600 max-w-2xl mx-auto`}>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Our comprehensive platform provides all the tools and insights
               needed to drive customer engagement and business growth.
             </p>
@@ -275,7 +273,7 @@ export default function LandingPage() {
               Powerful <span className="text-[#1a3d2e]">Modules</span> for Every
               Need
             </h2>
-            <p className={`${tw.subHeading} text-gray-600 max-w-2xl mx-auto`}>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Explore our comprehensive suite of modules designed to optimize
               every aspect of your customer value management strategy.
             </p>
@@ -296,9 +294,7 @@ export default function LandingPage() {
                     <div className="flex items-center justify-center w-12 h-12 bg-[#1a3d2e]/10 rounded-md mr-4 group-hover:bg-[#1a3d2e]/20 transition-all duration-300 group-hover:scale-110">
                       <Icon className="w-6 h-6 text-[#1a3d2e] group-hover:text-[#0f2a1f] transition-colors duration-300" />
                     </div>
-                    <h3
-                      className={`${tw.subHeading} text-gray-900 group-hover:text-[#1a3d2e] transition-colors duration-300`}
-                    >
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#1a3d2e] transition-colors duration-300">
                       {module.title}
                     </h3>
                   </div>
@@ -334,7 +330,7 @@ export default function LandingPage() {
               Trusted by{" "}
               <span className="text-emerald-300">Leading Organizations</span>
             </h2>
-            <p className={`${tw.subHeading} text-white/90 max-w-2xl mx-auto`}>
+            <p className="text-lg text-white/90 max-w-2xl mx-auto">
               Join thousands of businesses using Sentra to drive customer
               engagement and growth.
             </p>

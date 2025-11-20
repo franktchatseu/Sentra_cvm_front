@@ -135,7 +135,7 @@ export default function QuickListDetailsModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex-1">
-            <h2 className={`${tw.subHeading} text-gray-900`}>
+            <h2 className="text-lg font-semibold text-gray-900">
               {currentQuickList.name}
             </h2>
             {currentQuickList.description && (

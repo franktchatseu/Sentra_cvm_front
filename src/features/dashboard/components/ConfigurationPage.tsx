@@ -72,8 +72,8 @@ export default function ConfigurationPage() {
       },
       {
         id: "campaign-catalogs",
-        name: "Campaign Categories",
-        description: "Manage campaign categories and catalogs",
+        name: "Campaigns catalogs",
+        description: "Manage Campaigns catalogs and catalogs",
         type: "campaign",
         category: "Campaign Configuration",
         status: "active",
@@ -101,8 +101,8 @@ export default function ConfigurationPage() {
       },
       {
         id: "offer-catalogs",
-        name: "Offer Categories",
-        description: "Manage offer categories and catalogs",
+        name: "Offer Catalogs",
+        description: "Manage offer catalogs",
         type: "offer",
         category: "Offer Configuration",
         status: "active",
@@ -130,8 +130,8 @@ export default function ConfigurationPage() {
       // Segment-related configs
       {
         id: "segment-catalogs",
-        name: "Segment Categories",
-        description: "Manage segment categories and classifications",
+        name: "segment catalogs",
+        description: "Manage segment catalogs and classifications",
         type: "segment",
         category: "Segment Configuration",
         status: "active",

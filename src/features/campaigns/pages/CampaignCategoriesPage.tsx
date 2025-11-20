@@ -414,11 +414,8 @@ export default function CampaignCategoriesPage() {
       // Load stats from backend endpoint (not from categories data)
       await loadStats(skipCache);
     } catch (err) {
-      console.error("Failed to load campaign categories:", err);
-      showError(
-        "Failed to load campaign categories",
-        "Please try again later."
-      );
+      console.error("Failed to load Campaigns catalogs:", err);
+      showError("Failed to load Campaigns catalogs", "Please try again later.");
       setError(""); // Clear error state
       setCampaignCategories([]);
     } finally {

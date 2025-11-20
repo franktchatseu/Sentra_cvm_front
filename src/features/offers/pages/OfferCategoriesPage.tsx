@@ -153,7 +153,7 @@ function CategoryModal({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className={`${tw.subHeading} text-gray-900`}>
+              <h2 className="text-lg font-semibold text-gray-900">
                 {category ? "Edit Offer Catalog" : "Create New Offer Catalog"}
               </h2>
               <button
@@ -451,7 +451,7 @@ function OffersModal({
                   ) : filteredOffers.length === 0 ? (
                     <div className="text-center py-8">
                       <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
+                      <h3 className="text-base font-semibold text-gray-900 mb-2">
                         {searchTerm
                           ? "No offers found"
                           : "No offers in this category"}
@@ -1661,7 +1661,7 @@ function OfferCategoriesPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
+                  <h3 className="text-lg font-semibold text-gray-900">
                     Filter Categories
                   </h3>
                   <button
@@ -1717,7 +1717,7 @@ function OfferCategoriesPage() {
 
                 {/* Advanced Search Section */}
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-4`}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Advanced Search
                   </h3>
 

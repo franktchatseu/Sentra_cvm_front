@@ -138,7 +138,7 @@ export default function CampaignDefinitionStep({
           : (response as { data: CampaignCategory[] }).data || [];
         setCategories(categories as CampaignCategory[]);
       } catch (error) {
-        console.error("Failed to fetch campaign categories:", error);
+        console.error("Failed to fetch Campaigns catalogs:", error);
         setCategories([]);
       } finally {
         setIsLoadingCategories(false);
