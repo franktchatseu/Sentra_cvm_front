@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import React from "react";
 import {
   Home,
@@ -90,6 +90,7 @@ interface NavigationItem {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const previousPathnameRef = useRef<string>(location.pathname);
 
   const navigation: NavigationItem[] = [
     {
@@ -372,6 +373,77 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     return location.pathname === item.href;
   };
+
+  // Auto-expand parent items when a child is active (only on pathname change)
+  useEffect(() => {
+    // Only auto-expand when pathname actually changes, not on every render
+    if (previousPathnameRef.current === location.pathname) {
+      return;
+    }
+
+    previousPathnameRef.current = location.pathname;
+
+    const activeParentNames: string[] = [];
+
+    navigation.forEach((item) => {
+      if (item.type === "parent" && item.children) {
+        // Check if the parent's own href matches (exact match)
+        const isParentActive = location.pathname === item.href;
+
+        // Check if any direct child is active
+        const hasActiveChild = item.children.some(
+          (child) => location.pathname === child.href
+        );
+
+        // Also check nested children (grandchildren)
+        const hasActiveNestedChild = item.children.some((child) => {
+          if (child.type === "parent" && child.children) {
+            return child.children.some(
+              (grandchild) => location.pathname === grandchild.href
+            );
+          }
+          return false;
+        });
+
+        // Check if pathname starts with the parent href (for sub-routes)
+        const isSubRoute = location.pathname.startsWith(item.href + "/");
+
+        if (
+          isParentActive ||
+          hasActiveChild ||
+          hasActiveNestedChild ||
+          isSubRoute
+        ) {
+          activeParentNames.push(item.name.toLowerCase());
+
+          // If a nested child is active, also expand the intermediate parent
+          item.children.forEach((child) => {
+            if (child.type === "parent" && child.children) {
+              const hasActiveGrandchild = child.children.some(
+                (grandchild) => location.pathname === grandchild.href
+              );
+              if (hasActiveGrandchild) {
+                activeParentNames.push(child.name.toLowerCase());
+              }
+            }
+          });
+        }
+      }
+    });
+
+    // Update expanded items to include active parents (only add, don't force)
+    if (activeParentNames.length > 0) {
+      setExpandedItems((prev) => {
+        const newExpanded = [...prev];
+        activeParentNames.forEach((name) => {
+          if (!newExpanded.includes(name)) {
+            newExpanded.push(name);
+          }
+        });
+        return newExpanded;
+      });
+    }
+  }, [location.pathname]);
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when navigating
