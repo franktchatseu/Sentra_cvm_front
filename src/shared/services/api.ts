@@ -2,8 +2,7 @@
 // Base URL can be set via environment variable VITE_API_BASE_URL
 // Default: http://localhost:8080/api/database-service
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  `${window.location.protocol}//${window.location.host}/api/database-service`;
+  `http://cvm.groupngs.com:8080/api/database-service`;
 
 export const API_CONFIG = {
   BASE_URL: API_BASE_URL,

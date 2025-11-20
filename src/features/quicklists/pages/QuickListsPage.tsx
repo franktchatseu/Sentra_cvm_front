@@ -176,6 +176,7 @@ export default function QuickListsPage() {
     name: string;
     description?: string | null;
     created_by?: string | null;
+    isManualEntry?: boolean;
   }) => {
     try {
       const response = await quicklistService.createQuickList(request);
@@ -206,6 +207,18 @@ export default function QuickListsPage() {
       }
 
       setIsCreateModalOpen(false);
+
+      // If manual entry, open communication modal automatically
+      if (request.isManualEntry && response.data && response.data.quicklist_id) {
+        // Fetch the complete quicklist data by ID
+        const quicklistResponse = await quicklistService.getQuickListById(
+          response.data.quicklist_id
+        );
+        if (quicklistResponse.success && quicklistResponse.data) {
+          setCommunicateQuickList(quicklistResponse.data);
+          setIsCommunicateModalOpen(true);
+        }
+      }
 
       // Reload stats and quicklists
       await loadStats();
