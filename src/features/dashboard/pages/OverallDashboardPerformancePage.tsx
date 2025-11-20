@@ -81,6 +81,33 @@ type PerformanceSnapshot = {
 };
 
 const timeRangeOptions: RangeOption[] = ["7d", "30d", "90d"];
+const rangeDays: Record<RangeOption, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+};
+
+const getDaysBetween = (start: string, end: string) => {
+  const startDate = start ? new Date(start) : null;
+  const endDate = end ? new Date(end) : null;
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime())
+  ) {
+    return null;
+  }
+  const diff = Math.abs(endDate.getTime() - startDate.getTime());
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
+
+const mapDaysToRange = (days: number | null): RangeOption => {
+  if (days === null) return "7d";
+  if (days <= 7) return "7d";
+  if (days <= 30) return "30d";
+  return "90d";
+};
 
 const channelOptions: ChannelFilter[] = [
   "All Channels",
@@ -629,21 +656,21 @@ const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
 };
 
 export default function OverallDashboardPerformancePage() {
-  // Independent filter states for each chart
-  const [channelChartRange, setChannelChartRange] = useState<RangeOption>("7d");
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
+  const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [channelFilter, setChannelFilter] =
     useState<ChannelFilter>("All Channels");
-  const [smsDeliveryChartRange, setSmsDeliveryChartRange] =
-    useState<RangeOption>("7d");
-  const [timeSeriesChartRange, setTimeSeriesChartRange] =
-    useState<RangeOption>("7d");
 
-  // Stat cards always use 30d snapshot (fixed)
-  const kpiSnapshot = mockPerformanceSnapshots["30d"];
-  // Each chart uses its own range
-  const channelSnapshot = mockPerformanceSnapshots[channelChartRange];
-  const smsDeliverySnapshot = mockPerformanceSnapshots[smsDeliveryChartRange];
-  const timeSeriesSnapshot = mockPerformanceSnapshots[timeSeriesChartRange];
+  const customDays = getDaysBetween(customRange.start, customRange.end);
+  const activeRangeKey: RangeOption =
+    customRange.start && customRange.end
+      ? mapDaysToRange(customDays)
+      : selectedRange;
+
+  const kpiSnapshot = mockPerformanceSnapshots[activeRangeKey];
+  const channelSnapshot = mockPerformanceSnapshots[activeRangeKey];
+  const smsDeliverySnapshot = mockPerformanceSnapshots[activeRangeKey];
+  const timeSeriesSnapshot = mockPerformanceSnapshots[activeRangeKey];
 
   const filteredChannels = useMemo(() => {
     if (channelFilter === "All Channels") {
@@ -652,17 +679,89 @@ export default function OverallDashboardPerformancePage() {
     return channelSnapshot.channels.filter(
       (channel) => channel.channel === channelFilter
     );
-  }, [channelFilter, channelSnapshot.channels]);
+  }, [channelFilter, channelSnapshot]);
 
   return (
     <div className="space-y-6 p-6">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Overall Dashboard Performance
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          System-wide performance metrics and analytics
-        </p>
+      <header className="space-y-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Overall Dashboard Performance
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            System-wide performance metrics and analytics
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {timeRangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  setSelectedRange(option);
+                  setCustomRange({ start: "", end: "" });
+                }}
+                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  !(customRange.start && customRange.end) &&
+                  selectedRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {option.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="overall-date-start"
+                className="text-sm text-gray-600"
+              >
+                From
+              </label>
+              <input
+                id="overall-date-start"
+                type="date"
+                value={customRange.start}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    start: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="overall-date-end"
+                className="text-sm text-gray-600"
+              >
+                To
+              </label>
+              <input
+                id="overall-date-end"
+                type="date"
+                value={customRange.end}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    end: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setCustomRange({ start: "", end: "" })}
+              className="text-sm font-medium text-gray-600 underline"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Performance Metrics */}
@@ -773,21 +872,6 @@ export default function OverallDashboardPerformancePage() {
             <p className="mt-1 text-sm text-gray-600">
               Compare metrics across SMS, Email, Push, and Social channels
             </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {timeRangeOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setChannelChartRange(option)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  channelChartRange === option
-                    ? "border-[#252829] bg-[#252829] text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {option.toUpperCase()}
-              </button>
-            ))}
           </div>
         </div>
         <div className="mb-6 flex flex-wrap gap-2">
@@ -902,21 +986,6 @@ export default function OverallDashboardPerformancePage() {
               Track SMS sent, delivered, and conversion metrics
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {timeRangeOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setSmsDeliveryChartRange(option)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  smsDeliveryChartRange === option
-                    ? "border-[#252829] bg-[#252829] text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {option.toUpperCase()}
-              </button>
-            ))}
-          </div>
         </div>
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
@@ -987,21 +1056,6 @@ export default function OverallDashboardPerformancePage() {
             <p className="mt-1 text-sm text-gray-600">
               Track key metrics across the selected time period
             </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {timeRangeOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setTimeSeriesChartRange(option)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  timeSeriesChartRange === option
-                    ? "border-[#252829] bg-[#252829] text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {option.toUpperCase()}
-              </button>
-            ))}
           </div>
         </div>
         <div className="h-96">

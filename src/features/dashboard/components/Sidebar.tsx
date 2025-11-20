@@ -23,12 +23,13 @@ import {
   Briefcase,
   Flag,
   // Bell,
-  // List,
+  List,
   Upload,
   Fingerprint,
   Activity,
   LineChart,
   Gift,
+  Mail,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
@@ -230,6 +231,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "segments",
         },
+        {
+          name: "Segment Lists",
+          href: "/dashboard/segment-list",
+          icon: List,
+          type: "single",
+          entity: "segments",
+        },
       ],
     },
     {
@@ -275,7 +283,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "analytics",
         },
         {
-          name: "Offer Performance Reports",
+          name: "Offer Reports",
           href: "/dashboard/reports/offers",
           icon: Gift,
           type: "single",
@@ -285,6 +293,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           name: "Delivery & SMS Reports",
           href: "/dashboard/reports/delivery",
           icon: MessageSquare,
+          type: "single",
+          entity: "analytics",
+        },
+        {
+          name: "Delivery & Email Reports",
+          href: "/dashboard/reports/email-delivery",
+          icon: Mail,
           type: "single",
           entity: "analytics",
         },

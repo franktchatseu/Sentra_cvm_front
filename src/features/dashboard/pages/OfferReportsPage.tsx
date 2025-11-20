@@ -1,0 +1,1134 @@
+import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  Download,
+  Gift,
+  Percent,
+  TrendingUp,
+  DollarSign,
+  Users2,
+  Coins,
+  Sparkles,
+} from "lucide-react";
+import { colors } from "../../../shared/utils/tokens";
+
+type RangeOption = "7d" | "30d" | "90d";
+
+const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];
+const rangeDays: Record<RangeOption, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+};
+
+const getDaysBetween = (start: string, end: string) => {
+  const startDate = start ? new Date(start) : null;
+  const endDate = end ? new Date(end) : null;
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime())
+  ) {
+    return null;
+  }
+  const diff = Math.abs(endDate.getTime() - startDate.getTime());
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
+
+const mapDaysToRange = (days: number | null): RangeOption => {
+  if (days === null) return "7d";
+  if (days <= 7) return "7d";
+  if (days <= 30) return "30d";
+  return "90d";
+};
+
+// Mock data types
+interface CombinedSummary {
+  totalRedemptions: number;
+  redemptionRate: number;
+  revenueGenerated: number;
+  incrementalRevenue: number;
+  totalCost: number;
+  roi: number;
+}
+
+interface FunnelStage {
+  stage: string;
+  value: number;
+  percentage?: number;
+}
+
+interface TimeSeriesPoint {
+  period: string;
+  redemptions: number;
+  cumulativeRedemptions: number;
+}
+
+interface OfferTypePerformance {
+  type: string;
+  redemptionRate: number;
+  aov: number;
+  marginPercent: number;
+  incrementalRevenue: number;
+}
+
+interface OfferRow {
+  id: string;
+  offerName: string;
+  campaignName: string;
+  segment: string;
+  status: "Active" | "Expired" | "Scheduled" | "Paused";
+  targetGroup: number;
+  controlGroup: number;
+  messagesGenerated: number;
+  sent: number;
+  delivered: number;
+  conversions: number;
+  lastUpdated: string;
+}
+
+// Mock data for combined KPIs (offers + rewards)
+const combinedSummary: Record<RangeOption, CombinedSummary> = {
+  "7d": {
+    totalRedemptions: 6_850, // offers + rewards combined
+    redemptionRate: 3.4,
+    revenueGenerated: 312_000,
+    incrementalRevenue: 98_000,
+    totalCost: 42_500, // discounts + cashback
+    roi: 2.3,
+  },
+  "30d": {
+    totalRedemptions: 24_200,
+    redemptionRate: 3.8,
+    revenueGenerated: 1_420_000,
+    incrementalRevenue: 385_000,
+    totalCost: 168_000,
+    roi: 2.3,
+  },
+  "90d": {
+    totalRedemptions: 72_800,
+    redemptionRate: 4.2,
+    revenueGenerated: 4_250_000,
+    incrementalRevenue: 1_240_000,
+    totalCost: 512_000,
+    roi: 2.4,
+  },
+};
+
+// Offer stage data
+const funnelData: Record<RangeOption, FunnelStage[]> = {
+  "7d": [
+    { stage: "Exposed", value: 140_000 },
+    { stage: "Viewed", value: 68_000 },
+    { stage: "Engaged", value: 16_200 },
+    { stage: "Redeemed", value: 5_450 },
+  ],
+  "30d": [
+    { stage: "Exposed", value: 620_000 },
+    { stage: "Viewed", value: 298_000 },
+    { stage: "Engaged", value: 86_400 },
+    { stage: "Redeemed", value: 34_200 },
+  ],
+  "90d": [
+    { stage: "Exposed", value: 1_980_000 },
+    { stage: "Viewed", value: 965_000 },
+    { stage: "Engaged", value: 312_000 },
+    { stage: "Redeemed", value: 142_500 },
+  ],
+};
+
+// Redemption timeline data
+const redemptionTimelineData: Record<RangeOption, TimeSeriesPoint[]> = {
+  "7d": [
+    { period: "Mon", redemptions: 720, cumulativeRedemptions: 720 },
+    { period: "Tue", redemptions: 850, cumulativeRedemptions: 1_570 },
+    { period: "Wed", redemptions: 920, cumulativeRedemptions: 2_490 },
+    { period: "Thu", redemptions: 780, cumulativeRedemptions: 3_270 },
+    { period: "Fri", redemptions: 810, cumulativeRedemptions: 4_080 },
+    { period: "Sat", redemptions: 690, cumulativeRedemptions: 4_770 },
+    { period: "Sun", redemptions: 650, cumulativeRedemptions: 5_420 },
+  ],
+  "30d": [
+    { period: "Week 1", redemptions: 3_850, cumulativeRedemptions: 3_850 },
+    { period: "Week 2", redemptions: 4_920, cumulativeRedemptions: 8_770 },
+    { period: "Week 3", redemptions: 5_340, cumulativeRedemptions: 14_110 },
+    { period: "Week 4", redemptions: 4_540, cumulativeRedemptions: 18_650 },
+  ],
+  "90d": [
+    { period: "September", redemptions: 16_200, cumulativeRedemptions: 16_200 },
+    { period: "October", redemptions: 19_500, cumulativeRedemptions: 35_700 },
+    { period: "November", redemptions: 18_500, cumulativeRedemptions: 54_200 },
+  ],
+};
+
+// Offer type comparison data (using actual system offer types)
+const offerTypeData: Record<RangeOption, OfferTypePerformance[]> = {
+  "7d": [
+    {
+      type: "Data",
+      redemptionRate: 4.2,
+      aov: 78,
+      marginPercent: 20.5,
+      incrementalRevenue: 85_000,
+    },
+    {
+      type: "Voice",
+      redemptionRate: 2.8,
+      aov: 62,
+      marginPercent: 16.3,
+      incrementalRevenue: 48_000,
+    },
+    {
+      type: "SMS",
+      redemptionRate: 2.2,
+      aov: 38,
+      marginPercent: 13.2,
+      incrementalRevenue: 32_000,
+    },
+    {
+      type: "Combo",
+      redemptionRate: 4.8,
+      aov: 115,
+      marginPercent: 23.8,
+      incrementalRevenue: 98_000,
+    },
+    {
+      type: "Voucher",
+      redemptionRate: 5.5,
+      aov: 85,
+      marginPercent: 17.7,
+      incrementalRevenue: 78_000,
+    },
+    {
+      type: "Bundle",
+      redemptionRate: 4.0,
+      aov: 132,
+      marginPercent: 25.2,
+      incrementalRevenue: 112_000,
+    },
+    {
+      type: "Bonus",
+      redemptionRate: 3.5,
+      aov: 72,
+      marginPercent: 15.8,
+      incrementalRevenue: 58_000,
+    },
+  ],
+  "30d": [
+    {
+      type: "Data",
+      redemptionRate: 4.8,
+      aov: 85,
+      marginPercent: 22.5,
+      incrementalRevenue: 285_000,
+    },
+    {
+      type: "Voice",
+      redemptionRate: 3.2,
+      aov: 68,
+      marginPercent: 18.3,
+      incrementalRevenue: 142_000,
+    },
+    {
+      type: "SMS",
+      redemptionRate: 2.8,
+      aov: 45,
+      marginPercent: 15.2,
+      incrementalRevenue: 98_000,
+    },
+    {
+      type: "Combo",
+      redemptionRate: 5.2,
+      aov: 125,
+      marginPercent: 25.8,
+      incrementalRevenue: 342_000,
+    },
+    {
+      type: "Voucher",
+      redemptionRate: 6.1,
+      aov: 92,
+      marginPercent: 19.7,
+      incrementalRevenue: 268_000,
+    },
+    {
+      type: "Bundle",
+      redemptionRate: 4.5,
+      aov: 145,
+      marginPercent: 27.2,
+      incrementalRevenue: 398_000,
+    },
+    {
+      type: "Bonus",
+      redemptionRate: 3.9,
+      aov: 78,
+      marginPercent: 16.8,
+      incrementalRevenue: 185_000,
+    },
+  ],
+  "90d": [
+    {
+      type: "Data",
+      redemptionRate: 5.2,
+      aov: 92,
+      marginPercent: 24.5,
+      incrementalRevenue: 845_000,
+    },
+    {
+      type: "Voice",
+      redemptionRate: 3.6,
+      aov: 75,
+      marginPercent: 20.3,
+      incrementalRevenue: 428_000,
+    },
+    {
+      type: "SMS",
+      redemptionRate: 3.2,
+      aov: 52,
+      marginPercent: 17.2,
+      incrementalRevenue: 298_000,
+    },
+    {
+      type: "Combo",
+      redemptionRate: 5.8,
+      aov: 138,
+      marginPercent: 27.8,
+      incrementalRevenue: 1_025_000,
+    },
+    {
+      type: "Voucher",
+      redemptionRate: 6.8,
+      aov: 105,
+      marginPercent: 21.7,
+      incrementalRevenue: 812_000,
+    },
+    {
+      type: "Bundle",
+      redemptionRate: 5.0,
+      aov: 158,
+      marginPercent: 29.2,
+      incrementalRevenue: 1_198_000,
+    },
+    {
+      type: "Bonus",
+      redemptionRate: 4.4,
+      aov: 88,
+      marginPercent: 18.8,
+      incrementalRevenue: 558_000,
+    },
+  ],
+};
+
+// Offer table data
+const offerRows: OfferRow[] = [
+  {
+    id: "offer-001",
+    offerName: "Welcome 20% Off",
+    campaignName: "New Customer Onboarding",
+    segment: "New Customers",
+    status: "Active",
+    targetGroup: 45_000,
+    controlGroup: 5_000,
+    messagesGenerated: 50_000,
+    sent: 48_500,
+    delivered: 47_200,
+    conversions: 1_890,
+    lastUpdated: "2025-10-01",
+  },
+  {
+    id: "offer-002",
+    offerName: "Flash Friday $15 Off",
+    campaignName: "Weekend Flash Sale",
+    segment: "Active Shoppers",
+    status: "Expired",
+    targetGroup: 120_000,
+    controlGroup: 15_000,
+    messagesGenerated: 135_000,
+    sent: 132_000,
+    delivered: 128_400,
+    conversions: 5_280,
+    lastUpdated: "2025-09-25",
+  },
+  {
+    id: "offer-003",
+    offerName: "Bundle & Save 30%",
+    campaignName: "Cross-Sell Campaign",
+    segment: "High Value",
+    status: "Active",
+    targetGroup: 68_000,
+    controlGroup: 8_000,
+    messagesGenerated: 76_000,
+    sent: 74_500,
+    delivered: 72_800,
+    conversions: 2_380,
+    lastUpdated: "2025-09-28",
+  },
+  {
+    id: "offer-004",
+    offerName: "Free Shipping",
+    campaignName: "Abandoned Cart Recovery",
+    segment: "Cart Abandoners",
+    status: "Active",
+    targetGroup: 95_000,
+    controlGroup: 10_000,
+    messagesGenerated: 105_000,
+    sent: 102_000,
+    delivered: 99_500,
+    conversions: 4_845,
+    lastUpdated: "2025-10-04",
+  },
+  {
+    id: "offer-005",
+    offerName: "VIP 25% Exclusive",
+    campaignName: "VIP Appreciation Week",
+    segment: "VIP Customers",
+    status: "Scheduled",
+    targetGroup: 12_000,
+    controlGroup: 2_000,
+    messagesGenerated: 14_000,
+    sent: 0,
+    delivered: 0,
+    conversions: 0,
+    lastUpdated: "2025-10-10",
+  },
+  {
+    id: "offer-006",
+    offerName: "BOGO 50% Off",
+    campaignName: "Spring Clearance",
+    segment: "Regular Customers",
+    status: "Active",
+    targetGroup: 78_000,
+    controlGroup: 9_000,
+    messagesGenerated: 87_000,
+    sent: 85_200,
+    delivered: 83_100,
+    conversions: 2_262,
+    lastUpdated: "2025-09-22",
+  },
+];
+
+const statusOptions = [
+  "All Statuses",
+  "Active",
+  "Expired",
+  "Scheduled",
+  "Paused",
+];
+const segmentOptions = [
+  "All Segments",
+  "New Customers",
+  "Active Shoppers",
+  "High Value",
+  "Cart Abandoners",
+  "VIP Customers",
+  "Regular Customers",
+];
+
+const chartPalette = {
+  primary: colors.primary.accent,
+  secondary: colors.tertiary.tag1,
+  tertiary: colors.tertiary.tag2,
+  quaternary: colors.tertiary.tag3,
+  success: colors.status.success,
+  redemptions: "#3b82f6",
+  cumulative: "#8b5cf6",
+  percentOff: colors.tertiary.tag1,
+  dollarOff: colors.primary.accent,
+  bogo: colors.tertiary.tag2,
+  freeShipping: colors.status.success,
+  bundle: colors.tertiary.tag3,
+};
+
+interface ChartTooltipEntry {
+  name?: string;
+  value?: number | string;
+  color?: string;
+  dataKey?: string;
+  payload?: Record<string, unknown>;
+}
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: ChartTooltipEntry[];
+  label?: string;
+}
+
+const formatCurrency = (value: number): string => {
+  if (value >= 1_000_000) {
+    return `$${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (value >= 1_000) {
+    return `$${(value / 1_000).toFixed(0)}K`;
+  }
+  return `$${value}`;
+};
+
+const formatNumber = (value: number): string => {
+  return value.toLocaleString("en-US");
+};
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+      <p className="mb-2 text-sm font-semibold text-gray-900">{label}</p>
+      {payload.map((entry, idx) => (
+        <div
+          key={idx}
+          className="flex items-center justify-between gap-4 text-sm"
+        >
+          <span className="flex items-center gap-2">
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-gray-600">{entry.name}</span>
+          </span>
+          <span className="font-semibold text-gray-900">
+            {typeof entry.value === "number"
+              ? formatNumber(entry.value)
+              : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const statIcons = {
+  redemption: Gift,
+  revenue: DollarSign,
+  margin: Percent,
+  growth: TrendingUp,
+  users: Users2,
+  coins: Coins,
+  sparkles: Sparkles,
+};
+
+export default function OfferReportsPage() {
+  const [tableQuery, setTableQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Statuses");
+  const [segmentFilter, setSegmentFilter] = useState("All Segments");
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
+  const [customRange, setCustomRange] = useState({ start: "", end: "" });
+
+  const customDays = getDaysBetween(customRange.start, customRange.end);
+  const activeRangeKey: RangeOption =
+    customRange.start && customRange.end
+      ? mapDaysToRange(customDays)
+      : selectedRange;
+
+  const summary = combinedSummary[activeRangeKey];
+
+  const heroCards = [
+    {
+      label: "Total Redemptions",
+      value: summary.totalRedemptions.toLocaleString("en-US"),
+      subtext: "Total offers used by customers",
+      icon: statIcons.users,
+      trend: { value: "+12.8%", direction: "up" as const },
+    },
+    {
+      label: "Redemption Rate",
+      value: `${summary.redemptionRate.toFixed(1)}%`,
+      subtext: "Customers who used promotions",
+      icon: statIcons.growth,
+      trend: { value: "+0.6 pts", direction: "up" as const },
+    },
+    {
+      label: "Revenue Generated",
+      value: formatCurrency(summary.revenueGenerated),
+      subtext: "Total sales from promotions",
+      icon: statIcons.revenue,
+      trend: { value: "+$156K", direction: "up" as const },
+    },
+    {
+      label: "Incremental Revenue",
+      value: formatCurrency(summary.incrementalRevenue),
+      subtext: "New revenue created",
+      icon: statIcons.sparkles,
+      trend: { value: "+$42K", direction: "up" as const },
+    },
+    {
+      label: "Total Cost",
+      value: formatCurrency(summary.totalCost),
+      subtext: "Total discount cost",
+      icon: statIcons.coins,
+      trend: { value: "+$18K", direction: "up" as const },
+    },
+    {
+      label: "ROI",
+      value: `${summary.roi.toFixed(1)}x`,
+      subtext: "Revenue per dollar spent",
+      icon: statIcons.growth,
+      trend: { value: "+0.2x", direction: "up" as const },
+    },
+  ];
+
+  const funnelSeries = funnelData[activeRangeKey];
+  const timelineSeries = redemptionTimelineData[activeRangeKey];
+  const offerTypeComparison = offerTypeData[activeRangeKey];
+
+  const filteredRows = useMemo(() => {
+    const query = tableQuery.trim().toLowerCase();
+    const maxDays =
+      customRange.start && customRange.end
+        ? customDays ?? rangeDays[selectedRange]
+        : rangeDays[selectedRange];
+    const startMs = customRange.start
+      ? new Date(customRange.start).getTime()
+      : null;
+    const endMs = customRange.end ? new Date(customRange.end).getTime() : null;
+
+    return offerRows.filter((row) => {
+      const matchesStatus =
+        statusFilter === "All Statuses" ? true : row.status === statusFilter;
+      const matchesSegment =
+        segmentFilter === "All Segments" ? true : row.segment === segmentFilter;
+      const matchesQuery = query
+        ? row.offerName.toLowerCase().includes(query) ||
+          row.campaignName.toLowerCase().includes(query) ||
+          row.segment.toLowerCase().includes(query)
+        : true;
+      const rowDate = new Date(row.lastUpdated).getTime();
+      const now = Date.now();
+      const matchesRange =
+        customRange.start && customRange.end && startMs && endMs
+          ? rowDate >= startMs && rowDate <= endMs
+          : now - rowDate <= maxDays * 24 * 60 * 60 * 1000;
+      return matchesStatus && matchesSegment && matchesQuery && matchesRange;
+    });
+  }, [
+    statusFilter,
+    segmentFilter,
+    tableQuery,
+    customRange,
+    customDays,
+    selectedRange,
+  ]);
+
+  const handleDownloadCsv = () => {
+    if (!filteredRows.length) return;
+
+    const headers = [
+      "Offer Name",
+      "Campaign Name",
+      "Segment",
+      "Status",
+      "Target Group",
+      "Control Group",
+      "Messages Generated",
+      "Sent",
+      "Delivered",
+      "Conversions",
+      "Last Updated",
+    ];
+
+    const csvRows = [
+      headers.join(","),
+      ...filteredRows.map((row) =>
+        [
+          `"${row.offerName}"`,
+          `"${row.campaignName}"`,
+          `"${row.segment}"`,
+          row.status,
+          row.targetGroup,
+          row.controlGroup,
+          row.messagesGenerated,
+          row.sent,
+          row.delivered,
+          row.conversions,
+          row.lastUpdated,
+        ].join(",")
+      ),
+    ];
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `offer-reports-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="space-y-8 p-8">
+      {/* Header */}
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Offer Reports</h1>
+          <p className="mt-2 text-base text-gray-600">
+            Track offer performance, redemption behavior, and ROI across all
+            promotional campaigns
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {rangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  setSelectedRange(option);
+                  setCustomRange({ start: "", end: "" });
+                }}
+                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  !(customRange.start && customRange.end) &&
+                  selectedRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {option.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="offer-date-start"
+                className="text-sm text-gray-600"
+              >
+                From
+              </label>
+              <input
+                id="offer-date-start"
+                type="date"
+                value={customRange.start}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    start: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="offer-date-end" className="text-sm text-gray-600">
+                To
+              </label>
+              <input
+                id="offer-date-end"
+                type="date"
+                value={customRange.end}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    end: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setCustomRange({ start: "", end: "" })}
+              className="text-sm font-medium text-gray-600 underline"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero KPI Cards */}
+      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {heroCards.map((card, idx) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={idx}
+              className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600">
+                    {card.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                    {card.value}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">{card.subtext}</p>
+                </div>
+                <Icon
+                  className="h-5 w-5 flex-shrink-0"
+                  style={{ color: colors.primary.accent }}
+                />
+              </div>
+              <div className="mt-3 flex items-center gap-1 text-xs">
+                <span
+                  className={`font-semibold ${
+                    card.trend.direction === "up"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {card.trend.value}
+                </span>
+                <span className="text-gray-500">vs last period</span>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* Visualizations Grid */}
+      <section className="grid gap-6 lg:grid-cols-2">
+        {/* Offer Performance Stages */}
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Offer Performance Stages
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Customer journey from exposure to redemption
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={funnelSeries}
+                margin={{ top: 20, right: 24, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="stage" tick={{ fill: "#6b7280" }} />
+                <YAxis tick={{ fill: "#6b7280" }} />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: "transparent" }}
+                />
+                <Bar
+                  dataKey="value"
+                  name="Users"
+                  fill={chartPalette.primary}
+                  maxBarSize={60}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Redemption Timeline */}
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Redemption Timeline
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Redemption volume over the selected period
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timelineSeries}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="period" tick={{ fill: "#6b7280" }} />
+                <YAxis tick={{ fill: "#6b7280" }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
+                <Line
+                  type="monotone"
+                  dataKey="redemptions"
+                  name="Daily Redemptions"
+                  stroke={chartPalette.redemptions}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cumulativeRedemptions"
+                  name="Cumulative"
+                  stroke={chartPalette.cumulative}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+
+      {/* Offer Type Comparison */}
+      <section>
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Offer Type Comparison
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Performance across offer types
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={offerTypeComparison}
+                margin={{ top: 20, right: 24, left: 0, bottom: 0 }}
+                barCategoryGap="20%"
+                barGap={4}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="type" tick={{ fill: "#6b7280" }} />
+                <YAxis
+                  yAxisId="left"
+                  orientation="left"
+                  tick={{ fill: "#6b7280" }}
+                  label={{
+                    value: "Redemption Rate (%)",
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { fill: "#6b7280", fontSize: 12 },
+                  }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fill: "#6b7280" }}
+                  label={{
+                    value: "AOV ($)",
+                    angle: 90,
+                    position: "insideRight",
+                    style: { fill: "#6b7280", fontSize: 12 },
+                  }}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: "transparent" }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
+                <Bar
+                  yAxisId="left"
+                  dataKey="redemptionRate"
+                  name="Redemption Rate %"
+                  fill={chartPalette.primary}
+                  maxBarSize={40}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  yAxisId="right"
+                  dataKey="aov"
+                  name="AOV ($)"
+                  fill={chartPalette.secondary}
+                  maxBarSize={40}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+
+      {/* Offer Data Table */}
+      <section className="space-y-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Offer Performance Table
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Detailed view of all offers with redemption and revenue metrics
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <input
+              type="text"
+              value={tableQuery}
+              onChange={(event) => setTableQuery(event.target.value)}
+              placeholder="Search offer or campaign"
+              className="w-full rounded-md border border-gray-200 px-3 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:outline-none md:w-80"
+            />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
+            >
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+            <select
+              value={segmentFilter}
+              onChange={(event) => setSegmentFilter(event.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
+            >
+              {segmentOptions.map((segment) => (
+                <option key={segment} value={segment}>
+                  {segment}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleDownloadCsv}
+              className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: colors.primary.action }}
+            >
+              <Download className="h-4 w-4" />
+              Download CSV
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden lg:block">
+          <div className="overflow-x-auto">
+            <table
+              className="w-full text-sm text-gray-900"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: colors.surface.tableHeader }}>
+                <tr className="text-left text-sm font-medium uppercase tracking-wide">
+                  {[
+                    "Offer Name",
+                    "Campaign Name",
+                    "Segment",
+                    "Status",
+                    "Target Group",
+                    "Control Group",
+                    "Messages Generated",
+                    "Sent",
+                    "Delivered",
+                    "Conversions",
+                    "Last Updated",
+                  ].map((header, idx, arr) => (
+                    <th
+                      key={header}
+                      className="px-6 py-3"
+                      style={{
+                        color: colors.surface.tableHeaderText,
+                        borderTopLeftRadius: idx === 0 ? "0.375rem" : undefined,
+                        borderTopRightRadius:
+                          idx === arr.length - 1 ? "0.375rem" : undefined,
+                      }}
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={11}
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
+                      No offers found matching your filters
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRows.map((entry) => (
+                    <tr key={entry.id} className="transition-colors">
+                      <td
+                        className="px-6 py-4 font-semibold"
+                        style={{
+                          backgroundColor: colors.surface.tablebodybg,
+                          borderTopLeftRadius: "0.375rem",
+                          borderBottomLeftRadius: "0.375rem",
+                        }}
+                      >
+                        <div className="text-gray-900">{entry.offerName}</div>
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.campaignName}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.segment}
+                      </td>
+                      <td
+                        className="px-6 py-4 text-gray-900"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.status}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.targetGroup.toLocaleString("en-US")}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.controlGroup.toLocaleString("en-US")}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.messagesGenerated.toLocaleString("en-US")}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.sent.toLocaleString("en-US")}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: colors.surface.tablebodybg }}
+                      >
+                        {entry.delivered.toLocaleString("en-US")}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{
+                          backgroundColor: colors.surface.tablebodybg,
+                        }}
+                      >
+                        {entry.conversions.toLocaleString("en-US")}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{
+                          backgroundColor: colors.surface.tablebodybg,
+                          borderTopRightRadius: "0.375rem",
+                          borderBottomRightRadius: "0.375rem",
+                        }}
+                      >
+                        {entry.lastUpdated}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

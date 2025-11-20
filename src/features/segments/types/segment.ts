@@ -600,7 +600,9 @@ export interface SegmentConditionGroup {
     file_path?: string;
     list_label?: string;
     list_headers?: string;
+    mode?: "existing" | "new";
   };
+  segmentIds?: number[]; // For segments condition type
   profileConditions?: SegmentCondition[]; // For 360 profile conditions
 }
 

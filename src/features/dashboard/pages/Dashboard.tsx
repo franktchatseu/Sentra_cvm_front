@@ -49,8 +49,9 @@ import SearchResultsPage from "../../../shared/pages/SearchResultsPage";
 import OverallDashboardPerformancePage from "./OverallDashboardPerformancePage";
 import CustomerProfileReportsPage from "./CustomerProfileReportsPage";
 import CampaignReportsPage from "./CampaignReportsPage";
-import OfferPerformanceReportsPage from "./OfferPerformanceReportsPage";
 import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
+import DeliveryEmailReportsPage from "./DeliveryEmailReportsPage";
+import OfferReportsPage from "./OfferReportsPage";
 
 export default function Dashboard() {
   return (
@@ -72,10 +73,11 @@ export default function Dashboard() {
         />
         <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
         <Route path="/campaign-types" element={<CampaignTypesPage />} />
-        <Route
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/campaign-catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="campaigns" />}
-        />
+        /> */}
         <Route
           path="/campaign-objectives"
           element={<CampaignObjectivesPage />}
@@ -109,17 +111,19 @@ export default function Dashboard() {
         <Route path="/products/:id" element={<ProductDetailsPage />} />
         <Route path="/products/:id/edit" element={<EditProductPage />} />
         <Route path="/products/catalogs" element={<ProductCategoriesPage />} />
-        <Route
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/products/catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="products" />}
-        />
+        /> */}
         <Route path="/product-types" element={<ProductTypesPage />} />
         <Route path="/offer-types" element={<OfferTypesPage />} />
         <Route path="/offer-catalogs" element={<OfferCategoriesPage />} />
-        <Route
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/offer-catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="offers" />}
-        />
+        /> */}
         {/* <Route path="/offer-catalogs/:id" element={<CategoryDetailsPage />} /> */}
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/user-management/:id" element={<UserDetailsPage />} />
@@ -127,10 +131,11 @@ export default function Dashboard() {
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />
         <Route path="/segments/:id/edit" element={<EditSegmentPage />} />
         <Route path="/segment-catalogs" element={<SegmentCategoriesPage />} />
-        <Route
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/segment-catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="segments" />}
-        />
+        /> */}
         <Route path="/segment-list" element={<SegmentListPage />} />
         <Route path="/segment-types" element={<SegmentTypesPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
@@ -156,11 +161,12 @@ export default function Dashboard() {
           element={<CustomerProfileReportsPage />}
         />
         <Route path="/reports/campaigns" element={<CampaignReportsPage />} />
-        <Route
-          path="/reports/offers"
-          element={<OfferPerformanceReportsPage />}
-        />
+        <Route path="/reports/offers" element={<OfferReportsPage />} />
         <Route path="/reports/delivery" element={<DeliverySMSReportsPage />} />
+        <Route
+          path="/reports/email-delivery"
+          element={<DeliveryEmailReportsPage />}
+        />
       </Routes>
     </DashboardLayout>
   );
