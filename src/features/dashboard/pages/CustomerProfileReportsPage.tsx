@@ -589,7 +589,7 @@ export default function CustomerProfileReportsPage() {
       "Segment",
       "Lifetime Revenue",
       "Transactions",
-      "Last Purchase",
+      "Last Transaction",
       "Churn Risk",
     ];
 
@@ -749,7 +749,7 @@ export default function CustomerProfileReportsPage() {
               icon: DollarSign,
             },
             {
-              label: "Avg Order Value",
+              label: "Avg Transaction Value",
               value: `$${Math.round(
                 heroBase.avgOrderValue * clvAdjust
               ).toLocaleString("en-US")}`,
@@ -786,7 +786,7 @@ export default function CustomerProfileReportsPage() {
               )}%`,
               trend: "-0.6 pts vs last quarter",
               trendDirection: "down",
-              description: "No purchase in 120 days",
+              description: "No transaction in 120 days",
               icon: BarChart3,
             },
           ];
@@ -1161,7 +1161,7 @@ export default function CustomerProfileReportsPage() {
                     "Segment",
                     "Lifetime Revenue",
                     "Transactions",
-                    "Last Purchase",
+                    "Last Transaction",
                     "Churn Risk",
                   ].map((header) => (
                     <th

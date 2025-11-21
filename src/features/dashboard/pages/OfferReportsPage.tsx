@@ -1013,7 +1013,7 @@ export default function OfferReportsPage() {
                   orientation="right"
                   tick={{ fill: "#6b7280" }}
                   label={{
-                    value: "AOV ($)",
+                    value: "Avg Transaction Value ($)",
                     angle: 90,
                     position: "insideRight",
                     style: { fill: "#6b7280", fontSize: 12 },
@@ -1035,7 +1035,7 @@ export default function OfferReportsPage() {
                 <Bar
                   yAxisId="right"
                   dataKey="aov"
-                  name="AOV ($)"
+                  name="Avg Transaction Value ($)"
                   fill={chartPalette.secondary}
                   maxBarSize={40}
                   radius={[4, 4, 0, 0]}
