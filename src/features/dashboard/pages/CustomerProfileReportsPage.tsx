@@ -209,12 +209,12 @@ const baseCohortRetention: CohortPoint[] = [
   { month: 3, cohort: "Jan", retention: 58 },
   { month: 4, cohort: "Jan", retention: 49 },
   { month: 5, cohort: "Jan", retention: 45 },
-  { month: 1, cohort: "Apr", retention: 100 },
+  { month: 1, cohort: "Apr", retention: 98 },
   { month: 2, cohort: "Apr", retention: 76 },
   { month: 3, cohort: "Apr", retention: 63 },
   { month: 4, cohort: "Apr", retention: 54 },
   { month: 5, cohort: "Apr", retention: 50 },
-  { month: 1, cohort: "Jul", retention: 100 },
+  { month: 1, cohort: "Jul", retention: 96 },
   { month: 2, cohort: "Jul", retention: 79 },
   { month: 3, cohort: "Jul", retention: 66 },
   { month: 4, cohort: "Jul", retention: 57 },
@@ -841,7 +841,9 @@ export default function CustomerProfileReportsPage() {
                 Customer Value Matrix
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Customer segments by value score and recency
+                See how many customers are in each segment (Champions,
+                Loyalists, At-Risk, etc.) to understand your customer base
+                composition
               </p>
             </div>
           </div>
@@ -881,7 +883,8 @@ export default function CustomerProfileReportsPage() {
                 Customer Lifetime Value Distribution
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Customer count by CLV bucket and cumulative revenue share
+                See how customers are distributed across different value ranges
+                and which groups generate the most revenue
               </p>
             </div>
           </div>
@@ -949,7 +952,9 @@ export default function CustomerProfileReportsPage() {
                 Lifecycle Distribution
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Customer count by lifecycle stage over time
+                Track how many customers are in each stage (Active, New,
+                At-Risk, Churned) each month to spot trends and identify issues
+                early
               </p>
             </div>
           </div>
@@ -1022,15 +1027,17 @@ export default function CustomerProfileReportsPage() {
                 Cohort Retention Comparison
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Compare how each acquisition cohort retains month over month
+                See how well customers acquired in different months stay active
+                over time - helps identify if your retention efforts are
+                improving
               </p>
             </div>
           </div>
-          <div className="mt-6 h-80">
+          <div className="mt-6 h-96">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={cohortComparisonSeries}
-                margin={{ top: 20, right: 24, left: 0, bottom: 40 }}
+                margin={{ top: 20, right: 24, left: 20, bottom: 40 }}
                 barCategoryGap="30%"
                 barGap={12}
               >
@@ -1058,7 +1065,10 @@ export default function CustomerProfileReportsPage() {
                   content={<CustomTooltip />}
                   cursor={{ fill: "transparent" }}
                 />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
+                <Legend
+                  iconType="circle"
+                  wrapperStyle={{ paddingTop: 28, marginTop: 18 }}
+                />
                 <Bar
                   dataKey="Jan"
                   name="Jan Cohort"
