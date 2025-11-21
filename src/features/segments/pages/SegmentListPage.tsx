@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus,
   Search,
   Grid,
   List as ListIcon,
   FileText,
-  X,
   Eye,
   Edit,
   Trash2,
 } from "lucide-react";
-import { color, tw } from "../../../shared/utils/utils";
-import ListUpload from "../components/ListUpload";
+import { button, color, tw } from "../../../shared/utils/utils";
+import SegmentListModal, {
+  SegmentListFormValues,
+} from "../components/SegmentListModal";
 
 interface SegmentList {
   list_id: number;
@@ -21,6 +22,12 @@ interface SegmentList {
   created_on: string;
   list_type: "seed" | "and" | "standard";
   tags?: string[];
+  subscriber_id_col_name?: string;
+  file_delimiter?: string;
+  list_headers?: string;
+  file_text?: string;
+  file_name?: string;
+  file_size?: number;
 }
 
 export default function SegmentListPage() {
@@ -28,8 +35,12 @@ export default function SegmentListPage() {
   const [filteredLists, setFilteredLists] = useState<SegmentList[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedList, setSelectedList] = useState<SegmentList | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [editingList, setEditingList] = useState<SegmentList | null>(null);
+  const [modalInitialData, setModalInitialData] = useState<
+    SegmentListFormValues | undefined
+  >(undefined);
 
   // Mock data - in real app, this would come from API
   const mockLists: SegmentList[] = [
@@ -110,11 +121,69 @@ export default function SegmentListPage() {
     setFilteredLists(filtered);
   };
 
-  const handleCreateList = (listData: any) => {
-    // For now, just close the modal without creating anything
-    // since we don't have a backend endpoint
-    console.log("List data received:", listData);
-    setShowCreateModal(false);
+  const openCreateModal = () => {
+    setModalMode("create");
+    setEditingList(null);
+    setModalInitialData(undefined);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingList(null);
+    setModalInitialData(undefined);
+  };
+
+  const handleModalSubmit = (formData: SegmentListFormValues) => {
+    if (modalMode === "edit" && editingList) {
+      setLists((prev) =>
+        prev.map((list) =>
+          list.list_id === editingList.list_id
+            ? {
+                ...list,
+                name: formData.list_label,
+                description: formData.list_description,
+                list_type: formData.list_type,
+                tags: list.tags,
+                subscriber_id_col_name: formData.subscriber_id_col_name,
+                file_delimiter: formData.file_delimiter,
+                list_headers: formData.list_headers,
+                file_text: formData.file_text || list.file_text,
+                file_name: formData.file_name || list.file_name,
+                file_size: formData.file_size || list.file_size,
+              }
+            : list
+        )
+      );
+      closeModal();
+      return;
+    }
+
+    const rowCount = formData.file_text
+      ? formData.file_text.split(/\r?\n/).filter((line, index) => {
+          if (!line.trim()) return false;
+          return formData.list_headers ? index > 0 : true;
+        }).length
+      : 0;
+
+    const newList: SegmentList = {
+      list_id: Date.now(),
+      name: formData.list_label || `Uploaded List ${lists.length + 1}`,
+      description: formData.list_description,
+      subscriber_count: rowCount,
+      created_on: new Date().toISOString(),
+      list_type: formData.list_type,
+      tags: [],
+      subscriber_id_col_name: formData.subscriber_id_col_name,
+      file_delimiter: formData.file_delimiter,
+      list_headers: formData.list_headers,
+      file_text: formData.file_text,
+      file_name: formData.file_name,
+      file_size: formData.file_size,
+    };
+
+    setLists((prev) => [newList, ...prev]);
+    closeModal();
   };
 
   const handleViewList = (list: SegmentList) => {
@@ -123,8 +192,21 @@ export default function SegmentListPage() {
   };
 
   const handleEditList = (list: SegmentList) => {
-    setSelectedList(list);
-    setShowCreateModal(true);
+    setModalMode("edit");
+    setEditingList(list);
+    setModalInitialData({
+      list_id: list.list_id,
+      list_label: list.name,
+      list_description: list.description,
+      list_type: list.list_type,
+      subscriber_id_col_name: list.subscriber_id_col_name || "",
+      file_delimiter: list.file_delimiter || ",",
+      list_headers: list.list_headers || "",
+      file_text: list.file_text || "",
+      file_name: list.file_name,
+      file_size: list.file_size,
+    });
+    setIsModalOpen(true);
   };
 
   const handleDeleteList = (listId: number) => {
@@ -165,9 +247,14 @@ export default function SegmentListPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 text-white rounded-md text-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
-          style={{ backgroundColor: color.primary.action }}
+          onClick={openCreateModal}
+          className="inline-flex items-center text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+          style={{
+            backgroundColor: button.action.background,
+            color: button.action.color,
+            borderRadius: button.action.borderRadius,
+            padding: `${button.action.paddingY} ${button.action.paddingX}`,
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Create New List
@@ -189,21 +276,23 @@ export default function SegmentListPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-md transition-colors ${
+            className={`p-2 rounded transition-colors ${
               viewMode === "grid"
-                ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
-                : `bg-gray-100 text-gray-600 hover:bg-gray-200`
+                ? "bg-gray-200 text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
             }`}
+            title="Grid View"
           >
             <Grid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded-md transition-colors ${
+            className={`p-2 rounded transition-colors ${
               viewMode === "list"
-                ? `bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`
-                : `bg-gray-100 text-gray-600 hover:bg-gray-200`
+                ? "bg-gray-200 text-gray-900"
+                : "text-gray-500 hover:text-gray-700"
             }`}
+            title="List View"
           >
             <ListIcon className="w-4 h-4" />
           </button>
@@ -399,48 +488,14 @@ export default function SegmentListPage() {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-md max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>
-                  {selectedList ? "Edit List" : "Create New List"}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setSelectedList(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <ListUpload
-                onListDataChange={handleCreateList}
-                listData={
-                  selectedList
-                    ? {
-                        list_id: selectedList.list_id,
-                        list_description: selectedList.description,
-                        list_type: selectedList.list_type,
-                        list_label: selectedList.name,
-                        mode: "existing",
-                      }
-                    : undefined
-                }
-                hideExistingLists={true}
-                showCreateButton={true}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <SegmentListModal
+        isOpen={isModalOpen}
+        mode={modalMode}
+        initialData={modalInitialData}
+        onClose={closeModal}
+        onSubmit={handleModalSubmit}
+        submitLabel={modalMode === "create" ? "Create List" : "Save Changes"}
+      />
     </div>
   );
 }

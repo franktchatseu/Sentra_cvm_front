@@ -266,7 +266,7 @@ export default function CategoryDetailsPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard/offer-catalogs")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>

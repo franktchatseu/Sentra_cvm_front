@@ -23,6 +23,65 @@ import { colors } from "../../../shared/utils/tokens";
 type RangeOption = "7d" | "30d" | "90d";
 
 const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];
+const rangeDays: Record<RangeOption, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+};
+
+const getDaysBetween = (start: string, end: string) => {
+  const startDate = start ? new Date(start) : null;
+  const endDate = end ? new Date(end) : null;
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime())
+  ) {
+    return null;
+  }
+  const diff = Math.abs(endDate.getTime() - startDate.getTime());
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
+
+const mapDaysToRange = (days: number | null): RangeOption => {
+  if (days === null) return "7d";
+  if (days <= 7) return "7d";
+  if (days <= 30) return "30d";
+  return "90d";
+};
+
+const getRangeLabel = (option: RangeOption): string => {
+  const labels: Record<RangeOption, string> = {
+    "7d": "Daily",
+    "30d": "Weekly",
+    "90d": "Monthly",
+  };
+  return labels[option];
+};
+
+// Scale data based on actual number of days vs base range
+const getScaleFactor = (
+  customDays: number | null,
+  baseRange: RangeOption
+): number => {
+  if (!customDays) return 1;
+  const baseDays = rangeDays[baseRange];
+  return customDays / baseDays;
+};
+
+// Get date constraints for date inputs
+const getDateConstraints = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+
+  const minDate = new Date(today);
+  minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
+  const minDateStr = minDate.toISOString().split("T")[0];
+
+  return { minDate: minDateStr, maxDate };
+};
 
 type CampaignSummary = {
   eligibleAudience: number;
@@ -71,6 +130,7 @@ type CampaignRow = {
   delivered: number;
   conversions: number;
   messagesGenerated: number;
+  lastRunDate: string;
 };
 
 const campaignSummary: Record<RangeOption, CampaignSummary> = {
@@ -251,56 +311,78 @@ const revenueData: Record<RangeOption, TrendPoint[]> = {
   ],
 };
 
-const campaignRows: CampaignRow[] = [
-  {
-    id: "camp-neo",
-    name: "Neo Onboarding Journey",
-    segment: "New Customers",
-    offer: "Cashback Bonus",
-    targetGroup: 60_000,
-    controlGroup: 10_000,
-    sent: 70_000,
-    delivered: 66_500,
-    conversions: 5_400,
-    messagesGenerated: 210_000,
-  },
-  {
-    id: "camp-vip",
-    name: "VIP Upsell",
-    segment: "High Value",
-    offer: "Priority Upgrade",
-    targetGroup: 32_000,
-    controlGroup: 6_000,
-    sent: 38_000,
-    delivered: 36_200,
-    conversions: 4_800,
-    messagesGenerated: 120_000,
-  },
-  {
-    id: "camp-churn",
-    name: "Churn Winback",
-    segment: "Churn Risk",
-    offer: "Winback Voucher",
-    targetGroup: 48_000,
-    controlGroup: 8_000,
-    sent: 55_000,
-    delivered: 49_500,
-    conversions: 3_900,
-    messagesGenerated: 150_000,
-  },
-  {
-    id: "camp-seasonal",
-    name: "Seasonal Promotions",
-    segment: "Broad Audience",
-    offer: "Seasonal Bundles",
-    targetGroup: 75_000,
-    controlGroup: 12_000,
-    sent: 88_000,
-    delivered: 80_200,
-    conversions: 6_800,
-    messagesGenerated: 260_000,
-  },
-];
+// Generate comprehensive dummy data for campaigns
+const generateCampaignRows = (): CampaignRow[] => {
+  const segments = [
+    "New Customers",
+    "High Value",
+    "Churn Risk",
+    "Broad Audience",
+    "VIP",
+    "At-Risk",
+    "Reactivated",
+  ];
+  const offers = [
+    "Cashback Bonus",
+    "Priority Upgrade",
+    "Winback Voucher",
+    "Seasonal Bundles",
+    "Data Bundle",
+    "Voice Minutes",
+    "SMS Pack",
+  ];
+  const campaignNames = [
+    "Neo Onboarding Journey",
+    "VIP Upsell",
+    "Churn Winback",
+    "Seasonal Promotions",
+    "Welcome Series",
+    "Loyalty Rewards",
+    "Birthday Campaign",
+    "Holiday Special",
+    "Product Launch",
+    "Re-engagement Drive",
+    "Cross-sell Bundle",
+    "Referral Program",
+  ];
+
+  const rows: CampaignRow[] = [];
+  const today = new Date();
+
+  segments.forEach((segment, segIdx) => {
+    for (let i = 0; i < 3; i++) {
+      const baseIdx = segIdx * 3 + i;
+      const daysAgo = i * 10 + Math.floor(Math.random() * 5);
+      const runDate = new Date(today);
+      runDate.setDate(today.getDate() - daysAgo);
+
+      const targetGroup = 20000 + Math.floor(Math.random() * 60000);
+      const controlGroup = Math.floor(targetGroup * 0.15);
+      const sent = targetGroup + controlGroup;
+      const delivered = Math.floor(sent * (0.92 + Math.random() * 0.06));
+      const conversions = Math.floor(delivered * (0.06 + Math.random() * 0.08));
+      const messagesGenerated = sent * (2 + Math.floor(Math.random() * 2));
+
+      rows.push({
+        id: `camp-${String(1000 + baseIdx)}`,
+        name: campaignNames[baseIdx % campaignNames.length],
+        segment,
+        offer: offers[baseIdx % offers.length],
+        targetGroup,
+        controlGroup,
+        sent,
+        delivered,
+        conversions,
+        messagesGenerated,
+        lastRunDate: runDate.toISOString().split("T")[0],
+      });
+    }
+  });
+
+  return rows;
+};
+
+const campaignRows: CampaignRow[] = generateCampaignRows();
 
 type ChartTooltipEntry = {
   color?: string;
@@ -351,13 +433,46 @@ const statIcons = {
 export default function CampaignReportsPage() {
   const [tableQuery, setTableQuery] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("All");
-  const [channelChartRange, setChannelChartRange] = useState<RangeOption>("7d");
-  const [funnelRange, setFunnelRange] = useState<RangeOption>("7d");
-  const [trendRange, setTrendRange] = useState<RangeOption>("7d");
-  const [revenueRange, setRevenueRange] = useState<RangeOption>("7d");
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
+  const [customRange, setCustomRange] = useState({ start: "", end: "" });
 
-  const defaultRange: RangeOption = "30d";
-  const summary = campaignSummary[defaultRange];
+  const customDays = getDaysBetween(customRange.start, customRange.end);
+  const activeRangeKey: RangeOption =
+    customRange.start && customRange.end
+      ? mapDaysToRange(customDays)
+      : selectedRange;
+
+  // Calculate scale factor for custom date ranges
+  const scaleFactor = useMemo(() => {
+    if (customRange.start && customRange.end && customDays) {
+      return getScaleFactor(customDays, activeRangeKey);
+    }
+    return 1;
+  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+
+  // Scale summary data based on actual date range
+  const baseSummary = campaignSummary[activeRangeKey];
+  const summary = useMemo(() => {
+    if (scaleFactor === 1) return baseSummary;
+    return {
+      ...baseSummary,
+      eligibleAudience: Math.round(baseSummary.eligibleAudience * scaleFactor),
+      recipients: Math.round(baseSummary.recipients * scaleFactor),
+      reach: Math.round(baseSummary.reach * scaleFactor),
+      impressions: Math.round(baseSummary.impressions * scaleFactor),
+      opens: Math.round(baseSummary.opens * scaleFactor),
+      conversions: Math.round(baseSummary.conversions * scaleFactor),
+      revenue: Math.round(baseSummary.revenue * scaleFactor),
+      leads: Math.round(baseSummary.leads * scaleFactor),
+      campaignCost: Math.round(baseSummary.campaignCost * scaleFactor),
+      // Rates stay the same (percentages don't scale)
+      clickRate: baseSummary.clickRate,
+      engagementRate: baseSummary.engagementRate,
+      conversionRate: baseSummary.conversionRate,
+      roas: baseSummary.roas,
+      cac: baseSummary.cac,
+    };
+  }, [baseSummary, scaleFactor]);
   const heroCards = [
     {
       label: "Audience Reached",
@@ -409,6 +524,15 @@ export default function CampaignReportsPage() {
 
   const filteredRows = useMemo(() => {
     const query = tableQuery.trim().toLowerCase();
+    const maxDays =
+      customRange.start && customRange.end
+        ? customDays ?? rangeDays[selectedRange]
+        : rangeDays[selectedRange];
+    const startMs = customRange.start
+      ? new Date(customRange.start).getTime()
+      : null;
+    const endMs = customRange.end ? new Date(customRange.end).getTime() : null;
+
     return campaignRows.filter((row) => {
       const matchesSegment =
         segmentFilter === "All" ? true : row.segment === segmentFilter;
@@ -416,9 +540,16 @@ export default function CampaignReportsPage() {
         ? row.name.toLowerCase().includes(query) ||
           row.segment.toLowerCase().includes(query)
         : true;
-      return matchesSegment && matchesQuery;
+      const rowDate = new Date(row.lastRunDate).getTime();
+      const now = Date.now();
+      const matchesRange =
+        customRange.start && customRange.end && startMs && endMs
+          ? rowDate >= startMs && rowDate <= endMs
+          : now - rowDate <= maxDays * 24 * 60 * 60 * 1000;
+
+      return matchesSegment && matchesQuery && matchesRange;
     });
-  }, [segmentFilter, tableQuery]);
+  }, [segmentFilter, tableQuery, customRange, customDays, selectedRange]);
 
   const segmentOptions = [
     "All",
@@ -435,10 +566,46 @@ export default function CampaignReportsPage() {
     spend: "#0F5A32",
   };
 
-  const channelData = channelReachData[channelChartRange];
-  const funnelSeries = funnelData[funnelRange];
-  const trendSeries = trendData[trendRange];
-  const revenueSeries = revenueData[revenueRange];
+  // Scale chart data based on actual date range
+  const channelData = useMemo(() => {
+    const base = channelReachData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      reach: Math.round(point.reach * scaleFactor),
+      impressions: Math.round(point.impressions * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const funnelSeries = useMemo(() => {
+    const base = funnelData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      value: Math.round(point.value * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const trendSeries = useMemo(() => {
+    const base = trendData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      // Rates stay the same
+      ctr: point.ctr,
+      engagement: point.engagement,
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const revenueSeries = useMemo(() => {
+    const base = revenueData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      revenue: Math.round(point.revenue * scaleFactor),
+      spend: Math.round(point.spend * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
 
   const handleDownloadCsv = () => {
     if (!filteredRows.length) return;
@@ -453,6 +620,7 @@ export default function CampaignReportsPage() {
       "Sent",
       "Delivered",
       "Conversions",
+      "Last Run",
     ];
 
     const rows = filteredRows.map((row) => [
@@ -465,6 +633,7 @@ export default function CampaignReportsPage() {
       row.sent,
       row.delivered,
       row.conversions,
+      row.lastRunDate,
     ]);
 
     const csvContent = [headers, ...rows]
@@ -483,13 +652,89 @@ export default function CampaignReportsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <header className="space-y-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Campaign Reports</h1>
           <p className="mt-2 text-sm text-gray-600">
             Monitor end-to-end campaign reach, engagement, and revenue impact
           </p>
+        </div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {rangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  setSelectedRange(option);
+                  setCustomRange({ start: "", end: "" });
+                }}
+                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  !(customRange.start && customRange.end) &&
+                  selectedRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {getRangeLabel(option)}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="campaign-date-start"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                From:
+              </label>
+              <input
+                id="campaign-date-start"
+                type="date"
+                value={customRange.start}
+                min={getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    start: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="campaign-date-end"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                To:
+              </label>
+              <input
+                id="campaign-date-end"
+                type="date"
+                value={customRange.end}
+                min={customRange.start || getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    end: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+              />
+            </div>
+            {(customRange.start || customRange.end) && (
+              <button
+                type="button"
+                onClick={() => setCustomRange({ start: "", end: "" })}
+                className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -547,21 +792,6 @@ export default function CampaignReportsPage() {
                 Breakdown of reach and impressions by channel
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {rangeOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setChannelChartRange(option)}
-                  className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    channelChartRange === option
-                      ? "border-[#252829] bg-[#252829] text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {option.toUpperCase()}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -601,21 +831,6 @@ export default function CampaignReportsPage() {
                 Track drop-off from sent to conversion
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {rangeOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setFunnelRange(option)}
-                  className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    funnelRange === option
-                      ? "border-[#252829] bg-[#252829] text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {option.toUpperCase()}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -653,21 +868,6 @@ export default function CampaignReportsPage() {
               <p className="mt-1 text-sm text-gray-600">
                 Monitor interaction quality across the selected period
               </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {rangeOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setTrendRange(option)}
-                  className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    trendRange === option
-                      ? "border-[#252829] bg-[#252829] text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {option.toUpperCase()}
-                </button>
-              ))}
             </div>
           </div>
           <div className="mt-6 h-80">
@@ -716,21 +916,6 @@ export default function CampaignReportsPage() {
                 Compare generated revenue against campaign spend
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {rangeOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setRevenueRange(option)}
-                  className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    revenueRange === option
-                      ? "border-[#252829] bg-[#252829] text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {option.toUpperCase()}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -778,12 +963,12 @@ export default function CampaignReportsPage() {
               value={tableQuery}
               onChange={(event) => setTableQuery(event.target.value)}
               placeholder="Search campaign"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:outline-none md:w-80"
+              className="w-full rounded-md border border-gray-200 px-3 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:outline-none md:w-80"
             />
             <select
               value={segmentFilter}
               onChange={(event) => setSegmentFilter(event.target.value)}
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
             >
               {segmentOptions.map((segment) => (
                 <option key={segment} value={segment}>
@@ -794,7 +979,7 @@ export default function CampaignReportsPage() {
             <button
               type="button"
               onClick={handleDownloadCsv}
-              className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold text-white"
               style={{ backgroundColor: colors.primary.action }}
             >
               <Download className="h-4 w-4" />
@@ -820,6 +1005,7 @@ export default function CampaignReportsPage() {
                     "Sent",
                     "Delivered",
                     "Conversions",
+                    "Last Run",
                   ].map((header, idx, arr) => (
                     <th
                       key={header}
@@ -877,8 +1063,6 @@ export default function CampaignReportsPage() {
                       className="px-6 py-4"
                       style={{
                         backgroundColor: colors.surface.tablebodybg,
-                        borderTopRightRadius: "0.375rem",
-                        borderBottomRightRadius: "0.375rem",
                       }}
                     >
                       {entry.messagesGenerated.toLocaleString("en-US")}
@@ -900,6 +1084,16 @@ export default function CampaignReportsPage() {
                       style={{ backgroundColor: colors.surface.tablebodybg }}
                     >
                       {entry.conversions.toLocaleString("en-US")}
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{
+                        backgroundColor: colors.surface.tablebodybg,
+                        borderTopRightRadius: "0.375rem",
+                        borderBottomRightRadius: "0.375rem",
+                      }}
+                    >
+                      {entry.lastRunDate}
                     </td>
                   </tr>
                 ))}

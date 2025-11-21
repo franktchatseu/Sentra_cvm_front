@@ -13,8 +13,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Download,
-  MailOpen,
-  MessageCircle,
+  Inbox,
+  Mail,
+  MailCheck,
   MousePointerClick,
   TrendingUp,
   UserMinus,
@@ -23,7 +24,7 @@ import { colors } from "../../../shared/utils/tokens";
 import { color } from "../../../shared/utils/utils";
 
 type RangeOption = "7d" | "30d" | "90d";
-type MessageStatus = "Delivered" | "Failed" | "Pending" | "Rejected";
+type EmailStatus = "Delivered" | "Bounced" | "Deferred" | "Spam";
 
 type DeliveryPoint = {
   period: string;
@@ -32,148 +33,252 @@ type DeliveryPoint = {
   converted: number;
 };
 
-type SMSSummary = {
+type EmailSummary = {
   sent: number;
   delivered: number;
   deliveryRate: number;
-  failedRate: number;
   conversionRate: number;
   conversions: number;
+  bounceRate: number;
   openRate: number;
   ctr: number;
-  optOutRate: number;
+  unsubscribeRate: number;
 };
 
-type SMSRangeData = {
-  summary: SMSSummary;
+type EmailRangeData = {
+  summary: EmailSummary;
   deliverySeries: DeliveryPoint[];
 };
 
-type MessageLogEntry = {
+type EmailLogEntry = {
   id: string;
   campaignId: string;
   campaignName: string;
-  recipient: string;
-  region: string;
-  senderId: string;
-  timestamp: string;
-  status: MessageStatus;
+  status: EmailStatus;
   sent: number;
   delivered: number;
   conversions: number;
   conversionRate: number;
-  errorCode?: string;
+  sentDate: string;
 };
 
 const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];
-const rangeDays: Record<RangeOption, number> = {
-  "7d": 7,
-  "30d": 30,
-  "90d": 90,
-};
-const statusOptions: (MessageStatus | "All")[] = [
+const statusOptions: (EmailStatus | "All")[] = [
   "All",
   "Delivered",
-  "Failed",
-  "Pending",
-  "Rejected",
+  "Bounced",
+  "Deferred",
+  "Spam",
 ];
 
 const chartColors = {
-  sent: colors.tertiary.tag1,
-  delivered: "#3b82f6",
-  converted: "#15803d",
-  failed: colors.status.danger,
+  sent: colors.tertiary.tag2,
+  delivered: colors.primary.accent,
+  converted: colors.tertiary.tag4,
 };
 
-const smsMockData: Record<RangeOption, SMSRangeData> = {
+const emailMockData: Record<RangeOption, EmailRangeData> = {
   "7d": {
     summary: {
-      sent: 87_500,
-      delivered: 82_000,
-      deliveryRate: 93.7,
-      conversionRate: 7.5,
-      conversions: 6_400,
-      failedRate: 4.5,
-      openRate: 42.3,
-      ctr: 9.1,
-      optOutRate: 0.6,
+      sent: 255_000,
+      delivered: 234_500,
+      deliveryRate: 92,
+      conversionRate: 3.8,
+      conversions: 8_900,
+      bounceRate: 5.6,
+      openRate: 48.2,
+      ctr: 12.4,
+      unsubscribeRate: 0.4,
     },
     deliverySeries: [
-      { period: "Mon", sent: 12_500, delivered: 11_800, converted: 920 },
-      { period: "Tue", sent: 12_200, delivered: 11_500, converted: 915 },
-      { period: "Wed", sent: 12_800, delivered: 12_050, converted: 940 },
-      { period: "Thu", sent: 12_400, delivered: 11_780, converted: 930 },
-      { period: "Fri", sent: 12_600, delivered: 11_900, converted: 945 },
-      { period: "Sat", sent: 12_100, delivered: 11_420, converted: 905 },
-      { period: "Sun", sent: 13_000, delivered: 12_550, converted: 950 },
+      { period: "Mon", sent: 36_500, delivered: 33_800, converted: 1_320 },
+      { period: "Tue", sent: 35_000, delivered: 32_400, converted: 1_250 },
+      { period: "Wed", sent: 37_200, delivered: 34_300, converted: 1_310 },
+      { period: "Thu", sent: 36_100, delivered: 33_900, converted: 1_305 },
+      { period: "Fri", sent: 36_800, delivered: 34_200, converted: 1_315 },
+      { period: "Sat", sent: 36_400, delivered: 33_700, converted: 1_230 },
+      { period: "Sun", sent: 37_000, delivered: 32_200, converted: 1_170 },
     ],
   },
   "30d": {
     summary: {
-      sent: 360_000,
-      delivered: 337_500,
-      deliveryRate: 93.7,
-      conversionRate: 7.8,
-      conversions: 27_000,
-      failedRate: 4.2,
-      openRate: 41.8,
-      ctr: 9.4,
-      optOutRate: 0.7,
+      sent: 1_020_000,
+      delivered: 945_000,
+      deliveryRate: 92.6,
+      conversionRate: 4.2,
+      conversions: 40_000,
+      bounceRate: 5.1,
+      openRate: 49.7,
+      ctr: 12.9,
+      unsubscribeRate: 0.45,
     },
     deliverySeries: [
-      { period: "Oct 1-7", sent: 90_000, delivered: 84_800, converted: 6_750 },
-      { period: "Oct 8-14", sent: 90_500, delivered: 85_050, converted: 6_820 },
+      { period: "Week 1", sent: 255_000, delivered: 235_000, converted: 9_600 },
+      { period: "Week 2", sent: 255_000, delivered: 240_000, converted: 9_900 },
       {
-        period: "Oct 15-21",
-        sent: 88_500,
-        delivered: 83_300,
-        converted: 6_700,
+        period: "Week 3",
+        sent: 255_000,
+        delivered: 235_000,
+        converted: 10_200,
       },
       {
-        period: "Oct 22-28",
-        sent: 91_000,
-        delivered: 84_350,
-        converted: 6_780,
+        period: "Week 4",
+        sent: 255_000,
+        delivered: 235_000,
+        converted: 10_300,
       },
     ],
   },
   "90d": {
     summary: {
-      sent: 1_075_000,
-      delivered: 1_008_000,
-      deliveryRate: 93.8,
-      conversionRate: 8.0,
-      conversions: 80_400,
-      failedRate: 4.0,
-      openRate: 42.6,
-      ctr: 9.9,
-      optOutRate: 0.8,
+      sent: 3_150_000,
+      delivered: 2_920_000,
+      deliveryRate: 92.7,
+      conversionRate: 4.4,
+      conversions: 138_000,
+      bounceRate: 4.9,
+      openRate: 50.1,
+      ctr: 13.1,
+      unsubscribeRate: 0.5,
     },
     deliverySeries: [
       {
         period: "September",
-        sent: 355_000,
-        delivered: 333_000,
-        converted: 26_700,
+        sent: 1_050_000,
+        delivered: 975_000,
+        converted: 46_000,
       },
       {
         period: "October",
-        sent: 360_000,
-        delivered: 337_500,
-        converted: 27_000,
+        sent: 1_050_000,
+        delivered: 973_000,
+        converted: 46_200,
       },
       {
         period: "November",
-        sent: 360_000,
-        delivered: 337_500,
-        converted: 27_200,
+        sent: 1_050_000,
+        delivered: 972_000,
+        converted: 45_800,
       },
     ],
   },
 };
 
+// Generate comprehensive dummy data with dates relative to today
+const generateEmailMessageLogs = (): EmailLogEntry[] => {
+  const campaigns = [
+    { id: "CAMP-2201", name: "Reactivation Blast" },
+    { id: "CAMP-2202", name: "Upsell Journey" },
+    { id: "CAMP-2203", name: "Rewards Digest" },
+    { id: "CAMP-2204", name: "VIP Launch" },
+    { id: "CAMP-2205", name: "Churn Recovery" },
+    { id: "CAMP-2206", name: "Welcome Series" },
+    { id: "CAMP-2207", name: "Flash Sale" },
+    { id: "CAMP-2208", name: "Newsletter" },
+  ];
+  const statuses: EmailStatus[] = ["Delivered", "Bounced", "Deferred", "Spam"];
+
+  const rows: EmailLogEntry[] = [];
+  const today = new Date();
+
+  // Generate emails across the last 90 days with various statuses
+  campaigns.forEach((campaign) => {
+    for (let i = 0; i < 6; i++) {
+      const daysAgo = Math.floor(Math.random() * 90); // Spread across last 90 days
+      const sentDate = new Date(today);
+      sentDate.setDate(today.getDate() - daysAgo);
+
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const sent = 10000 + Math.floor(Math.random() * 20000);
+      const deliveryRate =
+        status === "Delivered"
+          ? 0.92 + Math.random() * 0.06
+          : status === "Bounced"
+          ? 0.85 + Math.random() * 0.05
+          : status === "Spam"
+          ? 0.8 + Math.random() * 0.08
+          : 0.9 + Math.random() * 0.05;
+      const delivered = Math.floor(sent * deliveryRate);
+      const conversionRate =
+        status === "Delivered"
+          ? 2.0 + Math.random() * 5.0
+          : status === "Spam"
+          ? 0.5 + Math.random() * 1.5
+          : 1.0 + Math.random() * 3.0;
+      const conversions = Math.floor(delivered * (conversionRate / 100));
+
+      rows.push({
+        id: `EMAIL-${sentDate
+          .toISOString()
+          .split("T")[0]
+          .replace(/-/g, "")}-${String(i + 1).padStart(3, "0")}`,
+        campaignId: campaign.id,
+        campaignName: campaign.name,
+        status,
+        sent,
+        delivered,
+        conversions,
+        conversionRate: Math.round(conversionRate * 10) / 10,
+        sentDate: sentDate.toISOString().split("T")[0],
+      });
+    }
+  });
+
+  return rows;
+};
+
+const emailMessageLogs: EmailLogEntry[] = generateEmailMessageLogs();
+
 const formatNumber = (value: number) => value.toLocaleString("en-US");
+
+type ChartTooltipEntry = {
+  color?: string;
+  name?: string;
+  value?: number | string;
+};
+
+type ChartTooltipProps = {
+  active?: boolean;
+  label?: string;
+  payload?: ChartTooltipEntry[];
+};
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+      <p className="mb-2 text-sm font-semibold text-gray-900">{label}</p>
+      {payload.map((entry, idx) => (
+        <div
+          key={idx}
+          className="flex items-center justify-between gap-4 text-sm"
+        >
+          <span className="flex items-center gap-2">
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-gray-600">{entry.name}</span>
+          </span>
+          <span className="font-semibold text-gray-900">
+            {typeof entry.value === "number"
+              ? formatNumber(entry.value)
+              : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const rangeDays: Record<RangeOption, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+};
 
 const getDaysBetween = (start: string, end: string) => {
   const startDate = start ? new Date(start) : null;
@@ -229,135 +334,11 @@ const getDateConstraints = () => {
   return { minDate: minDateStr, maxDate };
 };
 
-// Generate comprehensive dummy data with dates relative to today
-const generateSMSMessageLogs = (): MessageLogEntry[] => {
-  const campaigns = [
-    { id: "CAMP-8472", name: "Loyalty Reactivation" },
-    { id: "LOYALTY-5541", name: "VIP Upsell" },
-    { id: "REACT-2201", name: "Churn Winback" },
-    { id: "WELCOME-3321", name: "Welcome Series" },
-    { id: "PROMO-4456", name: "Flash Sale" },
-    { id: "BIRTHDAY-6678", name: "Birthday Campaign" },
-  ];
-  const statuses: MessageStatus[] = [
-    "Delivered",
-    "Failed",
-    "Pending",
-    "Rejected",
-  ];
-  const regions = ["Uganda", "Kenya", "Rwanda", "Tanzania", "Ghana", "Nigeria"];
-  const errorCodes = ["INV_NUMBER", "DND_ACTIVE", "BLOCKED", "TIMEOUT"];
-  const phonePrefixes = ["+256", "+254", "+250", "+255", "+233", "+234"];
-
-  const rows: MessageLogEntry[] = [];
-  const today = new Date();
-
-  // Generate messages across the last 90 days with various statuses
-  campaigns.forEach((campaign, campIdx) => {
-    for (let i = 0; i < 8; i++) {
-      const daysAgo = Math.floor(Math.random() * 90); // Spread across last 90 days
-      const messageDate = new Date(today);
-      messageDate.setDate(today.getDate() - daysAgo);
-      messageDate.setHours(
-        9 + Math.floor(Math.random() * 12),
-        Math.floor(Math.random() * 60),
-        0,
-        0
-      );
-
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const regionIdx = campIdx % regions.length;
-      const delivered = status === "Delivered" ? 1 : 0;
-      const conversions = delivered === 1 && Math.random() > 0.6 ? 1 : 0;
-      const conversionRate =
-        delivered === 1 ? (conversions === 1 ? 100 : 0) : 0;
-
-      const phoneNum = `${phonePrefixes[regionIdx]} ${
-        700 + Math.floor(Math.random() * 100)
-      } ${String(100000 + Math.floor(Math.random() * 900000))}`;
-
-      rows.push({
-        id: `MSG-${messageDate
-          .toISOString()
-          .split("T")[0]
-          .replace(/-/g, "")}-${String(i + 1).padStart(3, "0")}`,
-        campaignId: campaign.id,
-        campaignName: campaign.name,
-        recipient: phoneNum,
-        region: regions[regionIdx],
-        senderId: "SentraCVM",
-        timestamp: messageDate.toISOString(),
-        status,
-        sent: 1,
-        delivered,
-        conversions,
-        conversionRate,
-        ...(status === "Failed" || status === "Rejected"
-          ? {
-              errorCode:
-                errorCodes[Math.floor(Math.random() * errorCodes.length)],
-            }
-          : {}),
-      });
-    }
-  });
-
-  return rows;
-};
-
-const smsMessageLogs: MessageLogEntry[] = generateSMSMessageLogs();
-
-type ChartTooltipEntry = {
-  color?: string;
-  name?: string;
-  value?: number | string;
-};
-
-type ChartTooltipProps = {
-  active?: boolean;
-  label?: string;
-  payload?: ChartTooltipEntry[];
-};
-
-const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
-  if (!active || !payload?.length) {
-    return null;
-  }
-
-  return (
-    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
-      <p className="mb-2 text-sm font-semibold text-gray-900">{label}</p>
-      {payload.map((entry, idx) => (
-        <div
-          key={idx}
-          className="flex items-center justify-between gap-4 text-sm"
-        >
-          <span className="flex items-center gap-2">
-            <span
-              className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-gray-600">{entry.name}</span>
-          </span>
-          <span className="font-semibold text-gray-900">
-            {typeof entry.value === "number"
-              ? formatNumber(entry.value)
-              : entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export default function DeliverySMSReportsPage() {
+export default function DeliveryEmailReportsPage() {
   const [deliveryRange, setDeliveryRange] = useState<RangeOption>("7d");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
-  const [statusFilter, setStatusFilter] = useState<MessageStatus | "All">(
-    "All"
-  );
+  const [statusFilter, setStatusFilter] = useState<EmailStatus | "All">("All");
   const [campaignQuery, setCampaignQuery] = useState("");
-
   const customDays = getDaysBetween(customRange.start, customRange.end);
   const activeRangeKey: RangeOption =
     customRange.start && customRange.end
@@ -373,7 +354,7 @@ export default function DeliverySMSReportsPage() {
   }, [customRange.start, customRange.end, customDays, activeRangeKey]);
 
   // Scale snapshot data based on actual date range
-  const baseSnapshot = smsMockData[activeRangeKey];
+  const baseSnapshot = emailMockData[activeRangeKey];
   const summarySnapshot = useMemo(() => {
     if (scaleFactor === 1) return baseSnapshot;
     return {
@@ -385,11 +366,11 @@ export default function DeliverySMSReportsPage() {
         conversions: Math.round(baseSnapshot.summary.conversions * scaleFactor),
         // Rates stay the same
         deliveryRate: baseSnapshot.summary.deliveryRate,
-        failedRate: baseSnapshot.summary.failedRate,
+        bounceRate: baseSnapshot.summary.bounceRate,
         conversionRate: baseSnapshot.summary.conversionRate,
         openRate: baseSnapshot.summary.openRate,
         ctr: baseSnapshot.summary.ctr,
-        optOutRate: baseSnapshot.summary.optOutRate,
+        unsubscribeRate: baseSnapshot.summary.unsubscribeRate,
       },
     };
   }, [baseSnapshot, scaleFactor]);
@@ -406,6 +387,7 @@ export default function DeliverySMSReportsPage() {
       })),
     };
   }, [baseSnapshot, scaleFactor]);
+
   const filteredLogs = useMemo(() => {
     const now = Date.now();
     const maxDays =
@@ -419,21 +401,21 @@ export default function DeliverySMSReportsPage() {
     const endMs = customRange.end ? new Date(customRange.end).getTime() : null;
 
     const query = campaignQuery.trim().toLowerCase();
-    return smsMessageLogs.filter((entry) => {
+    return emailMessageLogs.filter((entry) => {
       const matchesStatus =
         statusFilter === "All" ? true : entry.status === statusFilter;
       const matchesQuery = query
         ? entry.campaignId.toLowerCase().includes(query) ||
           entry.campaignName.toLowerCase().includes(query)
         : true;
-      const entryDate = new Date(entry.timestamp).getTime();
+      const entryDate = new Date(entry.sentDate).getTime();
       const matchesRange =
         customRange.start && customRange.end && startMs && endMs
           ? entryDate >= startMs && entryDate <= endMs
           : now - entryDate <= maxDays * 24 * 60 * 60 * 1000;
       return matchesStatus && matchesQuery && matchesRange;
     });
-  }, [campaignQuery, statusFilter, customRange, customDays, deliveryRange]);
+  }, [campaignQuery, statusFilter, customRange, deliveryRange, customDays]);
 
   const handleDownloadCsv = () => {
     if (!filteredLogs.length) return;
@@ -466,7 +448,7 @@ export default function DeliverySMSReportsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "sms_delivery_logs.csv");
+    link.setAttribute("download", "email_delivery_logs.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -475,60 +457,60 @@ export default function DeliverySMSReportsPage() {
 
   const summaryStats = [
     {
-      label: "Messages Sent",
+      label: "Emails Sent",
       value: formatNumber(summarySnapshot.summary.sent),
-      description: "Total SMS dispatched last 30 days",
-      icon: MessageCircle,
+      description: "Total emails dispatched last 30 days",
+      icon: Mail,
     },
     {
-      label: "Delivered Messages",
+      label: "Delivered Emails",
       value: formatNumber(summarySnapshot.summary.delivered),
-      description: "Reached user devices successfully",
-      icon: CheckCircle2,
+      description: "Reached inboxes successfully",
+      icon: MailCheck,
     },
     {
-      label: "Delivery Rate",
+      label: "Inbox Placement",
       value: `${summarySnapshot.summary.deliveryRate.toFixed(1)}%`,
       description: "Delivered vs total sent",
-      icon: TrendingUp,
+      icon: Inbox,
     },
     {
-      label: "Failed Delivery Rate",
-      value: `${summarySnapshot.summary.failedRate.toFixed(1)}%`,
-      description: "Messages bouncing or rejected",
+      label: "Bounce Rate",
+      value: `${summarySnapshot.summary.bounceRate.toFixed(1)}%`,
+      description: "Rejected or invalid addresses",
       icon: AlertTriangle,
     },
     {
       label: "Open Rate",
       value: `${summarySnapshot.summary.openRate.toFixed(1)}%`,
-      description: "Recipients opening SMS content",
-      icon: MailOpen,
+      description: "Recipients opening emails",
+      icon: CheckCircle2,
     },
     {
       label: "Click-Through Rate",
       value: `${summarySnapshot.summary.ctr.toFixed(1)}%`,
-      description: "Recipients tapping tracked links",
+      description: "Recipients clicking tracked links",
       icon: MousePointerClick,
     },
     {
       label: "Conversion Rate",
       value: `${summarySnapshot.summary.conversionRate.toFixed(1)}%`,
-      description: "Delivered SMS leading to actions",
+      description: "Emails leading to outcomes",
       icon: TrendingUp,
     },
     {
-      label: "Opt-Out Rate",
-      value: `${summarySnapshot.summary.optOutRate.toFixed(1)}%`,
-      description: "Recipients choosing to unsubscribe",
+      label: "Unsubscribe Rate",
+      value: `${summarySnapshot.summary.unsubscribeRate.toFixed(2)}%`,
+      description: "Recipients opting out",
       icon: UserMinus,
     },
   ];
 
-  const statusStyles: Record<MessageStatus, string> = {
+  const statusStyles: Record<EmailStatus, string> = {
     Delivered: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    Failed: "border-red-200 bg-red-50 text-red-700",
-    Pending: "border-amber-200 bg-amber-50 text-amber-700",
-    Rejected: "border-slate-200 bg-slate-50 text-slate-700",
+    Bounced: "border-red-200 bg-red-50 text-red-700",
+    Deferred: "border-amber-200 bg-amber-50 text-amber-700",
+    Spam: "border-slate-200 bg-slate-50 text-slate-700",
   };
 
   return (
@@ -536,10 +518,11 @@ export default function DeliverySMSReportsPage() {
       <header className="space-y-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Delivery & SMS Reports
+            Delivery & Email Reports
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Deep dive into SMS delivery health and outcomes
+            Track inbox placement, engagement, and conversion impact for every
+            send
           </p>
         </div>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -565,13 +548,13 @@ export default function DeliverySMSReportsPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <label
-                htmlFor="sms-date-start"
+                htmlFor="email-date-start"
                 className="text-sm font-medium text-gray-700 whitespace-nowrap"
               >
                 From:
               </label>
               <input
-                id="sms-date-start"
+                id="email-date-start"
                 type="date"
                 value={customRange.start}
                 min={getDateConstraints().minDate}
@@ -587,13 +570,13 @@ export default function DeliverySMSReportsPage() {
             </div>
             <div className="flex items-center gap-2">
               <label
-                htmlFor="sms-date-end"
+                htmlFor="email-date-end"
                 className="text-sm font-medium text-gray-700 whitespace-nowrap"
               >
                 To:
               </label>
               <input
-                id="sms-date-end"
+                id="email-date-end"
                 type="date"
                 value={customRange.end}
                 min={customRange.start || getDateConstraints().minDate}
@@ -649,7 +632,7 @@ export default function DeliverySMSReportsPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              SMS Delivery Funnel
+              Email Delivery Funnel
             </h2>
             <p className="mt-1 text-sm text-gray-600">
               Track sent, delivered, and conversions across timelines
@@ -674,7 +657,7 @@ export default function DeliverySMSReportsPage() {
                 tick={{ fill: "#6b7280" }}
                 axisLine={{ stroke: "#e5e7eb" }}
                 label={{
-                  value: "Message Count",
+                  value: "Email Count",
                   angle: -90,
                   position: "insideLeft",
                 }}
@@ -719,10 +702,10 @@ export default function DeliverySMSReportsPage() {
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Message Delivery Log
+              Email Delivery Log
             </h2>
             <p className="mt-1 text-sm text-gray-600">
-              Inspect individual sends, troubleshoot failures, and export detail
+              Inspect campaign-level sends, diagnose issues, and export data
             </p>
           </div>
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -736,7 +719,7 @@ export default function DeliverySMSReportsPage() {
             <select
               value={statusFilter}
               onChange={(event) =>
-                setStatusFilter(event.target.value as MessageStatus | "All")
+                setStatusFilter(event.target.value as EmailStatus | "All")
               }
               className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-40"
             >
@@ -817,19 +800,19 @@ export default function DeliverySMSReportsPage() {
                       className="px-6 py-4"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      {entry.sent}
+                      {formatNumber(entry.sent)}
                     </td>
                     <td
                       className="px-6 py-4"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      {entry.delivered}
+                      {formatNumber(entry.delivered)}
                     </td>
                     <td
                       className="px-6 py-4"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      {entry.conversions}
+                      {formatNumber(entry.conversions)}
                     </td>
                     <td
                       className="px-6 py-4"
@@ -843,7 +826,7 @@ export default function DeliverySMSReportsPage() {
             </table>
             {!filteredLogs.length && (
               <div className="py-10 text-center text-sm text-gray-500">
-                No messages match your filters yet.
+                No campaigns match your filters yet.
               </div>
             )}
           </div>

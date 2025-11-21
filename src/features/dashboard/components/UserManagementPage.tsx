@@ -1138,7 +1138,7 @@ export default function UserManagementPage() {
                         Created
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Actions
@@ -1164,7 +1164,18 @@ export default function UserManagementPage() {
                               <button
                                 type="button"
                                 onClick={() => handleViewUser(user)}
-                                className={`font-semibold text-sm sm:text-base ${tw.textPrimary} transition-colors hover:opacity-80 truncate`}
+                                className="font-semibold text-sm sm:text-base text-gray-900 transition-colors truncate"
+                                style={{
+                                  color: "inherit",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color =
+                                    color.primary.accent;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color =
+                                    "rgb(17, 24, 39)"; // gray-900
+                                }}
                                 title={`${user.first_name} ${user.last_name}`}
                               >
                                 {user.first_name} {user.last_name}
@@ -1238,7 +1249,7 @@ export default function UserManagementPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            <div className="flex items-center justify-end space-x-2">
+                            <div className="flex items-center justify-center space-x-2">
                               <button
                                 onClick={() => handleToggleStatus(user)}
                                 disabled={loadingActions.toggling.has(user.id)}
@@ -1336,11 +1347,21 @@ export default function UserManagementPage() {
                       className="p-4 border-b border-gray-200 last:border-b-0"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="text-base font-semibold text-black mb-1">
+                        <div className="text-base font-semibold mb-1">
                           <button
                             type="button"
                             onClick={() => handleViewUser(user)}
-                            className="text-black hover:opacity-80"
+                            className="transition-colors"
+                            style={{
+                              color: "rgb(17, 24, 39)", // gray-900
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "rgb(17, 24, 39)"; // gray-900
+                            }}
                           >
                             {user.first_name} {user.last_name}
                           </button>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,7 +7,6 @@ import {
   Trash2,
   Grid,
   List,
-  X,
   Filter,
   XCircle,
   FolderOpen,
@@ -16,6 +14,9 @@ import {
   Archive,
   Star,
 } from "lucide-react";
+import CatalogItemsModal, {
+  CatalogItem,
+} from "../../../shared/components/CatalogItemsModal";
 import {
   CategoryStats,
   ProductCategory,
@@ -82,11 +83,32 @@ const mergeTagCountsFromSnapshot = (
   const updatedCounts: CategoryCountMap = { ...baseCounts };
 
   productsSnapshot.forEach((product) => {
+    const primaryCategoryId = Number(product.category_id);
+    const primaryIsAllowed =
+      Number.isFinite(primaryCategoryId) &&
+      allowedCategoryIds.has(primaryCategoryId);
+
+    if (primaryIsAllowed) {
+      const key = String(primaryCategoryId);
+      if (!updatedCounts[key]) {
+        updatedCounts[key] = {
+          total_products: 0,
+          active_products: 0,
+          inactive_products: 0,
+        };
+      }
+      updatedCounts[key].total_products += 1;
+      if (product.is_active) {
+        updatedCounts[key].active_products += 1;
+      } else {
+        updatedCounts[key].inactive_products += 1;
+      }
+    }
+
     if (!Array.isArray(product.tags) || product.tags.length === 0) {
       return;
     }
 
-    const primaryCategoryId = Number(product.category_id);
     const uniqueTaggedCatalogs = Array.from(
       new Set(
         product.tags
@@ -99,7 +121,7 @@ const mergeTagCountsFromSnapshot = (
     );
 
     uniqueTaggedCatalogs.forEach((catalogId) => {
-      if (!Number.isNaN(primaryCategoryId) && primaryCategoryId === catalogId) {
+      if (primaryIsAllowed && primaryCategoryId === catalogId) {
         return;
       }
 
@@ -205,14 +227,11 @@ function ProductsModal({
   allProducts,
   refreshAllProducts,
 }: ProductsModalProps) {
-  const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [showAssignModal, setShowAssignModal] = useState(false);
   const [removingProductId, setRemovingProductId] = useState<
     number | string | null
   >(null);
@@ -220,22 +239,8 @@ function ProductsModal({
   useEffect(() => {
     if (isOpen && category) {
       loadProducts();
-      setSearchTerm("");
     }
   }, [isOpen, category]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = products.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [searchTerm, products]);
 
   const loadProducts = async () => {
     if (!category) return;
@@ -387,9 +392,14 @@ function ProductsModal({
         !Number.isNaN(primaryCategoryId) &&
         primaryCategoryId === Number(category.id)
       ) {
-        showError(
-          "Cannot remove this product because this catalog is its primary category"
-        );
+        await confirm({
+          title: "Primary Category",
+          message:
+            "This catalog is the product's primary category. Update the product to use a different primary category before removing it here.",
+          type: "info",
+          confirmText: "Got it",
+          cancelText: "Close",
+        });
         return;
       }
 
@@ -415,148 +425,36 @@ function ProductsModal({
   };
 
   return (
-    <>
-      {isOpen && category && (
-        <>
-          {/* Main Products Modal */}
-          <div className="fixed inset-0 z-[9999] overflow-y-auto">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={onClose}
-            ></div>
-            <div className="relative min-h-screen flex items-center justify-center p-4">
-              <div className="relative bg-white rounded-md shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Products in "{category.name}"
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {products.length} product
-                      {products.length !== 1 ? "s" : ""} found
-                    </p>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-                    title="Close"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Search and Actions */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex flex-col md:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Search
-                        className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400`}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/dashboard/products/catalogs/${category.id}/assign`
-                          )
-                        }
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                      >
-                        Add products to this catalog
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 max-h-96 overflow-y-auto">
-                  {loading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <LoadingSpinner />
-                    </div>
-                  ) : filteredProducts.length === 0 ? (
-                    <div className="text-center py-8">
-                      <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
-                        {searchTerm
-                          ? "No products found"
-                          : "No products in this category"}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {searchTerm
-                          ? "Try adjusting your search terms"
-                          : "Create a new product or assign an existing one to this category"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {product.name}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {product.description || "No description"}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                product.is_active
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {product.is_active ? "Active" : "Inactive"}
-                            </span>
-                            <button
-                              onClick={() => {
-                                if (product.id) {
-                                  navigate(`/dashboard/products/${product.id}`);
-                                }
-                              }}
-                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors text-sm font-medium"
-                            >
-                              View
-                            </button>
-                            <button
-                              onClick={() => handleRemoveProduct(product.id)}
-                              disabled={removingProductId === product.id}
-                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm font-medium disabled:opacity-50"
-                            >
-                              {removingProductId === product.id
-                                ? "Removing..."
-                                : "Remove"}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Assign Products Modal */}
-        </>
+    <CatalogItemsModal<Product>
+      isOpen={isOpen}
+      onClose={onClose}
+      category={category}
+      items={products}
+      loading={loading}
+      error={error}
+      entityName="product"
+      entityNamePlural="products"
+      assignRoute={`/dashboard/products/catalogs/${category?.id}/assign`}
+      viewRoute={(id) => `/dashboard/products/${id}`}
+      onRemove={handleRemoveProduct}
+      removingId={removingProductId}
+      onRefresh={async () => {
+        await loadProducts();
+        await onRefreshProductCounts();
+        await onRefreshCategories();
+      }}
+      renderStatus={(product) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            product.is_active
+              ? "bg-green-100 text-green-800"
+              : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {product.is_active ? "Active" : "Inactive"}
+        </span>
       )}
-    </>
+    />
   );
 }
 
@@ -1065,7 +963,7 @@ export default function ProductCatalogsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/products")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors flex items-center gap-2"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -1391,11 +1289,8 @@ export default function ProductCatalogsPage() {
                   </div>
                   <button
                     onClick={() => handleViewProducts(category)}
-                    className="px-3 py-1 rounded-md text-sm font-medium"
-                    style={{
-                      color: color.primary.accent,
-                      backgroundColor: "transparent",
-                    }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                    style={{ backgroundColor: color.primary.action }}
                     title="View & Assign Products"
                   >
                     View Products
@@ -1514,11 +1409,8 @@ export default function ProductCatalogsPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleViewProducts(category)}
-                  className="px-3 py-1 rounded-md text-sm font-medium"
-                  style={{
-                    color: color.primary.accent,
-                    backgroundColor: "transparent",
-                  }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View & Assign Products"
                 >
                   View Products

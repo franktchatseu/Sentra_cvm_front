@@ -81,6 +81,65 @@ type PerformanceSnapshot = {
 };
 
 const timeRangeOptions: RangeOption[] = ["7d", "30d", "90d"];
+const rangeDays: Record<RangeOption, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+};
+
+const getDaysBetween = (start: string, end: string) => {
+  const startDate = start ? new Date(start) : null;
+  const endDate = end ? new Date(end) : null;
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime())
+  ) {
+    return null;
+  }
+  const diff = Math.abs(endDate.getTime() - startDate.getTime());
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
+
+const mapDaysToRange = (days: number | null): RangeOption => {
+  if (days === null) return "7d";
+  if (days <= 7) return "7d";
+  if (days <= 30) return "30d";
+  return "90d";
+};
+
+const getRangeLabel = (option: RangeOption): string => {
+  const labels: Record<RangeOption, string> = {
+    "7d": "Daily",
+    "30d": "Weekly",
+    "90d": "Monthly",
+  };
+  return labels[option];
+};
+
+// Scale data based on actual number of days vs base range
+const getScaleFactor = (
+  customDays: number | null,
+  baseRange: RangeOption
+): number => {
+  if (!customDays) return 1;
+  const baseDays = rangeDays[baseRange];
+  return customDays / baseDays;
+};
+
+// Get date constraints for date inputs
+const getDateConstraints = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+
+  const minDate = new Date(today);
+  minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
+  const minDateStr = minDate.toISOString().split("T")[0];
+
+  return { minDate: minDateStr, maxDate };
+};
 
 const channelOptions: ChannelFilter[] = [
   "All Channels",
@@ -629,21 +688,110 @@ const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
 };
 
 export default function OverallDashboardPerformancePage() {
-  // Independent filter states for each chart
-  const [channelChartRange, setChannelChartRange] = useState<RangeOption>("7d");
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
+  const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [channelFilter, setChannelFilter] =
     useState<ChannelFilter>("All Channels");
-  const [smsDeliveryChartRange, setSmsDeliveryChartRange] =
-    useState<RangeOption>("7d");
-  const [timeSeriesChartRange, setTimeSeriesChartRange] =
-    useState<RangeOption>("7d");
 
-  // Stat cards always use 30d snapshot (fixed)
-  const kpiSnapshot = mockPerformanceSnapshots["30d"];
-  // Each chart uses its own range
-  const channelSnapshot = mockPerformanceSnapshots[channelChartRange];
-  const smsDeliverySnapshot = mockPerformanceSnapshots[smsDeliveryChartRange];
-  const timeSeriesSnapshot = mockPerformanceSnapshots[timeSeriesChartRange];
+  const customDays = getDaysBetween(customRange.start, customRange.end);
+  const activeRangeKey: RangeOption =
+    customRange.start && customRange.end
+      ? mapDaysToRange(customDays)
+      : selectedRange;
+
+  // Calculate scale factor for custom date ranges
+  const scaleFactor = useMemo(() => {
+    if (customRange.start && customRange.end && customDays) {
+      return getScaleFactor(customDays, activeRangeKey);
+    }
+    return 1;
+  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+
+  // Scale snapshot data based on actual date range
+  const baseSnapshot = mockPerformanceSnapshots[activeRangeKey];
+  const kpiSnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      reach: {
+        reach: Math.round(baseSnapshot.reach.reach * scaleFactor),
+      },
+      engagement: {
+        ...baseSnapshot.engagement,
+        clicks: Math.round(baseSnapshot.engagement.clicks * scaleFactor),
+        // Rates stay the same
+        ctr: baseSnapshot.engagement.ctr,
+        openRate: baseSnapshot.engagement.openRate,
+        engagementRate: baseSnapshot.engagement.engagementRate,
+      },
+      conversion: {
+        ...baseSnapshot.conversion,
+        conversions: Math.round(
+          baseSnapshot.conversion.conversions * scaleFactor
+        ),
+        revenue: Math.round(baseSnapshot.conversion.revenue * scaleFactor),
+        spend: Math.round(baseSnapshot.conversion.spend * scaleFactor),
+        // Rates stay the same
+        cvr: baseSnapshot.conversion.cvr,
+        cpc: baseSnapshot.conversion.cpc,
+        cpl: baseSnapshot.conversion.cpl,
+        cpa: baseSnapshot.conversion.cpa,
+        roas: baseSnapshot.conversion.roas,
+      },
+    };
+  }, [baseSnapshot, scaleFactor]);
+
+  const channelSnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      channels: baseSnapshot.channels.map((channel) => ({
+        ...channel,
+        reach: Math.round(channel.reach * scaleFactor),
+        clicks: Math.round(channel.clicks * scaleFactor),
+        opens: Math.round(channel.opens * scaleFactor),
+        conversions: Math.round(channel.conversions * scaleFactor),
+        revenue: Math.round(channel.revenue * scaleFactor),
+        spend: Math.round(channel.spend * scaleFactor),
+        // Rates stay the same
+        ctr: channel.ctr,
+        openRate: channel.openRate,
+        cvr: channel.cvr,
+        cpc: channel.cpc,
+        cpl: channel.cpl,
+        cpa: channel.cpa,
+        roas: channel.roas,
+        engagementRate: channel.engagementRate,
+      })),
+    };
+  }, [baseSnapshot, scaleFactor]);
+
+  const smsDeliverySnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      smsDelivery: baseSnapshot.smsDelivery.map((point) => ({
+        ...point,
+        sent: Math.round(point.sent * scaleFactor),
+        delivered: Math.round(point.delivered * scaleFactor),
+        converted: Math.round(point.converted * scaleFactor),
+      })),
+    };
+  }, [baseSnapshot, scaleFactor]);
+
+  const timeSeriesSnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      timeSeries: baseSnapshot.timeSeries.map((point) => ({
+        ...point,
+        reach: Math.round(point.reach * scaleFactor),
+        clicks: Math.round(point.clicks * scaleFactor),
+        conversions: Math.round(point.conversions * scaleFactor),
+        revenue: Math.round(point.revenue * scaleFactor),
+      })),
+    };
+  }, [baseSnapshot, scaleFactor]);
 
   const filteredChannels = useMemo(() => {
     if (channelFilter === "All Channels") {
@@ -652,17 +800,95 @@ export default function OverallDashboardPerformancePage() {
     return channelSnapshot.channels.filter(
       (channel) => channel.channel === channelFilter
     );
-  }, [channelFilter, channelSnapshot.channels]);
+  }, [channelFilter, channelSnapshot]);
 
   return (
-    <div className="space-y-6 p-6">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Overall Dashboard Performance
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          System-wide performance metrics and analytics
-        </p>
+    <div className="space-y-6">
+      <header className="space-y-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Overall Dashboard Performance
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            System-wide performance metrics and analytics
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {timeRangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  setSelectedRange(option);
+                  setCustomRange({ start: "", end: "" });
+                }}
+                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  !(customRange.start && customRange.end) &&
+                  selectedRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {getRangeLabel(option)}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="overall-date-start"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                From:
+              </label>
+              <input
+                id="overall-date-start"
+                type="date"
+                value={customRange.start}
+                min={getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    start: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="overall-date-end"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                To:
+              </label>
+              <input
+                id="overall-date-end"
+                type="date"
+                value={customRange.end}
+                min={customRange.start || getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    end: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+              />
+            </div>
+            {(customRange.start || customRange.end) && (
+              <button
+                type="button"
+                onClick={() => setCustomRange({ start: "", end: "" })}
+                className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       {/* Performance Metrics */}
@@ -773,21 +999,6 @@ export default function OverallDashboardPerformancePage() {
             <p className="mt-1 text-sm text-gray-600">
               Compare metrics across SMS, Email, Push, and Social channels
             </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {timeRangeOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setChannelChartRange(option)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  channelChartRange === option
-                    ? "border-[#252829] bg-[#252829] text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {option.toUpperCase()}
-              </button>
-            ))}
           </div>
         </div>
         <div className="mb-6 flex flex-wrap gap-2">
@@ -902,21 +1113,6 @@ export default function OverallDashboardPerformancePage() {
               Track SMS sent, delivered, and conversion metrics
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {timeRangeOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setSmsDeliveryChartRange(option)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  smsDeliveryChartRange === option
-                    ? "border-[#252829] bg-[#252829] text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {option.toUpperCase()}
-              </button>
-            ))}
-          </div>
         </div>
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
@@ -987,21 +1183,6 @@ export default function OverallDashboardPerformancePage() {
             <p className="mt-1 text-sm text-gray-600">
               Track key metrics across the selected time period
             </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {timeRangeOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setTimeSeriesChartRange(option)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  timeSeriesChartRange === option
-                    ? "border-[#252829] bg-[#252829] text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {option.toUpperCase()}
-              </button>
-            ))}
           </div>
         </div>
         <div className="h-96">

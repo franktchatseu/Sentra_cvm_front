@@ -383,7 +383,7 @@ export default function GenericConfigurationPage({
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate(config.backPath)}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -491,7 +491,7 @@ export default function GenericConfigurationPage({
                       Description
                     </th>
                     <th
-                      className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider"
+                      className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
                       style={{
                         color: color.surface.tableHeaderText,
                         backgroundColor: color.surface.tableHeader,
@@ -539,14 +539,14 @@ export default function GenericConfigurationPage({
                       </td>
 
                       <td
-                        className="px-6 py-4 text-right"
+                        className="px-6 py-4 text-center"
                         style={{
                           backgroundColor: color.surface.tablebodybg,
                           borderTopRightRadius: "0.375rem",
                           borderBottomRightRadius: "0.375rem",
                         }}
                       >
-                        <div className="flex items-center justify-end space-x-2">
+                        <div className="flex items-center justify-center space-x-2">
                           <button
                             onClick={() => handleEditItem(item)}
                             className="p-2 rounded-md transition-colors"
