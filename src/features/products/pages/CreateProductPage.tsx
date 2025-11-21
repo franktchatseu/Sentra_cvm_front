@@ -354,14 +354,6 @@ export default function CreateProductPage() {
               style={{
                 backgroundColor: color.primary.action,
               }}
-              onMouseEnter={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.opacity = "0.9";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = "1";
-              }}
             >
               {isLoading ? (
                 <>

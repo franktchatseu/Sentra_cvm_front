@@ -318,16 +318,6 @@ export default function EditProductPage() {
               disabled={isLoading}
               className="px-3 py-2 rounded-md text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
               style={{ backgroundColor: color.primary.action }}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.disabled) {
-                  (e.target as HTMLButtonElement).style.backgroundColor =
-                    color.primary.action;
-                }
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  color.primary.action;
-              }}
             >
               {isLoading ? (
                 <>

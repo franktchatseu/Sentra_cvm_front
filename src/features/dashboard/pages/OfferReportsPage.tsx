@@ -131,14 +131,13 @@ interface OfferRow {
   lastUpdated: string;
 }
 
-// Mock data for combined KPIs (offers + rewards)
 const combinedSummary: Record<RangeOption, CombinedSummary> = {
   "7d": {
-    totalRedemptions: 6_850, // offers + rewards combined
+    totalRedemptions: 6_850, 
     redemptionRate: 3.4,
     revenueGenerated: 312_000,
     incrementalRevenue: 98_000,
-    totalCost: 42_500, // discounts + cashback
+    totalCost: 42_500, 
     roi: 2.3,
   },
   "30d": {
