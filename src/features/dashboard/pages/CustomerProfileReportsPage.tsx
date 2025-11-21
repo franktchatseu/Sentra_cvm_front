@@ -76,12 +76,6 @@ type CohortPoint = {
   retention: number;
 };
 
-type HeatmapCell = {
-  day: string;
-  hourBlock: string;
-  volume: number;
-};
-
 type CustomerRow = {
   id: string;
   name: string;
@@ -246,26 +240,6 @@ const baseCohortRetention: CohortPoint[] = [
   { month: 4, cohort: "Jul", retention: 57 },
   { month: 5, cohort: "Jul", retention: 52 },
 ];
-
-const heatmapDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const heatmapSlots = ["8-11", "11-14", "14-17", "17-20", "20-23"];
-
-const basePurchaseHeatmap: HeatmapCell[] = heatmapDays
-  .map((day) =>
-    heatmapSlots.map((slot) => ({
-      day,
-      hourBlock: slot,
-      volume:
-        Math.floor(Math.random() * 80) +
-        (["Fri", "Sat"].includes(day)
-          ? 60
-          : ["Mon", "Tue"].includes(day)
-          ? 40
-          : 50) +
-        (slot === "17-20" ? 40 : 0),
-    }))
-  )
-  .flat();
 
 // Generate comprehensive dummy data that covers all filter combinations
 const generateCustomerRows = (): CustomerRow[] => {
@@ -546,14 +520,6 @@ export default function CustomerProfileReportsPage() {
     }));
   }, [actualMultiplier]);
 
-  const purchaseHeatmapSeries = useMemo(() => {
-    const multiplier = actualMultiplier;
-    return basePurchaseHeatmap.map((cell) => ({
-      ...cell,
-      volume: Math.round(cell.volume * multiplier),
-    }));
-  }, [actualMultiplier]);
-
   const secondaryMetrics: SecondaryMetric[] = [
     {
       label: "New Customers",
@@ -641,35 +607,23 @@ export default function CustomerProfileReportsPage() {
     if (!filteredCustomers.length) return;
 
     const headers = [
-      "Rank",
       "Customer ID",
       "Name",
       "Segment",
       "Lifetime Revenue",
-      "CLV",
       "Orders",
-      "AOV",
       "Last Purchase",
-      "Engagement Score",
       "Churn Risk",
-      "Preferred Channel",
-      "Location",
     ];
 
-    const rows = filteredCustomers.map((row, index) => [
-      index + 1,
+    const rows = filteredCustomers.map((row) => [
       row.id,
       row.name,
       row.segment,
       row.lifetimeValue,
-      row.clv,
       row.orders,
-      row.aov,
       row.lastPurchase,
-      row.engagementScore,
       `${row.churnRisk}%`,
-      row.preferredChannel,
-      row.location,
     ]);
 
     const csvContent = [headers, ...rows]
@@ -1192,66 +1146,6 @@ export default function CustomerProfileReportsPage() {
         </div>
       </section>
 
-      <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Purchase Behavior Heatmap
-            </h2>
-            <p className="mt-1 text-sm text-gray-600">
-              Most active shopping windows by day and time block
-            </p>
-          </div>
-        </div>
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-100 text-sm">
-            <thead>
-              <tr>
-                <th className="py-2 text-left text-xs font-medium uppercase text-gray-500">
-                  Day
-                </th>
-                {heatmapSlots.map((slot) => (
-                  <th
-                    key={slot}
-                    className="px-4 py-2 text-center text-xs font-medium uppercase text-gray-500"
-                  >
-                    {slot}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {heatmapDays.map((day) => (
-                <tr key={day}>
-                  <td className="py-2 text-sm font-medium text-gray-700">
-                    {day}
-                  </td>
-                  {heatmapSlots.map((slot) => {
-                    const cell = purchaseHeatmapSeries.find(
-                      (entry) => entry.day === day && entry.hourBlock === slot
-                    );
-                    const intensity = cell ? Math.min(cell.volume / 150, 1) : 0;
-                    const background = `rgba(0, 187, 204, ${
-                      0.15 + intensity * 0.6
-                    })`;
-                    return (
-                      <td key={slot} className="px-4 py-2">
-                        <div
-                          className="rounded-md py-3 text-center text-xs font-semibold text-gray-700"
-                          style={{ background }}
-                        >
-                          {cell?.volume ?? 0}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
       <section className="space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -1315,19 +1209,13 @@ export default function CustomerProfileReportsPage() {
               <thead style={{ background: color.surface.tableHeader }}>
                 <tr className="text-left text-sm font-medium uppercase tracking-wider">
                   {[
-                    "Rank",
                     "Customer ID",
                     "Name",
                     "Segment",
                     "Lifetime Revenue",
-                    "CLV",
                     "Orders",
-                    "AOV",
                     "Last Purchase",
-                    "Engagement",
                     "Churn Risk",
-                    "Preferred Channel",
-                    "Location",
                   ].map((header) => (
                     <th
                       key={header}
@@ -1340,16 +1228,10 @@ export default function CustomerProfileReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredCustomers.map((customer, index) => (
+                {filteredCustomers.map((customer) => (
                   <tr key={customer.id} className="transition-colors">
                     <td
-                      className="px-6 py-4 font-semibold"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      <div className="text-lg text-gray-900">{index + 1}</div>
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
+                      className="px-6 py-4 font-semibold text-gray-900"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       {customer.id}
@@ -1378,33 +1260,13 @@ export default function CustomerProfileReportsPage() {
                       className="px-6 py-4 text-gray-900"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      ${formatNumber(customer.clv)}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
                       {customer.orders}
                     </td>
                     <td
                       className="px-6 py-4 text-gray-900"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      ${customer.aov}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
                       {customer.lastPurchase}
-                    </td>
-                    <td
-                      className="px-6 py-4"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      <span className="font-semibold text-gray-900">
-                        {customer.engagementScore}
-                      </span>
                     </td>
                     <td
                       className="px-6 py-4"
@@ -1421,18 +1283,6 @@ export default function CustomerProfileReportsPage() {
                       >
                         {customer.churnRisk}%
                       </span>
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {customer.preferredChannel}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {customer.location}
                     </td>
                   </tr>
                 ))}

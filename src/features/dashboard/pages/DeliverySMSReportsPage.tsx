@@ -229,94 +229,83 @@ const getDateConstraints = () => {
   return { minDate: minDateStr, maxDate };
 };
 
-const smsMessageLogs: MessageLogEntry[] = [
-  {
-    id: "MSG-20251001-001",
-    campaignId: "CAMP-8472",
-    campaignName: "Loyalty Reactivation",
-    recipient: "+256 700 112233",
-    region: "Uganda",
-    senderId: "SentraCVM",
-    timestamp: "2025-10-01T09:32:00Z",
-    status: "Delivered",
-    sent: 1,
-    delivered: 1,
-    conversions: 1,
-    conversionRate: 100,
-  },
-  {
-    id: "MSG-20251001-002",
-    campaignId: "CAMP-8472",
-    campaignName: "Loyalty Reactivation",
-    recipient: "+256 701 778899",
-    region: "Uganda",
-    senderId: "SentraCVM",
-    timestamp: "2025-10-01T09:33:00Z",
-    status: "Failed",
-    sent: 1,
-    delivered: 0,
-    conversions: 0,
-    conversionRate: 0,
-    errorCode: "INV_NUMBER",
-  },
-  {
-    id: "MSG-20251002-014",
-    campaignId: "LOYALTY-5541",
-    campaignName: "VIP Upsell",
-    recipient: "+254 712 445566",
-    region: "Kenya",
-    senderId: "SentraCVM",
-    timestamp: "2025-10-02T13:12:00Z",
-    status: "Delivered",
-    sent: 1,
-    delivered: 1,
-    conversions: 0,
-    conversionRate: 0,
-  },
-  {
-    id: "MSG-20251002-021",
-    campaignId: "LOYALTY-5541",
-    campaignName: "VIP Upsell",
-    recipient: "+254 733 889900",
-    region: "Kenya",
-    senderId: "SentraCVM",
-    timestamp: "2025-10-02T13:18:00Z",
-    status: "Pending",
-    sent: 1,
-    delivered: 0,
-    conversions: 0,
-    conversionRate: 0,
-  },
-  {
-    id: "MSG-20251003-087",
-    campaignId: "REACT-2201",
-    campaignName: "Churn Winback",
-    recipient: "+250 788 220033",
-    region: "Rwanda",
-    senderId: "SentraCVM",
-    timestamp: "2025-10-03T18:47:00Z",
-    status: "Delivered",
-    sent: 1,
-    delivered: 1,
-    conversions: 1,
-    conversionRate: 100,
-  },
-  {
-    id: "MSG-20251004-033",
-    campaignId: "REACT-2201",
-    campaignName: "Churn Winback",
-    recipient: "+250 781 557799",
-    region: "Rwanda",
-    senderId: "SentraCVM",
-    timestamp: "2025-10-04T07:22:00Z",
-    status: "Rejected",
-    sent: 1,
-    delivered: 0,
-    conversions: 0,
-    conversionRate: 0,
-    errorCode: "DND_ACTIVE",
-  },
-];
+// Generate comprehensive dummy data with dates relative to today
+const generateSMSMessageLogs = (): MessageLogEntry[] => {
+  const campaigns = [
+    { id: "CAMP-8472", name: "Loyalty Reactivation" },
+    { id: "LOYALTY-5541", name: "VIP Upsell" },
+    { id: "REACT-2201", name: "Churn Winback" },
+    { id: "WELCOME-3321", name: "Welcome Series" },
+    { id: "PROMO-4456", name: "Flash Sale" },
+    { id: "BIRTHDAY-6678", name: "Birthday Campaign" },
+  ];
+  const statuses: MessageStatus[] = [
+    "Delivered",
+    "Failed",
+    "Pending",
+    "Rejected",
+  ];
+  const regions = ["Uganda", "Kenya", "Rwanda", "Tanzania", "Ghana", "Nigeria"];
+  const errorCodes = ["INV_NUMBER", "DND_ACTIVE", "BLOCKED", "TIMEOUT"];
+  const phonePrefixes = ["+256", "+254", "+250", "+255", "+233", "+234"];
+
+  const rows: MessageLogEntry[] = [];
+  const today = new Date();
+
+  // Generate messages across the last 90 days with various statuses
+  campaigns.forEach((campaign, campIdx) => {
+    for (let i = 0; i < 8; i++) {
+      const daysAgo = Math.floor(Math.random() * 90); // Spread across last 90 days
+      const messageDate = new Date(today);
+      messageDate.setDate(today.getDate() - daysAgo);
+      messageDate.setHours(
+        9 + Math.floor(Math.random() * 12),
+        Math.floor(Math.random() * 60),
+        0,
+        0
+      );
+
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const regionIdx = campIdx % regions.length;
+      const delivered = status === "Delivered" ? 1 : 0;
+      const conversions = delivered === 1 && Math.random() > 0.6 ? 1 : 0;
+      const conversionRate =
+        delivered === 1 ? (conversions === 1 ? 100 : 0) : 0;
+
+      const phoneNum = `${phonePrefixes[regionIdx]} ${
+        700 + Math.floor(Math.random() * 100)
+      } ${String(100000 + Math.floor(Math.random() * 900000))}`;
+
+      rows.push({
+        id: `MSG-${messageDate
+          .toISOString()
+          .split("T")[0]
+          .replace(/-/g, "")}-${String(i + 1).padStart(3, "0")}`,
+        campaignId: campaign.id,
+        campaignName: campaign.name,
+        recipient: phoneNum,
+        region: regions[regionIdx],
+        senderId: "SentraCVM",
+        timestamp: messageDate.toISOString(),
+        status,
+        sent: 1,
+        delivered,
+        conversions,
+        conversionRate,
+        ...(status === "Failed" || status === "Rejected"
+          ? {
+              errorCode:
+                errorCodes[Math.floor(Math.random() * errorCodes.length)],
+            }
+          : {}),
+      });
+    }
+  });
+
+  return rows;
+};
+
+const smsMessageLogs: MessageLogEntry[] = generateSMSMessageLogs();
 
 type ChartTooltipEntry = {
   color?: string;

@@ -164,63 +164,70 @@ const emailMockData: Record<RangeOption, EmailRangeData> = {
   },
 };
 
-const emailMessageLogs: EmailLogEntry[] = [
-  {
-    id: "EMAIL-20251001-001",
-    campaignId: "CAMP-2201",
-    campaignName: "Reactivation Blast",
-    status: "Delivered",
-    sent: 25_000,
-    delivered: 23_200,
-    conversions: 920,
-    conversionRate: 4.0,
-    sentDate: "2025-10-01",
-  },
-  {
-    id: "EMAIL-20251001-002",
-    campaignId: "CAMP-2202",
-    campaignName: "Upsell Journey",
-    status: "Bounced",
-    sent: 12_500,
-    delivered: 11_400,
-    conversions: 280,
-    conversionRate: 2.5,
-    sentDate: "2025-10-02",
-  },
-  {
-    id: "EMAIL-20251001-003",
-    campaignId: "CAMP-2203",
-    campaignName: "Rewards Digest",
-    status: "Deferred",
-    sent: 18_200,
-    delivered: 17_050,
-    conversions: 640,
-    conversionRate: 3.7,
-    sentDate: "2025-10-03",
-  },
-  {
-    id: "EMAIL-20251001-004",
-    campaignId: "CAMP-2204",
-    campaignName: "VIP Launch",
-    status: "Delivered",
-    sent: 15_000,
-    delivered: 14_400,
-    conversions: 880,
-    conversionRate: 6.1,
-    sentDate: "2025-10-05",
-  },
-  {
-    id: "EMAIL-20251001-005",
-    campaignId: "CAMP-2205",
-    campaignName: "Churn Recovery",
-    status: "Spam",
-    sent: 16_500,
-    delivered: 13_950,
-    conversions: 310,
-    conversionRate: 1.9,
-    sentDate: "2025-10-06",
-  },
-];
+// Generate comprehensive dummy data with dates relative to today
+const generateEmailMessageLogs = (): EmailLogEntry[] => {
+  const campaigns = [
+    { id: "CAMP-2201", name: "Reactivation Blast" },
+    { id: "CAMP-2202", name: "Upsell Journey" },
+    { id: "CAMP-2203", name: "Rewards Digest" },
+    { id: "CAMP-2204", name: "VIP Launch" },
+    { id: "CAMP-2205", name: "Churn Recovery" },
+    { id: "CAMP-2206", name: "Welcome Series" },
+    { id: "CAMP-2207", name: "Flash Sale" },
+    { id: "CAMP-2208", name: "Newsletter" },
+  ];
+  const statuses: EmailStatus[] = ["Delivered", "Bounced", "Deferred", "Spam"];
+
+  const rows: EmailLogEntry[] = [];
+  const today = new Date();
+
+  // Generate emails across the last 90 days with various statuses
+  campaigns.forEach((campaign) => {
+    for (let i = 0; i < 6; i++) {
+      const daysAgo = Math.floor(Math.random() * 90); // Spread across last 90 days
+      const sentDate = new Date(today);
+      sentDate.setDate(today.getDate() - daysAgo);
+
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const sent = 10000 + Math.floor(Math.random() * 20000);
+      const deliveryRate =
+        status === "Delivered"
+          ? 0.92 + Math.random() * 0.06
+          : status === "Bounced"
+          ? 0.85 + Math.random() * 0.05
+          : status === "Spam"
+          ? 0.8 + Math.random() * 0.08
+          : 0.9 + Math.random() * 0.05;
+      const delivered = Math.floor(sent * deliveryRate);
+      const conversionRate =
+        status === "Delivered"
+          ? 2.0 + Math.random() * 5.0
+          : status === "Spam"
+          ? 0.5 + Math.random() * 1.5
+          : 1.0 + Math.random() * 3.0;
+      const conversions = Math.floor(delivered * (conversionRate / 100));
+
+      rows.push({
+        id: `EMAIL-${sentDate
+          .toISOString()
+          .split("T")[0]
+          .replace(/-/g, "")}-${String(i + 1).padStart(3, "0")}`,
+        campaignId: campaign.id,
+        campaignName: campaign.name,
+        status,
+        sent,
+        delivered,
+        conversions,
+        conversionRate: Math.round(conversionRate * 10) / 10,
+        sentDate: sentDate.toISOString().split("T")[0],
+      });
+    }
+  });
+
+  return rows;
+};
+
+const emailMessageLogs: EmailLogEntry[] = generateEmailMessageLogs();
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 
