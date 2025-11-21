@@ -764,7 +764,7 @@ export default function OfferReportsPage() {
   };
 
   return (
-    <div className="space-y-8 p-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="space-y-4">
         <div>
