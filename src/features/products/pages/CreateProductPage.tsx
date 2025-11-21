@@ -109,7 +109,7 @@ export default function CreateProductPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard/products")}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-2 rounded-md transition-colors"
             style={{ color: color.text.secondary }}
           >
             <ArrowLeft className="w-5 h-5" />

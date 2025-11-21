@@ -23,7 +23,7 @@ import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import SegmentModal from "../components/SegmentModal";
 
 // Mock data for testing
@@ -960,8 +960,13 @@ export default function SegmentDetailsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleEdit}
-            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-all duration-200 flex items-center gap-2"
-            style={{ backgroundColor: color.primary.action }}
+            className="text-sm font-medium text-white rounded-md flex items-center gap-2"
+            style={{
+              backgroundColor: button.action.background,
+              color: button.action.color,
+              borderRadius: button.action.borderRadius,
+              padding: `${button.action.paddingY} ${button.action.paddingX}`,
+            }}
           >
             <Edit className="w-4 h-4" />
             Edit Segment
@@ -979,7 +984,7 @@ export default function SegmentDetailsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className={`text-sm font-medium ${tw.textMuted} mb-2`}>
@@ -997,18 +1002,18 @@ export default function SegmentDetailsPage() {
               )}
             </div>
             <div
-              className="p-4 rounded-lg flex-shrink-0"
+              className="p-3 rounded-md flex-shrink-0"
               style={{ backgroundColor: `${color.primary.accent}15` }}
             >
               <Users
-                className="w-7 h-7"
+                className="w-6 h-6"
                 style={{ color: color.primary.accent }}
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className={`text-sm font-medium ${tw.textMuted} mb-2`}>
@@ -1021,18 +1026,18 @@ export default function SegmentDetailsPage() {
               </p>
             </div>
             <div
-              className="p-4 rounded-lg flex-shrink-0"
+              className="p-3 rounded-md flex-shrink-0"
               style={{ backgroundColor: `${color.primary.accent}15` }}
             >
               <Activity
-                className="w-7 h-7"
+                className="w-6 h-6"
                 style={{ color: color.primary.accent }}
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className={`text-sm font-medium ${tw.textMuted} mb-2`}>
@@ -1047,21 +1052,21 @@ export default function SegmentDetailsPage() {
               >
                 {segment.visibility === "public" ? "Public" : "Private"}
               </p>
-              <p className="text-xs text-black mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 {segment.visibility === "public"
                   ? "Visible to all users"
                   : "Only you can see this"}
               </p>
             </div>
             <div
-              className={`p-4 rounded-lg flex-shrink-0 ${
+              className={`p-3 rounded-md flex-shrink-0 ${
                 segment.visibility === "public" ? "bg-green-100" : "bg-gray-100"
               }`}
             >
               {segment.visibility === "public" ? (
-                <Eye className="w-7 h-7 text-green-600" />
+                <Eye className="w-6 h-6 text-green-600" />
               ) : (
-                <EyeOff className="w-7 h-7 text-gray-600" />
+                <EyeOff className="w-6 h-6 text-gray-600" />
               )}
             </div>
           </div>
@@ -1071,7 +1076,7 @@ export default function SegmentDetailsPage() {
       {/* Details Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Basic Information */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <div
               className="p-2 rounded-md"
@@ -1251,9 +1256,9 @@ export default function SegmentDetailsPage() {
           </div>
         </div>
 
-        {/* Query Information - Only show if queries exist */}
-        {(segment.query || segment.count_query) && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        {/* Query Information */}
+        {segment.query || segment.count_query ? (
+          <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <div
                 className="p-2 rounded-md"
@@ -1299,12 +1304,46 @@ export default function SegmentDetailsPage() {
               )}
             </div>
           </div>
+        ) : (
+          <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-6">
+              <div
+                className="p-2 rounded-md"
+                style={{ backgroundColor: `${color.primary.accent}15` }}
+              >
+                <Activity
+                  className="w-5 h-5"
+                  style={{ color: color.primary.accent }}
+                />
+              </div>
+              <h3 className={`text-lg font-semibold ${tw.textPrimary}`}>
+                Query Information
+              </h3>
+            </div>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div
+                className="p-4 rounded-md mb-4"
+                style={{ backgroundColor: `${color.primary.accent}10` }}
+              >
+                <Activity
+                  className="w-8 h-8"
+                  style={{ color: color.primary.accent }}
+                />
+              </div>
+              <p className={`text-sm font-medium ${tw.textMuted} mb-1`}>
+                No queries available
+              </p>
+              <p className={`text-xs ${tw.textMuted} text-center`}>
+                This segment does not have any query information.
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Criteria/Definition Section */}
       {(segment.criteria || segment.definition) && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <div
               className="p-2 rounded-md"
@@ -1353,9 +1392,9 @@ export default function SegmentDetailsPage() {
 
                 return (
                   <div key={index} className="relative">
-                    <div className="flex items-start space-x-3 p-4 bg-gradient-to-r from-gray-50 to-white rounded-md border border-gray-200">
+                    <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-md border border-gray-200">
                       <div
-                        className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0`}
+                        className={`mt-1 w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0`}
                         style={{ backgroundColor: `${color.primary.accent}20` }}
                       >
                         <span
@@ -1388,9 +1427,9 @@ export default function SegmentDetailsPage() {
                           .conditions as Array<Record<string, unknown>>
                       ).length -
                         1 && (
-                      <div className="flex items-center justify-center py-1">
+                      <div className="flex items-center justify-center py-2">
                         <span
-                          className={`px-3 py-1 text-xs font-bold rounded-full`}
+                          className={`px-3 py-1 text-xs font-semibold rounded-md`}
                           style={{
                             backgroundColor: `${color.primary.accent}15`,
                             color: color.primary.accent,
@@ -1416,7 +1455,7 @@ export default function SegmentDetailsPage() {
       )}
 
       {/* Segment Members Section */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white rounded-md border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div
@@ -1444,7 +1483,7 @@ export default function SegmentDetailsPage() {
                 setShowMembersModal(true);
                 loadMembers();
               }}
-              className="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-md transition-all text-sm flex items-center gap-2 hover:bg-gray-50"
+              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md transition-all text-sm font-medium flex items-center gap-2 hover:bg-gray-50"
             >
               <Eye className="w-4 h-4" />
               View All Members
@@ -1455,15 +1494,12 @@ export default function SegmentDetailsPage() {
                 setSelectedCustomers([]);
                 setCustomerSearchTerm("");
               }}
-              className="px-4 py-2 text-white rounded-md transition-all text-sm flex items-center gap-2"
-              style={{ backgroundColor: color.primary.action }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  color.primary.action;
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  color.primary.action;
+              className="text-sm font-medium text-white rounded-md flex items-center gap-2"
+              style={{
+                backgroundColor: button.action.background,
+                color: button.action.color,
+                borderRadius: button.action.borderRadius,
+                padding: `${button.action.paddingY} ${button.action.paddingX}`,
               }}
             >
               <Plus className="w-4 h-4" />
@@ -1483,7 +1519,7 @@ export default function SegmentDetailsPage() {
       {/* Members Modal */}
       {showMembersModal &&
         createPortal(
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-md shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
@@ -1521,15 +1557,12 @@ export default function SegmentDetailsPage() {
                     </div>
                     <button
                       onClick={handleAddMembers}
-                      className="px-4 py-2 text-white rounded-md transition-all"
-                      style={{ backgroundColor: color.primary.action }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          color.primary.action;
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          color.primary.action;
+                      className="text-sm font-medium text-white rounded-md"
+                      style={{
+                        backgroundColor: button.action.background,
+                        color: button.action.color,
+                        borderRadius: button.action.borderRadius,
+                        padding: `${button.action.paddingY} ${button.action.paddingX}`,
                       }}
                     >
                       Add
@@ -1685,7 +1718,7 @@ export default function SegmentDetailsPage() {
       {/* Customer Selection Modal */}
       {showCustomerSelection &&
         createPortal(
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-md shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
@@ -1788,7 +1821,7 @@ export default function SegmentDetailsPage() {
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => setShowCustomerSelection(false)}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
                   >
                     Cancel
                   </button>
@@ -1822,8 +1855,13 @@ export default function SegmentDetailsPage() {
                       }
                     }}
                     disabled={selectedCustomers.length === 0}
-                    className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: color.primary.action }}
+                    className="text-sm font-medium text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: button.action.background,
+                      color: button.action.color,
+                      borderRadius: button.action.borderRadius,
+                      padding: `${button.action.paddingY} ${button.action.paddingX}`,
+                    }}
                   >
                     Add {selectedCustomers.length} Customer
                     {selectedCustomers.length !== 1 ? "s" : ""}
@@ -1838,7 +1876,7 @@ export default function SegmentDetailsPage() {
       {/* Export Modal */}
       {showExportModal &&
         createPortal(
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-gray-900">
@@ -1931,24 +1969,19 @@ export default function SegmentDetailsPage() {
                   <button
                     onClick={() => setShowExportModal(false)}
                     disabled={isExporting}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50"
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50 text-sm font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCustomExport}
                     disabled={isExporting}
-                    className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    style={{ backgroundColor: color.primary.action }}
-                    onMouseEnter={(e) => {
-                      if (!isExporting) {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          color.primary.action;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor =
-                        color.primary.action;
+                    className="text-sm font-medium text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    style={{
+                      backgroundColor: button.action.background,
+                      color: button.action.color,
+                      borderRadius: button.action.borderRadius,
+                      padding: `${button.action.paddingY} ${button.action.paddingX}`,
                     }}
                   >
                     {isExporting ? (
