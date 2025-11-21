@@ -260,7 +260,7 @@ export default function UserDetailsPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={navigateBack}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-2 text-gray-600 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -710,36 +710,146 @@ export default function UserDetailsPage() {
                     {/* All Permissions List */}
                     {hasPermissions && (
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
                           All Permissions ({permissionsList.length})
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto">
-                          {permissionsList.map((perm) => (
-                            <div
-                              key={perm.id}
-                              className="bg-gray-50 rounded-md p-3 border border-gray-200 hover:bg-gray-100 transition-colors"
+                        <div
+                          className={`rounded-md border border-[${color.border.default}] overflow-hidden`}
+                        >
+                          <div className="hidden lg:block overflow-x-auto">
+                            <table
+                              className="min-w-full"
+                              style={{
+                                borderCollapse: "separate",
+                                borderSpacing: "0 8px",
+                              }}
                             >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {perm.name}
-                                  </p>
-                                  <p className="text-xs text-gray-500 mt-1 font-mono">
-                                    {perm.code}
-                                  </p>
-                                  {perm.description && (
-                                    <p className="text-xs text-gray-600 mt-1">
-                                      {perm.description}
+                              <thead
+                                style={{
+                                  background: color.surface.tableHeader,
+                                }}
+                              >
+                                <tr>
+                                  <th
+                                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
+                                    style={{
+                                      color: color.surface.tableHeaderText,
+                                    }}
+                                  >
+                                    Permission
+                                  </th>
+                                  <th
+                                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider hidden md:table-cell"
+                                    style={{
+                                      color: color.surface.tableHeaderText,
+                                    }}
+                                  >
+                                    Code
+                                  </th>
+                                  <th
+                                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider hidden xl:table-cell"
+                                    style={{
+                                      color: color.surface.tableHeaderText,
+                                    }}
+                                  >
+                                    Description
+                                  </th>
+                                  <th
+                                    className="px-6 py-4 text-center text-sm font-medium uppercase tracking-wider w-16"
+                                    style={{
+                                      color: color.surface.tableHeaderText,
+                                    }}
+                                  >
+                                    Status
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {permissionsList.map((perm) => (
+                                  <tr key={perm.id}>
+                                    <td
+                                      className="px-6 py-4 text-sm font-medium text-gray-900"
+                                      style={{
+                                        backgroundColor:
+                                          color.surface.tablebodybg,
+                                      }}
+                                    >
+                                      {perm.name}
+                                    </td>
+                                    <td
+                                      className="px-6 py-4 text-sm text-gray-700 font-mono hidden md:table-cell"
+                                      style={{
+                                        backgroundColor:
+                                          color.surface.tablebodybg,
+                                      }}
+                                    >
+                                      <span
+                                        className="truncate block"
+                                        title={perm.code}
+                                      >
+                                        {perm.code}
+                                      </span>
+                                    </td>
+                                    <td
+                                      className="px-6 py-4 text-sm text-gray-600 hidden xl:table-cell"
+                                      style={{
+                                        backgroundColor:
+                                          color.surface.tablebodybg,
+                                      }}
+                                    >
+                                      <span
+                                        className="truncate block"
+                                        title={perm.description || ""}
+                                      >
+                                        {perm.description || "—"}
+                                      </span>
+                                    </td>
+                                    <td
+                                      className="px-6 py-4 text-center"
+                                      style={{
+                                        backgroundColor:
+                                          color.surface.tablebodybg,
+                                      }}
+                                    >
+                                      <CheckCircle
+                                        className="w-5 h-5 mx-auto"
+                                        style={{ color: color.status.success }}
+                                      />
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {/* Mobile View */}
+                          <div className="lg:hidden space-y-2 p-4">
+                            {permissionsList.map((perm) => (
+                              <div
+                                key={perm.id}
+                                className="bg-gray-50 rounded-md p-3 border border-gray-200"
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {perm.name}
                                     </p>
-                                  )}
+                                    <p className="text-xs text-gray-500 mt-1 font-mono">
+                                      {perm.code}
+                                    </p>
+                                  </div>
+                                  <CheckCircle
+                                    className="w-4 h-4 flex-shrink-0 mt-0.5"
+                                    style={{ color: color.status.success }}
+                                  />
                                 </div>
-                                <CheckCircle
-                                  className="w-4 h-4 flex-shrink-0 mt-0.5"
-                                  style={{ color: color.status.success }}
-                                />
+                                {perm.description && (
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    {perm.description}
+                                  </p>
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}

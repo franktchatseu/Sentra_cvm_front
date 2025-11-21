@@ -521,7 +521,7 @@ export default function SegmentDetailsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/segments")}
-            className={`p-2 rounded-md ${tw.textMuted} hover:bg-gray-100 transition-colors`}
+            className={`p-2 rounded-md ${tw.textMuted} transition-colors`}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>

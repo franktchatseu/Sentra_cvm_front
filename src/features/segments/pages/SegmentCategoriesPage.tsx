@@ -700,7 +700,7 @@ export default function SegmentCategoriesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/segments")}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-2 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>

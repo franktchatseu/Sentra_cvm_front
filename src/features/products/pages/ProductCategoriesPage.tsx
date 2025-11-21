@@ -963,7 +963,7 @@ export default function ProductCatalogsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/products")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors flex items-center gap-2"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>

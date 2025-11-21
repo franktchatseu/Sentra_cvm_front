@@ -187,7 +187,7 @@ export default function CommunicationPolicyPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/configuration")}
-            className={`p-2 ${tw.textSecondary} ${tw.hover} rounded-md transition-colors`}
+            className={`p-2 ${tw.textSecondary} rounded-md transition-colors`}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
