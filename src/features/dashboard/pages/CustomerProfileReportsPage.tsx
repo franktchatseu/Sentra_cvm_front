@@ -1,20 +1,14 @@
 import { useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
-  ZAxis,
 } from "recharts";
 import {
   Activity,
@@ -38,12 +32,6 @@ type HeroMetric = {
   trendDirection: "up" | "down";
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-};
-
-type SecondaryMetric = {
-  label: string;
-  value: string;
-  description: string;
 };
 
 type ValueMatrixPoint = {
@@ -104,14 +92,6 @@ const heroBase = {
   churnRate: 8.3,
 };
 
-const secondaryMetricBase = {
-  newCustomers: 42_500,
-  reactivationRate: 14.2,
-  nps: 47,
-  multiChannel: 0.61,
-  topSegmentShare: 0.22,
-};
-
 const baseValueMatrixData: ValueMatrixPoint[] = [
   {
     segment: "Champions",
@@ -160,57 +140,57 @@ const baseValueMatrixData: ValueMatrixPoint[] = [
 const baseLifecycleData: LifecyclePoint[] = [
   {
     month: "Jun",
-    new: 38,
+    new: 120,
     active: 420,
-    atRisk: 85,
-    dormant: 55,
-    churned: 32,
-    reactivated: 18,
+    atRisk: 180,
+    dormant: 140,
+    churned: 95,
+    reactivated: 65,
   },
   {
     month: "Jul",
-    new: 40,
+    new: 125,
     active: 432,
-    atRisk: 90,
-    dormant: 60,
-    churned: 34,
-    reactivated: 22,
+    atRisk: 190,
+    dormant: 150,
+    churned: 100,
+    reactivated: 70,
   },
   {
     month: "Aug",
-    new: 44,
+    new: 130,
     active: 448,
-    atRisk: 94,
-    dormant: 63,
-    churned: 35,
-    reactivated: 20,
+    atRisk: 200,
+    dormant: 160,
+    churned: 105,
+    reactivated: 75,
   },
   {
     month: "Sep",
-    new: 48,
+    new: 135,
     active: 460,
-    atRisk: 97,
-    dormant: 67,
-    churned: 36,
-    reactivated: 24,
+    atRisk: 210,
+    dormant: 170,
+    churned: 110,
+    reactivated: 80,
   },
   {
     month: "Oct",
-    new: 52,
+    new: 140,
     active: 474,
-    atRisk: 101,
-    dormant: 70,
-    churned: 38,
-    reactivated: 26,
+    atRisk: 220,
+    dormant: 180,
+    churned: 115,
+    reactivated: 85,
   },
   {
     month: "Nov",
-    new: 55,
+    new: 145,
     active: 486,
-    atRisk: 105,
-    dormant: 72,
-    churned: 39,
-    reactivated: 28,
+    atRisk: 230,
+    dormant: 190,
+    churned: 120,
+    reactivated: 90,
   },
 ];
 
@@ -352,7 +332,10 @@ const generateCustomerRows = (): CustomerRow[] => {
         lastInteractionDate: interactionDate.toISOString().split("T")[0],
         engagementScore,
         churnRisk,
-        preferredChannel: channels[baseIdx % channels.length],
+        preferredChannel: channels[baseIdx % channels.length] as
+          | "Email"
+          | "SMS"
+          | "Push",
         location: locations[baseIdx % locations.length],
       });
     }
@@ -363,21 +346,44 @@ const generateCustomerRows = (): CustomerRow[] => {
 
 const customerRows: CustomerRow[] = generateCustomerRows();
 
-const valueMatrixColors: Record<ValueMatrixPoint["lifecycle"], string> = {
-  New: colors.tertiary.tag2,
-  Active: colors.tertiary.tag4,
-  "At-Risk": colors.status.warning,
-  Churned: colors.status.danger,
+type ChartTooltipEntry = {
+  color?: string;
+  name?: string;
+  value?: number | string;
 };
 
-const segmentOptions = [
-  "All Customers",
-  "Champions",
-  "Loyalists",
-  "At-Risk",
-  "Churned",
-  "Reactivated",
-];
+type ChartTooltipProps = {
+  active?: boolean;
+  label?: string;
+  payload?: ChartTooltipEntry[];
+};
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+      <p className="mb-2 text-sm font-semibold text-gray-900">{label}</p>
+      {payload.map((entry, idx) => (
+        <div
+          key={idx}
+          className="flex items-center justify-between gap-4 text-sm text-gray-600"
+        >
+          <span className="flex items-center gap-2">
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            {entry.name}
+          </span>
+          <span className="font-semibold text-gray-900">{entry.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];
 const rangeDays: Record<RangeOption, number> = {
@@ -488,7 +494,7 @@ export default function CustomerProfileReportsPage() {
         )
       ),
     }));
-  }, [actualMultiplier]);
+  }, [actualMultiplier, activeRangeKey]);
 
   const lifecycleSeries = useMemo(() => {
     const multiplier = actualMultiplier;
@@ -509,7 +515,7 @@ export default function CustomerProfileReportsPage() {
       ...bucket,
       customers: Math.round(bucket.customers * multiplier),
     }));
-  }, [activeRangeKey]);
+  }, [actualMultiplier]);
 
   const cohortSeries = useMemo(() => {
     const adjustment =
@@ -518,59 +524,30 @@ export default function CustomerProfileReportsPage() {
       ...point,
       retention: Math.min(100, point.retention + adjustment),
     }));
-  }, [actualMultiplier]);
+  }, [activeRangeKey]);
 
-  const secondaryMetrics: SecondaryMetric[] = [
-    {
-      label: "New Customers",
-      value: formatNumber(
-        Math.round(secondaryMetricBase.newCustomers * actualMultiplier)
-      ),
-      description: "Customers acquired in range",
-    },
-    {
-      label: "Reactivation Rate",
-      value: `${(
-        secondaryMetricBase.reactivationRate *
-        (activeRangeKey === "7d" ? 0.9 : activeRangeKey === "30d" ? 0.97 : 1)
-      ).toFixed(1)}%`,
-      description: "Dormant to active in 60 days",
-    },
-    {
-      label: "Net Promoter Score",
-      value: `${Math.round(
-        secondaryMetricBase.nps +
-          (activeRangeKey === "7d" ? 1 : activeRangeKey === "30d" ? 0.5 : 0)
-      )}`,
-      description: "Rolling 90-day NPS",
-    },
-    {
-      label: "Multi-Channel Usage",
-      value: `${Math.round(
-        secondaryMetricBase.multiChannel *
-          (activeRangeKey === "7d"
-            ? 0.95
-            : activeRangeKey === "30d"
-            ? 0.98
-            : 1) *
-          100
-      )}%`,
-      description: "Customers active on 2+ channels",
-    },
-    {
-      label: "Top Segment",
-      value: `Loyal Enthusiasts (${Math.round(
-        secondaryMetricBase.topSegmentShare *
-          (activeRangeKey === "7d"
-            ? 0.92
-            : activeRangeKey === "30d"
-            ? 0.97
-            : 1) *
-          100
-      )}%)`,
-      description: "Largest share of base",
-    },
-  ];
+  const cohortComparisonSeries = useMemo(() => {
+    const months = Array.from(
+      new Set(cohortSeries.map((entry) => entry.month))
+    ).sort((a, b) => a - b);
+
+    const cohorts = ["Jan", "Apr", "Jul"];
+
+    return months.map((month) => {
+      const row: Record<string, string | number> = {
+        month: `Month ${month}`,
+      };
+
+      cohorts.forEach((cohort) => {
+        const dataPoint = cohortSeries.find(
+          (entry) => entry.month === month && entry.cohort === cohort
+        );
+        row[cohort] = dataPoint?.retention ?? 0;
+      });
+
+      return row;
+    });
+  }, [cohortSeries]);
 
   const filteredCustomers = useMemo(() => {
     const maxDays =
@@ -864,72 +841,35 @@ export default function CustomerProfileReportsPage() {
                 Customer Value Matrix
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Recency vs value to spot Champions and At-Risk cohorts
+                Customer segments by value score and recency
               </p>
             </div>
           </div>
           <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart
-                margin={{ top: 20, right: 30, bottom: 10, left: 10 }}
+              <BarChart
+                data={valueMatrixSeries}
+                margin={{ top: 20, right: 24, left: 0, bottom: 50 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
-                  type="number"
-                  dataKey="recency"
-                  name="Days Since Purchase"
-                  domain={[0, 140]}
-                  tick={{ fill: "#6b7280" }}
-                  label={{ value: "Recency (days)", position: "bottom" }}
+                  dataKey="segment"
+                  tick={{ fill: "#6b7280", fontSize: 11 }}
+                  interval={0}
                 />
-                <YAxis
-                  type="number"
-                  dataKey="valueScore"
-                  name="Value Score"
-                  domain={[0, 100]}
-                  tick={{ fill: "#6b7280" }}
-                  label={{
-                    value: "Frequency × Monetary score",
-                    angle: -90,
-                    position: "insideLeft",
-                  }}
-                />
-                <ZAxis dataKey="customers" range={[80, 400]} />
+                <YAxis tick={{ fill: "#6b7280" }} />
                 <Tooltip
-                  cursor={{ strokeDasharray: "4 4" }}
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
-                    const point = payload[0].payload as ValueMatrixPoint;
-                    return (
-                      <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg text-sm text-gray-900">
-                        <p className="font-semibold">{point.segment}</p>
-                        <p className="text-gray-600">
-                          {formatNumber(point.customers)} customers
-                        </p>
-                        <p className="text-gray-600">
-                          Recency: {point.recency}d · Value Score:{" "}
-                          {point.valueScore}
-                        </p>
-                        <p className="text-gray-600">
-                          Lifecycle: {point.lifecycle}
-                        </p>
-                      </div>
-                    );
-                  }}
+                  content={<CustomTooltip />}
+                  cursor={{ fill: "transparent" }}
                 />
-                {(["New", "Active", "At-Risk", "Churned"] as const).map(
-                  (stage) => (
-                    <Scatter
-                      key={stage}
-                      name={stage}
-                      data={valueMatrixSeries.filter(
-                        (point) => point.lifecycle === stage
-                      )}
-                      fill={valueMatrixColors[stage]}
-                    />
-                  )
-                )}
-              </ScatterChart>
+                <Bar
+                  dataKey="customers"
+                  name="Customers"
+                  fill={colors.primary.accent}
+                  maxBarSize={60}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -938,92 +878,7 @@ export default function CustomerProfileReportsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                Lifecycle Distribution
-              </h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Monthly composition of customer lifecycle stages
-              </p>
-            </div>
-          </div>
-          <div className="mt-6 h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={lifecycleSeries}
-                margin={{ top: 20, right: 24, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="month" tick={{ fill: "#6b7280" }} />
-                <YAxis
-                  tick={{ fill: "#6b7280" }}
-                  tickFormatter={(value) => `${value}k`}
-                  label={{
-                    value: "Customers (000s)",
-                    angle: -90,
-                    position: "insideLeft",
-                  }}
-                />
-                <Tooltip />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="active"
-                  stackId="1"
-                  stroke={colors.tertiary.tag4}
-                  fill={`${colors.tertiary.tag4}CC`}
-                  name="Active"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="new"
-                  stackId="1"
-                  stroke={colors.tertiary.tag2}
-                  fill={`${colors.tertiary.tag2}B3`}
-                  name="New"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="reactivated"
-                  stackId="1"
-                  stroke={colors.charts.offers.voucher}
-                  fill={`${colors.charts.offers.voucher}B3`}
-                  name="Reactivated"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="atRisk"
-                  stackId="1"
-                  stroke={colors.status.warning}
-                  fill={`${colors.status.warning}B3`}
-                  name="At-Risk"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="dormant"
-                  stackId="1"
-                  stroke="#94a3b8"
-                  fill="#94a3b866"
-                  name="Dormant"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="churned"
-                  stackId="1"
-                  stroke={colors.status.danger}
-                  fill={`${colors.status.danger}B3`}
-                  name="Churned"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                CLV Distribution
+                Customer Lifetime Value Distribution
               </h2>
               <p className="mt-1 text-sm text-gray-600">
                 Customer count by CLV bucket and cumulative revenue share
@@ -1036,7 +891,7 @@ export default function CustomerProfileReportsPage() {
                 data={clvDistributionSeries}
                 margin={{ top: 20, right: 24, left: 0, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="range" tick={{ fill: "#6b7280" }} />
                 <YAxis
                   yAxisId="left"
@@ -1059,8 +914,11 @@ export default function CustomerProfileReportsPage() {
                     position: "insideRight",
                   }}
                 />
-                <Tooltip />
-                <Legend />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: "transparent" }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
                 <Bar
                   yAxisId="left"
                   dataKey="customers"
@@ -1081,31 +939,109 @@ export default function CustomerProfileReportsPage() {
             </ResponsiveContainer>
           </div>
         </div>
+      </section>
 
+      <section className="space-y-6">
         <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                Cohort Retention Curves
+                Lifecycle Distribution
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Percent of customers still active by months since acquisition
+                Customer count by lifecycle stage over time
               </p>
             </div>
           </div>
           <div className="mt-6 h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={cohortSeries}
-                margin={{ top: 20, right: 24, left: 0, bottom: 0 }}
+              <BarChart
+                data={lifecycleSeries}
+                margin={{ top: 20, right: 24, left: 20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" tick={{ fill: "#6b7280" }} />
+                <YAxis
+                  tick={{ fill: "#6b7280" }}
+                  tickFormatter={(value) => `${value}k`}
+                  label={{
+                    value: "Customers (000s)",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: "transparent" }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
+                <Bar
+                  dataKey="active"
+                  name="Active"
+                  fill={colors.tertiary.tag4}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="new"
+                  name="New"
+                  fill={colors.tertiary.tag2}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="reactivated"
+                  name="Reactivated"
+                  fill={colors.charts.offers.voucher}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="atRisk"
+                  name="At-Risk"
+                  fill={colors.status.warning}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="dormant"
+                  name="Dormant"
+                  fill="#94a3b8"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="churned"
+                  name="Churned"
+                  fill={colors.status.danger}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Cohort Retention Comparison
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Compare how each acquisition cohort retains month over month
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={cohortComparisonSeries}
+                margin={{ top: 20, right: 24, left: 0, bottom: 40 }}
+                barCategoryGap="30%"
+                barGap={12}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="month"
                   tick={{ fill: "#6b7280" }}
                   label={{
                     value: "Months since acquisition",
                     position: "bottom",
+                    style: { marginTop: 8, marginBottom: 8 },
                   }}
                 />
                 <YAxis
@@ -1118,29 +1054,30 @@ export default function CustomerProfileReportsPage() {
                     position: "insideLeft",
                   }}
                 />
-                <Tooltip />
-                <Legend />
-                {["Jan", "Apr", "Jul"].map((cohort, index) => (
-                  <Line
-                    key={cohort}
-                    type="monotone"
-                    dataKey="retention"
-                    data={cohortSeries.filter(
-                      (point) => point.cohort === cohort
-                    )}
-                    name={`${cohort} Cohort`}
-                    stroke={
-                      [
-                        colors.tertiary.tag4,
-                        colors.primary.accent,
-                        colors.tertiary.tag2,
-                      ][index]
-                    }
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                ))}
-              </LineChart>
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: "transparent" }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
+                <Bar
+                  dataKey="Jan"
+                  name="Jan Cohort"
+                  fill="#9333ea"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="Apr"
+                  name="Apr Cohort"
+                  fill="#3b82f6"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="Jul"
+                  name="Jul Cohort"
+                  fill="#10b981"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
