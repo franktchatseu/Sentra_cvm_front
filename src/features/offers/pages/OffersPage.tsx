@@ -1015,7 +1015,7 @@ export default function OffersPage() {
                     Created
                   </th>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Actions
@@ -1102,7 +1102,7 @@ export default function OffersPage() {
                       className="px-6 py-4 text-sm font-medium"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      <div className="flex items-center justify-end space-x-2">
+                      <div className="flex items-center justify-center space-x-2">
                         {/* Play/Pause buttons - Only show if approved (not draft, not expired/archived) */}
                         {offer.status === OfferStatusEnum.APPROVED && (
                           <>

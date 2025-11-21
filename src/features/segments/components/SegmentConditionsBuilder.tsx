@@ -949,7 +949,7 @@ export default function SegmentConditionsBuilder({
                       }
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Upload List
+                      Create List
                     </button>
                   </div>
 
@@ -976,7 +976,7 @@ export default function SegmentConditionsBuilder({
                         style={{ backgroundColor: button.action.background }}
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Upload List
+                        Create List
                       </button>
                     </div>
                   )}
@@ -1265,7 +1265,7 @@ function ExistingListPicker({
         />
       </div>
 
-      <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-md p-2">
+      <div className="space-y-2 max-h-64 overflow-y-auto p-2">
         {filteredLists.length === 0 && (
           <div className="py-6 text-center text-sm text-gray-500">
             {query ? `No lists match "${query}"` : "No lists available"}
@@ -1276,10 +1276,10 @@ function ExistingListPicker({
             type="button"
             key={list.list_id}
             onClick={() => onSelect(list)}
-            className={`w-full text-left rounded-md border p-3 transition ${
+            className={`w-full text-left rounded-md p-3 transition ${
               selectedListId === list.list_id
-                ? "border-gray-800 bg-gray-50"
-                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                ? "bg-gray-50"
+                : "hover:bg-gray-50"
             }`}
           >
             <div className="flex items-start justify-between">

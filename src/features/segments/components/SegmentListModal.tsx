@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  X,
-  Upload,
-  FileText,
-  Hash,
-  List as ListIcon,
-  AlertCircle,
-} from "lucide-react";
-import { color, button as buttonTokens } from "../../../shared/utils/utils";
+import { X, Upload, FileText, AlertCircle } from "lucide-react";
+import { button as buttonTokens } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 export type SegmentListFormValues = {
   list_id?: number;
@@ -206,7 +200,7 @@ export default function SegmentListModal({
         }
       }}
     >
-      <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
           <div>
             <p className="text-xs uppercase tracking-wide text-gray-400">
@@ -234,236 +228,194 @@ export default function SegmentListModal({
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto px-6 py-6 space-y-6"
         >
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-5">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                List Details
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                    <ListIcon className="mr-2 h-4 w-4 text-gray-400" />
-                    List Name
-                  </label>
-                  <input
-                    type="text"
-                    value={form.list_label}
-                    onChange={(e) =>
-                      handleInputChange("list_label", e.target.value)
-                    }
-                    placeholder="e.g., High Value Customers"
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      errors.list_label
-                        ? "border-red-400 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
-                    }`}
-                  />
-                  {errors.list_label && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {errors.list_label}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                    <Hash className="mr-2 h-4 w-4 text-gray-400" />
-                    Description
-                  </label>
-                  <textarea
-                    value={form.list_description}
-                    onChange={(e) =>
-                      handleInputChange("list_description", e.target.value)
-                    }
-                    rows={4}
-                    placeholder="Describe who belongs in this list and how you'll use it."
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      errors.list_description
-                        ? "border-red-400 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
-                    }`}
-                  />
-                  {errors.list_description && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {errors.list_description}
-                    </p>
-                  )}
-                </div>
-              </div>
+          <div className="space-y-6">
+            <div>
+              <label className="text-sm font-medium text-black mb-1 block">
+                List Name
+              </label>
+              <input
+                type="text"
+                value={form.list_label}
+                onChange={(e) =>
+                  handleInputChange("list_label", e.target.value)
+                }
+                placeholder="e.g., High Value Customers"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                  errors.list_label
+                    ? "border-red-400 focus:ring-red-200"
+                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
+                }`}
+              />
+              {errors.list_label && (
+                <p className="mt-1 text-xs text-red-500">{errors.list_label}</p>
+              )}
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <h3 className="text-sm font-semibold text-gray-900 mb 4">
-                Configuration
-              </h3>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-2">
-                    List Type
-                  </p>
-                  <div className="space-y-2">
-                    {listTypeOptions.map((option) => (
-                      <label
-                        key={option.value}
-                        className={`flex cursor-pointer items-start space-x-3 rounded-lg border px-3 py-2 transition ${
-                          form.list_type === option.value
-                            ? "border-[var(--primary-color,#5EC6B1)] bg-[var(--primary-color,#5EC6B1)]/5"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="list_type"
-                          value={option.value}
-                          checked={form.list_type === option.value}
-                          onChange={() =>
-                            handleInputChange("list_type", option.value)
-                          }
-                          className="mt-1 text-[var(--primary-color,#5EC6B1)] focus:ring-[var(--primary-color,#5EC6B1)]"
-                        />
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {option.label}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {option.description}
-                          </p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Subscriber ID Column
-                  </label>
-                  <input
-                    type="text"
-                    value={form.subscriber_id_col_name}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "subscriber_id_col_name",
-                        e.target.value
-                      )
-                    }
-                    placeholder="e.g., msisdn, email, customer_id"
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      errors.subscriber_id_col_name
-                        ? "border-red-400 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
-                    }`}
-                  />
-                  {errors.subscriber_id_col_name && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {errors.subscriber_id_col_name}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    File Delimiter
-                  </label>
-                  <select
-                    value={form.file_delimiter}
-                    onChange={(e) =>
-                      handleInputChange("file_delimiter", e.target.value)
-                    }
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                      errors.file_delimiter
-                        ? "border-red-400 focus:ring-red-200"
-                        : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
-                    }`}
-                  >
-                    <option value=",">Comma (,)</option>
-                    <option value=";">Semicolon (;)</option>
-                    <option value="\t">Tab</option>
-                    <option value="|">Pipe (|)</option>
-                  </select>
-                  {errors.file_delimiter && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {errors.file_delimiter}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl bg-gray-50/70 p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {isCreateMode
-                    ? "Upload Your File"
-                    : "Upload Replacement File"}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Supported formats: CSV, TSV, TXT, or XLSX up to 10MB.
+            <div>
+              <label className="text-sm font-medium text-black mb-1 block">
+                Description
+              </label>
+              <textarea
+                value={form.list_description}
+                onChange={(e) =>
+                  handleInputChange("list_description", e.target.value)
+                }
+                rows={4}
+                placeholder="Describe who belongs in this list and how you'll use it."
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                  errors.list_description
+                    ? "border-red-400 focus:ring-red-200"
+                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
+                }`}
+              />
+              {errors.list_description && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.list_description}
                 </p>
-              </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-black mb-1 block">
+                List Type
+              </label>
+              <HeadlessSelect
+                options={listTypeOptions.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+                value={form.list_type}
+                onChange={(value) =>
+                  handleInputChange(
+                    "list_type",
+                    value as SegmentListFormValues["list_type"]
+                  )
+                }
+                placeholder="Select list type..."
+                error={!!errors.list_type}
+              />
+              {errors.list_type && (
+                <p className="mt-1 text-xs text-red-500">{errors.list_type}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-black mb-1 block">
+                Subscriber ID Column
+              </label>
+              <input
+                type="text"
+                value={form.subscriber_id_col_name}
+                onChange={(e) =>
+                  handleInputChange("subscriber_id_col_name", e.target.value)
+                }
+                placeholder="e.g., msisdn, email, customer_id"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                  errors.subscriber_id_col_name
+                    ? "border-red-400 focus:ring-red-200"
+                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
+                }`}
+              />
+              {errors.subscriber_id_col_name && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.subscriber_id_col_name}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-black mb-1 block">
+                File Delimiter
+              </label>
+              <select
+                value={form.file_delimiter}
+                onChange={(e) =>
+                  handleInputChange("file_delimiter", e.target.value)
+                }
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                  errors.file_delimiter
+                    ? "border-red-400 focus:ring-red-200"
+                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
+                }`}
+              >
+                <option value=",">Comma (,)</option>
+                <option value=";">Semicolon (;)</option>
+                <option value="\t">Tab</option>
+                <option value="|">Pipe (|)</option>
+              </select>
+              {errors.file_delimiter && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.file_delimiter}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-black mb-1 block">
+                {isCreateMode ? "Upload Your File" : "Upload Replacement File"}
+              </label>
+              <p className="text-sm text-gray-500 mb-3">
+                Supported formats: CSV, TSV, TXT, or XLSX up to 10MB.
+              </p>
               {!form.file_text && errors.file_text && (
-                <div className="flex items-center text-sm text-red-500">
+                <div className="flex items-center text-sm text-red-500 mb-3">
                   <AlertCircle className="mr-1 h-4 w-4" />
                   {errors.file_text}
                 </div>
               )}
-            </div>
 
-            {!form.file_text ? (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-4 flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 py-10 text-center cursor-pointer transition"
-              >
-                <div className="rounded-full bg-white p-3 shadow-sm mb-3">
-                  <Upload className="h-6 w-6 text-[var(--primary-color,#5EC6B1)]" />
-                </div>
-                <p className="font-semibold text-gray-900">
-                  Drag & drop or choose a file
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  We’ll automatically detect headers and preview your data.
-                </p>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="rounded-lg bg-[var(--primary-color,#5EC6B1)]/10 p-2">
-                    <FileText className="h-6 w-6 text-[var(--primary-color,#5EC6B1)]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {form.file_name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {uploadedFile
-                        ? `${(uploadedFile.size / 1024).toFixed(1)} KB`
-                        : form.file_size
-                        ? `${(form.file_size / 1024).toFixed(1)} KB`
-                        : null}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={removeFile}
-                  className="text-sm font-medium text-red-500 hover:text-red-600"
+              {!form.file_text ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 py-10 text-center cursor-pointer transition"
                 >
-                  Remove
-                </button>
-              </div>
-            )}
+                  <div className="rounded-full bg-white p-3 shadow-sm mb-3">
+                    <Upload className="h-6 w-6 text-[var(--primary-color,#5EC6B1)]" />
+                  </div>
+                  <p className="font-semibold text-gray-900">
+                    Drag & drop or choose a file
+                  </p>
+                  {/* <p className="text-sm text-gray-500 mt-1">
+                  We’ll automatically detect headers and preview your data.
+                </p> */}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="rounded-lg bg-[var(--primary-color,#5EC6B1)]/10 p-2">
+                      <FileText className="h-6 w-6 text-[var(--primary-color,#5EC6B1)]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {form.file_name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {uploadedFile
+                          ? `${(uploadedFile.size / 1024).toFixed(1)} KB`
+                          : form.file_size
+                          ? `${(form.file_size / 1024).toFixed(1)} KB`
+                          : null}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="text-sm font-medium text-red-500 hover:text-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.txt,.tsv,.xlsx"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-
-            {/* Preview removed */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt,.tsv,.xlsx"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-end">

@@ -491,7 +491,7 @@ export default function GenericConfigurationPage({
                       Description
                     </th>
                     <th
-                      className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider"
+                      className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
                       style={{
                         color: color.surface.tableHeaderText,
                         backgroundColor: color.surface.tableHeader,
@@ -539,14 +539,14 @@ export default function GenericConfigurationPage({
                       </td>
 
                       <td
-                        className="px-6 py-4 text-right"
+                        className="px-6 py-4 text-center"
                         style={{
                           backgroundColor: color.surface.tablebodybg,
                           borderTopRightRadius: "0.375rem",
                           borderBottomRightRadius: "0.375rem",
                         }}
                       >
-                        <div className="flex items-center justify-end space-x-2">
+                        <div className="flex items-center justify-center space-x-2">
                           <button
                             onClick={() => handleEditItem(item)}
                             className="p-2 rounded-md transition-colors"
