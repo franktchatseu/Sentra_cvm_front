@@ -54,6 +54,38 @@ const mapDaysToRange = (days: number | null): RangeOption => {
   return "90d";
 };
 
+const getRangeLabel = (option: RangeOption): string => {
+  const labels: Record<RangeOption, string> = {
+    "7d": "Daily",
+    "30d": "Weekly",
+    "90d": "Monthly",
+  };
+  return labels[option];
+};
+
+// Scale data based on actual number of days vs base range
+const getScaleFactor = (
+  customDays: number | null,
+  baseRange: RangeOption
+): number => {
+  if (!customDays) return 1;
+  const baseDays = rangeDays[baseRange];
+  return customDays / baseDays;
+};
+
+// Get date constraints for date inputs
+const getDateConstraints = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+
+  const minDate = new Date(today);
+  minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
+  const minDateStr = minDate.toISOString().split("T")[0];
+
+  return { minDate: minDateStr, maxDate };
+};
+
 // Mock data types
 interface CombinedSummary {
   totalRedemptions: number;
@@ -330,93 +362,99 @@ const offerTypeData: Record<RangeOption, OfferTypePerformance[]> = {
   ],
 };
 
-// Offer table data
-const offerRows: OfferRow[] = [
-  {
-    id: "offer-001",
-    offerName: "Welcome 20% Off",
-    campaignName: "New Customer Onboarding",
-    segment: "New Customers",
-    status: "Active",
-    targetGroup: 45_000,
-    controlGroup: 5_000,
-    messagesGenerated: 50_000,
-    sent: 48_500,
-    delivered: 47_200,
-    conversions: 1_890,
-    lastUpdated: "2025-10-01",
-  },
-  {
-    id: "offer-002",
-    offerName: "Flash Friday $15 Off",
-    campaignName: "Weekend Flash Sale",
-    segment: "Active Shoppers",
-    status: "Expired",
-    targetGroup: 120_000,
-    controlGroup: 15_000,
-    messagesGenerated: 135_000,
-    sent: 132_000,
-    delivered: 128_400,
-    conversions: 5_280,
-    lastUpdated: "2025-09-25",
-  },
-  {
-    id: "offer-003",
-    offerName: "Bundle & Save 30%",
-    campaignName: "Cross-Sell Campaign",
-    segment: "High Value",
-    status: "Active",
-    targetGroup: 68_000,
-    controlGroup: 8_000,
-    messagesGenerated: 76_000,
-    sent: 74_500,
-    delivered: 72_800,
-    conversions: 2_380,
-    lastUpdated: "2025-09-28",
-  },
-  {
-    id: "offer-004",
-    offerName: "Free Shipping",
-    campaignName: "Abandoned Cart Recovery",
-    segment: "Cart Abandoners",
-    status: "Active",
-    targetGroup: 95_000,
-    controlGroup: 10_000,
-    messagesGenerated: 105_000,
-    sent: 102_000,
-    delivered: 99_500,
-    conversions: 4_845,
-    lastUpdated: "2025-10-04",
-  },
-  {
-    id: "offer-005",
-    offerName: "VIP 25% Exclusive",
-    campaignName: "VIP Appreciation Week",
-    segment: "VIP Customers",
-    status: "Scheduled",
-    targetGroup: 12_000,
-    controlGroup: 2_000,
-    messagesGenerated: 14_000,
-    sent: 0,
-    delivered: 0,
-    conversions: 0,
-    lastUpdated: "2025-10-10",
-  },
-  {
-    id: "offer-006",
-    offerName: "BOGO 50% Off",
-    campaignName: "Spring Clearance",
-    segment: "Regular Customers",
-    status: "Active",
-    targetGroup: 78_000,
-    controlGroup: 9_000,
-    messagesGenerated: 87_000,
-    sent: 85_200,
-    delivered: 83_100,
-    conversions: 2_262,
-    lastUpdated: "2025-09-22",
-  },
-];
+// Generate comprehensive dummy data for offers
+const generateOfferRows = (): OfferRow[] => {
+  const segments = [
+    "New Customers",
+    "Active Shoppers",
+    "High Value",
+    "Cart Abandoners",
+    "VIP Customers",
+    "Regular Customers",
+    "At-Risk",
+  ];
+  const statuses: ("Active" | "Expired" | "Scheduled" | "Paused")[] = [
+    "Active",
+    "Expired",
+    "Scheduled",
+    "Paused",
+  ];
+  const offerNames = [
+    "Welcome 20% Off",
+    "Flash Friday $15 Off",
+    "Bundle & Save 30%",
+    "Free Shipping",
+    "VIP 25% Exclusive",
+    "BOGO 50% Off",
+    "Data Bundle Special",
+    "Voice Minutes Bonus",
+    "SMS Pack Deal",
+    "Combo Offer",
+    "Holiday Voucher",
+    "Referral Reward",
+  ];
+  const campaignNames = [
+    "New Customer Onboarding",
+    "Weekend Flash Sale",
+    "Cross-Sell Campaign",
+    "Abandoned Cart Recovery",
+    "VIP Appreciation Week",
+    "Spring Clearance",
+    "Product Launch",
+    "Re-engagement Drive",
+    "Seasonal Promo",
+    "Loyalty Program",
+    "Birthday Special",
+    "Winback Campaign",
+  ];
+
+  const rows: OfferRow[] = [];
+  const today = new Date();
+
+  segments.forEach((segment, segIdx) => {
+    statuses.forEach((status, statusIdx) => {
+      const baseIdx = segIdx * statuses.length + statusIdx;
+      const daysAgo = baseIdx * 3 + Math.floor(Math.random() * 5);
+      const updateDate = new Date(today);
+      updateDate.setDate(today.getDate() - daysAgo);
+
+      const targetGroup = 20000 + Math.floor(Math.random() * 100000);
+      const controlGroup = Math.floor(targetGroup * 0.12);
+      const messagesGenerated = targetGroup + controlGroup;
+      const sent =
+        status === "Scheduled"
+          ? 0
+          : Math.floor(messagesGenerated * (0.95 + Math.random() * 0.04));
+      const delivered =
+        status === "Scheduled"
+          ? 0
+          : Math.floor(sent * (0.94 + Math.random() * 0.05));
+      const conversions =
+        status === "Scheduled"
+          ? 0
+          : Math.floor(delivered * (0.03 + Math.random() * 0.05));
+
+      rows.push({
+        id: `offer-${String(100 + baseIdx).padStart(3, "0")}`,
+        offerName: offerNames[baseIdx % offerNames.length],
+        campaignName: campaignNames[baseIdx % campaignNames.length],
+        segment,
+        status,
+        targetGroup,
+        controlGroup,
+        messagesGenerated,
+        sent,
+        delivered,
+        conversions,
+        lastUpdated: updateDate.toISOString().split("T")[0],
+      });
+    });
+  });
+
+  return rows;
+};
+
+const offerRows: OfferRow[] = generateOfferRows();
 
 const statusOptions = [
   "All Statuses",
@@ -529,7 +567,31 @@ export default function OfferReportsPage() {
       ? mapDaysToRange(customDays)
       : selectedRange;
 
-  const summary = combinedSummary[activeRangeKey];
+  // Calculate scale factor for custom date ranges
+  const scaleFactor = useMemo(() => {
+    if (customRange.start && customRange.end && customDays) {
+      return getScaleFactor(customDays, activeRangeKey);
+    }
+    return 1;
+  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+
+  // Scale summary data based on actual date range
+  const baseSummary = combinedSummary[activeRangeKey];
+  const summary = useMemo(() => {
+    if (scaleFactor === 1) return baseSummary;
+    return {
+      ...baseSummary,
+      totalRedemptions: Math.round(baseSummary.totalRedemptions * scaleFactor),
+      revenueGenerated: Math.round(baseSummary.revenueGenerated * scaleFactor),
+      incrementalRevenue: Math.round(
+        baseSummary.incrementalRevenue * scaleFactor
+      ),
+      totalCost: Math.round(baseSummary.totalCost * scaleFactor),
+      // Rates stay the same (percentages don't scale)
+      redemptionRate: baseSummary.redemptionRate,
+      roi: baseSummary.roi,
+    };
+  }, [baseSummary, scaleFactor]);
 
   const heroCards = [
     {
@@ -576,9 +638,41 @@ export default function OfferReportsPage() {
     },
   ];
 
-  const funnelSeries = funnelData[activeRangeKey];
-  const timelineSeries = redemptionTimelineData[activeRangeKey];
-  const offerTypeComparison = offerTypeData[activeRangeKey];
+  // Scale chart data based on actual date range
+  const funnelSeries = useMemo(() => {
+    const base = funnelData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      value: Math.round(point.value * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const timelineSeries = useMemo(() => {
+    const base = redemptionTimelineData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      redemptions: Math.round(point.redemptions * scaleFactor),
+      cumulativeRedemptions: Math.round(
+        point.cumulativeRedemptions * scaleFactor
+      ),
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const offerTypeComparison = useMemo(() => {
+    const base = offerTypeData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      // Rates stay the same
+      redemptionRate: point.redemptionRate,
+      aov: point.aov,
+      marginPercent: point.marginPercent,
+      // Scale revenue
+      incrementalRevenue: Math.round(point.incrementalRevenue * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
 
   const filteredRows = useMemo(() => {
     const query = tableQuery.trim().toLowerCase();
@@ -680,7 +774,7 @@ export default function OfferReportsPage() {
             promotional campaigns
           </p>
         </div>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             {rangeOptions.map((option) => (
               <button
@@ -696,7 +790,7 @@ export default function OfferReportsPage() {
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                 }`}
               >
-                {option.toUpperCase()}
+                {getRangeLabel(option)}
               </button>
             ))}
           </div>
@@ -704,47 +798,56 @@ export default function OfferReportsPage() {
             <div className="flex items-center gap-2">
               <label
                 htmlFor="offer-date-start"
-                className="text-sm text-gray-600"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
               >
-                From
+                From:
               </label>
               <input
                 id="offer-date-start"
                 type="date"
                 value={customRange.start}
+                min={getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     start: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor="offer-date-end" className="text-sm text-gray-600">
-                To
+              <label
+                htmlFor="offer-date-end"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                To:
               </label>
               <input
                 id="offer-date-end"
                 type="date"
                 value={customRange.end}
+                min={customRange.start || getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     end: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setCustomRange({ start: "", end: "" })}
-              className="text-sm font-medium text-gray-600 underline"
-            >
-              Clear
-            </button>
+            {(customRange.start || customRange.end) && (
+              <button
+                type="button"
+                onClick={() => setCustomRange({ start: "", end: "" })}
+                className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </div>

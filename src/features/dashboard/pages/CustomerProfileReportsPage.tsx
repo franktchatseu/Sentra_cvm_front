@@ -22,6 +22,7 @@ import {
   BarChart3,
   Crown,
   DollarSign,
+  Download,
   Repeat,
   Users,
 } from "lucide-react";
@@ -266,83 +267,127 @@ const basePurchaseHeatmap: HeatmapCell[] = heatmapDays
   )
   .flat();
 
-const customerRows: CustomerRow[] = [
-  {
-    id: "CUST-34218",
-    name: "Sophia K.",
-    segment: "Champions",
-    lifetimeValue: 12_400,
-    clv: 14_200,
-    orders: 42,
-    aov: 296,
-    lastPurchase: "3 days ago",
-    lastInteractionDate: "2025-10-05",
-    engagementScore: 94,
-    churnRisk: 8,
-    preferredChannel: "Email",
-    location: "Nairobi, KE",
-  },
-  {
-    id: "CUST-44105",
-    name: "Michael O.",
-    segment: "Loyalists",
-    lifetimeValue: 8_120,
-    clv: 9_500,
-    orders: 28,
-    aov: 254,
-    lastPurchase: "8 days ago",
-    lastInteractionDate: "2025-09-30",
-    engagementScore: 86,
-    churnRisk: 14,
-    preferredChannel: "SMS",
-    location: "Kampala, UG",
-  },
-  {
-    id: "CUST-55142",
-    name: "Amy T.",
-    segment: "Potential Loyalist",
-    lifetimeValue: 2_340,
-    clv: 4_200,
-    orders: 9,
-    aov: 182,
-    lastPurchase: "21 days ago",
-    lastInteractionDate: "2025-09-17",
-    engagementScore: 68,
-    churnRisk: 28,
-    preferredChannel: "Push",
-    location: "Lagos, NG",
-  },
-  {
-    id: "CUST-66201",
-    name: "David R.",
-    segment: "At-Risk",
-    lifetimeValue: 5_420,
-    clv: 5_600,
-    orders: 18,
-    aov: 201,
-    lastPurchase: "58 days ago",
-    lastInteractionDate: "2025-08-11",
-    engagementScore: 44,
-    churnRisk: 62,
-    preferredChannel: "Email",
-    location: "Accra, GH",
-  },
-  {
-    id: "CUST-77114",
-    name: "Grace I.",
-    segment: "Reactivated",
-    lifetimeValue: 3_840,
-    clv: 6_200,
-    orders: 14,
-    aov: 205,
-    lastPurchase: "11 days ago",
-    lastInteractionDate: "2025-09-27",
-    engagementScore: 74,
-    churnRisk: 24,
-    preferredChannel: "SMS",
-    location: "Dar es Salaam, TZ",
-  },
-];
+// Generate comprehensive dummy data that covers all filter combinations
+const generateCustomerRows = (): CustomerRow[] => {
+  const segments = [
+    "Champions",
+    "Loyalists",
+    "Potential Loyalist",
+    "At-Risk",
+    "Reactivated",
+  ];
+  const channels = ["Email", "SMS", "Push"];
+  const locations = [
+    "Nairobi, KE",
+    "Kampala, UG",
+    "Lagos, NG",
+    "Accra, GH",
+    "Dar es Salaam, TZ",
+    "Kigali, RW",
+    "Addis Ababa, ET",
+  ];
+  const names = [
+    "Sophia K.",
+    "Michael O.",
+    "Amy T.",
+    "David R.",
+    "Grace I.",
+    "James M.",
+    "Emma L.",
+    "Robert N.",
+    "Olivia P.",
+    "William Q.",
+    "Isabella S.",
+    "Benjamin T.",
+    "Mia U.",
+    "Daniel V.",
+    "Charlotte W.",
+    "Matthew X.",
+    "Amelia Y.",
+    "Joseph Z.",
+    "Harper A.",
+    "Samuel B.",
+    "Evelyn C.",
+    "Henry D.",
+    "Abigail E.",
+    "Alexander F.",
+    "Emily G.",
+  ];
+
+  const rows: CustomerRow[] = [];
+  const today = new Date();
+
+  // Generate customers across all segments, risk levels, and date ranges
+  segments.forEach((segment, segIdx) => {
+    for (let i = 0; i < 5; i++) {
+      const baseIdx = segIdx * 5 + i;
+      const daysAgo = i * 15 + Math.floor(Math.random() * 10); // Spread across date ranges
+      const interactionDate = new Date(today);
+      interactionDate.setDate(today.getDate() - daysAgo);
+
+      // Calculate churn risk based on segment and recency
+      let churnRisk = 15;
+      if (segment === "At-Risk")
+        churnRisk = 65 + Math.floor(Math.random() * 20);
+      else if (segment === "Potential Loyalist")
+        churnRisk = 25 + Math.floor(Math.random() * 10);
+      else if (segment === "Reactivated")
+        churnRisk = 20 + Math.floor(Math.random() * 15);
+      else if (daysAgo > 30) churnRisk = 30 + Math.floor(Math.random() * 20);
+
+      // Calculate engagement score inversely related to churn risk
+      const engagementScore = Math.max(
+        30,
+        100 - churnRisk + Math.floor(Math.random() * 20)
+      );
+
+      // Calculate values based on segment
+      let lifetimeValue = 2000 + Math.floor(Math.random() * 3000);
+      let clv = lifetimeValue * 1.2;
+      let orders = 5 + Math.floor(Math.random() * 20);
+      let aov = 150 + Math.floor(Math.random() * 150);
+
+      if (segment === "Champions") {
+        lifetimeValue = 8000 + Math.floor(Math.random() * 6000);
+        clv = lifetimeValue * 1.15;
+        orders = 30 + Math.floor(Math.random() * 25);
+        aov = 250 + Math.floor(Math.random() * 100);
+      } else if (segment === "Loyalists") {
+        lifetimeValue = 5000 + Math.floor(Math.random() * 4000);
+        clv = lifetimeValue * 1.18;
+        orders = 20 + Math.floor(Math.random() * 15);
+        aov = 200 + Math.floor(Math.random() * 80);
+      }
+
+      const lastPurchaseText =
+        daysAgo === 0
+          ? "Today"
+          : daysAgo === 1
+          ? "1 day ago"
+          : `${daysAgo} days ago`;
+
+      rows.push({
+        id: `CUST-${String(34000 + baseIdx).padStart(5, "0")}`,
+        name: names[baseIdx % names.length],
+        segment,
+        lifetimeValue,
+        clv: Math.round(clv),
+        orders,
+        aov: Math.round(aov),
+        lastPurchase: lastPurchaseText,
+        lastInteractionDate: interactionDate.toISOString().split("T")[0],
+        engagementScore,
+        churnRisk,
+        preferredChannel: channels[baseIdx % channels.length],
+        location: locations[baseIdx % locations.length],
+      });
+    }
+  });
+
+  return rows;
+};
+
+const customerRows: CustomerRow[] = generateCustomerRows();
 
 const valueMatrixColors: Record<ValueMatrixPoint["lifecycle"], string> = {
   New: colors.tertiary.tag2,
@@ -394,12 +439,43 @@ const mapDaysToRange = (days: number | null): RangeOption => {
   return "90d";
 };
 
+const getRangeLabel = (option: RangeOption): string => {
+  const labels: Record<RangeOption, string> = {
+    "7d": "Daily",
+    "30d": "Weekly",
+    "90d": "Monthly",
+  };
+  return labels[option];
+};
+
+// Calculate scale factor based on actual custom days vs base range
+const getCustomScaleFactor = (
+  customDays: number | null,
+  baseRange: RangeOption
+): number => {
+  if (!customDays) return rangeMultipliers[baseRange];
+  const baseDays = rangeDays[baseRange];
+  const baseMultiplier = rangeMultipliers[baseRange];
+  // Scale proportionally: if 7d has multiplier 0.38, and user selects 14 days (2x), scale to 0.76
+  return (customDays / baseDays) * baseMultiplier;
+};
+
+// Get date constraints for date inputs
+const getDateConstraints = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+
+  const minDate = new Date(today);
+  minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
+  const minDateStr = minDate.toISOString().split("T")[0];
+
+  return { minDate: minDateStr, maxDate };
+};
+
 export default function CustomerProfileReportsPage() {
-  const [selectedSegment, setSelectedSegment] =
-    useState<string>("All Customers");
-  const [selectedRange, setSelectedRange] = useState<RangeOption>("90d");
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
-  const [tableQuery, setTableQuery] = useState("");
   const [tableSegment, setTableSegment] = useState("All");
   const [tableRiskFilter, setTableRiskFilter] = useState("All");
 
@@ -409,8 +485,16 @@ export default function CustomerProfileReportsPage() {
       ? mapDaysToRange(customDays)
       : selectedRange;
 
+  // Calculate actual scale factor based on custom days
+  const actualMultiplier = useMemo(() => {
+    if (customRange.start && customRange.end && customDays) {
+      return getCustomScaleFactor(customDays, activeRangeKey);
+    }
+    return rangeMultipliers[activeRangeKey];
+  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+
   const valueMatrixSeries = useMemo(() => {
-    const multiplier = rangeMultipliers[activeRangeKey];
+    const multiplier = actualMultiplier;
     return baseValueMatrixData.map((point) => ({
       ...point,
       customers: Math.max(200, Math.round(point.customers * multiplier)),
@@ -430,10 +514,10 @@ export default function CustomerProfileReportsPage() {
         )
       ),
     }));
-  }, [activeRangeKey]);
+  }, [actualMultiplier]);
 
   const lifecycleSeries = useMemo(() => {
-    const multiplier = rangeMultipliers[activeRangeKey];
+    const multiplier = actualMultiplier;
     return baseLifecycleData.map((point) => ({
       month: point.month,
       new: Math.round(point.new * multiplier),
@@ -443,10 +527,10 @@ export default function CustomerProfileReportsPage() {
       churned: Math.round(point.churned * multiplier),
       reactivated: Math.round(point.reactivated * multiplier),
     }));
-  }, [activeRangeKey]);
+  }, [actualMultiplier]);
 
   const clvDistributionSeries = useMemo(() => {
-    const multiplier = rangeMultipliers[activeRangeKey];
+    const multiplier = actualMultiplier;
     return baseClvDistribution.map((bucket) => ({
       ...bucket,
       customers: Math.round(bucket.customers * multiplier),
@@ -460,23 +544,21 @@ export default function CustomerProfileReportsPage() {
       ...point,
       retention: Math.min(100, point.retention + adjustment),
     }));
-  }, [activeRangeKey]);
+  }, [actualMultiplier]);
 
   const purchaseHeatmapSeries = useMemo(() => {
-    const multiplier = rangeMultipliers[activeRangeKey];
+    const multiplier = actualMultiplier;
     return basePurchaseHeatmap.map((cell) => ({
       ...cell,
       volume: Math.round(cell.volume * multiplier),
     }));
-  }, [activeRangeKey]);
+  }, [actualMultiplier]);
 
   const secondaryMetrics: SecondaryMetric[] = [
     {
       label: "New Customers",
       value: formatNumber(
-        Math.round(
-          secondaryMetricBase.newCustomers * rangeMultipliers[activeRangeKey]
-        )
+        Math.round(secondaryMetricBase.newCustomers * actualMultiplier)
       ),
       description: "Customers acquired in range",
     },
@@ -525,7 +607,6 @@ export default function CustomerProfileReportsPage() {
   ];
 
   const filteredCustomers = useMemo(() => {
-    const query = tableQuery.trim().toLowerCase();
     const maxDays =
       customRange.start && customRange.end
         ? customDays ?? rangeDays[activeRangeKey]
@@ -536,10 +617,6 @@ export default function CustomerProfileReportsPage() {
     const endMs = customRange.end ? new Date(customRange.end).getTime() : null;
 
     return customerRows.filter((row) => {
-      const matchesQuery = query
-        ? row.id.toLowerCase().includes(query) ||
-          row.name.toLowerCase().includes(query)
-        : true;
       const matchesSegment =
         tableSegment === "All" ? true : row.segment === tableSegment;
       const matchesRisk =
@@ -556,16 +633,9 @@ export default function CustomerProfileReportsPage() {
         customRange.start && customRange.end && startMs && endMs
           ? rowDate >= startMs && rowDate <= endMs
           : now - rowDate <= maxDays * 24 * 60 * 60 * 1000;
-      return matchesQuery && matchesSegment && matchesRisk && matchesRange;
+      return matchesSegment && matchesRisk && matchesRange;
     });
-  }, [
-    tableQuery,
-    tableSegment,
-    tableRiskFilter,
-    customRange,
-    customDays,
-    activeRangeKey,
-  ]);
+  }, [tableSegment, tableRiskFilter, customRange, customDays, activeRangeKey]);
 
   const handleDownloadCsv = () => {
     if (!filteredCustomers.length) return;
@@ -629,99 +699,88 @@ export default function CustomerProfileReportsPage() {
             engagement signals
           </p>
         </div>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <select
-            value={selectedSegment}
-            onChange={(event) => setSelectedSegment(event.target.value)}
-            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-64"
-          >
-            {segmentOptions.map((segment) => (
-              <option key={segment} value={segment}>
-                {segment}
-              </option>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {rangeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  setSelectedRange(option);
+                  setCustomRange({ start: "", end: "" });
+                }}
+                className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  !(customRange.start && customRange.end) &&
+                  selectedRange === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {getRangeLabel(option)}
+              </button>
             ))}
-          </select>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <div className="flex flex-wrap gap-2">
-              {rangeOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => {
-                    setSelectedRange(option);
-                    setCustomRange({ start: "", end: "" });
-                  }}
-                  className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    !(customRange.start && customRange.end) &&
-                    selectedRange === option
-                      ? "border-[#252829] bg-[#252829] text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {option.toUpperCase()}
-                </button>
-              ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="customer-date-start"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                From:
+              </label>
+              <input
+                id="customer-date-start"
+                type="date"
+                value={customRange.start}
+                min={getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    start: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+              />
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="customer-date-start"
-                  className="text-sm text-gray-600"
-                >
-                  From
-                </label>
-                <input
-                  id="customer-date-start"
-                  type="date"
-                  value={customRange.start}
-                  onChange={(event) =>
-                    setCustomRange((prev) => ({
-                      ...prev,
-                      start: event.target.value,
-                    }))
-                  }
-                  className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="customer-date-end"
-                  className="text-sm text-gray-600"
-                >
-                  To
-                </label>
-                <input
-                  id="customer-date-end"
-                  type="date"
-                  value={customRange.end}
-                  onChange={(event) =>
-                    setCustomRange((prev) => ({
-                      ...prev,
-                      end: event.target.value,
-                    }))
-                  }
-                  className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
-                />
-              </div>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="customer-date-end"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                To:
+              </label>
+              <input
+                id="customer-date-end"
+                type="date"
+                value={customRange.end}
+                min={customRange.start || getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
+                onChange={(event) =>
+                  setCustomRange((prev) => ({
+                    ...prev,
+                    end: event.target.value,
+                  }))
+                }
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+              />
+            </div>
+            {(customRange.start || customRange.end) && (
               <button
                 type="button"
                 onClick={() => setCustomRange({ start: "", end: "" })}
-                className="text-sm font-medium text-gray-600 underline"
+                className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 Clear
               </button>
-            </div>
+            )}
           </div>
         </div>
       </header>
 
       <section>
         {(() => {
-          const scaleMap: Record<RangeOption, number> = {
-            "7d": 0.38,
-            "30d": 0.72,
-            "90d": 1,
-          };
-          const valueScale = scaleMap[activeRangeKey];
+          // Use actual multiplier for custom dates, otherwise use preset scale
+          const valueScale = actualMultiplier;
           const clvAdjust =
             activeRangeKey === "7d"
               ? 0.96
@@ -841,23 +900,6 @@ export default function CustomerProfileReportsPage() {
             </div>
           );
         })()}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        {secondaryMetrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="rounded-md border border-gray-200 bg-white p-4 shadow-sm"
-          >
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-              {metric.label}
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {metric.value}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">{metric.description}</p>
-          </div>
-        ))}
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -1221,17 +1263,10 @@ export default function CustomerProfileReportsPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <input
-              type="text"
-              value={tableQuery}
-              onChange={(event) => setTableQuery(event.target.value)}
-              placeholder="Search customer"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:outline-none md:w-64"
-            />
             <select
               value={tableSegment}
               onChange={(event) => setTableSegment(event.target.value)}
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-40"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
             >
               {[
                 "All",
@@ -1249,7 +1284,7 @@ export default function CustomerProfileReportsPage() {
             <select
               value={tableRiskFilter}
               onChange={(event) => setTableRiskFilter(event.target.value)}
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-40"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
             >
               {["All", "High", "Medium", "Low"].map((option) => (
                 <option key={option} value={option}>
@@ -1260,9 +1295,10 @@ export default function CustomerProfileReportsPage() {
             <button
               type="button"
               onClick={handleDownloadCsv}
-              className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold text-white"
               style={{ backgroundColor: colors.primary.action }}
             >
+              <Download className="h-4 w-4" />
               Download CSV
             </button>
           </div>

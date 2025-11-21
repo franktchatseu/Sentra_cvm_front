@@ -174,6 +174,61 @@ const smsMockData: Record<RangeOption, SMSRangeData> = {
 };
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
+
+const getDaysBetween = (start: string, end: string) => {
+  const startDate = start ? new Date(start) : null;
+  const endDate = end ? new Date(end) : null;
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime())
+  ) {
+    return null;
+  }
+  const diff = Math.abs(endDate.getTime() - startDate.getTime());
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
+
+const mapDaysToRange = (days: number | null): RangeOption => {
+  if (days === null) return "7d";
+  if (days <= 7) return "7d";
+  if (days <= 30) return "30d";
+  return "90d";
+};
+
+const getRangeLabel = (option: RangeOption): string => {
+  const labels: Record<RangeOption, string> = {
+    "7d": "Daily",
+    "30d": "Weekly",
+    "90d": "Monthly",
+  };
+  return labels[option];
+};
+
+// Scale data based on actual number of days vs base range
+const getScaleFactor = (
+  customDays: number | null,
+  baseRange: RangeOption
+): number => {
+  if (!customDays) return 1;
+  const baseDays = rangeDays[baseRange];
+  return customDays / baseDays;
+};
+
+// Get date constraints for date inputs
+const getDateConstraints = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+
+  const minDate = new Date(today);
+  minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
+  const minDateStr = minDate.toISOString().split("T")[0];
+
+  return { minDate: minDateStr, maxDate };
+};
+
 const smsMessageLogs: MessageLogEntry[] = [
   {
     id: "MSG-20251001-001",
@@ -313,27 +368,6 @@ export default function DeliverySMSReportsPage() {
     "All"
   );
   const [campaignQuery, setCampaignQuery] = useState("");
-  const getDaysBetween = (start: string, end: string) => {
-    const startDate = start ? new Date(start) : null;
-    const endDate = end ? new Date(end) : null;
-    if (
-      !startDate ||
-      !endDate ||
-      Number.isNaN(startDate.getTime()) ||
-      Number.isNaN(endDate.getTime())
-    ) {
-      return null;
-    }
-    const diff = Math.abs(endDate.getTime() - startDate.getTime());
-    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  };
-
-  const mapDaysToRange = (days: number | null): RangeOption => {
-    if (days === null) return "7d";
-    if (days <= 7) return "7d";
-    if (days <= 30) return "30d";
-    return "90d";
-  };
 
   const customDays = getDaysBetween(customRange.start, customRange.end);
   const activeRangeKey: RangeOption =
@@ -341,8 +375,48 @@ export default function DeliverySMSReportsPage() {
       ? mapDaysToRange(customDays)
       : deliveryRange;
 
-  const summarySnapshot = smsMockData[activeRangeKey];
-  const deliverySnapshot = smsMockData[activeRangeKey];
+  // Calculate scale factor for custom date ranges
+  const scaleFactor = useMemo(() => {
+    if (customRange.start && customRange.end && customDays) {
+      return getScaleFactor(customDays, activeRangeKey);
+    }
+    return 1;
+  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+
+  // Scale snapshot data based on actual date range
+  const baseSnapshot = smsMockData[activeRangeKey];
+  const summarySnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      summary: {
+        ...baseSnapshot.summary,
+        sent: Math.round(baseSnapshot.summary.sent * scaleFactor),
+        delivered: Math.round(baseSnapshot.summary.delivered * scaleFactor),
+        conversions: Math.round(baseSnapshot.summary.conversions * scaleFactor),
+        // Rates stay the same
+        deliveryRate: baseSnapshot.summary.deliveryRate,
+        failedRate: baseSnapshot.summary.failedRate,
+        conversionRate: baseSnapshot.summary.conversionRate,
+        openRate: baseSnapshot.summary.openRate,
+        ctr: baseSnapshot.summary.ctr,
+        optOutRate: baseSnapshot.summary.optOutRate,
+      },
+    };
+  }, [baseSnapshot, scaleFactor]);
+
+  const deliverySnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      deliverySeries: baseSnapshot.deliverySeries.map((point) => ({
+        ...point,
+        sent: Math.round(point.sent * scaleFactor),
+        delivered: Math.round(point.delivered * scaleFactor),
+        converted: Math.round(point.converted * scaleFactor),
+      })),
+    };
+  }, [baseSnapshot, scaleFactor]);
   const filteredLogs = useMemo(() => {
     const now = Date.now();
     const maxDays =
@@ -495,52 +569,64 @@ export default function DeliverySMSReportsPage() {
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                 }`}
               >
-                {option.toUpperCase()}
+                {getRangeLabel(option)}
               </button>
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <label htmlFor="sms-date-start" className="text-sm text-gray-600">
-                From
+              <label
+                htmlFor="sms-date-start"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                From:
               </label>
               <input
                 id="sms-date-start"
                 type="date"
                 value={customRange.start}
+                min={getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     start: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor="sms-date-end" className="text-sm text-gray-600">
-                To
+              <label
+                htmlFor="sms-date-end"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                To:
               </label>
               <input
                 id="sms-date-end"
                 type="date"
                 value={customRange.end}
+                min={customRange.start || getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     end: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setCustomRange({ start: "", end: "" })}
-              className="text-sm font-medium text-gray-600 underline"
-            >
-              Clear
-            </button>
+            {(customRange.start || customRange.end) && (
+              <button
+                type="button"
+                onClick={() => setCustomRange({ start: "", end: "" })}
+                className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </header>

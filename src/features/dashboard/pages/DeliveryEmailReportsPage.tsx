@@ -295,6 +295,38 @@ const mapDaysToRange = (days: number | null): RangeOption => {
   return "90d";
 };
 
+const getRangeLabel = (option: RangeOption): string => {
+  const labels: Record<RangeOption, string> = {
+    "7d": "Daily",
+    "30d": "Weekly",
+    "90d": "Monthly",
+  };
+  return labels[option];
+};
+
+// Scale data based on actual number of days vs base range
+const getScaleFactor = (
+  customDays: number | null,
+  baseRange: RangeOption
+): number => {
+  if (!customDays) return 1;
+  const baseDays = rangeDays[baseRange];
+  return customDays / baseDays;
+};
+
+// Get date constraints for date inputs
+const getDateConstraints = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+
+  const minDate = new Date(today);
+  minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
+  const minDateStr = minDate.toISOString().split("T")[0];
+
+  return { minDate: minDateStr, maxDate };
+};
+
 export default function DeliveryEmailReportsPage() {
   const [deliveryRange, setDeliveryRange] = useState<RangeOption>("7d");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
@@ -306,8 +338,48 @@ export default function DeliveryEmailReportsPage() {
       ? mapDaysToRange(customDays)
       : deliveryRange;
 
-  const summarySnapshot = emailMockData[activeRangeKey];
-  const deliverySnapshot = emailMockData[activeRangeKey];
+  // Calculate scale factor for custom date ranges
+  const scaleFactor = useMemo(() => {
+    if (customRange.start && customRange.end && customDays) {
+      return getScaleFactor(customDays, activeRangeKey);
+    }
+    return 1;
+  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+
+  // Scale snapshot data based on actual date range
+  const baseSnapshot = emailMockData[activeRangeKey];
+  const summarySnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      summary: {
+        ...baseSnapshot.summary,
+        sent: Math.round(baseSnapshot.summary.sent * scaleFactor),
+        delivered: Math.round(baseSnapshot.summary.delivered * scaleFactor),
+        conversions: Math.round(baseSnapshot.summary.conversions * scaleFactor),
+        // Rates stay the same
+        deliveryRate: baseSnapshot.summary.deliveryRate,
+        bounceRate: baseSnapshot.summary.bounceRate,
+        conversionRate: baseSnapshot.summary.conversionRate,
+        openRate: baseSnapshot.summary.openRate,
+        ctr: baseSnapshot.summary.ctr,
+        unsubscribeRate: baseSnapshot.summary.unsubscribeRate,
+      },
+    };
+  }, [baseSnapshot, scaleFactor]);
+
+  const deliverySnapshot = useMemo(() => {
+    if (scaleFactor === 1) return baseSnapshot;
+    return {
+      ...baseSnapshot,
+      deliverySeries: baseSnapshot.deliverySeries.map((point) => ({
+        ...point,
+        sent: Math.round(point.sent * scaleFactor),
+        delivered: Math.round(point.delivered * scaleFactor),
+        converted: Math.round(point.converted * scaleFactor),
+      })),
+    };
+  }, [baseSnapshot, scaleFactor]);
 
   const filteredLogs = useMemo(() => {
     const now = Date.now();
@@ -462,7 +534,7 @@ export default function DeliveryEmailReportsPage() {
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                 }`}
               >
-                {option.toUpperCase()}
+                {getRangeLabel(option)}
               </button>
             ))}
           </div>
@@ -470,47 +542,56 @@ export default function DeliveryEmailReportsPage() {
             <div className="flex items-center gap-2">
               <label
                 htmlFor="email-date-start"
-                className="text-sm text-gray-600"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
               >
-                From
+                From:
               </label>
               <input
                 id="email-date-start"
                 type="date"
                 value={customRange.start}
+                min={getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     start: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor="email-date-end" className="text-sm text-gray-600">
-                To
+              <label
+                htmlFor="email-date-end"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                To:
               </label>
               <input
                 id="email-date-end"
                 type="date"
                 value={customRange.end}
+                min={customRange.start || getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     end: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setCustomRange({ start: "", end: "" })}
-              className="text-sm font-medium text-gray-600 underline"
-            >
-              Clear
-            </button>
+            {(customRange.start || customRange.end) && (
+              <button
+                type="button"
+                onClick={() => setCustomRange({ start: "", end: "" })}
+                className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </header>

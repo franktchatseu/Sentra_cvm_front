@@ -51,6 +51,38 @@ const mapDaysToRange = (days: number | null): RangeOption => {
   return "90d";
 };
 
+const getRangeLabel = (option: RangeOption): string => {
+  const labels: Record<RangeOption, string> = {
+    "7d": "Daily",
+    "30d": "Weekly",
+    "90d": "Monthly",
+  };
+  return labels[option];
+};
+
+// Scale data based on actual number of days vs base range
+const getScaleFactor = (
+  customDays: number | null,
+  baseRange: RangeOption
+): number => {
+  if (!customDays) return 1;
+  const baseDays = rangeDays[baseRange];
+  return customDays / baseDays;
+};
+
+// Get date constraints for date inputs
+const getDateConstraints = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+
+  const minDate = new Date(today);
+  minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
+  const minDateStr = minDate.toISOString().split("T")[0];
+
+  return { minDate: minDateStr, maxDate };
+};
+
 type CampaignSummary = {
   eligibleAudience: number;
   recipients: number;
@@ -279,60 +311,78 @@ const revenueData: Record<RangeOption, TrendPoint[]> = {
   ],
 };
 
-const campaignRows: CampaignRow[] = [
-  {
-    id: "camp-neo",
-    name: "Neo Onboarding Journey",
-    segment: "New Customers",
-    offer: "Cashback Bonus",
-    targetGroup: 60_000,
-    controlGroup: 10_000,
-    sent: 70_000,
-    delivered: 66_500,
-    conversions: 5_400,
-    messagesGenerated: 210_000,
-    lastRunDate: "2025-10-01",
-  },
-  {
-    id: "camp-vip",
-    name: "VIP Upsell",
-    segment: "High Value",
-    offer: "Priority Upgrade",
-    targetGroup: 32_000,
-    controlGroup: 6_000,
-    sent: 38_000,
-    delivered: 36_200,
-    conversions: 4_800,
-    messagesGenerated: 120_000,
-    lastRunDate: "2025-10-05",
-  },
-  {
-    id: "camp-churn",
-    name: "Churn Winback",
-    segment: "Churn Risk",
-    offer: "Winback Voucher",
-    targetGroup: 48_000,
-    controlGroup: 8_000,
-    sent: 55_000,
-    delivered: 49_500,
-    conversions: 3_900,
-    messagesGenerated: 150_000,
-    lastRunDate: "2025-09-28",
-  },
-  {
-    id: "camp-seasonal",
-    name: "Seasonal Promotions",
-    segment: "Broad Audience",
-    offer: "Seasonal Bundles",
-    targetGroup: 75_000,
-    controlGroup: 12_000,
-    sent: 88_000,
-    delivered: 80_200,
-    conversions: 6_800,
-    messagesGenerated: 260_000,
-    lastRunDate: "2025-09-20",
-  },
-];
+// Generate comprehensive dummy data for campaigns
+const generateCampaignRows = (): CampaignRow[] => {
+  const segments = [
+    "New Customers",
+    "High Value",
+    "Churn Risk",
+    "Broad Audience",
+    "VIP",
+    "At-Risk",
+    "Reactivated",
+  ];
+  const offers = [
+    "Cashback Bonus",
+    "Priority Upgrade",
+    "Winback Voucher",
+    "Seasonal Bundles",
+    "Data Bundle",
+    "Voice Minutes",
+    "SMS Pack",
+  ];
+  const campaignNames = [
+    "Neo Onboarding Journey",
+    "VIP Upsell",
+    "Churn Winback",
+    "Seasonal Promotions",
+    "Welcome Series",
+    "Loyalty Rewards",
+    "Birthday Campaign",
+    "Holiday Special",
+    "Product Launch",
+    "Re-engagement Drive",
+    "Cross-sell Bundle",
+    "Referral Program",
+  ];
+
+  const rows: CampaignRow[] = [];
+  const today = new Date();
+
+  segments.forEach((segment, segIdx) => {
+    for (let i = 0; i < 3; i++) {
+      const baseIdx = segIdx * 3 + i;
+      const daysAgo = i * 10 + Math.floor(Math.random() * 5);
+      const runDate = new Date(today);
+      runDate.setDate(today.getDate() - daysAgo);
+
+      const targetGroup = 20000 + Math.floor(Math.random() * 60000);
+      const controlGroup = Math.floor(targetGroup * 0.15);
+      const sent = targetGroup + controlGroup;
+      const delivered = Math.floor(sent * (0.92 + Math.random() * 0.06));
+      const conversions = Math.floor(delivered * (0.06 + Math.random() * 0.08));
+      const messagesGenerated = sent * (2 + Math.floor(Math.random() * 2));
+
+      rows.push({
+        id: `camp-${String(1000 + baseIdx)}`,
+        name: campaignNames[baseIdx % campaignNames.length],
+        segment,
+        offer: offers[baseIdx % offers.length],
+        targetGroup,
+        controlGroup,
+        sent,
+        delivered,
+        conversions,
+        messagesGenerated,
+        lastRunDate: runDate.toISOString().split("T")[0],
+      });
+    }
+  });
+
+  return rows;
+};
+
+const campaignRows: CampaignRow[] = generateCampaignRows();
 
 type ChartTooltipEntry = {
   color?: string;
@@ -392,7 +442,37 @@ export default function CampaignReportsPage() {
       ? mapDaysToRange(customDays)
       : selectedRange;
 
-  const summary = campaignSummary[activeRangeKey];
+  // Calculate scale factor for custom date ranges
+  const scaleFactor = useMemo(() => {
+    if (customRange.start && customRange.end && customDays) {
+      return getScaleFactor(customDays, activeRangeKey);
+    }
+    return 1;
+  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+
+  // Scale summary data based on actual date range
+  const baseSummary = campaignSummary[activeRangeKey];
+  const summary = useMemo(() => {
+    if (scaleFactor === 1) return baseSummary;
+    return {
+      ...baseSummary,
+      eligibleAudience: Math.round(baseSummary.eligibleAudience * scaleFactor),
+      recipients: Math.round(baseSummary.recipients * scaleFactor),
+      reach: Math.round(baseSummary.reach * scaleFactor),
+      impressions: Math.round(baseSummary.impressions * scaleFactor),
+      opens: Math.round(baseSummary.opens * scaleFactor),
+      conversions: Math.round(baseSummary.conversions * scaleFactor),
+      revenue: Math.round(baseSummary.revenue * scaleFactor),
+      leads: Math.round(baseSummary.leads * scaleFactor),
+      campaignCost: Math.round(baseSummary.campaignCost * scaleFactor),
+      // Rates stay the same (percentages don't scale)
+      clickRate: baseSummary.clickRate,
+      engagementRate: baseSummary.engagementRate,
+      conversionRate: baseSummary.conversionRate,
+      roas: baseSummary.roas,
+      cac: baseSummary.cac,
+    };
+  }, [baseSummary, scaleFactor]);
   const heroCards = [
     {
       label: "Audience Reached",
@@ -486,10 +566,46 @@ export default function CampaignReportsPage() {
     spend: "#0F5A32",
   };
 
-  const channelData = channelReachData[activeRangeKey];
-  const funnelSeries = funnelData[activeRangeKey];
-  const trendSeries = trendData[activeRangeKey];
-  const revenueSeries = revenueData[activeRangeKey];
+  // Scale chart data based on actual date range
+  const channelData = useMemo(() => {
+    const base = channelReachData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      reach: Math.round(point.reach * scaleFactor),
+      impressions: Math.round(point.impressions * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const funnelSeries = useMemo(() => {
+    const base = funnelData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      value: Math.round(point.value * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const trendSeries = useMemo(() => {
+    const base = trendData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      // Rates stay the same
+      ctr: point.ctr,
+      engagement: point.engagement,
+    }));
+  }, [activeRangeKey, scaleFactor]);
+
+  const revenueSeries = useMemo(() => {
+    const base = revenueData[activeRangeKey];
+    if (scaleFactor === 1) return base;
+    return base.map((point) => ({
+      ...point,
+      revenue: Math.round(point.revenue * scaleFactor),
+      spend: Math.round(point.spend * scaleFactor),
+    }));
+  }, [activeRangeKey, scaleFactor]);
 
   const handleDownloadCsv = () => {
     if (!filteredRows.length) return;
@@ -544,7 +660,7 @@ export default function CampaignReportsPage() {
             Monitor end-to-end campaign reach, engagement, and revenue impact
           </p>
         </div>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             {rangeOptions.map((option) => (
               <button
@@ -560,7 +676,7 @@ export default function CampaignReportsPage() {
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                 }`}
               >
-                {option.toUpperCase()}
+                {getRangeLabel(option)}
               </button>
             ))}
           </div>
@@ -568,50 +684,56 @@ export default function CampaignReportsPage() {
             <div className="flex items-center gap-2">
               <label
                 htmlFor="campaign-date-start"
-                className="text-sm text-gray-600"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
               >
-                From
+                From:
               </label>
               <input
                 id="campaign-date-start"
                 type="date"
                 value={customRange.start}
+                min={getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     start: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
             <div className="flex items-center gap-2">
               <label
                 htmlFor="campaign-date-end"
-                className="text-sm text-gray-600"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
               >
-                To
+                To:
               </label>
               <input
                 id="campaign-date-end"
                 type="date"
                 value={customRange.end}
+                min={customRange.start || getDateConstraints().minDate}
+                max={getDateConstraints().maxDate}
                 onChange={(event) =>
                   setCustomRange((prev) => ({
                     ...prev,
                     end: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setCustomRange({ start: "", end: "" })}
-              className="text-sm font-medium text-gray-600 underline"
-            >
-              Clear
-            </button>
+            {(customRange.start || customRange.end) && (
+              <button
+                type="button"
+                onClick={() => setCustomRange({ start: "", end: "" })}
+                className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </header>
