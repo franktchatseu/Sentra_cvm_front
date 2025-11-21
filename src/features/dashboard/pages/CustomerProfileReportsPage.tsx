@@ -588,7 +588,7 @@ export default function CustomerProfileReportsPage() {
       "Name",
       "Segment",
       "Lifetime Revenue",
-      "Orders",
+      "Transactions",
       "Last Purchase",
       "Churn Risk",
     ];
@@ -765,7 +765,7 @@ export default function CustomerProfileReportsPage() {
               )} / yr`,
               trend: "+0.2 YoY",
               trendDirection: "up",
-              description: "Orders per customer annually",
+              description: "Transactions per customer annually",
               icon: Repeat,
             },
             {
@@ -1160,7 +1160,7 @@ export default function CustomerProfileReportsPage() {
                     "Name",
                     "Segment",
                     "Lifetime Revenue",
-                    "Orders",
+                    "Transactions",
                     "Last Purchase",
                     "Churn Risk",
                   ].map((header) => (
