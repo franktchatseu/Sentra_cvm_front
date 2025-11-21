@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
   Edit,
   Trash2,
-  X,
   MessageSquare,
   ArrowLeft,
   Grid,
   List,
 } from "lucide-react";
+import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -101,14 +100,14 @@ function CategoryModal({
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
             {category ? "Edit Campaign Catalog" : "Create New Campaign Catalog"}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
+            className="p-2 rounded-md transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -126,7 +125,7 @@ function CategoryModal({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Enter campaign catalog name"
                 maxLength={64}
                 required
@@ -145,7 +144,7 @@ function CategoryModal({
                     description: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Enter campaign catalog description"
                 rows={3}
                 maxLength={500}
@@ -157,14 +156,14 @@ function CategoryModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}
             >
               {isSaving
@@ -234,7 +233,6 @@ export default function CampaignCategoriesPage() {
   const [removingCampaignId, setRemovingCampaignId] = useState<
     number | string | null
   >(null);
-  const [campaignSearchTerm, setCampaignSearchTerm] = useState("");
   // Note: allCampaigns state removed - not used here anymore
   // getAllCampaigns is only used in AssignItemsPage for campaigns
 
@@ -414,11 +412,8 @@ export default function CampaignCategoriesPage() {
       // Load stats from backend endpoint (not from categories data)
       await loadStats(skipCache);
     } catch (err) {
-      console.error("Failed to load campaign categories:", err);
-      showError(
-        "Failed to load campaign categories",
-        "Please try again later."
-      );
+      console.error("Failed to load Campaigns catalogs:", err);
+      showError("Failed to load Campaigns catalogs", "Please try again later.");
       setError(""); // Clear error state
       setCampaignCategories([]);
     } finally {
@@ -593,41 +588,75 @@ export default function CampaignCategoriesPage() {
   };
 
   const handleRemoveCampaign = async (campaignId: number | string) => {
-    // TODO: Uncomment and implement when remove functionality is available
-    // const confirmed = await confirm({
-    //   title: "Remove Campaign",
-    //   message: `Are you sure you want to remove this campaign from "${selectedCategory?.name}"?`,
-    //   type: "warning",
-    //   confirmText: "Remove",
-    //   cancelText: "Cancel",
-    // });
-    // if (!confirmed) return;
-    // try {
-    //   setRemovingCampaignId(campaignId);
-    //   // Get campaign to update its tags/category_id
-    //   const campaign = await campaignService.getCampaignById(Number(campaignId));
-    //   const updatedTags = (campaign.tags || []).filter(
-    //     (tag) => tag !== buildCatalogTag(selectedCategory?.id || 0)
-    //   );
-    //   // Update campaign to remove catalog tag
-    //   await campaignService.updateCampaign(Number(campaignId), {
-    //     tags: updatedTags,
-    //     // If category_id matches, set to null or another category
-    //     category_id: campaign.category_id === selectedCategory?.id ? null : campaign.category_id,
-    //   });
-    //   // Refresh campaigns list
-    //   if (selectedCategory) {
-    //     await handleViewCampaigns(selectedCategory);
-    //   }
-    //   showToast("Campaign removed from catalog successfully");
-    // } catch (err) {
-    //   showError("Failed to remove campaign", err instanceof Error ? err.message : "Please try again");
-    // } finally {
-    //   setRemovingCampaignId(null);
-    // }
+    if (!selectedCategory) return;
 
-    // Temporary: Show toast until remove functionality is implemented
-    showToast("info", "Can't access this action");
+    const confirmed = await confirm({
+      title: "Remove Campaign",
+      message: `Are you sure you want to remove this campaign from "${selectedCategory.name}"?`,
+      type: "warning",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
+
+    try {
+      setRemovingCampaignId(campaignId);
+
+      const campaign = await campaignService.getCampaignById(
+        Number(campaignId),
+        true
+      );
+
+      if (!campaign) {
+        showError("Failed to load campaign details", "Please try again later.");
+        return;
+      }
+
+      const primaryCategoryId = Number(campaign.category_id);
+      if (
+        Number.isFinite(primaryCategoryId) &&
+        primaryCategoryId === Number(selectedCategory.id)
+      ) {
+        await confirm({
+          title: "Primary Category",
+          message:
+            "This catalog is the campaign's primary category. Change the campaign's primary category before removing it from this catalog.",
+          type: "info",
+          confirmText: "Got it",
+          cancelText: "Close",
+        });
+        return;
+      }
+
+      const catalogTag = buildCatalogTag(selectedCategory.id);
+      const hasCatalogTag =
+        Array.isArray(campaign.tags) && campaign.tags.includes(catalogTag);
+
+      if (!hasCatalogTag) {
+        showError("Campaign is not tagged to this catalog.");
+        return;
+      }
+
+      const updatedTags = (campaign.tags || []).filter(
+        (tag) => tag !== catalogTag
+      );
+
+      await campaignService.updateCampaign(Number(campaignId), {
+        tags: updatedTags,
+      });
+
+      showToast("Campaign removed from catalog successfully");
+      if (selectedCategory) {
+        await handleViewCampaigns(selectedCategory);
+      }
+    } catch (err) {
+      showError(
+        "Failed to remove campaign",
+        err instanceof Error ? err.message : "Please try again later."
+      );
+    } finally {
+      setRemovingCampaignId(null);
+    }
   };
 
   const filteredCampaignCategories = (campaignCategories || []).filter(
@@ -682,7 +711,7 @@ export default function CampaignCategoriesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/campaigns")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -698,7 +727,7 @@ export default function CampaignCategoriesPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleCreateCategory}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
@@ -718,7 +747,7 @@ export default function CampaignCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
@@ -767,7 +796,7 @@ export default function CampaignCategoriesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -809,7 +838,7 @@ export default function CampaignCategoriesPage() {
         </div>
       ) : filteredCampaignCategories.length === 0 ? (
         <div
-          className="rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4"
+          className="rounded-md shadow-sm border border-gray-200 text-center py-16 px-4"
           style={{ backgroundColor: color.surface.cards }}
         >
           <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -824,7 +853,7 @@ export default function CampaignCategoriesPage() {
           {!searchTerm && (
             <button
               onClick={handleCreateCategory}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -837,7 +866,7 @@ export default function CampaignCategoriesPage() {
           {filteredCampaignCategories.map((category) => (
             <div
               key={category.id}
-              className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              className="border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
               style={{ backgroundColor: color.surface.cards }}
             >
               <div className="flex items-start justify-between mb-2">
@@ -849,14 +878,14 @@ export default function CampaignCategoriesPage() {
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 rounded-lg transition-colors"
+                    className="p-2 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 rounded-lg transition-colors"
+                    className="p-2 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -886,8 +915,8 @@ export default function CampaignCategoriesPage() {
                 </span>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View & Assign Campaigns"
                 >
                   View Campaigns
@@ -901,7 +930,7 @@ export default function CampaignCategoriesPage() {
           {filteredCampaignCategories.map((category) => (
             <div
               key={category.id}
-              className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
               style={{ backgroundColor: color.surface.cards }}
             >
               <div className="flex items-center gap-4 flex-1">
@@ -924,8 +953,8 @@ export default function CampaignCategoriesPage() {
                 </div>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className="px-3 py-1.5 text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View & Assign Campaigns"
                 >
                   View Campaigns
@@ -934,14 +963,14 @@ export default function CampaignCategoriesPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleEditCategory(category)}
-                  className="p-2 rounded-lg transition-colors"
+                  className="p-2 rounded-md transition-colors"
                   title="Edit"
                 >
                   <Edit className="w-4 h-4 text-gray-600" />
                 </button>
                 <button
                   onClick={() => handleDeleteCategory(category)}
-                  className="p-2 rounded-lg transition-colors"
+                  className="p-2 rounded-md transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
@@ -964,170 +993,43 @@ export default function CampaignCategoriesPage() {
       />
 
       {/* Campaigns Modal */}
-      {isCampaignsModalOpen &&
-        selectedCategory &&
-        createPortal(
-          <div className="fixed inset-0 z-[9999] overflow-y-auto">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={() => {
-                setIsCampaignsModalOpen(false);
-                setSelectedCategory(null);
-                setCampaigns([]);
-                setCampaignSearchTerm("");
-              }}
-            ></div>
-            <div className="relative min-h-screen flex items-center justify-center p-4">
-              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Campaigns in "{selectedCategory.name}"
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {campaigns.length} campaign
-                      {campaigns.length !== 1 ? "s" : ""} found
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setIsCampaignsModalOpen(false);
-                      setSelectedCategory(null);
-                      setCampaigns([]);
-                      setCampaignSearchTerm("");
-                    }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
-
-                {/* Search and Actions */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex flex-col md:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search campaigns..."
-                        value={campaignSearchTerm}
-                        onChange={(e) => setCampaignSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          navigate(
-                            `/dashboard/campaign-catalogs/${selectedCategory.id}/assign`
-                          );
-                        }}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add campaigns to this catalog
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 max-h-96 overflow-y-auto">
-                  {campaignsLoading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <LoadingSpinner />
-                    </div>
-                  ) : campaigns.length === 0 ? (
-                    <div className="text-center py-8">
-                      <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {campaignSearchTerm
-                          ? "No campaigns found"
-                          : "No campaigns in this category"}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {campaignSearchTerm
-                          ? "Try adjusting your search terms"
-                          : "Create a new campaign or assign an existing one to this category"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {campaigns
-                        .filter((campaign) => {
-                          if (!campaignSearchTerm) return true;
-                          const searchLower = campaignSearchTerm.toLowerCase();
-                          return (
-                            campaign.name
-                              ?.toLowerCase()
-                              .includes(searchLower) ||
-                            campaign.description
-                              ?.toLowerCase()
-                              .includes(searchLower)
-                          );
-                        })
-                        .map((campaign, index) => (
-                          <div
-                            key={campaign.id || index}
-                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                          >
-                            <div className="flex-1">
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {campaign.name || "Unknown Campaign"}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {campaign.description || "No description"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  campaign.status === "active"
-                                    ? "bg-green-100 text-green-800"
-                                    : campaign.status === "draft"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {campaign.status || "unknown"}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  setIsCampaignsModalOpen(false);
-                                  navigate(
-                                    `/dashboard/campaigns/${campaign.id}`
-                                  );
-                                }}
-                                className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() =>
-                                  campaign?.id &&
-                                  handleRemoveCampaign(campaign.id)
-                                }
-                                disabled={removingCampaignId === campaign?.id}
-                                className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
-                              >
-                                {removingCampaignId === campaign?.id
-                                  ? "Removing..."
-                                  : "Remove"}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
+      <CatalogItemsModal
+        isOpen={isCampaignsModalOpen}
+        onClose={() => {
+          setIsCampaignsModalOpen(false);
+          setSelectedCategory(null);
+          setCampaigns([]);
+        }}
+        category={selectedCategory}
+        items={campaigns}
+        loading={campaignsLoading}
+        entityName="campaign"
+        entityNamePlural="campaigns"
+        assignRoute={`/dashboard/campaign-catalogs/${selectedCategory?.id}/assign`}
+        viewRoute={(id) => `/dashboard/campaigns/${id}`}
+        onRemove={async (id) => {
+          await handleRemoveCampaign(id);
+        }}
+        removingId={removingCampaignId}
+        onRefresh={async () => {
+          if (selectedCategory) {
+            await handleViewCampaigns(selectedCategory);
+          }
+        }}
+        renderStatus={(campaign) => (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              campaign.status === "active"
+                ? "bg-green-100 text-green-800"
+                : campaign.status === "draft"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {campaign.status || "unknown"}
+          </span>
         )}
+      />
     </div>
   );
 }

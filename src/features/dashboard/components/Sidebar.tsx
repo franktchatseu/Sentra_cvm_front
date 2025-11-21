@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import React from "react";
 import {
   Home,
@@ -24,9 +24,12 @@ import {
   Flag,
   // Bell,
   List,
-  Building2,
   Upload,
   Fingerprint,
+  Activity,
+  LineChart,
+  Gift,
+  Mail,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
@@ -86,12 +89,8 @@ interface NavigationItem {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>([
-    "campaign management",
-    "offer management",
-    "product management",
-    "segment management",
-  ]);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const previousPathnameRef = useRef<string>(location.pathname);
 
   const navigation: NavigationItem[] = [
     {
@@ -123,13 +122,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "campaigns",
         },
         {
-          name: "Departments",
-          href: "/dashboard/departments",
-          icon: Building2,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
           name: "Programs",
           href: "/dashboard/programs",
           icon: Briefcase,
@@ -140,6 +132,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           name: "Campaign Catalogs",
           href: "/dashboard/campaign-catalogs",
           icon: Folder,
+          type: "single",
+          entity: "campaigns",
+        },
+        {
+          name: "Campaign Types",
+          href: "/dashboard/campaign-types",
+          icon: Layers,
           type: "single",
           entity: "campaigns",
         },
@@ -220,13 +219,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "segments",
         },
         {
-          name: "Segment List",
-          href: "/dashboard/segment-list",
-          icon: List,
-          type: "single",
-          entity: "segments",
-        },
-        {
           name: "Segment Types",
           href: "/dashboard/segment-types",
           icon: Layers,
@@ -240,10 +232,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type: "single",
           entity: "segments",
         },
+        {
+          name: "Segment Lists",
+          href: "/dashboard/segment-list",
+          icon: List,
+          type: "single",
+          entity: "segments",
+        },
       ],
     },
     {
-      name: "QuickLists",
+      name: "Manual Broadcast",
       href: "/dashboard/quicklists",
       icon: Upload,
       type: "single",
@@ -255,6 +254,57 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       icon: UserCheck,
       type: "single",
       entity: "users",
+    },
+    {
+      name: "Reports & Analytics",
+      href: "/dashboard/reports",
+      icon: LineChart,
+      type: "parent",
+      entity: "analytics",
+      children: [
+        {
+          name: "Overall Dashboard Performance",
+          href: "/dashboard/reports/overview",
+          icon: Activity,
+          type: "single",
+          entity: "analytics",
+        },
+        {
+          name: "Customer Profile Reports",
+          href: "/dashboard/reports/customer-profiles",
+          icon: Users,
+          type: "single",
+          entity: "analytics",
+        },
+        {
+          name: "Campaign Reports",
+          href: "/dashboard/reports/campaigns",
+          icon: Target,
+          type: "single",
+          entity: "analytics",
+        },
+        {
+          name: "Offer Reports",
+          href: "/dashboard/reports/offers",
+          icon: Gift,
+          type: "single",
+          entity: "analytics",
+        },
+        {
+          name: "Delivery & SMS Reports",
+          href: "/dashboard/reports/delivery",
+          icon: MessageSquare,
+          type: "single",
+          entity: "analytics",
+        },
+        {
+          name: "Delivery & Email Reports",
+          href: "/dashboard/reports/email-delivery",
+          icon: Mail,
+          type: "single",
+          entity: "analytics",
+        },
+      ],
     },
     {
       name: "Configuration",
@@ -282,11 +332,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     },
   ];
 
-  // All icons are now black - no entity-specific colors
-
   const getItemClasses = (isActive: boolean) => {
     return isActive
-      ? `text-white border-l-[5px] border-white/60 font-bold`
+      ? `text-white border-l-[2px] border-white/60  rounded-md font-bold`
       : `text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200 font-normal`;
   };
 
@@ -297,31 +345,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     return `text-white/90 group-hover:text-white transition-colors duration-200`;
   };
 
-  const toggleExpanded = (itemName: string) => {
+  const parentItemNames = navigation
+    .filter((item) => item.type === "parent")
+    .map((item) => item.name.toLowerCase());
+
+  const toggleExpanded = (itemName: string, exclusiveItems?: string[]) => {
     setExpandedItems((prev) => {
-      // If clicking the same item, toggle it
       if (prev.includes(itemName)) {
         return prev.filter((item) => item !== itemName);
       }
 
-      // Special case: Management sections should close each other
-      if (
-        itemName === "offer management" ||
-        itemName === "product management" ||
-        itemName === "segment management"
-      ) {
-        // Close the other management sections if they're open, then open this one
-        const filtered = prev.filter(
-          (item) =>
-            item !== "offer management" &&
-            item !== "product management" &&
-            item !== "segment management"
-        );
-        return [...filtered, itemName];
-      }
+      const filtered = exclusiveItems
+        ? prev.filter((item) => !exclusiveItems.includes(item))
+        : prev;
 
-      // For all other items, allow multiple to be open
-      return [...prev, itemName];
+      return [...filtered, itemName];
     });
   };
 
@@ -335,6 +373,77 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     return location.pathname === item.href;
   };
+
+  // Auto-expand parent items when a child is active (only on pathname change)
+  useEffect(() => {
+    // Only auto-expand when pathname actually changes, not on every render
+    if (previousPathnameRef.current === location.pathname) {
+      return;
+    }
+
+    previousPathnameRef.current = location.pathname;
+
+    const activeParentNames: string[] = [];
+
+    navigation.forEach((item) => {
+      if (item.type === "parent" && item.children) {
+        // Check if the parent's own href matches (exact match)
+        const isParentActive = location.pathname === item.href;
+
+        // Check if any direct child is active
+        const hasActiveChild = item.children.some(
+          (child) => location.pathname === child.href
+        );
+
+        // Also check nested children (grandchildren)
+        const hasActiveNestedChild = item.children.some((child) => {
+          if (child.type === "parent" && child.children) {
+            return child.children.some(
+              (grandchild) => location.pathname === grandchild.href
+            );
+          }
+          return false;
+        });
+
+        // Check if pathname starts with the parent href (for sub-routes)
+        const isSubRoute = location.pathname.startsWith(item.href + "/");
+
+        if (
+          isParentActive ||
+          hasActiveChild ||
+          hasActiveNestedChild ||
+          isSubRoute
+        ) {
+          activeParentNames.push(item.name.toLowerCase());
+
+          // If a nested child is active, also expand the intermediate parent
+          item.children.forEach((child) => {
+            if (child.type === "parent" && child.children) {
+              const hasActiveGrandchild = child.children.some(
+                (grandchild) => location.pathname === grandchild.href
+              );
+              if (hasActiveGrandchild) {
+                activeParentNames.push(child.name.toLowerCase());
+              }
+            }
+          });
+        }
+      }
+    });
+
+    // Update expanded items to include active parents (only add, don't force)
+    if (activeParentNames.length > 0) {
+      setExpandedItems((prev) => {
+        const newExpanded = [...prev];
+        activeParentNames.forEach((name) => {
+          if (!newExpanded.includes(name)) {
+            newExpanded.push(name);
+          }
+        });
+        return newExpanded;
+      });
+    }
+  }, [location.pathname]);
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when navigating
@@ -391,9 +500,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <div key={item.name}>
                         <button
                           onClick={() =>
-                            toggleExpanded(item.name.toLowerCase())
+                            toggleExpanded(
+                              item.name.toLowerCase(),
+                              parentItemNames
+                            )
                           }
-                          className={`group w-full flex items-center justify-between rounded-xl p-3 text-sm transition-all duration-300 ease-out ${
+                          className={`group w-full flex items-center justify-between rounded-md p-3 text-sm transition-all duration-300 ease-out ${
                             !isActive ? "hover:scale-105 hover:shadow-lg" : ""
                           } ${getItemClasses(isActive)}`}
                         >
@@ -436,7 +548,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                       onClick={() =>
                                         toggleExpanded(child.name.toLowerCase())
                                       }
-                                      className={`group w-full flex items-center justify-between rounded-lg p-2.5 text-sm transition-all duration-200 ${
+                                      className={`group w-full flex items-center justify-between rounded-md p-2.5 text-sm transition-all duration-200 ${
                                         isChildActive
                                           ? getItemClasses(isChildActive)
                                           : getItemClasses(false)
@@ -470,7 +582,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                               key={grandchild.name}
                                               to={grandchild.href}
                                               onClick={handleLinkClick}
-                                              className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${
+                                              className={`group flex items-center gap-x-3 rounded-md p-2.5 text-sm transition-all duration-200 ${
                                                 isGrandchildActive
                                                   ? getItemClasses(
                                                       isGrandchildActive
@@ -499,7 +611,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   key={child.name}
                                   to={child.href}
                                   onClick={handleLinkClick}
-                                  className={`group flex items-center gap-x-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${getItemClasses(
+                                  className={`group flex items-center gap-x-3 rounded-md p-2.5 text-sm transition-all duration-200 ${getItemClasses(
                                     isChildActive
                                   )}`}
                                 >
@@ -523,7 +635,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={item.name}
                       to={item.href}
                       onClick={handleLinkClick}
-                      className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm transition-all duration-300 ease-out ${
+                      className={`group flex items-center gap-x-3 rounded-md p-3 text-sm transition-all duration-300 ease-out ${
                         !isActive ? "hover:scale-105 hover:shadow-lg" : ""
                       } ${getItemClasses(isActive)}`}
                     >
@@ -581,8 +693,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       }}
                     >
                       <button
-                        onClick={() => toggleExpanded(item.name.toLowerCase())}
-                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out ${
+                        onClick={() =>
+                          toggleExpanded(
+                            item.name.toLowerCase(),
+                            parentItemNames
+                          )
+                        }
+                        className={`group w-full flex items-center md:justify-center xl:justify-between rounded-md md:p-3 xl:p-3 text-sm transition-all duration-300 ease-out ${
                           !isActive ? "hover:scale-105 hover:shadow-lg" : ""
                         } ${getItemClasses(isActive)}`}
                         title={item.name}
@@ -604,7 +721,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                       {/* Tooltip for minimized sidebar */}
                       <div
-                        className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl"
+                        className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl"
                         style={{
                           top: "50%",
                           transform: "translateY(-50%)",
@@ -638,7 +755,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     onClick={() =>
                                       toggleExpanded(child.name.toLowerCase())
                                     }
-                                    className={`group w-full flex items-center md:justify-center xl:justify-between rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${
+                                    className={`group w-full flex items-center md:justify-center xl:justify-between rounded-md md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${
                                       isChildActive
                                         ? getItemClasses(isChildActive)
                                         : getItemClasses(false)
@@ -664,7 +781,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                                   {/* Tooltip for child */}
                                   <div
-                                    className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl"
+                                    className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl"
                                     style={{
                                       top: "50%",
                                       transform: "translateY(-50%)",
@@ -689,7 +806,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                             <Link
                                               to={grandchild.href}
                                               onClick={handleLinkClick}
-                                              className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${getItemClasses(
+                                              className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-md md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${getItemClasses(
                                                 isGrandchildActive
                                               )}`}
                                               title={grandchild.name}
@@ -706,7 +823,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                                             {/* Tooltip for grandchild */}
                                             <div
-                                              className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl"
+                                              className="md:block xl:hidden absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none shadow-xl"
                                               style={{
                                                 top: "50%",
                                                 transform: "translateY(-50%)",
@@ -731,7 +848,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 <Link
                                   to={child.href}
                                   onClick={handleLinkClick}
-                                  className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-lg md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${
+                                  className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-md md:p-2.5 xl:p-2.5 text-sm transition-all duration-200 ${
                                     isChildActive
                                       ? getItemClasses(isChildActive)
                                       : getItemClasses(false)
@@ -781,7 +898,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   >
                     <Link
                       to={item.href}
-                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(
+                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-md md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(
                         isActive
                       )}`}
                       title={item.name}
@@ -830,7 +947,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <Link
                       to="#"
                       onClick={(e) => e.preventDefault()}
-                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-xl md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(
+                      className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-md md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(
                         isActive
                       )}`}
                       title={item.name}

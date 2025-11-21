@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { ChevronDown, Type, Sparkles, AlignLeft } from 'lucide-react';
-import { tw, color } from '../../../shared/utils/utils';
-import { CommunicationChannel } from '../types/communication';
-import RichTextEditor from './RichTextEditor';
+import { useState } from "react";
+import { ChevronDown, Type, Sparkles, AlignLeft } from "lucide-react";
+import { tw, color } from "../../../shared/utils/utils";
+import { CommunicationChannel } from "../types/communication";
+import RichTextEditor from "./RichTextEditor";
 
 interface MessageEditorProps {
   title: string;
@@ -26,23 +26,29 @@ export default function MessageEditor({
   onToggleRichText,
 }: MessageEditorProps) {
   const [showVariables, setShowVariables] = useState(false);
-  const [activeField, setActiveField] = useState<'title' | 'body'>('body');
+  const [activeField, setActiveField] = useState<"title" | "body">("body");
   const [cursorPosition, setCursorPosition] = useState<number>(0);
 
   const insertVariable = (variable: string) => {
     const formattedVariable = `{{${variable}}}`;
-    
-    if (activeField === 'title') {
+
+    if (activeField === "title") {
       // Insert at cursor position in title
-      const newTitle = title.slice(0, cursorPosition) + formattedVariable + title.slice(cursorPosition);
+      const newTitle =
+        title.slice(0, cursorPosition) +
+        formattedVariable +
+        title.slice(cursorPosition);
       onTitleChange(newTitle);
     } else {
       // Insert at cursor position in body or at the end
       if (isRichText) {
         // For rich text, append at the end with a space
-        onBodyChange(body + ' ' + formattedVariable + ' ');
+        onBodyChange(body + " " + formattedVariable + " ");
       } else {
-        const newBody = body.slice(0, cursorPosition) + formattedVariable + body.slice(cursorPosition);
+        const newBody =
+          body.slice(0, cursorPosition) +
+          formattedVariable +
+          body.slice(cursorPosition);
         onBodyChange(newBody);
       }
     }
@@ -59,7 +65,7 @@ export default function MessageEditor({
     onBodyChange(e.target.value);
   };
 
-  const hasTitle = channel === 'EMAIL';
+  const hasTitle = channel === "EMAIL";
 
   return (
     <div className="space-y-4">
@@ -67,64 +73,74 @@ export default function MessageEditor({
         <label className={tw.label}>Message Content</label>
         <div className="flex items-center space-x-2">
           {/* Rich Text Toggle */}
-          {channel === 'EMAIL' && onToggleRichText && (
+          {channel === "EMAIL" && onToggleRichText && (
             <button
               type="button"
               onClick={onToggleRichText}
-              className="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg border transition-colors"
+              className="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md border transition-colors"
               style={{
-                backgroundColor: isRichText ? `${color.primary.accent}15` : 'white',
-                borderColor: isRichText ? color.primary.accent : '#D1D5DB',
-                color: isRichText ? color.primary.accent : '#6B7280',
+                backgroundColor: isRichText
+                  ? `${color.primary.accent}15`
+                  : "white",
+                borderColor: isRichText ? color.primary.accent : "#D1D5DB",
+                color: isRichText ? color.primary.accent : "#6B7280",
               }}
             >
-              {isRichText ? <Sparkles className="w-4 h-4" /> : <AlignLeft className="w-4 h-4" />}
-              <span>{isRichText ? 'Rich Text' : 'Plain Text'}</span>
+              {isRichText ? (
+                <Sparkles className="w-4 h-4" />
+              ) : (
+                <AlignLeft className="w-4 h-4" />
+              )}
+              <span>{isRichText ? "Rich Text" : "Plain Text"}</span>
             </button>
           )}
           <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowVariables(!showVariables)}
-            className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Type className="w-4 h-4" />
-            <span>Insert Variable</span>
-            <ChevronDown className="w-4 h-4" />
-          </button>
-          {showVariables && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-              <div className="p-2 bg-gray-50 border-b border-gray-200">
-                <p className="text-xs font-medium text-gray-600 uppercase">Available Variables</p>
+            <button
+              type="button"
+              onClick={() => setShowVariables(!showVariables)}
+              className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              <Type className="w-4 h-4" />
+              <span>Insert Variable</span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {showVariables && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-10 overflow-hidden">
+                <div className="p-2 bg-gray-50 border-b border-gray-200">
+                  <p className="text-xs font-medium text-gray-600 uppercase">
+                    Available Variables
+                  </p>
+                </div>
+                <div className="max-h-60 overflow-y-auto">
+                  {availableVariables.map((variable) => (
+                    <button
+                      key={variable}
+                      type="button"
+                      onClick={() => insertVariable(variable)}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover-variable-btn"
+                      style={
+                        {
+                          ["--hover-bg" as any]: `${color.primary.accent}15`,
+                          ["--hover-color" as any]: color.primary.accent,
+                        } as React.CSSProperties
+                      }
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = `${color.primary.accent}15`;
+                        e.currentTarget.style.color = color.primary.accent;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "#374151";
+                      }}
+                    >
+                      <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
+                        {`{{${variable}}}`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="max-h-60 overflow-y-auto">
-                {availableVariables.map((variable) => (
-                  <button
-                    key={variable}
-                    type="button"
-                    onClick={() => insertVariable(variable)}
-                    className="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover-variable-btn"
-                    style={{
-                      ['--hover-bg' as any]: `${color.primary.accent}15`,
-                      ['--hover-color' as any]: color.primary.accent,
-                    } as React.CSSProperties}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = `${color.primary.accent}15`;
-                      e.currentTarget.style.color = color.primary.accent;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = '#374151';
-                    }}
-                  >
-                    <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
-                      {`{{${variable}}}`}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
           </div>
         </div>
       </div>
@@ -139,22 +155,24 @@ export default function MessageEditor({
             value={title}
             onChange={handleTitleChange}
             onClick={(e) => {
-              setActiveField('title');
+              setActiveField("title");
               setCursorPosition(e.currentTarget.selectionStart || 0);
             }}
-            onKeyUp={(e) => setCursorPosition(e.currentTarget.selectionStart || 0)}
+            onKeyUp={(e) =>
+              setCursorPosition(e.currentTarget.selectionStart || 0)
+            }
             placeholder="Enter email subject..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent transition-all"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-transparent transition-all"
             style={{
-              boxShadow: 'none',
+              boxShadow: "none",
             }}
             onFocus={(e) => {
-              setActiveField('title');
+              setActiveField("title");
               setCursorPosition(e.currentTarget.selectionStart || 0);
               e.currentTarget.style.boxShadow = `0 0 0 2px ${color.primary.accent}40`;
             }}
             onBlur={(e) => {
-              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.boxShadow = "none";
             }}
           />
         </div>
@@ -165,7 +183,10 @@ export default function MessageEditor({
           Message Body <span className="text-red-500">*</span>
         </label>
         {isRichText ? (
-          <div onClick={() => setActiveField('body')} onFocus={() => setActiveField('body')}>
+          <div
+            onClick={() => setActiveField("body")}
+            onFocus={() => setActiveField("body")}
+          >
             <RichTextEditor
               value={body}
               onChange={onBodyChange}
@@ -175,31 +196,35 @@ export default function MessageEditor({
           </div>
         ) : (
           <textarea
-          value={body}
-          onChange={handleBodyChange}
-          onClick={(e) => {
-            setActiveField('body');
-            setCursorPosition(e.currentTarget.selectionStart || 0);
-          }}
-          onKeyUp={(e) => setCursorPosition(e.currentTarget.selectionStart || 0)}
-          placeholder="Enter your message... Use {{variable}} to insert dynamic content."
-          rows={8}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent transition-all font-mono text-sm resize-none"
-          style={{
-            boxShadow: 'none',
-          }}
-          onFocus={(e) => {
-            setActiveField('body');
-            setCursorPosition(e.currentTarget.selectionStart || 0);
-            e.currentTarget.style.boxShadow = `0 0 0 2px ${color.primary.accent}40`;
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+            value={body}
+            onChange={handleBodyChange}
+            onClick={(e) => {
+              setActiveField("body");
+              setCursorPosition(e.currentTarget.selectionStart || 0);
+            }}
+            onKeyUp={(e) =>
+              setCursorPosition(e.currentTarget.selectionStart || 0)
+            }
+            placeholder="Enter your message... Use {{variable}} to insert dynamic content."
+            rows={8}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:border-transparent transition-all font-mono text-sm resize-none"
+            style={{
+              boxShadow: "none",
+            }}
+            onFocus={(e) => {
+              setActiveField("body");
+              setCursorPosition(e.currentTarget.selectionStart || 0);
+              e.currentTarget.style.boxShadow = `0 0 0 2px ${color.primary.accent}40`;
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+            }}
           />
         )}
         <p className="mt-2 text-xs text-gray-500">
-          {isRichText ? 'Use the toolbar to format your message. ' : `Character count: ${body.length} | `}
+          {isRichText
+            ? "Use the toolbar to format your message. "
+            : `Character count: ${body.length} | `}
           Variables will be replaced with actual data when sent
         </p>
       </div>

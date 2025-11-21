@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
   Edit,
   Trash2,
-  X,
   MessageSquare,
   ArrowLeft,
   Grid,
@@ -18,6 +16,7 @@ import {
   Archive,
   Star,
 } from "lucide-react";
+import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -29,7 +28,7 @@ import {
   CreateOfferCategoryRequest,
   UpdateOfferCategoryRequest,
 } from "../types/offerCategory";
-import { Offer } from "../types/offer";
+import { Offer, UpdateOfferRequest } from "../types/offer";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 
 const CATALOG_TAG_PREFIX = "catalog:";
@@ -108,7 +107,7 @@ function CategoryModal({
     description: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (category) {
@@ -119,18 +118,18 @@ function CategoryModal({
     } else {
       setFormData({ name: "", description: "" });
     }
-    setError("");
+    setFormError("");
   }, [category, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      setError("Catalog name is required");
+      setFormError("Catalog name is required");
       return;
     }
 
     setIsLoading(true);
-    setError("");
+    setFormError("");
 
     try {
       const categoryData = {
@@ -142,8 +141,7 @@ function CategoryModal({
       onClose(); // Only close after save succeeds
     } catch (err) {
       console.error("Failed to save category:", err);
-      showError("Failed to save category", "Please try again later.");
-      setError(""); // Clear error state
+      setFormError("Failed to save category. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -152,14 +150,14 @@ function CategoryModal({
   return isOpen
     ? createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className={`${tw.subHeading} text-gray-900`}>
+              <h2 className="text-lg font-semibold text-gray-900">
                 {category ? "Edit Offer Catalog" : "Create New Offer Catalog"}
               </h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -177,7 +175,7 @@ function CategoryModal({
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                     placeholder="Enter offer catalog name"
                     required
                   />
@@ -195,25 +193,29 @@ function CategoryModal({
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                     placeholder="Enter offer catalog description"
                     rows={3}
                   />
                 </div>
               </div>
 
+              {formError && (
+                <p className="text-sm text-red-600 mt-4">{formError}</p>
+              )}
+
               <div className="flex items-center justify-end space-x-3 mt-6">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   {isLoading
@@ -246,13 +248,11 @@ function OffersModal({
   onRefreshCategories,
   onRefreshCounts,
 }: OffersModalProps) {
-  const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const { success: showSuccess, error: showError } = useToast();
   const [offers, setOffers] = useState<BasicOffer[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredOffers, setFilteredOffers] = useState<BasicOffer[]>([]);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [removingOfferId, setRemovingOfferId] = useState<
     number | string | null
   >(null);
@@ -260,29 +260,15 @@ function OffersModal({
   useEffect(() => {
     if (isOpen && category) {
       loadOffers();
-      setSearchTerm("");
     }
   }, [isOpen, category]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = offers.filter(
-        (offer: BasicOffer) =>
-          offer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          offer?.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredOffers(filtered);
-    } else {
-      setFilteredOffers(offers);
-    }
-  }, [searchTerm, offers]);
 
   const loadOffers = async () => {
     if (!category) return;
 
     try {
       setLoading(true);
-      setError(null);
+      setModalError(null);
       const catalogTag = buildCatalogTag(category.id);
 
       const [primaryResponse, allOffers] = await Promise.all([
@@ -321,47 +307,85 @@ function OffersModal({
     } catch (err) {
       console.error("Failed to load offers:", err);
       showError("Failed to load offers", "Please try again later.");
-      setError(""); // Clear error state
+      setModalError("Failed to load offers. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemoveOffer = async (offerId: number | string) => {
-    // TODO: Uncomment and implement when remove functionality is available
-    // const confirmed = await confirm({
-    //   title: "Remove Offer",
-    //   message: `Are you sure you want to remove this offer from "${category?.name}"?`,
-    //   type: "warning",
-    //   confirmText: "Remove",
-    //   cancelText: "Cancel",
-    // });
-    // if (!confirmed) return;
-    // try {
-    //   setRemovingOfferId(offerId);
-    //   // Get offer to update its tags/category_id
-    //   const offer = await offerService.getOfferById(Number(offerId));
-    //   const updatedTags = (offer.tags || []).filter(
-    //     (tag) => tag !== buildCatalogTag(category?.id || 0)
-    //   );
-    //   // Update offer to remove catalog tag
-    //   await offerService.updateOffer(Number(offerId), {
-    //     tags: updatedTags,
-    //     // If category_id matches, set to null or another category
-    //     category_id: offer.category_id === category?.id ? null : offer.category_id,
-    //   });
-    //   // Refresh offers list
-    //   await loadOffers();
-    //   await onRefreshCounts();
-    //   showSuccess("Offer removed from catalog successfully");
-    // } catch (err) {
-    //   showError("Failed to remove offer", err instanceof Error ? err.message : "Please try again");
-    // } finally {
-    //   setRemovingOfferId(null);
-    // }
+    if (!category) return;
 
-    // Temporary: Show toast until remove functionality is implemented
-    showSuccess("Can't access this action");
+    const confirmed = await confirm({
+      title: "Remove Offer",
+      message: `Are you sure you want to remove this offer from "${category.name}"?`,
+      type: "warning",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setRemovingOfferId(offerId);
+
+      const offerResponse = await offerService.getOfferById(Number(offerId));
+      const offerData = offerResponse.data as Offer | undefined;
+
+      if (!offerData) {
+        showError("Failed to load offer details", "Please try again later.");
+        return;
+      }
+
+      const primaryCategoryId = Number(offerData.category_id);
+      if (
+        Number.isFinite(primaryCategoryId) &&
+        primaryCategoryId === Number(category.id)
+      ) {
+        await confirm({
+          title: "Primary Category",
+          message:
+            "This catalog is the offer's primary category. Change the offer's primary category before removing it from this catalog.",
+          type: "info",
+          confirmText: "Got it",
+          cancelText: "Close",
+        });
+        return;
+      }
+
+      const catalogTag = buildCatalogTag(category.id);
+      const hasCatalogTag =
+        Array.isArray(offerData.tags) && offerData.tags.includes(catalogTag);
+
+      if (!hasCatalogTag) {
+        showError("Offer is not tagged to this catalog.");
+        return;
+      }
+
+      const updatedTags = (offerData.tags || []).filter(
+        (tag) => tag !== catalogTag
+      );
+
+      const updates: UpdateOfferRequest = {
+        tags: updatedTags,
+      };
+
+      await offerService.updateOffer(Number(offerId), updates);
+
+      await loadOffers();
+      await Promise.resolve(onRefreshCounts());
+      await Promise.resolve(onRefreshCategories());
+
+      showSuccess("Offer removed from catalog successfully");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Please try again later.";
+      showError("Failed to remove offer", message);
+    } finally {
+      setRemovingOfferId(null);
+    }
   };
 
   // const handleCreateOffer = () => {
@@ -371,147 +395,38 @@ function OffersModal({
   // };
 
   return (
-    <>
-      {isOpen && category && (
-        <>
-          {/* Main Offers Modal */}
-          <div className="fixed inset-0 z-[9999] overflow-y-auto">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={onClose}
-            ></div>
-            <div className="relative min-h-screen flex items-center justify-center p-4">
-              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Offers in "{category.name}"
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {offers.length} offer{offers.length !== 1 ? "s" : ""}{" "}
-                      found
-                    </p>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
-
-                {/* Search and Actions */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex flex-col md:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search offers..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          navigate(
-                            `/dashboard/offer-catalogs/${category.id}/assign`
-                          );
-                        }}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add offers to this catalog
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 max-h-96 overflow-y-auto">
-                  {loading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <LoadingSpinner />
-                    </div>
-                  ) : filteredOffers.length === 0 ? (
-                    <div className="text-center py-8">
-                      <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className={`${tw.subHeading} text-gray-900 mb-2`}>
-                        {searchTerm
-                          ? "No offers found"
-                          : "No offers in this category"}
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        {searchTerm
-                          ? "Try adjusting your search terms"
-                          : "Create a new offer or assign an existing one to this category"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredOffers.map((offer: BasicOffer, index) => (
-                        <div
-                          key={offer?.id || index}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex-1">
-                            <div>
-                              <h4 className="font-medium text-gray-900">
-                                {offer?.name || "Unknown Offer"}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {offer?.description || "No description"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                offer?.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : offer?.status === "draft"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {offer?.status || "unknown"}
-                            </span>
-                            <button
-                              onClick={() => {
-                                if (offer?.id) {
-                                  navigate(`/dashboard/offers/${offer.id}`);
-                                }
-                              }}
-                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                            >
-                              View
-                            </button>
-                            <button
-                              onClick={() =>
-                                offer?.id && handleRemoveOffer(offer.id)
-                              }
-                              disabled={removingOfferId === offer?.id}
-                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
-                            >
-                              {removingOfferId === offer?.id
-                                ? "Removing..."
-                                : "Remove"}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+    <CatalogItemsModal<BasicOffer>
+      isOpen={isOpen}
+      onClose={onClose}
+      category={category}
+      items={offers}
+      loading={loading}
+      error={modalError}
+      entityName="offer"
+      entityNamePlural="offers"
+      assignRoute={`/dashboard/offer-catalogs/${category?.id}/assign`}
+      viewRoute={(id) => `/dashboard/offers/${id}`}
+      onRemove={handleRemoveOffer}
+      removingId={removingOfferId}
+      onRefresh={async () => {
+        await loadOffers();
+        await Promise.resolve(onRefreshCounts());
+        await Promise.resolve(onRefreshCategories());
+      }}
+      renderStatus={(offer) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            offer?.status === "active"
+              ? "bg-green-100 text-green-800"
+              : offer?.status === "draft"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {offer?.status || "unknown"}
+        </span>
       )}
-    </>
+    />
   );
 }
 
@@ -524,7 +439,7 @@ function OfferCategoriesPage() {
     OfferCategoryWithCount[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [pageError, setPageError] = useState("");
   const [categoryOfferCounts, setCategoryOfferCounts] = useState<
     Record<
       number,
@@ -715,7 +630,7 @@ function OfferCategoriesPage() {
             ? Number(topCategory.offer_count)
             : topCategory.offerCount ?? 0;
         setPopularCategory({
-          name: topCategory.name,
+          name: topCategory.name ?? "Unknown",
           count: Number.isNaN(parsedTotalOffers) ? 0 : parsedTotalOffers,
         });
       }
@@ -738,7 +653,10 @@ function OfferCategoriesPage() {
         > = {};
 
         (response.data || []).forEach((item) => {
-          const categoryId = item.categoryId;
+          const categoryId = Number(item.categoryId);
+          if (!Number.isFinite(categoryId)) {
+            return;
+          }
           performanceMap[categoryId] = {
             totalRevenue: item.totalRevenue || 0,
             conversionRate: item.conversionRate || 0,
@@ -783,33 +701,36 @@ function OfferCategoriesPage() {
           }
         > = {};
 
-        response.data.forEach(
-          (item: { category_name: string; offer_count: string | number }) => {
-            // Find the category by name to get its ID
-            const matchingCategory = categoriesToMatch.find(
-              (cat) => cat.name === item.category_name
-            );
+        const offerCountEntries = ((response.data as unknown) ?? []) as Array<{
+          category_name: string;
+          offer_count: string | number;
+        }>;
 
-            if (matchingCategory) {
-              const categoryId =
-                typeof matchingCategory.id === "string"
-                  ? parseInt(matchingCategory.id, 10)
-                  : matchingCategory.id;
-              const offerCount =
-                typeof item.offer_count === "string"
-                  ? parseInt(item.offer_count, 10)
-                  : item.offer_count || 0;
+        offerCountEntries.forEach((item) => {
+          // Find the category by name to get its ID
+          const matchingCategory = categoriesToMatch.find(
+            (cat) => cat.name === item.category_name
+          );
 
-              countsMap[categoryId] = {
-                totalOffers: offerCount,
-                activeOffers: 0, // Backend doesn't provide this breakdown
-                expiredOffers: 0,
-                draftOffers: 0,
-                pendingOffers: 0,
-              };
-            }
+          if (matchingCategory) {
+            const categoryId =
+              typeof matchingCategory.id === "string"
+                ? parseInt(matchingCategory.id, 10)
+                : matchingCategory.id;
+            const offerCount =
+              typeof item.offer_count === "string"
+                ? parseInt(item.offer_count, 10)
+                : item.offer_count || 0;
+
+            countsMap[categoryId] = {
+              totalOffers: offerCount,
+              activeOffers: 0, // Backend doesn't provide this breakdown
+              expiredOffers: 0,
+              draftOffers: 0,
+              pendingOffers: 0,
+            };
           }
-        );
+        });
 
         if (Array.isArray(allOffers)) {
           const categoriesIndex = new Map<number, boolean>();
@@ -946,7 +867,7 @@ function OfferCategoriesPage() {
       }
 
       setOfferCategories(categoriesWithCounts);
-      setError("");
+      setPageError("");
 
       // Load offer counts for all categories at once
       // Note: loadAllOfferCounts needs offerCategories to match by name,
@@ -956,7 +877,7 @@ function OfferCategoriesPage() {
     } catch (err) {
       console.error("Failed to load categories:", err);
       showError("Failed to load categories", "Please try again later.");
-      setError(""); // Clear error state
+      setPageError("Failed to load offer catalogs. Please try again later.");
       setOfferCategories([]);
     } finally {
       setLoading(false);
@@ -996,7 +917,7 @@ function OfferCategoriesPage() {
         "Category Deleted",
         `"${category.name}" has been deleted successfully.`
       );
-    } catch {
+    } catch (err) {
       // Error"Error deleting category:", err);
       showError(
         "Error",
@@ -1037,8 +958,8 @@ function OfferCategoriesPage() {
 
       setIsModalOpen(false);
       setEditingCategory(undefined);
-    } catch {
-      // Error"Failed to save category:", err);
+    } catch (err) {
+      console.error("Failed to save category:", err);
       showError("Failed to save category", "Please try again later.");
     }
   };
@@ -1095,7 +1016,7 @@ function OfferCategoriesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/offers")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -1111,7 +1032,7 @@ function OfferCategoriesPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleCreateCategory}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
@@ -1119,6 +1040,12 @@ function OfferCategoriesPage() {
           </button>
         </div>
       </div>
+
+      {pageError && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {pageError}
+        </div>
+      )}
 
       {/* Stats Cards */}
       {stats && (
@@ -1131,7 +1058,7 @@ function OfferCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
@@ -1180,13 +1107,13 @@ function OfferCategoriesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
           />
         </div>
         <div className="flex items-center gap-2 p-1">
           <button
             onClick={() => setShowAdvancedFilters(true)}
-            className="flex items-center px-4 py-2 rounded-lg bg-gray-50 transition-colors text-sm font-medium"
+            className="flex items-center px-4 py-2 rounded-md bg-gray-50 transition-colors text-sm font-medium"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
@@ -1335,7 +1262,7 @@ function OfferCategoriesPage() {
         </div>
       ) : filteredOfferCategories.length === 0 ? (
         <div
-          className="rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4"
+          className="rounded-md shadow-sm border border-gray-200 text-center py-16 px-4"
           style={{ backgroundColor: color.surface.cards }}
         >
           <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -1350,7 +1277,7 @@ function OfferCategoriesPage() {
           {!searchTerm && (
             <button
               onClick={handleCreateCategory}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -1363,7 +1290,7 @@ function OfferCategoriesPage() {
           {filteredOfferCategories.map((category) => (
             <div
               key={category.id}
-              className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              className="border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
               style={{ backgroundColor: color.surface.cards }}
             >
               <div className="flex items-start justify-between mb-2">
@@ -1375,21 +1302,21 @@ function OfferCategoriesPage() {
                 <div className="flex items-center space-x-1">
                   {/* <button
                     onClick={() => handleViewDetails(category)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="View Details"
                   >
                     <Eye className="w-4 h-4 text-gray-600" />
                   </button> */}
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -1433,8 +1360,8 @@ function OfferCategoriesPage() {
                   </span>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className="px-3 py-1.5 text-sm font-medium transition-colors"
-                    style={{ color: color.primary.accent }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                    style={{ backgroundColor: color.primary.action }}
                     title="View & Assign Offers"
                   >
                     View Offers
@@ -1492,7 +1419,7 @@ function OfferCategoriesPage() {
             return (
               <div
                 key={category.id}
-                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all"
+                className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-all"
                 style={{ backgroundColor: color.surface.cards }}
               >
                 <div className="flex items-center justify-between">
@@ -1559,8 +1486,8 @@ function OfferCategoriesPage() {
                   </div>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className="px-3 py-1.5 text-sm font-medium transition-colors"
-                    style={{ color: color.primary.accent }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                    style={{ backgroundColor: color.primary.action }}
                     title="View & Assign Offers"
                   >
                     View Offers
@@ -1569,21 +1496,21 @@ function OfferCategoriesPage() {
                 <div className="flex items-center gap-2">
                   {/* <button
                   onClick={() => handleViewDetails(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   title="View Details"
                 >
                   <Eye className="w-4 h-4 text-gray-600" />
                 </button> */}
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -1637,12 +1564,12 @@ function OfferCategoriesPage() {
             >
               <div className={`p-6 border-b ${tw.borderDefault}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`${tw.subHeading} ${tw.textPrimary}`}>
+                  <h3 className="text-lg font-semibold text-gray-900">
                     Filter Categories
                   </h3>
                   <button
                     onClick={handleCloseModal}
-                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-md transition-colors`}
                   >
                     ×
                   </button>
@@ -1693,7 +1620,7 @@ function OfferCategoriesPage() {
 
                 {/* Advanced Search Section */}
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className={`${tw.subHeading} ${tw.textPrimary} mb-4`}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Advanced Search
                   </h3>
 
@@ -1715,7 +1642,7 @@ function OfferCategoriesPage() {
                           }))
                         }
                         placeholder="Enter exact category name..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -1742,7 +1669,7 @@ function OfferCategoriesPage() {
                             isActive: value,
                           }));
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">All Status</option>
                         <option value="true">Active Only</option>
@@ -1767,7 +1694,7 @@ function OfferCategoriesPage() {
                               createdAfter: e.target.value,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
@@ -1785,7 +1712,7 @@ function OfferCategoriesPage() {
                               createdBefore: e.target.value,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
@@ -1799,7 +1726,7 @@ function OfferCategoriesPage() {
                       setFilterType("all");
                       clearAdvancedSearch();
                     }}
-                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-md hover:bg-gray-50 transition-colors`}
                   >
                     Clear All
                   </button>

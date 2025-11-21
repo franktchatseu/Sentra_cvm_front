@@ -680,10 +680,10 @@ export default function SegmentManagementPage() {
       {!isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Segments */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag1 }}
               >
                 <Layers className="w-6 h-6 text-white" />
@@ -708,10 +708,10 @@ export default function SegmentManagementPage() {
           </div>
 
           {/* Active Segments */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag4 }}
               >
                 <Activity className="w-6 h-6 text-white" />
@@ -732,10 +732,10 @@ export default function SegmentManagementPage() {
           </div>
 
           {/* Total Customers */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag2 }}
               >
                 <Users className="w-6 h-6 text-white" />
@@ -752,10 +752,10 @@ export default function SegmentManagementPage() {
           </div>
 
           {/* Top Segment */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div
-                className="p-3 rounded-lg flex-shrink-0"
+                className="p-3 rounded-md flex-shrink-0"
                 style={{ backgroundColor: color.tertiary.tag3 }}
               >
                 <TrendingUp className="w-6 h-6 text-white" />
@@ -803,7 +803,7 @@ export default function SegmentManagementPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
+              className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-md focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
             />
           </div>
 
@@ -838,7 +838,7 @@ export default function SegmentManagementPage() {
             />
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5  rounded-lg bg-gray-50 transition-colors text-base font-medium`}
+              className={`flex items-center px-4 py-2.5  rounded-md bg-gray-50 transition-colors text-base font-medium`}
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -874,7 +874,7 @@ export default function SegmentManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white rounded-lg border border-[${color.border.default}] `}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -890,10 +890,10 @@ export default function SegmentManagementPage() {
           </div>
         ) : error ? (
           <div className="p-8 text-center">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+            <div className="bg-red-50 border border-red-200 rounded-md p-6">
               <button
                 onClick={loadSegments}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
               >
                 Try Again
               </button>
@@ -902,7 +902,7 @@ export default function SegmentManagementPage() {
         ) : filteredSegments.length === 0 ? (
           <div className="p-8 md:p-16 text-center">
             <div
-              className={`bg-gradient-to-br from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 rounded-xl p-6 md:p-12`}
+              className={`bg-gradient-to-br from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 rounded-md p-6 md:p-12`}
             >
               <h3 className={`${tw.cardHeading} ${tw.textPrimary} mb-1`}>
                 No segments found
@@ -926,76 +926,87 @@ export default function SegmentManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead
-                  className={`border-b ${tw.borderDefault}`}
-                  style={{ background: color.surface.tableHeader }}
-                >
+            <div className="hidden lg:block overflow-x-auto">
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+              >
+                <thead style={{ background: color.surface.tableHeader }}>
                   <tr>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Segment
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Type
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Tags
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Customers
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Visibility
                     </th>
                     <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Created
                     </th>
                     <th
-                      className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`bg-white divide-y ${tw.borderDefault}/50`}>
+                <tbody>
                   {filteredSegments.map((segment) => (
-                    <tr
-                      key={segment.id}
-                      className={`group hover:bg-gray-50/30 transition-all duration-300`}
-                    >
-                      <td className="px-6 py-4">
-                        <div
-                          className={`text-base font-semibold ${tw.textPrimary} group-hover:text-[${color.primary.accent}] transition-colors`}
-                        >
-                          {segment.name}
-                        </div>
-                        <div className={`text-sm ${tw.textSecondary} mt-1`}>
-                          {segment.description}
+                    <tr key={segment.id} className="transition-colors">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div>
+                          <div
+                            className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                            title={segment.name}
+                          >
+                            {segment.name}
+                          </div>
+                          {segment.description && (
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                              title={segment.description}
+                            >
+                              {segment.description}
+                            </div>
+                          )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                             segment.type === "dynamic"
                               ? `bg-[${color.primary.accent}]`
                               : segment.type === "static"
@@ -1017,14 +1028,17 @@ export default function SegmentManagementPage() {
                             : "N/A"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4 hidden xl:table-cell"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div className="flex flex-wrap gap-1">
                           {segment.tags && segment.tags.length > 0 ? (
                             <>
                               {segment.tags.slice(0, 2).map((tag) => (
                                 <span
                                   key={tag}
-                                  className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
+                                  className={`inline-flex items-center px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-xs font-medium rounded-full`}
                                 >
                                   <Tag className="w-3 h-3 mr-1" />
                                   {tag}
@@ -1032,20 +1046,23 @@ export default function SegmentManagementPage() {
                               ))}
                               {segment.tags.length > 2 && (
                                 <span
-                                  className={`inline-flex items-center px-2 py-1 text-sm font-medium ${tw.textMuted}`}
+                                  className={`inline-flex items-center px-2 py-1 text-xs font-medium ${tw.textMuted}`}
                                 >
                                   +{segment.tags.length - 2} more
                                 </span>
                               )}
                             </>
                           ) : (
-                            <span className={`text-sm ${tw.textMuted}`}>
+                            <span className={`text-xs ${tw.textMuted}`}>
                               No tags
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div className="flex items-center space-x-2">
                           <Users
                             className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`}
@@ -1055,9 +1072,12 @@ export default function SegmentManagementPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4 hidden lg:table-cell"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                             segment.visibility === "public"
                               ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
                               : `bg-[${color.status.info}]/10 text-[${color.status.info}]`
@@ -1068,34 +1088,34 @@ export default function SegmentManagementPage() {
                             : "Private"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`text-sm ${tw.textPrimary} font-medium`}
-                          >
-                            {new Date(segment.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </div>
-                        </div>
+                      <td
+                        className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textPrimary}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {new Date(segment.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center justify-end space-x-2">
+                      <td
+                        className="px-6 py-4 text-sm font-medium"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="flex items-center justify-center space-x-2">
                           <button
                             onClick={() => handleViewSegment(segment.id)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            className={`group p-3 rounded-md ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             title="View Details"
                           >
                             <Eye className="w-4 h-4 " />
                           </button>
                           <button
                             onClick={() => handleToggleStatus(segment)}
-                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                             title={
                               segment.is_active ? "Deactivate" : "Activate"
                             }
@@ -1108,7 +1128,7 @@ export default function SegmentManagementPage() {
                           </button>
                           <button
                             onClick={() => handleEditSegment(segment.id)}
-                            className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                            className={`group p-3 rounded-md ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             title="Edit"
                           >
                             <Edit className="w-4 h-4 " />
@@ -1123,7 +1143,7 @@ export default function SegmentManagementPage() {
                               onClick={(e) =>
                                 handleActionMenuToggle(segment.id, e)
                               }
-                              className={`group p-3 rounded-xl ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
+                              className={`group p-3 rounded-md ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
@@ -1144,7 +1164,7 @@ export default function SegmentManagementPage() {
                     ref={(el) => {
                       dropdownMenuRefs.current[segment.id] = el;
                     }}
-                    className="fixed bg-white border border-gray-200 rounded-lg shadow-xl py-3 w-64"
+                    className="fixed bg-white border border-gray-200 rounded-md shadow-xl py-3 w-64"
                     style={{
                       zIndex: 99999,
                       top: `${dropdownPosition.top}px`,
@@ -1236,7 +1256,7 @@ export default function SegmentManagementPage() {
               {filteredSegments.map((segment) => (
                 <div
                   key={segment.id}
-                  className={`bg-white border ${tw.borderDefault} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}
+                  className={`bg-white border ${tw.borderDefault} rounded-md p-4 shadow-sm hover:shadow-md transition-shadow`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -1252,7 +1272,7 @@ export default function SegmentManagementPage() {
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => handleToggleStatus(segment)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         title={segment.is_active ? "Deactivate" : "Activate"}
                       >
                         {segment.is_active ? (
@@ -1263,14 +1283,14 @@ export default function SegmentManagementPage() {
                       </button>
                       <button
                         onClick={() => handleViewSegment(segment.id)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEditSegment(segment.id)}
-                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                        className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         title="Edit"
                       >
                         <Edit className="w-4 h-4" />
@@ -1283,7 +1303,7 @@ export default function SegmentManagementPage() {
                       >
                         <button
                           onClick={(e) => handleActionMenuToggle(segment.id, e)}
-                          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                          className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         >
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -1355,7 +1375,7 @@ export default function SegmentManagementPage() {
       {/* Pagination */}
       {!isLoading && !error && filteredSegments.length > 0 && (
         <div
-          className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+          className={`bg-white rounded-md shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div
@@ -1375,7 +1395,7 @@ export default function SegmentManagementPage() {
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -1385,7 +1405,7 @@ export default function SegmentManagementPage() {
               <button
                 onClick={() => setPage(page + 1)}
                 disabled={page >= totalPages}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -1431,7 +1451,7 @@ export default function SegmentManagementPage() {
                   </h3>
                   <button
                     onClick={handleCloseModal}
-                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-lg transition-colors`}
+                    className={`p-2 ${tw.textMuted} hover:bg-gray-50 rounded-md transition-colors`}
                   >
                     ×
                   </button>
@@ -1518,7 +1538,7 @@ export default function SegmentManagementPage() {
                       setTypeFilter("all");
                       setSelectedTags([]);
                     }}
-                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-lg hover:bg-gray-50 transition-colors`}
+                    className={`flex-1 px-4 py-2 text-sm border border-gray-300 ${tw.textSecondary} rounded-md hover:bg-gray-50 transition-colors`}
                   >
                     Clear All
                   </button>

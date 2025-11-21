@@ -21,6 +21,7 @@ export interface Product {
   created_by?: number;
   updated_by?: number;
   metadata?: Record<string, unknown>;
+  tags?: string[];
 }
 
 export interface CreateProductRequest {

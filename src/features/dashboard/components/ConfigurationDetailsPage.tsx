@@ -161,7 +161,7 @@ export default function ConfigurationDetailsPage() {
           </h2>
           <button
             onClick={() => navigate("/dashboard/configuration")}
-            className="px-4 py-2 text-white rounded-lg transition-all mt-4"
+            className="px-4 py-2 text-white rounded-md transition-all mt-4"
             style={{ backgroundColor: color.primary.action }}
           >
             Back to Configurations
@@ -178,7 +178,7 @@ export default function ConfigurationDetailsPage() {
         <div className="flex items-center gap-4 mb-4">
           <button
             onClick={() => navigate("/dashboard/configuration")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -210,7 +210,7 @@ export default function ConfigurationDetailsPage() {
           placeholder="Search sub-configurations..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className={`w-full pl-10 pr-4 py-3 ${components.input.default} rounded-xl focus:outline-none transition-all duration-200 text-sm`}
+          className={`w-full pl-10 pr-4 py-3 ${components.input.default} rounded-md focus:outline-none transition-all duration-200 text-sm`}
         />
       </div>
 
@@ -238,7 +238,7 @@ export default function ConfigurationDetailsPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto rounded-md border border-gray-200 overflow-hidden">
           <table className="w-full">
             <thead
               className={`border-b ${tw.borderDefault}`}

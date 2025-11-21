@@ -8,6 +8,7 @@ import Dashboard from './features/dashboard/pages/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
+import { color } from './shared/utils/utils';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -39,7 +40,7 @@ function App() {
       <ToastProvider>
         <ConfirmProvider>
           <Router>
-            <div className="min-h-screen" style={{ backgroundColor: '#e5e7eb' }}>
+            <div className="min-h-screen" style={{ backgroundColor: color.primary.background }}>
               <AppRoutes />
             </div>
           </Router>

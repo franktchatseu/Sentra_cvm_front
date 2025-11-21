@@ -46,7 +46,35 @@ class CampaignService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${BASE_URL}${endpoint}`;
+    let url = `${BASE_URL}${endpoint}`;
+
+    // Ensure no 'id' parameter is accidentally included in the URL
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.searchParams.has("id")) {
+        urlObj.searchParams.delete("id");
+        url = urlObj.toString();
+        console.warn(
+          `Removed 'id' parameter from campaign service URL: ${endpoint}`
+        );
+      }
+    } catch {
+      // If URL parsing fails (relative URL), manually check and clean query string
+      const queryIndex = url.indexOf("?");
+      if (queryIndex !== -1) {
+        const baseUrl = url.substring(0, queryIndex);
+        const queryString = url.substring(queryIndex + 1);
+        const params = new URLSearchParams(queryString);
+        if (params.has("id")) {
+          params.delete("id");
+          const newQuery = params.toString();
+          url = newQuery ? `${baseUrl}?${newQuery}` : baseUrl;
+          console.warn(
+            `Removed 'id' parameter from campaign service URL: ${endpoint}`
+          );
+        }
+      }
+    }
 
     const response = await fetch(url, {
       ...options,
@@ -190,26 +218,30 @@ class CampaignService {
     skipCache?: boolean; // camelCase
   }): Promise<CampaignResponse> {
     const queryParams = new URLSearchParams();
-    if (params) {
-      // Define allowed parameters to prevent sending invalid ones like 'id' or 'limit'
-      const allowedParams = [
-        "search",
-        "status",
-        "approvalStatus",
-        "categoryId",
-        "programId",
-        "startDateFrom",
-        "startDateTo",
-        "sortBy",
-        "sortDirection",
-        "page",
-        "pageSize",
-        "skipCache",
-      ];
 
+    // Define allowed parameters to prevent sending invalid ones like 'id', 'limit', 'offset'
+    const allowedParams = [
+      "search",
+      "status",
+      "approvalStatus",
+      "categoryId",
+      "programId",
+      "startDateFrom",
+      "startDateTo",
+      "sortBy",
+      "sortDirection",
+      "page",
+      "pageSize",
+      "skipCache",
+    ];
+
+    // Explicitly exclude these parameters that should never be sent
+    const excludedParams = ["id", "limit", "offset"];
+
+    if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        // Skip 'id' and other disallowed parameters
-        if (key === "id" || !allowedParams.includes(key)) {
+        // Explicitly skip 'id' and other disallowed/excluded parameters
+        if (excludedParams.includes(key) || !allowedParams.includes(key)) {
           return;
         }
 
@@ -248,6 +280,7 @@ class CampaignService {
         }
       });
     }
+
     const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
     return this.request<CampaignResponse>(`/all${query}`);
   }
@@ -637,7 +670,7 @@ class CampaignService {
   }
 
   /**
-   * Get campaign categories from new backend endpoint
+   * Get Campaigns catalogs from new backend endpoint
    */
   async getCampaignCategories(params?: {
     limit?: number;
@@ -889,7 +922,7 @@ class CampaignService {
   }
 
   /**
-   * Get active campaign categories
+   * Get active Campaigns catalogs
    */
   async getActiveCampaignCategories(params?: {
     limit?: number;
@@ -919,7 +952,7 @@ class CampaignService {
   }
 
   /**
-   * Get root campaign categories
+   * Get root Campaigns catalogs
    */
   async getRootCampaignCategories(params?: {
     limit?: number;
@@ -949,7 +982,7 @@ class CampaignService {
   }
 
   /**
-   * Search campaign categories
+   * Search Campaigns catalogs
    */
   async searchCampaignCategories(
     searchTerm: string,

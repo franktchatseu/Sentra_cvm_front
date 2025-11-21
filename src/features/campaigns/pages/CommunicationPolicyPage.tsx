@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Search, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, components, helpers } from "../../../shared/utils/utils";
 import {
   CommunicationPolicyConfiguration,
@@ -185,8 +186,8 @@ export default function CommunicationPolicyPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate("/dashboard/configuration/campaign-1")}
-            className={`p-2 ${tw.textSecondary} ${tw.hover} rounded-lg transition-colors`}
+            onClick={() => navigate("/dashboard/configuration")}
+            className={`p-2 ${tw.textSecondary} rounded-md transition-colors`}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -226,11 +227,19 @@ export default function CommunicationPolicyPage() {
       </div>
 
       <div
-        className={`bg-white rounded-lg shadow-sm border border-[${color.border.default}] overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <span className={tw.textSecondary}>Loading policies...</span>
+          <div className="flex flex-col items-center justify-center py-16">
+            <LoadingSpinner
+              variant="modern"
+              size="xl"
+              color="primary"
+              className="mb-4"
+            />
+            <p className={`${tw.textMuted} font-medium text-sm`}>
+              Loading policies...
+            </p>
           </div>
         ) : filteredPolicies.length === 0 ? (
           <div className="text-center py-12">
@@ -253,11 +262,11 @@ export default function CommunicationPolicyPage() {
           <>
             {/* Desktop Table View */}
             <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full">
-                <thead
-                  className={`border-b ${tw.borderDefault}`}
-                  style={{ background: color.surface.tableHeader }}
-                >
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+              >
+                <thead style={{ background: color.surface.tableHeader }}>
                   <tr>
                     <th
                       className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
@@ -272,7 +281,7 @@ export default function CommunicationPolicyPage() {
                       Channels
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell`}
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Configuration Summary
@@ -291,35 +300,49 @@ export default function CommunicationPolicyPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y ${tw.borderMuted}`}>
+                <tbody>
                   {filteredPolicies.map((policy) => (
-                    <tr
-                      key={policy.id}
-                      className={`${tw.hover} transition-colors`}
-                    >
-                      <td className="px-6 py-4">
+                    <tr key={policy.id} className="transition-colors">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div>
                           <div
-                            className={`${tw.body} font-semibold ${tw.textPrimary}`}
+                            className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                            title={policy.name}
                           >
                             {policy.name}
                           </div>
-                          <div className={`${tw.caption} ${tw.textMuted}`}>
+                          <div
+                            className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                            title={policy.description || "No description"}
+                          >
                             {policy.description || "No description"}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         {getChannelsDisplay(policy.channels)}
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className={`px-6 py-4 hidden md:table-cell`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <div
-                          className={`${tw.caption} ${tw.textSecondary} max-w-xs`}
+                          className={`text-xs sm:text-sm ${tw.textSecondary} truncate max-w-xs`}
+                          title={getComprehensiveConfigSummary(policy)}
                         >
                           {getComprehensiveConfigSummary(policy)}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
                         <span
                           className={
                             policy.isActive
@@ -330,20 +353,25 @@ export default function CommunicationPolicyPage() {
                           {policy.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
+                      <td
+                        className="px-6 py-4 text-right text-sm font-medium"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEditPolicy(policy)}
-                            className={`p-2 ${color.primary.action} hover:${color.primary.action}/90 ${tw.accent10} rounded-lg transition-colors`}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                             style={{ color: color.primary.action }}
+                            title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeletePolicy(policy)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
+                            title="Delete"
                           >
-                            <Trash2 className="w-4 h-4 text-red-600" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -390,13 +418,13 @@ export default function CommunicationPolicyPage() {
                     <div className="flex items-center space-x-2 ml-4">
                       <button
                         onClick={() => handleEditPolicy(policy)}
-                        className="p-2 text-[#588157] hover:text-[#3A5A40] hover:bg-[#588157]/10 rounded-lg transition-colors"
+                        className="p-2 text-[#588157] hover:text-[#3A5A40] hover:bg-[#588157]/10 rounded-md transition-colors"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeletePolicy(policy)}
-                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                       >
                         <Trash2 className="w-4 h-4 text-red-600" />
                       </button>

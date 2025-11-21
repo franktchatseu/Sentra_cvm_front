@@ -1,15 +1,16 @@
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Trash2, Loader2, Search, User, Users, List } from "lucide-react";
 import {
   SegmentCondition,
   SegmentConditionGroup,
   SEGMENT_FIELDS,
-  PROFILE_360_FIELDS,
   OPERATOR_LABELS,
 } from "../types/segment";
-import ListUpload from "./ListUpload";
-import { color, tw, button } from "../../../shared/utils/utils";
+import { color, tw } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useSegmentationFields } from "../hooks/useSegmentationFields";
+import SegmentPickerModal from "./SegmentPickerModal";
+import QuickListPickerModal from "./QuickListPickerModal";
 
 interface SegmentConditionsBuilderProps {
   conditions: SegmentConditionGroup[];
@@ -21,6 +22,26 @@ export default function SegmentConditionsBuilder({
   onChange,
 }: SegmentConditionsBuilderProps) {
   const generateId = () => Math.random().toString(36).substr(2, 9);
+  const [isSegmentModalOpen, setIsSegmentModalOpen] = useState(false);
+  const [isQuickListModalOpen, setIsQuickListModalOpen] = useState(false);
+  const [currentEditingCondition, setCurrentEditingCondition] = useState<{
+    groupId: string;
+    conditionId: string;
+  } | null>(null);
+
+  // Get icon for condition type (using theme colors only)
+  const getConditionTypeIcon = (type: string) => {
+    switch (type) {
+      case "360_profile":
+        return User;
+      case "segment":
+        return Users;
+      case "list":
+        return List;
+      default:
+        return User;
+    }
+  };
 
   // Load segmentation fields from backend
   const {
@@ -28,14 +49,10 @@ export default function SegmentConditionsBuilder({
     allFields,
     isLoading: isLoadingFields,
     error: fieldsError,
-    getFieldById,
     getFieldByValue,
-    getOperatorsForField,
-    getFieldType: getBackendFieldType,
   } = useSegmentationFields();
 
   const addConditionGroup = () => {
-    // Use first field from backend if available, fallback to hardcoded
     const firstField = allFields.length > 0 ? allFields[0] : null;
     const defaultFieldValue = firstField
       ? firstField.field_value
@@ -46,10 +63,12 @@ export default function SegmentConditionsBuilder({
     const newGroup: SegmentConditionGroup = {
       id: generateId(),
       operator: "AND",
-      conditionType: "rule",
+      groupOperator: "AND",
       conditions: [
         {
           id: generateId(),
+          conditionType: "360_profile",
+          category: categories.length > 0 ? categories[0].id : undefined,
           field: defaultFieldValue,
           field_id: defaultFieldId,
           operator: "equals",
@@ -78,7 +97,6 @@ export default function SegmentConditionsBuilder({
   };
 
   const addCondition = (groupId: string) => {
-    // Use first field from backend if available, fallback to hardcoded
     const firstField = allFields.length > 0 ? allFields[0] : null;
     const defaultFieldValue = firstField
       ? firstField.field_value
@@ -88,6 +106,8 @@ export default function SegmentConditionsBuilder({
 
     const newCondition: SegmentCondition = {
       id: generateId(),
+      conditionType: "360_profile",
+      category: categories.length > 0 ? categories[0].id : undefined,
       field: defaultFieldValue,
       field_id: defaultFieldId,
       operator: "equals",
@@ -139,136 +159,206 @@ export default function SegmentConditionsBuilder({
     );
   };
 
-  const getFieldType = (fieldKey: string, isProfile360 = false) => {
-    // Try to get field from backend first
-    if (!isProfile360 && allFields.length > 0) {
-      const backendField = getFieldByValue(fieldKey);
-      if (backendField) {
-        // Map backend field types to our internal types
-        switch (backendField.field_type) {
-          case "numeric":
-            return "number";
-          case "text":
-            return "string";
-          case "boolean":
-            return "boolean";
-          default:
-            return "string";
-        }
+  const getFieldType = (fieldKey: string) => {
+    const backendField = getFieldByValue(fieldKey);
+    if (backendField) {
+      switch (backendField.field_type) {
+        case "numeric":
+          return "number";
+        case "text":
+          return "string";
+        case "boolean":
+          return "boolean";
+        default:
+          return "string";
       }
     }
-
-    // Fallback to hardcoded fields for 360 profiles or if backend fields not loaded
-    const fields = isProfile360 ? PROFILE_360_FIELDS : SEGMENT_FIELDS;
-    const field = fields.find((f) => f.key === fieldKey);
+    const field = SEGMENT_FIELDS.find((f) => f.key === fieldKey);
     return field?.type || "string";
   };
 
-  const getAvailableOperators = (fieldKey: string, isProfile360 = false) => {
-    // Try to get operators from backend first
-    if (!isProfile360 && allFields.length > 0) {
-      const backendField = getFieldByValue(fieldKey);
-      if (backendField && backendField.operators.length > 0) {
-        // Map backend operators to our internal operator labels
-        return backendField.operators.map((op) => {
-          // Map backend symbols to our internal operator keys
-          const symbolMap: Record<string, string> = {
-            "=": "equals",
-            "!=": "not_equals",
-            ">": "greater_than",
-            "<": "less_than",
-            IN: "in",
-            "NOT IN": "not_in",
-            LIKE: "contains",
-            "NOT LIKE": "not_contains",
-          };
-          return symbolMap[op.symbol] || op.label;
-        });
-      }
+  const getAvailableOperators = (fieldKey: string) => {
+    const backendField = getFieldByValue(fieldKey);
+    if (backendField && backendField.operators.length > 0) {
+      return backendField.operators.map((op) => {
+        const symbolMap: Record<string, string> = {
+          "=": "equals",
+          "!=": "not_equals",
+          ">": "greater_than",
+          "<": "less_than",
+          IN: "in",
+          "NOT IN": "not_in",
+          LIKE: "contains",
+          "NOT LIKE": "not_contains",
+        };
+        return symbolMap[op.symbol] || op.label;
+      });
     }
-
-    // Fallback to hardcoded operators
-    const fields = isProfile360 ? PROFILE_360_FIELDS : SEGMENT_FIELDS;
-    const field = fields.find((f) => f.key === fieldKey);
+    const field = SEGMENT_FIELDS.find((f) => f.key === fieldKey);
     return field?.operators || ["equals"];
   };
 
-  const renderConditionValue = (
+  // Render condition based on type
+  const renderConditionFields = (
     groupId: string,
-    condition: SegmentCondition,
-    isProfile360 = false
+    condition: SegmentCondition
   ) => {
-    const fieldType = getFieldType(condition.field, isProfile360);
-    const updateFunction = isProfile360
-      ? updateProfileCondition
-      : updateCondition;
+    switch (condition.conditionType) {
+      case "360_profile":
+        return render360ProfileFields(groupId, condition);
+      case "segment":
+        return renderSegmentFields(groupId, condition);
+      case "list":
+        return renderListFields(groupId, condition);
+      default:
+        return null;
+    }
+  };
 
-    // Get backend field to check for dropdown component type
-    const backendField = !isProfile360
-      ? getFieldByValue(condition.field)
-      : null;
+  // Render 360 Profile condition fields
+  const render360ProfileFields = (
+    groupId: string,
+    condition: SegmentCondition
+  ) => {
+    const backendField = condition.field ? getFieldByValue(condition.field) : null;
     const isDropdown = backendField?.ui?.component_type === "dropdown";
-    const isMultiSelect = backendField?.ui?.is_multi_select || false;
     const distinctValues = backendField?.validation?.distinct_values || [];
 
-    // If field has dropdown component type with distinct values, render dropdown
-    if (isDropdown && distinctValues.length > 0) {
-      if (
-        isMultiSelect ||
-        condition.operator === "in" ||
-        condition.operator === "not_in"
-      ) {
-        // Multi-select dropdown - display as checkboxes
-        const selectedValues = Array.isArray(condition.value)
-          ? condition.value.map((v) => String(v))
-          : condition.value
-          ? [String(condition.value)]
-          : [];
+    return (
+      <>
+        {/* Category Selection */}
+        <div className="min-w-[150px] max-w-[180px] flex-shrink-0">
+          <HeadlessSelect
+            options={categories.map((cat) => ({
+              value: cat.id.toString(),
+              label: cat.name,
+            }))}
+            value={condition.category?.toString() || ""}
+            onChange={(value) => {
+              const categoryId = parseInt(value as string);
+              const selectedCategory = categories.find((c) => c.id === categoryId);
+              const categoryFields = selectedCategory?.fields || [];
+              const firstField = categoryFields.length > 0 ? categoryFields[0] : null;
 
-        return (
-          <div className="min-w-[200px]">
-            <div className="border border-gray-300 rounded-lg p-2 max-h-40 overflow-y-auto bg-white">
-              {distinctValues.map((val, idx) => {
-                const isChecked = selectedValues.includes(val);
-                return (
-                  <label
-                    key={idx}
-                    className="flex items-center space-x-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        let newValues: string[];
-                        if (e.target.checked) {
-                          newValues = [...selectedValues, val];
-                        } else {
-                          newValues = selectedValues.filter((v) => v !== val);
-                        }
-                        updateFunction(groupId, condition.id, {
-                          value:
-                            newValues.length > 1
-                              ? newValues
-                              : newValues[0] || "",
-                          type: newValues.length > 1 ? "array" : "string",
-                        });
-                      }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{val}</span>
-                  </label>
+              updateCondition(groupId, condition.id, {
+                category: categoryId,
+                field: firstField ? firstField.field_value : "",
+                field_id: firstField?.id,
+                operator: "equals",
+                operator_id: firstField?.operators[0]?.id,
+                value: "",
+              });
+            }}
+            placeholder="Select category"
+            className="text-sm"
+          />
+        </div>
+
+        {/* Field Selection - Filtered by category */}
+        <div className="min-w-[180px] max-w-[220px] flex-shrink-0">
+          <HeadlessSelect
+            options={(() => {
+              if (condition.category) {
+                const selectedCategory = categories.find(
+                  (c) => c.id === condition.category
                 );
-              })}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {selectedValues.length} value(s) selected
-            </p>
-          </div>
-        );
-      } else {
-        // Single-select dropdown
-        return (
-          <div className="min-w-[200px]">
+                const fieldsToShow = selectedCategory?.fields || [];
+                return fieldsToShow.map((field) => ({
+                  value: field.field_value,
+                  label: field.field_name,
+                }));
+              }
+              const fieldsToShow = allFields.length > 0 ? allFields : SEGMENT_FIELDS;
+              return fieldsToShow.map((field) => ({
+                value:
+                  "field_value" in field ? field.field_value : field.key,
+                label: "field_name" in field ? field.field_name : field.label,
+              }));
+            })()}
+            value={condition.field || ""}
+            onChange={(value) => {
+              const fieldType = getFieldType(value as string);
+              const availableOperators = getAvailableOperators(value as string);
+              const backendField = getFieldByValue(value as string);
+              const firstOperator = backendField?.operators[0];
+
+              const symbolMap: Record<string, string> = {
+                "=": "equals",
+                "!=": "not_equals",
+                ">": "greater_than",
+                "<": "less_than",
+                IN: "in",
+                "NOT IN": "not_in",
+                LIKE: "contains",
+                "NOT LIKE": "not_contains",
+              };
+              const mappedOperator = firstOperator
+                ? symbolMap[firstOperator.symbol] || firstOperator.label
+                : availableOperators[0];
+
+              updateCondition(groupId, condition.id, {
+                field: value as string,
+                field_id: backendField?.id,
+                operator: mappedOperator as any,
+                operator_id: firstOperator?.id,
+                type: fieldType,
+                value: fieldType === "number" ? 0 : "",
+              });
+            }}
+            placeholder="Select field"
+            className="text-sm"
+          />
+        </div>
+
+        {/* Operator Selection */}
+        <div className="min-w-[100px] max-w-[130px] flex-shrink-0">
+          <HeadlessSelect
+            options={(() => {
+              const field = condition.field ? getFieldByValue(condition.field) : null;
+              if (field && field.operators.length > 0) {
+                return field.operators.map((op) => {
+                  const symbolMap: Record<string, string> = {
+                    "=": "equals",
+                    "!=": "not_equals",
+                    ">": "greater_than",
+                    "<": "less_than",
+                    IN: "in",
+                    "NOT IN": "not_in",
+                    LIKE: "contains",
+                    "NOT LIKE": "not_contains",
+                  };
+                  const mappedOp = symbolMap[op.symbol] || op.label;
+                  return {
+                    value: `${mappedOp}|${op.id}`,
+                    label: op.label.charAt(0).toUpperCase() + op.label.slice(1),
+                  };
+                });
+              }
+              return getAvailableOperators(condition.field || "").map((op) => ({
+                value: `${op}|`,
+                label: OPERATOR_LABELS[op],
+              }));
+            })()}
+            value={
+              condition.operator_id
+                ? `${condition.operator}|${condition.operator_id}`
+                : `${condition.operator}|`
+            }
+            onChange={(value) => {
+              const [operator, operatorId] = (value as string).split("|");
+              updateCondition(groupId, condition.id, {
+                operator: operator as any,
+                operator_id: operatorId ? parseInt(operatorId) : undefined,
+              });
+            }}
+            placeholder="Select operator"
+            className="text-sm"
+          />
+        </div>
+
+        {/* Value Input */}
+        {isDropdown && distinctValues.length > 0 ? (
+          <div className="min-w-[160px] flex-1 max-w-[250px]">
             <HeadlessSelect
               options={distinctValues.map((val) => ({
                 value: val,
@@ -276,7 +366,7 @@ export default function SegmentConditionsBuilder({
               }))}
               value={condition.value as string}
               onChange={(value) => {
-                updateFunction(groupId, condition.id, {
+                updateCondition(groupId, condition.id, {
                   value: value as string,
                   type: "string",
                 });
@@ -285,115 +375,121 @@ export default function SegmentConditionsBuilder({
               className="text-sm"
             />
           </div>
-        );
-      }
-    }
-
-    // Fallback to original input logic for non-dropdown fields
-    if (condition.operator === "in" || condition.operator === "not_in") {
-      return (
-        <input
-          type="text"
-          value={
-            Array.isArray(condition.value)
-              ? condition.value.join(", ")
-              : condition.value
-          }
-          onChange={(e) => {
-            const values = e.target.value
-              .split(",")
-              .map((v) => v.trim())
-              .filter((v) => v);
-            updateFunction(groupId, condition.id, {
-              value: values,
-              type: "array",
-            });
-          }}
-          placeholder="Enter values separated by commas"
-          className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
-        />
-      );
-    }
-
-    return (
-      <input
-        type={fieldType === "number" ? "number" : "text"}
-        value={condition.value as string | number}
-        onChange={(e) => {
-          const value =
-            fieldType === "number"
-              ? parseFloat(e.target.value) || 0
-              : e.target.value;
-          updateFunction(groupId, condition.id, { value, type: fieldType });
-        }}
-        placeholder="Enter value"
-        className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-lg focus:outline-none text-sm`}
-      />
+        ) : (
+          <input
+            type={getFieldType(condition.field || "") === "number" ? "number" : "text"}
+            value={condition.value as string | number}
+            onChange={(e) => {
+              const fieldType = getFieldType(condition.field || "");
+              const value =
+                fieldType === "number"
+                  ? parseFloat(e.target.value) || 0
+                  : e.target.value;
+              updateCondition(groupId, condition.id, { value, type: fieldType });
+            }}
+            placeholder="Enter value"
+            className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-md focus:outline-none text-sm min-w-[160px] flex-1 max-w-[250px]`}
+          />
+        )}
+      </>
     );
   };
 
-  const addProfileCondition = (groupId: string) => {
-    const newCondition: SegmentCondition = {
-      id: generateId(),
-      field: PROFILE_360_FIELDS[0].key,
-      operator: "equals",
-      value: "",
-      type: "string",
+  // Render Segment condition fields
+  const renderSegmentFields = (groupId: string, condition: SegmentCondition) => {
+    const handleOpenSegmentModal = () => {
+      setCurrentEditingCondition({
+        groupId,
+        conditionId: condition.id,
+      });
+      setIsSegmentModalOpen(true);
     };
 
-    onChange(
-      conditions.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              profileConditions: [
-                ...(group.profileConditions || []),
-                newCondition,
-              ],
-            }
-          : group
-      )
+    return (
+      <>
+        {/* Segment Selection */}
+        <div className="min-w-[200px] flex-1 max-w-[350px]">
+          <button
+            type="button"
+            onClick={handleOpenSegmentModal}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm text-left flex items-center justify-between hover:border-gray-400 transition-colors"
+          >
+            <span className={condition.segment_name ? "text-gray-900" : "text-gray-500"}>
+              {condition.segment_name || "Select a segment..."}
+            </span>
+            <Search className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Operator for Segment */}
+        <div className="min-w-[100px] max-w-[130px] flex-shrink-0">
+          <HeadlessSelect
+            options={[
+              { value: "in", label: "Is In" },
+              { value: "not_in", label: "Is Not In" },
+            ]}
+            value={condition.operator}
+            onChange={(value) => {
+              updateCondition(groupId, condition.id, {
+                operator: value as "in" | "not_in",
+              });
+            }}
+            placeholder="Select operator"
+            className="text-sm"
+          />
+        </div>
+      </>
     );
   };
 
-  const removeProfileCondition = (groupId: string, conditionId: string) => {
-    onChange(
-      conditions.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              profileConditions: (group.profileConditions || []).filter(
-                (c) => c.id !== conditionId
-              ),
-            }
-          : group
-      )
+  // Render List (QuickList) condition fields
+  const renderListFields = (groupId: string, condition: SegmentCondition) => {
+    const handleOpenQuickListModal = () => {
+      setCurrentEditingCondition({
+        groupId,
+        conditionId: condition.id,
+      });
+      setIsQuickListModalOpen(true);
+    };
+
+    return (
+      <>
+        {/* QuickList Selection */}
+        <div className="min-w-[200px] flex-1 max-w-[350px]">
+          <button
+            type="button"
+            onClick={handleOpenQuickListModal}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm text-left flex items-center justify-between hover:border-gray-400 transition-colors"
+          >
+            <span className={condition.list_name ? "text-gray-900" : "text-gray-500"}>
+              {condition.list_name || "Select a quicklist..."}
+            </span>
+            <Search className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Operator for List */}
+        <div className="min-w-[100px] max-w-[130px] flex-shrink-0">
+          <HeadlessSelect
+            options={[
+              { value: "in", label: "Is In" },
+              { value: "not_in", label: "Is Not In" },
+            ]}
+            value={condition.operator}
+            onChange={(value) => {
+              updateCondition(groupId, condition.id, {
+                operator: value as "in" | "not_in",
+              });
+            }}
+            placeholder="Select operator"
+            className="text-sm"
+          />
+        </div>
+      </>
     );
   };
 
-  const updateProfileCondition = (
-    groupId: string,
-    conditionId: string,
-    updates: Partial<SegmentCondition>
-  ) => {
-    onChange(
-      conditions.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              profileConditions: (group.profileConditions || []).map(
-                (condition) =>
-                  condition.id === conditionId
-                    ? { ...condition, ...updates }
-                    : condition
-              ),
-            }
-          : group
-      )
-    );
-  };
-
-  // Show loading state while fields are being fetched
+  // Show loading state
   if (isLoadingFields) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -420,7 +516,7 @@ export default function SegmentConditionsBuilder({
         <button
           type="button"
           onClick={addConditionGroup}
-          className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors"
+          className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors"
           style={{
             backgroundColor: color.primary.action,
           }}
@@ -437,70 +533,64 @@ export default function SegmentConditionsBuilder({
       {conditions.map((group, groupIndex) => (
         <div
           key={group.id}
-          className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+          className="border border-gray-200 rounded-md p-4 bg-gray-50"
         >
           {/* Group Header */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
+              {/* Operator Between Groups - Only show for 2nd group onwards */}
               {groupIndex > 0 && (
-                <span className="px-2 py-1 bg-gray-200 text-gray-700 text-sm font-medium rounded">
-                  AND
-                </span>
-              )}
-
-              {/* Condition Type Selection */}
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Type:
-                </label>
-                <div className="w-48">
-                  <HeadlessSelect
-                    options={[
-                      { value: "rule", label: "Rule" },
-                      { value: "list", label: "List" },
-                      { value: "segments", label: "Segments" },
-                      { value: "360", label: "360 Profile" },
-                    ]}
-                    value={group.conditionType}
-                    onChange={(value) =>
-                      updateConditionGroup(group.id, {
-                        conditionType: value as
-                          | "rule"
-                          | "list"
-                          | "segments"
-                          | "360",
-                      })
-                    }
-                    placeholder="Select type"
-                    className="text-sm"
-                  />
-                </div>
-              </div>
-
-              {group.conditionType === "rule" && (
-                <>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-medium text-gray-500 uppercase">
+                    Between Groups:
+                  </span>
                   <div className="w-20">
                     <HeadlessSelect
                       options={[
                         { value: "AND", label: "AND" },
                         { value: "OR", label: "OR" },
                       ]}
-                      value={group.operator}
+                      value={conditions[groupIndex - 1].groupOperator || "AND"}
                       onChange={(value) =>
-                        updateConditionGroup(group.id, {
-                          operator: value as "AND" | "OR",
+                        updateConditionGroup(conditions[groupIndex - 1].id, {
+                          groupOperator: value as "AND" | "OR",
                         })
                       }
                       placeholder="AND"
                       className="text-sm"
                     />
                   </div>
-                  <span className="text-sm text-gray-600">
-                    {group.conditions.length} condition
-                    {group.conditions.length !== 1 ? "s" : ""}
-                  </span>
-                </>
+                  <div className="h-6 w-px bg-gray-300 mx-1" />
+                </div>
               )}
+
+              {/* Operator within group */}
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-medium text-gray-500 uppercase">
+                  Within Group:
+                </span>
+                <div className="w-20">
+                  <HeadlessSelect
+                    options={[
+                      { value: "AND", label: "AND" },
+                      { value: "OR", label: "OR" },
+                    ]}
+                    value={group.operator}
+                    onChange={(value) =>
+                      updateConditionGroup(group.id, {
+                        operator: value as "AND" | "OR",
+                      })
+                    }
+                    placeholder="AND"
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+              
+              <span className="text-sm text-gray-600">
+                ({group.conditions.length} condition
+                {group.conditions.length !== 1 ? "s" : ""})
+              </span>
             </div>
             <button
               type="button"
@@ -512,367 +602,142 @@ export default function SegmentConditionsBuilder({
             </button>
           </div>
 
-          {/* Condition Content */}
-          {group.conditionType === "rule" && (
-            <div className="space-y-3">
-              {group.conditions.map((condition, conditionIndex) => (
-                <div
-                  key={condition.id}
-                  className="flex items-center space-x-3 bg-white p-3 rounded border"
-                >
-                  {conditionIndex > 0 && (
-                    <span
-                      className={`px-2 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-xs font-medium rounded`}
-                    >
-                      {group.operator}
-                    </span>
-                  )}
-
-                  {/* Field Selection */}
-                  <div className="min-w-[200px]">
-                    <HeadlessSelect
-                      options={(allFields.length > 0
-                        ? allFields
-                        : SEGMENT_FIELDS
-                      ).map((field) => ({
-                        value:
-                          "field_value" in field
-                            ? field.field_value
-                            : field.key,
-                        label:
-                          "field_name" in field
-                            ? field.field_name
-                            : field.label,
-                      }))}
-                      value={condition.field}
-                      onChange={(value) => {
-                        const fieldType = getFieldType(value as string);
-                        const availableOperators = getAvailableOperators(
-                          value as string
-                        );
-
-                        // Get backend field to extract IDs
-                        const backendField = getFieldByValue(value as string);
-                        const firstOperator = backendField?.operators[0];
-
-                        // Map first operator symbol to our internal format
-                        const symbolMap: Record<string, string> = {
-                          "=": "equals",
-                          "!=": "not_equals",
-                          ">": "greater_than",
-                          "<": "less_than",
-                          IN: "in",
-                          "NOT IN": "not_in",
-                          LIKE: "contains",
-                          "NOT LIKE": "not_contains",
-                        };
-                        const mappedOperator = firstOperator
-                          ? symbolMap[firstOperator.symbol] ||
-                            firstOperator.label
-                          : availableOperators[0];
-
-                        updateCondition(group.id, condition.id, {
-                          field: value as string,
-                          field_id: backendField?.id,
-                          operator: mappedOperator as
-                            | "equals"
-                            | "not_equals"
-                            | "contains"
-                            | "not_contains"
-                            | "greater_than"
-                            | "less_than"
-                            | "in"
-                            | "not_in",
-                          operator_id: firstOperator?.id,
-                          type: fieldType,
-                          value: fieldType === "number" ? 0 : "",
-                        });
-                      }}
-                      placeholder="Select field"
-                      className="text-sm"
-                    />
-                  </div>
-
-                  {/* Operator Selection */}
-                  <div className="min-w-[120px]">
-                    <HeadlessSelect
-                      options={(() => {
-                        const backendField = getFieldByValue(condition.field);
-                        if (backendField && backendField.operators.length > 0) {
-                          return backendField.operators.map((op) => {
-                            const symbolMap: Record<string, string> = {
-                              "=": "equals",
-                              "!=": "not_equals",
-                              ">": "greater_than",
-                              "<": "less_than",
-                              IN: "in",
-                              "NOT IN": "not_in",
-                              LIKE: "contains",
-                              "NOT LIKE": "not_contains",
-                            };
-                            const mappedOp = symbolMap[op.symbol] || op.label;
-                            return {
-                              value: `${mappedOp}|${op.id}`, // Store both operator name and ID
-                              label:
-                                op.label.charAt(0).toUpperCase() +
-                                op.label.slice(1),
-                            };
-                          });
-                        }
-                        // Fallback to hardcoded operators
-                        return getAvailableOperators(condition.field).map(
-                          (op) => ({
-                            value: `${op}|`,
-                            label: OPERATOR_LABELS[op],
-                          })
-                        );
-                      })()}
-                      value={
-                        condition.operator_id
-                          ? `${condition.operator}|${condition.operator_id}`
-                          : `${condition.operator}|`
-                      }
-                      onChange={(value) => {
-                        const [operator, operatorId] = (value as string).split(
-                          "|"
-                        );
-                        updateCondition(group.id, condition.id, {
-                          operator: operator as
-                            | "equals"
-                            | "not_equals"
-                            | "contains"
-                            | "not_contains"
-                            | "greater_than"
-                            | "less_than"
-                            | "in"
-                            | "not_in",
-                          operator_id: operatorId
-                            ? parseInt(operatorId)
-                            : undefined,
-                        });
-                      }}
-                      placeholder="Select operator"
-                      className="text-sm"
-                    />
-                  </div>
-
-                  {/* Value Input */}
-                  {renderConditionValue(group.id, condition)}
-
-                  {/* Remove Condition */}
-                  <button
-                    type="button"
-                    onClick={() => removeCondition(group.id, condition.id)}
-                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
-                    title="Remove Condition"
-                    disabled={group.conditions.length === 1}
+          {/* Conditions */}
+          <div className="space-y-3">
+            {group.conditions.map((condition, conditionIndex) => {
+              const TypeIcon = getConditionTypeIcon(condition.conditionType);
+              
+              return (
+              <div
+                key={condition.id}
+                className="flex items-center flex-wrap gap-3 p-3 rounded-md border transition-colors hover:border-gray-300"
+                style={{
+                  backgroundColor: color.surface.background,
+                  borderColor: color.border.muted,
+                }}
+              >
+                {conditionIndex > 0 && (
+                  <span
+                    className="px-2.5 py-1 text-xs font-semibold rounded-md"
+                    style={{
+                      backgroundColor: `${color.primary.accent}15`,
+                      color: color.text.primary,
+                    }}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* List Upload Component */}
-          {group.conditionType === "list" && (
-            <ListUpload
-              listData={group.listData}
-              onListDataChange={(listData) =>
-                updateConditionGroup(group.id, { listData })
-              }
-            />
-          )}
-
-          {/* Segments Selection */}
-          {group.conditionType === "segments" && (
-            <div
-              className="p-4 rounded-lg border border-gray-200"
-              style={{ backgroundColor: `${color.primary.accent}10` }}
-            >
-              <h4 className={`font-medium ${tw.textPrimary} mb-2`}>
-                Select Segments
-              </h4>
-              <p className={`text-sm ${tw.textSecondary} mb-3`}>
-                Choose existing segments to include in this condition group.
-              </p>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
-                <option value="">Select a segment...</option>
-                {/* This would be populated with actual segments from the backend */}
-              </select>
-            </div>
-          )}
-
-          {/* 360 Profile */}
-          {group.conditionType === "360" && (
-            <div
-              className="p-4 rounded-lg border border-gray-200"
-              style={{ backgroundColor: `${color.primary.accent}10` }}
-            >
-              <h4 className={`font-medium ${tw.textPrimary} mb-2`}>
-                360 Customer Profile
-              </h4>
-              <p className={`text-sm ${tw.textSecondary} mb-3`}>
-                Configure conditions based on comprehensive customer profile
-                data.
-              </p>
-
-              <div className="space-y-3">
-                {(group.profileConditions || []).length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 mb-3">
-                      No profile conditions defined yet
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => addProfileCondition(group.id)}
-                      className="inline-flex items-center px-3 py-2 text-sm text-white rounded-lg transition-colors"
-                      style={{ backgroundColor: color.primary.action }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Profile Condition
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {group.profileConditions?.map(
-                      (condition, conditionIndex) => (
-                        <div
-                          key={condition.id}
-                          className="flex items-center space-x-3 bg-white p-3 rounded border"
-                        >
-                          {conditionIndex > 0 && (
-                            <span
-                              className="px-2 py-1 text-xs font-medium rounded"
-                              style={{
-                                backgroundColor: `${color.primary.accent}20`,
-                                color: color.primary.accent,
-                              }}
-                            >
-                              AND
-                            </span>
-                          )}
-
-                          {/* Profile Field Selection */}
-                          <select
-                            value={condition.field}
-                            onChange={(e) => {
-                              const fieldType = getFieldType(
-                                e.target.value,
-                                true
-                              );
-                              const availableOperators = getAvailableOperators(
-                                e.target.value,
-                                true
-                              );
-                              updateProfileCondition(group.id, condition.id, {
-                                field: e.target.value,
-                                operator: availableOperators[0] as
-                                  | "equals"
-                                  | "not_equals"
-                                  | "contains"
-                                  | "not_contains"
-                                  | "greater_than"
-                                  | "less_than"
-                                  | "in"
-                                  | "not_in",
-                                type: fieldType,
-                                value: fieldType === "number" ? 0 : "",
-                              });
-                            }}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none min-w-[200px]"
-                            style={{
-                              borderColor: tw.borderDefault,
-                            }}
-                          >
-                            {PROFILE_360_FIELDS.map((field) => (
-                              <option key={field.key} value={field.key}>
-                                {field.label}
-                              </option>
-                            ))}
-                          </select>
-
-                          {/* Operator Selection */}
-                          <select
-                            value={condition.operator}
-                            onChange={(e) =>
-                              updateProfileCondition(group.id, condition.id, {
-                                operator: e.target.value as
-                                  | "equals"
-                                  | "not_equals"
-                                  | "contains"
-                                  | "not_contains"
-                                  | "greater_than"
-                                  | "less_than"
-                                  | "in"
-                                  | "not_in",
-                              })
-                            }
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                            style={{
-                              borderColor: tw.borderDefault,
-                            }}
-                          >
-                            {getAvailableOperators(condition.field, true).map(
-                              (op) => (
-                                <option key={op} value={op}>
-                                  {OPERATOR_LABELS[op]}
-                                </option>
-                              )
-                            )}
-                          </select>
-
-                          {/* Value Input */}
-                          {renderConditionValue(group.id, condition, true)}
-
-                          {/* Remove Condition */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeProfileCondition(group.id, condition.id)
-                            }
-                            className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
-                            title="Remove Condition"
-                            disabled={group.profileConditions?.length === 1}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )
-                    )}
-
-                    {/* Add Profile Condition Button */}
-                    <button
-                      type="button"
-                      onClick={() => addProfileCondition(group.id)}
-                      className="inline-flex items-center px-3 py-2 text-sm text-white rounded-lg transition-colors"
-                      style={{
-                        backgroundColor: color.primary.action,
-                      }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Profile Condition
-                    </button>
-                  </>
+                    {group.operator}
+                  </span>
                 )}
-              </div>
-            </div>
-          )}
 
-          {/* Add Condition Button - Only show for rule type */}
-          {group.conditionType === "rule" && (
-            <button
-              type="button"
-              onClick={() => addCondition(group.id)}
-              className="mt-3 inline-flex items-center px-3 py-2 text-sm text-white rounded-lg transition-colors"
-              style={{
-                backgroundColor: color.primary.action,
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Condition
-            </button>
-          )}
+                {/* Condition Type Badge - Selectable appearance */}
+                <div 
+                  className="flex items-center gap-2 px-3 py-2 rounded-md min-w-[160px] flex-shrink-0 cursor-pointer transition-all hover:shadow-md"
+                  style={{
+                    backgroundColor: color.surface.background,
+                    border: `1px solid ${color.border.default}`,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = color.primary.accent;
+                    e.currentTarget.style.backgroundColor = `${color.primary.accent}08`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = color.border.default;
+                    e.currentTarget.style.backgroundColor = color.surface.background;
+                  }}
+                >
+                  <TypeIcon 
+                    className="w-4 h-4 flex-shrink-0" 
+                    style={{ color: color.text.secondary }}
+                  />
+                  <div className="flex-1 [&_button]:bg-transparent [&_button]:border-0 [&_button]:p-0 [&_button]:shadow-none [&_button]:font-medium [&_button]:text-sm [&_button]:cursor-pointer"
+                    style={{
+                      color: color.text.primary,
+                    }}
+                  >
+                    <HeadlessSelect
+                      options={[
+                        { value: "360_profile", label: "360 Profile" },
+                        { value: "segment", label: "Segment" },
+                        { value: "list", label: "QuickList" },
+                      ]}
+                      value={condition.conditionType}
+                      onChange={(value) => {
+                      const condType = value as "360_profile" | "segment" | "list";
+                      // Reset condition based on type
+                      if (condType === "360_profile") {
+                        const firstField = allFields.length > 0 ? allFields[0] : null;
+                        updateCondition(group.id, condition.id, {
+                          conditionType: condType,
+                          category: categories.length > 0 ? categories[0].id : undefined,
+                          field: firstField?.field_value || "",
+                          field_id: firstField?.id,
+                          operator: "equals",
+                          operator_id: firstField?.operators[0]?.id,
+                          value: "",
+                          segment_id: undefined,
+                          segment_name: undefined,
+                          list_id: undefined,
+                          list_name: undefined,
+                        });
+                      } else if (condType === "segment") {
+                        updateCondition(group.id, condition.id, {
+                          conditionType: condType,
+                          operator: "in",
+                          value: "",
+                          category: undefined,
+                          field: undefined,
+                          field_id: undefined,
+                          list_id: undefined,
+                          list_name: undefined,
+                        });
+                      } else if (condType === "list") {
+                        updateCondition(group.id, condition.id, {
+                          conditionType: condType,
+                          operator: "in",
+                          value: "",
+                          category: undefined,
+                          field: undefined,
+                          field_id: undefined,
+                          segment_id: undefined,
+                          segment_name: undefined,
+                        });
+                      }
+                    }}
+                    placeholder="Select type"
+                    className="text-sm"
+                  />
+                  </div>
+                </div>
+
+                {/* Render fields based on condition type */}
+                {renderConditionFields(group.id, condition)}
+
+                {/* Remove Condition */}
+                <button
+                  type="button"
+                  onClick={() => removeCondition(group.id, condition.id)}
+                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors flex-shrink-0"
+                  title="Remove Condition"
+                  disabled={group.conditions.length === 1}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              );
+            })}
+          </div>
+
+          {/* Add Condition Button */}
+          <button
+            type="button"
+            onClick={() => addCondition(group.id)}
+            className="mt-3 inline-flex items-center px-3 py-2 text-sm text-white rounded-md transition-colors"
+            style={{
+              backgroundColor: color.primary.action,
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Condition
+          </button>
         </div>
       ))}
 
@@ -880,12 +745,76 @@ export default function SegmentConditionsBuilder({
       <button
         type="button"
         onClick={addConditionGroup}
-        className="inline-flex items-center px-4 py-2 text-sm text-white rounded-lg transition-colors"
+        className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors"
         style={{ backgroundColor: color.primary.action }}
       >
         <Plus className="w-4 h-4 mr-2" />
         Add Condition Group
       </button>
+
+      {/* Segment Picker Modal */}
+      <SegmentPickerModal
+        isOpen={isSegmentModalOpen}
+        onClose={() => {
+          setIsSegmentModalOpen(false);
+          setCurrentEditingCondition(null);
+        }}
+        onSelect={(segment) => {
+          if (currentEditingCondition) {
+            updateCondition(
+              currentEditingCondition.groupId,
+              currentEditingCondition.conditionId,
+              {
+                segment_id: segment.id,
+                segment_name: segment.name,
+              }
+            );
+          }
+          setIsSegmentModalOpen(false);
+          setCurrentEditingCondition(null);
+        }}
+        selectedSegmentId={
+          currentEditingCondition
+            ? conditions
+                .find((g) => g.id === currentEditingCondition.groupId)
+                ?.conditions.find(
+                  (c) => c.id === currentEditingCondition.conditionId
+                )?.segment_id
+            : undefined
+        }
+      />
+
+      {/* QuickList Picker Modal */}
+      <QuickListPickerModal
+        isOpen={isQuickListModalOpen}
+        onClose={() => {
+          setIsQuickListModalOpen(false);
+          setCurrentEditingCondition(null);
+        }}
+        onSelect={(quicklist) => {
+          if (currentEditingCondition) {
+            updateCondition(
+              currentEditingCondition.groupId,
+              currentEditingCondition.conditionId,
+              {
+                list_id: quicklist.id,
+                list_name: quicklist.name,
+              }
+            );
+          }
+          setIsQuickListModalOpen(false);
+          setCurrentEditingCondition(null);
+        }}
+        selectedQuickListId={
+          currentEditingCondition
+            ? conditions
+                .find((g) => g.id === currentEditingCondition.groupId)
+                ?.conditions.find(
+                  (c) => c.id === currentEditingCondition.conditionId
+                )?.list_id
+            : undefined
+        }
+      />
     </div>
   );
 }

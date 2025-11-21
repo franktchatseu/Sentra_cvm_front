@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { ChevronDown, Check } from "lucide-react";
 
 interface Option {
   id: string | number;
@@ -27,37 +27,40 @@ export default function Select({
   label,
   error,
   disabled = false,
-  className = '',
-  searchable = false
+  className = "",
+  searchable = false,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredOptions = searchable 
-    ? options.filter(option =>
+  const filteredOptions = searchable
+    ? options.filter((option) =>
         option.label.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : options;
 
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find((option) => option.value === value);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
-        setSearchTerm('');
+        setSearchTerm("");
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSelect = (optionValue: string | number) => {
     onChange(optionValue);
     setIsOpen(false);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   return (
@@ -67,27 +70,37 @@ export default function Select({
           {label}
         </label>
       )}
-      
+
       <div ref={dropdownRef} className="relative">
         <div
           className={`
-            relative w-full px-3 py-2 border rounded-lg bg-white cursor-pointer
+            relative w-full px-3 py-2 border rounded-md bg-white cursor-pointer
             transition-all duration-200 focus-within:border-blue-500
-            ${error ? 'border-red-300' : 'border-gray-300 hover:border-gray-400'}
-            ${disabled ? 'bg-gray-50 cursor-not-allowed' : ''}
+            ${
+              error ? "border-red-300" : "border-gray-300 hover:border-gray-400"
+            }
+            ${disabled ? "bg-gray-50 cursor-not-allowed" : ""}
           `}
           onClick={() => !disabled && setIsOpen(!isOpen)}
         >
           <div className="flex items-center justify-between">
-            <span className={`text-sm ${selectedOption ? 'text-gray-900' : 'text-gray-500'}`}>
+            <span
+              className={`text-sm ${
+                selectedOption ? "text-gray-900" : "text-gray-500"
+              }`}
+            >
               {selectedOption ? selectedOption.label : placeholder}
             </span>
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
           </div>
         </div>
 
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden">
             {searchable && (
               <div className="p-2 border-b border-gray-100">
                 <input
@@ -99,10 +112,10 @@ export default function Select({
                 />
               </div>
             )}
-            
+
             <div className="max-h-48 overflow-y-auto">
               {filteredOptions.length > 0 ? (
-                filteredOptions.map(option => {
+                filteredOptions.map((option) => {
                   const isSelected = value === option.value;
                   return (
                     <div
@@ -110,11 +123,17 @@ export default function Select({
                       onClick={() => handleSelect(option.value)}
                       className={`
                         flex items-center justify-between px-3 py-2 text-sm cursor-pointer transition-colors
-                        ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}
+                        ${
+                          isSelected
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }
                       `}
                     >
                       <span>{option.label}</span>
-                      {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-blue-600" />
+                      )}
                     </div>
                   );
                 })
@@ -128,9 +147,7 @@ export default function Select({
         )}
       </div>
 
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

@@ -1,9 +1,24 @@
-import { useState } from 'react';
-import { Plus, X, Clock, GitBranch, Settings, ChevronDown, ChevronRight } from 'lucide-react';
-import { CampaignOffer, CampaignSegment, IntervalConfig, ConditionConfig, SequentialOfferMapping } from '../../types/campaign';
+import { useState } from "react";
+import {
+  Plus,
+  X,
+  Clock,
+  GitBranch,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
+import {
+  CampaignOffer,
+  CampaignSegment,
+  IntervalConfig,
+  ConditionConfig,
+  SequentialOfferMapping,
+} from "../../types/campaign";
+import { color } from "../../../../shared/utils/utils";
 
 interface OfferFlowChartProps {
-  campaignType: 'round_robin' | 'multiple_level';
+  campaignType: "round_robin" | "multiple_level";
   segment: CampaignSegment;
   selectedOffers: CampaignOffer[];
   offerMappings: SequentialOfferMapping[];
@@ -17,7 +32,7 @@ export default function OfferFlowChart({
   selectedOffers,
   offerMappings,
   onUpdateMappings,
-  onAddOffer
+  onAddOffer,
 }: OfferFlowChartProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set([0]));
   const [editingNode, setEditingNode] = useState<number | null>(null);
@@ -37,7 +52,7 @@ export default function OfferFlowChart({
     // Reorder sequence
     const reorderedMappings = newMappings.map((mapping, i) => ({
       ...mapping,
-      sequence_order: i + 1
+      sequence_order: i + 1,
     }));
     onUpdateMappings(reorderedMappings);
   };
@@ -46,7 +61,7 @@ export default function OfferFlowChart({
     const newMappings = [...offerMappings];
     newMappings[index] = {
       ...newMappings[index],
-      interval_config: config
+      interval_config: config,
     };
     onUpdateMappings(newMappings);
     setEditingNode(null);
@@ -56,30 +71,33 @@ export default function OfferFlowChart({
     const newMappings = [...offerMappings];
     newMappings[index] = {
       ...newMappings[index],
-      condition_config: config
+      condition_config: config,
     };
     onUpdateMappings(newMappings);
     setEditingNode(null);
   };
 
   const getOfferById = (offerId: string) => {
-    return selectedOffers.find(o => o.id === offerId);
+    return selectedOffers.find((o) => o.id === offerId);
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
+    <div className="bg-white border border-gray-200 rounded-md p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Offer Flow Configuration</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Offer Flow Configuration
+          </h3>
           <p className="text-sm text-gray-500 mt-1">
-            {campaignType === 'round_robin'
-              ? 'Configure offers with time intervals between each delivery'
-              : 'Configure offers with conditional logic for delivery'}
+            {campaignType === "round_robin"
+              ? "Configure offers with time intervals between each delivery"
+              : "Configure offers with conditional logic for delivery"}
           </p>
         </div>
         <button
           onClick={onAddOffer}
-          className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
+          className="inline-flex items-center px-4 py-2 text-white rounded-md text-sm font-medium"
+          style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Offer
@@ -90,14 +108,14 @@ export default function OfferFlowChart({
       <div className="space-y-4">
         <div className="flex items-start">
           <div className="flex-shrink-0 w-12 flex flex-col items-center">
-            <div className="w-10 h-10  rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">START</span>
+            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-gray-700 font-bold text-sm">START</span>
             </div>
             {offerMappings.length > 0 && (
-              <div className="w-0.5 h-12 "></div>
+              <div className="w-0.5 h-12 bg-gray-300"></div>
             )}
           </div>
-          <div className="flex-1 ml-4 /5 border border-[#588157]/20 rounded-lg p-4">
+          <div className="flex-1 ml-4 bg-gray-50 border border-gray-200 rounded-md p-4">
             <div className="flex items-center space-x-3">
               <div className="font-semibold text-gray-900">{segment.name}</div>
               <span className="text-sm text-gray-600">
@@ -119,8 +137,10 @@ export default function OfferFlowChart({
           return (
             <div key={index} className="flex items-start">
               <div className="flex-shrink-0 w-12 flex flex-col items-center">
-                <div className="w-8 h-8 bg-[#A3B18A] rounded-full flex items-center justify-center">
-                  <span className="text-[#344E41] font-bold text-xs">{index + 1}</span>
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span className="text-gray-700 font-bold text-xs">
+                    {index + 1}
+                  </span>
                 </div>
                 {index < offerMappings.length - 1 && (
                   <div className="w-0.5 h-12 bg-gray-300"></div>
@@ -129,13 +149,14 @@ export default function OfferFlowChart({
 
               <div className="flex-1 ml-4 space-y-3">
                 {/* Interval/Condition Display */}
-                {campaignType === 'round_robin' && mapping.interval_config && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                {campaignType === "round_robin" && mapping.interval_config && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4 text-amber-600" />
                         <span className="text-sm font-medium text-amber-900">
-                          Wait {mapping.interval_config.interval_value} {mapping.interval_config.interval_type}
+                          Wait {mapping.interval_config.interval_value}{" "}
+                          {mapping.interval_config.interval_type}
                         </span>
                       </div>
                       <button
@@ -146,35 +167,42 @@ export default function OfferFlowChart({
                       </button>
                     </div>
                     {mapping.interval_config.description && (
-                      <p className="text-xs text-amber-700 mt-1">{mapping.interval_config.description}</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        {mapping.interval_config.description}
+                      </p>
                     )}
                   </div>
                 )}
 
-                {campaignType === 'multiple_level' && mapping.condition_config && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <GitBranch className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-900">
-                          If {mapping.condition_config.field} {mapping.condition_config.operator} {String(mapping.condition_config.value)}
-                        </span>
+                {campaignType === "multiple_level" &&
+                  mapping.condition_config && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <GitBranch className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">
+                            If {mapping.condition_config.field}{" "}
+                            {mapping.condition_config.operator}{" "}
+                            {String(mapping.condition_config.value)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setEditingNode(index)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => setEditingNode(index)}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </button>
+                      {mapping.condition_config.description && (
+                        <p className="text-xs text-blue-700 mt-1">
+                          {mapping.condition_config.description}
+                        </p>
+                      )}
                     </div>
-                    {mapping.condition_config.description && (
-                      <p className="text-xs text-blue-700 mt-1">{mapping.condition_config.description}</p>
-                    )}
-                  </div>
-                )}
+                  )}
 
                 {/* Offer Card */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                <div className="bg-white border border-gray-200 rounded-md p-4">
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => toggleNode(index)}
@@ -186,13 +214,17 @@ export default function OfferFlowChart({
                         <ChevronRight className="w-4 h-4 text-gray-400" />
                       )}
                       <div className="text-left">
-                        <div className="font-semibold text-gray-900">{offer.name}</div>
-                        <div className="text-sm text-gray-500">{offer.reward_type} - {offer.reward_value}</div>
+                        <div className="font-semibold text-gray-900">
+                          {offer.name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {offer.reward_type} - {offer.reward_value}
+                        </div>
                       </div>
                     </button>
                     <button
                       onClick={() => handleRemoveMapping(index)}
-                      className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                      className="text-gray-400 p-1"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -200,32 +232,43 @@ export default function OfferFlowChart({
 
                   {isExpanded && (
                     <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
-                      <p className="text-sm text-gray-600">{offer.description}</p>
+                      <p className="text-sm text-gray-600">
+                        {offer.description}
+                      </p>
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span>Valid for {offer.validity_period} days</span>
-                        <span className="px-2 py-1 bg-gray-100 rounded">{offer.offer_type}</span>
+                        <span className="px-2 py-1 bg-gray-100 rounded">
+                          {offer.offer_type}
+                        </span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Editing Panels */}
-                {isEditing && campaignType === 'round_robin' && (
+                {isEditing && campaignType === "round_robin" && (
                   <IntervalConfigPanel
-                    config={mapping.interval_config || { interval_type: 'days', interval_value: 1 }}
+                    config={
+                      mapping.interval_config || {
+                        interval_type: "days",
+                        interval_value: 1,
+                      }
+                    }
                     onSave={(config) => handleUpdateInterval(index, config)}
                     onCancel={() => setEditingNode(null)}
                   />
                 )}
 
-                {isEditing && campaignType === 'multiple_level' && (
+                {isEditing && campaignType === "multiple_level" && (
                   <ConditionConfigPanel
-                    config={mapping.condition_config || {
-                      condition_type: 'customer_attribute',
-                      operator: 'equals',
-                      field: '',
-                      value: ''
-                    }}
+                    config={
+                      mapping.condition_config || {
+                        condition_type: "customer_attribute",
+                        operator: "equals",
+                        field: "",
+                        value: "",
+                      }
+                    }
                     onSave={(config) => handleUpdateCondition(index, config)}
                     onCancel={() => setEditingNode(null)}
                   />
@@ -243,15 +286,20 @@ export default function OfferFlowChart({
                 <span className="text-white font-bold text-sm">END</span>
               </div>
             </div>
-            <div className="flex-1 ml-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="text-sm text-gray-600">Campaign sequence complete</div>
+            <div className="flex-1 ml-4 bg-gray-50 border border-gray-200 rounded-md p-4">
+              <div className="text-sm text-gray-600">
+                Campaign sequence complete
+              </div>
             </div>
           </div>
         )}
 
         {offerMappings.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            <p>No offers added yet. Click "Add Offer" to start building your sequence.</p>
+            <p>
+              No offers added yet. Click "Add Offer" to start building your
+              sequence.
+            </p>
           </div>
         )}
       </div>
@@ -266,31 +314,49 @@ interface IntervalConfigPanelProps {
   onCancel: () => void;
 }
 
-function IntervalConfigPanel({ config, onSave, onCancel }: IntervalConfigPanelProps) {
+function IntervalConfigPanel({
+  config,
+  onSave,
+  onCancel,
+}: IntervalConfigPanelProps) {
   const [localConfig, setLocalConfig] = useState<IntervalConfig>(config);
 
   return (
-    <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 space-y-4">
+    <div className="bg-amber-50 border border-amber-300 rounded-md p-4 space-y-4">
       <h4 className="font-semibold text-gray-900">Configure Time Interval</h4>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Interval Value</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Interval Value
+          </label>
           <input
             type="number"
             min="1"
             value={localConfig.interval_value}
-            onChange={(e) => setLocalConfig({ ...localConfig, interval_value: parseInt(e.target.value) || 1 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+            onChange={(e) =>
+              setLocalConfig({
+                ...localConfig,
+                interval_value: parseInt(e.target.value) || 1,
+              })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Interval Type</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Interval Type
+          </label>
           <select
             value={localConfig.interval_type}
-            onChange={(e) => setLocalConfig({ ...localConfig, interval_type: e.target.value as 'hours' | 'days' | 'weeks' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+            onChange={(e) =>
+              setLocalConfig({
+                ...localConfig,
+                interval_type: e.target.value as "hours" | "days" | "weeks",
+              })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
           >
             <option value="hours">Hours</option>
             <option value="days">Days</option>
@@ -300,12 +366,16 @@ function IntervalConfigPanel({ config, onSave, onCancel }: IntervalConfigPanelPr
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Description (optional)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Description (optional)
+        </label>
         <input
           type="text"
-          value={localConfig.description || ''}
-          onChange={(e) => setLocalConfig({ ...localConfig, description: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+          value={localConfig.description || ""}
+          onChange={(e) =>
+            setLocalConfig({ ...localConfig, description: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
           placeholder="e.g., Wait for customer to open first email"
         />
       </div>
@@ -319,7 +389,8 @@ function IntervalConfigPanel({ config, onSave, onCancel }: IntervalConfigPanelPr
         </button>
         <button
           onClick={() => onSave(localConfig)}
-          className="px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
+          className="px-4 py-2 text-white rounded-md text-sm font-medium"
+          style={{ backgroundColor: color.primary.action }}
         >
           Save Interval
         </button>
@@ -335,19 +406,31 @@ interface ConditionConfigPanelProps {
   onCancel: () => void;
 }
 
-function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanelProps) {
+function ConditionConfigPanel({
+  config,
+  onSave,
+  onCancel,
+}: ConditionConfigPanelProps) {
   const [localConfig, setLocalConfig] = useState<ConditionConfig>(config);
 
   return (
-    <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 space-y-4">
+    <div className="bg-blue-50 border border-blue-300 rounded-md p-4 space-y-4">
       <h4 className="font-semibold text-gray-900">Configure Condition</h4>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Condition Type</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Condition Type
+        </label>
         <select
           value={localConfig.condition_type}
-          onChange={(e) => setLocalConfig({ ...localConfig, condition_type: e.target.value as ConditionConfig['condition_type'] })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+          onChange={(e) =>
+            setLocalConfig({
+              ...localConfig,
+              condition_type: e.target
+                .value as ConditionConfig["condition_type"],
+            })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
         >
           <option value="customer_attribute">Customer Attribute</option>
           <option value="behavior">Behavior</option>
@@ -357,23 +440,34 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Field</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Field
+        </label>
         <input
           type="text"
           value={localConfig.field}
-          onChange={(e) => setLocalConfig({ ...localConfig, field: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+          onChange={(e) =>
+            setLocalConfig({ ...localConfig, field: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
           placeholder="e.g., purchase_amount, email_opened, tier_level"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Operator</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Operator
+          </label>
           <select
             value={localConfig.operator}
-            onChange={(e) => setLocalConfig({ ...localConfig, operator: e.target.value as ConditionConfig['operator'] })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+            onChange={(e) =>
+              setLocalConfig({
+                ...localConfig,
+                operator: e.target.value as ConditionConfig["operator"],
+              })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
           >
             <option value="equals">Equals</option>
             <option value="not_equals">Not Equals</option>
@@ -385,7 +479,9 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Value</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Value
+          </label>
           <input
             type="text"
             value={String(localConfig.value)}
@@ -395,22 +491,26 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
               const numVal = parseFloat(val);
               setLocalConfig({
                 ...localConfig,
-                value: isNaN(numVal) ? val : numVal
+                value: isNaN(numVal) ? val : numVal,
               });
             }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
             placeholder="e.g., 100, premium, true"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Description (optional)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Description (optional)
+        </label>
         <input
           type="text"
-          value={localConfig.description || ''}
-          onChange={(e) => setLocalConfig({ ...localConfig, description: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#588157] focus:border-transparent"
+          value={localConfig.description || ""}
+          onChange={(e) =>
+            setLocalConfig({ ...localConfig, description: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
           placeholder="e.g., Only for premium customers"
         />
       </div>
@@ -424,7 +524,8 @@ function ConditionConfigPanel({ config, onSave, onCancel }: ConditionConfigPanel
         </button>
         <button
           onClick={() => onSave(localConfig)}
-          className="px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
+          className="px-4 py-2 text-white rounded-md text-sm font-medium"
+          style={{ backgroundColor: color.primary.action }}
         >
           Save Condition
         </button>

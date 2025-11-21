@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle, XCircle } from 'lucide-react';
-import { tw, color } from '../../../shared/utils/utils';
-import LoadingSpinner from '../../../shared/components/ui/LoadingSpinner';
-import ChannelSelector from '../components/ChannelSelector';
-import MessageEditor from '../components/MessageEditor';
-import PreviewPanel from '../components/PreviewPanel';
-import { communicationService } from '../services/communicationService';
-import { quicklistService } from '../../quicklists/services/quicklistService';
-import { CommunicationChannel, CommunicationResult } from '../types/communication';
-import { QuickList } from '../../quicklists/types/quicklist';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Send, CheckCircle, XCircle } from "lucide-react";
+import { tw, color } from "../../../shared/utils/utils";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import ChannelSelector from "../components/ChannelSelector";
+import MessageEditor from "../components/MessageEditor";
+import PreviewPanel from "../components/PreviewPanel";
+import { communicationService } from "../services/communicationService";
+import { quicklistService } from "../../quicklists/services/quicklistService";
+import {
+  CommunicationChannel,
+  CommunicationResult,
+} from "../types/communication";
+import { QuickList } from "../../quicklists/types/quicklist";
 
 export default function CreateCommunicationPage() {
   const { quicklistId } = useParams<{ quicklistId: string }>();
@@ -22,9 +25,10 @@ export default function CreateCommunicationPage() {
   const [result, setResult] = useState<CommunicationResult | null>(null);
 
   // Form state
-  const [selectedChannel, setSelectedChannel] = useState<CommunicationChannel>('EMAIL');
-  const [messageTitle, setMessageTitle] = useState('');
-  const [messageBody, setMessageBody] = useState('');
+  const [selectedChannel, setSelectedChannel] =
+    useState<CommunicationChannel>("EMAIL");
+  const [messageTitle, setMessageTitle] = useState("");
+  const [messageBody, setMessageBody] = useState("");
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -36,13 +40,19 @@ export default function CreateCommunicationPage() {
   const loadQuickListAndData = async () => {
     try {
       setLoading(true);
-      
+
       // Load QuickList details
-      const qlResponse = await quicklistService.getQuickListById(parseInt(quicklistId!), true);
+      const qlResponse = await quicklistService.getQuickListById(
+        parseInt(quicklistId!),
+        true
+      );
       setQuickList(qlResponse.data);
 
       // Load sample data (first row) for preview
-      const dataResponse = await quicklistService.getQuickListData(parseInt(quicklistId!), { limit: 1 });
+      const dataResponse = await quicklistService.getQuickListData(
+        parseInt(quicklistId!),
+        { limit: 1 }
+      );
       if (dataResponse.data && dataResponse.data.length > 0) {
         const firstRow = dataResponse.data[0];
         // Remove metadata fields
@@ -50,7 +60,7 @@ export default function CreateCommunicationPage() {
         setSampleData(cleanData);
       }
     } catch (error) {
-      console.error('Failed to load quicklist:', error);
+      console.error("Failed to load quicklist:", error);
     } finally {
       setLoading(false);
     }
@@ -66,11 +76,13 @@ export default function CreateCommunicationPage() {
       setResult(null);
 
       const response = await communicationService.sendCommunication({
-        source_type: 'quicklist',
+        source_type: "quicklist",
         source_id: quicklist.id,
         channels: [selectedChannel],
         message_template: {
-          ...(messageTitle && selectedChannel === 'EMAIL' ? { title: messageTitle } : {}),
+          ...(messageTitle && selectedChannel === "EMAIL"
+            ? { title: messageTitle }
+            : {}),
           body: messageBody,
         },
         filters: {
@@ -85,7 +97,7 @@ export default function CreateCommunicationPage() {
         setResult(response.data);
       }
     } catch (error) {
-      console.error('Failed to send communication:', error);
+      console.error("Failed to send communication:", error);
     } finally {
       setSending(false);
     }
@@ -122,10 +134,14 @@ export default function CreateCommunicationPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
             <div
-              className={`p-6 ${isSuccess ? 'bg-green-50 border-b border-green-200' : 'bg-red-50 border-b border-red-200'}`}
+              className={`p-6 ${
+                isSuccess
+                  ? "bg-green-50 border-b border-green-200"
+                  : "bg-red-50 border-b border-red-200"
+              }`}
             >
               <div className="flex items-center space-x-4">
                 {isSuccess ? (
@@ -134,10 +150,20 @@ export default function CreateCommunicationPage() {
                   <XCircle className="w-12 h-12 text-red-600" />
                 )}
                 <div>
-                  <h2 className={`text-2xl font-bold ${isSuccess ? 'text-green-900' : 'text-red-900'}`}>
-                    {isSuccess ? 'Communication Sent Successfully!' : 'Communication Completed with Errors'}
+                  <h2
+                    className={`text-2xl font-bold ${
+                      isSuccess ? "text-green-900" : "text-red-900"
+                    }`}
+                  >
+                    {isSuccess
+                      ? "Communication Sent Successfully!"
+                      : "Communication Completed with Errors"}
                   </h2>
-                  <p className={`text-sm ${isSuccess ? 'text-green-700' : 'text-red-700'}`}>
+                  <p
+                    className={`text-sm ${
+                      isSuccess ? "text-green-700" : "text-red-700"
+                    }`}
+                  >
                     Execution ID: {result.execution_id}
                   </p>
                 </div>
@@ -147,33 +173,60 @@ export default function CreateCommunicationPage() {
             {/* Stats */}
             <div className="p-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 font-medium mb-1">Total Recipients</p>
-                  <p className="text-2xl font-bold text-gray-900">{result.total_recipients}</p>
+                <div className="bg-gray-50 rounded-md p-4">
+                  <p className="text-xs text-gray-500 font-medium mb-1">
+                    Total Recipients
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {result.total_recipients}
+                  </p>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <p className="text-xs text-green-600 font-medium mb-1">Messages Sent</p>
-                  <p className="text-2xl font-bold text-green-700">{result.total_messages_sent}</p>
+                <div className="bg-green-50 rounded-md p-4">
+                  <p className="text-xs text-green-600 font-medium mb-1">
+                    Messages Sent
+                  </p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {result.total_messages_sent}
+                  </p>
                 </div>
-                <div className="bg-red-50 rounded-lg p-4">
-                  <p className="text-xs text-red-600 font-medium mb-1">Messages Failed</p>
-                  <p className="text-2xl font-bold text-red-700">{result.total_messages_failed}</p>
+                <div className="bg-red-50 rounded-md p-4">
+                  <p className="text-xs text-red-600 font-medium mb-1">
+                    Messages Failed
+                  </p>
+                  <p className="text-2xl font-bold text-red-700">
+                    {result.total_messages_failed}
+                  </p>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-xs text-blue-600 font-medium mb-1">Execution Time</p>
-                  <p className="text-2xl font-bold text-blue-700">{result.execution_time_ms}ms</p>
+                <div className="bg-blue-50 rounded-md p-4">
+                  <p className="text-xs text-blue-600 font-medium mb-1">
+                    Execution Time
+                  </p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {result.execution_time_ms}ms
+                  </p>
                 </div>
               </div>
 
               {/* Channel Breakdown */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-700">Channel Breakdown</h3>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Channel Breakdown
+                </h3>
                 {result.channel_summaries.map((summary) => (
-                  <div key={summary.channel} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700">{summary.channel}</span>
+                  <div
+                    key={summary.channel}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                  >
+                    <span className="text-sm font-medium text-gray-700">
+                      {summary.channel}
+                    </span>
                     <div className="flex items-center space-x-4 text-sm">
-                      <span className="text-green-600">✓ {summary.messages_sent} sent</span>
-                      <span className="text-red-600">✗ {summary.messages_failed} failed</span>
+                      <span className="text-green-600">
+                        ✓ {summary.messages_sent} sent
+                      </span>
+                      <span className="text-red-600">
+                        ✗ {summary.messages_failed} failed
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -183,14 +236,14 @@ export default function CreateCommunicationPage() {
             {/* Actions */}
             <div className="p-6 bg-gray-50 border-t flex items-center justify-between">
               <button
-                onClick={() => navigate('/dashboard/quicklists')}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => navigate("/dashboard/quicklists")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Back to QuickLists
               </button>
               <button
                 onClick={() => setResult(null)}
-                className="px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                className="px-6 py-2 text-sm font-medium text-white rounded-md transition-colors"
                 style={{ backgroundColor: color.primary.action }}
               >
                 Send Another
@@ -209,16 +262,21 @@ export default function CreateCommunicationPage() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate('/dashboard/quicklists')}
+            onClick={() => navigate("/dashboard/quicklists")}
             className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back to QuickLists</span>
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Send Communication</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Send Communication
+          </h1>
           <p className={`${tw.textMuted} mt-2`}>
-            Sending to: <span className="font-semibold text-gray-700">{quicklist.name}</span> (
-            {quicklist.row_count || 0} recipients)
+            Sending to:{" "}
+            <span className="font-semibold text-gray-700">
+              {quicklist.name}
+            </span>{" "}
+            ({quicklist.row_count || 0} recipients)
           </p>
         </div>
 
@@ -227,17 +285,22 @@ export default function CreateCommunicationPage() {
           {/* Left Column - Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Channel Selection */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <ChannelSelector selectedChannel={selectedChannel} onChannelChange={setSelectedChannel} />
+            <div className="bg-white rounded-md border border-gray-200 p-6">
+              <ChannelSelector
+                selectedChannel={selectedChannel}
+                onChannelChange={setSelectedChannel}
+              />
             </div>
 
             {/* Message Editor */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-md border border-gray-200 p-6">
               <MessageEditor
                 title={messageTitle}
                 body={messageBody}
                 channel={selectedChannel}
-                availableVariables={quicklist.columns || Object.keys(sampleData)}
+                availableVariables={
+                  quicklist.columns || Object.keys(sampleData)
+                }
                 onTitleChange={setMessageTitle}
                 onBodyChange={setMessageBody}
               />
@@ -246,15 +309,15 @@ export default function CreateCommunicationPage() {
             {/* Send Button */}
             <div className="flex items-center justify-end space-x-3">
               <button
-                onClick={() => navigate('/dashboard/quicklists')}
-                className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => navigate("/dashboard/quicklists")}
+                className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSend}
                 disabled={sending || !messageBody.trim()}
-                className="px-8 py-3 text-sm font-semibold text-white rounded-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 text-sm font-semibold text-white rounded-md transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
               >
                 {sending ? (
@@ -265,7 +328,9 @@ export default function CreateCommunicationPage() {
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    <span>Send Now to {quicklist.row_count || 0} Recipients</span>
+                    <span>
+                      Send Now to {quicklist.row_count || 0} Recipients
+                    </span>
                   </>
                 )}
               </button>
@@ -274,7 +339,7 @@ export default function CreateCommunicationPage() {
 
           {/* Right Column - Preview */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-6">
+            <div className="bg-white rounded-md border border-gray-200 p-6 sticky top-6">
               <PreviewPanel
                 channel={selectedChannel}
                 title={messageTitle}

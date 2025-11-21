@@ -7,46 +7,78 @@ Ajout du champ **Communication Channel** (SMS, EMAIL, USSD, APP) dans les Commun
 ## Changements Majeurs
 
 ### 1. **Nouveau Type Channel**
+
 ```typescript
-export type CommunicationChannel = 'SMS' | 'EMAIL' | 'USSD' | 'APP';
+export type CommunicationChannel = "SMS" | "EMAIL" | "USSD" | "APP";
 ```
 
 ### 2. **Constantes des Canaux**
+
 ```typescript
 export const COMMUNICATION_CHANNELS = [
-    { value: 'SMS', label: 'SMS', icon: '📱', description: 'Short Message Service' },
-    { value: 'EMAIL', label: 'Email', icon: '📧', description: 'Email Communication' },
-    { value: 'USSD', label: 'USSD', icon: '📞', description: 'Unstructured Supplementary Service Data' },
-    { value: 'APP', label: 'App Notification', icon: '📲', description: 'In-App Push Notification' }
+  {
+    value: "SMS",
+    label: "SMS",
+    icon: "📱",
+    description: "Short Message Service",
+  },
+  {
+    value: "EMAIL",
+    label: "Email",
+    icon: "📧",
+    description: "Email Communication",
+  },
+  {
+    value: "USSD",
+    label: "USSD",
+    icon: "📞",
+    description: "Unstructured Supplementary Service Data",
+  },
+  {
+    value: "APP",
+    label: "App Notification",
+    icon: "📲",
+    description: "In-App Push Notification",
+  },
 ];
 ```
 
 ## Interfaces Mises à Jour
 
 ### CommunicationPolicyConfiguration
+
 ```typescript
 export interface CommunicationPolicyConfiguration {
-    id: number;
-    name: string;
-    description?: string;
-    channel: CommunicationChannel;  // ✅ NOUVEAU
-    type: CommunicationPolicyType;
-    config: TimeWindowConfig | MaximumCommunicationConfig | DNDConfig | VIPListConfig;
-    isActive: boolean;
-    created_at: string;
-    updated_at: string;
+  id: number;
+  name: string;
+  description?: string;
+  channel: CommunicationChannel; // ✅ NOUVEAU
+  type: CommunicationPolicyType;
+  config:
+    | TimeWindowConfig
+    | MaximumCommunicationConfig
+    | DNDConfig
+    | VIPListConfig;
+  isActive: boolean;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
 ### CreateCommunicationPolicyRequest
+
 ```typescript
 export interface CreateCommunicationPolicyRequest {
-    name: string;
-    description?: string;
-    channel: CommunicationChannel;  // ✅ NOUVEAU
-    type: CommunicationPolicyType;
-    config: TimeWindowConfig | MaximumCommunicationConfig | DNDConfig | VIPListConfig;
-    isActive?: boolean;
+  name: string;
+  description?: string;
+  channel: CommunicationChannel; // ✅ NOUVEAU
+  type: CommunicationPolicyType;
+  config:
+    | TimeWindowConfig
+    | MaximumCommunicationConfig
+    | DNDConfig
+    | VIPListConfig;
+  isActive?: boolean;
 }
 ```
 
@@ -82,44 +114,47 @@ Le modal inclut maintenant un sélecteur visuel de canal de communication :
 - **Transitions fluides** : 200ms duration
 
 ### Code du Sélecteur
+
 ```tsx
 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-    {COMMUNICATION_CHANNELS.map((ch) => (
-        <button
-            type="button"
-            onClick={() => setChannel(ch.value)}
-            className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                channel === ch.value
-                    ? 'border-2 shadow-md'
-                    : 'border-gray-200 hover:border-gray-300'
-            }`}
-            style={{
-                borderColor: channel === ch.value ? color.primary.accent : undefined,
-                backgroundColor: channel === ch.value ? `${color.primary.accent}10` : 'white'
-            }}
-        >
-            <div className="flex flex-col items-center space-y-2">
-                <span className="text-2xl">{ch.icon}</span>
-                <span className={`${tw.caption} font-medium`}>
-                    {ch.label}
-                </span>
-            </div>
-        </button>
-    ))}
+  {COMMUNICATION_CHANNELS.map((ch) => (
+    <button
+      type="button"
+      onClick={() => setChannel(ch.value)}
+      className={`p-4 rounded-md border-2 transition-all duration-200 ${
+        channel === ch.value
+          ? "border-2 shadow-md"
+          : "border-gray-200 hover:border-gray-300"
+      }`}
+      style={{
+        borderColor: channel === ch.value ? color.primary.accent : undefined,
+        backgroundColor:
+          channel === ch.value ? `${color.primary.accent}10` : "white",
+      }}
+    >
+      <div className="flex flex-col items-center space-y-2">
+        <span className="text-2xl">{ch.icon}</span>
+        <span className={`${tw.caption} font-medium`}>{ch.label}</span>
+      </div>
+    </button>
+  ))}
 </div>
 ```
 
 ## Page de Liste - Changements
 
 ### ❌ **Supprimé** : Colonne "Policy Types"
+
 La colonne affichant les 4 icônes de types a été retirée car les 4 types sont toujours configurés ensemble.
 
 ### ✅ **Ajouté** : Colonne "Channel"
+
 Nouvelle colonne affichant le canal de communication.
 
 ### Structure du Tableau
 
 **Avant:**
+
 ```
 | POLICY              | POLICY TYPES | CONFIGURATION SUMMARY | STATUS | ACTIONS |
 |---------------------|--------------|----------------------|--------|---------|
@@ -127,6 +162,7 @@ Nouvelle colonne affichant le canal de communication.
 ```
 
 **Après:**
+
 ```
 | POLICY              | CHANNEL | CONFIGURATION SUMMARY       | STATUS | ACTIONS |
 |---------------------|---------|----------------------------|--------|---------|
@@ -137,17 +173,19 @@ Nouvelle colonne affichant le canal de communication.
 
 ```typescript
 const getChannelDisplay = (channelValue: string) => {
-    const channel = COMMUNICATION_CHANNELS.find(ch => ch.value === channelValue);
-    if (!channel) return null;
-    
-    return (
-        <div className="flex items-center space-x-2">
-            <span className="text-lg">{channel.icon}</span>
-            <span className={`${tw.caption} font-medium ${tw.textPrimary}`}>
-                {channel.label}
-            </span>
-        </div>
-    );
+  const channel = COMMUNICATION_CHANNELS.find(
+    (ch) => ch.value === channelValue
+  );
+  if (!channel) return null;
+
+  return (
+    <div className="flex items-center space-x-2">
+      <span className="text-lg">{channel.icon}</span>
+      <span className={`${tw.caption} font-medium ${tw.textPrimary}`}>
+        {channel.label}
+      </span>
+    </div>
+  );
 };
 ```
 
@@ -195,30 +233,33 @@ this.policies = [
 ## Exemples d'Utilisation
 
 ### Création d'une Policy EMAIL
+
 ```typescript
 const policy = {
-    name: "Morning Email Campaign",
-    description: "Send emails during morning hours",
-    channel: "EMAIL",  // 📧
-    type: "timeWindow",
-    config: { startTime: "08:00", endTime: "12:00" },
-    isActive: true
+  name: "Morning Email Campaign",
+  description: "Send emails during morning hours",
+  channel: "EMAIL", // 📧
+  type: "timeWindow",
+  config: { startTime: "08:00", endTime: "12:00" },
+  isActive: true,
 };
 ```
 
 ### Création d'une Policy SMS
+
 ```typescript
 const policy = {
-    name: "SMS Frequency Limit",
-    description: "Limit SMS to 5 per day",
-    channel: "SMS",  // 📱
-    type: "maximumCommunication",
-    config: { type: "daily", maxCount: 5 },
-    isActive: true
+  name: "SMS Frequency Limit",
+  description: "Limit SMS to 5 per day",
+  channel: "SMS", // 📱
+  type: "maximumCommunication",
+  config: { type: "daily", maxCount: 5 },
+  isActive: true,
 };
 ```
 
 ### Création d'une Policy APP
+
 ```typescript
 const policy = {
     name: "App Notification Rules",
@@ -231,20 +272,22 @@ const policy = {
 ```
 
 ### Création d'une Policy USSD
+
 ```typescript
 const policy = {
-    name: "USSD VIP Priority",
-    description: "Priority USSD for VIP customers",
-    channel: "USSD",  // 📞
-    type: "vipList",
-    config: { action: "include", priority: 1 },
-    isActive: true
+  name: "USSD VIP Priority",
+  description: "Priority USSD for VIP customers",
+  channel: "USSD", // 📞
+  type: "vipList",
+  config: { action: "include", priority: 1 },
+  isActive: true,
 };
 ```
 
 ## Vue Desktop vs Mobile
 
 ### Desktop (Table)
+
 ```
 ┌────────────────────────────────────────────────────────────────────┐
 │ POLICY              │ CHANNEL      │ CONFIGURATION     │ STATUS    │
@@ -257,6 +300,7 @@ const policy = {
 ```
 
 ### Mobile (Cards)
+
 ```
 ┌──────────────────────────────────────────┐
 │ 📧 Email  Business Hours Policy      [✓] │
@@ -284,10 +328,12 @@ const policy = {
 ## Validation
 
 ### Champs Requis
+
 - ✅ Policy Name
 - ✅ Communication Channel (par défaut: EMAIL)
 
 ### Champs Optionnels
+
 - Description
 - Configurations spécifiques à chaque type
 
@@ -304,22 +350,24 @@ const policy = {
 ### Structure API Recommandée
 
 **POST /api/communication-policies**
+
 ```json
 {
-    "name": "Business Hours Email",
-    "description": "Email policy for business hours",
-    "channel": "EMAIL",
-    "configs": {
-        "timeWindow": { "startTime": "09:00", "endTime": "18:00" },
-        "maximumCommunication": { "type": "daily", "maxCount": 3 },
-        "dnd": { "categories": [] },
-        "vipList": { "action": "include", "priority": 1 }
-    },
-    "isActive": true
+  "name": "Business Hours Email",
+  "description": "Email policy for business hours",
+  "channel": "EMAIL",
+  "configs": {
+    "timeWindow": { "startTime": "09:00", "endTime": "18:00" },
+    "maximumCommunication": { "type": "daily", "maxCount": 3 },
+    "dnd": { "categories": [] },
+    "vipList": { "action": "include", "priority": 1 }
+  },
+  "isActive": true
 }
 ```
 
 **GET /api/communication-policies**
+
 ```json
 [
     {

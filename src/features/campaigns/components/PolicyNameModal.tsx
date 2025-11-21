@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { tw } from '../../../shared/utils/utils';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { tw } from "../../../shared/utils/utils";
 
 interface PolicyNameModalProps {
   isOpen: boolean;
@@ -14,8 +14,8 @@ export default function PolicyNameModal({
   isOpen,
   onClose,
   onConfirm,
-  defaultName = '',
-  title = 'Enter Policy Name'
+  defaultName = "",
+  title = "Enter Policy Name",
 }: PolicyNameModalProps) {
   const [policyName, setPolicyName] = useState(defaultName);
 
@@ -34,7 +34,7 @@ export default function PolicyNameModal({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       onClose();
     }
   };
@@ -44,21 +44,19 @@ export default function PolicyNameModal({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black bg-opacity-60"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
-      <div 
-        className={`relative bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 z-10`}
+      <div
+        className={`relative bg-white rounded-md shadow-2xl w-full max-w-md mx-4 z-10`}
         onKeyDown={handleKeyDown}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {title}
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-200 rounded-md transition-colors"

@@ -1,6 +1,6 @@
-import { X } from 'lucide-react';
-import { createPortal } from 'react-dom';
-import CreateOfferPage from '../../../offers/pages/CreateOfferPage';
+import { X } from "lucide-react";
+import { createPortal } from "react-dom";
+import CreateOfferPage from "../../../offers/pages/CreateOfferPage";
 
 interface CreateOfferModalWrapperProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface CreateOfferModalWrapperProps {
 
 export default function CreateOfferModalWrapper({
   isOpen,
-  onClose
+  onClose,
 }: CreateOfferModalWrapperProps) {
   if (!isOpen) return null;
 
@@ -22,8 +22,8 @@ export default function CreateOfferModalWrapper({
         left: 0,
         right: 0,
         bottom: 0,
-        width: '100vw',
-        height: '100vh'
+        width: "100vw",
+        height: "100vh",
       }}
     >
       {/* Backdrop */}
@@ -33,16 +33,20 @@ export default function CreateOfferModalWrapper({
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-md shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Create New Offer</h2>
-            <p className="text-gray-600 mt-1">Follow the steps to create a comprehensive offer</p>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Create New Offer
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Follow the steps to create a comprehensive offer
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
           >
             <X className="w-6 h-6 text-gray-500" />
           </button>

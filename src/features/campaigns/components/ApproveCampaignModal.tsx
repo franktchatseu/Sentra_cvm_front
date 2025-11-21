@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { X, CheckCircle } from 'lucide-react';
-import { campaignService } from '../services/campaignService';
-import { useToast } from '../../../contexts/ToastContext';
-import { color, tw } from '../../../shared/utils/utils';
+import { useState } from "react";
+import { X, CheckCircle } from "lucide-react";
+import { campaignService } from "../services/campaignService";
+import { useToast } from "../../../contexts/ToastContext";
+import { color, tw } from "../../../shared/utils/utils";
 
 interface ApproveCampaignModalProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ export default function ApproveCampaignModal({
   onClose,
   campaignId,
   campaignName,
-  onSuccess
+  onSuccess,
 }: ApproveCampaignModalProps) {
   const { showToast } = useToast();
   const [isApproving, setIsApproving] = useState(false);
@@ -27,18 +27,18 @@ export default function ApproveCampaignModal({
     try {
       // TODO: Get actual user ID from auth context
       const userId = 1;
-      
+
       await campaignService.approveCampaign(campaignId, userId);
-      
-      showToast('success', `Campaign "${campaignName}" approved successfully!`);
+
+      showToast("success", `Campaign "${campaignName}" approved successfully!`);
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Error approving campaign:', error);
-      
+      console.error("Error approving campaign:", error);
+
       // Extract error message from backend response
-      let errorMessage = 'Failed to approve campaign. Please try again.';
-      
+      let errorMessage = "Failed to approve campaign. Please try again.";
+
       if (error instanceof Error) {
         // Try to parse JSON error message from the error string
         const match = error.message.match(/details: ({.*})/);
@@ -54,8 +54,8 @@ export default function ApproveCampaignModal({
           errorMessage = error.message;
         }
       }
-      
-      showToast('error', errorMessage);
+
+      showToast("error", errorMessage);
     } finally {
       setIsApproving(false);
     }
@@ -73,21 +73,26 @@ export default function ApproveCampaignModal({
         />
 
         {/* Modal */}
-        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="relative bg-white rounded-md shadow-2xl w-full max-w-md">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: color.border.default }}>
+          <div
+            className="flex items-center justify-between p-6 border-b"
+            style={{ borderColor: color.border.default }}
+          >
             <div className="flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: '#10B98120' }}
+                className="w-10 h-10 rounded-md flex items-center justify-center"
+                style={{ backgroundColor: "#10B98120" }}
               >
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
-              <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>Approve Campaign</h2>
+              <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>
+                Approve Campaign
+              </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
             >
               <X className="w-5 h-5 text-gray-500" />
             </button>
@@ -102,16 +107,20 @@ export default function ApproveCampaignModal({
               "{campaignName}"
             </p>
             <p className={`text-sm ${tw.textSecondary}`}>
-              This will mark the campaign as approved and allow it to proceed to activation.
+              This will mark the campaign as approved and allow it to proceed to
+              activation.
             </p>
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t" style={{ borderColor: color.border.default }}>
+          <div
+            className="flex items-center justify-end gap-3 p-6 border-t"
+            style={{ borderColor: color.border.default }}
+          >
             <button
               onClick={onClose}
               disabled={isApproving}
-              className="px-4 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
               style={{ borderColor: color.border.default }}
             >
               Cancel
@@ -119,8 +128,8 @@ export default function ApproveCampaignModal({
             <button
               onClick={handleApprove}
               disabled={isApproving}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              style={{ backgroundColor: '#10B981' }}
+              className="px-4 py-2 rounded-md text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              style={{ backgroundColor: "#10B981" }}
             >
               {isApproving ? (
                 <>

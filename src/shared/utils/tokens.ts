@@ -3,17 +3,22 @@ export const colors = {
   primary: {
     action: "#252829", // Main buttons, CTAs
     accent: "#00BBCC", // Interactive elements, highlights 4FDFF3
-    background: "#D1DCE1", // Dashboard pages
+    background: "#e5e7eb", // Dashboard pages
   },
 
   // Surface defines background colors for containers and cards
   surface: {
     cards: "#F5F5F5", // Cards and table headers (neutral-100)
     background: "#FFFFFF",
-    tableHeader:
-      "linear-gradient(to bottom, #394247 0%, #1F2223 70%, #2A2F31 100%)",
-    tableHeaderText: "#FFFFFF",
+    tableHeader: "#FFFFFF",
+      // "linear-gradient(to bottom, #394247 0%, #1F2223 70%, #2A2F31 100%)",
+    tableHeaderText: 
+    "#000000",
+    // "#FFFFFF",
+    tablebodybg: "#FFFFFF"
   },
+
+ 
 
   // Gradient colors for sidebar and header
   gradients: {

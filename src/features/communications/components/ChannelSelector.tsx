@@ -1,6 +1,6 @@
-import { Mail, MessageSquare, Phone, Bell } from 'lucide-react';
-import { CommunicationChannel } from '../types/communication';
-import { tw, color } from '../../../shared/utils/utils';
+import { Mail, MessageSquare, Phone, Bell } from "lucide-react";
+import { CommunicationChannel } from "../types/communication";
+import { tw, color } from "../../../shared/utils/utils";
 
 interface ChannelSelectorProps {
   selectedChannel: CommunicationChannel;
@@ -11,11 +11,16 @@ export default function ChannelSelector({
   selectedChannel,
   onChannelChange,
 }: ChannelSelectorProps) {
-  const channels: { value: CommunicationChannel; label: string; icon: React.ElementType; color: string }[] = [
-    { value: 'EMAIL', label: 'Email', icon: Mail, color: '#3B82F6' },
-    { value: 'SMS', label: 'SMS', icon: MessageSquare, color: '#10B981' },
-    { value: 'WHATSAPP', label: 'WhatsApp', icon: Phone, color: '#25D366' },
-    { value: 'PUSH', label: 'Push Notification', icon: Bell, color: '#F59E0B' },
+  const channels: {
+    value: CommunicationChannel;
+    label: string;
+    icon: React.ElementType;
+    color: string;
+  }[] = [
+    { value: "EMAIL", label: "Email", icon: Mail, color: "#3B82F6" },
+    { value: "SMS", label: "SMS", icon: MessageSquare, color: "#10B981" },
+    { value: "WHATSAPP", label: "WhatsApp", icon: Phone, color: "#25D366" },
+    { value: "PUSH", label: "Push Notification", icon: Bell, color: "#F59E0B" },
   ];
 
   return (
@@ -30,32 +35,36 @@ export default function ChannelSelector({
               type="button"
               onClick={() => onChannelChange(value)}
               className={`
-                relative p-4 rounded-xl border-2 transition-all duration-200
+                relative p-4 rounded-md border-2 transition-all duration-200
                 ${
                   isSelected
-                    ? 'shadow-md'
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                    ? "shadow-md"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
                 }
               `}
-              style={isSelected ? {
-                borderColor: color.primary.accent,
-                backgroundColor: `${color.primary.accent}15`
-              } : {}}
+              style={
+                isSelected
+                  ? {
+                      borderColor: color.primary.accent,
+                      backgroundColor: `${color.primary.accent}15`,
+                    }
+                  : {}
+              }
             >
               <div className="flex flex-col items-center space-y-2">
                 <div
                   className={`
-                    p-3 rounded-lg transition-colors
-                    ${isSelected ? 'bg-white' : 'bg-gray-50'}
+                    p-3 rounded-md transition-colors
+                    ${isSelected ? "bg-white" : "bg-gray-50"}
                   `}
-                  style={{ color: isSelected ? channelColor : '#9CA3AF' }}
+                  style={{ color: isSelected ? channelColor : "#9CA3AF" }}
                 >
                   <Icon className="w-6 h-6" />
                 </div>
                 <span
                   className={`
                     text-sm font-medium transition-colors
-                    ${isSelected ? 'text-gray-900' : 'text-gray-700'}
+                    ${isSelected ? "text-gray-900" : "text-gray-700"}
                   `}
                 >
                   {label}

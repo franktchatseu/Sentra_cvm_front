@@ -148,7 +148,7 @@ export default function EditProductPage() {
           </p>
           <button
             onClick={() => navigate("/dashboard/products")}
-            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-lg text-base font-semibold transition-all duration-200"
+            className="bg-[#3b8169] hover:bg-[#2d5f4e] text-white px-4 py-2 rounded-md text-base font-semibold transition-all duration-200"
           >
             Back to Products
           </button>
@@ -179,14 +179,14 @@ export default function EditProductPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
           <p className="text-red-700">{error}</p>
         </div>
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 transition-shadow hover:shadow-md">
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 transition-shadow hover:shadow-md">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Product Code */}
@@ -201,7 +201,7 @@ export default function EditProductPage() {
                 onChange={(e) =>
                   handleInputChange("product_code", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="e.g., VOICE_BUNDLE_001"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -219,7 +219,7 @@ export default function EditProductPage() {
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
                 placeholder="e.g., Premium Voice Bundle"
               />
             </div>
@@ -236,7 +236,7 @@ export default function EditProductPage() {
                 onChange={(e) =>
                   handleInputChange("price", parseFloat(e.target.value) || 0)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="0.00"
               />
               <p className="text-sm text-gray-500 mt-1">Product price</p>
@@ -252,7 +252,7 @@ export default function EditProductPage() {
                 required
                 value={formData.da_id}
                 onChange={(e) => handleInputChange("da_id", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
                 placeholder="Enter DA ID"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -286,7 +286,7 @@ export default function EditProductPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
                 placeholder="Describe the product features and benefits..."
               />
             </div>
@@ -297,7 +297,7 @@ export default function EditProductPage() {
             <button
               type="button"
               onClick={() => navigate("/dashboard/products")}
-              className="px-3 py-2 text-sm rounded-lg flex items-center gap-2 border transition-colors"
+              className="px-3 py-2 text-sm rounded-md flex items-center gap-2 border transition-colors"
               style={{
                 borderColor: color.border.default,
                 color: color.text.secondary,
@@ -316,7 +316,7 @@ export default function EditProductPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
+              className="px-3 py-2 rounded-md text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
               style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
                 if (!e.currentTarget.disabled) {

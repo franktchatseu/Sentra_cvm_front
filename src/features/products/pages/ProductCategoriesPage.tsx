@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,7 +7,6 @@ import {
   Trash2,
   Grid,
   List,
-  X,
   Filter,
   XCircle,
   FolderOpen,
@@ -16,6 +14,9 @@ import {
   Archive,
   Star,
 } from "lucide-react";
+import CatalogItemsModal, {
+  CatalogItem,
+} from "../../../shared/components/CatalogItemsModal";
 import {
   CategoryStats,
   ProductCategory,
@@ -25,6 +26,10 @@ import { Product } from "../types/product";
 import { productCategoryService } from "../services/productCategoryService";
 import { productService } from "../services/productService";
 import { color, tw } from "../../../shared/utils/utils";
+import {
+  buildCatalogTag,
+  parseCatalogTag,
+} from "../../../shared/utils/catalogTags";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -35,10 +40,123 @@ interface ProductsModalProps {
   onClose: () => void;
   category: ProductCategory | null;
   onRefreshCategories: () => void;
-  onRefreshProductCounts: () => void;
+  onRefreshProductCounts: () => Promise<void> | void;
   allProducts: Product[];
   refreshAllProducts: () => Promise<Product[]>;
 }
+
+type CategoryCountMap = Record<
+  string,
+  {
+    total_products: number;
+    active_products: number;
+    inactive_products: number;
+  }
+>;
+
+const parseCountValue = (value?: number | string | null): number => {
+  if (typeof value === "number") {
+    return Number.isNaN(value) ? 0 : value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+const mergeTagCountsFromSnapshot = (
+  baseCounts: CategoryCountMap,
+  categoriesList: ProductCategory[],
+  productsSnapshot: Product[]
+): CategoryCountMap => {
+  if (!categoriesList.length || !productsSnapshot.length) {
+    return baseCounts;
+  }
+
+  const allowedCategoryIds = new Set(
+    categoriesList
+      .map((category) => Number(category.id))
+      .filter((id) => Number.isFinite(id))
+  );
+
+  const updatedCounts: CategoryCountMap = { ...baseCounts };
+
+  productsSnapshot.forEach((product) => {
+    const primaryCategoryId = Number(product.category_id);
+    const primaryIsAllowed =
+      Number.isFinite(primaryCategoryId) &&
+      allowedCategoryIds.has(primaryCategoryId);
+
+    if (primaryIsAllowed) {
+      const key = String(primaryCategoryId);
+      if (!updatedCounts[key]) {
+        updatedCounts[key] = {
+          total_products: 0,
+          active_products: 0,
+          inactive_products: 0,
+        };
+      }
+      updatedCounts[key].total_products += 1;
+      if (product.is_active) {
+        updatedCounts[key].active_products += 1;
+      } else {
+        updatedCounts[key].inactive_products += 1;
+      }
+    }
+
+    if (!Array.isArray(product.tags) || product.tags.length === 0) {
+      return;
+    }
+
+    const uniqueTaggedCatalogs = Array.from(
+      new Set(
+        product.tags
+          .map((tag) => parseCatalogTag(tag))
+          .filter(
+            (catalogId): catalogId is number =>
+              typeof catalogId === "number" && allowedCategoryIds.has(catalogId)
+          )
+      )
+    );
+
+    uniqueTaggedCatalogs.forEach((catalogId) => {
+      if (primaryIsAllowed && primaryCategoryId === catalogId) {
+        return;
+      }
+
+      const key = String(catalogId);
+      if (!updatedCounts[key]) {
+        updatedCounts[key] = {
+          total_products: 0,
+          active_products: 0,
+          inactive_products: 0,
+        };
+      }
+
+      updatedCounts[key].total_products += 1;
+      if (product.is_active) {
+        updatedCounts[key].active_products += 1;
+      } else {
+        updatedCounts[key].inactive_products += 1;
+      }
+
+      if (catalogId === 8) {
+        console.log(
+          "[ProductCatalogsPage] merge snapshot -> found tagged product for catalog 8:",
+          {
+            productId: product.id,
+            tags: product.tags,
+            primaryCategoryId,
+            updatedCounts: updatedCounts[key],
+          }
+        );
+      }
+    });
+  });
+
+  return updatedCounts;
+};
 
 const fetchAllProductsByCategory = async (
   categoryId: number
@@ -71,6 +189,35 @@ const fetchAllProductsByCategory = async (
   return collected;
 };
 
+const fetchProductsByTag = async (tag: string): Promise<Product[]> => {
+  const pageSize = 100;
+  let offset = 0;
+  const collected: Product[] = [];
+
+  while (true) {
+    const response = await productService.getProductsByTag({
+      tag,
+      limit: pageSize,
+      offset,
+    });
+
+    const batch = (response.data || []) as Product[];
+    collected.push(...batch);
+
+    const hasMore =
+      batch.length === pageSize &&
+      (response.pagination?.hasMore ?? batch.length === pageSize);
+
+    if (!hasMore) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return collected;
+};
+
 function ProductsModal({
   isOpen,
   onClose,
@@ -80,42 +227,20 @@ function ProductsModal({
   allProducts,
   refreshAllProducts,
 }: ProductsModalProps) {
-  const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [showAssignModal, setShowAssignModal] = useState(false);
   const [removingProductId, setRemovingProductId] = useState<
     number | string | null
   >(null);
 
   useEffect(() => {
     if (isOpen && category) {
-      // Make sure we fetch a fresh snapshot before deriving modal data
-      const ensureDataAndLoad = async () => {
-        await refreshAllProducts();
-        loadProducts();
-        setSearchTerm("");
-      };
-      ensureDataAndLoad();
+      loadProducts();
     }
-  }, [isOpen, category, refreshAllProducts]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = products.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [searchTerm, products]);
+  }, [isOpen, category]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProducts = async () => {
     if (!category) return;
@@ -129,11 +254,31 @@ function ProductsModal({
         : await refreshAllProducts();
 
       const categoryId = Number(category.id);
+      const catalogTag = buildCatalogTag(category.id);
+
       const productsForCategory = snapshot.filter(
         (product: Product) => Number(product.category_id) === categoryId
       );
 
-      setProducts(productsForCategory);
+      let taggedProducts: Product[] = [];
+      try {
+        const taggedResponse = await productService.getProductsByTag({
+          tag: catalogTag,
+          limit: 500,
+        });
+        taggedProducts = taggedResponse.data || [];
+      } catch (tagErr) {
+        console.error("Failed to load catalog-tagged products:", tagErr);
+      }
+
+      const mergedProducts = new Map<number, Product>();
+      [...productsForCategory, ...taggedProducts].forEach((product) => {
+        if (product && typeof product.id === "number") {
+          mergedProducts.set(product.id, product);
+        }
+      });
+
+      setProducts(Array.from(mergedProducts.values()));
     } catch (err) {
       console.error("Failed to load products:", err);
       showError("Failed to load products", "Please try again later.");
@@ -166,12 +311,43 @@ function ProductsModal({
     let failed = 0;
     const errors: string[] = [];
 
+    const catalogTag = buildCatalogTag(category.id);
+    const categoryId = Number(category.id);
+
     // Assign each product individually
     for (const productId of productIds) {
       try {
-        await productService.updateProduct(Number(productId), {
-          category_id: Number(category.id),
-        });
+        const productSnapshot = products.find(
+          (product) => product.id === Number(productId)
+        );
+
+        const updates: Promise<unknown>[] = [];
+
+        if (
+          (!productSnapshot || !productSnapshot.category_id) &&
+          !Number.isNaN(categoryId)
+        ) {
+          updates.push(
+            productService.updateProduct(Number(productId), {
+              category_id: categoryId,
+            })
+          );
+        }
+
+        const hasTag =
+          Array.isArray(productSnapshot?.tags) &&
+          productSnapshot.tags?.includes(catalogTag);
+
+        if (!hasTag) {
+          updates.push(
+            productService.addProductTag(Number(productId), catalogTag)
+          );
+        }
+
+        if (updates.length > 0) {
+          await Promise.all(updates);
+        }
+
         success++;
       } catch (err) {
         failed++;
@@ -185,7 +361,7 @@ function ProductsModal({
 
     // Refresh products list and counts
     loadProducts();
-    onRefreshProductCounts();
+    await onRefreshProductCounts();
 
     return { success, failed, errors };
   };
@@ -207,23 +383,36 @@ function ProductsModal({
       }
 
       const primaryCategoryId = Number(productData.category_id);
+      const catalogTag = buildCatalogTag(category.id);
+      const hasCatalogTag =
+        Array.isArray(productData.tags) &&
+        productData.tags.includes(catalogTag);
+
       if (
         !Number.isNaN(primaryCategoryId) &&
         primaryCategoryId === Number(category.id)
       ) {
-        showError(
-          "Cannot remove this product because this catalog is its primary category"
-        );
+        await confirm({
+          title: "Primary Category",
+          message:
+            "This catalog is the product's primary category. Update the product to use a different primary category before removing it here.",
+          type: "info",
+          confirmText: "Got it",
+          cancelText: "Close",
+        });
         return;
       }
 
-      await productService.updateProduct(Number(productId), {
-        category_id: null,
-      });
-      showToast("Product removed from catalog");
-      onRefreshCategories();
-      onRefreshProductCounts();
-      await loadProducts();
+      if (hasCatalogTag) {
+        await productService.removeProductTag(Number(productId), catalogTag);
+        showToast("Product removed from catalog");
+        await refreshAllProducts();
+        onRefreshCategories();
+        await onRefreshProductCounts();
+        await loadProducts();
+      } else {
+        showError("Product is not tagged to this catalog");
+      }
     } catch (err) {
       showError(
         err instanceof Error
@@ -236,152 +425,36 @@ function ProductsModal({
   };
 
   return (
-    <>
-      {isOpen && category && (
-        <>
-          {/* Main Products Modal */}
-          <div className="fixed inset-0 z-[9999] overflow-y-auto">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={onClose}
-            ></div>
-            <div className="relative min-h-screen flex items-center justify-center p-4">
-              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Products in "{category.name}"
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {products.length} product
-                      {products.length !== 1 ? "s" : ""} found
-                    </p>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Close"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Search and Actions */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex flex-col md:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Search
-                        className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400`}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          // TODO: Uncomment when assign functionality is available
-                          // navigate(
-                          //   `/dashboard/products/catalogs/${category.id}/assign`
-                          // );
-
-                          // Temporary: Show toast until assign functionality is implemented
-                          showToast("info", "Can't access this action");
-                        }}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                      >
-                        Add products to this catalog
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 max-h-96 overflow-y-auto">
-                  {loading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <LoadingSpinner />
-                    </div>
-                  ) : filteredProducts.length === 0 ? (
-                    <div className="text-center py-8">
-                      <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
-                        {searchTerm
-                          ? "No products found"
-                          : "No products in this category"}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {searchTerm
-                          ? "Try adjusting your search terms"
-                          : "Create a new product or assign an existing one to this category"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {product.name}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {product.description || "No description"}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                product.is_active
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {product.is_active ? "Active" : "Inactive"}
-                            </span>
-                            <button
-                              onClick={() => {
-                                if (product.id) {
-                                  navigate(`/dashboard/products/${product.id}`);
-                                }
-                              }}
-                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                            >
-                              View
-                            </button>
-                            <button
-                              onClick={() => handleRemoveProduct(product.id)}
-                              disabled={removingProductId === product.id}
-                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
-                            >
-                              {removingProductId === product.id
-                                ? "Removing..."
-                                : "Remove"}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Assign Products Modal */}
-        </>
+    <CatalogItemsModal<Product>
+      isOpen={isOpen}
+      onClose={onClose}
+      category={category}
+      items={products}
+      loading={loading}
+      error={error}
+      entityName="product"
+      entityNamePlural="products"
+      assignRoute={`/dashboard/products/catalogs/${category?.id}/assign`}
+      viewRoute={(id) => `/dashboard/products/${id}`}
+      onRemove={handleRemoveProduct}
+      removingId={removingProductId}
+      onRefresh={async () => {
+        await loadProducts();
+        await onRefreshProductCounts();
+        await onRefreshCategories();
+      }}
+      renderStatus={(product) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            product.is_active
+              ? "bg-green-100 text-green-800"
+              : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {product.is_active ? "Active" : "Inactive"}
+        </span>
       )}
-    </>
+    />
   );
 }
 
@@ -407,16 +480,8 @@ export default function ProductCatalogsPage() {
     useState<ProductCategory | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [categoryProductCounts, setCategoryProductCounts] = useState<
-    Record<
-      number,
-      {
-        total_products: number;
-        active_products: number;
-        inactive_products: number;
-      }
-    >
-  >({});
+  const [categoryProductCounts, setCategoryProductCounts] =
+    useState<CategoryCountMap>({});
   const [categoryPerformance, setCategoryPerformance] = useState<
     Record<
       number,
@@ -491,27 +556,54 @@ export default function ProductCatalogsPage() {
         skipCache: true,
       });
 
-      const countsMap: Record<
-        number,
-        {
-          total_products: number;
-          active_products: number;
-          inactive_products: number;
-        }
-      > = {};
+      const countsMap: CategoryCountMap = {};
 
       (response.data || []).forEach((item: ProductCountByCategory) => {
-        countsMap[item.category_id] = {
-          total_products: item.product_count || 0,
+        if (item.category_id === undefined || item.category_id === null) {
+          return;
+        }
+        const key = String(item.category_id);
+        countsMap[key] = {
+          total_products: parseCountValue(item.product_count),
           active_products: 0, // This endpoint doesn't provide active/inactive breakdown
           inactive_products: 0,
         };
       });
 
       setCategoryProductCounts(countsMap);
+      return countsMap;
     } catch (err) {
       console.error("Failed to load category product counts:", err);
+      return {};
     }
+  };
+
+  const refreshCategoryProductCounts = async (
+    categoriesOverride?: ProductCategory[],
+    productsSnapshotOverride?: Product[]
+  ) => {
+    const baseCounts = await loadCategoryProductCounts();
+    const targetCategories = categoriesOverride ?? categories;
+    let finalCounts = baseCounts;
+
+    if (targetCategories.length) {
+      const productsSnapshot =
+        productsSnapshotOverride ??
+        (allProducts.length > 0 ? allProducts : await loadAllProducts());
+
+      finalCounts = mergeTagCountsFromSnapshot(
+        baseCounts,
+        targetCategories,
+        productsSnapshot
+      );
+    }
+
+    setCategoryProductCounts(finalCounts);
+    console.log(
+      "[ProductCatalogsPage] Final category product counts state:",
+      finalCounts
+    );
+    return finalCounts;
   };
 
   const loadStats = async (skipCache = false) => {
@@ -580,7 +672,10 @@ export default function ProductCatalogsPage() {
     }
   };
 
-  const loadCategories = async (skipCache = false) => {
+  const loadCategories = async (
+    skipCache = false,
+    productsSnapshotOverride?: Product[]
+  ) => {
     try {
       setLoading(true);
       setError(null);
@@ -591,10 +686,18 @@ export default function ProductCatalogsPage() {
         skipCache: skipCache,
       });
 
-      setCategories(response.data || []);
+      const categoryList = response.data || [];
+      setCategories(categoryList);
 
-      // Load product counts separately
-      await loadCategoryProductCounts();
+      // Load product counts (including tag-based assignments)
+      console.log(
+        "[ProductCatalogsPage] Loaded categories:",
+        categoryList.length
+      );
+      const productsSnapshot =
+        productsSnapshotOverride ??
+        (allProducts.length > 0 ? allProducts : await loadAllProducts());
+      await refreshCategoryProductCounts(categoryList, productsSnapshot);
     } catch (err) {
       console.error("Failed to load categories:", err);
       showError("Failed to load categories", "Please try again later.");
@@ -606,9 +709,10 @@ export default function ProductCatalogsPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([loadStats(true), loadCategories(true)]); // Always skip cache for fresh data
+      await loadStats(true);
+      const productsSnapshot = await loadAllProducts();
+      await loadCategories(true, productsSnapshot);
       await loadCategoryPerformance();
-      await loadAllProducts(); // Still load products for assignment modal
     };
     loadData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -622,36 +726,6 @@ export default function ProductCatalogsPage() {
       const products = response.data || [];
       setAllProducts(products);
 
-      const aggregatedCounts: Record<
-        number,
-        {
-          total_products: number;
-          active_products: number;
-          inactive_products: number;
-        }
-      > = {};
-
-      products.forEach((product: Product) => {
-        const categoryId = Number(product.category_id);
-        if (Number.isNaN(categoryId)) {
-          return;
-        }
-        if (!aggregatedCounts[categoryId]) {
-          aggregatedCounts[categoryId] = {
-            total_products: 0,
-            active_products: 0,
-            inactive_products: 0,
-          };
-        }
-        aggregatedCounts[categoryId].total_products += 1;
-        if (product.is_active) {
-          aggregatedCounts[categoryId].active_products += 1;
-        } else {
-          aggregatedCounts[categoryId].inactive_products += 1;
-        }
-      });
-
-      setCategoryProductCounts((prev) => ({ ...prev, ...aggregatedCounts }));
       return products;
     } catch (err) {
       // Failed to load products for assignment
@@ -767,13 +841,13 @@ export default function ProductCatalogsPage() {
     if (advancedSearch.productCountMin !== "") {
       const minCount = parseInt(advancedSearch.productCountMin);
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesProductCount = matchesProductCount && categoryCount >= minCount;
     }
     if (advancedSearch.productCountMax !== "") {
       const maxCount = parseInt(advancedSearch.productCountMax);
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesProductCount = matchesProductCount && categoryCount <= maxCount;
     }
 
@@ -785,11 +859,11 @@ export default function ProductCatalogsPage() {
       matchesFilterType = category.is_active === false;
     } else if (filterType === "with_products") {
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesFilterType = categoryCount > 0;
     } else if (filterType === "empty") {
       const categoryCount =
-        categoryProductCounts[category.id]?.total_products || 0;
+        categoryProductCounts[String(category.id)]?.total_products || 0;
       matchesFilterType = categoryCount === 0;
     }
 
@@ -808,7 +882,7 @@ export default function ProductCatalogsPage() {
   const inactiveCatalogs =
     stats?.inactive_categories ?? Math.max(0, totalCatalogs - activeCatalogs);
   const clientSideUnusedCount = categories.filter(
-    (cat) => (categoryProductCounts[cat.id]?.total_products || 0) === 0
+    (cat) => (categoryProductCounts[String(cat.id)]?.total_products || 0) === 0
   ).length;
 
   const unusedCatalogs = stats?.empty_categories ?? clientSideUnusedCount;
@@ -817,7 +891,8 @@ export default function ProductCatalogsPage() {
     name: string;
     count: number;
   } | null>((acc, category) => {
-    const count = categoryProductCounts[category.id]?.total_products || 0;
+    const count =
+      categoryProductCounts[String(category.id)]?.total_products || 0;
     if (!acc || count > acc.count) {
       return {
         name: category.name,
@@ -888,7 +963,7 @@ export default function ProductCatalogsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/products")}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -904,7 +979,7 @@ export default function ProductCatalogsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
               (e.target as HTMLButtonElement).style.backgroundColor =
@@ -932,7 +1007,7 @@ export default function ProductCatalogsPage() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -980,13 +1055,13 @@ export default function ProductCatalogsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
           />
         </div>
 
         <button
           onClick={() => setShowAdvancedFilters(true)}
-          className="flex items-center px-4 py-2 rounded-lg bg-gray-50 transition-colors text-sm font-medium"
+          className="flex items-center px-4 py-2 rounded-md bg-gray-50 transition-colors text-sm font-medium"
         >
           <Filter className="h-4 w-4 mr-2" />
           Filters
@@ -1135,7 +1210,7 @@ export default function ProductCatalogsPage() {
           <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
         </div>
       ) : filteredCatalogs.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 text-center py-16 px-4">
           <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
           </h3>
@@ -1147,7 +1222,7 @@ export default function ProductCatalogsPage() {
           {!searchTerm && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
                 (e.target as HTMLButtonElement).style.backgroundColor =
@@ -1167,7 +1242,7 @@ export default function ProductCatalogsPage() {
           {filteredCatalogs.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              className="bg-white border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-2">
                 <h3 className={`${tw.cardHeading} text-gray-900 flex-1`}>
@@ -1176,14 +1251,14 @@ export default function ProductCatalogsPage() {
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleEditCatalog(category)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCatalog(category)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -1202,17 +1277,20 @@ export default function ProductCatalogsPage() {
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     <div className="font-medium">
-                      {categoryProductCounts[category.id]?.total_products || 0}{" "}
+                      {category.id === 8 &&
+                        console.log(
+                          "[ProductCatalogsPage] Rendering card for catalog 8 with counts:",
+                          categoryProductCounts[String(category.id)]
+                        )}
+                      {categoryProductCounts[String(category.id)]
+                        ?.total_products || 0}{" "}
                       products
                     </div>
                   </div>
                   <button
                     onClick={() => handleViewProducts(category)}
-                    className="px-3 py-1 rounded-lg text-sm font-medium"
-                    style={{
-                      color: color.primary.accent,
-                      backgroundColor: "transparent",
-                    }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                    style={{ backgroundColor: color.primary.action }}
                     title="View & Assign Products"
                   >
                     View Products
@@ -1263,7 +1341,7 @@ export default function ProductCatalogsPage() {
           {filteredCatalogs.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
@@ -1272,7 +1350,13 @@ export default function ProductCatalogsPage() {
                   </h3>
                   <div className="text-sm text-gray-600 mt-0.5">
                     <div className="font-medium">
-                      {categoryProductCounts[category.id]?.total_products || 0}{" "}
+                      {category.id === 8 &&
+                        console.log(
+                          "[ProductCatalogsPage] Rendering list card for catalog 8 with counts:",
+                          categoryProductCounts[String(category.id)]
+                        )}
+                      {categoryProductCounts[String(category.id)]
+                        ?.total_products || 0}{" "}
                       products
                     </div>
                   </div>
@@ -1325,25 +1409,22 @@ export default function ProductCatalogsPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleViewProducts(category)}
-                  className="px-3 py-1 rounded-lg text-sm font-medium"
-                  style={{
-                    color: color.primary.accent,
-                    backgroundColor: "transparent",
-                  }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View & Assign Products"
                 >
                   View Products
                 </button>
                 <button
                   onClick={() => handleEditCatalog(category)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   title="Edit"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDeleteCatalog(category)}
-                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
@@ -1365,7 +1446,7 @@ export default function ProductCatalogsPage() {
       {editingCatalog &&
         createPortal(
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[9999] backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 border border-gray-100">
+            <div className="bg-white rounded-md shadow-xl w-full max-w-md mx-4 border border-gray-100">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">
                   Edit Catalog
@@ -1391,7 +1472,7 @@ export default function ProductCatalogsPage() {
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none"
                     placeholder="e.g., Data, Voice, SMS..."
                     required
                   />
@@ -1405,7 +1486,7 @@ export default function ProductCatalogsPage() {
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none"
                     placeholder="Catalog description..."
                   />
                 </div>
@@ -1418,14 +1499,14 @@ export default function ProductCatalogsPage() {
                       setEditName("");
                       setEditDescription("");
                     }}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors text-sm"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpdateCatalog}
                     disabled={!editName.trim() || isUpdating}
-                    className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                    className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
                     style={{ backgroundColor: color.primary.action }}
                     onMouseEnter={(e) => {
                       if (!e.currentTarget.disabled) {
@@ -1462,7 +1543,7 @@ export default function ProductCatalogsPage() {
         }}
         category={selectedCategory}
         onRefreshCategories={loadCategories}
-        onRefreshProductCounts={loadCategoryProductCounts}
+        onRefreshProductCounts={refreshCategoryProductCounts}
         allProducts={allProducts}
         refreshAllProducts={loadAllProducts}
       />
@@ -1504,7 +1585,7 @@ export default function ProductCatalogsPage() {
                       setIsClosingModal(false);
                     }, 300);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   title="Close"
                 >
                   <X className="w-5 h-5" />
@@ -1572,7 +1653,7 @@ export default function ProductCatalogsPage() {
                           exactName: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Search by exact name..."
                     />
                   </div>
@@ -1598,7 +1679,7 @@ export default function ProductCatalogsPage() {
                           isActive: value,
                         }));
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Any Status</option>
                       <option value="true">Active</option>
@@ -1621,7 +1702,7 @@ export default function ProductCatalogsPage() {
                             createdAfter: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -1637,7 +1718,7 @@ export default function ProductCatalogsPage() {
                             createdBefore: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -1658,7 +1739,7 @@ export default function ProductCatalogsPage() {
                             productCountMin: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="0"
                       />
                     </div>
@@ -1676,7 +1757,7 @@ export default function ProductCatalogsPage() {
                             productCountMax: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="∞"
                       />
                     </div>
@@ -1687,7 +1768,7 @@ export default function ProductCatalogsPage() {
                 <div className="flex justify-between pt-4 border-t border-gray-200">
                   <button
                     onClick={clearAdvancedSearch}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors text-sm"
                   >
                     Clear All
                   </button>
@@ -1699,7 +1780,7 @@ export default function ProductCatalogsPage() {
                         setIsClosingModal(false);
                       }, 300);
                     }}
-                    className="px-4 py-2 text-white rounded-lg transition-all text-sm"
+                    className="px-4 py-2 text-white rounded-md transition-all text-sm"
                     style={{ backgroundColor: color.primary.action }}
                   >
                     Apply Filters

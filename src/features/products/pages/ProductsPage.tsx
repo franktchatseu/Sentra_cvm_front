@@ -22,6 +22,7 @@ import { ProductCategory } from "../types/productCategory";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -273,7 +274,7 @@ export default function ProductsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate("/dashboard/products/create")}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
               (e.target as HTMLButtonElement).style.backgroundColor =
@@ -293,7 +294,7 @@ export default function ProductsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Total Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -308,7 +309,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag1}20` }}
             >
               <Package
@@ -320,7 +321,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Active Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -335,7 +336,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag4}20` }}
             >
               <TrendingUp
@@ -347,7 +348,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Inactive Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -362,7 +363,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag3}20` }}
             >
               <XCircle
@@ -374,7 +375,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Average Price Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -391,7 +392,7 @@ export default function ProductsPage() {
               </p>
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag2}20` }}
             >
               <DollarSign
@@ -403,7 +404,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Top Selling Products Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -423,7 +424,7 @@ export default function ProductsPage() {
               )}
             </div>
             <div
-              className="p-3 rounded-lg"
+              className="p-3 rounded-md"
               style={{ backgroundColor: `${color.tertiary.tag1}20` }}
             >
               <BarChart3
@@ -448,7 +449,7 @@ export default function ProductsPage() {
               placeholder="Search products..."
               value={filters.search || ""}
               onChange={(e) => handleSearch(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 text-sm  border border-[${tw.borderDefault}] rounded-lg focus:outline-none`}
+              className={`w-full pl-10 pr-4 py-3 text-sm  border border-[${tw.borderDefault}] rounded-md focus:outline-none`}
             />
           </div>
 
@@ -519,11 +520,11 @@ export default function ProductsPage() {
       {/* Error Message */}
       {error && (
         <div
-          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-xl p-4 mb-6 flex items-center justify-end`}
+          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-md p-4 mb-6 flex items-center justify-end`}
         >
           <button
             onClick={() => loadProducts()}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
             style={{ backgroundColor: color.status.danger }}
           >
             Try Again
@@ -533,16 +534,19 @@ export default function ProductsPage() {
 
       {/* Products Table */}
       <div
-        className={`bg-white rounded-lg shadow-sm border border-[${tw.borderDefault}] overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div
-              className={`animate-spin rounded-full h-8 w-8 border-b-2 border-[${color.primary.action}]`}
-            ></div>
-            <span className={`ml-3 ${tw.textSecondary}`}>
+          <div className="flex flex-col items-center justify-center py-16">
+            <LoadingSpinner
+              variant="modern"
+              size="xl"
+              color="primary"
+              className="mb-4"
+            />
+            <p className={`${tw.textMuted} font-medium text-sm`}>
               Loading products...
-            </span>
+            </p>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">
@@ -555,7 +559,7 @@ export default function ProductsPage() {
             </p>
             <button
               onClick={() => navigate("/dashboard/products/create")}
-              className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
+              className="px-4 py-2 rounded-md font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
               style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
                 (e.target as HTMLButtonElement).style.backgroundColor =
@@ -571,167 +575,187 @@ export default function ProductsPage() {
             </button>
           </div>
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead
-                  className={`border-b ${tw.borderDefault}`}
-                  style={{ background: color.surface.tableHeader }}
-                >
-                  <tr>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Product
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Product ID
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      DA ID
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Category
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Status
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Created
-                    </th>
-                    <th
-                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y divide-[${tw.borderDefault}]`}>
-                  {products.map((product) => {
-                    const categoryName =
-                      categories.find(
-                        (cat) => cat.id === parseInt(product.category_id)
-                      )?.name || "Uncategorized";
-                    const status = product.is_active ? "Active" : "Inactive";
-                    const statusBadge = product.is_active
-                      ? `bg-[${color.status.success}] text-[${color.status.success}]`
-                      : `bg-[${color.surface.cards}] text-[${color.text.primary}]`;
+          <div className="hidden lg:block overflow-x-auto">
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Product
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Product ID
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    DA ID
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Category
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Created
+                  </th>
+                  <th
+                    className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => {
+                  const categoryName =
+                    categories.find(
+                      (cat) => cat.id === parseInt(product.category_id)
+                    )?.name || "Uncategorized";
+                  const status = product.is_active ? "Active" : "Inactive";
+                  const statusBadge = product.is_active
+                    ? `bg-[${color.status.success}] text-[${color.status.success}]`
+                    : `bg-[${color.surface.cards}] text-[${color.text.primary}]`;
 
-                    return (
-                      <tr
-                        key={product.id}
-                        className="hover:bg-gray-50 transition-colors"
+                  return (
+                    <tr key={product.id} className="transition-colors">
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <td className="px-6 py-4">
+                        <div>
                           <div
-                            className={`text-base font-semibold ${tw.textPrimary}`}
+                            className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                            title={product.name}
                           >
                             {product.name}
                           </div>
-                          <div
-                            className={`text-sm ${tw.textMuted} truncate max-w-xs`}
+                          {product.description && (
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                              title={product.description}
+                            >
+                              {product.description || "No description"}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td
+                        className={`px-6 py-4 hidden lg:table-cell text-sm ${tw.textPrimary}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {product.product_id || product.id || "N/A"}
+                      </td>
+                      <td
+                        className={`px-6 py-4 hidden xl:table-cell text-sm ${tw.textPrimary}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {product.da_id || "N/A"}
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <span
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                        >
+                          {categoryName}
+                        </span>
+                      </td>
+                      <td
+                        className="px-6 py-4"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <span
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${statusBadge}`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td
+                        className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {new Date(product.created_at).toLocaleDateString()}
+                      </td>
+                      <td
+                        className="px-6 py-4 text-sm font-medium"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() =>
+                              navigate(`/dashboard/products/${product.id}`)
+                            }
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                            title="View Details"
                           >
-                            {product.description || "No description"}
-                          </div>
-                        </td>
-                        <td className={`px-6 py-4 text-sm ${tw.textPrimary}`}>
-                          {product.product_id || product.id || "N/A"}
-                        </td>
-                        <td className={`px-6 py-4 text-sm ${tw.textPrimary}`}>
-                          {product.da_id || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 text-base">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/dashboard/products/${product.id}/edit`)
+                            }
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                            title="Edit Product"
                           >
-                            {categoryName}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-base">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${statusBadge}`}
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(product)}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                            title={
+                              product.is_active ? "Deactivate" : "Activate"
+                            }
                           >
-                            {status}
-                          </span>
-                        </td>
-                        <td className={`px-6 py-4 text-sm ${tw.textMuted}`}>
-                          {new Date(product.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() =>
-                                navigate(`/dashboard/products/${product.id}`)
-                              }
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/dashboard/products/${product.id}/edit`
-                                )
-                              }
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
-                              title="Edit Product"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleToggleStatus(product)}
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
-                              title={
-                                product.is_active ? "Deactivate" : "Activate"
-                              }
-                            >
-                              {product.is_active ? (
-                                <Pause className="w-4 h-4" />
-                              ) : (
-                                <Play className="w-4 h-4" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
-                              title="Delete Product"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
+                            {product.is_active ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {/* Pagination */}
       {!loading && !error && (products.length > 0 || total > 0) && (
         <div
-          className={`bg-white rounded-xl shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+          className={`bg-white rounded-md shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div
@@ -755,7 +779,7 @@ export default function ProductsPage() {
               <button
                 onClick={() => handlePageChange((filters.page || 1) - 1)}
                 disabled={filters.page === 1}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -765,7 +789,7 @@ export default function ProductsPage() {
               <button
                 onClick={() => handlePageChange((filters.page || 1) + 1)}
                 disabled={(filters.page || 1) >= (totalPages || 1)}
-                className={`p-2 border ${tw.borderDefault} rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
+                className={`p-2 border ${tw.borderDefault} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base whitespace-nowrap`}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

@@ -182,7 +182,7 @@ export default function ProductDetailsPage() {
           </p>
           <button
             onClick={navigateBack}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 mx-auto text-base text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -200,7 +200,7 @@ export default function ProductDetailsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={navigateBack}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -216,7 +216,7 @@ export default function ProductDetailsPage() {
         <div className="flex flex-col sm:flex-row xl:flex-row lg:flex-col gap-3">
           <button
             onClick={handleToggleStatus}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit text-white"
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit text-white"
             style={{
               backgroundColor: button.secondaryAction.background,
             }}
@@ -241,7 +241,7 @@ export default function ProductDetailsPage() {
           </button>
           <button
             onClick={() => navigate(`/dashboard/products/${id}/edit`)}
-            className="px-4 py-2 text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit"
+            className="px-4 py-2 text-white rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm w-fit"
             style={{ backgroundColor: button.action.background }}
             onMouseEnter={(e) => {
               (e.target as HTMLButtonElement).style.opacity = "0.9";
@@ -255,7 +255,7 @@ export default function ProductDetailsPage() {
           </button>
           <button
             onClick={handleDelete}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-red-700 flex items-center gap-2 text-sm w-fit"
+            className="px-4 py-2 bg-red-600 text-white rounded-md font-semibold transition-all duration-200 hover:bg-red-700 flex items-center gap-2 text-sm w-fit"
           >
             <Trash2 className="w-4 h-4" />
             Delete
@@ -269,11 +269,11 @@ export default function ProductDetailsPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Product Overview */}
           <div
-            className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+            className={`bg-white rounded-md border border-[${tw.borderDefault}] p-6`}
           >
             <div className="flex items-start space-x-4 mb-6">
               <div
-                className="h-14 w-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                className="h-14 w-14 rounded-md flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: color.primary.accent }}
               >
                 <Package className="w-7 h-7 text-white" />
@@ -320,7 +320,7 @@ export default function ProductDetailsPage() {
 
           {/* Basic Information */}
           <div
-            className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+            className={`bg-white rounded-md border border-[${tw.borderDefault}] p-6`}
           >
             <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
               Basic Information
@@ -375,7 +375,7 @@ export default function ProductDetailsPage() {
 
           {/* Pricing Information */}
           <div
-            className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+            className={`bg-white rounded-md border border-[${tw.borderDefault}] p-6`}
           >
             <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
               Pricing
@@ -422,7 +422,7 @@ export default function ProductDetailsPage() {
             product.effective_from ||
             product.effective_to) && (
             <div
-              className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+              className={`bg-white rounded-md border border-[${tw.borderDefault}] p-6`}
             >
               <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
                 Validity Period
@@ -501,7 +501,7 @@ export default function ProductDetailsPage() {
         <div className="space-y-6">
           {/* Timeline */}
           <div
-            className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+            className={`bg-white rounded-md border border-[${tw.borderDefault}] p-6`}
           >
             <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
               Timeline
@@ -570,7 +570,7 @@ export default function ProductDetailsPage() {
           {/* Additional Info */}
           {(product.available_quantity !== null || product.metadata) && (
             <div
-              className={`bg-white rounded-xl border border-[${tw.borderDefault}] p-6`}
+              className={`bg-white rounded-md border border-[${tw.borderDefault}] p-6`}
             >
               <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
                 Additional Information
@@ -596,7 +596,7 @@ export default function ProductDetailsPage() {
                       Metadata
                     </label>
                     <pre
-                      className={`text-xs ${tw.textPrimary} bg-gray-50 p-3 rounded-lg overflow-x-auto`}
+                      className={`text-xs ${tw.textPrimary} bg-gray-50 p-3 rounded-md overflow-x-auto`}
                     >
                       {JSON.stringify(product.metadata, null, 2)}
                     </pre>

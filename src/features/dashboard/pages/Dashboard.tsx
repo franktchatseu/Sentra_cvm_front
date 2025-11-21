@@ -5,6 +5,7 @@ import CampaignsPage from "../../campaigns/pages/CampaignsPage";
 import CampaignDetailsPage from "../../campaigns/pages/CampaignDetailsPage";
 import CreateCampaignPage from "../../campaigns/pages/CreateCampaignPage";
 import CampaignCategoriesPage from "../../campaigns/pages/CampaignCategoriesPage";
+import CampaignTypesPage from "../../campaigns/pages/CampaignTypesPage";
 import CampaignObjectivesPage from "../../campaigns/pages/CampaignObjectivesPage";
 import ProgramsPage from "../../campaigns/pages/ProgramsPage";
 import ProgramDetailsPage from "../../campaigns/pages/ProgramDetailsPage";
@@ -44,6 +45,13 @@ import CustomerIdentityPage from "../../customer/pages/CustomerIdentityPage";
 import CustomerIdentityFieldDetailsPage from "../../customer/pages/CustomerIdentityFieldDetailsPage";
 import CampaignApprovalHistoryPage from "../../campaigns/pages/CampaignApprovalHistoryPage";
 import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycleHistoryPage";
+import SearchResultsPage from "../../../shared/pages/SearchResultsPage";
+import OverallDashboardPerformancePage from "./OverallDashboardPerformancePage";
+import CustomerProfileReportsPage from "./CustomerProfileReportsPage";
+import CampaignReportsPage from "./CampaignReportsPage";
+import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
+import DeliveryEmailReportsPage from "./DeliveryEmailReportsPage";
+import OfferReportsPage from "./OfferReportsPage";
 
 export default function Dashboard() {
   return (
@@ -64,10 +72,12 @@ export default function Dashboard() {
           element={<CampaignLifecycleHistoryPage />}
         />
         <Route path="/campaign-catalogs" element={<CampaignCategoriesPage />} />
-        <Route
+        <Route path="/campaign-types" element={<CampaignTypesPage />} />
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/campaign-catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="campaigns" />}
-        />
+        /> */}
         <Route
           path="/campaign-objectives"
           element={<CampaignObjectivesPage />}
@@ -101,17 +111,19 @@ export default function Dashboard() {
         <Route path="/products/:id" element={<ProductDetailsPage />} />
         <Route path="/products/:id/edit" element={<EditProductPage />} />
         <Route path="/products/catalogs" element={<ProductCategoriesPage />} />
-        <Route
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/products/catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="products" />}
-        />
+        /> */}
         <Route path="/product-types" element={<ProductTypesPage />} />
         <Route path="/offer-types" element={<OfferTypesPage />} />
         <Route path="/offer-catalogs" element={<OfferCategoriesPage />} />
-        <Route
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/offer-catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="offers" />}
-        />
+        /> */}
         {/* <Route path="/offer-catalogs/:id" element={<CategoryDetailsPage />} /> */}
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/user-management/:id" element={<UserDetailsPage />} />
@@ -119,10 +131,11 @@ export default function Dashboard() {
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />
         <Route path="/segments/:id/edit" element={<EditSegmentPage />} />
         <Route path="/segment-catalogs" element={<SegmentCategoriesPage />} />
-        <Route
+        {/* Commented out - now using modal instead of page */}
+        {/* <Route
           path="/segment-catalogs/:catalogId/assign"
           element={<AssignItemsPage itemType="segments" />}
-        />
+        /> */}
         <Route path="/segment-list" element={<SegmentListPage />} />
         <Route path="/segment-types" element={<SegmentTypesPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
@@ -137,6 +150,22 @@ export default function Dashboard() {
         <Route
           path="/customer-identity/fields/:id"
           element={<CustomerIdentityFieldDetailsPage />}
+        />
+        <Route path="/search" element={<SearchResultsPage />} />
+        <Route
+          path="/reports/overview"
+          element={<OverallDashboardPerformancePage />}
+        />
+        <Route
+          path="/reports/customer-profiles"
+          element={<CustomerProfileReportsPage />}
+        />
+        <Route path="/reports/campaigns" element={<CampaignReportsPage />} />
+        <Route path="/reports/offers" element={<OfferReportsPage />} />
+        <Route path="/reports/delivery" element={<DeliverySMSReportsPage />} />
+        <Route
+          path="/reports/email-delivery"
+          element={<DeliveryEmailReportsPage />}
         />
       </Routes>
     </DashboardLayout>

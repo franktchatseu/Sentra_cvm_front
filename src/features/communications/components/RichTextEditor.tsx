@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import {
   Bold,
   Italic,
@@ -8,8 +8,8 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-} from 'lucide-react';
-import { color } from '../../../shared/utils/utils';
+} from "lucide-react";
+import { color } from "../../../shared/utils/utils";
 
 interface RichTextEditorProps {
   value: string;
@@ -21,8 +21,8 @@ interface RichTextEditorProps {
 export default function RichTextEditor({
   value,
   onChange,
-  placeholder = 'Enter your message...',
-  minHeight = '200px',
+  placeholder = "Enter your message...",
+  minHeight = "200px",
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -33,7 +33,10 @@ export default function RichTextEditor({
     }
   }, [value]);
 
-  const execCommand = (command: string, value: string | undefined = undefined) => {
+  const execCommand = (
+    command: string,
+    value: string | undefined = undefined
+  ) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
     updateContent();
@@ -50,24 +53,24 @@ export default function RichTextEditor({
   };
 
   const toolbarButtons = [
-    { icon: Bold, command: 'bold', title: 'Bold' },
-    { icon: Italic, command: 'italic', title: 'Italic' },
-    { icon: Underline, command: 'underline', title: 'Underline' },
-    { type: 'separator' },
-    { icon: List, command: 'insertUnorderedList', title: 'Bullet List' },
-    { icon: ListOrdered, command: 'insertOrderedList', title: 'Numbered List' },
-    { type: 'separator' },
-    { icon: AlignLeft, command: 'justifyLeft', title: 'Align Left' },
-    { icon: AlignCenter, command: 'justifyCenter', title: 'Align Center' },
-    { icon: AlignRight, command: 'justifyRight', title: 'Align Right' },
+    { icon: Bold, command: "bold", title: "Bold" },
+    { icon: Italic, command: "italic", title: "Italic" },
+    { icon: Underline, command: "underline", title: "Underline" },
+    { type: "separator" },
+    { icon: List, command: "insertUnorderedList", title: "Bullet List" },
+    { icon: ListOrdered, command: "insertOrderedList", title: "Numbered List" },
+    { type: "separator" },
+    { icon: AlignLeft, command: "justifyLeft", title: "Align Left" },
+    { icon: AlignCenter, command: "justifyCenter", title: "Align Center" },
+    { icon: AlignRight, command: "justifyRight", title: "Align Right" },
   ];
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
+    <div className="border border-gray-300 rounded-md overflow-hidden">
       {/* Toolbar */}
       <div className="bg-gray-50 border-b border-gray-300 p-2 flex items-center gap-1 flex-wrap">
         {toolbarButtons.map((button, index) => {
-          if (button.type === 'separator') {
+          if (button.type === "separator") {
             return <div key={index} className="w-px h-6 bg-gray-300 mx-1" />;
           }
 
@@ -80,15 +83,15 @@ export default function RichTextEditor({
               className="p-2 hover:bg-gray-200 rounded transition-colors"
               title={button.title}
               style={{
-                color: '#6B7280',
+                color: "#6B7280",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = `${color.primary.accent}15`;
                 e.currentTarget.style.color = color.primary.accent;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = '#6B7280';
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.color = "#6B7280";
               }}
             >
               <Icon className="w-4 h-4" />
@@ -100,7 +103,7 @@ export default function RichTextEditor({
 
         {/* Font Size Selector */}
         <select
-          onChange={(e) => execCommand('fontSize', e.target.value)}
+          onChange={(e) => execCommand("fontSize", e.target.value)}
           className="text-sm border border-gray-300 rounded px-2 py-1"
           defaultValue="3"
         >
@@ -123,9 +126,9 @@ export default function RichTextEditor({
         className="p-4 outline-none"
         style={{
           minHeight,
-          maxHeight: '400px',
-          overflowY: 'auto',
-          boxShadow: isFocused ? `0 0 0 2px ${color.primary.accent}40` : 'none',
+          maxHeight: "400px",
+          overflowY: "auto",
+          boxShadow: isFocused ? `0 0 0 2px ${color.primary.accent}40` : "none",
         }}
         data-placeholder={placeholder}
       />

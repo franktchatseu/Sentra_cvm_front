@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { FileText, Plus, Eye, Trash2 } from 'lucide-react';
-import { color } from '../../../shared/utils/utils';
-import { MessageTemplate } from '../types/template';
-import { CommunicationChannel } from '../types/communication';
-import { templateService } from '../services/templateService';
+import { useState, useEffect } from "react";
+import { FileText, Plus, Eye, Trash2 } from "lucide-react";
+import { color } from "../../../shared/utils/utils";
+import { MessageTemplate } from "../types/template";
+import { CommunicationChannel } from "../types/communication";
+import { templateService } from "../services/templateService";
 
 interface TemplateSelectorProps {
   channel: CommunicationChannel;
@@ -18,7 +18,8 @@ export default function TemplateSelector({
 }: TemplateSelectorProps) {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [previewTemplate, setPreviewTemplate] = useState<MessageTemplate | null>(null);
+  const [previewTemplate, setPreviewTemplate] =
+    useState<MessageTemplate | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -36,7 +37,7 @@ export default function TemplateSelector({
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this template?')) {
+    if (confirm("Are you sure you want to delete this template?")) {
       templateService.deleteTemplate(id);
       loadTemplates();
       if (selectedId === id) {
@@ -55,13 +56,15 @@ export default function TemplateSelector({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <FileText className="w-4 h-4 text-gray-600" />
-          <h3 className="text-sm font-semibold text-gray-700">Message Templates</h3>
+          <h3 className="text-sm font-semibold text-gray-700">
+            Message Templates
+          </h3>
         </div>
         {onCreateNew && (
           <button
             type="button"
             onClick={onCreateNew}
-            className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            className="flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>New Template</span>
@@ -90,11 +93,11 @@ export default function TemplateSelector({
               key={template.id}
               onClick={() => handleSelect(template)}
               className={`
-                p-3 rounded-lg border-2 cursor-pointer transition-all
+                p-3 rounded-md border-2 cursor-pointer transition-all
                 ${
                   selectedId === template.id
-                    ? 'shadow-md'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? "shadow-md"
+                    : "border-gray-200 hover:border-gray-300"
                 }
               `}
               style={
@@ -123,7 +126,8 @@ export default function TemplateSelector({
                   )}
                   <div className="flex items-center space-x-2 mt-2">
                     <span className="text-xs text-gray-500">
-                      {template.variables.length} variable{template.variables.length !== 1 ? 's' : ''}
+                      {template.variables.length} variable
+                      {template.variables.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 </div>
@@ -136,7 +140,7 @@ export default function TemplateSelector({
                   >
                     <Eye className="w-4 h-4 text-gray-600" />
                   </button>
-                  {!template.id.startsWith('default_') && (
+                  {!template.id.startsWith("default_") && (
                     <button
                       onClick={(e) => handleDelete(template.id, e)}
                       className="p-1.5 hover:bg-red-100 rounded transition-colors"
@@ -159,13 +163,17 @@ export default function TemplateSelector({
           onClick={() => setPreviewTemplate(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto"
+            className="bg-white rounded-md shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-900">{previewTemplate.name}</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                {previewTemplate.name}
+              </h3>
               {previewTemplate.subject && (
-                <p className="text-sm text-gray-600 mt-1">Subject: {previewTemplate.subject}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Subject: {previewTemplate.subject}
+                </p>
               )}
             </div>
             <div className="p-6">
@@ -175,13 +183,15 @@ export default function TemplateSelector({
                   dangerouslySetInnerHTML={{ __html: previewTemplate.body }}
                 />
               ) : (
-                <p className="whitespace-pre-wrap text-gray-700">{previewTemplate.body}</p>
+                <p className="whitespace-pre-wrap text-gray-700">
+                  {previewTemplate.body}
+                </p>
               )}
             </div>
             <div className="p-4 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setPreviewTemplate(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Close
               </button>

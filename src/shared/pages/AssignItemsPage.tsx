@@ -19,6 +19,7 @@ import { segmentService } from "../../features/segments/services/segmentService"
 import { offerCategoryService } from "../../features/offers/services/offerCategoryService";
 import { productCategoryService } from "../../features/products/services/productCategoryService";
 import { campaignService } from "../../features/campaigns/services/campaignService";
+import { buildCatalogTag } from "../utils/catalogTags";
 import {
   Offer,
   OfferStatusEnum,
@@ -31,11 +32,6 @@ import {
   UpdateSegmentRequest,
 } from "../../features/segments/types/segment";
 import { BackendCampaignType } from "../../features/campaigns/types/campaign";
-
-const CATALOG_TAG_PREFIX = "catalog:";
-
-const buildCatalogTag = (categoryId: number | string) =>
-  `${CATALOG_TAG_PREFIX}${categoryId}`;
 
 type ItemType = "offers" | "products" | "segments" | "campaigns";
 
@@ -262,14 +258,31 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                 break;
               }
               case "products": {
-                const productsResponse =
-                  await productService.getProductsByCategory(
-                    Number(catalogId),
-                    { limit: 100, skipCache: true }
-                  );
-                assigned = (productsResponse.data || []).map(
-                  (product: Product) => product.id
-                );
+                const catalogTag = buildCatalogTag(catalogId);
+                const [productsResponse, taggedResponse] = await Promise.all([
+                  productService.getProductsByCategory(Number(catalogId), {
+                    limit: 100,
+                    skipCache: true,
+                  }),
+                  productService.getProductsByTag({
+                    tag: catalogTag,
+                    limit: 500,
+                  }),
+                ]);
+
+                const assignedSet = new Set<number | string>();
+                (productsResponse.data || []).forEach((product: Product) => {
+                  if (product?.id !== undefined) {
+                    assignedSet.add(product.id);
+                  }
+                });
+                (taggedResponse.data || []).forEach((product: Product) => {
+                  if (product?.id !== undefined) {
+                    assignedSet.add(product.id);
+                  }
+                });
+
+                assigned = Array.from(assignedSet);
                 break;
               }
               case "segments":
@@ -549,11 +562,38 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
               await offerService.updateOffer(Number(itemId), updatePayload);
               break;
             }
-            case "products":
-              await productService.updateProduct(Number(itemId), {
-                category_id: Number(catalogId),
-              });
+            case "products": {
+              const product = items.find((item) => item.id === itemId) as
+                | Product
+                | undefined;
+              const operations: Promise<unknown>[] = [];
+
+              if (
+                (!product?.category_id || product.category_id === null) &&
+                !Number.isNaN(catalogIdNumber)
+              ) {
+                operations.push(
+                  productService.updateProduct(Number(itemId), {
+                    category_id: catalogIdNumber,
+                  })
+                );
+              }
+
+              const hasTag =
+                Array.isArray(product?.tags) &&
+                product.tags?.includes(catalogTag);
+
+              if (!hasTag) {
+                operations.push(
+                  productService.addProductTag(Number(itemId), catalogTag)
+                );
+              }
+
+              if (operations.length > 0) {
+                await Promise.all(operations);
+              }
               break;
+            }
             case "segments": {
               const segment = items.find((item) => item.id === itemId) as
                 | Segment
@@ -781,7 +821,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 rounded-md transition-colors"
             title="Go back"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -809,7 +849,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
               placeholder={`Search ${typeInfo.plural}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-lg focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
+              className={`w-full pl-10 pr-4 py-3 border ${tw.borderDefault} rounded-md focus:outline-none transition-all duration-200 bg-white focus:ring-2 focus:ring-[${color.primary.accent}]/20`}
             />
           </div>
 
@@ -934,7 +974,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
             <button
               onClick={handleAssignSelected}
               disabled={assigning || selectedItemIds.size === 0}
-              className="px-5 py-2.5 text-white rounded-lg font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed  flex items-center gap-2 whitespace-nowrap"
+              className="px-5 py-2.5 text-white rounded-md font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed  flex items-center gap-2 whitespace-nowrap"
               style={{
                 backgroundColor:
                   assigning || selectedItemIds.size === 0
@@ -959,7 +999,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <LoadingSpinner />

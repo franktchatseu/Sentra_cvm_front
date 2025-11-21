@@ -79,7 +79,7 @@ export default function CustomerIdentityFieldDetailsPage() {
         <button
           type="button"
           onClick={handleBack}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-md transition-colors"
         >
           <ArrowLeft className="h-5 w-5 text-gray-700" />
         </button>
@@ -87,21 +87,21 @@ export default function CustomerIdentityFieldDetailsPage() {
           <h1 className={`${tw.mainHeading} text-gray-900`}>
             {field ? field.field_name : "Field Details"}
           </h1>
-          <p className={`${tw.textSecondary} mt-1 text-sm`}>
-            Unique field identifier{" "}
-            <span style={{ color: color.primary.accent }}>
-              {field?.id ?? id}
-            </span>
-          </p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-12 flex items-center justify-center">
+        <div
+          className="bg-white border rounded-md p-12 flex items-center justify-center"
+          style={{ borderColor: color.border.default }}
+        >
           <LoadingSpinner variant="modern" size="lg" color="primary" />
         </div>
       ) : error ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center space-y-3">
+        <div
+          className="bg-white border rounded-md p-8 text-center space-y-3"
+          style={{ borderColor: color.border.default }}
+        >
           <h3 className="text-lg font-semibold text-gray-900">
             Unable to load field
           </h3>
@@ -109,20 +109,19 @@ export default function CustomerIdentityFieldDetailsPage() {
           <button
             type="button"
             onClick={loadField}
-            className="px-4 py-2 text-sm font-semibold text-white rounded-lg hover:opacity-95 transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-white rounded-md hover:opacity-95 transition-colors"
             style={{ backgroundColor: color.primary.action }}
           >
             Retry
           </button>
         </div>
       ) : field ? (
-        <div className="space-y-6">
-          <section className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
-            <h2 className={`${tw.cardHeading} text-gray-900`}>
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900">
               Field Overview
             </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <InfoCard
                 icon={<Database className="h-5 w-5 text-white" />}
                 title="Core Metadata"
@@ -177,74 +176,103 @@ export default function CustomerIdentityFieldDetailsPage() {
             </div>
           </section>
 
-          <section className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <section className="space-y-4">
             <div className="flex items-center gap-3">
               <div
-                className="p-2 rounded-lg"
+                className="p-2 rounded-md"
                 style={{ backgroundColor: color.primary.accent }}
               >
                 <ListChecks className="h-5 w-5 text-white" />
               </div>
-              <h2 className={`${tw.cardHeading} text-gray-900`}>
+              <h2 className="text-lg font-semibold text-gray-900">
                 Operator Support
               </h2>
             </div>
             {field.operators.length === 0 ? (
-              <p className={`${tw.textSecondary} text-sm`}>
-                No operators configured for this field.
-              </p>
+              <div className="bg-white border border-gray-200 rounded-md p-6">
+                <p className={`${tw.textSecondary} text-sm`}>
+                  No operators configured for this field.
+                </p>
+              </div>
             ) : (
               <div
-                className="overflow-x-auto border rounded-lg"
-                style={{ borderColor: color.border.default }}
+                className={`rounded-md border border-[${color.border.default}] overflow-hidden`}
               >
-                <table className="min-w-full bg-white">
-                  <thead
-                    className={`border-b ${tw.borderDefault}`}
-                    style={{ background: color.surface.tableHeader }}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table
+                    className="min-w-full"
+                    style={{
+                      borderCollapse: "separate",
+                      borderSpacing: "0 8px",
+                    }}
                   >
-                    <tr>
-                      {[
-                        "Label",
-                        "Symbol",
-                        "Requires Value",
-                        "Requires Two Values",
-                        "Applicable Types",
-                      ].map((header) => (
-                        <th
-                          key={header}
-                          className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider"
-                          style={{ color: color.surface.tableHeaderText }}
-                        >
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody
-                    className={`bg-white divide-y divide-[${color.border.default}]`}
-                  >
-                    {field.operators.map((operator) => (
-                      <tr key={operator.id} className="hover:bg-gray-50/40">
-                        <td className="px-6 py-3 text-sm text-gray-900 font-medium">
-                          {operator.label}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-700">
-                          {operator.symbol}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-700">
-                          {operator.requires_value ? "Yes" : "No"}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-700">
-                          {operator.requires_two_values ? "Yes" : "No"}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-700">
-                          {operator.applicable_field_types.join(", ")}
-                        </td>
+                    <thead style={{ background: color.surface.tableHeader }}>
+                      <tr>
+                        {[
+                          "Label",
+                          "Symbol",
+                          "Requires Value",
+                          "Requires Two Values",
+                          "Applicable Types",
+                        ].map((header) => (
+                          <th
+                            key={header}
+                            className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
+                            style={{ color: color.surface.tableHeaderText }}
+                          >
+                            {header}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {field.operators.map((operator) => (
+                        <tr key={operator.id}>
+                          <td
+                            className="px-6 py-4 text-sm text-gray-900 font-medium"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {operator.label}
+                          </td>
+                          <td
+                            className="px-6 py-4 text-sm text-gray-700"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {operator.symbol}
+                          </td>
+                          <td
+                            className="px-6 py-4 text-sm text-gray-700"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {operator.requires_value ? "Yes" : "No"}
+                          </td>
+                          <td
+                            className="px-6 py-4 text-sm text-gray-700"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {operator.requires_two_values ? "Yes" : "No"}
+                          </td>
+                          <td
+                            className="px-6 py-4 text-sm text-gray-700"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {operator.applicable_field_types.join(", ")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </section>
@@ -267,10 +295,13 @@ type InfoCardProps = {
 
 function InfoCard({ icon, title, items }: InfoCardProps) {
   return (
-    <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+    <div
+      className="bg-white border rounded-md p-5 space-y-4"
+      style={{ borderColor: color.border.default }}
+    >
       <div className="flex items-center gap-3">
         <div
-          className="p-2 rounded-lg"
+          className="p-2 rounded-md"
           style={{ backgroundColor: color.primary.accent }}
         >
           {icon}
@@ -282,10 +313,14 @@ function InfoCard({ icon, title, items }: InfoCardProps) {
       <dl className="space-y-3">
         {items.map((item) => (
           <div key={item.label}>
-            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <dt
+              className={`text-xs font-medium uppercase tracking-wide ${tw.textMuted}`}
+            >
               {item.label}
             </dt>
-            <dd className="text-sm text-gray-900 mt-1">{item.value}</dd>
+            <dd className="text-sm text-gray-900 mt-1 font-medium">
+              {item.value}
+            </dd>
           </div>
         ))}
       </dl>

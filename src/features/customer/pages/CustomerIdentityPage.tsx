@@ -95,7 +95,7 @@ export default function CustomerIdentityPage() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search fields..."
-            className={`w-full pl-10 pr-4 py-3.5 text-sm rounded-lg border border-[${color.border.default}] focus:outline-none focus:ring-2`}
+            className={`w-full pl-10 pr-4 py-3.5 text-sm rounded-md border border-[${color.border.default}] focus:outline-none focus:ring-2`}
             style={
               {
                 "--tw-ring-color": color.primary.accent,
@@ -124,7 +124,7 @@ export default function CustomerIdentityPage() {
       <div className="space-y-4">
         {(isLoading || error || hasNoFields || hasNoFilteredResults) && (
           <div
-            className={`border rounded-2xl p-6`}
+            className={`border rounded-md p-6`}
             style={{
               borderColor: color.border.default,
               backgroundColor: color.surface.background,
@@ -146,7 +146,7 @@ export default function CustomerIdentityPage() {
                 <button
                   type="button"
                   onClick={loadFields}
-                  className="px-4 py-2 text-sm font-semibold text-white rounded-lg hover:opacity-95 transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-white rounded-md hover:opacity-95 transition-colors"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   Retry
@@ -176,89 +176,105 @@ export default function CustomerIdentityPage() {
 
         {!isLoading && !error && !hasNoFields && !hasNoFilteredResults && (
           <div
-            className="overflow-x-auto border rounded-lg"
-            style={{ borderColor: color.border.default }}
+            className={`rounded-md border border-[${color.border.default}] overflow-hidden`}
           >
-            <table className="min-w-full bg-white">
-              <thead
-                className={`border-b ${tw.borderDefault}`}
-                style={{ background: color.surface.tableHeader }}
+            <div className="hidden lg:block overflow-x-auto">
+              <table
+                className="min-w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
               >
-                <tr>
-                  {[
-                    "ID",
-                    "Field Name",
-                    "Field Type",
-                    "Source Table",
-                    "Description",
-                    "Actions",
-                  ].map((header) => (
-                    <th
-                      key={header}
-                      className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody
-                className={`bg-white divide-y divide-[${color.border.default}]`}
-              >
-                {filteredFields.map((field) => (
-                  <tr key={field.id} className="hover:bg-gray-50/40">
-                    <td className="px-6 py-4 text-sm">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/dashboard/customer-identity/fields/${field.id}`,
-                            {
-                              state: { field },
-                            }
-                          )
-                        }
-                        className="font-semibold hover:underline"
-                        style={{ color: color.primary.accent }}
+                <thead style={{ background: color.surface.tableHeader }}>
+                  <tr>
+                    {[
+                      "ID",
+                      "Field Name",
+                      "Field Type",
+                      "Source Table",
+                      "Description",
+                      "Actions",
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
+                        style={{ color: color.surface.tableHeaderText }}
                       >
-                        {field.id}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                      {field.field_name}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {field.field_type}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {field.source_table}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {field.description || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/dashboard/customer-identity/fields/${field.id}`,
-                            {
-                              state: { field },
-                            }
-                          )
-                        }
-                        className="p-2 rounded-lg text-white transition-colors"
-                        style={{ backgroundColor: color.primary.accent }}
-                        title="View details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                    </td>
+                        {header}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredFields.map((field) => (
+                    <tr key={field.id}>
+                      <td
+                        className="px-6 py-4 text-sm"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/dashboard/customer-identity/fields/${field.id}`,
+                              {
+                                state: { field },
+                              }
+                            )
+                          }
+                          className="font-semibold hover:underline"
+                          style={{ color: color.primary.accent }}
+                        >
+                          {field.id}
+                        </button>
+                      </td>
+                      <td
+                        className="px-6 py-4 text-sm text-gray-900 font-medium"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {field.field_name}
+                      </td>
+                      <td
+                        className="px-6 py-4 text-sm text-gray-700"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {field.field_type}
+                      </td>
+                      <td
+                        className="px-6 py-4 text-sm text-gray-700"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {field.source_table}
+                      </td>
+                      <td
+                        className="px-6 py-4 text-sm text-gray-600"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {field.description || "—"}
+                      </td>
+                      <td
+                        className="px-6 py-4 text-sm"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/dashboard/customer-identity/fields/${field.id}`,
+                              {
+                                state: { field },
+                              }
+                            )
+                          }
+                          className="p-2 rounded-md text-black transition-colors hover:bg-gray-100"
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

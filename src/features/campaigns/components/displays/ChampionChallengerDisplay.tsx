@@ -1,6 +1,6 @@
-import { Award, Target, Users, Settings, Trash2 } from 'lucide-react';
-import { CampaignSegment } from '../../types/campaign';
-import { color } from '../../../../shared/utils/utils';
+import { Award, Target, Users, Settings, Trash2 } from "lucide-react";
+import { CampaignSegment } from "../../types/campaign";
+import { color } from "../../../../shared/utils/utils";
 
 interface ChampionChallengerDisplayProps {
   champion: CampaignSegment | null;
@@ -17,33 +17,45 @@ export default function ChampionChallengerDisplay({
   onAddChampion,
   onAddChallenger,
   onRemoveSegment,
-  onConfigureControlGroup
+  onConfigureControlGroup,
 }: ChampionChallengerDisplayProps) {
-
-  const totalAudience = (champion?.customer_count || 0) +
+  const totalAudience =
+    (champion?.customer_count || 0) +
     challengers.reduce((sum, c) => sum + c.customer_count, 0);
 
   return (
     <div className="space-y-4">
-
       {/* Champion Section */}
       <div className="space-y-3">
         <div className="flex items-center space-x-2">
           <Award className="w-5 h-5 text-[#588157]" />
-          <h3 className="text-base font-semibold text-gray-900">Champion Segment</h3>
+          <h3 className="text-base font-semibold text-gray-900">
+            Champion Segment
+          </h3>
         </div>
 
         {champion ? (
-          <div className="border border-[#588157] rounded-lg p-4">
+          <div className="border border-[#588157] rounded-md p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 flex-1">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color.primary.accent}20` }}>
-                  <Award className="w-5 h-5" style={{ color: color.primary.accent }} />
+                <div
+                  className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: `${color.primary.accent}20` }}
+                >
+                  <Award
+                    className="w-5 h-5"
+                    style={{ color: color.primary.accent }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
-                    <h4 className="text-base font-semibold text-gray-900">{champion.name}</h4>
-                    <span className="px-2 py-0.5 text-white text-xs font-medium rounded-full" style={{ backgroundColor: color.primary.accent }}>
+                    <h4 className="text-base font-semibold text-gray-900">
+                      {champion.name}
+                    </h4>
+                    <span
+                      className="px-2 py-0.5 text-white text-xs font-medium rounded-full"
+                      style={{ backgroundColor: color.primary.accent }}
+                    >
                       🏆 CHAMPION
                     </span>
                   </div>
@@ -54,25 +66,32 @@ export default function ChampionChallengerDisplay({
                         {champion.customer_count.toLocaleString()} customers
                       </span>
                     </div>
-                    {champion.control_group_config && champion.control_group_config.type !== 'none' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${color.primary.accent}15`, color: color.primary.accent }}>
-                        Control Group
-                      </span>
-                    )}
+                    {champion.control_group_config &&
+                      champion.control_group_config.type !== "none" && (
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full font-medium"
+                          style={{
+                            backgroundColor: `${color.primary.accent}15`,
+                            color: color.primary.accent,
+                          }}
+                        >
+                          Control Group
+                        </span>
+                      )}
                   </div>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => onConfigureControlGroup(champion.id)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
                   title="Configure Control Group"
                 >
                   <Settings className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onRemoveSegment(champion.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-red-500 rounded-md transition-colors"
                   title="Remove Champion"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -81,13 +100,15 @@ export default function ChampionChallengerDisplay({
             </div>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+          <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
                 <Award className="w-5 h-5 text-gray-400" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-1">No Champion Defined</h3>
+                <h3 className="text-sm font-medium text-gray-900 mb-1">
+                  No Champion Defined
+                </h3>
                 <p className="text-xs text-gray-600">
                   Add your champion segment first
                 </p>
@@ -103,19 +124,17 @@ export default function ChampionChallengerDisplay({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Target className="w-5 h-5 text-[#588157]" />
-              <h3 className="text-base font-semibold text-gray-900">Challenger Segments</h3>
-              <span className="text-sm text-gray-500">({challengers.length})</span>
+              <h3 className="text-base font-semibold text-gray-900">
+                Challenger Segments
+              </h3>
+              <span className="text-sm text-gray-500">
+                ({challengers.length})
+              </span>
             </div>
             <button
               onClick={onAddChallenger}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md text-sm font-medium"
               style={{ backgroundColor: color.primary.action }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-              }}
             >
               <Target className="w-4 h-4 mr-2" />
               Add Challenger
@@ -123,7 +142,7 @@ export default function ChampionChallengerDisplay({
           </div>
 
           {challengers.length > 0 ? (
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 rounded-md overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -146,10 +165,13 @@ export default function ChampionChallengerDisplay({
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {challengers.map((challenger, index) => (
-                    <tr key={challenger.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={challenger.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center">
-                          <span 
+                          <span
                             className="inline-flex items-center justify-center w-6 h-6 text-xs font-semibold rounded text-white"
                             style={{ backgroundColor: color.primary.action }}
                           >
@@ -159,15 +181,24 @@ export default function ChampionChallengerDisplay({
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center space-x-3">
-                          <div 
-                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: `${color.primary.accent}20` }}
+                          <div
+                            className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+                            style={{
+                              backgroundColor: `${color.primary.accent}20`,
+                            }}
                           >
-                            <Target className="w-4 h-4" style={{ color: color.primary.accent }} />
+                            <Target
+                              className="w-4 h-4"
+                              style={{ color: color.primary.accent }}
+                            />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{challenger.name}</div>
-                            <div className="text-xs text-gray-500">{challenger.description}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {challenger.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {challenger.description}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -180,8 +211,15 @@ export default function ChampionChallengerDisplay({
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {challenger.control_group_config && challenger.control_group_config.type !== 'none' ? (
-                          <span className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: `${color.primary.accent}15`, color: color.primary.accent }}>
+                        {challenger.control_group_config &&
+                        challenger.control_group_config.type !== "none" ? (
+                          <span
+                            className="text-xs px-2 py-1 rounded-full font-medium"
+                            style={{
+                              backgroundColor: `${color.primary.accent}15`,
+                              color: color.primary.accent,
+                            }}
+                          >
                             Active
                           </span>
                         ) : (
@@ -193,7 +231,9 @@ export default function ChampionChallengerDisplay({
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end space-x-1">
                           <button
-                            onClick={() => onConfigureControlGroup(challenger.id)}
+                            onClick={() =>
+                              onConfigureControlGroup(challenger.id)
+                            }
                             className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
                             title="Configure Control Group"
                           >
@@ -214,23 +254,20 @@ export default function ChampionChallengerDisplay({
               </table>
             </div>
           ) : (
-            <div className=" border border-gray-300 rounded-xl p-8">
+            <div className=" border border-gray-300 rounded-md p-8">
               <div className="flex flex-col items-center justify-center text-center">
                 <Target className="w-12 h-12 text-[#588157] mb-3" />
-                <h4 className="font-medium text-gray-900 mb-2">No Challengers Yet</h4>
+                <h4 className="font-medium text-gray-900 mb-2">
+                  No Challengers Yet
+                </h4>
                 <p className="text-sm text-gray-600 mb-4 max-w-sm">
-                  Add challenger segments to test alternative strategies against your champion.
+                  Add challenger segments to test alternative strategies against
+                  your champion.
                 </p>
                 <button
                   onClick={onAddChallenger}
-                  className="inline-flex items-center px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="inline-flex items-center px-4 py-2 text-white rounded-md text-sm font-medium"
                   style={{ backgroundColor: color.primary.action }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.interactive.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor = color.primary.action;
-                  }}
                 >
                   <Target className="w-4 h-4 mr-2" />
                   Add First Challenger

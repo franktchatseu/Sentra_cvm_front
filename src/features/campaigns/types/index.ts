@@ -1,24 +1,24 @@
 // Campaign creation and updates
-export * from './createCampaign';
-export * from './updateCampaign';
+export * from "./createCampaign";
+export * from "./updateCampaign";
 
 // Campaign execution
-export * from './runCampaign';
-export * from './validateCampaign';
+export * from "./runCampaign";
+export * from "./validateCampaign";
 
 // Campaign approval workflow
-export * from './approveCampaign';
-export * from './rejectCampaign';
+export * from "./approveCampaign";
+export * from "./rejectCampaign";
 
 // Campaign lifecycle management
-export * from './pauseCampaign';
+export * from "./pauseCampaign";
 
 // Campaign cloning
-export * from './cloneCampaign';
-export * from './cloneCampaignWithModifications';
+export * from "./cloneCampaign";
+export * from "./cloneCampaignWithModifications";
 
-// Campaign categories
-export * from './campaignCategory';
+// Campaigns catalogs
+export * from "./campaignCategory";
 
 // Campaign linking
-export * from './linkCampaignToOffer';
+export * from "./linkCampaignToOffer";

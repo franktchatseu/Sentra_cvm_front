@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Shield,
   Plus,
@@ -13,8 +14,10 @@ import {
   MoreVertical,
   X,
   BarChart3,
+  ArrowLeft,
 } from "lucide-react";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import { color, tw } from "../../../shared/utils/utils";
 
 interface UniversalControlGroup {
   id: string;
@@ -32,6 +35,7 @@ interface UniversalControlGroup {
 }
 
 export default function ControlGroupsPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive" | "expired"
@@ -102,7 +106,7 @@ export default function ControlGroupsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800 border-green-200";
+        return `bg-[${color.primary.action}]/10 text-[${color.primary.action}] border-[${color.primary.action}]/20`;
       case "inactive":
         return "bg-gray-100 text-gray-800 border-gray-200";
       case "expired":
@@ -144,17 +148,26 @@ export default function ControlGroupsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Universal Control Groups
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Configure and manage universal control groups for campaigns
-          </p>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate("/dashboard/configuration")}
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Universal Control Groups
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Configure and manage universal control groups for campaigns
+            </p>
+          </div>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
+          className={`inline-flex items-center px-4 py-2 ${tw.primaryAction} rounded-md text-sm font-medium transition-colors hover:opacity-90`}
+          style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-4 w-4 mr-2" />
           <span>Create Control Group</span>
@@ -163,10 +176,16 @@ export default function ControlGroupsPage() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-[#3A5A40]/10">
-              <Shield className="h-6 w-6 text-[#3A5A40]" />
+            <div
+              className="p-3 rounded-md"
+              style={{ backgroundColor: `${color.primary.action}10` }}
+            >
+              <Shield
+                className="h-6 w-6"
+                style={{ color: color.primary.action }}
+              />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
@@ -179,10 +198,16 @@ export default function ControlGroupsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-green-100">
-              <Users className="h-6 w-6 text-green-600" />
+            <div
+              className="p-3 rounded-md"
+              style={{ backgroundColor: `${color.primary.action}10` }}
+            >
+              <Users
+                className="h-6 w-6"
+                style={{ color: color.primary.action }}
+              />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Groups</p>
@@ -193,9 +218,9 @@ export default function ControlGroupsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-100">
+            <div className="p-3 rounded-md bg-blue-100">
               <Percent className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
@@ -227,7 +252,7 @@ export default function ControlGroupsPage() {
               placeholder="Search control groups..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -248,130 +273,202 @@ export default function ControlGroupsPage() {
       </div>
 
       {/* Control Groups Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Generation Time
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Percentage
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Member Count
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer Base
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Recurrence
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredGroups.map((group) => (
-                <tr
-                  key={group.id}
-                  className="hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-[#3A5A40]/10">
-                          <Shield className="h-5 w-5 text-[#3A5A40]" />
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {group.name}
-                        </div>
-                        {group.description && (
-                          <div className="text-sm text-gray-500">
-                            {group.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(
-                        group.status
-                      )}`}
-                    >
-                      {group.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      {group.generationTime}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Percent className="h-4 w-4 mr-2 text-gray-400" />
-                      {group.percentage}%
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Users className="h-4 w-4 mr-2 text-gray-400" />
-                      {group.memberCount.toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">
-                      {getCustomerBaseLabel(group.customerBase)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                      {getRecurrenceLabel(group.recurrence)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200"
-                        title="Edit"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-red-600 transition-colors duration-200"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                        title="More options"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+      <div
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
+      >
+        {filteredGroups.length > 0 ? (
+          <div className="hidden lg:block overflow-x-auto">
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Name
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Generation Time
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Percentage
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Member Count
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Customer Base
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Recurrence
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Empty State */}
-        {filteredGroups.length === 0 && (
+              </thead>
+              <tbody>
+                {filteredGroups.map((group) => (
+                  <tr key={group.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div
+                            className="h-10 w-10 rounded-md flex items-center justify-center"
+                            style={{
+                              backgroundColor: `${color.primary.action}10`,
+                            }}
+                          >
+                            <Shield
+                              className="h-5 w-5"
+                              style={{ color: color.primary.action }}
+                            />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div
+                            className={`font-semibold text-sm sm:text-base ${tw.textPrimary}`}
+                          >
+                            {group.name}
+                          </div>
+                          {group.description && (
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                            >
+                              {group.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <span
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${
+                          group.status === "active"
+                            ? ""
+                            : group.status === "inactive"
+                            ? "bg-gray-100 text-gray-800 border-gray-200"
+                            : "bg-red-100 text-red-800 border-red-200"
+                        }`}
+                        style={
+                          group.status === "active"
+                            ? {
+                                backgroundColor: `${color.primary.action}10`,
+                                color: color.primary.action,
+                                borderColor: `${color.primary.action}20`,
+                              }
+                            : undefined
+                        }
+                      >
+                        {group.status}
+                      </span>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                        {group.generationTime}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Percent className="h-4 w-4 mr-2 text-gray-400" />
+                        {group.percentage}%
+                      </div>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-gray-400" />
+                        {group.memberCount.toLocaleString()}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {getCustomerBaseLabel(group.customerBase)}
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                        {getRecurrenceLabel(group.recurrence)}
+                      </div>
+                    </td>
+                    <td
+                      className="px-6 py-4 text-sm font-medium"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+                          title="More options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
           <div className="text-center py-12">
             <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -384,7 +481,8 @@ export default function ControlGroupsPage() {
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-[#3A5A40] hover:bg-[#2f4a35] text-white rounded-md text-sm font-medium transition-colors"
+              className={`inline-flex items-center px-4 py-2 ${tw.primaryAction} rounded-md text-sm font-medium transition-colors hover:opacity-90`}
+              style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Control Group
@@ -397,7 +495,7 @@ export default function ControlGroupsPage() {
       {showCreateModal &&
         createPortal(
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-md shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
@@ -418,10 +516,19 @@ export default function ControlGroupsPage() {
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-[#588157] text-[#588157] bg-white">
+                    <div
+                      className="flex items-center justify-center w-8 h-8 rounded-full border-2 bg-white"
+                      style={{
+                        borderColor: color.primary.action,
+                        color: color.primary.action,
+                      }}
+                    >
                       <Users className="w-4 h-4" />
                     </div>
-                    <span className="ml-2 text-sm font-medium text-[#588157]">
+                    <span
+                      className="ml-2 text-sm font-medium"
+                      style={{ color: color.primary.action }}
+                    >
                       Customer Base
                     </span>
                     <div className="w-16 h-0.5 mx-4 bg-gray-300" />
@@ -455,7 +562,20 @@ export default function ControlGroupsPage() {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-0"
+                      style={
+                        {
+                          "--tw-ring-color": color.primary.action,
+                        } as React.CSSProperties & {
+                          "--tw-ring-color"?: string;
+                        }
+                      }
+                      onFocus={(e) => {
+                        e.target.style.borderColor = color.primary.action;
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "";
+                      }}
                       placeholder="Enter control group name"
                     />
                   </div>
@@ -471,7 +591,13 @@ export default function ControlGroupsPage() {
                           name="customerBase"
                           value="active_subscribers"
                           defaultChecked
-                          className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
+                          className="mt-1 w-4 h-4 border-gray-300"
+                          style={
+                            {
+                              accentColor: color.primary.action,
+                              "--tw-ring-color": color.primary.action,
+                            } as React.CSSProperties
+                          }
                         />
                         <div className="ml-3">
                           <div className="font-medium text-gray-900">
@@ -487,7 +613,13 @@ export default function ControlGroupsPage() {
                           type="radio"
                           name="customerBase"
                           value="all_customers"
-                          className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
+                          className="mt-1 w-4 h-4 border-gray-300"
+                          style={
+                            {
+                              accentColor: color.primary.action,
+                              "--tw-ring-color": color.primary.action,
+                            } as React.CSSProperties
+                          }
                         />
                         <div className="ml-3">
                           <div className="font-medium text-gray-900">
@@ -503,7 +635,13 @@ export default function ControlGroupsPage() {
                           type="radio"
                           name="customerBase"
                           value="saved_segments"
-                          className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
+                          className="mt-1 w-4 h-4 border-gray-300"
+                          style={
+                            {
+                              accentColor: color.primary.action,
+                              "--tw-ring-color": color.primary.action,
+                            } as React.CSSProperties
+                          }
                         />
                         <div className="ml-3">
                           <div className="font-medium text-gray-900">
@@ -534,7 +672,10 @@ export default function ControlGroupsPage() {
                   >
                     Cancel
                   </button>
-                  <button className="px-4 py-2 bg-[#3A5A40] text-white rounded-md text-sm font-medium hover:bg-[#2f4a35] transition-colors">
+                  <button
+                    className={`px-4 py-2 ${tw.primaryAction} rounded-md text-sm font-medium hover:opacity-90 transition-colors`}
+                    style={{ backgroundColor: color.primary.action }}
+                  >
                     Next
                   </button>
                 </div>

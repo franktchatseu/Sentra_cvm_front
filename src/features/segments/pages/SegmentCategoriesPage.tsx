@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
   Edit,
   Trash2,
-  X,
   Users,
   ArrowLeft,
   Grid,
@@ -17,6 +15,7 @@ import {
   Archive,
   Star,
 } from "lucide-react";
+import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
@@ -105,16 +104,16 @@ function CategoryModal({
   return isOpen
     ? createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className={`${tw.subHeading} text-gray-900`}>
+              <h2 className="text-lg font-semibold text-gray-900">
                 {category
                   ? "Edit Segment Catalog"
                   : "Create New Segment Catalog"}
               </h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -132,7 +131,7 @@ function CategoryModal({
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
                     placeholder="e.g., Marketing Segments, Retention Campaigns"
                     required
                   />
@@ -151,7 +150,7 @@ function CategoryModal({
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
                     placeholder="Optional description for this segment catalog"
                   />
                 </div>
@@ -161,14 +160,14 @@ function CategoryModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: color.primary.action }}
                   onMouseEnter={(e) => {
                     if (!e.currentTarget.disabled) {
@@ -209,16 +208,10 @@ function SegmentsModal({
   category,
   onRefreshCategories,
 }: SegmentsModalProps) {
-  const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
   const [segments, setSegments] = useState<Segment[]>([]);
-  const [filteredSegments, setFilteredSegments] = useState<Segment[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [allSegments, setAllSegments] = useState<Segment[]>([]);
-  const [loadingAllSegments, setLoadingAllSegments] = useState(false);
   const [removingSegmentId, setRemovingSegmentId] = useState<
     number | string | null
   >(null);
@@ -247,11 +240,9 @@ function SegmentsModal({
       });
 
       setSegments(categorySegments);
-      setFilteredSegments(categorySegments);
     } catch (err) {
       // Failed to load segments
       setSegments([]);
-      setFilteredSegments([]);
     } finally {
       setIsLoading(false);
     }
@@ -262,40 +253,6 @@ function SegmentsModal({
       loadCategorySegments();
     }
   }, [isOpen, category, loadCategorySegments]);
-
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const filtered = segments.filter(
-        (segment) =>
-          segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (segment.description &&
-            segment.description
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()))
-      );
-      setFilteredSegments(filtered);
-    } else {
-      setFilteredSegments(segments);
-    }
-  }, [searchTerm, segments]);
-
-  // Load all segments for assignment modal
-  const loadAllSegments = async () => {
-    try {
-      setLoadingAllSegments(true);
-      const response = await segmentService.getSegments({
-        limit: 1000,
-        skipCache: true,
-      });
-      const segmentsData = (response.data || []) as Segment[];
-      setAllSegments(segmentsData);
-    } catch (err) {
-      // Failed to load all segments
-      setAllSegments([]);
-    } finally {
-      setLoadingAllSegments(false);
-    }
-  };
 
   // Get assigned segment IDs (segments in this category)
   const assignedSegmentIds = segments
@@ -339,167 +296,117 @@ function SegmentsModal({
   };
 
   const handleRemoveSegment = async (segmentId: number | string) => {
-    // TODO: Uncomment and implement when remove functionality is available
-    // const confirmed = await confirm({
-    //   title: "Remove Segment",
-    //   message: `Are you sure you want to remove this segment from "${category?.name}"?`,
-    //   type: "warning",
-    //   confirmText: "Remove",
-    //   cancelText: "Cancel",
-    // });
-    // if (!confirmed) return;
-    // try {
-    //   setRemovingSegmentId(segmentId);
-    //   // Get segment to update its tags/category
-    //   const segment = await segmentService.getSegmentById(Number(segmentId));
-    //   const updatedTags = (segment.tags || []).filter(
-    //     (tag) => tag !== buildSegmentCatalogTag(category?.id || 0)
-    //   );
-    //   // Update segment to remove catalog tag
-    //   await segmentService.updateSegment(Number(segmentId), {
-    //     tags: updatedTags,
-    //     // If category matches, set to null or another category
-    //     category: segment.category === category?.id ? null : segment.category,
-    //   });
-    //   // Refresh segments list
-    //   await loadCategorySegments();
-    //   await onRefreshCategories();
-    //   showToast("Segment removed from catalog successfully");
-    // } catch (err) {
-    //   showError("Failed to remove segment", err instanceof Error ? err.message : "Please try again");
-    // } finally {
-    //   setRemovingSegmentId(null);
-    // }
+    if (!category) return;
 
-    // Temporary: Show toast until remove functionality is implemented
-    showToast("info", "Can't access this action");
+    const confirmed = await confirm({
+      title: "Remove Segment",
+      message: `Are you sure you want to remove this segment from "${category.name}"?`,
+      type: "warning",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setRemovingSegmentId(segmentId);
+
+      const segmentResponse = await segmentService.getSegmentById(
+        Number(segmentId),
+        true
+      );
+      const segmentData = segmentResponse.data as Segment | undefined;
+
+      if (!segmentData) {
+        showError("Failed to load segment details", "Please try again later.");
+        return;
+      }
+
+      const primaryCategory =
+        typeof segmentData.category === "string"
+          ? parseInt(segmentData.category, 10)
+          : segmentData.category;
+
+      if (
+        typeof primaryCategory === "number" &&
+        !Number.isNaN(primaryCategory) &&
+        primaryCategory === Number(category.id)
+      ) {
+        await confirm({
+          title: "Primary Category",
+          message:
+            "This catalog is the segment's primary category. Update the segment's primary category before removing it from this catalog.",
+          type: "info",
+          confirmText: "Got it",
+          cancelText: "Close",
+        });
+        return;
+      }
+
+      const catalogTag = buildSegmentCatalogTag(category.id);
+      const hasCatalogTag =
+        Array.isArray(segmentData.tags) &&
+        segmentData.tags.includes(catalogTag);
+
+      if (!hasCatalogTag) {
+        showError("Segment is not tagged to this catalog.");
+        return;
+      }
+
+      const updatedTags = (segmentData.tags || []).filter(
+        (tag) => tag !== catalogTag
+      );
+
+      await segmentService.updateSegment(Number(segmentId), {
+        tags: updatedTags,
+      });
+
+      showToast("Segment removed from catalog successfully");
+      await loadCategorySegments();
+      await onRefreshCategories();
+    } catch (err) {
+      showError(
+        "Failed to remove segment",
+        err instanceof Error ? err.message : "Please try again later."
+      );
+    } finally {
+      setRemovingSegmentId(null);
+    }
   };
 
   return (
-    <>
-      {isOpen && category && (
-        <>
-          {/* Main Segments Modal */}
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Segments in "{category?.name}"
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {segments.length} segment{segments.length !== 1 ? "s" : ""}{" "}
-                    in this catalog
-                  </p>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-
-              {/* Search and Assign Button */}
-              <div className="px-6 pt-4 pb-2 border-b border-gray-200">
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search segments..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigate(
-                        `/dashboard/segment-catalogs/${category.id}/assign`
-                      );
-                    }}
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap hover:bg-gray-50"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add segments to this catalog
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6">
-                {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <LoadingSpinner
-                      variant="modern"
-                      size="lg"
-                      color="primary"
-                    />
-                    <p className="text-gray-500 mt-4">Loading segments...</p>
-                  </div>
-                ) : filteredSegments.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">
-                      {searchTerm
-                        ? "No segments match your search"
-                        : "No segments in this catalog"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredSegments.map((segment) => (
-                      <div
-                        key={segment.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">
-                            {segment.name}
-                          </h3>
-                          {segment.description && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              {segment.description}
-                            </p>
-                          )}
-                          {segment.customer_count !== undefined && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              {segment.customer_count.toLocaleString()}{" "}
-                              customers
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() =>
-                              navigate(`/dashboard/segments/${segment.id}`)
-                            }
-                            className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleRemoveSegment(segment.id)}
-                            disabled={removingSegmentId === segment.id}
-                            className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
-                          >
-                            {removingSegmentId === segment.id
-                              ? "Removing..."
-                              : "Remove"}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Assign Segments Modal */}
-        </>
+    <CatalogItemsModal<Segment>
+      isOpen={isOpen}
+      onClose={onClose}
+      category={category}
+      items={segments}
+      loading={isLoading}
+      entityName="segment"
+      entityNamePlural="segments"
+      assignRoute={`/dashboard/segment-catalogs/${category?.id}/assign`}
+      viewRoute={(id) => `/dashboard/segments/${id}`}
+      onRemove={handleRemoveSegment}
+      removingId={removingSegmentId}
+      onRefresh={async () => {
+        await loadCategorySegments();
+        await onRefreshCategories();
+      }}
+      renderItem={(segment) => (
+        <div>
+          <h3 className="font-medium text-gray-900">{segment.name}</h3>
+          {segment.description && (
+            <p className="text-sm text-gray-500 mt-1">{segment.description}</p>
+          )}
+          {segment.customer_count !== undefined && (
+            <p className="text-xs text-gray-400 mt-1">
+              {segment.customer_count.toLocaleString()} customers
+            </p>
+          )}
+        </div>
       )}
-    </>
+    />
   );
 }
 
@@ -793,7 +700,7 @@ export default function SegmentCategoriesPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/segments")}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
@@ -812,7 +719,7 @@ export default function SegmentCategoriesPage() {
             setSelectedCategory(null);
             setIsCategoryModalOpen(true);
           }}
-          className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+          className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
           style={{ backgroundColor: color.primary.action }}
           onMouseEnter={(e) => {
             (e.target as HTMLButtonElement).style.backgroundColor =
@@ -841,7 +748,7 @@ export default function SegmentCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
               >
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
@@ -890,7 +797,7 @@ export default function SegmentCategoriesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search catalogs..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
           />
         </div>
         <div className="flex items-center gap-2  p-1">
@@ -931,7 +838,7 @@ export default function SegmentCategoriesPage() {
           <p className={`${tw.textMuted} font-medium`}>Loading catalogs...</p>
         </div>
       ) : filteredCategories.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-4">
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 text-center py-16 px-4">
           <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className={`${tw.cardHeading} text-gray-900 mb-1`}>
             {searchTerm ? "No catalogs found" : "No catalogs yet"}
@@ -947,7 +854,7 @@ export default function SegmentCategoriesPage() {
                 setSelectedCategory(null);
                 setIsCategoryModalOpen(true);
               }}
-              className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-all"
+              className="inline-flex items-center px-4 py-2 text-white rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
               onMouseEnter={(e) => {
                 (e.target as HTMLButtonElement).style.backgroundColor =
@@ -968,7 +875,7 @@ export default function SegmentCategoriesPage() {
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all"
+              className="bg-white border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between mb-2">
                 <h3 className={`${tw.cardHeading} text-gray-900`}>
@@ -980,14 +887,14 @@ export default function SegmentCategoriesPage() {
                       setSelectedCategory(category);
                       setIsCategoryModalOpen(true);
                     }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -1012,8 +919,8 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsSegmentsModalOpen(true);
                   }}
-                  className="text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View Segments"
                 >
                   View Segments
@@ -1027,7 +934,7 @@ export default function SegmentCategoriesPage() {
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1">
@@ -1046,8 +953,8 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsSegmentsModalOpen(true);
                   }}
-                  className="text-sm font-medium transition-colors"
-                  style={{ color: color.primary.accent }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
+                  style={{ backgroundColor: color.primary.action }}
                   title="View Segments"
                 >
                   View Segments
@@ -1057,14 +964,14 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsCategoryModalOpen(true);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   title="Edit"
                 >
                   <Edit className="w-4 h-4 text-gray-600" />
                 </button>
                 <button
                   onClick={() => handleDeleteCategory(category)}
-                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />

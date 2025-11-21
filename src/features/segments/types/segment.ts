@@ -346,10 +346,11 @@ export type TypeDistributionResponse = {
 };
 
 export type CategoryDistributionResponse = {
-  category_id: number;
+  category_id?: number;
   category_name: string;
-  segment_count: number;
-  percentage: number;
+  segment_count?: number | string;
+  count?: number | string;
+  percentage?: number;
 };
 
 export type LargestSegmentsResponse = {
@@ -567,8 +568,22 @@ export enum ComputationStatusEnum {
 
 export interface SegmentCondition {
   id: string;
-  field: string; // field_value (e.g., "customer_id") - kept for backward compatibility
+  conditionType: "360_profile" | "segment" | "list"; // Type of condition
+  
+  // For 360 Profile conditions
+  category?: number; // Category ID for filtering fields
+  field?: string; // field_value (e.g., "customer_id")
   field_id?: number; // Backend field ID - used for API calls
+  
+  // For Segment conditions
+  segment_id?: number; // Referenced segment ID
+  segment_name?: string; // Referenced segment name (for display)
+  
+  // For List conditions
+  list_id?: number; // Referenced quicklist ID
+  list_name?: string; // Referenced quicklist name (for display)
+  
+  // Common fields
   operator:
     | "equals"
     | "not_equals"
@@ -585,22 +600,9 @@ export interface SegmentCondition {
 
 export interface SegmentConditionGroup {
   id: string;
-  operator: "AND" | "OR";
-  conditionType: "rule" | "list" | "segments" | "360";
-  conditions: SegmentCondition[];
-  listData?: {
-    list_id?: number;
-    list_description?: string;
-    list_type?: "seed" | "and" | "standard";
-    subscriber_id_col_name?: string;
-    subscriber_count?: number;
-    file_delimiter?: string;
-    file_text?: string;
-    file_path?: string;
-    list_label?: string;
-    list_headers?: string;
-  };
-  profileConditions?: SegmentCondition[]; // For 360 profile conditions
+  operator: "AND" | "OR"; // Operator within conditions in this group
+  groupOperator?: "AND" | "OR"; // Operator between this group and the next
+  conditions: SegmentCondition[]; // Each condition can have its own type (360_profile, segment, or list)
 }
 
 // Legacy aliases for backward compatibility

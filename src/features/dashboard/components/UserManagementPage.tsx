@@ -861,7 +861,7 @@ export default function UserManagementPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsAnalyticsModalOpen(true)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
             <BarChart3 className="w-4 h-4" />
             View Analytics
@@ -885,7 +885,7 @@ export default function UserManagementPage() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -1043,29 +1043,29 @@ export default function UserManagementPage() {
 
       {/* Content */}
       <div
-        className={`bg-white border border-gray-200 rounded-lg p-6 overflow-hidden`}
+        className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner
               variant="modern"
-              size="lg"
+              size="xl"
               color="primary"
-              className="mr-3"
+              className="mb-4"
             />
-            <span className={`${tw.textSecondary}`}>
+            <p className={`${tw.textMuted} font-medium text-sm`}>
               Loading {activeTab}...
-            </span>
+            </p>
           </div>
         ) : errorState ? (
           <div className="p-8 text-center">
             <div
-              className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-xl p-6`}
+              className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-md p-6`}
             >
               <p className="font-medium mb-3">{errorState}</p>
               <button
                 onClick={() => loadData({ skipCache: true })}
-                className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-colors font-medium"
+                className="px-4 py-2 text-white rounded-md hover:opacity-90 transition-colors font-medium"
                 style={{ backgroundColor: color.status.danger }}
               >
                 Try Again
@@ -1089,7 +1089,7 @@ export default function UserManagementPage() {
                     setSelectedUser(null);
                     setIsModalOpen(true);
                   }}
-                  className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
+                  className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 mx-auto text-sm text-white"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   <Plus className="w-4 h-4" />
@@ -1100,52 +1100,52 @@ export default function UserManagementPage() {
           ) : (
             <>
               {/* Desktop Table */}
-              <div className="max-md:hidden overflow-x-auto -mx-6 -mt-6">
-                <table className="w-full">
-                  <thead
-                    className={`border-b ${tw.borderDefault}`}
-                    style={{ background: color.surface.tableHeader }}
-                  >
+              <div className="hidden lg:block overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead style={{ background: color.surface.tableHeader }}>
                     <tr>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         User
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Department
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Role
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Status
                       </th>
                       <th
-                        className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Created
                       </th>
                       <th
-                        className={`px-6 py-4 text-right text-sm font-medium uppercase tracking-wider`}
+                        className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody>
                     {filteredUsers.map((user) => {
                       const normalizedStatus = normalizeStatus(user);
                       const userIsActive = normalizedStatus === "active";
@@ -1153,41 +1153,73 @@ export default function UserManagementPage() {
                       const statusColor = getStatusColorToken(normalizedStatus);
 
                       return (
-                        <tr
-                          key={user.id}
-                          className="hover:bg-gray-50/30 transition-colors"
-                        >
-                          <td className="px-6 py-4">
+                        <tr key={user.id} className="transition-colors">
+                          <td
+                            className="px-6 py-4"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <div>
                               <button
                                 type="button"
                                 onClick={() => handleViewUser(user)}
-                                className="text-base font-semibold text-black transition-colors hover:opacity-80"
+                                className="font-semibold text-sm sm:text-base text-gray-900 transition-colors truncate"
+                                style={{
+                                  color: "inherit",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color =
+                                    color.primary.accent;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color =
+                                    "rgb(17, 24, 39)"; // gray-900
+                                }}
+                                title={`${user.first_name} ${user.last_name}`}
                               >
                                 {user.first_name} {user.last_name}
                               </button>
-                              <div className={`text-sm ${tw.textMuted}`}>
+                              <div
+                                className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                                title={user.email_address || user.email}
+                              >
                                 {user.email_address || user.email}
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td
+                            className="px-6 py-4 hidden lg:table-cell"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                             >
                               {user.department || "N/A"}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td
+                            className="px-6 py-4 hidden xl:table-cell"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                             >
                               {getUserRoleName(user)}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td
+                            className="px-6 py-4"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                                 userIsActive
                                   ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
                                   : `bg-[${statusColor}]/10 text-[${statusColor}]`
@@ -1196,24 +1228,32 @@ export default function UserManagementPage() {
                               {statusLabel}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className={`text-sm ${tw.textSecondary}`}>
-                              {new Date(user.created_at).toLocaleDateString(
-                                "en-US",
-                                {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                }
-                              )}
-                            </div>
+                          <td
+                            className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {new Date(user.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end space-x-2">
+                          <td
+                            className="px-6 py-4 text-sm font-medium"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            <div className="flex items-center justify-center space-x-2">
                               <button
                                 onClick={() => handleToggleStatus(user)}
                                 disabled={loadingActions.toggling.has(user.id)}
-                                className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{
                                   color: userIsActive
                                     ? deactivateColor
@@ -1241,7 +1281,7 @@ export default function UserManagementPage() {
                               </button>
                               <button
                                 onClick={() => handleViewUser(user)}
-                                className="p-2 rounded-lg transition-colors"
+                                className="p-2 rounded-md transition-colors"
                                 style={{
                                   color: color.primary.action,
                                   backgroundColor: "transparent",
@@ -1255,7 +1295,7 @@ export default function UserManagementPage() {
                                   setSelectedUser(user);
                                   setIsModalOpen(true);
                                 }}
-                                className="p-2 rounded-lg transition-colors"
+                                className="p-2 rounded-md transition-colors"
                                 style={{
                                   color: color.primary.action,
                                   backgroundColor: "transparent",
@@ -1267,7 +1307,7 @@ export default function UserManagementPage() {
                               <button
                                 onClick={() => handleDeleteUser(user)}
                                 disabled={loadingActions.deleting.has(user.id)}
-                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title={
                                   loadingActions.deleting.has(user.id)
                                     ? "Deleting..."
@@ -1307,11 +1347,21 @@ export default function UserManagementPage() {
                       className="p-4 border-b border-gray-200 last:border-b-0"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="text-base font-semibold text-black mb-1">
+                        <div className="text-base font-semibold mb-1">
                           <button
                             type="button"
                             onClick={() => handleViewUser(user)}
-                            className="text-black hover:opacity-80"
+                            className="transition-colors"
+                            style={{
+                              color: "rgb(17, 24, 39)", // gray-900
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "rgb(17, 24, 39)"; // gray-900
+                            }}
                           >
                             {user.first_name} {user.last_name}
                           </button>
@@ -1344,7 +1394,7 @@ export default function UserManagementPage() {
                           <button
                             onClick={() => handleToggleStatus(user)}
                             disabled={loadingActions.toggling.has(user.id)}
-                            className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{
                               color: userIsActive
                                 ? deactivateColor
@@ -1372,7 +1422,7 @@ export default function UserManagementPage() {
                           </button>
                           <button
                             onClick={() => handleViewUser(user)}
-                            className="p-2 rounded-lg transition-colors"
+                            className="p-2 rounded-md transition-colors"
                             style={{
                               color: color.primary.action,
                               backgroundColor: "transparent",
@@ -1386,7 +1436,7 @@ export default function UserManagementPage() {
                               setSelectedUser(user);
                               setIsModalOpen(true);
                             }}
-                            className="p-2 rounded-lg transition-colors"
+                            className="p-2 rounded-md transition-colors"
                             style={{
                               color: color.primary.action,
                               backgroundColor: "transparent",
@@ -1398,7 +1448,7 @@ export default function UserManagementPage() {
                           <button
                             onClick={() => handleDeleteUser(user)}
                             disabled={loadingActions.deleting.has(user.id)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title={
                               loadingActions.deleting.has(user.id)
                                 ? "Deleting..."
@@ -1436,40 +1486,40 @@ export default function UserManagementPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto -mx-6 -mt-6">
-              <table className="w-full">
-                <thead
-                  className={`border-b ${tw.borderDefault} rounded-t-2xl`}
-                  style={{ background: color.surface.tableHeader }}
-                >
+            <div className="hidden lg:block overflow-x-auto">
+              <table
+                className="w-full"
+                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+              >
+                <thead style={{ background: color.surface.tableHeader }}>
                   <tr>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Applicant
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested Role
                     </th>
                     <th
-                      className={`px-6 py-4 text-left text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Requested
                     </th>
                     <th
-                      className={`px-6 py-4 text-right text-xs font-medium uppercase tracking-wider`}
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {filteredRequests.map((request, index) => {
                     const requestId = resolveAccountRequestId(request);
                     const requestKey =
@@ -1507,40 +1557,51 @@ export default function UserManagementPage() {
                     const requestRole = getPendingRequestRole(request);
 
                     return (
-                      <tr
-                        key={requestKey}
-                        className="hover:bg-gray-50/30 transition-colors"
-                      >
-                        <td className="px-6 py-4">
+                      <tr key={requestKey} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
                           <div>
                             <div
-                              className={`text-base font-semibold ${tw.textPrimary}`}
+                              className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                              title={fullName}
                             >
                               {fullName}
                             </div>
-                            <div className={`text-sm ${tw.textMuted}`}>
+                            <div
+                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                              title={requestEmail}
+                            >
                               {requestEmail}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td
+                          className="px-6 py-4 hidden lg:table-cell"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                            className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                           >
                             {requestRole}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className={`text-sm ${tw.textSecondary}`}>
-                            {formattedDate}
-                          </div>
+                        <td
+                          className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          {formattedDate}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td
+                          className="px-6 py-4 text-sm font-medium"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => handleApproveRequest(request)}
                               disabled={actionDisabled || approvingLoading}
-                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title={
                                 actionDisabled
                                   ? "Missing request identifier"
@@ -1562,7 +1623,7 @@ export default function UserManagementPage() {
                             <button
                               onClick={() => handleRejectRequest(request)}
                               disabled={actionDisabled || rejectingLoading}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title={
                                 actionDisabled
                                   ? "Missing request identifier"
@@ -1644,7 +1705,7 @@ export default function UserManagementPage() {
                         <button
                           onClick={() => handleApproveRequest(request)}
                           disabled={actionDisabled || approvingLoading}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {approvingLoading ? (
                             <>
@@ -1666,7 +1727,7 @@ export default function UserManagementPage() {
                         <button
                           onClick={() => handleRejectRequest(request)}
                           disabled={actionDisabled || rejectingLoading}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {rejectingLoading ? (
                             <>
@@ -1713,14 +1774,14 @@ export default function UserManagementPage() {
       {/* Analytics Modal */}
       {isAnalyticsModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-md max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
                 User Analytics
               </h2>
               <button
                 onClick={() => setIsAnalyticsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -1751,7 +1812,7 @@ export default function UserManagementPage() {
                           .map(([status, count]) => (
                             <div
                               key={status}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                             >
                               <span className="text-sm text-gray-600 capitalize">
                                 {status.replace(/_/g, " ")}
@@ -1779,7 +1840,7 @@ export default function UserManagementPage() {
                           .map(([dept, count]) => (
                             <div
                               key={dept}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                             >
                               <span className="text-sm text-gray-600">
                                 {dept}
@@ -1807,7 +1868,7 @@ export default function UserManagementPage() {
                           .map(([role, count]) => (
                             <div
                               key={role}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                             >
                               <span className="text-sm text-gray-600">
                                 {role}

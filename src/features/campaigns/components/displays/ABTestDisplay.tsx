@@ -1,6 +1,6 @@
-import { Settings, Trash2 } from 'lucide-react';
-import { CampaignSegment } from '../../types/campaign';
-import { color } from '../../../../shared/utils/utils';
+import { Settings, Trash2 } from "lucide-react";
+import { CampaignSegment } from "../../types/campaign";
+import { color } from "../../../../shared/utils/utils";
 
 interface ABTestDisplayProps {
   variantA: CampaignSegment | null;
@@ -13,44 +13,54 @@ export default function ABTestDisplay({
   variantA,
   variantB,
   onRemoveSegment,
-  onConfigureControlGroup
+  onConfigureControlGroup,
 }: ABTestDisplayProps) {
-
   return (
     <div className="space-y-3">
-      <div className="text-sm text-gray-600 mb-2">Configure A and B variants for testing</div>
+      <div className="text-sm text-gray-600 mb-2">
+        Configure A and B variants for testing
+      </div>
 
       {/* A/B Test Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Variant A */}
         <div>
-
           {variantA ? (
-            <div className="border rounded-lg p-4" style={{ borderColor: color.primary.action }}>
+            <div
+              className="border rounded-md p-4"
+              style={{ borderColor: color.primary.action }}
+            >
               <div className="flex flex-col h-full">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: color.primary.action }}>
+                    <div
+                      className="w-10 h-10 rounded-md flex items-center justify-center"
+                      style={{ backgroundColor: color.primary.action }}
+                    >
                       <span className="text-white font-bold text-base">A</span>
                     </div>
                     <div>
                       <div className="mb-1">
-                        <h4 className="font-semibold text-gray-900">{variantA.name}</h4>
+                        <h4 className="font-semibold text-gray-900">
+                          {variantA.name}
+                        </h4>
                       </div>
-                      <p className="text-xs text-gray-600">{variantA.description}</p>
+                      <p className="text-xs text-gray-600">
+                        {variantA.description}
+                      </p>
                     </div>
                   </div>
                   <div className="flex space-x-1">
                     <button
                       onClick={() => onConfigureControlGroup(variantA.id)}
-                      className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
                       title="Configure Control Group"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onRemoveSegment(variantA.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-md transition-colors"
                       title="Remove"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -58,18 +68,30 @@ export default function ABTestDisplay({
                   </div>
                 </div>
 
-                {variantA.control_group_config && variantA.control_group_config.type !== 'none' && (
-                  <div className="pt-3 border-t" style={{ borderColor: `${color.primary.action}30` }}>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color.primary.accent }}></div>
-                      <span className="text-xs font-medium" style={{ color: color.primary.accent }}>Control Group</span>
+                {variantA.control_group_config &&
+                  variantA.control_group_config.type !== "none" && (
+                    <div
+                      className="pt-3 border-t"
+                      style={{ borderColor: `${color.primary.action}30` }}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: color.primary.accent }}
+                        ></div>
+                        <span
+                          className="text-xs font-medium"
+                          style={{ color: color.primary.accent }}
+                        >
+                          Control Group
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-3">
+            <div className="border-2 border-dashed border-gray-300 rounded-md p-3">
               <div className="flex items-center justify-center">
                 <p className="text-sm text-gray-500">Variant A not set</p>
               </div>
@@ -79,33 +101,42 @@ export default function ABTestDisplay({
 
         {/* Variant B */}
         <div>
-
           {variantB ? (
-            <div className="border rounded-lg p-4" style={{ borderColor: color.primary.accent }}>
+            <div
+              className="border rounded-md p-4"
+              style={{ borderColor: color.primary.accent }}
+            >
               <div className="flex flex-col h-full">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: color.primary.accent }}>
+                    <div
+                      className="w-10 h-10 rounded-md flex items-center justify-center"
+                      style={{ backgroundColor: color.primary.accent }}
+                    >
                       <span className="text-white font-bold text-base">B</span>
                     </div>
                     <div>
                       <div className="mb-1">
-                        <h4 className="font-semibold text-gray-900">{variantB.name}</h4>
+                        <h4 className="font-semibold text-gray-900">
+                          {variantB.name}
+                        </h4>
                       </div>
-                      <p className="text-xs text-gray-600">{variantB.description}</p>
+                      <p className="text-xs text-gray-600">
+                        {variantB.description}
+                      </p>
                     </div>
                   </div>
                   <div className="flex space-x-1">
                     <button
                       onClick={() => onConfigureControlGroup(variantB.id)}
-                      className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
                       title="Configure Control Group"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onRemoveSegment(variantB.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-md transition-colors"
                       title="Remove"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -113,18 +144,30 @@ export default function ABTestDisplay({
                   </div>
                 </div>
 
-                {variantB.control_group_config && variantB.control_group_config.type !== 'none' && (
-                  <div className="pt-3 border-t" style={{ borderColor: `${color.primary.accent}30` }}>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color.primary.accent }}></div>
-                      <span className="text-xs font-medium" style={{ color: color.primary.accent }}>Control Group</span>
+                {variantB.control_group_config &&
+                  variantB.control_group_config.type !== "none" && (
+                    <div
+                      className="pt-3 border-t"
+                      style={{ borderColor: `${color.primary.accent}30` }}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: color.primary.accent }}
+                        ></div>
+                        <span
+                          className="text-xs font-medium"
+                          style={{ color: color.primary.accent }}
+                        >
+                          Control Group
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-3">
+            <div className="border-2 border-dashed border-gray-300 rounded-md p-3">
               <div className="flex items-center justify-center">
                 <p className="text-sm text-gray-500">Variant B not set</p>
               </div>
@@ -132,7 +175,6 @@ export default function ABTestDisplay({
           )}
         </div>
       </div>
-
     </div>
   );
 }
