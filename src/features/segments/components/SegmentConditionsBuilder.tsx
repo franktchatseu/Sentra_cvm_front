@@ -900,7 +900,7 @@ export default function SegmentConditionsBuilder({
                   </h4>
 
                   {/* Tab Buttons */}
-                  <div className="flex space-x-2 mb-4">
+                  <div className="flex space-x-4 my-6">
                     <button
                       type="button"
                       onClick={() =>
@@ -909,7 +909,7 @@ export default function SegmentConditionsBuilder({
                           [group.id]: "existing",
                         }))
                       }
-                      className={`flex items-center px-4 py-2 rounded-md font-medium transition-colors ${
+                      className={`flex items-center px-4 py-2 rounded-md font-medium text-sm transition-colors ${
                         listMode === "existing"
                           ? "text-white"
                           : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -934,7 +934,7 @@ export default function SegmentConditionsBuilder({
                           [group.id]: "new",
                         }))
                       }
-                      className={`flex items-center px-4 py-2 rounded-md font-medium transition-colors ${
+                      className={`flex items-center px-4 py-2 rounded-md font-medium text-sm transition-colors ${
                         listMode === "new"
                           ? "text-white"
                           : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -976,7 +976,7 @@ export default function SegmentConditionsBuilder({
                         style={{ backgroundColor: button.action.background }}
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Create List
+                        Upload List
                       </button>
                     </div>
                   )}
@@ -1265,7 +1265,7 @@ function ExistingListPicker({
         />
       </div>
 
-      <div className="space-y-2 max-h-64 overflow-y-auto p-2">
+      <div className="space-y-4 max-h-64 overflow-y-auto">
         {filteredLists.length === 0 && (
           <div className="py-6 text-center text-sm text-gray-500">
             {query ? `No lists match "${query}"` : "No lists available"}
@@ -1276,7 +1276,7 @@ function ExistingListPicker({
             type="button"
             key={list.list_id}
             onClick={() => onSelect(list)}
-            className={`w-full text-left rounded-md p-3 transition ${
+            className={`w-full text-left rounded-md transition ${
               selectedListId === list.list_id
                 ? "bg-gray-50"
                 : "hover:bg-gray-50"
