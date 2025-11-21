@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,6 +10,7 @@ import {
   List,
   Filter,
   XCircle,
+  X,
   FolderOpen,
   CheckCircle,
   Archive,
@@ -39,7 +41,7 @@ interface ProductsModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: ProductCategory | null;
-  onRefreshCategories: () => void;
+  onRefreshCategories: () => void | Promise<void>;
   onRefreshProductCounts: () => Promise<void> | void;
   allProducts: Product[];
   refreshAllProducts: () => Promise<Product[]>;
@@ -139,18 +141,6 @@ const mergeTagCountsFromSnapshot = (
         updatedCounts[key].active_products += 1;
       } else {
         updatedCounts[key].inactive_products += 1;
-      }
-
-      if (catalogId === 8) {
-        console.log(
-          "[ProductCatalogsPage] merge snapshot -> found tagged product for catalog 8:",
-          {
-            productId: product.id,
-            tags: product.tags,
-            primaryCategoryId,
-            updatedCounts: updatedCounts[key],
-          }
-        );
       }
     });
   });
@@ -379,6 +369,7 @@ function ProductsModal({
 
       if (!productData) {
         showError("Product details not found");
+        setRemovingProductId(null);
         return;
       }
 
@@ -400,6 +391,7 @@ function ProductsModal({
           confirmText: "Got it",
           cancelText: "Close",
         });
+        setRemovingProductId(null);
         return;
       }
 
@@ -407,11 +399,13 @@ function ProductsModal({
         await productService.removeProductTag(Number(productId), catalogTag);
         showToast("Product removed from catalog");
         await refreshAllProducts();
-        onRefreshCategories();
+        // Refresh categories to update counts on cards
+        await onRefreshCategories();
         await onRefreshProductCounts();
         await loadProducts();
       } else {
         showError("Product is not tagged to this catalog");
+        setRemovingProductId(null);
       }
     } catch (err) {
       showError(
@@ -599,10 +593,6 @@ export default function ProductCatalogsPage() {
     }
 
     setCategoryProductCounts(finalCounts);
-    console.log(
-      "[ProductCatalogsPage] Final category product counts state:",
-      finalCounts
-    );
     return finalCounts;
   };
 
@@ -690,10 +680,6 @@ export default function ProductCatalogsPage() {
       setCategories(categoryList);
 
       // Load product counts (including tag-based assignments)
-      console.log(
-        "[ProductCatalogsPage] Loaded categories:",
-        categoryList.length
-      );
       const productsSnapshot =
         productsSnapshotOverride ??
         (allProducts.length > 0 ? allProducts : await loadAllProducts());
@@ -717,11 +703,11 @@ export default function ProductCatalogsPage() {
     loadData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadAllProducts = async () => {
+  const loadAllProducts = async (skipCache = false) => {
     try {
       const response = await productService.getAllProducts({
         limit: 100,
-        skipCache: true,
+        skipCache: skipCache,
       });
       const products = response.data || [];
       setAllProducts(products);
@@ -793,7 +779,14 @@ export default function ProductCatalogsPage() {
         "Catalog Deleted",
         `"${category.name}" has been deleted successfully.`
       );
-      await Promise.all([loadCategories(true), loadStats(true)]);
+      // Refresh categories and stats with cache skipped, and reload all products
+      await Promise.all([
+        loadCategories(true),
+        loadStats(true),
+        loadAllProducts(true),
+      ]);
+      // Refresh product counts after products are reloaded
+      await refreshCategoryProductCounts();
     } catch (err) {
       console.error("Failed to delete category:", err);
       showError("Failed to delete category", "Please try again later.");
@@ -1277,11 +1270,6 @@ export default function ProductCatalogsPage() {
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     <div className="font-medium">
-                      {category.id === 8 &&
-                        console.log(
-                          "[ProductCatalogsPage] Rendering card for catalog 8 with counts:",
-                          categoryProductCounts[String(category.id)]
-                        )}
                       {categoryProductCounts[String(category.id)]
                         ?.total_products || 0}{" "}
                       products
@@ -1350,11 +1338,6 @@ export default function ProductCatalogsPage() {
                   </h3>
                   <div className="text-sm text-gray-600 mt-0.5">
                     <div className="font-medium">
-                      {category.id === 8 &&
-                        console.log(
-                          "[ProductCatalogsPage] Rendering list card for catalog 8 with counts:",
-                          categoryProductCounts[String(category.id)]
-                        )}
                       {categoryProductCounts[String(category.id)]
                         ?.total_products || 0}{" "}
                       products
@@ -1542,7 +1525,9 @@ export default function ProductCatalogsPage() {
           setSelectedCategory(null);
         }}
         category={selectedCategory}
-        onRefreshCategories={loadCategories}
+        onRefreshCategories={async () => {
+          await loadCategories(true); // skipCache = true
+        }}
         onRefreshProductCounts={refreshCategoryProductCounts}
         allProducts={allProducts}
         refreshAllProducts={loadAllProducts}

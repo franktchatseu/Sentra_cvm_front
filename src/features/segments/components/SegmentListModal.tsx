@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Upload, FileText, AlertCircle } from "lucide-react";
-import { button as buttonTokens } from "../../../shared/utils/utils";
+import { button as buttonTokens, color } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 export type SegmentListFormValues = {
@@ -68,6 +68,7 @@ export default function SegmentListModal({
   const [form, setForm] = useState<SegmentListFormValues>(defaultForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isCreateMode = mode === "create";
@@ -119,8 +120,51 @@ export default function SegmentListModal({
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    processFile(file);
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setForm((prev) => ({
+      ...prev,
+      file_text: "",
+      list_headers: "",
+      file_name: "",
+      file_size: undefined,
+    }));
+  };
+
+  const processFile = (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    const validExtensions = [".csv", ".txt", ".tsv", ".xlsx"];
+    const fileExtension = file.name
+      .substring(file.name.lastIndexOf("."))
+      .toLowerCase();
+    if (!validExtensions.includes(fileExtension)) {
+      setErrors((prev) => ({
+        ...prev,
+        file_text: "Please upload a CSV, TXT, TSV, or XLSX file.",
+      }));
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      setErrors((prev) => ({
+        ...prev,
+        file_text: "File size must be less than 10MB.",
+      }));
+      return;
+    }
 
     setUploadedFile(file);
+    setErrors((prev) => ({ ...prev, file_text: "" }));
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -145,18 +189,32 @@ export default function SegmentListModal({
     reader.readAsText(file);
   };
 
-  const removeFile = () => {
-    setUploadedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFile(files[0]);
     }
-    setForm((prev) => ({
-      ...prev,
-      file_text: "",
-      list_headers: "",
-      file_name: "",
-      file_size: undefined,
-    }));
   };
 
   const validateForm = () => {
@@ -164,9 +222,6 @@ export default function SegmentListModal({
 
     if (!form.list_label.trim()) {
       validationErrors.list_label = "List name is required.";
-    }
-    if (!form.list_description.trim()) {
-      validationErrors.list_description = "Please provide a brief description.";
     }
     if (!form.subscriber_id_col_name.trim()) {
       validationErrors.subscriber_id_col_name =
@@ -197,7 +252,7 @@ export default function SegmentListModal({
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-[1px] px-4 py-6"
       onClick={(e) => {
         if (e.currentTarget === e.target) {
           handleClose();
@@ -233,6 +288,28 @@ export default function SegmentListModal({
           className="flex-1 overflow-y-auto px-6 py-6 space-y-6"
         >
           <div className="space-y-6">
+            <div>
+              <label className="text-sm font-medium text-black mb-1 block">
+                List Name
+              </label>
+              <input
+                type="text"
+                value={form.list_label}
+                onChange={(e) =>
+                  handleInputChange("list_label", e.target.value)
+                }
+                placeholder="e.g., High Value Customers"
+                className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                  errors.list_label
+                    ? "border-red-400 focus:ring-red-200"
+                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
+                }`}
+              />
+              {errors.list_label && (
+                <p className="mt-1 text-xs text-red-500">{errors.list_label}</p>
+              )}
+            </div>
+
             <div>
               <label className="text-sm font-medium text-black mb-1 block">
                 List Type
@@ -285,24 +362,59 @@ export default function SegmentListModal({
               <label className="text-sm font-medium text-black mb-1 block">
                 Subscriber ID Column
               </label>
-              <input
-                type="text"
-                value={form.subscriber_id_col_name}
-                onChange={(e) =>
-                  handleInputChange("subscriber_id_col_name", e.target.value)
-                }
-                placeholder="e.g., msisdn, email, customer_id"
-                className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                  errors.subscriber_id_col_name
-                    ? "border-red-400 focus:ring-red-200"
-                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
-                }`}
-              />
-              {errors.subscriber_id_col_name && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.subscriber_id_col_name}
-                </p>
-              )}
+              {(() => {
+                // Parse headers from the uploaded file
+                const parseHeaders = (): string[] => {
+                  if (!form.list_headers || !form.file_delimiter) {
+                    return [];
+                  }
+                  // Convert delimiter string to actual character for splitting
+                  let delimiter = form.file_delimiter;
+                  if (delimiter === "\\t" || delimiter === "\t") {
+                    delimiter = "\t";
+                  }
+
+                  return form.list_headers
+                    .split(delimiter)
+                    .map((h) => h.trim().replace(/^["']|["']$/g, "")) // Remove quotes from start/end
+                    .filter((h) => h.length > 0);
+                };
+
+                const headerOptions = parseHeaders();
+                const placeholder =
+                  headerOptions.length > 0
+                    ? "Select a column from your file..."
+                    : "Upload a file to see column options...";
+
+                // Always use dropdown - populate with headers when available
+                return (
+                  <>
+                    <HeadlessSelect
+                      options={headerOptions.map((header) => ({
+                        value: header,
+                        label: header,
+                      }))}
+                      value={form.subscriber_id_col_name}
+                      onChange={(value) =>
+                        handleInputChange("subscriber_id_col_name", value || "")
+                      }
+                      placeholder={placeholder}
+                      error={!!errors.subscriber_id_col_name}
+                    />
+                    {errors.subscriber_id_col_name && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.subscriber_id_col_name}
+                      </p>
+                    )}
+                    {headerOptions.length === 0 && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Upload a file above to automatically populate column
+                        options.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <div>
@@ -349,13 +461,38 @@ export default function SegmentListModal({
               {!form.file_text ? (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center justify-center rounded-md border border-gray-200 bg-gray-50 py-10 text-center cursor-pointer transition"
+                  onDragEnter={handleDragEnter}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed py-10 text-center cursor-pointer transition ${
+                    isDragging
+                      ? "border-[var(--primary-color,#5EC6B1)] bg-[var(--primary-color,#5EC6B1)]/5"
+                      : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
+                  }`}
                 >
-                  <div className="rounded-full bg-white p-3 shadow-sm mb-3">
-                    <Upload className="h-6 w-6 text-[var(--primary-color,#5EC6B1)]" />
+                  <div
+                    className={`rounded-full p-3 shadow-sm mb-3 ${
+                      isDragging
+                        ? "bg-[var(--primary-color,#5EC6B1)]/10"
+                        : "bg-white"
+                    }`}
+                  >
+                    <Upload
+                      className={`h-6 w-6 ${
+                        isDragging
+                          ? "text-[var(--primary-color,#5EC6B1)]"
+                          : "text-[var(--primary-color,#5EC6B1)]"
+                      }`}
+                    />
                   </div>
                   <p className="font-semibold text-gray-900">
-                    Drag & drop or choose a file
+                    {isDragging
+                      ? "Drop file here"
+                      : "Drag & drop or choose a file"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Supported formats: CSV, TSV, TXT, or XLSX up to 10MB
                   </p>
                 </div>
               ) : (
@@ -365,17 +502,33 @@ export default function SegmentListModal({
                       <div className="rounded-lg bg-[var(--primary-color,#5EC6B1)]/10 p-2">
                         <FileText className="h-6 w-6 text-[var(--primary-color,#5EC6B1)]" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-900">
                           {form.file_name}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {uploadedFile
-                            ? `${(uploadedFile.size / 1024).toFixed(1)} KB`
-                            : form.file_size
-                            ? `${(form.file_size / 1024).toFixed(1)} KB`
-                            : null}
-                        </p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <p className="text-xs text-gray-500">
+                            {uploadedFile
+                              ? `${(uploadedFile.size / 1024).toFixed(1)} KB`
+                              : form.file_size
+                              ? `${(form.file_size / 1024).toFixed(1)} KB`
+                              : null}
+                          </p>
+                          {form.file_text &&
+                            (() => {
+                              const rowCount =
+                                form.file_text
+                                  .split(/\r?\n/)
+                                  .filter((line) => line.trim().length > 0)
+                                  .length - 1; // Subtract 1 for header row
+                              return (
+                                <p className="text-xs text-gray-500">
+                                  {rowCount.toLocaleString()}{" "}
+                                  {rowCount === 1 ? "row" : "rows"}
+                                </p>
+                              );
+                            })()}
+                        </div>
                       </div>
                     </div>
                     <button
@@ -387,19 +540,131 @@ export default function SegmentListModal({
                     </button>
                   </div>
 
-                  {form.list_headers && (
-                    <div>
-                      <label className="text-sm font-medium text-black mb-1 block">
-                        File Headers
-                      </label>
-                      <textarea
-                        readOnly
-                        value={form.list_headers}
-                        rows={3}
-                        className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 font-mono"
-                      />
-                    </div>
-                  )}
+                  {form.list_headers &&
+                    form.file_text &&
+                    (() => {
+                      // Parse the file content to show preview
+                      const parseFilePreview = () => {
+                        if (
+                          !form.file_text ||
+                          !form.file_delimiter ||
+                          !form.list_headers
+                        ) {
+                          return { headers: [], rows: [] };
+                        }
+
+                        let delimiter = form.file_delimiter;
+                        if (delimiter === "\\t" || delimiter === "\t") {
+                          delimiter = "\t";
+                        }
+
+                        const lines = form.file_text
+                          .split(/\r?\n/)
+                          .filter((line) => line.trim().length > 0);
+                        const headers = form.list_headers
+                          .split(delimiter)
+                          .map((h) => h.trim().replace(/^["']|["']$/g, "")) // Remove quotes from start/end
+                          .filter((h) => h.length > 0);
+
+                        // Parse data rows (skip header row, limit to first 10 rows for preview)
+                        const dataRows = lines.slice(1, 11).map((line) => {
+                          const values = line
+                            .split(delimiter)
+                            .map((v) => v.trim().replace(/^["']|["']$/g, "")); // Remove quotes from start/end
+                          return headers.map((_, index) => values[index] || "");
+                        });
+
+                        return { headers, rows: dataRows };
+                      };
+
+                      const preview = parseFilePreview();
+                      const totalRows =
+                        form.file_text
+                          .split(/\r?\n/)
+                          .filter((line) => line.trim().length > 0).length - 1;
+
+                      return (
+                        <div className="mt-4">
+                          <label className="text-sm font-medium text-black mb-2 block">
+                            File Preview
+                          </label>
+                          <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                            <table
+                              className="w-full"
+                              style={{
+                                borderCollapse: "separate",
+                                borderSpacing: "0 8px",
+                              }}
+                            >
+                              <thead
+                                style={{
+                                  background: color.surface.tableHeader,
+                                }}
+                              >
+                                <tr>
+                                  {preview.headers.map((header, index) => (
+                                    <th
+                                      key={index}
+                                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
+                                      style={{
+                                        color: color.surface.tableHeaderText,
+                                      }}
+                                    >
+                                      {header}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {preview.rows.length > 0 ? (
+                                  preview.rows.map((row, rowIndex) => (
+                                    <tr
+                                      key={rowIndex}
+                                      className="transition-colors"
+                                    >
+                                      {row.map((cell, cellIndex) => (
+                                        <td
+                                          key={cellIndex}
+                                          className="px-6 py-4 text-sm whitespace-nowrap"
+                                          style={{
+                                            backgroundColor:
+                                              color.surface.tablebodybg,
+                                          }}
+                                        >
+                                          {cell || (
+                                            <span className="text-gray-400">
+                                              —
+                                            </span>
+                                          )}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td
+                                      colSpan={preview.headers.length}
+                                      className="px-6 py-4 text-sm text-gray-500 text-center"
+                                      style={{
+                                        backgroundColor:
+                                          color.surface.tablebodybg,
+                                      }}
+                                    >
+                                      No data rows found
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                          {totalRows > 10 && (
+                            <div className="px-6 py-2 bg-gray-50 border-t border-gray-200 text-sm text-gray-500 text-center">
+                              Showing first 10 of {totalRows} rows
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                 </div>
               )}
 
@@ -410,28 +675,6 @@ export default function SegmentListModal({
                 onChange={handleFileUpload}
                 className="hidden"
               />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-black mb-1 block">
-                List Name
-              </label>
-              <input
-                type="text"
-                value={form.list_label}
-                onChange={(e) =>
-                  handleInputChange("list_label", e.target.value)
-                }
-                placeholder="e.g., High Value Customers"
-                className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                  errors.list_label
-                    ? "border-red-400 focus:ring-red-200"
-                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
-                }`}
-              />
-              {errors.list_label && (
-                <p className="mt-1 text-xs text-red-500">{errors.list_label}</p>
-              )}
             </div>
           </div>
 

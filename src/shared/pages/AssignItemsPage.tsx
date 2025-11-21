@@ -1122,9 +1122,24 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                           )}
                         </button>
                       </td>
-                      <td className="px-6 py-4">
+                      <td
+                        className={`px-6 py-4 ${
+                          !isAssigned ? "cursor-pointer hover:bg-gray-100" : ""
+                        }`}
+                        onClick={() => {
+                          if (!isAssigned) {
+                            handleToggleSelection(item.id);
+                          }
+                        }}
+                      >
                         <div>
-                          <div className="font-semibold text-gray-900">
+                          <div
+                            className={`font-semibold ${
+                              !isAssigned
+                                ? "text-gray-900 hover:text-blue-600"
+                                : "text-gray-900"
+                            } transition-colors`}
+                          >
                             {item.name}
                           </div>
                           {isAssigned && (

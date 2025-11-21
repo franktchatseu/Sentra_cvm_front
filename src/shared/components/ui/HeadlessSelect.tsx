@@ -106,7 +106,7 @@ export default function HeadlessSelect({
                     value={option.value}
                     disabled={option.disabled}
                     className={({ active, disabled }) =>
-                      `relative cursor-default select-none py-2.5 pl-10 pr-6 transition-colors duration-150 whitespace-nowrap ${
+                      `relative cursor-default select-none py-2.5 pl-3 pr-6 transition-colors duration-150 whitespace-nowrap ${
                         active ? "bg-gray-100 text-gray-900" : "text-gray-900"
                       } ${
                         disabled
@@ -124,11 +124,6 @@ export default function HeadlessSelect({
                         >
                           {option.label}
                         </span>
-                        {selected ? (
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#3b8169]">
-                            <CheckIcon className="h-5 w-5" aria-hidden="true" />
-                          </span>
-                        ) : null}
                       </>
                     )}
                   </Listbox.Option>

@@ -435,9 +435,12 @@ export default function SegmentModal({
                   {/* Error Message */}
                   {error && (
                     <div
-                      className={`p-4 bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-md`}
+                      className="p-4 bg-red-50 border border-red-300 rounded-md"
+                      style={{
+                        borderColor: "#ef4444",
+                      }}
                     >
-                      <p className={`text-sm text-[${color.status.danger}]`}>
+                      <p className="text-sm font-medium text-red-600">
                         {error}
                       </p>
                     </div>

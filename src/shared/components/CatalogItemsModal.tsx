@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { X, Search, Plus } from "lucide-react";
 import { color } from "../utils/utils";
 import LoadingSpinner from "./ui/LoadingSpinner";
 import AssignItemsModal from "./AssignItemsModal";
+import HeadlessSelect from "./ui/HeadlessSelect";
 
 export interface CatalogItem {
   id: number | string;
@@ -53,9 +54,64 @@ export default function CatalogItemsModal<T extends CatalogItem>({
   onRefresh,
 }: CatalogItemsModalProps<T>) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [filteredItems, setFilteredItems] = useState<T[]>([]);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
+  // Get status options based on entity type
+  const getStatusOptions = () => {
+    switch (entityNamePlural) {
+      case "campaigns":
+        return [
+          { value: "", label: "All Statuses" },
+          { value: "active", label: "Active" },
+          { value: "draft", label: "Draft" },
+          { value: "pending_approval", label: "Pending Approval" },
+          { value: "approved", label: "Approved" },
+          { value: "paused", label: "Paused" },
+          { value: "completed", label: "Completed" },
+          { value: "cancelled", label: "Cancelled" },
+        ];
+      case "offers":
+        return [
+          { value: "", label: "All Statuses" },
+          { value: "active", label: "Active" },
+          { value: "draft", label: "Draft" },
+          { value: "expired", label: "Expired" },
+          { value: "inactive", label: "Inactive" },
+        ];
+      case "products":
+        return [
+          { value: "", label: "All Statuses" },
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" },
+        ];
+      case "segments":
+        return [
+          { value: "", label: "All Statuses" },
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" },
+        ];
+      default:
+        return [{ value: "", label: "All Statuses" }];
+    }
+  };
+
+  // Get status from item based on entity type
+  const getItemStatus = (item: T): string => {
+    if (entityNamePlural === "campaigns") {
+      return (item as any).status || "";
+    } else if (entityNamePlural === "offers") {
+      return (item as any).status || "";
+    } else if (entityNamePlural === "products") {
+      return (item as any).is_active ? "active" : "inactive";
+    } else if (entityNamePlural === "segments") {
+      return (item as any).is_active ? "active" : "inactive";
+    }
+    return "";
+  };
 
   // Map entity names to itemType for AssignItemsModal
   const getItemType = (): "offers" | "products" | "segments" | "campaigns" => {
@@ -69,21 +125,32 @@ export default function CatalogItemsModal<T extends CatalogItem>({
   useEffect(() => {
     if (isOpen && category) {
       setSearchTerm("");
+      setStatusFilter("");
     }
   }, [isOpen, category]);
 
   useEffect(() => {
+    let filtered = items;
+
+    // Apply search filter
     if (searchTerm) {
-      const filtered = items.filter(
+      filtered = filtered.filter(
         (item) =>
           item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredItems(filtered);
-    } else {
-      setFilteredItems(items);
     }
-  }, [searchTerm, items]);
+
+    // Apply status filter
+    if (statusFilter) {
+      filtered = filtered.filter((item) => {
+        const itemStatus = getItemStatus(item);
+        return itemStatus.toLowerCase() === statusFilter.toLowerCase();
+      });
+    }
+
+    setFilteredItems(filtered);
+  }, [searchTerm, statusFilter, items]);
 
   if (!isOpen || !category) return null;
 
@@ -105,7 +172,7 @@ export default function CatalogItemsModal<T extends CatalogItem>({
               <h2 className="text-xl font-semibold text-gray-900">
                 {entityNamePlural.charAt(0).toUpperCase() +
                   entityNamePlural.slice(1)}{" "}
-                in "{category.name}"
+                in {category.name}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {itemCount} {entityName}
@@ -121,17 +188,27 @@ export default function CatalogItemsModal<T extends CatalogItem>({
             </button>
           </div>
 
-          {/* Search */}
+          {/* Search and Filter */}
           <div className="p-6 border-b border-gray-200">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder={`Search ${entityNamePlural}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={`Search ${entityNamePlural}...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="w-48 flex-shrink-0">
+                <HeadlessSelect
+                  options={getStatusOptions()}
+                  value={statusFilter}
+                  onChange={(value) => setStatusFilter(value || "")}
+                  placeholder="All Statuses"
+                />
+              </div>
             </div>
           </div>
 
@@ -162,7 +239,7 @@ export default function CatalogItemsModal<T extends CatalogItem>({
                     key={item.id}
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       {renderItem ? (
                         renderItem(item)
                       ) : (
@@ -176,25 +253,19 @@ export default function CatalogItemsModal<T extends CatalogItem>({
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {renderStatus ? (
-                        renderStatus(item)
-                      ) : item.status ? (
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            item.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : item.status === "draft"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      ) : null}
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-6">
                       <button
                         onClick={() => {
-                          navigate(viewRoute(item.id));
+                          // Pass current location as return path so user can navigate back to modal
+                          navigate(viewRoute(item.id), {
+                            state: {
+                              returnTo: {
+                                pathname: location.pathname,
+                                fromModal: true,
+                                catalogId: category?.id,
+                              },
+                            },
+                          });
                         }}
                         className="px-3 py-1 text-white rounded-md text-sm font-medium transition-colors"
                         style={{ backgroundColor: color.primary.action }}
@@ -219,7 +290,7 @@ export default function CatalogItemsModal<T extends CatalogItem>({
           <div className="p-6 border-t border-gray-200 flex justify-end">
             <button
               onClick={() => setIsAssignModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-md transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm text-white font-semibold rounded-md transition-all"
               style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="w-4 h-4" />

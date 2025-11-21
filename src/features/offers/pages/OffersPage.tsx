@@ -116,8 +116,44 @@ export default function OffersPage() {
       const response = await offerService.searchOffers(searchParams);
 
       if (response.success && response.data) {
-        setOffers(response.data);
-        const total = response.pagination?.total || response.data.length;
+        let offersList = response.data;
+
+        // Apply client-side sorting by created_at DESC (newest first)
+        if (filters.sortBy && filters.sortDirection) {
+          offersList = [...offersList].sort((a, b) => {
+            let aValue: any;
+            let bValue: any;
+
+            switch (filters.sortBy) {
+              case "created_at":
+                aValue = new Date(a.created_at || 0).getTime();
+                bValue = new Date(b.created_at || 0).getTime();
+                break;
+              case "name":
+                aValue = (a.name || "").toLowerCase();
+                bValue = (b.name || "").toLowerCase();
+                break;
+              case "status":
+                aValue = (a.status || "").toLowerCase();
+                bValue = (b.status || "").toLowerCase();
+                break;
+              default:
+                aValue = a[filters.sortBy as keyof typeof a];
+                bValue = b[filters.sortBy as keyof typeof b];
+            }
+
+            if (aValue < bValue) {
+              return filters.sortDirection === "ASC" ? -1 : 1;
+            }
+            if (aValue > bValue) {
+              return filters.sortDirection === "ASC" ? 1 : -1;
+            }
+            return 0;
+          });
+        }
+
+        setOffers(offersList);
+        const total = response.pagination?.total || offersList.length;
         setTotalOffers(total);
       } else {
         showError(

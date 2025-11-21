@@ -12,7 +12,6 @@ import {
   Eye,
   UserPlus,
   BarChart3,
-  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../../users/services/userService";
@@ -27,6 +26,14 @@ import { color, tw, components } from "../../../shared/utils/utils";
 import { useAuth } from "../../../contexts/AuthContext";
 import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from "recharts";
 
 type AccountRequestListItem = {
   id?: number;
@@ -97,7 +104,6 @@ export default function UserManagementPage() {
   >({});
   const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
   const [reportsLoading, setReportsLoading] = useState(false);
-  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
   const activateColor = color.tertiary.tag4;
   const deactivateColor = color.configStatus.inactive;
@@ -261,6 +267,14 @@ export default function UserManagementPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleLookup]);
 
+  // Load reports when analytics tab is selected to get fresh data
+  useEffect(() => {
+    if (activeTab === "analytics") {
+      loadReports();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const loadReports = async () => {
     try {
       setReportsLoading(true);
@@ -311,9 +325,15 @@ export default function UserManagementPage() {
         return data;
       };
 
-      if (status.success) setStatusCounts(transformToObject(status.data || {}));
-      if (dept.success) setDepartmentCounts(transformToObject(dept.data || {}));
-      if (role.success) setRoleCounts(transformToObject(role.data || {}, true));
+      if (status.success) {
+        setStatusCounts(transformToObject(status.data || {}));
+      }
+      if (dept.success) {
+        setDepartmentCounts(transformToObject(dept.data || {}));
+      }
+      if (role.success) {
+        setRoleCounts(transformToObject(role.data || {}, true));
+      }
     } catch (err) {
       console.error("Error loading reports:", err);
     } finally {
@@ -860,13 +880,6 @@ export default function UserManagementPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsAnalyticsModalOpen(true)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <BarChart3 className="w-4 h-4" />
-            View Analytics
-          </button>
-          <button
             onClick={() => {
               setSelectedUser(null);
               setIsModalOpen(true);
@@ -966,6 +979,23 @@ export default function UserManagementPage() {
             {accountRequests.length}
           </span>
           {activeTab === "requests" && (
+            <div
+              className="absolute bottom-0 left-0 right-0 h-0.5"
+              style={{ backgroundColor: color.primary.accent }}
+            />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("analytics")}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative ${
+            activeTab === "analytics"
+              ? "text-black"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Analytics</span>
+          {activeTab === "analytics" && (
             <div
               className="absolute bottom-0 left-0 right-0 h-0.5"
               style={{ backgroundColor: color.primary.accent }}
@@ -1473,287 +1503,648 @@ export default function UserManagementPage() {
               </div>
             </>
           )
-        ) : // Account Requests Tab
-        filteredRequests.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No Pending Requests
-            </h3>
-            <p className={`${tw.textMuted}`}>
-              All account requests have been processed.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table
-                className="w-full"
-                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
-              >
-                <thead style={{ background: color.surface.tableHeader }}>
-                  <tr>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Applicant
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Requested Role
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Requested
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: color.surface.tableHeaderText }}
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRequests.map((request, index) => {
-                    const requestId = resolveAccountRequestId(request);
-                    const requestKey =
-                      requestId ??
-                      request.user_id ??
-                      `${
-                        request.email ?? request.email_address ?? "request"
-                      }-${index}`;
-                    const approvingLoading =
-                      typeof requestId === "number" &&
-                      loadingActions.approving.has(requestId);
-                    const rejectingLoading =
-                      typeof requestId === "number" &&
-                      loadingActions.rejecting.has(requestId);
-                    const actionDisabled = typeof requestId !== "number";
-                    const fullName =
-                      [request.first_name, request.last_name]
-                        .filter(Boolean)
-                        .join(" ")
-                        .trim() || "Unknown";
-                    const requestEmail =
-                      request.email_address ??
-                      request.email ??
-                      request.private_email_address ??
-                      "N/A";
-                    const requestDate =
-                      request.created_at ?? request.created_on;
-                    const formattedDate = requestDate
-                      ? new Date(requestDate).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })
-                      : "N/A";
-                    const requestRole = getPendingRequestRole(request);
+        ) : activeTab === "requests" ? (
+          filteredRequests.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Pending Requests
+              </h3>
+              <p className={`${tw.textMuted}`}>
+                All account requests have been processed.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead style={{ background: color.surface.tableHeader }}>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{ color: color.surface.tableHeaderText }}
+                      >
+                        User
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
+                        style={{ color: color.surface.tableHeaderText }}
+                      >
+                        Requested Role
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                        style={{ color: color.surface.tableHeaderText }}
+                      >
+                        Requested
+                      </th>
+                      <th
+                        className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
+                        style={{ color: color.surface.tableHeaderText }}
+                      >
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRequests.map((request, index) => {
+                      const requestId = resolveAccountRequestId(request);
+                      const requestKey =
+                        requestId ??
+                        request.user_id ??
+                        `${
+                          request.email ?? request.email_address ?? "request"
+                        }-${index}`;
+                      const approvingLoading =
+                        typeof requestId === "number" &&
+                        loadingActions.approving.has(requestId);
+                      const rejectingLoading =
+                        typeof requestId === "number" &&
+                        loadingActions.rejecting.has(requestId);
+                      const actionDisabled = typeof requestId !== "number";
+                      const fullName =
+                        [request.first_name, request.last_name]
+                          .filter(Boolean)
+                          .join(" ")
+                          .trim() || "Unknown";
+                      const requestEmail =
+                        request.email_address ??
+                        request.email ??
+                        request.private_email_address ??
+                        "N/A";
+                      const requestDate =
+                        request.created_at ?? request.created_on;
+                      const formattedDate = requestDate
+                        ? new Date(requestDate).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "N/A";
+                      const requestRole = getPendingRequestRole(request);
 
-                    return (
-                      <tr key={requestKey} className="transition-colors">
-                        <td
-                          className="px-6 py-4"
-                          style={{ backgroundColor: color.surface.tablebodybg }}
-                        >
-                          <div>
-                            <div
-                              className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
-                              title={fullName}
-                            >
-                              {fullName}
+                      return (
+                        <tr key={requestKey} className="transition-colors">
+                          <td
+                            className="px-6 py-4"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            <div>
+                              <div
+                                className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                                title={fullName}
+                              >
+                                {fullName}
+                              </div>
+                              <div
+                                className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                                title={requestEmail}
+                              >
+                                {requestEmail}
+                              </div>
                             </div>
-                            <div
-                              className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
-                              title={requestEmail}
+                          </td>
+                          <td
+                            className="px-6 py-4 hidden lg:table-cell"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            <span
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
                             >
-                              {requestEmail}
+                              {requestRole}
+                            </span>
+                          </td>
+                          <td
+                            className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            {formattedDate}
+                          </td>
+                          <td
+                            className="px-6 py-4 text-sm font-medium"
+                            style={{
+                              backgroundColor: color.surface.tablebodybg,
+                            }}
+                          >
+                            <div className="flex items-center justify-center space-x-2">
+                              <button
+                                onClick={() => handleApproveRequest(request)}
+                                disabled={actionDisabled || approvingLoading}
+                                className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={
+                                  actionDisabled
+                                    ? "Missing request identifier"
+                                    : approvingLoading
+                                    ? "Approving..."
+                                    : "Approve request"
+                                }
+                              >
+                                {approvingLoading ? (
+                                  <LoadingSpinner
+                                    variant="modern"
+                                    size="sm"
+                                    color="primary"
+                                  />
+                                ) : (
+                                  <UserCheck className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleRejectRequest(request)}
+                                disabled={actionDisabled || rejectingLoading}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={
+                                  actionDisabled
+                                    ? "Missing request identifier"
+                                    : rejectingLoading
+                                    ? "Rejecting..."
+                                    : "Reject request"
+                                }
+                              >
+                                {rejectingLoading ? (
+                                  <LoadingSpinner
+                                    variant="modern"
+                                    size="sm"
+                                    color="primary"
+                                  />
+                                ) : (
+                                  <UserX className="w-4 h-4" />
+                                )}
+                              </button>
                             </div>
-                          </div>
-                        </td>
-                        <td
-                          className="px-6 py-4 hidden lg:table-cell"
-                          style={{ backgroundColor: color.surface.tablebodybg }}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="lg:hidden">
+                {filteredRequests.map((request, index) => {
+                  const requestId = resolveAccountRequestId(request);
+                  const requestKey =
+                    requestId ??
+                    request.user_id ??
+                    `${
+                      request.email ?? request.email_address ?? "request"
+                    }-${index}`;
+                  const approvingLoading =
+                    typeof requestId === "number" &&
+                    loadingActions.approving.has(requestId);
+                  const rejectingLoading =
+                    typeof requestId === "number" &&
+                    loadingActions.rejecting.has(requestId);
+                  const actionDisabled = typeof requestId !== "number";
+                  const fullName =
+                    [request.first_name, request.last_name]
+                      .filter(Boolean)
+                      .join(" ")
+                      .trim() || "Unknown";
+                  const requestEmail =
+                    request.email_address ??
+                    request.email ??
+                    request.private_email_address ??
+                    "N/A";
+                  const requestRole = getPendingRequestRole(request);
+
+                  return (
+                    <div
+                      key={requestKey}
+                      className="p-4 border-b border-gray-200 last:border-b-0"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className={`text-base font-semibold ${tw.textPrimary} mb-1`}
                         >
+                          {fullName}
+                        </div>
+                        <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                          {requestEmail}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-3">
                           <span
-                            className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
                           >
                             {requestRole}
                           </span>
-                        </td>
-                        <td
-                          className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
-                          style={{ backgroundColor: color.surface.tablebodybg }}
-                        >
-                          {formattedDate}
-                        </td>
-                        <td
-                          className="px-6 py-4 text-sm font-medium"
-                          style={{ backgroundColor: color.surface.tablebodybg }}
-                        >
-                          <div className="flex items-center justify-end space-x-2">
-                            <button
-                              onClick={() => handleApproveRequest(request)}
-                              disabled={actionDisabled || approvingLoading}
-                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={
-                                actionDisabled
-                                  ? "Missing request identifier"
-                                  : approvingLoading
-                                  ? "Approving..."
-                                  : "Approve request"
-                              }
-                            >
-                              {approvingLoading ? (
+                        </div>
+                        <div className="flex items-center justify-center space-x-2">
+                          <button
+                            onClick={() => handleApproveRequest(request)}
+                            disabled={actionDisabled || approvingLoading}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {approvingLoading ? (
+                              <>
                                 <LoadingSpinner
                                   variant="modern"
                                   size="sm"
                                   color="primary"
+                                  className="mr-1"
                                 />
-                              ) : (
-                                <UserCheck className="w-4 h-4" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleRejectRequest(request)}
-                              disabled={actionDisabled || rejectingLoading}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={
-                                actionDisabled
-                                  ? "Missing request identifier"
-                                  : rejectingLoading
-                                  ? "Rejecting..."
-                                  : "Reject request"
-                              }
-                            >
-                              {rejectingLoading ? (
+                                Approving...
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck className="w-4 h-4 mr-1" />
+                                Approve
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleRejectRequest(request)}
+                            disabled={actionDisabled || rejectingLoading}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {rejectingLoading ? (
+                              <>
                                 <LoadingSpinner
                                   variant="modern"
                                   size="sm"
                                   color="primary"
+                                  className="mr-1"
                                 />
-                              ) : (
-                                <UserX className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="lg:hidden">
-              {filteredRequests.map((request, index) => {
-                const requestId = resolveAccountRequestId(request);
-                const requestKey =
-                  requestId ??
-                  request.user_id ??
-                  `${
-                    request.email ?? request.email_address ?? "request"
-                  }-${index}`;
-                const approvingLoading =
-                  typeof requestId === "number" &&
-                  loadingActions.approving.has(requestId);
-                const rejectingLoading =
-                  typeof requestId === "number" &&
-                  loadingActions.rejecting.has(requestId);
-                const actionDisabled = typeof requestId !== "number";
-                const fullName =
-                  [request.first_name, request.last_name]
-                    .filter(Boolean)
-                    .join(" ")
-                    .trim() || "Unknown";
-                const requestEmail =
-                  request.email_address ??
-                  request.email ??
-                  request.private_email_address ??
-                  "N/A";
-                const requestRole = getPendingRequestRole(request);
-
-                return (
-                  <div
-                    key={requestKey}
-                    className="p-4 border-b border-gray-200 last:border-b-0"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-base font-semibold ${tw.textPrimary} mb-1`}
-                      >
-                        {fullName}
-                      </div>
-                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                        {requestEmail}
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
-                        >
-                          {requestRole}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleApproveRequest(request)}
-                          disabled={actionDisabled || approvingLoading}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {approvingLoading ? (
-                            <>
-                              <LoadingSpinner
-                                variant="modern"
-                                size="sm"
-                                color="primary"
-                                className="mr-1"
-                              />
-                              Approving...
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="w-4 h-4 mr-1" />
-                              Approve
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleRejectRequest(request)}
-                          disabled={actionDisabled || rejectingLoading}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {rejectingLoading ? (
-                            <>
-                              <LoadingSpinner
-                                variant="modern"
-                                size="sm"
-                                color="primary"
-                                className="mr-1"
-                              />
-                              Rejecting...
-                            </>
-                          ) : (
-                            <>
-                              <UserX className="w-4 h-4 mr-1" />
-                              Reject
-                            </>
-                          )}
-                        </button>
+                                Rejecting...
+                              </>
+                            ) : (
+                              <>
+                                <UserX className="w-4 h-4 mr-1" />
+                                Reject
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+                  );
+                })}
+              </div>
+            </>
+          )
+        ) : activeTab === "analytics" ? (
+          <div className="p-6">
+            {reportsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner
+                  variant="modern"
+                  size="lg"
+                  color="primary"
+                  className="mr-3"
+                />
+                <span className={`${tw.textSecondary}`}>
+                  Loading analytics...
+                </span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0">
+                {/* Users by Status */}
+                <div className="bg-white rounded-lg border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                  {Object.keys(statusCounts).length > 0 ? (
+                    (() => {
+                      const statusColors: Record<string, string> = {
+                        active: color.status.success,
+                        inactive: color.status.danger,
+                        pending_activation: color.status.warning,
+                        suspended: color.text.muted,
+                      };
+                      const statusData = Object.entries(statusCounts)
+                        .sort(([, a], [, b]) => Number(b) - Number(a))
+                        .map(([status, count]) => ({
+                          name: status
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase()),
+                          value: Number(count) || 0,
+                          color:
+                            statusColors[status.toLowerCase()] ||
+                            color.primary.accent,
+                        }));
+                      const total = statusData.reduce(
+                        (sum, item) => sum + (Number(item.value) || 0),
+                        0
+                      );
+
+                      return (
+                        <>
+                          <h3
+                            className={`text-base font-semibold ${tw.textPrimary} mb-4`}
+                          >
+                            Users by Status
+                          </h3>
+                          <div className="h-56 w-full min-h-[224px] mb-4">
+                            <ResponsiveContainer width="100%" height={224}>
+                              <PieChart>
+                                <Pie
+                                  data={statusData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={(props) => {
+                                    const percent = props.percent as
+                                      | number
+                                      | undefined;
+                                    return percent && percent > 0.05
+                                      ? `${(percent * 100).toFixed(0)}%`
+                                      : "";
+                                  }}
+                                  outerRadius={70}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {statusData.map((entry, index) => (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fill={entry.color}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="space-y-2 pt-4">
+                            {statusData.map((item) => (
+                              <div
+                                key={item.name}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span
+                                    className={`${tw.textPrimary} capitalize`}
+                                  >
+                                    {item.name}
+                                  </span>
+                                </div>
+                                <span
+                                  className="font-semibold"
+                                  style={{ color: item.color }}
+                                >
+                                  {item.value}
+                                </span>
+                              </div>
+                            ))}
+                            <div className="flex items-center justify-between text-sm font-semibold mt-2">
+                              <span className={tw.textPrimary}>Total</span>
+                              <span style={{ color: color.primary.accent }}>
+                                {total}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-center py-8">
+                      <BarChart3 className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className={`text-sm ${tw.textMuted}`}>
+                        No status data
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Users by Department */}
+                <div className="bg-white rounded-lg border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                  {Object.keys(departmentCounts).length > 0 ? (
+                    (() => {
+                      const departmentColors = [
+                        color.primary.accent,
+                        color.primary.action,
+                        color.tertiary.tag4,
+                        color.status.info,
+                        color.status.warning,
+                        color.status.success,
+                      ];
+                      const departmentData = Object.entries(departmentCounts)
+                        .sort(([, a], [, b]) => Number(b) - Number(a))
+                        .map(([dept, count], index) => ({
+                          name: dept || "Unassigned",
+                          value: Number(count) || 0,
+                          color:
+                            departmentColors[index % departmentColors.length],
+                        }));
+                      const total = departmentData.reduce(
+                        (sum, item) => sum + (Number(item.value) || 0),
+                        0
+                      );
+
+                      return (
+                        <>
+                          <h3
+                            className={`text-base font-semibold ${tw.textPrimary} mb-4`}
+                          >
+                            Users by Department
+                          </h3>
+                          <div className="h-56 w-full min-h-[224px] mb-4">
+                            <ResponsiveContainer width="100%" height={224}>
+                              <PieChart>
+                                <Pie
+                                  data={departmentData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={(props) => {
+                                    const percent = props.percent as
+                                      | number
+                                      | undefined;
+                                    return percent && percent > 0.05
+                                      ? `${(percent * 100).toFixed(0)}%`
+                                      : "";
+                                  }}
+                                  outerRadius={70}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {departmentData.map((entry, index) => (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fill={entry.color}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend
+                                  wrapperStyle={{ fontSize: "12px" }}
+                                  formatter={(value) =>
+                                    value.length > 15
+                                      ? value.substring(0, 15) + "..."
+                                      : value
+                                  }
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="space-y-2 pt-4 max-h-40 overflow-y-auto">
+                            {departmentData.map((item) => (
+                              <div
+                                key={item.name}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span className={`${tw.textPrimary}`}>
+                                    {item.name}
+                                  </span>
+                                </div>
+                                <span
+                                  className="font-semibold"
+                                  style={{ color: item.color }}
+                                >
+                                  {item.value}
+                                </span>
+                              </div>
+                            ))}
+                            <div className="flex items-center justify-between text-sm font-semibold mt-2">
+                              <span className={tw.textPrimary}>Total</span>
+                              <span style={{ color: color.primary.accent }}>
+                                {total}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-center py-8">
+                      <BarChart3 className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className={`text-sm ${tw.textMuted}`}>
+                        No department data
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Users by Role */}
+                <div className="bg-white rounded-lg border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                  {Object.keys(roleCounts).length > 0 ? (
+                    (() => {
+                      const roleColors = [
+                        color.primary.accent,
+                        color.primary.action,
+                        color.tertiary.tag4,
+                        color.status.info,
+                        color.status.warning,
+                        color.status.success,
+                      ];
+                      const roleData = Object.entries(roleCounts)
+                        .sort(([, a], [, b]) => Number(b) - Number(a))
+                        .map(([role, count], index) => ({
+                          name: role,
+                          value: Number(count) || 0,
+                          color: roleColors[index % roleColors.length],
+                        }));
+                      const total = roleData.reduce(
+                        (sum, item) => sum + (Number(item.value) || 0),
+                        0
+                      );
+
+                      return (
+                        <>
+                          <h3
+                            className={`text-base font-semibold ${tw.textPrimary} mb-4`}
+                          >
+                            Users by Role
+                          </h3>
+                          <div className="h-56 w-full min-h-[224px] mb-4">
+                            <ResponsiveContainer width="100%" height={224}>
+                              <PieChart>
+                                <Pie
+                                  data={roleData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={(props) => {
+                                    const percent = props.percent as
+                                      | number
+                                      | undefined;
+                                    return percent && percent > 0.05
+                                      ? `${(percent * 100).toFixed(0)}%`
+                                      : "";
+                                  }}
+                                  outerRadius={70}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {roleData.map((entry, index) => (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fill={entry.color}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend
+                                  wrapperStyle={{ fontSize: "12px" }}
+                                  formatter={(value) =>
+                                    value.length > 15
+                                      ? value.substring(0, 15) + "..."
+                                      : value
+                                  }
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="space-y-2 pt-4 max-h-40 overflow-y-auto">
+                            {roleData.map((item) => (
+                              <div
+                                key={item.name}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span className={`${tw.textPrimary}`}>
+                                    {item.name}
+                                  </span>
+                                </div>
+                                <span
+                                  className="font-semibold"
+                                  style={{ color: item.color }}
+                                >
+                                  {item.value}
+                                </span>
+                              </div>
+                            ))}
+                            <div className="flex items-center justify-between text-sm font-semibold mt-2">
+                              <span className={tw.textPrimary}>Total</span>
+                              <span style={{ color: color.primary.accent }}>
+                                {total}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-center py-8">
+                      <BarChart3 className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className={`text-sm ${tw.textMuted}`}>No role data</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* User Modal */}
@@ -1770,140 +2161,6 @@ export default function UserManagementPage() {
           loadData({ skipCache: true }); // Skip cache to get fresh data
         }}
       />
-
-      {/* Analytics Modal */}
-      {isAnalyticsModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-md max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">
-                User Analytics
-              </h2>
-              <button
-                onClick={() => setIsAnalyticsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="p-6">
-              {reportsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <LoadingSpinner
-                    variant="modern"
-                    size="lg"
-                    color="primary"
-                    className="mr-3"
-                  />
-                  <span className={`${tw.textSecondary}`}>
-                    Loading analytics...
-                  </span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {Object.keys(statusCounts).length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                        Users by Status
-                      </h3>
-                      <div className="space-y-2">
-                        {Object.entries(statusCounts)
-                          .sort(([, a], [, b]) => b - a)
-                          .map(([status, count]) => (
-                            <div
-                              key={status}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-                            >
-                              <span className="text-sm text-gray-600 capitalize">
-                                {status.replace(/_/g, " ")}
-                              </span>
-                              <span
-                                className="text-sm font-bold"
-                                style={{ color: color.primary.accent }}
-                              >
-                                {count}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {Object.keys(departmentCounts).length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                        Users by Department
-                      </h3>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {Object.entries(departmentCounts)
-                          .sort(([, a], [, b]) => b - a)
-                          .map(([dept, count]) => (
-                            <div
-                              key={dept}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-                            >
-                              <span className="text-sm text-gray-600">
-                                {dept}
-                              </span>
-                              <span
-                                className="text-sm font-bold"
-                                style={{ color: color.primary.accent }}
-                              >
-                                {count}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {Object.keys(roleCounts).length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                        Users by Role
-                      </h3>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {Object.entries(roleCounts)
-                          .sort(([, a], [, b]) => b - a)
-                          .map(([role, count]) => (
-                            <div
-                              key={role}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-                            >
-                              <span className="text-sm text-gray-600">
-                                {role}
-                              </span>
-                              <span
-                                className="text-sm font-bold"
-                                style={{ color: color.primary.accent }}
-                              >
-                                {count}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {Object.keys(statusCounts).length === 0 &&
-                    Object.keys(departmentCounts).length === 0 &&
-                    Object.keys(roleCounts).length === 0 && (
-                      <div className="col-span-3 text-center py-12">
-                        <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-base font-medium text-gray-900 mb-1">
-                          No Analytics Data
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Analytics data will appear here once available.
-                        </p>
-                      </div>
-                    )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -376,6 +376,53 @@ export default function SegmentManagementPage() {
           selectedTags.some((tag) => (segment.tags || []).includes(tag))
         );
       }
+
+      // Apply client-side sorting
+      if (sortBy && sortDirection) {
+        segmentData = [...segmentData].sort((a, b) => {
+          let aValue: any;
+          let bValue: any;
+
+          switch (sortBy) {
+            case "created_at":
+              aValue = new Date(a.created_at || 0).getTime();
+              bValue = new Date(b.created_at || 0).getTime();
+              break;
+            case "updated_at":
+              aValue = new Date(a.updated_at || 0).getTime();
+              bValue = new Date(b.updated_at || 0).getTime();
+              break;
+            case "name":
+              aValue = (a.name || "").toLowerCase();
+              bValue = (b.name || "").toLowerCase();
+              break;
+            case "id":
+              aValue = Number(a.id) || 0;
+              bValue = Number(b.id) || 0;
+              break;
+            case "type":
+              aValue = (a.type || "").toLowerCase();
+              bValue = (b.type || "").toLowerCase();
+              break;
+            case "category":
+              aValue = Number(a.category) || 0;
+              bValue = Number(b.category) || 0;
+              break;
+            default:
+              aValue = a[sortBy as keyof Segment];
+              bValue = b[sortBy as keyof Segment];
+          }
+
+          if (aValue < bValue) {
+            return sortDirection === "ASC" ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return sortDirection === "ASC" ? 1 : -1;
+          }
+          return 0;
+        });
+      }
+
       setSegments(segmentData);
       // Update allSegments for tag calculation
       setAllSegments(segmentData);

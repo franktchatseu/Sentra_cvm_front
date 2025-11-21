@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -17,7 +18,14 @@ import { useToast } from "../../../contexts/ToastContext";
 import { campaignService } from "../services/campaignService";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { BackendCampaignType } from "../types/campaign";
-import { FolderOpen, CheckCircle, XCircle, Archive, Star } from "lucide-react";
+import {
+  FolderOpen,
+  CheckCircle,
+  XCircle,
+  X,
+  Archive,
+  Star,
+} from "lucide-react";
 
 const CATALOG_TAG_PREFIX = "catalog:";
 
@@ -609,6 +617,7 @@ export default function CampaignCategoriesPage() {
 
       if (!campaign) {
         showError("Failed to load campaign details", "Please try again later.");
+        setRemovingCampaignId(null);
         return;
       }
 
@@ -625,6 +634,7 @@ export default function CampaignCategoriesPage() {
           confirmText: "Got it",
           cancelText: "Close",
         });
+        setRemovingCampaignId(null);
         return;
       }
 
@@ -634,6 +644,7 @@ export default function CampaignCategoriesPage() {
 
       if (!hasCatalogTag) {
         showError("Campaign is not tagged to this catalog.");
+        setRemovingCampaignId(null);
         return;
       }
 
@@ -646,9 +657,12 @@ export default function CampaignCategoriesPage() {
       });
 
       showToast("Campaign removed from catalog successfully");
+      // Refresh the modal campaigns list
       if (selectedCategory) {
         await handleViewCampaigns(selectedCategory);
       }
+      // Also refresh the categories list to update counts on cards
+      await loadCategories(true);
     } catch (err) {
       showError(
         "Failed to remove campaign",
@@ -1014,6 +1028,8 @@ export default function CampaignCategoriesPage() {
         onRefresh={async () => {
           if (selectedCategory) {
             await handleViewCampaigns(selectedCategory);
+            // Also refresh the categories list to update counts on cards
+            await loadCategories(true);
           }
         }}
         renderStatus={(campaign) => (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -12,6 +13,7 @@ import {
   FolderOpen,
   CheckCircle,
   XCircle,
+  X,
   Filter,
   Archive,
   Star,
@@ -336,6 +338,7 @@ function OffersModal({
 
       if (!offerData) {
         showError("Failed to load offer details", "Please try again later.");
+        setRemovingOfferId(null);
         return;
       }
 
@@ -352,6 +355,7 @@ function OffersModal({
           confirmText: "Got it",
           cancelText: "Close",
         });
+        setRemovingOfferId(null);
         return;
       }
 
@@ -361,6 +365,7 @@ function OffersModal({
 
       if (!hasCatalogTag) {
         showError("Offer is not tagged to this catalog.");
+        setRemovingOfferId(null);
         return;
       }
 

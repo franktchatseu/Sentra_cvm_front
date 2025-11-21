@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -12,6 +13,7 @@ import {
   FolderOpen,
   CheckCircle,
   XCircle,
+  X,
   Archive,
   Star,
 } from "lucide-react";
@@ -321,6 +323,7 @@ function SegmentsModal({
 
       if (!segmentData) {
         showError("Failed to load segment details", "Please try again later.");
+        setRemovingSegmentId(null);
         return;
       }
 
@@ -342,6 +345,7 @@ function SegmentsModal({
           confirmText: "Got it",
           cancelText: "Close",
         });
+        setRemovingSegmentId(null);
         return;
       }
 
@@ -352,6 +356,7 @@ function SegmentsModal({
 
       if (!hasCatalogTag) {
         showError("Segment is not tagged to this catalog.");
+        setRemovingSegmentId(null);
         return;
       }
 
@@ -365,6 +370,7 @@ function SegmentsModal({
 
       showToast("Segment removed from catalog successfully");
       await loadCategorySegments();
+      // Refresh categories to update counts on cards
       await onRefreshCategories();
     } catch (err) {
       showError(
@@ -432,43 +438,51 @@ export default function SegmentCategoriesPage() {
       ? value.toLocaleString()
       : "...";
 
-  const loadCategories = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      let response;
-      // Use searchSegmentCategories when there's a search term, otherwise use getSegmentCategories
-      if (debouncedSearchTerm.trim()) {
-        response = await segmentService.searchSegmentCategories(
-          debouncedSearchTerm,
-          true
+  const loadCategories = useCallback(
+    async (skipCache = false) => {
+      setIsLoading(true);
+      try {
+        let response;
+        // Use searchSegmentCategories when there's a search term, otherwise use getSegmentCategories
+        // Always skip cache when explicitly requested, otherwise default to true for fresh data
+        const shouldSkipCache = skipCache !== false ? true : false;
+        if (debouncedSearchTerm.trim()) {
+          response = await segmentService.searchSegmentCategories(
+            debouncedSearchTerm,
+            shouldSkipCache
+          );
+        } else {
+          response = await segmentService.getSegmentCategories(
+            undefined,
+            shouldSkipCache
+          );
+        }
+        const categoriesData = response.data || [];
+
+        // Ensure all category IDs are numbers
+        const validCategoriesData = categoriesData.map(
+          (cat: SegmentCategory & { id: number | string }) => ({
+            ...cat,
+            id: typeof cat.id === "string" ? parseInt(cat.id, 10) : cat.id,
+          })
         );
-      } else {
-        response = await segmentService.getSegmentCategories(undefined, true);
+
+        setCategories(validCategoriesData);
+
+        // Load segment counts for each category
+        await loadSegmentCounts(validCategoriesData);
+      } catch (err) {
+        showError(
+          "Error loading categories",
+          (err as Error).message || "Failed to load segment catalogs"
+        );
+        setCategories([]);
+      } finally {
+        setIsLoading(false);
       }
-      const categoriesData = response.data || [];
-
-      // Ensure all category IDs are numbers
-      const validCategoriesData = categoriesData.map(
-        (cat: SegmentCategory & { id: number | string }) => ({
-          ...cat,
-          id: typeof cat.id === "string" ? parseInt(cat.id, 10) : cat.id,
-        })
-      );
-
-      setCategories(validCategoriesData);
-
-      // Load segment counts for each category
-      await loadSegmentCounts(validCategoriesData);
-    } catch (err) {
-      showError(
-        "Error loading categories",
-        (err as Error).message || "Failed to load segment catalogs"
-      );
-      setCategories([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showError, debouncedSearchTerm]);
+    },
+    [showError, debouncedSearchTerm]
+  );
 
   // Debounce search term
   useEffect(() => {
@@ -550,7 +564,7 @@ export default function SegmentCategoriesPage() {
         "Catalog created",
         `Segment catalog "${categoryData.name}" has been created successfully`
       );
-      await loadCategories();
+      await loadCategories(true); // skipCache = true
     } catch (err) {
       throw new Error(
         (err as Error).message || "Failed to create segment catalog"
@@ -575,7 +589,7 @@ export default function SegmentCategoriesPage() {
         "Catalog updated",
         `Segment catalog "${categoryData.name}" has been updated successfully`
       );
-      await loadCategories();
+      await loadCategories(true); // skipCache = true
     } catch (err) {
       throw new Error(
         (err as Error).message || "Failed to update segment catalog"
@@ -605,7 +619,8 @@ export default function SegmentCategoriesPage() {
         "Catalog deleted",
         `Segment catalog "${category.name}" has been deleted successfully`
       );
-      await loadCategories();
+      // Refresh from server to ensure cache is cleared
+      await loadCategories(true); // skipCache = true
     } catch (err) {
       showError(
         "Error deleting catalog",
@@ -1000,7 +1015,9 @@ export default function SegmentCategoriesPage() {
           setSelectedCategory(null);
         }}
         category={selectedCategory}
-        onRefreshCategories={() => loadCategories(true)}
+        onRefreshCategories={async () => {
+          await loadCategories(true); // skipCache = true
+        }}
       />
     </div>
   );

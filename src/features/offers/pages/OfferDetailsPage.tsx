@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import {
   ArrowLeft,
@@ -77,9 +77,29 @@ const localeOptions = COMMON_LOCALES.map((locale) => ({
 export default function OfferDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
   const { user } = useAuth();
+
+  // Check if we came from a catalog modal
+  const returnTo = (
+    location.state as {
+      returnTo?: {
+        pathname: string;
+        fromModal?: boolean;
+        catalogId?: number | string;
+      };
+    }
+  )?.returnTo;
+
+  const handleBack = () => {
+    if (returnTo?.pathname) {
+      navigate(returnTo.pathname, { replace: true });
+    } else {
+      navigate("/dashboard/offers");
+    }
+  };
 
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1029,7 +1049,7 @@ export default function OfferDetailsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate("/dashboard/offers")}
+            onClick={handleBack}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

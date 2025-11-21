@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Calendar,
@@ -30,7 +30,27 @@ import {
 export default function CampaignDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
+
+  // Check if we came from a catalog modal
+  const returnTo = (
+    location.state as {
+      returnTo?: {
+        pathname: string;
+        fromModal?: boolean;
+        catalogId?: number | string;
+      };
+    }
+  )?.returnTo;
+
+  const handleBack = () => {
+    if (returnTo?.pathname) {
+      navigate(returnTo.pathname, { replace: true });
+    } else {
+      navigate("/dashboard/campaigns");
+    }
+  };
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -411,7 +431,7 @@ export default function CampaignDetailsPage() {
             style={{ backgroundColor: color.primary.action }}
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Campaigns
+            {returnTo?.pathname ? "Back" : "Back to Campaigns"}
           </button>
         </div>
       </div>
@@ -422,10 +442,7 @@ export default function CampaignDetailsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate("/dashboard/campaigns")}
-            className="p-2 text-gray-600 rounded-md"
-          >
+          <button onClick={handleBack} className="p-2 text-gray-600 rounded-md">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
