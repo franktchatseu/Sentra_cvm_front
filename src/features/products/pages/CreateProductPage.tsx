@@ -30,23 +30,25 @@ export default function CreateProductPage() {
 
   // Initialize selectedCategoryIds from formData.category_id
   useEffect(() => {
-    if (formData.category_id && !selectedCategoryIds.includes(formData.category_id)) {
+    if (
+      formData.category_id &&
+      !selectedCategoryIds.includes(formData.category_id)
+    ) {
       setSelectedCategoryIds([formData.category_id]);
+    } else if (!formData.category_id && selectedCategoryIds.length > 0) {
+      setSelectedCategoryIds([]);
     }
   }, [formData.category_id]);
 
   // Update formData.category_id when selectedCategoryIds changes (use first one)
   useEffect(() => {
-    if (selectedCategoryIds.length > 0) {
-      setFormData({
-        ...formData,
-        category_id: selectedCategoryIds[0], // Send only first to backend
-      });
-    } else {
-      setFormData({
-        ...formData,
-        category_id: undefined,
-      });
+    const firstCategoryId =
+      selectedCategoryIds.length > 0 ? selectedCategoryIds[0] : undefined;
+    if (formData.category_id !== firstCategoryId) {
+      setFormData((prev) => ({
+        ...prev,
+        category_id: firstCategoryId, // Send only first to backend
+      }));
     }
   }, [selectedCategoryIds]);
 
@@ -316,7 +318,8 @@ export default function CreateProductPage() {
                 className="w-full"
               />
               <p className="text-xs text-gray-500 mt-1">
-                You can select multiple catalogs. Only the first one will be saved to the backend.
+                You can select multiple catalogs. Only the first one will be
+                saved to the backend.
               </p>
             </div>
 

@@ -10,6 +10,7 @@ import SegmentConditionsBuilder from "./SegmentConditionsBuilder";
 import { segmentService } from "../services/segmentService";
 import { color, tw } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import MultiCategorySelector from "../../../shared/components/MultiCategorySelector";
 
 interface SegmentModalProps {
   isOpen: boolean;
@@ -41,6 +42,28 @@ export default function SegmentModal({
   const [categories, setCategories] = useState<{ id: number; name: string }[]>(
     []
   );
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+
+  // Initialize selectedCategoryIds from formData.category
+  useEffect(() => {
+    if (formData.category && !selectedCategoryIds.includes(formData.category)) {
+      setSelectedCategoryIds([formData.category]);
+    } else if (!formData.category && selectedCategoryIds.length > 0) {
+      setSelectedCategoryIds([]);
+    }
+  }, [formData.category]);
+
+  // Update formData.category when selectedCategoryIds changes (use first one)
+  useEffect(() => {
+    const firstCategoryId =
+      selectedCategoryIds.length > 0 ? selectedCategoryIds[0] : undefined;
+    if (formData.category !== firstCategoryId) {
+      setFormData((prev) => ({
+        ...prev,
+        category: firstCategoryId, // Send only first to backend
+      }));
+    }
+  }, [selectedCategoryIds]);
 
   // Load categories
   useEffect(() => {
@@ -475,25 +498,17 @@ export default function SegmentModal({
                       >
                         Segment Catalog
                       </label>
-                      <HeadlessSelect
-                        options={[
-                          { value: "", label: "No catalog (Uncategorized)" },
-                          ...categories.map((cat) => ({
-                            value: String(cat.id),
-                            label: cat.name,
-                          })),
-                        ]}
-                        value={
-                          formData.category ? String(formData.category) : ""
-                        }
-                        onChange={(value) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            category: value ? Number(value) : undefined,
-                          }))
-                        }
-                        placeholder="Select a catalog"
+                      <MultiCategorySelector
+                        value={selectedCategoryIds}
+                        onChange={setSelectedCategoryIds}
+                        placeholder="Select catalog(s)"
+                        entityType="segment"
+                        className="w-full"
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        You can select multiple catalogs. Only the first one
+                        will be saved to the backend.
+                      </p>
                     </div>
                   </div>
 

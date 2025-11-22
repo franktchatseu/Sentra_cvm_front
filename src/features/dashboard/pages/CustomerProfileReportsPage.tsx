@@ -19,6 +19,12 @@ import {
   Download,
   Repeat,
   Users,
+  Search,
+  Mail,
+  MessageSquare,
+  Calendar,
+  Tag,
+  PieChart,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
 import { color } from "../../../shared/utils/utils";
@@ -78,6 +84,49 @@ type CustomerRow = {
   churnRisk: number;
   preferredChannel: "Email" | "SMS" | "Push";
   location: string;
+};
+
+// Types for customer search data
+type CustomerInfo = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: string;
+  lastActivity: string;
+  status: "active" | "inactive";
+};
+
+type CustomerSegment = {
+  id: string;
+  name: string;
+  type: string;
+  addedDate: string;
+};
+
+type CustomerOffer = {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  redeemedDate: string;
+  value: number;
+};
+
+type CustomerEvent = {
+  id: string;
+  type: "sms" | "email" | "push" | "other";
+  title: string;
+  description: string;
+  date: string;
+  status: string;
+};
+
+type SubscribedList = {
+  id: string;
+  name: string;
+  subscribedDate: string;
+  status: "active" | "unsubscribed";
 };
 
 const formatNumber = (value: number) =>
@@ -470,9 +519,193 @@ export default function CustomerProfileReportsPage() {
   const [tableRiskFilter, setTableRiskFilter] = useState("All");
   const [useDummyData, setUseDummyData] = useState(true);
 
+  // Customer search state
+  const [customerSearchTerm, setCustomerSearchTerm] = useState<string>("");
+  const [searchedCustomer, setSearchedCustomer] = useState<CustomerInfo | null>(
+    null
+  );
+  const [isSearchingCustomer, setIsSearchingCustomer] =
+    useState<boolean>(false);
+  const [customerError, setCustomerError] = useState<string | null>(null);
+  const [customerSegments, setCustomerSegments] = useState<CustomerSegment[]>(
+    []
+  );
+  const [customerOffers, setCustomerOffers] = useState<CustomerOffer[]>([]);
+  const [customerEvents, setCustomerEvents] = useState<CustomerEvent[]>([]);
+  const [subscribedLists, setSubscribedLists] = useState<SubscribedList[]>([]);
+
+  // Event filtering state
+  const [eventSearchTerm, setEventSearchTerm] = useState<string>("");
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+  const [eventDateFrom, setEventDateFrom] = useState<string>("");
+  const [eventDateTo, setEventDateTo] = useState<string>("");
+
   const handleRun = () => {
     setAppliedCustomRange(customRange);
   };
+
+  // Customer search function
+  const handleCustomerSearch = async () => {
+    if (!customerSearchTerm.trim()) {
+      setCustomerError("Please enter a customer ID, email, or phone number");
+      return;
+    }
+
+    setIsSearchingCustomer(true);
+    setCustomerError(null);
+
+    try {
+      // Mock API call - replace with actual service call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Mock customer data
+      const mockCustomer: CustomerInfo = {
+        id: "CUST-001",
+        name: "John Doe",
+        email: customerSearchTerm.includes("@")
+          ? customerSearchTerm
+          : "john.doe@example.com",
+        phone: "+1234567890",
+        createdAt: "2024-01-15",
+        lastActivity: "2024-11-20",
+        status: "active",
+      };
+
+      setSearchedCustomer(mockCustomer);
+
+      // Mock related data
+      setCustomerSegments([
+        {
+          id: "SEG-001",
+          name: "VIP Customers",
+          type: "Dynamic",
+          addedDate: "2024-02-01",
+        },
+        {
+          id: "SEG-002",
+          name: "High Value",
+          type: "Static",
+          addedDate: "2024-03-15",
+        },
+      ]);
+
+      setCustomerOffers([
+        {
+          id: "OFF-001",
+          name: "20% Off First Purchase",
+          type: "Discount",
+          status: "Redeemed",
+          redeemedDate: "2024-05-10",
+          value: 50,
+        },
+        {
+          id: "OFF-002",
+          name: "Free Shipping",
+          type: "Shipping",
+          status: "Active",
+          redeemedDate: "2024-10-15",
+          value: 10,
+        },
+      ]);
+
+      setCustomerEvents([
+        {
+          id: "EVT-001",
+          type: "sms",
+          title: "Welcome SMS",
+          description: "Welcome to our platform",
+          date: "2024-01-15T10:00:00",
+          status: "Delivered",
+        },
+        {
+          id: "EVT-002",
+          type: "email",
+          title: "Newsletter",
+          description: "Monthly newsletter",
+          date: "2024-02-01T09:00:00",
+          status: "Opened",
+        },
+        {
+          id: "EVT-003",
+          type: "sms",
+          title: "Order Confirmation",
+          description: "Your order has been confirmed",
+          date: "2024-05-10T14:30:00",
+          status: "Delivered",
+        },
+        {
+          id: "EVT-004",
+          type: "email",
+          title: "Promotional Email",
+          description: "Special offers for you",
+          date: "2024-10-15T11:00:00",
+          status: "Clicked",
+        },
+        {
+          id: "EVT-005",
+          type: "push",
+          title: "Push Notification",
+          description: "New product available",
+          date: "2024-11-01T08:00:00",
+          status: "Sent",
+        },
+      ]);
+
+      setSubscribedLists([
+        {
+          id: "LIST-001",
+          name: "Newsletter",
+          subscribedDate: "2024-01-15",
+          status: "active",
+        },
+        {
+          id: "LIST-002",
+          name: "Promotions",
+          subscribedDate: "2024-01-15",
+          status: "active",
+        },
+        {
+          id: "LIST-003",
+          name: "Product Updates",
+          subscribedDate: "2024-02-01",
+          status: "unsubscribed",
+        },
+      ]);
+    } catch (err) {
+      setCustomerError(
+        err instanceof Error ? err.message : "Failed to search customer"
+      );
+      setSearchedCustomer(null);
+    } finally {
+      setIsSearchingCustomer(false);
+    }
+  };
+
+  // Filtered events based on search, type, and date
+  const filteredEvents = useMemo(() => {
+    return customerEvents.filter((event) => {
+      const matchesSearch =
+        eventSearchTerm.trim() === "" ||
+        event.title.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+        event.description.toLowerCase().includes(eventSearchTerm.toLowerCase());
+
+      const matchesType =
+        eventTypeFilter === "all" || event.type === eventTypeFilter;
+
+      const matchesDate =
+        (!eventDateFrom || new Date(event.date) >= new Date(eventDateFrom)) &&
+        (!eventDateTo ||
+          new Date(event.date) <= new Date(eventDateTo + "T23:59:59"));
+
+      return matchesSearch && matchesType && matchesDate;
+    });
+  }, [
+    customerEvents,
+    eventSearchTerm,
+    eventTypeFilter,
+    eventDateFrom,
+    eventDateTo,
+  ]);
 
   const customDays = getDaysBetween(
     appliedCustomRange.start,
@@ -697,6 +930,43 @@ export default function CustomerProfileReportsPage() {
             engagement signals
           </p>
         </div>
+
+        {/* Customer Search Section */}
+        <div className="rounded-md border border-gray-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Search Customer
+          </h2>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={customerSearchTerm}
+                onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleCustomerSearch();
+                  }
+                }}
+                placeholder="Enter customer ID, email, or phone number..."
+                className="w-full pl-10 pr-4 py-3.5 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#252829] cursor-pointer"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleCustomerSearch}
+              disabled={isSearchingCustomer}
+              className="px-6 py-3.5 text-sm font-semibold text-white rounded-md hover:opacity-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              {isSearchingCustomer ? "Searching..." : "Search"}
+            </button>
+          </div>
+          {customerError && (
+            <p className="mt-2 text-sm text-red-600">{customerError}</p>
+          )}
+        </div>
+
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             {rangeOptions.map((option) => (
@@ -813,6 +1083,440 @@ export default function CustomerProfileReportsPage() {
           </div>
         </div>
       </header>
+
+      {/* Customer Details Section */}
+      {searchedCustomer && (
+        <div className="space-y-6">
+          {/* Customer Info Card */}
+          <div className="rounded-md border border-gray-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Customer Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Customer ID</p>
+                <p className="text-base font-medium text-gray-900">
+                  {searchedCustomer.id}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Name</p>
+                <p className="text-base font-medium text-gray-900">
+                  {searchedCustomer.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="text-base font-medium text-gray-900">
+                  {searchedCustomer.email}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Phone</p>
+                <p className="text-base font-medium text-gray-900">
+                  {searchedCustomer.phone}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Created At</p>
+                <p className="text-base font-medium text-gray-900">
+                  {searchedCustomer.createdAt}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Last Activity</p>
+                <p className="text-base font-medium text-gray-900">
+                  {searchedCustomer.lastActivity}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Status</p>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    searchedCustomer.status === "active"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {searchedCustomer.status}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Segments Table */}
+          <div className="rounded-md border border-gray-200 bg-white overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Users
+                  className="h-5 w-5"
+                  style={{ color: color.primary.accent }}
+                />
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Segments
+                </h2>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {["Segment ID", "Name", "Type", "Added Date"].map(
+                      (header) => (
+                        <th
+                          key={header}
+                          className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider text-gray-700"
+                        >
+                          {header}
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {customerSegments.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
+                        No segments found
+                      </td>
+                    </tr>
+                  ) : (
+                    customerSegments.map((segment) => (
+                      <tr key={segment.id}>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {segment.id}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          {segment.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {segment.type}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {segment.addedDate}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Offers Table */}
+          <div className="rounded-md border border-gray-200 bg-white overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Tag
+                  className="h-5 w-5"
+                  style={{ color: color.primary.accent }}
+                />
+                <h2 className="text-lg font-semibold text-gray-900">Offers</h2>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {[
+                      "Offer ID",
+                      "Name",
+                      "Type",
+                      "Status",
+                      "Redeemed Date",
+                      "Value ($)",
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider text-gray-700"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {customerOffers.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
+                        No offers found
+                      </td>
+                    </tr>
+                  ) : (
+                    customerOffers.map((offer) => (
+                      <tr key={offer.id}>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {offer.id}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          {offer.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {offer.type}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              offer.status === "Redeemed"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {offer.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {offer.redeemedDate}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          ${offer.value.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Events Table with Filtering */}
+          <div className="rounded-md border border-gray-200 bg-white overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar
+                    className="h-5 w-5"
+                    style={{ color: color.primary.accent }}
+                  />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Events
+                  </h2>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={eventSearchTerm}
+                    onChange={(e) => setEventSearchTerm(e.target.value)}
+                    placeholder="Search events..."
+                    className="w-full pl-10 pr-4 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#252829] cursor-pointer"
+                  />
+                </div>
+                <select
+                  value={eventTypeFilter}
+                  onChange={(e) => setEventTypeFilter(e.target.value)}
+                  className="px-4 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#252829]"
+                >
+                  <option value="all">All Event Types</option>
+                  <option value="sms">SMS</option>
+                  <option value="email">Email</option>
+                  <option value="push">Push</option>
+                  <option value="other">Other</option>
+                </select>
+                <input
+                  type="date"
+                  value={eventDateFrom}
+                  onChange={(e) => setEventDateFrom(e.target.value)}
+                  max={getDateConstraints().maxDate}
+                  placeholder="From Date"
+                  className="px-4 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#252829] cursor-pointer"
+                />
+                <input
+                  type="date"
+                  value={eventDateTo}
+                  onChange={(e) => setEventDateTo(e.target.value)}
+                  max={getDateConstraints().maxDate}
+                  placeholder="To Date"
+                  className="px-4 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#252829] cursor-pointer"
+                />
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {[
+                      "Event ID",
+                      "Type",
+                      "Title",
+                      "Description",
+                      "Date",
+                      "Status",
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider text-gray-700"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredEvents.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
+                        No events found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredEvents.map((event) => (
+                      <tr key={event.id}>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {event.id}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            {event.type === "sms" && (
+                              <MessageSquare className="h-4 w-4 text-blue-500" />
+                            )}
+                            {event.type === "email" && (
+                              <Mail className="h-4 w-4 text-green-500" />
+                            )}
+                            <span className="capitalize">{event.type}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          {event.title}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {event.description}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {new Date(event.date).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {event.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Subscribed Lists Table */}
+          <div className="rounded-md border border-gray-200 bg-white overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Mail
+                  className="h-5 w-5"
+                  style={{ color: color.primary.accent }}
+                />
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Subscribed Lists
+                </h2>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {["List ID", "Name", "Subscribed Date", "Status"].map(
+                      (header) => (
+                        <th
+                          key={header}
+                          className="px-6 py-3 text-left text-sm font-medium uppercase tracking-wider text-gray-700"
+                        >
+                          {header}
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {subscribedLists.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
+                        No subscribed lists found
+                      </td>
+                    </tr>
+                  ) : (
+                    subscribedLists.map((list) => (
+                      <tr key={list.id}>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {list.id}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          {list.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {list.subscribedDate}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              list.status === "active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {list.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Metrics Section - Placeholder for graphs */}
+          <div className="rounded-md border border-gray-200 bg-white p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3
+                className="h-5 w-5"
+                style={{ color: color.primary.accent }}
+              />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Customer Metrics
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 border border-gray-200 rounded-md">
+                <div className="flex items-center gap-2 mb-2">
+                  <PieChart className="h-4 w-4 text-gray-600" />
+                  <p className="text-sm font-medium text-gray-700">
+                    Event Distribution
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Pie chart showing event types distribution
+                </p>
+              </div>
+              <div className="p-4 border border-gray-200 rounded-md">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="h-4 w-4 text-gray-600" />
+                  <p className="text-sm font-medium text-gray-700">
+                    Activity Timeline
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Bar chart showing customer activity over time
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section>
         {(() => {

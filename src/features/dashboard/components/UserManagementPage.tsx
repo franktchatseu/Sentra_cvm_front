@@ -1803,7 +1803,7 @@ export default function UserManagementPage() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0">
                 {/* Users by Status */}
-                <div className="bg-white rounded-lg border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                <div className="bg-whiterounded-md border border-gray-200 p-5 min-w-0 flex-shrink-0">
                   {Object.keys(statusCounts).length > 0 ? (
                     (() => {
                       const statusColors: Record<string, string> = {
@@ -1921,7 +1921,7 @@ export default function UserManagementPage() {
                 </div>
 
                 {/* Users by Department */}
-                <div className="bg-white rounded-lg border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                <div className="bg-whiterounded-md border border-gray-200 p-5 min-w-0 flex-shrink-0">
                   {Object.keys(departmentCounts).length > 0 ? (
                     (() => {
                       const departmentColors = [
@@ -2044,7 +2044,7 @@ export default function UserManagementPage() {
                 </div>
 
                 {/* Users by Role */}
-                <div className="bg-white rounded-lg border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                <div className="bg-whiterounded-md border border-gray-200 p-5 min-w-0 flex-shrink-0">
                   {Object.keys(roleCounts).length > 0 ? (
                     (() => {
                       const roleColors = [
