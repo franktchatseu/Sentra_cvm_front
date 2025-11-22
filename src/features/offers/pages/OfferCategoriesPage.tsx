@@ -1353,10 +1353,6 @@ function OfferCategoriesPage() {
                       borderColor: color.primary.action,
                       color: color.primary.action,
                     }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor =
-                        color.primary.action;
-                    }}
                     onMouseLeave={(e) => {
                       (e.target as HTMLButtonElement).style.backgroundColor =
                         "transparent";
@@ -1489,10 +1485,6 @@ function OfferCategoriesPage() {
                     style={{
                       borderColor: color.primary.action,
                       color: color.primary.action,
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor =
-                        color.primary.action;
                     }}
                     onMouseLeave={(e) => {
                       (e.target as HTMLButtonElement).style.backgroundColor =

@@ -1,0 +1,332 @@
+import { useState, useEffect, useRef } from "react";
+import { ChevronDown, Search, Plus, X, Check } from "lucide-react";
+import { ProductCategory } from "../../features/products/types/productCategory";
+import { productCategoryService } from "../../features/products/services/productCategoryService";
+import { color } from "../utils/utils";
+
+interface MultiCategorySelectorProps {
+  value?: number[]; // Array of selected category IDs
+  onChange: (categoryIds: number[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  allowCreate?: boolean;
+  onCreateCategory?: () => void;
+  onCategoryCreated?: (categoryId: number) => void;
+  className?: string;
+  refreshTrigger?: number;
+  entityType?: "campaign" | "offer" | "product" | "segment"; // For loading correct categories
+}
+
+export default function MultiCategorySelector({
+  value = [],
+  onChange,
+  placeholder = "Select Catalogs",
+  disabled = false,
+  allowCreate = false,
+  onCreateCategory,
+  onCategoryCreated,
+  className = "",
+  refreshTrigger,
+  entityType = "product",
+}: MultiCategorySelectorProps) {
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    loadCategories();
+  }, [refreshTrigger, entityType]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+        setSearchTerm("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const loadCategories = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Load categories based on entity type
+      let categoriesData: ProductCategory[] = [];
+      
+      if (entityType === "campaign") {
+        const { campaignService } = await import("../../features/campaigns/services/campaignService");
+        const response = await campaignService.getCampaignCategories();
+        categoriesData = Array.isArray(response)
+          ? response
+          : (response as { data: ProductCategory[] }).data || [];
+      } else if (entityType === "offer") {
+        const { offerCategoryService } = await import("../../features/offers/services/offerCategoryService");
+        const response = await offerCategoryService.getAllCategories({
+          limit: 100,
+          skipCache: true,
+        });
+        categoriesData = response.data || [];
+      } else if (entityType === "segment") {
+        const { segmentService } = await import("../../features/segments/services/segmentService");
+        const response = await segmentService.getSegmentCategories();
+        // Convert segment categories to ProductCategory format
+        categoriesData = (response.data || []).map((cat: { id: number; name: string }) => ({
+          id: cat.id,
+          name: cat.name,
+          description: "",
+          is_active: true,
+          created_at: "",
+          updated_at: "",
+        }));
+      } else {
+        // Default to product categories
+        const response = await productCategoryService.getAllCategories({
+          limit: 100,
+          skipCache: true,
+        });
+        categoriesData = response.data || [];
+      }
+      
+      setCategories(categoriesData);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load categories"
+      );
+      console.error("Failed to load categories:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredCategories = categories.filter(
+    (category) =>
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (category.description &&
+        category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const selectedCategories = categories.filter((cat) =>
+    value.includes(cat.id)
+  );
+
+  const handleToggle = (categoryId: number) => {
+    const newValue = value.includes(categoryId)
+      ? value.filter((id) => id !== categoryId)
+      : [...value, categoryId];
+    onChange(newValue);
+  };
+
+  const handleRemove = (categoryId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange(value.filter((id) => id !== categoryId));
+  };
+
+  const handleCreateNew = () => {
+    if (onCreateCategory) {
+      onCreateCategory();
+    }
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  const getDisplayText = () => {
+    if (selectedCategories.length === 0) {
+      return placeholder;
+    }
+    if (selectedCategories.length === 1) {
+      return selectedCategories[0].name;
+    }
+    return `${selectedCategories.length} catalogs selected`;
+  };
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <div className="flex">
+        <button
+          type="button"
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
+          className={`flex-1 px-4 py-2.5 text-left border rounded-md text-sm transition-all min-h-[42px] ${
+            disabled ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+          }`}
+          style={{
+            borderColor: color.border.default,
+            outline: "none",
+            borderTopRightRadius: allowCreate ? "0" : undefined,
+            borderBottomRightRadius: allowCreate ? "0" : undefined,
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = color.primary.accent;
+            e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = color.border.default;
+            e.target.style.boxShadow = "none";
+          }}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex-1 min-w-0">
+              {selectedCategories.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedCategories.slice(0, 2).map((cat) => (
+                    <span
+                      key={cat.id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
+                    >
+                      {cat.name}
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemove(cat.id, e)}
+                        className="hover:bg-blue-200 rounded-full p-0.5"
+                        disabled={disabled}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {selectedCategories.length > 2 && (
+                    <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+                      +{selectedCategories.length - 2} more
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-gray-500">{placeholder}</span>
+              )}
+            </div>
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ml-2 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+        </button>
+
+        {/* Add Category Button */}
+        {allowCreate && (
+          <button
+            type="button"
+            onClick={onCreateCategory ? onCreateCategory : handleCreateNew}
+            className="px-3 py-2.5 text-white rounded-r-lg flex items-center justify-center text-sm border-l-0"
+            style={{
+              backgroundColor: color.primary.action,
+              borderColor: color.primary.action,
+            }}
+            title="Create new catalog"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden">
+          <div className="p-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-48 overflow-y-auto">
+            {isLoading ? (
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                Loading...
+              </div>
+            ) : error ? (
+              <div className="px-4 py-3 text-sm text-red-500 text-center">
+                {error}
+              </div>
+            ) : filteredCategories.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                {searchTerm ? "No categories found" : "No categories available"}
+              </div>
+            ) : (
+              <>
+                {filteredCategories.map((category) => {
+                  const isSelected = value.includes(category.id);
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => handleToggle(category.id)}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center justify-between ${
+                        isSelected
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div
+                          className={`w-4 h-4 border-2 rounded flex items-center justify-center flex-shrink-0 ${
+                            isSelected
+                              ? "border-blue-600 bg-blue-600"
+                              : "border-gray-300"
+                          }`}
+                        >
+                          {isSelected && (
+                            <Check className="w-3 h-3 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">
+                            {category.name}
+                          </div>
+                          {category.description && (
+                            <div className="text-xs text-gray-500 mt-0.5 truncate">
+                              {category.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+
+                {/* Create New Category Option */}
+                {allowCreate && (
+                  <div className="border-t border-gray-200">
+                    <button
+                      onClick={
+                        onCreateCategory ? onCreateCategory : handleCreateNew
+                      }
+                      className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create new catalog
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

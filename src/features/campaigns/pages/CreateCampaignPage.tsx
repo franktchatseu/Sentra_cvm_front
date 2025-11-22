@@ -166,8 +166,8 @@ export default function CreateCampaignPage() {
           start_date: campaign?.start_date || undefined,
           end_date: campaign?.end_date || undefined,
           campaign_type: campaign?.campaign_type || "multiple_target_group",
-          // Load tags as comma-separated string from array
-          tag: campaign?.tags ? campaign.tags.join(", ") : "",
+          // Load tags as array
+          tags: campaign?.tags || [],
           // Load department_id if owner_team matches a department name
           department_id: campaign?.owner_team ? undefined : undefined, // Will be set in UI selection
         };
@@ -446,13 +446,8 @@ export default function CreateCampaignPage() {
           ? objectiveOption.label
           : formData.objective;
 
-        // Convert tags string to array
-        const tagsArray = formData.tag
-          ? formData.tag
-              .split(",")
-              .map((t: string) => t.trim())
-              .filter((t: string) => t.length > 0)
-          : [];
+        // Get tags array directly from formData
+        const tagsArray = formData.tags || [];
 
         // Get department name from formData.department_id
         const departmentId = (formData as { department_id?: number })
@@ -493,13 +488,8 @@ export default function CreateCampaignPage() {
           ? objectiveOption.label
           : formData.objective;
 
-        // Convert tags string to array
-        const tagsArray = formData.tag
-          ? formData.tag
-              .split(",")
-              .map((t: string) => t.trim())
-              .filter((t: string) => t.length > 0)
-          : [];
+        // Get tags array directly from formData
+        const tagsArray = formData.tags || [];
 
         // Get department name from formData.department_id
         const departmentId = (formData as { department_id?: number })

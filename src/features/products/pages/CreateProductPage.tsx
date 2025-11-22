@@ -4,6 +4,7 @@ import { ArrowLeft, Save, AlertCircle } from "lucide-react";
 import { CreateProductRequest } from "../types/product";
 import { productService } from "../services/productService";
 import CategorySelector from "../../../shared/components/CategorySelector";
+import MultiCategorySelector from "../../../shared/components/MultiCategorySelector";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
 import { tw, color } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
@@ -25,15 +26,36 @@ export default function CreateProductPage() {
     currency: "USD",
     da_id: "",
   });
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+
+  // Initialize selectedCategoryIds from formData.category_id
+  useEffect(() => {
+    if (formData.category_id && !selectedCategoryIds.includes(formData.category_id)) {
+      setSelectedCategoryIds([formData.category_id]);
+    }
+  }, [formData.category_id]);
+
+  // Update formData.category_id when selectedCategoryIds changes (use first one)
+  useEffect(() => {
+    if (selectedCategoryIds.length > 0) {
+      setFormData({
+        ...formData,
+        category_id: selectedCategoryIds[0], // Send only first to backend
+      });
+    } else {
+      setFormData({
+        ...formData,
+        category_id: undefined,
+      });
+    }
+  }, [selectedCategoryIds]);
 
   // Preselect category from URL parameter
   useEffect(() => {
     const categoryIdParam = searchParams.get("categoryId");
     if (categoryIdParam) {
-      setFormData((prev) => ({
-        ...prev,
-        category_id: parseInt(categoryIdParam),
-      }));
+      const categoryId = parseInt(categoryIdParam);
+      setSelectedCategoryIds([categoryId]);
     }
   }, [searchParams]);
 
@@ -97,8 +119,8 @@ export default function CreateProductPage() {
 
   const handleCategoryCreated = (categoryId: number) => {
     // Auto-select the newly created category
-    setFormData({ ...formData, category_id: categoryId });
-    // Trigger refresh of the CategorySelector
+    setSelectedCategoryIds([categoryId]);
+    // Trigger refresh of the MultiCategorySelector
     setRefreshTrigger((prev) => prev + 1);
   };
 
@@ -283,16 +305,19 @@ export default function CreateProductPage() {
               >
                 Catalog
               </label>
-              <CategorySelector
-                value={formData.category_id}
-                onChange={(categoryId) =>
-                  handleInputChange("category_id", categoryId)
-                }
-                placeholder="Select Catalog"
+              <MultiCategorySelector
+                value={selectedCategoryIds}
+                onChange={setSelectedCategoryIds}
+                placeholder="Select catalog(s)"
+                entityType="product"
                 allowCreate={true}
                 onCreateCategory={() => setShowCreateModal(true)}
                 refreshTrigger={refreshTrigger}
+                className="w-full"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                You can select multiple catalogs. Only the first one will be saved to the backend.
+              </p>
             </div>
 
             {/* Description */}

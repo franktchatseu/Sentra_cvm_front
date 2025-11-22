@@ -921,10 +921,6 @@ export default function CampaignCategoriesPage() {
                     borderColor: color.primary.action,
                     color: color.primary.action,
                   }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
-                  }}
                   onMouseLeave={(e) => {
                     (e.target as HTMLButtonElement).style.backgroundColor =
                       "transparent";
@@ -969,10 +965,6 @@ export default function CampaignCategoriesPage() {
                   style={{
                     borderColor: color.primary.action,
                     color: color.primary.action,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
                   }}
                   onMouseLeave={(e) => {
                     (e.target as HTMLButtonElement).style.backgroundColor =

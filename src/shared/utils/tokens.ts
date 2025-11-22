@@ -91,6 +91,114 @@ export const colors = {
     },
   },
 
+  // Standardized report chart colors - 4 color palette for all report graphs
+  reportCharts: {
+    // Base color palette (use these 4 colors across all report graphs)
+    palette: {
+      color1: "#00505C", // Dark teal
+      color2: "#C38BFB", // Purple (was dark gray)
+      color3: "#92A6B0", // Light gray-blue
+      color4: "#4FDFF3", // Cyan/light blue
+    },
+
+    // Customer Profile Reports
+    customerProfile: {
+      valueMatrix: {
+        customers: "#4FDFF3", // color4 - lighter for single bar
+      },
+      clvDistribution: {
+        customers: "#4FDFF3", // color4 (bar) - lighter
+        revenueShare: "#92A6B0", // color3 (line)
+      },
+      lifecycleDistribution: {
+        active: "#4FDFF3", // color4 - lighter for multi-bar
+        new: "#92A6B0", // color3 - lighter
+        reactivated: "#00505C", // color1 - dark teal
+        atRisk: "#C38BFB", // color2 - purple
+        dormant: "#92A6B0", // color3 (reuse)
+        churned: "#00505C", // color1 (reuse) - dark teal
+      },
+      cohortRetention: {
+        jan: "#4FDFF3", // color4 - lighter for multi-bar
+        apr: "#92A6B0", // color3 - lighter
+        jul: "#00505C", // color1 - dark teal
+      },
+    },
+
+    // Offer Reports
+    offerReports: {
+      redemptionFunnel: {
+        value: "#4FDFF3", // color4 - lighter for single bar
+      },
+      redemptionTimeline: {
+        redemptions: "#4FDFF3", // color4 - lighter
+        cumulative: "#92A6B0", // color3
+      },
+      offerTypeComparison: {
+        redemptionRate: "#4FDFF3", // color4 - lighter for multi-bar
+        avgTransactionValue: "#92A6B0", // color3 - lighter
+      },
+    },
+
+    // Campaign Reports
+    campaignReports: {
+      channelReach: {
+        reach: "#4FDFF3", // color4 - lighter for multi-bar
+        impressions: "#92A6B0", // color3 - lighter
+      },
+      engagementStages: {
+        value: "#4FDFF3", // color4 - lighter for single bar
+      },
+      ctrEngagementTrends: {
+        ctr: "#4FDFF3", // color4 - lighter
+        engagement: "#92A6B0", // color3
+      },
+      revenueVsSpend: {
+        revenue: "#4FDFF3", // color4 - lighter
+        spend: "#92A6B0", // color3 - lighter
+      },
+    },
+
+    // Delivery SMS Reports
+    deliverySMS: {
+      smsDelivery: {
+        sent: "#4FDFF3", // color4 - lighter for multi-bar
+        delivered: "#92A6B0", // color3 - lighter
+        converted: "#00505C", // color1 - dark teal
+      },
+    },
+
+    // Delivery Email Reports
+    deliveryEmail: {
+      emailDelivery: {
+        sent: "#4FDFF3", // color4 - lighter for multi-bar
+        delivered: "#92A6B0", // color3 - lighter
+        converted: "#00505C", // color1 - dark teal
+      },
+    },
+
+    // Overall Dashboard Performance
+    overallPerformance: {
+      channelPerformance: {
+        clicks: "#4FDFF3", // color4 - lighter for multi-bar
+        conversions: "#92A6B0", // color3 - lighter
+        ctr: "#00505C", // color1 (line) - dark teal
+        cvr: "#C38BFB", // color2 (line) - purple
+      },
+      smsDelivery: {
+        sent: "#4FDFF3", // color4 - lighter for multi-bar
+        delivered: "#92A6B0", // color3 - lighter
+        converted: "#00505C", // color1 - dark teal
+      },
+      timeSeriesTrends: {
+        reach: "#4FDFF3", // color4 - lighter for multi-bar
+        clicks: "#92A6B0", // color3 - lighter
+        conversions: "#00505C", // color1 - dark teal
+        revenue: "#C38BFB", // color2 (line) - purple
+      },
+    },
+  },
+
   // Configuration status colors
   configStatus: {
     active: "#C38BFB", // Purple 500 - Active
@@ -335,10 +443,10 @@ export const buttons = {
     paddingX: "0.75rem", // px-3
     borderRadius: "0.5rem",
     fontSize: "0.875rem", // text-sm (14px)
-    hover: {
-      background: colors.primary.action,
-      color: "#FFFFFF",
-    },
+    // hover: {
+    //   background: colors.primary.action,
+    //   color: "#FFFFFF",
+    // },
   },
 };
 

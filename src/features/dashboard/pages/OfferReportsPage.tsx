@@ -478,20 +478,7 @@ const segmentOptions = [
   "Regular Customers",
 ];
 
-const chartPalette = {
-  primary: colors.primary.accent,
-  secondary: colors.tertiary.tag1,
-  tertiary: colors.tertiary.tag2,
-  quaternary: colors.tertiary.tag3,
-  success: colors.status.success,
-  redemptions: "#3b82f6",
-  cumulative: "#8b5cf6",
-  percentOff: colors.tertiary.tag1,
-  dollarOff: colors.primary.accent,
-  bogo: colors.tertiary.tag2,
-  freeShipping: colors.status.success,
-  bundle: colors.tertiary.tag3,
-};
+// Chart colors now use standardized colors from tokens.reportCharts
 
 interface ChartTooltipEntry {
   name?: string;
@@ -569,6 +556,7 @@ export default function OfferReportsPage() {
     start: "",
     end: "",
   });
+  const [useDummyData, setUseDummyData] = useState(true);
 
   const handleRun = () => {
     setAppliedCustomRange(customRange);
@@ -599,6 +587,16 @@ export default function OfferReportsPage() {
   // Scale summary data based on actual date range
   const baseSummary = combinedSummary[activeRangeKey];
   const summary = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        totalRedemptions: 0,
+        redemptionRate: 0,
+        revenueGenerated: 0,
+        incrementalRevenue: 0,
+        totalCost: 0,
+        roi: 0,
+      };
+    }
     if (scaleFactor === 1) return baseSummary;
     return {
       ...baseSummary,
@@ -612,64 +610,122 @@ export default function OfferReportsPage() {
       redemptionRate: baseSummary.redemptionRate,
       roi: baseSummary.roi,
     };
-  }, [baseSummary, scaleFactor]);
+  }, [baseSummary, scaleFactor, useDummyData]);
 
-  const heroCards = [
-    {
-      label: "Total Redemptions",
-      value: summary.totalRedemptions.toLocaleString("en-US"),
-      subtext: "Total offers used by customers",
-      icon: statIcons.users,
-      trend: { value: "+12.8%", direction: "up" as const },
-    },
-    {
-      label: "Redemption Rate",
-      value: `${summary.redemptionRate.toFixed(1)}%`,
-      subtext: "Customers who used promotions",
-      icon: statIcons.growth,
-      trend: { value: "+0.6 pts", direction: "up" as const },
-    },
-    {
-      label: "Revenue Generated",
-      value: formatCurrency(summary.revenueGenerated),
-      subtext: "Total sales from promotions",
-      icon: statIcons.revenue,
-      trend: { value: "+$156K", direction: "up" as const },
-    },
-    {
-      label: "Incremental Revenue",
-      value: formatCurrency(summary.incrementalRevenue),
-      subtext: "New revenue created",
-      icon: statIcons.sparkles,
-      trend: { value: "+$42K", direction: "up" as const },
-    },
-    {
-      label: "Total Cost",
-      value: formatCurrency(summary.totalCost),
-      subtext: "Total discount cost",
-      icon: statIcons.coins,
-      trend: { value: "+$18K", direction: "up" as const },
-    },
-    {
-      label: "ROI",
-      value: `${summary.roi.toFixed(1)}x`,
-      subtext: "Revenue per dollar spent",
-      icon: statIcons.growth,
-      trend: { value: "+0.2x", direction: "up" as const },
-    },
-  ];
+  const heroCards = useDummyData
+    ? [
+        {
+          label: "Total Redemptions",
+          value: summary.totalRedemptions.toLocaleString("en-US"),
+          subtext: "Total offers used by customers",
+          icon: statIcons.users,
+          trend: { value: "+12.8%", direction: "up" as const },
+        },
+        {
+          label: "Redemption Rate",
+          value: `${summary.redemptionRate.toFixed(1)}%`,
+          subtext: "Customers who used promotions",
+          icon: statIcons.growth,
+          trend: { value: "+0.6 pts", direction: "up" as const },
+        },
+        {
+          label: "Revenue Generated",
+          value: formatCurrency(summary.revenueGenerated),
+          subtext: "Total sales from promotions",
+          icon: statIcons.revenue,
+          trend: { value: "+$156K", direction: "up" as const },
+        },
+        {
+          label: "Incremental Revenue",
+          value: formatCurrency(summary.incrementalRevenue),
+          subtext: "New revenue created",
+          icon: statIcons.sparkles,
+          trend: { value: "+$42K", direction: "up" as const },
+        },
+        {
+          label: "Total Cost",
+          value: formatCurrency(summary.totalCost),
+          subtext: "Total discount cost",
+          icon: statIcons.coins,
+          trend: { value: "+$18K", direction: "up" as const },
+        },
+        {
+          label: "ROI",
+          value: `${summary.roi.toFixed(1)}x`,
+          subtext: "Revenue per dollar spent",
+          icon: statIcons.growth,
+          trend: { value: "+0.2x", direction: "up" as const },
+        },
+      ]
+    : [
+        {
+          label: "Total Redemptions",
+          value: "0",
+          subtext: "Total offers used by customers",
+          icon: statIcons.users,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Redemption Rate",
+          value: "0.0%",
+          subtext: "Customers who used promotions",
+          icon: statIcons.growth,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Revenue Generated",
+          value: "$0",
+          subtext: "Total sales from promotions",
+          icon: statIcons.revenue,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Incremental Revenue",
+          value: "$0",
+          subtext: "New revenue created",
+          icon: statIcons.sparkles,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Total Cost",
+          value: "$0",
+          subtext: "Total discount cost",
+          icon: statIcons.coins,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "ROI",
+          value: "0.0x",
+          subtext: "Revenue per dollar spent",
+          icon: statIcons.growth,
+          trend: { value: "—", direction: "up" as const },
+        },
+      ];
 
   // Scale chart data based on actual date range
   const funnelSeries = useMemo(() => {
+    if (!useDummyData) {
+      return funnelData[activeRangeKey].map((point) => ({
+        ...point,
+        value: 0,
+      }));
+    }
     const base = funnelData[activeRangeKey];
     if (scaleFactor === 1) return base;
     return base.map((point) => ({
       ...point,
       value: Math.round(point.value * scaleFactor),
     }));
-  }, [activeRangeKey, scaleFactor]);
+  }, [activeRangeKey, scaleFactor, useDummyData]);
 
   const timelineSeries = useMemo(() => {
+    if (!useDummyData) {
+      return redemptionTimelineData[activeRangeKey].map((point) => ({
+        ...point,
+        redemptions: 0,
+        cumulativeRedemptions: 0,
+      }));
+    }
     const base = redemptionTimelineData[activeRangeKey];
     if (scaleFactor === 1) return base;
     return base.map((point) => ({
@@ -679,9 +735,18 @@ export default function OfferReportsPage() {
         point.cumulativeRedemptions * scaleFactor
       ),
     }));
-  }, [activeRangeKey, scaleFactor]);
+  }, [activeRangeKey, scaleFactor, useDummyData]);
 
   const offerTypeComparison = useMemo(() => {
+    if (!useDummyData) {
+      return offerTypeData[activeRangeKey].map((point) => ({
+        ...point,
+        redemptionRate: 0,
+        aov: 0,
+        marginPercent: 0,
+        incrementalRevenue: 0,
+      }));
+    }
     const base = offerTypeData[activeRangeKey];
     if (scaleFactor === 1) return base;
     return base.map((point) => ({
@@ -693,9 +758,12 @@ export default function OfferReportsPage() {
       // Scale revenue
       incrementalRevenue: Math.round(point.incrementalRevenue * scaleFactor),
     }));
-  }, [activeRangeKey, scaleFactor]);
+  }, [activeRangeKey, scaleFactor, useDummyData]);
 
   const filteredRows = useMemo(() => {
+    if (!useDummyData) {
+      return [];
+    }
     const query = tableQuery.trim().toLowerCase();
     const maxDays =
       appliedCustomRange.start && appliedCustomRange.end
@@ -733,6 +801,7 @@ export default function OfferReportsPage() {
     customRange,
     customDays,
     selectedRange,
+    useDummyData,
   ]);
 
   const handleDownloadCsv = () => {
@@ -819,6 +888,31 @@ export default function OfferReportsPage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+              <label
+                htmlFor="offer-data-toggle"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2"
+              >
+                Data Mode:
+              </label>
+              <button
+                id="offer-data-toggle"
+                type="button"
+                onClick={() => setUseDummyData(!useDummyData)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#252829] focus:ring-offset-2 ${
+                  useDummyData ? "bg-[#252829]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useDummyData ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+                {useDummyData ? "Dummy Data" : "Real Data"}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <label
                 htmlFor="offer-date-start"
@@ -958,7 +1052,7 @@ export default function OfferReportsPage() {
                 <Bar
                   dataKey="value"
                   name="Users"
-                  fill={chartPalette.primary}
+                  fill={colors.reportCharts.offerReports.redemptionFunnel.value}
                   maxBarSize={60}
                   radius={[4, 4, 0, 0]}
                 />
@@ -991,7 +1085,10 @@ export default function OfferReportsPage() {
                   type="monotone"
                   dataKey="redemptions"
                   name="Daily Redemptions"
-                  stroke={chartPalette.redemptions}
+                  stroke={
+                    colors.reportCharts.offerReports.redemptionTimeline
+                      .redemptions
+                  }
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -999,7 +1096,10 @@ export default function OfferReportsPage() {
                   type="monotone"
                   dataKey="cumulativeRedemptions"
                   name="Cumulative"
-                  stroke={chartPalette.cumulative}
+                  stroke={
+                    colors.reportCharts.offerReports.redemptionTimeline
+                      .cumulative
+                  }
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -1063,7 +1163,10 @@ export default function OfferReportsPage() {
                   yAxisId="left"
                   dataKey="redemptionRate"
                   name="Redemption Rate %"
-                  fill={chartPalette.primary}
+                  fill={
+                    colors.reportCharts.offerReports.offerTypeComparison
+                      .redemptionRate
+                  }
                   maxBarSize={40}
                   radius={[4, 4, 0, 0]}
                 />
@@ -1071,7 +1174,10 @@ export default function OfferReportsPage() {
                   yAxisId="right"
                   dataKey="aov"
                   name="Avg Transaction Value ($)"
-                  fill={chartPalette.secondary}
+                  fill={
+                    colors.reportCharts.offerReports.offerTypeComparison
+                      .avgTransactionValue
+                  }
                   maxBarSize={40}
                   radius={[4, 4, 0, 0]}
                 />

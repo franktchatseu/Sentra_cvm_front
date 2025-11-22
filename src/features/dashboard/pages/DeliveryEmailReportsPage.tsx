@@ -71,11 +71,7 @@ const statusOptions: (EmailStatus | "All")[] = [
   "Spam",
 ];
 
-const chartColors = {
-  sent: colors.tertiary.tag2,
-  delivered: colors.primary.accent,
-  converted: colors.tertiary.tag4,
-};
+// Chart colors now use standardized colors from tokens.reportCharts
 
 const emailMockData: Record<RangeOption, EmailRangeData> = {
   "7d": {
@@ -349,6 +345,7 @@ export default function DeliveryEmailReportsPage() {
   });
   const [statusFilter, setStatusFilter] = useState<EmailStatus | "All">("All");
   const [campaignQuery, setCampaignQuery] = useState("");
+  const [useDummyData, setUseDummyData] = useState(true);
 
   const handleRun = () => {
     setAppliedCustomRange(customRange);
@@ -379,6 +376,22 @@ export default function DeliveryEmailReportsPage() {
   // Scale snapshot data based on actual date range
   const baseSnapshot = emailMockData[activeRangeKey];
   const summarySnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        ...baseSnapshot,
+        summary: {
+          sent: 0,
+          delivered: 0,
+          conversions: 0,
+          deliveryRate: 0,
+          bounceRate: 0,
+          conversionRate: 0,
+          openRate: 0,
+          ctr: 0,
+          unsubscribeRate: 0,
+        },
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -396,9 +409,20 @@ export default function DeliveryEmailReportsPage() {
         unsubscribeRate: baseSnapshot.summary.unsubscribeRate,
       },
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
 
   const deliverySnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        ...baseSnapshot,
+        deliverySeries: baseSnapshot.deliverySeries.map((point) => ({
+          ...point,
+          sent: 0,
+          delivered: 0,
+          converted: 0,
+        })),
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -409,7 +433,7 @@ export default function DeliveryEmailReportsPage() {
         converted: Math.round(point.converted * scaleFactor),
       })),
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
 
   const filteredLogs = useMemo(() => {
     const now = Date.now();
@@ -440,7 +464,14 @@ export default function DeliveryEmailReportsPage() {
           : now - entryDate <= maxDays * 24 * 60 * 60 * 1000;
       return matchesStatus && matchesQuery && matchesRange;
     });
-  }, [campaignQuery, statusFilter, customRange, deliveryRange, customDays]);
+  }, [
+    campaignQuery,
+    statusFilter,
+    customRange,
+    deliveryRange,
+    customDays,
+    useDummyData,
+  ]);
 
   const handleDownloadCsv = () => {
     if (!filteredLogs.length) return;
@@ -572,6 +603,31 @@ export default function DeliveryEmailReportsPage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+              <label
+                htmlFor="email-data-toggle"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2"
+              >
+                Data Mode:
+              </label>
+              <button
+                id="email-data-toggle"
+                type="button"
+                onClick={() => setUseDummyData(!useDummyData)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#252829] focus:ring-offset-2 ${
+                  useDummyData ? "bg-[#252829]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useDummyData ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+                {useDummyData ? "Dummy Data" : "Real Data"}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <label
                 htmlFor="email-date-start"
@@ -714,21 +770,21 @@ export default function DeliveryEmailReportsPage() {
               <Bar
                 dataKey="sent"
                 name="Sent"
-                fill={chartColors.sent}
+                fill={colors.reportCharts.deliveryEmail.emailDelivery.sent}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />
               <Bar
                 dataKey="delivered"
                 name="Delivered"
-                fill={chartColors.delivered}
+                fill={colors.reportCharts.deliveryEmail.emailDelivery.delivered}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />
               <Bar
                 dataKey="converted"
                 name="Converted"
-                fill={chartColors.converted}
+                fill={colors.reportCharts.deliveryEmail.emailDelivery.converted}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />

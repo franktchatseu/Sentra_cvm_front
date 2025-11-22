@@ -52,6 +52,7 @@ import CampaignReportsPage from "./CampaignReportsPage";
 import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
 import DeliveryEmailReportsPage from "./DeliveryEmailReportsPage";
 import OfferReportsPage from "./OfferReportsPage";
+import SettingsPage from "../../settings/pages/SettingsPage";
 
 export default function Dashboard() {
   return (
@@ -167,6 +168,7 @@ export default function Dashboard() {
           path="/reports/email-delivery"
           element={<DeliveryEmailReportsPage />}
         />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </DashboardLayout>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Search, Settings } from "lucide-react";
+import { ChevronDown, Search, Settings, Plus, X } from "lucide-react";
+import MultiCategorySelector from "../../../../shared/components/MultiCategorySelector";
 import { CreateCampaignRequest } from "../../types/campaign";
 import { campaignService } from "../../services/campaignService";
 import { programService } from "../../services/programService";
@@ -107,6 +108,8 @@ export default function CampaignDefinitionStep({
     useState<CommunicationPolicyConfiguration | null>(null);
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [pendingPolicyData, setPendingPolicyData] = useState<any>(null);
+  const [tagInput, setTagInput] = useState("");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const programDropdownRef = useRef<HTMLDivElement>(null);
@@ -147,6 +150,28 @@ export default function CampaignDefinitionStep({
 
     fetchCategories();
   }, []);
+
+  // Initialize selectedCategoryIds from formData.category_id
+  useEffect(() => {
+    if (formData.category_id && !selectedCategoryIds.includes(formData.category_id)) {
+      setSelectedCategoryIds([formData.category_id]);
+    }
+  }, [formData.category_id]);
+
+  // Update formData.category_id when selectedCategoryIds changes (use first one)
+  useEffect(() => {
+    if (selectedCategoryIds.length > 0) {
+      setFormData({
+        ...formData,
+        category_id: selectedCategoryIds[0], // Send only first to backend
+      });
+    } else {
+      setFormData({
+        ...formData,
+        category_id: undefined,
+      });
+    }
+  }, [selectedCategoryIds]);
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -261,6 +286,28 @@ export default function CampaignDefinitionStep({
     }
   };
 
+  const handleAddTag = () => {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag) {
+      const currentTags = formData.tags || [];
+      if (!currentTags.includes(trimmedTag)) {
+        setFormData({
+          ...formData,
+          tags: [...currentTags, trimmedTag],
+        });
+      }
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const currentTags = formData.tags || [];
+    setFormData({
+      ...formData,
+      tags: currentTags.filter((tag) => tag !== tagToRemove),
+    });
+  };
+
   return (
     <div className=" space-y-6">
       <div className="mt-8 mb-8">
@@ -298,92 +345,16 @@ export default function CampaignDefinitionStep({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Catalog *
             </label>
-            <div className="relative" ref={categoryDropdownRef}>
-              <button
-                type="button"
-                onClick={() =>
-                  setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
-              >
-                <span
-                  className={
-                    formData.category_id ? "text-gray-900" : "text-gray-500"
-                  }
-                >
-                  {formData.category_id
-                    ? categories.find(
-                        (c) => Number(c.id) === Number(formData.category_id)
-                      )?.name ||
-                      (isLoadingCategories ? "Loading..." : "Select catalog")
-                    : "Select catalog"}
-                </span>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    isCategoryDropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {isCategoryDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                  <div className="p-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={categorySearchTerm}
-                        onChange={(e) => setCategorySearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-[#588157] focus:border-[#588157]"
-                        placeholder="Search categories..."
-                      />
-                    </div>
-                  </div>
-                  <div className="py-1">
-                    {isLoadingCategories ? (
-                      <div className="px-4 py-2 text-sm text-gray-500">
-                        Loading categories...
-                      </div>
-                    ) : categories.length === 0 ? (
-                      <div className="px-4 py-2 text-sm text-gray-500">
-                        No categories available
-                      </div>
-                    ) : (
-                      categories
-                        .filter(
-                          (category) =>
-                            category.name
-                              .toLowerCase()
-                              .includes(categorySearchTerm.toLowerCase()) ||
-                            category.description
-                              .toLowerCase()
-                              .includes(categorySearchTerm.toLowerCase())
-                        )
-                        .map((category) => (
-                          <button
-                            key={category.id}
-                            type="button"
-                            onClick={() => {
-                              setFormData({
-                                ...formData,
-                                category_id: category.id,
-                              });
-                              setIsCategoryDropdownOpen(false);
-                              setCategorySearchTerm("");
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                          >
-                            <div className="font-medium">{category.name}</div>
-                            <div className="text-gray-500 text-xs">
-                              {category.description}
-                            </div>
-                          </button>
-                        ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <MultiCategorySelector
+              value={selectedCategoryIds}
+              onChange={setSelectedCategoryIds}
+              placeholder="Select catalog(s)"
+              entityType="campaign"
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              You can select multiple catalogs. Only the first one will be saved to the backend.
+            </p>
           </div>
         </div>
 
@@ -598,17 +569,53 @@ export default function CampaignDefinitionStep({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Tags
             </label>
-            <input
-              type="text"
-              value={formData.tag || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, tag: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
-              placeholder="Enter tags separated by comma (e.g., promo, summer, new-customer)"
-            />
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder="Enter a tag and press Enter"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  disabled={!tagInput.trim()}
+                  className="px-3 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: color.primary.action }}
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              {formData.tags && formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-2 hover:text-green-900"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             <p className="text-xs text-gray-500 mt-1">
-              Separate multiple tags with commas
+              Press Enter or click the + button to add tags
             </p>
           </div>
 

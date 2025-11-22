@@ -468,6 +468,7 @@ export default function CustomerProfileReportsPage() {
   });
   const [tableSegment, setTableSegment] = useState("All");
   const [tableRiskFilter, setTableRiskFilter] = useState("All");
+  const [useDummyData, setUseDummyData] = useState(true);
 
   const handleRun = () => {
     setAppliedCustomRange(customRange);
@@ -496,6 +497,14 @@ export default function CustomerProfileReportsPage() {
   ]);
 
   const valueMatrixSeries = useMemo(() => {
+    if (!useDummyData) {
+      return baseValueMatrixData.map((point) => ({
+        ...point,
+        customers: 0,
+        recency: 0,
+        valueScore: 0,
+      }));
+    }
     const multiplier = actualMultiplier;
     return baseValueMatrixData.map((point) => ({
       ...point,
@@ -516,9 +525,20 @@ export default function CustomerProfileReportsPage() {
         )
       ),
     }));
-  }, [actualMultiplier, activeRangeKey]);
+  }, [actualMultiplier, activeRangeKey, useDummyData]);
 
   const lifecycleSeries = useMemo(() => {
+    if (!useDummyData) {
+      return baseLifecycleData.map((point) => ({
+        month: point.month,
+        new: 0,
+        active: 0,
+        atRisk: 0,
+        dormant: 0,
+        churned: 0,
+        reactivated: 0,
+      }));
+    }
     const multiplier = actualMultiplier;
     return baseLifecycleData.map((point) => ({
       month: point.month,
@@ -529,24 +549,37 @@ export default function CustomerProfileReportsPage() {
       churned: Math.round(point.churned * multiplier),
       reactivated: Math.round(point.reactivated * multiplier),
     }));
-  }, [actualMultiplier]);
+  }, [actualMultiplier, useDummyData]);
 
   const clvDistributionSeries = useMemo(() => {
+    if (!useDummyData) {
+      return baseClvDistribution.map((bucket) => ({
+        ...bucket,
+        customers: 0,
+        revenueShare: 0,
+      }));
+    }
     const multiplier = actualMultiplier;
     return baseClvDistribution.map((bucket) => ({
       ...bucket,
       customers: Math.round(bucket.customers * multiplier),
     }));
-  }, [actualMultiplier]);
+  }, [actualMultiplier, useDummyData]);
 
   const cohortSeries = useMemo(() => {
+    if (!useDummyData) {
+      return baseCohortRetention.map((point) => ({
+        ...point,
+        retention: 0,
+      }));
+    }
     const adjustment =
       activeRangeKey === "7d" ? 3 : activeRangeKey === "30d" ? 1 : 0;
     return baseCohortRetention.map((point) => ({
       ...point,
       retention: Math.min(100, point.retention + adjustment),
     }));
-  }, [activeRangeKey]);
+  }, [activeRangeKey, useDummyData]);
 
   const cohortComparisonSeries = useMemo(() => {
     const months = Array.from(
@@ -572,6 +605,9 @@ export default function CustomerProfileReportsPage() {
   }, [cohortSeries]);
 
   const filteredCustomers = useMemo(() => {
+    if (!useDummyData) {
+      return [];
+    }
     const maxDays =
       appliedCustomRange.start && appliedCustomRange.end
         ? customDays ?? rangeDays[activeRangeKey]
@@ -602,7 +638,14 @@ export default function CustomerProfileReportsPage() {
           : now - rowDate <= maxDays * 24 * 60 * 60 * 1000;
       return matchesSegment && matchesRisk && matchesRange;
     });
-  }, [tableSegment, tableRiskFilter, customRange, customDays, activeRangeKey]);
+  }, [
+    tableSegment,
+    tableRiskFilter,
+    customRange,
+    customDays,
+    activeRangeKey,
+    useDummyData,
+  ]);
 
   const handleDownloadCsv = () => {
     if (!filteredCustomers.length) return;
@@ -676,6 +719,31 @@ export default function CustomerProfileReportsPage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+              <label
+                htmlFor="customer-data-toggle"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2"
+              >
+                Data Mode:
+              </label>
+              <button
+                id="customer-data-toggle"
+                type="button"
+                onClick={() => setUseDummyData(!useDummyData)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#252829] focus:ring-offset-2 ${
+                  useDummyData ? "bg-[#252829]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useDummyData ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+                {useDummyData ? "Dummy Data" : "Real Data"}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <label
                 htmlFor="customer-date-start"
@@ -765,69 +833,121 @@ export default function CustomerProfileReportsPage() {
               ? -0.2
               : 0;
 
-          const heroMetrics: HeroMetric[] = [
-            {
-              label: "Active Customers",
-              value: formatNumber(
-                Math.round(heroBase.activeCustomers * valueScale)
-              ),
-              trend: "+4.2% vs last 90d",
-              trendDirection: "up",
-              description: "Activity in the selected period",
-              icon: Users,
-            },
-            {
-              label: "Avg Customer Lifetime Value",
-              value: `$${Math.round(heroBase.avgClv * clvAdjust).toLocaleString(
-                "en-US"
-              )}`,
-              trend: "+3.1% vs last quarter",
-              trendDirection: "up",
-              description: "Mean realized + predicted CLV",
-              icon: DollarSign,
-            },
-            {
-              label: "Avg Transaction Value",
-              value: `$${Math.round(
-                heroBase.avgOrderValue * clvAdjust
-              ).toLocaleString("en-US")}`,
-              trend: "+1.6% vs prior period",
-              trendDirection: "up",
-              description: "Mean transaction size",
-              icon: Crown,
-            },
-            {
-              label: "Purchase Frequency",
-              value: `${(heroBase.purchaseFrequency * clvAdjust).toFixed(
-                1
-              )} / yr`,
-              trend: "+0.2 YoY",
-              trendDirection: "up",
-              description: "Transactions per customer annually",
-              icon: Repeat,
-            },
-            {
-              label: "Engagement Score",
-              value: `${Math.max(
-                0,
-                heroBase.engagementScore + engagementAdjust
-              ).toFixed(0)} / 100`,
-              trend: "-2 pts vs last 30d",
-              trendDirection: engagementAdjust < 0 ? "down" : "up",
-              description: "Multi-channel composite score",
-              icon: Activity,
-            },
-            {
-              label: "Churn Rate",
-              value: `${Math.max(0, heroBase.churnRate + churnAdjust).toFixed(
-                1
-              )}%`,
-              trend: "-0.6 pts vs last quarter",
-              trendDirection: "down",
-              description: "No transaction in 120 days",
-              icon: BarChart3,
-            },
-          ];
+          const heroMetrics: HeroMetric[] = useDummyData
+            ? [
+                {
+                  label: "Active Customers",
+                  value: formatNumber(
+                    Math.round(heroBase.activeCustomers * valueScale)
+                  ),
+                  trend: "+4.2% vs last 90d",
+                  trendDirection: "up",
+                  description: "Activity in the selected period",
+                  icon: Users,
+                },
+                {
+                  label: "Avg Customer Lifetime Value",
+                  value: `$${Math.round(
+                    heroBase.avgClv * clvAdjust
+                  ).toLocaleString("en-US")}`,
+                  trend: "+3.1% vs last quarter",
+                  trendDirection: "up",
+                  description: "Mean realized + predicted CLV",
+                  icon: DollarSign,
+                },
+                {
+                  label: "Avg Transaction Value",
+                  value: `$${Math.round(
+                    heroBase.avgOrderValue * clvAdjust
+                  ).toLocaleString("en-US")}`,
+                  trend: "+1.6% vs prior period",
+                  trendDirection: "up",
+                  description: "Mean transaction size",
+                  icon: Crown,
+                },
+                {
+                  label: "Purchase Frequency",
+                  value: `${(heroBase.purchaseFrequency * clvAdjust).toFixed(
+                    1
+                  )} / yr`,
+                  trend: "+0.2 YoY",
+                  trendDirection: "up",
+                  description: "Transactions per customer annually",
+                  icon: Repeat,
+                },
+                {
+                  label: "Engagement Score",
+                  value: `${Math.max(
+                    0,
+                    heroBase.engagementScore + engagementAdjust
+                  ).toFixed(0)} / 100`,
+                  trend: "-2 pts vs last 30d",
+                  trendDirection: engagementAdjust < 0 ? "down" : "up",
+                  description: "Multi-channel composite score",
+                  icon: Activity,
+                },
+                {
+                  label: "Churn Rate",
+                  value: `${Math.max(
+                    0,
+                    heroBase.churnRate + churnAdjust
+                  ).toFixed(1)}%`,
+                  trend: "-0.6 pts vs last quarter",
+                  trendDirection: "down",
+                  description: "No transaction in 120 days",
+                  icon: BarChart3,
+                },
+              ]
+            : [
+                {
+                  label: "Active Customers",
+                  value: "0",
+                  trend: "—",
+                  trendDirection: "up",
+                  description: "Activity in the selected period",
+                  icon: Users,
+                },
+                {
+                  label: "Avg Customer Lifetime Value",
+                  value: "$0",
+                  trend: "—",
+                  trendDirection: "up",
+                  description: "Mean realized + predicted CLV",
+                  icon: DollarSign,
+                },
+                {
+                  label: "Avg Transaction Value",
+                  value: "$0",
+                  trend: "—",
+                  trendDirection: "up",
+                  description: "Mean transaction size",
+                  icon: Crown,
+                },
+                {
+                  label: "Purchase Frequency",
+                  value: "0.0 / yr",
+                  trend: "—",
+                  trendDirection: "up",
+                  description: "Transactions per customer annually",
+                  icon: Repeat,
+                },
+                {
+                  label: "Engagement Score",
+                  value: "0 / 100",
+                  trend: "—",
+                  trendDirection: "up",
+                  description: "Multi-channel composite score",
+                  icon: Activity,
+                },
+                {
+                  label: "Churn Rate",
+                  value: "0.0%",
+                  trend: "—",
+                  trendDirection: "down",
+                  description: "No transaction in 120 days",
+                  icon: BarChart3,
+                },
+              ];
 
           return (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -906,7 +1026,9 @@ export default function CustomerProfileReportsPage() {
                 <Bar
                   dataKey="customers"
                   name="Customers"
-                  fill={colors.primary.accent}
+                  fill={
+                    colors.reportCharts.customerProfile.valueMatrix.customers
+                  }
                   maxBarSize={60}
                   radius={[4, 4, 0, 0]}
                 />
@@ -965,7 +1087,10 @@ export default function CustomerProfileReportsPage() {
                   yAxisId="left"
                   dataKey="customers"
                   name="Customers"
-                  fill={colors.primary.accent}
+                  fill={
+                    colors.reportCharts.customerProfile.clvDistribution
+                      .customers
+                  }
                   radius={[4, 4, 0, 0]}
                 />
                 <Line
@@ -973,7 +1098,10 @@ export default function CustomerProfileReportsPage() {
                   type="monotone"
                   dataKey="revenueShare"
                   name="Revenue Share"
-                  stroke={colors.tertiary.tag4}
+                  stroke={
+                    colors.reportCharts.customerProfile.clvDistribution
+                      .revenueShare
+                  }
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -1022,37 +1150,55 @@ export default function CustomerProfileReportsPage() {
                 <Bar
                   dataKey="active"
                   name="Active"
-                  fill={colors.tertiary.tag4}
+                  fill={
+                    colors.reportCharts.customerProfile.lifecycleDistribution
+                      .active
+                  }
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="new"
                   name="New"
-                  fill={colors.tertiary.tag2}
+                  fill={
+                    colors.reportCharts.customerProfile.lifecycleDistribution
+                      .new
+                  }
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="reactivated"
                   name="Reactivated"
-                  fill={colors.charts.offers.voucher}
+                  fill={
+                    colors.reportCharts.customerProfile.lifecycleDistribution
+                      .reactivated
+                  }
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="atRisk"
                   name="At-Risk"
-                  fill={colors.status.warning}
+                  fill={
+                    colors.reportCharts.customerProfile.lifecycleDistribution
+                      .atRisk
+                  }
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="dormant"
                   name="Dormant"
-                  fill="#94a3b8"
+                  fill={
+                    colors.reportCharts.customerProfile.lifecycleDistribution
+                      .dormant
+                  }
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="churned"
                   name="Churned"
-                  fill={colors.status.danger}
+                  fill={
+                    colors.reportCharts.customerProfile.lifecycleDistribution
+                      .churned
+                  }
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -1111,19 +1257,19 @@ export default function CustomerProfileReportsPage() {
                 <Bar
                   dataKey="Jan"
                   name="Jan Cohort"
-                  fill="#9333ea"
+                  fill={colors.reportCharts.customerProfile.cohortRetention.jan}
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="Apr"
                   name="Apr Cohort"
-                  fill="#3b82f6"
+                  fill={colors.reportCharts.customerProfile.cohortRetention.apr}
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="Jul"
                   name="Jul Cohort"
-                  fill="#10b981"
+                  fill={colors.reportCharts.customerProfile.cohortRetention.jul}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

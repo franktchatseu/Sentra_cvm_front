@@ -636,22 +636,7 @@ const formatCurrency = (value: number) => {
   return `$${value.toFixed(2)}`;
 };
 
-const chartColors = {
-  // Channel Performance
-  clicks: "#3b82f6", // Blue
-  conversions: "#10b981", // Green
-  ctr: "#f59e0b", // Orange
-  cvr: "#ef4444", // Red
-  // SMS Delivery
-  sent: colors.tertiary.tag1, // Purple - initial send
-  delivered: "#3b82f6", // Blue - successful delivery
-  converted: "#15803d", // Dark Green - final conversion success
-  // Time Series
-  reach: "#6366f1", // Indigo
-  timeClicks: colors.tertiary.tag1, // Purple for time series clicks
-  timeConversions: colors.tertiary.tag3, // Yellow/Orange for conversions
-  revenue: colors.status.success, // Green for revenue
-};
+// Chart colors now use standardized colors from tokens.reportCharts
 
 type ChartTooltipEntry = {
   color?: string;
@@ -702,6 +687,7 @@ export default function OverallDashboardPerformancePage() {
   });
   const [channelFilter, setChannelFilter] =
     useState<ChannelFilter>("All Channels");
+  const [useDummyData, setUseDummyData] = useState(true);
 
   const handleRun = () => {
     setAppliedCustomRange(customRange);
@@ -732,6 +718,22 @@ export default function OverallDashboardPerformancePage() {
   // Scale snapshot data based on actual date range
   const baseSnapshot = mockPerformanceSnapshots[activeRangeKey];
   const kpiSnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        reach: { reach: 0 },
+        engagement: { clicks: 0, ctr: 0, openRate: 0, engagementRate: 0 },
+        conversion: {
+          conversions: 0,
+          revenue: 0,
+          spend: 0,
+          cvr: 0,
+          cpc: 0,
+          cpl: 0,
+          cpa: 0,
+          roas: 0,
+        },
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -761,9 +763,31 @@ export default function OverallDashboardPerformancePage() {
         roas: baseSnapshot.conversion.roas,
       },
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
 
   const channelSnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        ...baseSnapshot,
+        channels: baseSnapshot.channels.map((channel) => ({
+          ...channel,
+          reach: 0,
+          clicks: 0,
+          opens: 0,
+          conversions: 0,
+          revenue: 0,
+          spend: 0,
+          ctr: 0,
+          openRate: 0,
+          cvr: 0,
+          cpc: 0,
+          cpl: 0,
+          cpa: 0,
+          roas: 0,
+          engagementRate: 0,
+        })),
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -786,9 +810,20 @@ export default function OverallDashboardPerformancePage() {
         engagementRate: channel.engagementRate,
       })),
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
 
   const smsDeliverySnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        ...baseSnapshot,
+        smsDelivery: baseSnapshot.smsDelivery.map((point) => ({
+          ...point,
+          sent: 0,
+          delivered: 0,
+          converted: 0,
+        })),
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -799,9 +834,21 @@ export default function OverallDashboardPerformancePage() {
         converted: Math.round(point.converted * scaleFactor),
       })),
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
 
   const timeSeriesSnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        ...baseSnapshot,
+        timeSeries: baseSnapshot.timeSeries.map((point) => ({
+          ...point,
+          reach: 0,
+          clicks: 0,
+          conversions: 0,
+          revenue: 0,
+        })),
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -813,7 +860,7 @@ export default function OverallDashboardPerformancePage() {
         revenue: Math.round(point.revenue * scaleFactor),
       })),
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
 
   const filteredChannels = useMemo(() => {
     if (channelFilter === "All Channels") {
@@ -857,6 +904,31 @@ export default function OverallDashboardPerformancePage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+              <label
+                htmlFor="overall-data-toggle"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2"
+              >
+                Data Mode:
+              </label>
+              <button
+                id="overall-data-toggle"
+                type="button"
+                onClick={() => setUseDummyData(!useDummyData)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#252829] focus:ring-offset-2 ${
+                  useDummyData ? "bg-[#252829]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useDummyData ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+                {useDummyData ? "Dummy Data" : "Real Data"}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <label
                 htmlFor="overall-date-start"
@@ -1102,7 +1174,10 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="clicks"
-                fill={chartColors.clicks}
+                fill={
+                  colors.reportCharts.overallPerformance.channelPerformance
+                    .clicks
+                }
                 name="Clicks"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1110,7 +1185,10 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="conversions"
-                fill={chartColors.conversions}
+                fill={
+                  colors.reportCharts.overallPerformance.channelPerformance
+                    .conversions
+                }
                 name="Conversions"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1119,19 +1197,31 @@ export default function OverallDashboardPerformancePage() {
                 yAxisId="right"
                 type="monotone"
                 dataKey="ctr"
-                stroke={chartColors.ctr}
+                stroke={
+                  colors.reportCharts.overallPerformance.channelPerformance.ctr
+                }
                 strokeWidth={2.5}
                 name="CTR (%)"
-                dot={{ fill: chartColors.ctr, r: 4 }}
+                dot={{
+                  fill: colors.reportCharts.overallPerformance
+                    .channelPerformance.ctr,
+                  r: 4,
+                }}
               />
               <Line
                 yAxisId="right"
                 type="monotone"
                 dataKey="cvr"
-                stroke={chartColors.cvr}
+                stroke={
+                  colors.reportCharts.overallPerformance.channelPerformance.cvr
+                }
                 strokeWidth={2.5}
                 name="CVR (%)"
-                dot={{ fill: chartColors.cvr, r: 4 }}
+                dot={{
+                  fill: colors.reportCharts.overallPerformance
+                    .channelPerformance.cvr,
+                  r: 4,
+                }}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -1185,21 +1275,25 @@ export default function OverallDashboardPerformancePage() {
               />
               <Bar
                 dataKey="sent"
-                fill={chartColors.sent}
+                fill={colors.reportCharts.overallPerformance.smsDelivery.sent}
                 name="Sent"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />
               <Bar
                 dataKey="delivered"
-                fill={chartColors.delivered}
+                fill={
+                  colors.reportCharts.overallPerformance.smsDelivery.delivered
+                }
                 name="Delivered"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />
               <Bar
                 dataKey="converted"
-                fill={chartColors.converted}
+                fill={
+                  colors.reportCharts.overallPerformance.smsDelivery.converted
+                }
                 name="Converted"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1268,7 +1362,9 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="reach"
-                fill={chartColors.reach}
+                fill={
+                  colors.reportCharts.overallPerformance.timeSeriesTrends.reach
+                }
                 name="Reach"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1276,7 +1372,9 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="clicks"
-                fill={chartColors.timeClicks}
+                fill={
+                  colors.reportCharts.overallPerformance.timeSeriesTrends.clicks
+                }
                 name="Clicks"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1284,7 +1382,10 @@ export default function OverallDashboardPerformancePage() {
               <Bar
                 yAxisId="left"
                 dataKey="conversions"
-                fill={chartColors.timeConversions}
+                fill={
+                  colors.reportCharts.overallPerformance.timeSeriesTrends
+                    .conversions
+                }
                 name="Conversions"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
@@ -1293,10 +1394,17 @@ export default function OverallDashboardPerformancePage() {
                 yAxisId="right"
                 type="monotone"
                 dataKey="revenue"
-                stroke={chartColors.revenue}
+                stroke={
+                  colors.reportCharts.overallPerformance.timeSeriesTrends
+                    .revenue
+                }
                 strokeWidth={2.5}
                 name="Revenue"
-                dot={{ fill: chartColors.revenue, r: 4 }}
+                dot={{
+                  fill: colors.reportCharts.overallPerformance.timeSeriesTrends
+                    .revenue,
+                  r: 4,
+                }}
               />
             </ComposedChart>
           </ResponsiveContainer>

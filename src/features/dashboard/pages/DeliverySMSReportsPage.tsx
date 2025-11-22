@@ -79,12 +79,7 @@ const statusOptions: (MessageStatus | "All")[] = [
   "Rejected",
 ];
 
-const chartColors = {
-  sent: colors.tertiary.tag1,
-  delivered: "#3b82f6",
-  converted: "#15803d",
-  failed: colors.status.danger,
-};
+// Chart colors now use standardized colors from tokens.reportCharts
 
 const smsMockData: Record<RangeOption, SMSRangeData> = {
   "7d": {
@@ -367,6 +362,7 @@ export default function DeliverySMSReportsPage() {
     "All"
   );
   const [campaignQuery, setCampaignQuery] = useState("");
+  const [useDummyData, setUseDummyData] = useState(true);
 
   const handleRun = () => {
     setAppliedCustomRange(customRange);
@@ -397,6 +393,22 @@ export default function DeliverySMSReportsPage() {
   // Scale snapshot data based on actual date range
   const baseSnapshot = smsMockData[activeRangeKey];
   const summarySnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        ...baseSnapshot,
+        summary: {
+          sent: 0,
+          delivered: 0,
+          conversions: 0,
+          deliveryRate: 0,
+          failedRate: 0,
+          conversionRate: 0,
+          openRate: 0,
+          ctr: 0,
+          optOutRate: 0,
+        },
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -414,9 +426,20 @@ export default function DeliverySMSReportsPage() {
         optOutRate: baseSnapshot.summary.optOutRate,
       },
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
 
   const deliverySnapshot = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        ...baseSnapshot,
+        deliverySeries: baseSnapshot.deliverySeries.map((point) => ({
+          ...point,
+          sent: 0,
+          delivered: 0,
+          converted: 0,
+        })),
+      };
+    }
     if (scaleFactor === 1) return baseSnapshot;
     return {
       ...baseSnapshot,
@@ -427,8 +450,11 @@ export default function DeliverySMSReportsPage() {
         converted: Math.round(point.converted * scaleFactor),
       })),
     };
-  }, [baseSnapshot, scaleFactor]);
+  }, [baseSnapshot, scaleFactor, useDummyData]);
   const filteredLogs = useMemo(() => {
+    if (!useDummyData) {
+      return [];
+    }
     const now = Date.now();
     const maxDays =
       appliedCustomRange.start && appliedCustomRange.end
@@ -457,7 +483,14 @@ export default function DeliverySMSReportsPage() {
           : now - entryDate <= maxDays * 24 * 60 * 60 * 1000;
       return matchesStatus && matchesQuery && matchesRange;
     });
-  }, [campaignQuery, statusFilter, customRange, customDays, deliveryRange]);
+  }, [
+    campaignQuery,
+    statusFilter,
+    customRange,
+    customDays,
+    deliveryRange,
+    useDummyData,
+  ]);
 
   const handleDownloadCsv = () => {
     if (!filteredLogs.length) return;
@@ -588,6 +621,31 @@ export default function DeliverySMSReportsPage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+              <label
+                htmlFor="sms-data-toggle"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2"
+              >
+                Data Mode:
+              </label>
+              <button
+                id="sms-data-toggle"
+                type="button"
+                onClick={() => setUseDummyData(!useDummyData)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#252829] focus:ring-offset-2 ${
+                  useDummyData ? "bg-[#252829]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useDummyData ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+                {useDummyData ? "Dummy Data" : "Real Data"}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <label
                 htmlFor="sms-date-start"
@@ -730,21 +788,21 @@ export default function DeliverySMSReportsPage() {
               <Bar
                 dataKey="sent"
                 name="Sent"
-                fill={chartColors.sent}
+                fill={colors.reportCharts.deliverySMS.smsDelivery.sent}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />
               <Bar
                 dataKey="delivered"
                 name="Delivered"
-                fill={chartColors.delivered}
+                fill={colors.reportCharts.deliverySMS.smsDelivery.delivered}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />
               <Bar
                 dataKey="converted"
                 name="Converted"
-                fill={chartColors.converted}
+                fill={colors.reportCharts.deliverySMS.smsDelivery.converted}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}
               />

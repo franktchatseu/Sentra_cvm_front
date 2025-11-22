@@ -445,6 +445,7 @@ export default function CampaignReportsPage() {
     start: "",
     end: "",
   });
+  const [useDummyData, setUseDummyData] = useState(true);
 
   const handleRun = () => {
     setAppliedCustomRange(customRange);
@@ -475,6 +476,24 @@ export default function CampaignReportsPage() {
   // Scale summary data based on actual date range
   const baseSummary = campaignSummary[activeRangeKey];
   const summary = useMemo(() => {
+    if (!useDummyData) {
+      return {
+        eligibleAudience: 0,
+        recipients: 0,
+        reach: 0,
+        impressions: 0,
+        opens: 0,
+        clickRate: 0,
+        engagementRate: 0,
+        conversions: 0,
+        conversionRate: 0,
+        revenue: 0,
+        roas: 0,
+        cac: 0,
+        leads: 0,
+        campaignCost: 0,
+      };
+    }
     if (scaleFactor === 1) return baseSummary;
     return {
       ...baseSummary,
@@ -494,57 +513,105 @@ export default function CampaignReportsPage() {
       roas: baseSummary.roas,
       cac: baseSummary.cac,
     };
-  }, [baseSummary, scaleFactor]);
-  const heroCards = [
-    {
-      label: "Audience Reached",
-      value: summary.reach.toLocaleString("en-US"),
-      subtext: `${Math.round(
-        (summary.reach / summary.eligibleAudience) * 100
-      )}% of ${summary.eligibleAudience.toLocaleString("en-US")} eligible`,
-      icon: statIcons.audience,
-      trend: { value: "+8.4%", direction: "up" as const },
-    },
-    {
-      label: "Engagement Rate",
-      value: `${summary.engagementRate.toFixed(1)}%`,
-      subtext: "Opens, clicks & taps vs reach",
-      icon: statIcons.engagement,
-      trend: { value: "+2.1 pts", direction: "up" as const },
-    },
-    {
-      label: "Conversion Rate",
-      value: `${summary.conversionRate.toFixed(1)}%`,
-      subtext: `${summary.conversions.toLocaleString("en-US")} conversions`,
-      icon: statIcons.outcome,
-      trend: { value: "-0.4 pts", direction: "down" as const },
-    },
-    {
-      label: "Revenue Generated",
-      value: `$${summary.revenue.toLocaleString("en-US")}`,
-      subtext: `Avg $${Math.round(
-        summary.revenue / summary.conversions
-      ).toLocaleString("en-US")} per conversion`,
-      icon: statIcons.outcome,
-      trend: { value: "+$84K", direction: "up" as const },
-    },
-    {
-      label: "ROI / ROMI",
-      value: `${summary.roas.toFixed(1)}x`,
-      subtext: `Spend $${summary.campaignCost.toLocaleString("en-US")}`,
-      icon: statIcons.growth,
-      trend: { value: "+0.3x", direction: "up" as const },
-    },
-    {
-      label: "Campaign Cost",
-      value: `$${summary.campaignCost.toLocaleString("en-US")}`,
-      subtext: `CAC $${summary.cac.toFixed(2)}`,
-      icon: statIcons.outcome,
-      trend: { value: "+$12K", direction: "up" as const },
-    },
-  ];
+  }, [baseSummary, scaleFactor, useDummyData]);
+  const heroCards = useDummyData
+    ? [
+        {
+          label: "Audience Reached",
+          value: summary.reach.toLocaleString("en-US"),
+          subtext: `${Math.round(
+            (summary.reach / summary.eligibleAudience) * 100
+          )}% of ${summary.eligibleAudience.toLocaleString("en-US")} eligible`,
+          icon: statIcons.audience,
+          trend: { value: "+8.4%", direction: "up" as const },
+        },
+        {
+          label: "Engagement Rate",
+          value: `${summary.engagementRate.toFixed(1)}%`,
+          subtext: "Opens, clicks & taps vs reach",
+          icon: statIcons.engagement,
+          trend: { value: "+2.1 pts", direction: "up" as const },
+        },
+        {
+          label: "Conversion Rate",
+          value: `${summary.conversionRate.toFixed(1)}%`,
+          subtext: `${summary.conversions.toLocaleString("en-US")} conversions`,
+          icon: statIcons.outcome,
+          trend: { value: "-0.4 pts", direction: "down" as const },
+        },
+        {
+          label: "Revenue Generated",
+          value: `$${summary.revenue.toLocaleString("en-US")}`,
+          subtext: `Avg $${Math.round(
+            summary.revenue / summary.conversions
+          ).toLocaleString("en-US")} per conversion`,
+          icon: statIcons.outcome,
+          trend: { value: "+$84K", direction: "up" as const },
+        },
+        {
+          label: "ROI / ROMI",
+          value: `${summary.roas.toFixed(1)}x`,
+          subtext: `Spend $${summary.campaignCost.toLocaleString("en-US")}`,
+          icon: statIcons.growth,
+          trend: { value: "+0.3x", direction: "up" as const },
+        },
+        {
+          label: "Campaign Cost",
+          value: `$${summary.campaignCost.toLocaleString("en-US")}`,
+          subtext: `CAC $${summary.cac.toFixed(2)}`,
+          icon: statIcons.outcome,
+          trend: { value: "+$12K", direction: "up" as const },
+        },
+      ]
+    : [
+        {
+          label: "Audience Reached",
+          value: "0",
+          subtext: "0% of 0 eligible",
+          icon: statIcons.audience,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Engagement Rate",
+          value: "0.0%",
+          subtext: "Opens, clicks & taps vs reach",
+          icon: statIcons.engagement,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Conversion Rate",
+          value: "0.0%",
+          subtext: "0 conversions",
+          icon: statIcons.outcome,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Revenue Generated",
+          value: "$0",
+          subtext: "Avg $0 per conversion",
+          icon: statIcons.outcome,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "ROI / ROMI",
+          value: "0.0x",
+          subtext: "Spend $0",
+          icon: statIcons.growth,
+          trend: { value: "—", direction: "up" as const },
+        },
+        {
+          label: "Campaign Cost",
+          value: "$0",
+          subtext: "CAC $0.00",
+          icon: statIcons.outcome,
+          trend: { value: "—", direction: "up" as const },
+        },
+      ];
 
   const filteredRows = useMemo(() => {
+    if (!useDummyData) {
+      return [];
+    }
     const query = tableQuery.trim().toLowerCase();
     const maxDays =
       appliedCustomRange.start && appliedCustomRange.end
@@ -573,25 +640,31 @@ export default function CampaignReportsPage() {
 
       return matchesSegment && matchesQuery && matchesRange;
     });
-  }, [segmentFilter, tableQuery, customRange, customDays, selectedRange]);
+  }, [
+    segmentFilter,
+    tableQuery,
+    customRange,
+    customDays,
+    selectedRange,
+    useDummyData,
+  ]);
 
   const segmentOptions = [
     "All",
     ...new Set(campaignRows.map((row) => row.segment)),
   ];
 
-  const chartPalette = {
-    reach: colors.tertiary.tag1,
-    impressions: colors.tertiary.tag2,
-    funnel: colors.primary.accent,
-    ctr: colors.tertiary.tag2,
-    engagement: colors.tertiary.tag3,
-    revenue: "#6B21A8",
-    spend: "#0F5A32",
-  };
+  // Chart colors now use standardized colors from tokens.reportCharts
 
   // Scale chart data based on actual date range
   const channelData = useMemo(() => {
+    if (!useDummyData) {
+      return channelReachData[activeRangeKey].map((point) => ({
+        ...point,
+        reach: 0,
+        impressions: 0,
+      }));
+    }
     const base = channelReachData[activeRangeKey];
     if (scaleFactor === 1) return base;
     return base.map((point) => ({
@@ -599,18 +672,33 @@ export default function CampaignReportsPage() {
       reach: Math.round(point.reach * scaleFactor),
       impressions: Math.round(point.impressions * scaleFactor),
     }));
-  }, [activeRangeKey, scaleFactor]);
+  }, [activeRangeKey, scaleFactor, useDummyData]);
 
   const funnelSeries = useMemo(() => {
+    if (!useDummyData) {
+      return funnelData[activeRangeKey].map((point) => ({
+        ...point,
+        value: 0,
+      }));
+    }
     const base = funnelData[activeRangeKey];
     if (scaleFactor === 1) return base;
     return base.map((point) => ({
       ...point,
       value: Math.round(point.value * scaleFactor),
     }));
-  }, [activeRangeKey, scaleFactor]);
+  }, [activeRangeKey, scaleFactor, useDummyData]);
 
   const trendSeries = useMemo(() => {
+    if (!useDummyData) {
+      return trendData[activeRangeKey].map((point) => ({
+        ...point,
+        ctr: 0,
+        engagement: 0,
+        revenue: 0,
+        spend: 0,
+      }));
+    }
     const base = trendData[activeRangeKey];
     if (scaleFactor === 1) return base;
     return base.map((point) => ({
@@ -619,9 +707,16 @@ export default function CampaignReportsPage() {
       ctr: point.ctr,
       engagement: point.engagement,
     }));
-  }, [activeRangeKey, scaleFactor]);
+  }, [activeRangeKey, scaleFactor, useDummyData]);
 
   const revenueSeries = useMemo(() => {
+    if (!useDummyData) {
+      return revenueData[activeRangeKey].map((point) => ({
+        ...point,
+        revenue: 0,
+        spend: 0,
+      }));
+    }
     const base = revenueData[activeRangeKey];
     if (scaleFactor === 1) return base;
     return base.map((point) => ({
@@ -629,7 +724,7 @@ export default function CampaignReportsPage() {
       revenue: Math.round(point.revenue * scaleFactor),
       spend: Math.round(point.spend * scaleFactor),
     }));
-  }, [activeRangeKey, scaleFactor]);
+  }, [activeRangeKey, scaleFactor, useDummyData]);
 
   const handleDownloadCsv = () => {
     if (!filteredRows.length) return;
@@ -706,6 +801,31 @@ export default function CampaignReportsPage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+              <label
+                htmlFor="campaign-data-toggle"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap mr-2"
+              >
+                Data Mode:
+              </label>
+              <button
+                id="campaign-data-toggle"
+                type="button"
+                onClick={() => setUseDummyData(!useDummyData)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#252829] focus:ring-offset-2 ${
+                  useDummyData ? "bg-[#252829]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useDummyData ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+                {useDummyData ? "Dummy Data" : "Real Data"}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <label
                 htmlFor="campaign-date-start"
@@ -845,13 +965,15 @@ export default function CampaignReportsPage() {
                 <Bar
                   dataKey="reach"
                   name="Reach"
-                  fill={chartPalette.reach}
+                  fill={colors.reportCharts.campaignReports.channelReach.reach}
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="impressions"
                   name="Impressions"
-                  fill={chartPalette.impressions}
+                  fill={
+                    colors.reportCharts.campaignReports.channelReach.impressions
+                  }
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -886,7 +1008,9 @@ export default function CampaignReportsPage() {
                 <Bar
                   dataKey="value"
                   name="Volume"
-                  fill={chartPalette.funnel}
+                  fill={
+                    colors.reportCharts.campaignReports.engagementStages.value
+                  }
                   maxBarSize={60}
                   radius={[4, 4, 0, 0]}
                 />
@@ -926,7 +1050,9 @@ export default function CampaignReportsPage() {
                   type="monotone"
                   dataKey="ctr"
                   name="CTR %"
-                  stroke={chartPalette.ctr}
+                  stroke={
+                    colors.reportCharts.campaignReports.ctrEngagementTrends.ctr
+                  }
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -935,7 +1061,10 @@ export default function CampaignReportsPage() {
                   type="monotone"
                   dataKey="engagement"
                   name="Engagement %"
-                  stroke={chartPalette.engagement}
+                  stroke={
+                    colors.reportCharts.campaignReports.ctrEngagementTrends
+                      .engagement
+                  }
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -967,7 +1096,9 @@ export default function CampaignReportsPage() {
                   type="monotone"
                   dataKey="revenue"
                   name="Revenue ($k)"
-                  stroke={chartPalette.revenue}
+                  stroke={
+                    colors.reportCharts.campaignReports.revenueVsSpend.revenue
+                  }
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -975,7 +1106,9 @@ export default function CampaignReportsPage() {
                   type="monotone"
                   dataKey="spend"
                   name="Spend ($k)"
-                  stroke={chartPalette.spend}
+                  stroke={
+                    colors.reportCharts.campaignReports.revenueVsSpend.spend
+                  }
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />

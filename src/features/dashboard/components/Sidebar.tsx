@@ -945,12 +945,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }}
                   >
                     <Link
-                      to="#"
-                      onClick={(e) => e.preventDefault()}
+                      to={item.href}
                       className={`group flex items-center md:justify-center xl:justify-start gap-x-3 rounded-md md:p-3 xl:p-3 text-sm transition-all duration-200 ${getItemClasses(
                         isActive
                       )}`}
                       title={item.name}
+                      onClick={() => onClose()}
                     >
                       <Icon
                         className={`md:h-6 md:w-6 xl:h-5 xl:w-5 shrink-0 ${getIconClasses(

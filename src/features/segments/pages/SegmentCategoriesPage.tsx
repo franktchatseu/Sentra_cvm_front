@@ -927,10 +927,6 @@ export default function SegmentCategoriesPage() {
                     borderColor: color.primary.action,
                     color: color.primary.action,
                   }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
-                  }}
                   onMouseLeave={(e) => {
                     (e.target as HTMLButtonElement).style.backgroundColor =
                       "transparent";
@@ -971,10 +967,6 @@ export default function SegmentCategoriesPage() {
                   style={{
                     borderColor: color.primary.action,
                     color: color.primary.action,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
                   }}
                   onMouseLeave={(e) => {
                     (e.target as HTMLButtonElement).style.backgroundColor =

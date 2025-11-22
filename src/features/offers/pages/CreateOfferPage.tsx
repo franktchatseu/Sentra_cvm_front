@@ -31,6 +31,7 @@ import OfferCreativeStep from "../components/OfferCreativeStep";
 import OfferTrackingStep from "../components/OfferTrackingStep";
 import OfferRewardStep from "../components/OfferRewardStep";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import MultiCategorySelector from "../../../shared/components/MultiCategorySelector";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -223,6 +224,29 @@ function BasicInfoStep({
   | "onSaveDraft"
   | "onCancel"
 >) {
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+
+  // Initialize selectedCategoryIds from formData.category_id
+  useEffect(() => {
+    if (formData.category_id && !selectedCategoryIds.includes(formData.category_id)) {
+      setSelectedCategoryIds([formData.category_id]);
+    }
+  }, [formData.category_id]);
+
+  // Update formData.category_id when selectedCategoryIds changes (use first one)
+  useEffect(() => {
+    if (selectedCategoryIds.length > 0) {
+      setFormData({
+        ...formData,
+        category_id: selectedCategoryIds[0], // Send only first to backend
+      });
+    } else {
+      setFormData({
+        ...formData,
+        category_id: undefined,
+      });
+    }
+  }, [selectedCategoryIds]);
   return (
     <div className="space-y-6">
       <div className="mt-8 mb-8">
@@ -342,35 +366,17 @@ function BasicInfoStep({
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Catalog *
           </label>
-          <div className="relative">
-            <HeadlessSelect
-              options={[
-                {
-                  value: "",
-                  label: categoriesLoading
-                    ? "Loading catalogs..."
-                    : "Select catalog",
-                },
-                ...(offerCategories || []).map((category) => ({
-                  value: category.id.toString(),
-                  label: category.name,
-                })),
-              ]}
-              value={formData.category_id?.toString() || ""}
-              onChange={(value) => {
-                setFormData({
-                  ...formData,
-                  category_id: value ? Number(value) : undefined,
-                });
-                if (validationErrors?.category_id && clearValidationErrors) {
-                  clearValidationErrors();
-                }
-              }}
-              placeholder="Select catalog"
-              disabled={categoriesLoading}
-              className="[&_[role='listbox']]:!bottom-full [&_[role='listbox']]:!top-auto [&_[role='listbox']]:!mb-1 [&_[role='listbox']]:!mt-0"
-            />
-          </div>
+          <MultiCategorySelector
+            value={selectedCategoryIds}
+            onChange={setSelectedCategoryIds}
+            placeholder="Select catalog(s)"
+            entityType="offer"
+            disabled={categoriesLoading}
+            className="w-full"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            You can select multiple catalogs. Only the first one will be saved to the backend.
+          </p>
           {validationErrors?.category_id && (
             <p className="mt-1 text-sm text-red-600">
               {validationErrors.category_id}

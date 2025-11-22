@@ -1862,7 +1862,16 @@ export default function UserManagementPage() {
                                     />
                                   ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip
+                                  contentStyle={{
+                                    borderRadius: "0.375rem",
+                                    border: "1px solid #e5e7eb",
+                                    backgroundColor: "#ffffff",
+                                    padding: "0.75rem",
+                                    boxShadow:
+                                      "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                                  }}
+                                />
                               </PieChart>
                             </ResponsiveContainer>
                           </div>
@@ -1970,7 +1979,16 @@ export default function UserManagementPage() {
                                     />
                                   ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip
+                                  contentStyle={{
+                                    borderRadius: "0.375rem",
+                                    border: "1px solid #e5e7eb",
+                                    backgroundColor: "#ffffff",
+                                    padding: "0.75rem",
+                                    boxShadow:
+                                      "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                                  }}
+                                />
                                 <Legend
                                   wrapperStyle={{ fontSize: "12px" }}
                                   formatter={(value) =>
@@ -2083,7 +2101,16 @@ export default function UserManagementPage() {
                                     />
                                   ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip
+                                  contentStyle={{
+                                    borderRadius: "0.375rem",
+                                    border: "1px solid #e5e7eb",
+                                    backgroundColor: "#ffffff",
+                                    padding: "0.75rem",
+                                    boxShadow:
+                                      "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                                  }}
+                                />
                                 <Legend
                                   wrapperStyle={{ fontSize: "12px" }}
                                   formatter={(value) =>
