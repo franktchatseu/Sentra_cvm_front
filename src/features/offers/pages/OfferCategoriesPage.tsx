@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -13,7 +12,6 @@ import {
   FolderOpen,
   CheckCircle,
   XCircle,
-  X,
   Filter,
   Archive,
   Star,
@@ -338,7 +336,6 @@ function OffersModal({
 
       if (!offerData) {
         showError("Failed to load offer details", "Please try again later.");
-        setRemovingOfferId(null);
         return;
       }
 
@@ -355,7 +352,6 @@ function OffersModal({
           confirmText: "Got it",
           cancelText: "Close",
         });
-        setRemovingOfferId(null);
         return;
       }
 
@@ -365,7 +361,6 @@ function OffersModal({
 
       if (!hasCatalogTag) {
         showError("Offer is not tagged to this catalog.");
-        setRemovingOfferId(null);
         return;
       }
 
@@ -1063,40 +1058,28 @@ function OfferCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
               >
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="p-2.5 rounded-full flex items-center justify-center"
-                        style={{
-                          backgroundColor: stat.color || color.primary.accent,
-                        }}
-                      >
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="space-y-1">
-                        <p
-                          className={`${valueClass} font-bold ${tw.textPrimary}`}
-                          title={stat.title}
-                        >
-                          {displayValue}
-                        </p>
-                        <p
-                          className={`${tw.cardSubHeading} ${tw.textSecondary}`}
-                        >
-                          {stat.name}
-                        </p>
-                        {stat.description && (
-                          <p className={`text-sm ${tw.textSecondary}`}>
-                            {stat.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Icon
+                    className="h-5 w-5"
+                    style={{ color: color.primary.accent }}
+                  />
+                  <p className="text-sm font-medium text-gray-600">
+                    {stat.name}
+                  </p>
                 </div>
+                <p
+                  className={`mt-2 ${valueClass} font-bold text-gray-900`}
+                  title={stat.title}
+                >
+                  {displayValue}
+                </p>
+                {stat.description && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    {stat.description}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -1365,8 +1348,19 @@ function OfferCategoriesPage() {
                   </span>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
-                    style={{ backgroundColor: color.primary.action }}
+                    className={tw.borderedButton}
+                    style={{
+                      borderColor: color.primary.action,
+                      color: color.primary.action,
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.target as HTMLButtonElement).style.backgroundColor =
+                        color.primary.action;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.target as HTMLButtonElement).style.backgroundColor =
+                        "transparent";
+                    }}
                     title="View & Assign Offers"
                   >
                     View Offers
@@ -1491,8 +1485,19 @@ function OfferCategoriesPage() {
                   </div>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
-                    style={{ backgroundColor: color.primary.action }}
+                    className={tw.borderedButton}
+                    style={{
+                      borderColor: color.primary.action,
+                      color: color.primary.action,
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.target as HTMLButtonElement).style.backgroundColor =
+                        color.primary.action;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.target as HTMLButtonElement).style.backgroundColor =
+                        "transparent";
+                    }}
                     title="View & Assign Offers"
                   >
                     View Offers

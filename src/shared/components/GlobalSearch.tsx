@@ -11,17 +11,29 @@ import {
   FolderKanban,
   ArrowRight,
   Sparkles,
+  UserCheck,
+  Settings,
 } from "lucide-react";
 import { campaignService } from "../../features/campaigns/services/campaignService";
 import { offerService } from "../../features/offers/services/offerService";
 import { productService } from "../../features/products/services/productService";
 import { segmentService } from "../../features/segments/services/segmentService";
 import { programService } from "../../features/campaigns/services/programService";
+import { userService } from "../../features/users/services/userService";
+import { roleService } from "../../features/roles/services/roleService";
+import { Role } from "../../features/roles/types/role";
 import { color, tw } from "../utils/utils";
 
 interface SearchSuggestion {
   id: string | number;
-  type: "campaign" | "offer" | "product" | "segment" | "program";
+  type:
+    | "campaign"
+    | "offer"
+    | "product"
+    | "segment"
+    | "program"
+    | "user"
+    | "configuration";
   name: string;
   description?: string;
   url: string;
@@ -86,37 +98,202 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
 
     setIsLoading(true);
     try {
-      const [campaignsRes, offersRes, productsRes, segmentsRes, programsRes] =
-        await Promise.allSettled([
-          campaignService.getCampaigns({
-            limit: 5,
-            offset: 0,
-            skipCache: true,
-          }),
-          offerService.searchOffers({
-            search: query,
-            limit: 5,
-            offset: 0,
-            skipCache: true,
-          }),
-          productService.searchProducts({
-            name: query,
-            limit: 5,
-            offset: 0,
-            skipCache: true,
-          }),
-          segmentService.searchSegments({
-            search: query,
-            limit: 5,
-            offset: 0,
-            skipCache: true,
-          }),
-          programService.getAllPrograms({
-            limit: 5,
-            offset: 0,
-            skipCache: true,
-          }),
-        ]);
+      // Fetch roles to map role IDs to role names
+      let roleLookup: Record<number, Role> = {};
+      try {
+        const rolesResponse = await roleService.listRoles({
+          limit: 100,
+          offset: 0,
+          skipCache: true,
+        });
+        rolesResponse.roles.forEach((role) => {
+          if (role.id != null) {
+            roleLookup[role.id] = role;
+          }
+        });
+      } catch (err) {
+        console.error("Failed to load roles:", err);
+        // Continue without role lookup
+      }
+      // Get configurations (frontend-only)
+      const allConfigurations = [
+        {
+          id: "line-of-business",
+          name: "Line of Business",
+          description: "Define and manage your business lines and services",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/line-of-business",
+        },
+        {
+          id: "campaign-communication-policy",
+          name: "Campaign Communication Policy",
+          description: "Configure communication policies for campaigns",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-communication-policy",
+        },
+        {
+          id: "campaign-objectives",
+          name: "Campaign Objectives",
+          description: "Define and manage your campaign objectives",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-objectives",
+        },
+        {
+          id: "departments",
+          name: "Departments",
+          description: "Define and manage your departments",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/departments",
+        },
+        {
+          id: "programs",
+          name: "Programs",
+          description: "Manage campaign programs and initiatives",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/programs",
+        },
+        {
+          id: "campaign-catalogs",
+          name: "Campaigns catalogs",
+          description: "Manage Campaigns catalogs and catalogs",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-catalogs",
+        },
+        {
+          id: "campaign-types",
+          name: "Campaign Types",
+          description:
+            "Configure available campaign strategies like Round Robin or Champion Challenger",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-types",
+        },
+        {
+          id: "offer-types",
+          name: "Offer Types",
+          description: "Configure different types of offers and promotions",
+          type: "offer",
+          category: "Offer Configuration",
+          status: "active",
+          navigationPath: "/dashboard/offer-types",
+        },
+        {
+          id: "offer-catalogs",
+          name: "Offer Catalogs",
+          description: "Manage offer catalogs",
+          type: "offer",
+          category: "Offer Configuration",
+          status: "active",
+          navigationPath: "/dashboard/offer-catalogs",
+        },
+        {
+          id: "product-types",
+          name: "Product Types",
+          description: "Manage product types and classifications",
+          type: "product",
+          category: "Product Configuration",
+          status: "active",
+          navigationPath: "/dashboard/product-types",
+        },
+        {
+          id: "product-catalogs",
+          name: "Product Categories",
+          description: "Manage product categories and catalogs",
+          type: "product",
+          category: "Product Configuration",
+          status: "active",
+          navigationPath: "/dashboard/products/catalogs",
+        },
+        {
+          id: "segment-catalogs",
+          name: "segment catalogs",
+          description: "Manage segment catalogs and classifications",
+          type: "segment",
+          category: "Segment Configuration",
+          status: "active",
+          navigationPath: "/dashboard/segment-catalogs",
+        },
+        {
+          id: "segment-types",
+          name: "Segment Types",
+          description: "Manage the different segment methodologies available",
+          type: "segment",
+          category: "Segment Configuration",
+          status: "active",
+          navigationPath: "/dashboard/segment-types",
+        },
+        {
+          id: "user-management",
+          name: "User Management",
+          description: "Manage user accounts, roles, and permissions",
+          type: "user",
+          category: "User Configuration",
+          status: "active",
+          navigationPath: "/dashboard/user-management",
+        },
+        {
+          id: "control-groups",
+          name: "Universal Control Groups",
+          description:
+            "Configure and manage universal control groups for campaigns",
+          type: "control-group",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/control-groups",
+        },
+      ];
+
+      const [
+        campaignsRes,
+        offersRes,
+        productsRes,
+        segmentsRes,
+        programsRes,
+        usersRes,
+      ] = await Promise.allSettled([
+        campaignService.getCampaigns({
+          limit: 20,
+          offset: 0,
+          skipCache: true,
+        }),
+        offerService.searchOffers({
+          search: query,
+          limit: 5,
+          offset: 0,
+          skipCache: true,
+        }),
+        productService.searchProducts({
+          q: query,
+          limit: 5,
+          offset: 0,
+          skipCache: true,
+        }),
+        segmentService.getSegments({
+          pageSize: 20,
+          skipCache: true,
+        }),
+        programService.getAllPrograms({
+          limit: 20,
+          offset: 0,
+          skipCache: true,
+        }),
+        userService.getUsers({
+          skipCache: true,
+        }),
+      ]);
 
       const allSuggestions: SearchSuggestion[] = [];
 
@@ -164,15 +341,22 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
 
       // Process segments
       if (segmentsRes.status === "fulfilled" && segmentsRes.value.data) {
-        segmentsRes.value.data.slice(0, 3).forEach((segment) => {
-          allSuggestions.push({
-            id: segment.id,
-            type: "segment",
-            name: segment.name || "Unnamed Segment",
-            description: segment.description || undefined,
-            url: `/dashboard/segments/${segment.id}`,
+        segmentsRes.value.data
+          .filter(
+            (s) =>
+              s.name?.toLowerCase().includes(query.toLowerCase()) ||
+              s.description?.toLowerCase().includes(query.toLowerCase())
+          )
+          .slice(0, 3)
+          .forEach((segment) => {
+            allSuggestions.push({
+              id: segment.id,
+              type: "segment",
+              name: segment.name || "Unnamed Segment",
+              description: segment.description || undefined,
+              url: `/dashboard/segments/${segment.id}`,
+            });
           });
-        });
       }
 
       // Process programs
@@ -191,7 +375,69 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
           });
       }
 
-      setSuggestions(allSuggestions.slice(0, 8));
+      // Process users
+      if (usersRes.status === "fulfilled" && usersRes.value.data) {
+        const users = Array.isArray(usersRes.value.data)
+          ? usersRes.value.data
+          : [];
+        users
+          .filter((user) => {
+            if (!query.trim()) return true;
+            const searchLower = query.toLowerCase();
+            const fullName = `${user.first_name || ""} ${
+              user.last_name || ""
+            }`.trim();
+            return (
+              fullName.toLowerCase().includes(searchLower) ||
+              user.username?.toLowerCase().includes(searchLower) ||
+              user.email_address?.toLowerCase().includes(searchLower) ||
+              user.email?.toLowerCase().includes(searchLower) ||
+              user.department?.toLowerCase().includes(searchLower)
+            );
+          })
+          .slice(0, 3)
+          .forEach((user) => {
+            const roleId = user.role_id || user.primary_role_id;
+            const role = roleId ? roleLookup[roleId] : null;
+            const roleName =
+              role?.name ||
+              user.role_name ||
+              (roleId ? `Role ${roleId}` : "No Role");
+
+            allSuggestions.push({
+              id: user.id,
+              type: "user",
+              name:
+                `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+                user.username ||
+                user.email_address ||
+                "Unnamed User",
+              description: user.email_address || user.department || undefined,
+              url: `/dashboard/user-management/${user.id}`,
+            });
+          });
+      }
+
+      // Process configurations (frontend filtering)
+      allConfigurations
+        .filter(
+          (config) =>
+            config.name.toLowerCase().includes(query.toLowerCase()) ||
+            config.description.toLowerCase().includes(query.toLowerCase()) ||
+            config.category.toLowerCase().includes(query.toLowerCase())
+        )
+        .slice(0, 3)
+        .forEach((config) => {
+          allSuggestions.push({
+            id: config.id,
+            type: "configuration",
+            name: config.name,
+            description: config.description,
+            url: config.navigationPath,
+          });
+        });
+
+      setSuggestions(allSuggestions.slice(0, 10));
     } catch (error) {
       console.error("Failed to fetch search suggestions:", error);
       setSuggestions([]);
@@ -284,6 +530,8 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
       product: { label: "Product", icon: Package },
       segment: { label: "Segment", icon: Users },
       program: { label: "Program", icon: FolderKanban },
+      user: { label: "User", icon: UserCheck },
+      configuration: { label: "Configuration", icon: Settings },
     };
     return types[type];
   };

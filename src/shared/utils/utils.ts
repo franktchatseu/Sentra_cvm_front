@@ -101,6 +101,10 @@ export const tw = {
   label: "text-xs font-medium leading-[120%] tracking-[0.05em] uppercase",
 
   button: `bg-[#252829] active:bg-[#252829]/80 text-white text-sm font-medium transition-colors px-6 py-2 rounded-md cursor-pointer`,
+
+  // Bordered button with transparent background and colored border
+  // Use with inline styles: style={{ borderColor: color.primary.action, color: color.primary.action }}
+  borderedButton: `px-3 py-1.5 text-sm font-medium rounded-md border transition-colors bg-transparent hover:text-white`,
 };
 
 // Complete component styles - pre-built styles for common UI elements that you can use directly

@@ -898,33 +898,27 @@ export default function UserManagementPage() {
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
             >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="p-2 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: stat.color }}
-                    >
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-3xl font-bold text-black">
-                        {stat.value}
-                      </p>
-                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
-                        {stat.name}
-                      </p>
-                    </div>
-                  </div>
-                  {stat.badge && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-800">
-                      {stat.badge}
-                    </span>
-                  )}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    className="h-5 w-5"
+                    style={{ color: color.primary.accent }}
+                  />
+                  <p className="text-sm font-medium text-gray-600">
+                    {stat.name}
+                  </p>
                 </div>
+                {stat.badge && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-800">
+                    {stat.badge}
+                  </span>
+                )}
               </div>
+              <p className="mt-3 text-3xl font-bold text-gray-900">
+                {stat.value}
+              </p>
             </div>
           );
         })}

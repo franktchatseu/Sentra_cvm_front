@@ -294,145 +294,102 @@ export default function ProductsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Total Products Card */}
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
-                Total Products
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {statsLoading ? (
-                  <span className="text-gray-400">...</span>
-                ) : (
-                  stats?.totalProducts || 0
-                )}
-              </p>
-            </div>
-            <div
-              className="p-3 rounded-md"
-              style={{ backgroundColor: `${color.tertiary.tag1}20` }}
-            >
-              <Package
-                className="w-6 h-6"
-                style={{ color: color.tertiary.tag1 }}
-              />
-            </div>
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Package
+              className="h-5 w-5"
+              style={{ color: color.primary.accent }}
+            />
+            <p className="text-sm font-medium text-gray-600">Total Products</p>
           </div>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {statsLoading ? (
+              <span className="text-gray-400">...</span>
+            ) : (
+              stats?.totalProducts || 0
+            )}
+          </p>
         </div>
 
         {/* Active Products Card */}
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
-                Active Products
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {statsLoading ? (
-                  <span className="text-gray-400">...</span>
-                ) : (
-                  stats?.activeProducts || 0
-                )}
-              </p>
-            </div>
-            <div
-              className="p-3 rounded-md"
-              style={{ backgroundColor: `${color.tertiary.tag4}20` }}
-            >
-              <TrendingUp
-                className="w-6 h-6"
-                style={{ color: color.tertiary.tag4 }}
-              />
-            </div>
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <TrendingUp
+              className="h-5 w-5"
+              style={{ color: color.primary.accent }}
+            />
+            <p className="text-sm font-medium text-gray-600">Active Products</p>
           </div>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {statsLoading ? (
+              <span className="text-gray-400">...</span>
+            ) : (
+              stats?.activeProducts || 0
+            )}
+          </p>
         </div>
 
         {/* Inactive Products Card */}
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
-                Inactive Products
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {statsLoading ? (
-                  <span className="text-gray-400">...</span>
-                ) : (
-                  stats?.inactiveProducts || 0
-                )}
-              </p>
-            </div>
-            <div
-              className="p-3 rounded-md"
-              style={{ backgroundColor: `${color.tertiary.tag3}20` }}
-            >
-              <XCircle
-                className="w-6 h-6"
-                style={{ color: color.tertiary.tag3 }}
-              />
-            </div>
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <XCircle
+              className="h-5 w-5"
+              style={{ color: color.primary.accent }}
+            />
+            <p className="text-sm font-medium text-gray-600">
+              Inactive Products
+            </p>
           </div>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {statsLoading ? (
+              <span className="text-gray-400">...</span>
+            ) : (
+              stats?.inactiveProducts || 0
+            )}
+          </p>
         </div>
 
         {/* Average Price Card */}
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
-                Average Price
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {statsLoading ? (
-                  <span className="text-gray-400">...</span>
-                ) : stats?.averagePrice ? (
-                  `$${stats.averagePrice.toFixed(2)}`
-                ) : (
-                  "$0.00"
-                )}
-              </p>
-            </div>
-            <div
-              className="p-3 rounded-md"
-              style={{ backgroundColor: `${color.tertiary.tag2}20` }}
-            >
-              <DollarSign
-                className="w-6 h-6"
-                style={{ color: color.tertiary.tag2 }}
-              />
-            </div>
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <DollarSign
+              className="h-5 w-5"
+              style={{ color: color.primary.accent }}
+            />
+            <p className="text-sm font-medium text-gray-600">Average Price</p>
           </div>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {statsLoading ? (
+              <span className="text-gray-400">...</span>
+            ) : stats?.averagePrice ? (
+              `$${stats.averagePrice.toFixed(2)}`
+            ) : (
+              "$0.00"
+            )}
+          </p>
         </div>
 
         {/* Top Selling Products Card */}
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
-                Top Selling
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {statsLoading ? (
-                  <span className="text-gray-400">...</span>
-                ) : (
-                  topSelling.length || 0
-                )}
-              </p>
-              {topSelling.length > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {topSelling[0]?.name || "Products"}
-                </p>
-              )}
-            </div>
-            <div
-              className="p-3 rounded-md"
-              style={{ backgroundColor: `${color.tertiary.tag1}20` }}
-            >
-              <BarChart3
-                className="w-6 h-6"
-                style={{ color: color.tertiary.tag1 }}
-              />
-            </div>
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <BarChart3
+              className="h-5 w-5"
+              style={{ color: color.primary.accent }}
+            />
+            <p className="text-sm font-medium text-gray-600">Top Selling</p>
           </div>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {statsLoading ? (
+              <span className="text-gray-400">...</span>
+            ) : (
+              topSelling.length || 0
+            )}
+          </p>
+          {topSelling.length > 0 && (
+            <p className="mt-1 text-sm text-gray-500">
+              {topSelling[0]?.name || "Products"}
+            </p>
+          )}
         </div>
       </div>
 

@@ -59,11 +59,11 @@ function CategoryModal({
   onSave,
   isSaving = false,
 }: CategoryModalProps) {
+  const { error: showError } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (category) {
@@ -74,27 +74,24 @@ function CategoryModal({
     } else {
       setFormData({ name: "", description: "" });
     }
-    setError("");
   }, [category, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      setError("Catalog name is required");
+      showError("Catalog name is required");
       return;
     }
 
     if (formData.name.length > 64) {
-      setError("Catalog name must be 64 characters or less");
+      showError("Catalog name must be 64 characters or less");
       return;
     }
 
     if (formData.description && formData.description.length > 500) {
-      setError("Description must be 500 characters or less");
+      showError("Description must be 500 characters or less");
       return;
     }
-
-    setError("");
 
     const categoryData = {
       name: formData.name.trim(),
@@ -197,7 +194,6 @@ export default function CampaignCategoriesPage() {
     CampaignCategory[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<
@@ -399,30 +395,30 @@ export default function CampaignCategoriesPage() {
           []) as BackendCampaignType[];
         allCampaigns = [...allCampaigns, ...campaigns];
 
-        const total = campaignsResponse.meta?.total || 0;
+        const total = campaignsResponse.pagination?.total || 0;
         hasMore = allCampaigns.length < total && campaigns.length === limit;
         offset += limit;
       }
 
       // Calculate count for each category by checking both category_id AND tags
       // (same logic as offers/segments - supports multi-catalog assignment)
-      const categoriesWithCounts = categoriesData.map((category) => {
-        const count = getCampaignCountForCategory(category.id, allCampaigns);
-        return {
-          ...category,
-          campaign_count: count,
-        };
-      });
+      const categoriesWithCounts = (categoriesData as CampaignCategory[]).map(
+        (category: CampaignCategory) => {
+          const count = getCampaignCountForCategory(category.id, allCampaigns);
+          return {
+            ...category,
+            campaign_count: count,
+          };
+        }
+      );
 
       setCampaignCategories(categoriesWithCounts);
-      setError("");
 
       // Load stats from backend endpoint (not from categories data)
       await loadStats(skipCache);
     } catch (err) {
       console.error("Failed to load Campaigns catalogs:", err);
       showError("Failed to load Campaigns catalogs", "Please try again later.");
-      setError(""); // Clear error state
       setCampaignCategories([]);
     } finally {
       setLoading(false);
@@ -511,7 +507,7 @@ export default function CampaignCategoriesPage() {
       }
       setIsModalOpen(false);
       setEditingCategory(undefined);
-    } catch (err) {
+    } catch {
       showError("Failed to save category", "Please try again later.");
     } finally {
       setIsSaving(false);
@@ -547,7 +543,7 @@ export default function CampaignCategoriesPage() {
         const campaigns = (response.data || []) as BackendCampaignType[];
         allCampaigns = [...allCampaigns, ...campaigns];
 
-        const total = response.meta?.total || 0;
+        const total = response.pagination?.total || 0;
         hasMore = allCampaigns.length < total && campaigns.length === limit;
         offset += limit;
       }
@@ -587,7 +583,7 @@ export default function CampaignCategoriesPage() {
       }));
 
       setCampaigns(formattedCampaigns);
-    } catch (err) {
+    } catch {
       showError("Failed to load campaigns", "Please try again later.");
       setCampaigns([]);
     } finally {
@@ -610,16 +606,19 @@ export default function CampaignCategoriesPage() {
     try {
       setRemovingCampaignId(campaignId);
 
-      const campaign = await campaignService.getCampaignById(
+      const campaignResponse = await campaignService.getCampaignById(
         Number(campaignId),
         true
       );
 
-      if (!campaign) {
+      if (!campaignResponse) {
         showError("Failed to load campaign details", "Please try again later.");
         setRemovingCampaignId(null);
         return;
       }
+
+      // Cast to BackendCampaignType to access tags property
+      const campaign = campaignResponse as unknown as BackendCampaignType;
 
       const primaryCategoryId = Number(campaign.category_id);
       if (
@@ -649,7 +648,7 @@ export default function CampaignCategoriesPage() {
       }
 
       const updatedTags = (campaign.tags || []).filter(
-        (tag) => tag !== catalogTag
+        (tag: string) => tag !== catalogTag
       );
 
       await campaignService.updateCampaign(Number(campaignId), {
@@ -761,40 +760,28 @@ export default function CampaignCategoriesPage() {
             return (
               <div
                 key={stat.name}
-                className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+                className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
               >
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="p-2.5 rounded-full flex items-center justify-center"
-                        style={{
-                          backgroundColor: stat.color || color.primary.accent,
-                        }}
-                      >
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="space-y-1">
-                        <p
-                          className={`${valueClass} font-bold ${tw.textPrimary}`}
-                          title={stat.title}
-                        >
-                          {displayValue}
-                        </p>
-                        <p
-                          className={`${tw.cardSubHeading} ${tw.textSecondary}`}
-                        >
-                          {stat.name}
-                        </p>
-                        {stat.description && (
-                          <p className={`text-sm ${tw.textSecondary}`}>
-                            {stat.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Icon
+                    className="h-5 w-5"
+                    style={{ color: color.primary.accent }}
+                  />
+                  <p className="text-sm font-medium text-gray-600">
+                    {stat.name}
+                  </p>
                 </div>
+                <p
+                  className={`mt-2 ${valueClass} font-bold text-gray-900`}
+                  title={stat.title}
+                >
+                  {displayValue}
+                </p>
+                {stat.description && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    {stat.description}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -929,8 +916,19 @@ export default function CampaignCategoriesPage() {
                 </span>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
-                  style={{ backgroundColor: color.primary.action }}
+                  className={tw.borderedButton}
+                  style={{
+                    borderColor: color.primary.action,
+                    color: color.primary.action,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor =
+                      color.primary.action;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor =
+                      "transparent";
+                  }}
                   title="View & Assign Campaigns"
                 >
                   View Campaigns
@@ -967,8 +965,19 @@ export default function CampaignCategoriesPage() {
                 </div>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${tw.primaryAction}`}
-                  style={{ backgroundColor: color.primary.action }}
+                  className={tw.borderedButton}
+                  style={{
+                    borderColor: color.primary.action,
+                    color: color.primary.action,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor =
+                      color.primary.action;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLButtonElement).style.backgroundColor =
+                      "transparent";
+                  }}
                   title="View & Assign Campaigns"
                 >
                   View Campaigns

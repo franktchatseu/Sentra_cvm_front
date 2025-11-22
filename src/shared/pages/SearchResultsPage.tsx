@@ -7,18 +7,30 @@ import {
   Package,
   Users,
   FolderKanban,
+  UserCheck,
+  Settings,
 } from "lucide-react";
 import { campaignService } from "../../features/campaigns/services/campaignService";
 import { offerService } from "../../features/offers/services/offerService";
 import { productService } from "../../features/products/services/productService";
 import { segmentService } from "../../features/segments/services/segmentService";
 import { programService } from "../../features/campaigns/services/programService";
+import { userService } from "../../features/users/services/userService";
+import { roleService } from "../../features/roles/services/roleService";
+import { Role } from "../../features/roles/types/role";
 import { color, tw } from "../utils/utils";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 interface SearchResult {
   id: string | number;
-  type: "campaign" | "offer" | "product" | "segment" | "program";
+  type:
+    | "campaign"
+    | "offer"
+    | "product"
+    | "segment"
+    | "program"
+    | "user"
+    | "configuration";
   name: string;
   description?: string;
   url: string;
@@ -31,6 +43,8 @@ interface SearchResults {
   products: SearchResult[];
   segments: SearchResult[];
   programs: SearchResult[];
+  users: SearchResult[];
+  configurations: SearchResult[];
 }
 
 export default function SearchResultsPage() {
@@ -43,11 +57,20 @@ export default function SearchResultsPage() {
     products: [],
     segments: [],
     programs: [],
+    users: [],
+    configurations: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<
-    "all" | "campaign" | "offer" | "product" | "segment" | "program"
+    | "all"
+    | "campaign"
+    | "offer"
+    | "product"
+    | "segment"
+    | "program"
+    | "user"
+    | "configuration"
   >("all");
 
   const performSearch = useCallback(async (searchQuery: string) => {
@@ -58,6 +81,8 @@ export default function SearchResultsPage() {
         products: [],
         segments: [],
         programs: [],
+        users: [],
+        configurations: [],
       });
       return;
     }
@@ -66,37 +91,202 @@ export default function SearchResultsPage() {
     setError(null);
 
     try {
-      const [campaignsRes, offersRes, productsRes, segmentsRes, programsRes] =
-        await Promise.allSettled([
-          campaignService.getCampaigns({
-            limit: 50,
-            offset: 0,
-            skipCache: true,
-          }),
-          offerService.searchOffers({
-            search: searchQuery,
-            limit: 50,
-            offset: 0,
-            skipCache: true,
-          }),
-          productService.searchProducts({
-            name: searchQuery,
-            limit: 50,
-            offset: 0,
-            skipCache: true,
-          }),
-          segmentService.searchSegments({
-            search: searchQuery,
-            limit: 50,
-            offset: 0,
-            skipCache: true,
-          }),
-          programService.getAllPrograms({
-            limit: 50,
-            offset: 0,
-            skipCache: true,
-          }),
-        ]);
+      // Fetch roles to map role IDs to role names
+      let roleLookup: Record<number, Role> = {};
+      try {
+        const rolesResponse = await roleService.listRoles({
+          limit: 100,
+          offset: 0,
+          skipCache: true,
+        });
+        rolesResponse.roles.forEach((role) => {
+          if (role.id != null) {
+            roleLookup[role.id] = role;
+          }
+        });
+      } catch (err) {
+        console.error("Failed to load roles:", err);
+        // Continue without role lookup
+      }
+      // Get configurations (frontend-only)
+      const allConfigurations = [
+        {
+          id: "line-of-business",
+          name: "Line of Business",
+          description: "Define and manage your business lines and services",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/line-of-business",
+        },
+        {
+          id: "campaign-communication-policy",
+          name: "Campaign Communication Policy",
+          description: "Configure communication policies for campaigns",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-communication-policy",
+        },
+        {
+          id: "campaign-objectives",
+          name: "Campaign Objectives",
+          description: "Define and manage your campaign objectives",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-objectives",
+        },
+        {
+          id: "departments",
+          name: "Departments",
+          description: "Define and manage your departments",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/departments",
+        },
+        {
+          id: "programs",
+          name: "Programs",
+          description: "Manage campaign programs and initiatives",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/programs",
+        },
+        {
+          id: "campaign-catalogs",
+          name: "Campaigns catalogs",
+          description: "Manage Campaigns catalogs and catalogs",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-catalogs",
+        },
+        {
+          id: "campaign-types",
+          name: "Campaign Types",
+          description:
+            "Configure available campaign strategies like Round Robin or Champion Challenger",
+          type: "campaign",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/campaign-types",
+        },
+        {
+          id: "offer-types",
+          name: "Offer Types",
+          description: "Configure different types of offers and promotions",
+          type: "offer",
+          category: "Offer Configuration",
+          status: "active",
+          navigationPath: "/dashboard/offer-types",
+        },
+        {
+          id: "offer-catalogs",
+          name: "Offer Catalogs",
+          description: "Manage offer catalogs",
+          type: "offer",
+          category: "Offer Configuration",
+          status: "active",
+          navigationPath: "/dashboard/offer-catalogs",
+        },
+        {
+          id: "product-types",
+          name: "Product Types",
+          description: "Manage product types and classifications",
+          type: "product",
+          category: "Product Configuration",
+          status: "active",
+          navigationPath: "/dashboard/product-types",
+        },
+        {
+          id: "product-catalogs",
+          name: "Product Categories",
+          description: "Manage product categories and catalogs",
+          type: "product",
+          category: "Product Configuration",
+          status: "active",
+          navigationPath: "/dashboard/products/catalogs",
+        },
+        {
+          id: "segment-catalogs",
+          name: "segment catalogs",
+          description: "Manage segment catalogs and classifications",
+          type: "segment",
+          category: "Segment Configuration",
+          status: "active",
+          navigationPath: "/dashboard/segment-catalogs",
+        },
+        {
+          id: "segment-types",
+          name: "Segment Types",
+          description: "Manage the different segment methodologies available",
+          type: "segment",
+          category: "Segment Configuration",
+          status: "active",
+          navigationPath: "/dashboard/segment-types",
+        },
+        {
+          id: "user-management",
+          name: "User Management",
+          description: "Manage user accounts, roles, and permissions",
+          type: "user",
+          category: "User Configuration",
+          status: "active",
+          navigationPath: "/dashboard/user-management",
+        },
+        {
+          id: "control-groups",
+          name: "Universal Control Groups",
+          description:
+            "Configure and manage universal control groups for campaigns",
+          type: "control-group",
+          category: "Campaign Configuration",
+          status: "active",
+          navigationPath: "/dashboard/control-groups",
+        },
+      ];
+
+      const [
+        campaignsRes,
+        offersRes,
+        productsRes,
+        segmentsRes,
+        programsRes,
+        usersRes,
+      ] = await Promise.allSettled([
+        campaignService.getCampaigns({
+          limit: 50,
+          offset: 0,
+          skipCache: true,
+        }),
+        offerService.searchOffers({
+          search: searchQuery,
+          limit: 50,
+          offset: 0,
+          skipCache: true,
+        }),
+        productService.searchProducts({
+          q: searchQuery,
+          limit: 50,
+          offset: 0,
+          skipCache: true,
+        }),
+        segmentService.getSegments({
+          pageSize: 50,
+          skipCache: true,
+        }),
+        programService.getAllPrograms({
+          limit: 50,
+          offset: 0,
+          skipCache: true,
+        }),
+        userService.getUsers({
+          skipCache: true,
+        }),
+      ]);
 
       const searchResults: SearchResults = {
         campaigns: [],
@@ -104,6 +294,8 @@ export default function SearchResultsPage() {
         products: [],
         segments: [],
         programs: [],
+        users: [],
+        configurations: [],
       };
 
       // Process campaigns
@@ -156,17 +348,25 @@ export default function SearchResultsPage() {
 
       // Process segments
       if (segmentsRes.status === "fulfilled" && segmentsRes.value.data) {
-        searchResults.segments = segmentsRes.value.data.map((segment) => ({
-          id: segment.id,
-          type: "segment" as const,
-          name: segment.name || "Unnamed Segment",
-          description: segment.description || undefined,
-          url: `/dashboard/segments/${segment.id}`,
-          metadata: {
-            type: segment.type,
-            customer_count: segment.customer_count,
-          },
-        }));
+        searchResults.segments = segmentsRes.value.data
+          .filter(
+            (segment) =>
+              segment.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              segment.description
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase())
+          )
+          .map((segment) => ({
+            id: segment.id,
+            type: "segment" as const,
+            name: segment.name || "Unnamed Segment",
+            description: segment.description || undefined,
+            url: `/dashboard/segments/${segment.id}`,
+            metadata: {
+              type: segment.type,
+              customer_count: segment.customer_count,
+            },
+          }));
       }
 
       // Process programs
@@ -186,6 +386,74 @@ export default function SearchResultsPage() {
             },
           }));
       }
+
+      // Process users
+      if (usersRes.status === "fulfilled" && usersRes.value.data) {
+        const users = Array.isArray(usersRes.value.data)
+          ? usersRes.value.data
+          : [];
+        searchResults.users = users
+          .filter((user) => {
+            if (!searchQuery.trim()) return true;
+            const searchLower = searchQuery.toLowerCase();
+            const fullName = `${user.first_name || ""} ${
+              user.last_name || ""
+            }`.trim();
+            return (
+              fullName.toLowerCase().includes(searchLower) ||
+              user.username?.toLowerCase().includes(searchLower) ||
+              user.email_address?.toLowerCase().includes(searchLower) ||
+              user.email?.toLowerCase().includes(searchLower) ||
+              user.department?.toLowerCase().includes(searchLower)
+            );
+          })
+          .map((user) => {
+            const roleId = user.role_id || user.primary_role_id;
+            const role = roleId ? roleLookup[roleId] : null;
+            const roleName =
+              role?.name ||
+              user.role_name ||
+              (roleId ? `Role ${roleId}` : "No Role");
+
+            return {
+              id: user.id,
+              type: "user" as const,
+              name:
+                `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+                user.username ||
+                user.email_address ||
+                "Unnamed User",
+              description: user.email_address || user.department || undefined,
+              url: `/dashboard/user-management/${user.id}`,
+              metadata: {
+                role: roleName,
+              },
+            };
+          });
+      }
+
+      // Process configurations (frontend filtering)
+      searchResults.configurations = allConfigurations
+        .filter(
+          (config) =>
+            config.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            config.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            config.category.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map((config) => ({
+          id: config.id,
+          type: "configuration" as const,
+          name: config.name,
+          description: config.description,
+          url: config.navigationPath,
+          metadata: {
+            category: config.category,
+            type: config.type,
+            status: config.status,
+          },
+        }));
 
       setResults(searchResults);
     } catch (err) {
@@ -212,7 +480,9 @@ export default function SearchResultsPage() {
         results.offers.length +
         results.products.length +
         results.segments.length +
-        results.programs.length,
+        results.programs.length +
+        results.users.length +
+        results.configurations.length,
     },
     {
       id: "campaign" as const,
@@ -239,6 +509,16 @@ export default function SearchResultsPage() {
       name: "Programs",
       count: results.programs.length,
     },
+    {
+      id: "user" as const,
+      name: "Users",
+      count: results.users.length,
+    },
+    {
+      id: "configuration" as const,
+      name: "Configurations",
+      count: results.configurations.length,
+    },
   ];
 
   // Filter results by selected category
@@ -253,6 +533,8 @@ export default function SearchResultsPage() {
       products: [],
       segments: [],
       programs: [],
+      users: [],
+      configurations: [],
     };
 
     if (selectedCategory === "campaign") {
@@ -265,6 +547,10 @@ export default function SearchResultsPage() {
       filtered.segments = results.segments;
     } else if (selectedCategory === "program") {
       filtered.programs = results.programs;
+    } else if (selectedCategory === "user") {
+      filtered.users = results.users;
+    } else if (selectedCategory === "configuration") {
+      filtered.configurations = results.configurations;
     }
 
     return filtered;
@@ -294,6 +580,14 @@ export default function SearchResultsPage() {
         label: "Program",
         icon: FolderKanban,
       },
+      user: {
+        label: "User",
+        icon: UserCheck,
+      },
+      configuration: {
+        label: "Configuration",
+        icon: Settings,
+      },
     };
     return types[type];
   };
@@ -303,7 +597,9 @@ export default function SearchResultsPage() {
     filteredResults.offers.length +
     filteredResults.products.length +
     filteredResults.segments.length +
-    filteredResults.programs.length;
+    filteredResults.programs.length +
+    filteredResults.users.length +
+    filteredResults.configurations.length;
 
   const renderResultsSection = (
     title: string,
@@ -457,6 +753,12 @@ export default function SearchResultsPage() {
                 "Programs",
                 filteredResults.programs,
                 "program"
+              )}
+              {renderResultsSection("Users", filteredResults.users, "user")}
+              {renderResultsSection(
+                "Configurations",
+                filteredResults.configurations,
+                "configuration"
               )}
             </div>
           )}

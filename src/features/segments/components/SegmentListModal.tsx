@@ -566,8 +566,8 @@ export default function SegmentListModal({
                           .map((h) => h.trim().replace(/^["']|["']$/g, "")) // Remove quotes from start/end
                           .filter((h) => h.length > 0);
 
-                        // Parse data rows (skip header row, limit to first 10 rows for preview)
-                        const dataRows = lines.slice(1, 11).map((line) => {
+                        // Parse data rows (skip header row, limit to first 5 rows for preview)
+                        const dataRows = lines.slice(1, 6).map((line) => {
                           const values = line
                             .split(delimiter)
                             .map((v) => v.trim().replace(/^["']|["']$/g, "")); // Remove quotes from start/end
@@ -588,14 +588,8 @@ export default function SegmentListModal({
                           <label className="text-sm font-medium text-black mb-2 block">
                             File Preview
                           </label>
-                          <div className="overflow-x-auto max-h-64 overflow-y-auto">
-                            <table
-                              className="w-full"
-                              style={{
-                                borderCollapse: "separate",
-                                borderSpacing: "0 8px",
-                              }}
-                            >
+                          <div className="overflow-x-auto border border-gray-200 rounded-md">
+                            <table className="w-full">
                               <thead
                                 style={{
                                   background: color.surface.tableHeader,
@@ -605,7 +599,7 @@ export default function SegmentListModal({
                                   {preview.headers.map((header, index) => (
                                     <th
                                       key={index}
-                                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
+                                      className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap border-b border-gray-200"
                                       style={{
                                         color: color.surface.tableHeaderText,
                                       }}
@@ -620,16 +614,16 @@ export default function SegmentListModal({
                                   preview.rows.map((row, rowIndex) => (
                                     <tr
                                       key={rowIndex}
-                                      className="transition-colors"
+                                      className="transition-colors border-b border-gray-100 hover:bg-gray-50"
+                                      style={{
+                                        backgroundColor:
+                                          color.surface.tablebodybg,
+                                      }}
                                     >
                                       {row.map((cell, cellIndex) => (
                                         <td
                                           key={cellIndex}
-                                          className="px-6 py-4 text-sm whitespace-nowrap"
-                                          style={{
-                                            backgroundColor:
-                                              color.surface.tablebodybg,
-                                          }}
+                                          className="px-4 py-2 text-xs whitespace-nowrap"
                                         >
                                           {cell || (
                                             <span className="text-gray-400">
@@ -644,7 +638,7 @@ export default function SegmentListModal({
                                   <tr>
                                     <td
                                       colSpan={preview.headers.length}
-                                      className="px-6 py-4 text-sm text-gray-500 text-center"
+                                      className="px-4 py-4 text-xs text-gray-500 text-center"
                                       style={{
                                         backgroundColor:
                                           color.surface.tablebodybg,
@@ -657,9 +651,9 @@ export default function SegmentListModal({
                               </tbody>
                             </table>
                           </div>
-                          {totalRows > 10 && (
-                            <div className="px-6 py-2 bg-gray-50 border-t border-gray-200 text-sm text-gray-500 text-center">
-                              Showing first 10 of {totalRows} rows
+                          {totalRows > 5 && (
+                            <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 text-center">
+                              Showing first 5 of {totalRows} rows
                             </div>
                           )}
                         </div>

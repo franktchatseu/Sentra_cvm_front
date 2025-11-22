@@ -317,9 +317,25 @@ export default function SegmentManagementPage() {
             : null,
         categoryDistribution:
           categoryDistributionResponse.status === "fulfilled"
-            ? categoryDistributionResponse.value.data ||
-              categoryDistributionResponse.value ||
-              []
+            ? (
+                categoryDistributionResponse.value.data ||
+                categoryDistributionResponse.value ||
+                []
+              ).map((item) => ({
+                category_id: item.category_id ?? 0,
+                category_name: item.category_name ?? "",
+                segment_count:
+                  typeof item.segment_count === "number"
+                    ? item.segment_count
+                    : typeof item.count === "number"
+                    ? item.count
+                    : typeof item.segment_count === "string"
+                    ? parseInt(item.segment_count, 10) || 0
+                    : typeof item.count === "string"
+                    ? parseInt(item.count, 10) || 0
+                    : 0,
+                percentage: item.percentage ?? 0,
+              }))
             : [],
         largestSegments:
           largestSegmentsResponse.status === "fulfilled"
@@ -380,8 +396,8 @@ export default function SegmentManagementPage() {
       // Apply client-side sorting
       if (sortBy && sortDirection) {
         segmentData = [...segmentData].sort((a, b) => {
-          let aValue: any;
-          let bValue: any;
+          let aValue: number | string;
+          let bValue: number | string;
 
           switch (sortBy) {
             case "created_at":
@@ -408,9 +424,19 @@ export default function SegmentManagementPage() {
               aValue = Number(a.category) || 0;
               bValue = Number(b.category) || 0;
               break;
-            default:
-              aValue = a[sortBy as keyof Segment];
-              bValue = b[sortBy as keyof Segment];
+            default: {
+              const aField = a[sortBy as keyof Segment];
+              const bField = b[sortBy as keyof Segment];
+              aValue =
+                typeof aField === "string" || typeof aField === "number"
+                  ? aField
+                  : String(aField ?? "");
+              bValue =
+                typeof bField === "string" || typeof bField === "number"
+                  ? bField
+                  : String(bField ?? "");
+              break;
+            }
           }
 
           if (aValue < bValue) {
@@ -448,6 +474,7 @@ export default function SegmentManagementPage() {
     pageSize,
     sortBy,
     sortDirection,
+    showError,
   ]);
 
   useEffect(() => {
@@ -727,112 +754,97 @@ export default function SegmentManagementPage() {
       {!isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Segments */}
-          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between gap-4">
-              <div
-                className="p-3 rounded-md flex-shrink-0"
-                style={{ backgroundColor: color.tertiary.tag1 }}
-              >
-                <Layers className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                  {isLoadingAnalytics ? (
-                    <span className="text-gray-400">...</span>
-                  ) : (
-                    stats.totalSegments.toLocaleString()
-                  )}
-                </p>
-                <p className={`text-sm ${tw.textMuted} mt-1`}>Total Segments</p>
-                {analyticsData?.healthSummary?.last_7d_created &&
-                  analyticsData.healthSummary.last_7d_created > 0 && (
-                    <p className={`text-xs ${tw.textMuted} mt-2`}>
-                      +{analyticsData.healthSummary.last_7d_created} this week
-                    </p>
-                  )}
-              </div>
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Layers
+                className="h-5 w-5"
+                style={{ color: color.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">
+                Total Segments
+              </p>
             </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {isLoadingAnalytics ? (
+                <span className="text-gray-400">...</span>
+              ) : (
+                stats.totalSegments.toLocaleString()
+              )}
+            </p>
+            {analyticsData?.healthSummary?.last_7d_created &&
+              analyticsData.healthSummary.last_7d_created > 0 && (
+                <p className="mt-1 text-sm text-gray-500">
+                  +{analyticsData.healthSummary.last_7d_created} this week
+                </p>
+              )}
           </div>
 
           {/* Active Segments */}
-          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between gap-4">
-              <div
-                className="p-3 rounded-md flex-shrink-0"
-                style={{ backgroundColor: color.tertiary.tag4 }}
-              >
-                <Activity className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                  {isLoadingAnalytics ? (
-                    <span className="text-gray-400">...</span>
-                  ) : (
-                    stats.activeSegments.toLocaleString()
-                  )}
-                </p>
-                <p className={`text-sm ${tw.textMuted} mt-1`}>
-                  Active Segments
-                </p>
-              </div>
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Activity
+                className="h-5 w-5"
+                style={{ color: color.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">
+                Active Segments
+              </p>
             </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {isLoadingAnalytics ? (
+                <span className="text-gray-400">...</span>
+              ) : (
+                stats.activeSegments.toLocaleString()
+              )}
+            </p>
           </div>
 
           {/* Total Customers */}
-          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between gap-4">
-              <div
-                className="p-3 rounded-md flex-shrink-0"
-                style={{ backgroundColor: color.tertiary.tag2 }}
-              >
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                  {stats.totalCustomers.toLocaleString()}
-                </p>
-                <p className={`text-sm ${tw.textMuted} mt-1`}>
-                  Total customers in all segments
-                </p>
-              </div>
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Users
+                className="h-5 w-5"
+                style={{ color: color.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">
+                Total Customers
+              </p>
             </div>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {stats.totalCustomers.toLocaleString()}
+            </p>
+            {/* <p className="mt-1 text-sm text-gray-500">
+              Total customers in all segments
+            </p> */}
           </div>
 
           {/* Top Segment */}
-          <div className="bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between gap-4">
-              <div
-                className="p-3 rounded-md flex-shrink-0"
-                style={{ backgroundColor: color.tertiary.tag3 }}
-              >
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p
-                  className={`text-lg font-bold ${tw.textPrimary} truncate`}
-                  title={
-                    stats.largestSegments[0]?.name || "No segments available"
-                  }
-                >
-                  {isLoadingAnalytics ? (
-                    <span className="text-gray-400">...</span>
-                  ) : stats.largestSegments.length > 0 ? (
-                    stats.largestSegments[0]?.name || "No name"
-                  ) : (
-                    "No segments"
-                  )}
-                </p>
-                <p className={`text-sm ${tw.textMuted} mt-1`}>Top Segment</p>
-                {stats.largestSegments.length > 0 && (
-                  <p className={`text-xs ${tw.textMuted} mt-2`}>
-                    {(
-                      stats.largestSegments[0]?.member_count || 0
-                    ).toLocaleString()}{" "}
-                    members
-                  </p>
-                )}
-              </div>
+          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <TrendingUp
+                className="h-5 w-5"
+                style={{ color: color.primary.accent }}
+              />
+              <p className="text-sm font-medium text-gray-600">Top Segment</p>
             </div>
+            <p
+              className="mt-2 text-lg font-bold text-gray-900 truncate"
+              title={stats.largestSegments[0]?.name || "No segments available"}
+            >
+              {isLoadingAnalytics ? (
+                <span className="text-gray-400">...</span>
+              ) : stats.largestSegments.length > 0 ? (
+                stats.largestSegments[0]?.name || "No name"
+              ) : (
+                "No segments"
+              )}
+            </p>
+            {stats.largestSegments.length > 0 && (
+              <p className="mt-1 text-sm text-gray-500">
+                {(stats.largestSegments[0]?.member_count || 0).toLocaleString()}{" "}
+                members
+              </p>
+            )}
           </div>
         </div>
       )}

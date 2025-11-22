@@ -219,12 +219,18 @@ const getScaleFactor = (
 // Get date constraints for date inputs
 const getDateConstraints = () => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+  // Use local date to avoid timezone issues
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const maxDate = `${year}-${month}-${day}`; // Today (no future dates)
 
   const minDate = new Date(today);
   minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
-  const minDateStr = minDate.toISOString().split("T")[0];
+  const minYear = minDate.getFullYear();
+  const minMonth = String(minDate.getMonth() + 1).padStart(2, "0");
+  const minDay = String(minDate.getDate()).padStart(2, "0");
+  const minDateStr = `${minYear}-${minMonth}-${minDay}`;
 
   return { minDate: minDateStr, maxDate };
 };
@@ -353,24 +359,40 @@ const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
 export default function DeliverySMSReportsPage() {
   const [deliveryRange, setDeliveryRange] = useState<RangeOption>("7d");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
+  const [appliedCustomRange, setAppliedCustomRange] = useState({
+    start: "",
+    end: "",
+  });
   const [statusFilter, setStatusFilter] = useState<MessageStatus | "All">(
     "All"
   );
   const [campaignQuery, setCampaignQuery] = useState("");
 
-  const customDays = getDaysBetween(customRange.start, customRange.end);
+  const handleRun = () => {
+    setAppliedCustomRange(customRange);
+  };
+
+  const customDays = getDaysBetween(
+    appliedCustomRange.start,
+    appliedCustomRange.end
+  );
   const activeRangeKey: RangeOption =
-    customRange.start && customRange.end
+    appliedCustomRange.start && appliedCustomRange.end
       ? mapDaysToRange(customDays)
       : deliveryRange;
 
   // Calculate scale factor for custom date ranges
   const scaleFactor = useMemo(() => {
-    if (customRange.start && customRange.end && customDays) {
+    if (appliedCustomRange.start && appliedCustomRange.end && customDays) {
       return getScaleFactor(customDays, activeRangeKey);
     }
     return 1;
-  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+  }, [
+    appliedCustomRange.start,
+    appliedCustomRange.end,
+    customDays,
+    activeRangeKey,
+  ]);
 
   // Scale snapshot data based on actual date range
   const baseSnapshot = smsMockData[activeRangeKey];
@@ -409,14 +431,16 @@ export default function DeliverySMSReportsPage() {
   const filteredLogs = useMemo(() => {
     const now = Date.now();
     const maxDays =
-      customRange.start && customRange.end
+      appliedCustomRange.start && appliedCustomRange.end
         ? customDays ?? rangeDays[deliveryRange]
         : rangeDays[deliveryRange];
 
-    const startMs = customRange.start
-      ? new Date(customRange.start).getTime()
+    const startMs = appliedCustomRange.start
+      ? new Date(appliedCustomRange.start).getTime()
       : null;
-    const endMs = customRange.end ? new Date(customRange.end).getTime() : null;
+    const endMs = appliedCustomRange.end
+      ? new Date(appliedCustomRange.end).getTime()
+      : null;
 
     const query = campaignQuery.trim().toLowerCase();
     return smsMessageLogs.filter((entry) => {
@@ -428,7 +452,7 @@ export default function DeliverySMSReportsPage() {
         : true;
       const entryDate = new Date(entry.timestamp).getTime();
       const matchesRange =
-        customRange.start && customRange.end && startMs && endMs
+        appliedCustomRange.start && appliedCustomRange.end && startMs && endMs
           ? entryDate >= startMs && entryDate <= endMs
           : now - entryDate <= maxDays * 24 * 60 * 60 * 1000;
       return matchesStatus && matchesQuery && matchesRange;
@@ -550,9 +574,10 @@ export default function DeliverySMSReportsPage() {
                 onClick={() => {
                   setDeliveryRange(option);
                   setCustomRange({ start: "", end: "" });
+                  setAppliedCustomRange({ start: "", end: "" });
                 }}
                 className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !(customRange.start && customRange.end) &&
+                  !(appliedCustomRange.start && appliedCustomRange.end) &&
                   deliveryRange === option
                     ? "border-[#252829] bg-[#252829] text-white"
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
@@ -582,7 +607,7 @@ export default function DeliverySMSReportsPage() {
                     start: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+                className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -604,13 +629,26 @@ export default function DeliverySMSReportsPage() {
                     end: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+                className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
+            {customRange.start && customRange.end && (
+              <button
+                type="button"
+                onClick={handleRun}
+                className="rounded-md px-4 py-1.5 text-sm font-medium text-white transition-colors"
+                style={{ backgroundColor: colors.primary.accent }}
+              >
+                Run
+              </button>
+            )}
             {(customRange.start || customRange.end) && (
               <button
                 type="button"
-                onClick={() => setCustomRange({ start: "", end: "" })}
+                onClick={() => {
+                  setCustomRange({ start: "", end: "" });
+                  setAppliedCustomRange({ start: "", end: "" });
+                }}
                 className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 Clear

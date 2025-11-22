@@ -1324,55 +1324,33 @@ export default function DashboardHome() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
+          const trendColor =
+            stat.changeType === "positive"
+              ? "text-emerald-600"
+              : "text-red-600";
           return (
             <div
               key={stat.name}
-              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
             >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="p-2 rounded-full flex items-center justify-center"
-                      style={{
-                        backgroundColor: color.primary.accent,
-                      }}
-                    >
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="space-y-1">
-                      <p
-                        className={`text-2xl sm:text-3xl font-bold ${tw.textPrimary}`}
-                      >
-                        {stat.value}
-                      </p>
-                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
-                        {stat.name}
-                      </p>
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    className="h-5 w-5"
+                    style={{ color: color.primary.accent }}
+                  />
+                  <p className="text-sm font-medium text-gray-600">
+                    {stat.name}
+                  </p>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <div
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
-                      stat.changeType === "positive"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {stat.changeType === "positive" ? (
-                      <ArrowUpRight className="h-3 w-3" />
-                    ) : (
-                      <ArrowDownRight className="h-3 w-3" />
-                    )}
-                    {stat.change}
-                  </div>
-                  <span className={`text-xs ${tw.textMuted}`}>
-                    vs last month
-                  </span>
-                </div>
+                <span className={`text-xs font-semibold ${trendColor}`}>
+                  {stat.changeType === "positive" ? "↑" : "↓"} {stat.change}
+                </span>
               </div>
+              <p className="mt-3 text-3xl font-bold text-gray-900">
+                {stat.value}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">vs last month</p>
             </div>
           );
         })}
@@ -1395,38 +1373,23 @@ export default function DashboardHome() {
           return (
             <div
               key={insight.label}
-              className="group bg-white rounded-md border border-gray-200 p-6 relative overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
             >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="p-2 rounded-full flex items-center justify-center"
-                      style={{
-                        backgroundColor: color.primary.accent,
-                      }}
-                    >
-                      <InsightIcon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="space-y-1">
-                      <p
-                        className={`text-2xl sm:text-3xl font-bold ${tw.textPrimary}`}
-                      >
-                        {insight.value}
-                      </p>
-                      <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
-                        {insight.label}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-gray-100">
-                  <p className={`${tw.textSecondary} text-sm`}>
-                    {insight.description}
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
+                <InsightIcon
+                  className="h-5 w-5"
+                  style={{ color: color.primary.accent }}
+                />
+                <p className="text-sm font-medium text-gray-600">
+                  {insight.label}
+                </p>
               </div>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {insight.value}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                {insight.description}
+              </p>
             </div>
           );
         })}

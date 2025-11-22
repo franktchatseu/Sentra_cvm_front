@@ -326,6 +326,20 @@ export const buttons = {
     borderRadius: "0.5rem",
     fontSize: "0.875rem", // text-sm (14px)
   },
+
+  bordered: {
+    background: "transparent",
+    color: colors.primary.action,
+    border: `1px solid ${colors.primary.action}`,
+    paddingY: "0.375rem", // py-1.5
+    paddingX: "0.75rem", // px-3
+    borderRadius: "0.5rem",
+    fontSize: "0.875rem", // text-sm (14px)
+    hover: {
+      background: colors.primary.action,
+      color: "#FFFFFF",
+    },
+  },
 };
 
 // Cards defines consistent styling for all card components

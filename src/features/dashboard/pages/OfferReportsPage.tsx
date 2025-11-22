@@ -76,12 +76,18 @@ const getScaleFactor = (
 // Get date constraints for date inputs
 const getDateConstraints = () => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+  // Use local date to avoid timezone issues
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const maxDate = `${year}-${month}-${day}`; // Today (no future dates)
 
   const minDate = new Date(today);
   minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
-  const minDateStr = minDate.toISOString().split("T")[0];
+  const minYear = minDate.getFullYear();
+  const minMonth = String(minDate.getMonth() + 1).padStart(2, "0");
+  const minDay = String(minDate.getDate()).padStart(2, "0");
+  const minDateStr = `${minYear}-${minMonth}-${minDay}`;
 
   return { minDate: minDateStr, maxDate };
 };
@@ -133,11 +139,11 @@ interface OfferRow {
 
 const combinedSummary: Record<RangeOption, CombinedSummary> = {
   "7d": {
-    totalRedemptions: 6_850, 
+    totalRedemptions: 6_850,
     redemptionRate: 3.4,
     revenueGenerated: 312_000,
     incrementalRevenue: 98_000,
-    totalCost: 42_500, 
+    totalCost: 42_500,
     roi: 2.3,
   },
   "30d": {
@@ -559,20 +565,36 @@ export default function OfferReportsPage() {
   const [segmentFilter, setSegmentFilter] = useState("All Segments");
   const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
+  const [appliedCustomRange, setAppliedCustomRange] = useState({
+    start: "",
+    end: "",
+  });
 
-  const customDays = getDaysBetween(customRange.start, customRange.end);
+  const handleRun = () => {
+    setAppliedCustomRange(customRange);
+  };
+
+  const customDays = getDaysBetween(
+    appliedCustomRange.start,
+    appliedCustomRange.end
+  );
   const activeRangeKey: RangeOption =
-    customRange.start && customRange.end
+    appliedCustomRange.start && appliedCustomRange.end
       ? mapDaysToRange(customDays)
       : selectedRange;
 
   // Calculate scale factor for custom date ranges
   const scaleFactor = useMemo(() => {
-    if (customRange.start && customRange.end && customDays) {
+    if (appliedCustomRange.start && appliedCustomRange.end && customDays) {
       return getScaleFactor(customDays, activeRangeKey);
     }
     return 1;
-  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+  }, [
+    appliedCustomRange.start,
+    appliedCustomRange.end,
+    customDays,
+    activeRangeKey,
+  ]);
 
   // Scale summary data based on actual date range
   const baseSummary = combinedSummary[activeRangeKey];
@@ -676,13 +698,15 @@ export default function OfferReportsPage() {
   const filteredRows = useMemo(() => {
     const query = tableQuery.trim().toLowerCase();
     const maxDays =
-      customRange.start && customRange.end
+      appliedCustomRange.start && appliedCustomRange.end
         ? customDays ?? rangeDays[selectedRange]
         : rangeDays[selectedRange];
-    const startMs = customRange.start
-      ? new Date(customRange.start).getTime()
+    const startMs = appliedCustomRange.start
+      ? new Date(appliedCustomRange.start).getTime()
       : null;
-    const endMs = customRange.end ? new Date(customRange.end).getTime() : null;
+    const endMs = appliedCustomRange.end
+      ? new Date(appliedCustomRange.end).getTime()
+      : null;
 
     return offerRows.filter((row) => {
       const matchesStatus =
@@ -697,7 +721,7 @@ export default function OfferReportsPage() {
       const rowDate = new Date(row.lastUpdated).getTime();
       const now = Date.now();
       const matchesRange =
-        customRange.start && customRange.end && startMs && endMs
+        appliedCustomRange.start && appliedCustomRange.end && startMs && endMs
           ? rowDate >= startMs && rowDate <= endMs
           : now - rowDate <= maxDays * 24 * 60 * 60 * 1000;
       return matchesStatus && matchesSegment && matchesQuery && matchesRange;
@@ -781,9 +805,10 @@ export default function OfferReportsPage() {
                 onClick={() => {
                   setSelectedRange(option);
                   setCustomRange({ start: "", end: "" });
+                  setAppliedCustomRange({ start: "", end: "" });
                 }}
                 className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !(customRange.start && customRange.end) &&
+                  !(appliedCustomRange.start && appliedCustomRange.end) &&
                   selectedRange === option
                     ? "border-[#252829] bg-[#252829] text-white"
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
@@ -813,7 +838,7 @@ export default function OfferReportsPage() {
                     start: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+                className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -835,13 +860,26 @@ export default function OfferReportsPage() {
                     end: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+                className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
+            {customRange.start && customRange.end && (
+              <button
+                type="button"
+                onClick={handleRun}
+                className="rounded-md px-4 py-1.5 text-sm font-medium text-white transition-colors"
+                style={{ backgroundColor: colors.primary.accent }}
+              >
+                Run
+              </button>
+            )}
             {(customRange.start || customRange.end) && (
               <button
                 type="button"
-                onClick={() => setCustomRange({ start: "", end: "" })}
+                onClick={() => {
+                  setCustomRange({ start: "", end: "" });
+                  setAppliedCustomRange({ start: "", end: "" });
+                }}
                 className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 Clear
@@ -852,29 +890,27 @@ export default function OfferReportsPage() {
       </div>
 
       {/* Hero KPI Cards */}
-      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {heroCards.map((card, idx) => {
           const Icon = card.icon;
           return (
             <div
               key={idx}
-              className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
+              className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">
-                    {card.label}
-                  </p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
-                    {card.value}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">{card.subtext}</p>
-                </div>
+              <div className="flex items-center gap-2">
                 <Icon
-                  className="h-5 w-5 flex-shrink-0"
+                  className="h-5 w-5"
                   style={{ color: colors.primary.accent }}
                 />
+                <p className="text-sm font-medium text-gray-600">
+                  {card.label}
+                </p>
               </div>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {card.value}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">{card.subtext}</p>
               <div className="mt-3 flex items-center gap-1 text-xs">
                 <span
                   className={`font-semibold ${

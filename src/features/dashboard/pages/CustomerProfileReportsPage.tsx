@@ -443,12 +443,18 @@ const getCustomScaleFactor = (
 // Get date constraints for date inputs
 const getDateConstraints = () => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const maxDate = today.toISOString().split("T")[0]; // Today (no future dates)
+  // Use local date to avoid timezone issues
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const maxDate = `${year}-${month}-${day}`; // Today (no future dates)
 
   const minDate = new Date(today);
   minDate.setFullYear(today.getFullYear() - 2); // 2 years ago max
-  const minDateStr = minDate.toISOString().split("T")[0];
+  const minYear = minDate.getFullYear();
+  const minMonth = String(minDate.getMonth() + 1).padStart(2, "0");
+  const minDay = String(minDate.getDate()).padStart(2, "0");
+  const minDateStr = `${minYear}-${minMonth}-${minDay}`;
 
   return { minDate: minDateStr, maxDate };
 };
@@ -456,22 +462,38 @@ const getDateConstraints = () => {
 export default function CustomerProfileReportsPage() {
   const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
+  const [appliedCustomRange, setAppliedCustomRange] = useState({
+    start: "",
+    end: "",
+  });
   const [tableSegment, setTableSegment] = useState("All");
   const [tableRiskFilter, setTableRiskFilter] = useState("All");
 
-  const customDays = getDaysBetween(customRange.start, customRange.end);
+  const handleRun = () => {
+    setAppliedCustomRange(customRange);
+  };
+
+  const customDays = getDaysBetween(
+    appliedCustomRange.start,
+    appliedCustomRange.end
+  );
   const activeRangeKey: RangeOption =
-    customRange.start && customRange.end
+    appliedCustomRange.start && appliedCustomRange.end
       ? mapDaysToRange(customDays)
       : selectedRange;
 
   // Calculate actual scale factor based on custom days
   const actualMultiplier = useMemo(() => {
-    if (customRange.start && customRange.end && customDays) {
+    if (appliedCustomRange.start && appliedCustomRange.end && customDays) {
       return getCustomScaleFactor(customDays, activeRangeKey);
     }
     return rangeMultipliers[activeRangeKey];
-  }, [customRange.start, customRange.end, customDays, activeRangeKey]);
+  }, [
+    appliedCustomRange.start,
+    appliedCustomRange.end,
+    customDays,
+    activeRangeKey,
+  ]);
 
   const valueMatrixSeries = useMemo(() => {
     const multiplier = actualMultiplier;
@@ -551,13 +573,15 @@ export default function CustomerProfileReportsPage() {
 
   const filteredCustomers = useMemo(() => {
     const maxDays =
-      customRange.start && customRange.end
+      appliedCustomRange.start && appliedCustomRange.end
         ? customDays ?? rangeDays[activeRangeKey]
         : rangeDays[activeRangeKey];
-    const startMs = customRange.start
-      ? new Date(customRange.start).getTime()
+    const startMs = appliedCustomRange.start
+      ? new Date(appliedCustomRange.start).getTime()
       : null;
-    const endMs = customRange.end ? new Date(customRange.end).getTime() : null;
+    const endMs = appliedCustomRange.end
+      ? new Date(appliedCustomRange.end).getTime()
+      : null;
 
     return customerRows.filter((row) => {
       const matchesSegment =
@@ -573,7 +597,7 @@ export default function CustomerProfileReportsPage() {
       const rowDate = new Date(row.lastInteractionDate).getTime();
       const now = Date.now();
       const matchesRange =
-        customRange.start && customRange.end && startMs && endMs
+        appliedCustomRange.start && appliedCustomRange.end && startMs && endMs
           ? rowDate >= startMs && rowDate <= endMs
           : now - rowDate <= maxDays * 24 * 60 * 60 * 1000;
       return matchesSegment && matchesRisk && matchesRange;
@@ -638,9 +662,10 @@ export default function CustomerProfileReportsPage() {
                 onClick={() => {
                   setSelectedRange(option);
                   setCustomRange({ start: "", end: "" });
+                  setAppliedCustomRange({ start: "", end: "" });
                 }}
                 className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  !(customRange.start && customRange.end) &&
+                  !(appliedCustomRange.start && appliedCustomRange.end) &&
                   selectedRange === option
                     ? "border-[#252829] bg-[#252829] text-white"
                     : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
@@ -670,7 +695,7 @@ export default function CustomerProfileReportsPage() {
                     start: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+                className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -692,13 +717,26 @@ export default function CustomerProfileReportsPage() {
                     end: event.target.value,
                   }))
                 }
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
+                className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-[#252829] focus:outline-none focus:ring-1 focus:ring-[#252829]"
               />
             </div>
+            {customRange.start && customRange.end && (
+              <button
+                type="button"
+                onClick={handleRun}
+                className="rounded-md px-4 py-1.5 text-sm font-medium text-white transition-colors"
+                style={{ backgroundColor: color.primary.action }}
+              >
+                Run
+              </button>
+            )}
             {(customRange.start || customRange.end) && (
               <button
                 type="button"
-                onClick={() => setCustomRange({ start: "", end: "" })}
+                onClick={() => {
+                  setCustomRange({ start: "", end: "" });
+                  setAppliedCustomRange({ start: "", end: "" });
+                }}
                 className="ml-1 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 Clear
@@ -798,17 +836,18 @@ export default function CustomerProfileReportsPage() {
                   key={metric.label}
                   className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        {metric.label}
-                      </p>
-                      <p className="mt-2 text-3xl font-bold text-gray-900">
-                        {metric.value}
-                      </p>
-                    </div>
-                    <metric.icon className="h-6 w-6 text-gray-400" />
+                  <div className="flex items-center gap-2">
+                    <metric.icon
+                      className="h-5 w-5"
+                      style={{ color: colors.primary.accent }}
+                    />
+                    <p className="text-sm font-medium text-gray-600">
+                      {metric.label}
+                    </p>
                   </div>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
+                    {metric.value}
+                  </p>
                   <div className="mt-3 flex items-center gap-2 text-sm">
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${
