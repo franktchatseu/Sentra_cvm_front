@@ -211,31 +211,31 @@ const generateCustomerRows = (): CustomerRow[] => {
     "Addis Ababa, ET",
   ];
   const names = [
-    "Sophia K.",
-    "Michael O.",
-    "Amy T.",
-    "David R.",
-    "Grace I.",
-    "James M.",
-    "Emma L.",
-    "Robert N.",
-    "Olivia P.",
-    "William Q.",
-    "Isabella S.",
-    "Benjamin T.",
-    "Mia U.",
-    "Daniel V.",
-    "Charlotte W.",
-    "Matthew X.",
-    "Amelia Y.",
-    "Joseph Z.",
-    "Harper A.",
-    "Samuel B.",
-    "Evelyn C.",
-    "Henry D.",
-    "Abigail E.",
-    "Alexander F.",
-    "Emily G.",
+    "Sophia K",
+    "Michael O",
+    "Amy T",
+    "David R",
+    "Grace I",
+    "James M",
+    "Emma L",
+    "Robert N",
+    "Olivia P",
+    "William Q",
+    "Isabella S",
+    "Benjamin T",
+    "Mia U",
+    "Daniel V",
+    "Charlotte W",
+    "Matthew X",
+    "Amelia Y",
+    "Joseph Z",
+    "Harper A",
+    "Samuel B",
+    "Evelyn C",
+    "Henry D",
+    "Abigail E",
+    "Alexander F",
+    "Emily G",
   ];
 
   const rows: CustomerRow[] = [];
@@ -483,13 +483,16 @@ export default function CustomerProfileReportsPage() {
         return;
       }
 
-      // Navigate to search results page with customer data
-      navigate("/dashboard/reports/customer-profiles/search", {
-        state: {
-          customer: foundCustomer,
-          searchTerm: customerSearchTerm,
-        },
-      });
+      // Navigate to search results page with customer data and ID in URL
+      navigate(
+        `/dashboard/reports/customer-profiles/search?customerId=${foundCustomer.id}`,
+        {
+          state: {
+            customer: foundCustomer,
+            searchTerm: customerSearchTerm,
+          },
+        }
+      );
     } catch (err) {
       setCustomerError(
         err instanceof Error ? err.message : "Failed to search customer"

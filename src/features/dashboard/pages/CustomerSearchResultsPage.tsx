@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Search,
@@ -142,55 +142,96 @@ const generateCustomerRelatedData = (customer: CustomerRow) => {
   const interactionDate = new Date(customer.lastInteractionDate);
   if (!isNaN(interactionDate.getTime())) {
     const baseDate = new Date(interactionDate);
-    for (let i = 0; i < 8; i++) {
+    // Generate more events (15 total) to ensure all channels are well represented
+    for (let i = 0; i < 15; i++) {
       const eventDate = new Date(baseDate);
-      eventDate.setDate(eventDate.getDate() - i * 10);
-      const channelTypes: Array<"email" | "sms" | "push" | "other"> = [
-        "email",
-        "sms",
-        "push",
-      ];
-      const channelType = channelTypes[i % channelTypes.length];
+      eventDate.setDate(eventDate.getDate() - i * 7);
+
+      // Ensure we have events across all channels - distribute evenly
+      const channelIndex = i % 3;
+      const channelType =
+        channelIndex === 0 ? "email" : channelIndex === 1 ? "sms" : "push";
 
       if (channelType === "email") {
+        const emailTitles = [
+          "Welcome Email",
+          "Newsletter",
+          "Promotional Email",
+          "Order Confirmation",
+          "Shipping Update",
+        ];
+        const emailDescriptions = [
+          "Welcome to our community",
+          "Monthly updates and news",
+          "Special offers just for you",
+          "Your order has been confirmed",
+          "Your order is on the way",
+        ];
+        const emailStatuses = [
+          "Opened",
+          "Clicked",
+          "Opened",
+          "Delivered",
+          "Opened",
+        ];
+
         events.push({
           id: `EVT-${customer.id.slice(-3)}-E${i}`,
           type: "email",
-          title:
-            i === 0
-              ? "Welcome Email"
-              : i % 3 === 0
-              ? "Newsletter"
-              : "Promotional Email",
-          description:
-            i === 0
-              ? "Welcome to our community"
-              : i % 3 === 0
-              ? "Monthly updates and news"
-              : "Special offers just for you",
+          title: emailTitles[i % emailTitles.length],
+          description: emailDescriptions[i % emailDescriptions.length],
           date: eventDate.toISOString(),
-          status: i % 2 === 0 ? "Opened" : "Clicked",
+          status: emailStatuses[i % emailStatuses.length],
         });
       } else if (channelType === "sms") {
+        const smsTitles = [
+          "Transaction Update",
+          "Promotional SMS",
+          "Order Alert",
+          "Payment Reminder",
+          "Delivery Notification",
+        ];
+        const smsDescriptions = [
+          "Your transaction has been processed",
+          "Flash sale - 24 hours only",
+          "Your order is ready",
+          "Payment due soon",
+          "Package delivered",
+        ];
+        const smsStatuses = ["Delivered", "Read", "Delivered", "Sent", "Read"];
+
         events.push({
           id: `EVT-${customer.id.slice(-3)}-S${i}`,
           type: "sms",
-          title: i % 2 === 0 ? "Transaction Update" : "Promotional SMS",
-          description:
-            i % 2 === 0
-              ? "Your transaction has been processed"
-              : "Flash sale - 24 hours only",
+          title: smsTitles[i % smsTitles.length],
+          description: smsDescriptions[i % smsDescriptions.length],
           date: eventDate.toISOString(),
-          status: "Delivered",
+          status: smsStatuses[i % smsStatuses.length],
         });
       } else if (channelType === "push") {
+        const pushTitles = [
+          "New Products",
+          "Cart Reminder",
+          "Price Drop Alert",
+          "New Arrivals",
+          "Special Offer",
+        ];
+        const pushDescriptions = [
+          "Check out our latest arrivals",
+          "Items waiting in your cart",
+          "Price reduced on favorites",
+          "New collection available",
+          "Limited time offer",
+        ];
+        const pushStatuses = ["Sent", "Opened", "Sent", "Opened", "Sent"];
+
         events.push({
           id: `EVT-${customer.id.slice(-3)}-P${i}`,
           type: "push",
-          title: "New Products",
-          description: "Check out our latest arrivals",
+          title: pushTitles[i % pushTitles.length],
+          description: pushDescriptions[i % pushDescriptions.length],
           date: eventDate.toISOString(),
-          status: "Sent",
+          status: pushStatuses[i % pushStatuses.length],
         });
       }
     }
@@ -236,7 +277,146 @@ type TabType =
 export default function CustomerSearchResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const customer = location.state?.customer as CustomerRow | undefined;
+  const [searchParams] = useSearchParams();
+
+  // Get customer from state (initial navigation) or from URL params (on refresh)
+  const customerFromState = location.state?.customer as CustomerRow | undefined;
+  const customerIdFromUrl = searchParams.get("customerId");
+
+  // Generate customer data if we have ID from URL (recreate the same customer generation logic)
+  const customerFromUrl = useMemo(() => {
+    if (!customerIdFromUrl) return undefined;
+
+    // Recreate customer generation to find customer by ID
+    // This matches the logic from CustomerProfileReportsPage
+    const segments = [
+      "Champions",
+      "Loyalists",
+      "Potential Loyalist",
+      "At-Risk",
+      "Reactivated",
+    ];
+    const channels = ["Email", "SMS", "Push"];
+    const locations = [
+      "Nairobi, KE",
+      "Kampala, UG",
+      "Lagos, NG",
+      "Accra, GH",
+      "Dar es Salaam, TZ",
+      "Kigali, RW",
+      "Addis Ababa, ET",
+    ];
+    const names = [
+      "Sophia K",
+      "Michael O",
+      "Amy T",
+      "David R",
+      "Grace I",
+      "James M",
+      "Emma L",
+      "Robert N",
+      "Olivia P",
+      "William Q",
+      "Isabella S",
+      "Benjamin T",
+      "Mia U",
+      "Daniel V",
+      "Charlotte W",
+      "Matthew X",
+      "Amelia Y",
+      "Joseph Z",
+      "Harper A",
+      "Samuel B",
+      "Evelyn C",
+      "Henry D",
+      "Abigail E",
+      "Alexander F",
+      "Emily G",
+    ];
+
+    const rows: CustomerRow[] = [];
+    const today = new Date();
+
+    segments.forEach((segment, segIdx) => {
+      for (let i = 0; i < 5; i++) {
+        const baseIdx = segIdx * 5 + i;
+        const daysAgo = i * 15 + Math.floor(Math.random() * 10);
+        const interactionDate = new Date(today);
+        interactionDate.setDate(today.getDate() - daysAgo);
+
+        let churnRisk = 15;
+        if (segment === "At-Risk")
+          churnRisk = 65 + Math.floor(Math.random() * 20);
+        else if (segment === "Potential Loyalist")
+          churnRisk = 25 + Math.floor(Math.random() * 10);
+        else if (segment === "Reactivated")
+          churnRisk = 20 + Math.floor(Math.random() * 15);
+        else if (daysAgo > 30) churnRisk = 30 + Math.floor(Math.random() * 20);
+
+        const engagementScore = Math.max(
+          30,
+          100 - churnRisk + Math.floor(Math.random() * 20)
+        );
+
+        let lifetimeValue = 2000 + Math.floor(Math.random() * 3000);
+        let clv = lifetimeValue * 1.2;
+        let orders = 5 + Math.floor(Math.random() * 20);
+        let aov = 150 + Math.floor(Math.random() * 150);
+
+        if (segment === "Champions") {
+          lifetimeValue = 8000 + Math.floor(Math.random() * 6000);
+          clv = lifetimeValue * 1.15;
+          orders = 30 + Math.floor(Math.random() * 25);
+          aov = 250 + Math.floor(Math.random() * 100);
+        } else if (segment === "Loyalists") {
+          lifetimeValue = 5000 + Math.floor(Math.random() * 4000);
+          clv = lifetimeValue * 1.18;
+          orders = 20 + Math.floor(Math.random() * 15);
+          aov = 200 + Math.floor(Math.random() * 80);
+        }
+
+        const lastPurchaseText =
+          daysAgo === 0
+            ? "Today"
+            : daysAgo === 1
+            ? "1 day ago"
+            : `${daysAgo} days ago`;
+
+        rows.push({
+          id: `CUST-${String(34000 + baseIdx).padStart(5, "0")}`,
+          name: names[baseIdx % names.length],
+          segment,
+          lifetimeValue,
+          clv: Math.round(clv),
+          orders,
+          aov: Math.round(aov),
+          lastPurchase: lastPurchaseText,
+          lastInteractionDate: interactionDate.toISOString().split("T")[0],
+          engagementScore,
+          churnRisk,
+          preferredChannel: channels[baseIdx % channels.length] as
+            | "Email"
+            | "SMS"
+            | "Push",
+          location: locations[baseIdx % locations.length],
+        });
+      }
+    });
+
+    return rows.find((c) => c.id === customerIdFromUrl);
+  }, [customerIdFromUrl]);
+
+  const customer = customerFromState || customerFromUrl;
+
+  // Update URL when customer changes to persist on refresh
+  useEffect(() => {
+    if (customer && !customerIdFromUrl) {
+      navigate(
+        `/dashboard/reports/customer-profiles/search?customerId=${customer.id}`,
+        { replace: true }
+      );
+    }
+  }, [customer, customerIdFromUrl, navigate]);
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [eventSearchTerm, setEventSearchTerm] = useState<string>("");
@@ -435,7 +615,7 @@ export default function CustomerSearchResultsPage() {
           { id: "activity", label: "Events", icon: Activity },
           { id: "subscribedLists", label: "Subscribed Lists", icon: List },
           { id: "engagement", label: "Analytics", icon: BarChart3 },
-          { id: "marketing", label: "Marketing", icon: Megaphone },
+          { id: "marketing", label: "Segments & Offers", icon: Megaphone },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -596,13 +776,13 @@ export default function CustomerSearchResultsPage() {
                 value={eventSearchTerm}
                 onChange={(e) => setEventSearchTerm(e.target.value)}
                 placeholder="Search events..."
-                className="w-full pl-10 pr-4 py-2.5 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               />
             </div>
             <select
               value={eventTypeFilter}
               onChange={(e) => setEventTypeFilter(e.target.value)}
-              className="px-4 py-2.5 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+              className="px-4 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
               <option value="all">All Channels</option>
               <option value="email">Email</option>
@@ -612,7 +792,7 @@ export default function CustomerSearchResultsPage() {
             <select
               value={eventStatusFilter}
               onChange={(e) => setEventStatusFilter(e.target.value)}
-              className="px-4 py-2.5 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+              className="px-4 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="Sent">Sent</option>
@@ -628,7 +808,7 @@ export default function CustomerSearchResultsPage() {
                 value={eventDateFrom}
                 onChange={(e) => setEventDateFrom(e.target.value)}
                 placeholder="From Date"
-                className="w-full pl-10 pr-10 py-2.5 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent cursor-pointer"
+                className="w-full pl-10 pr-10 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent cursor-pointer"
                 onClick={(e) =>
                   (e.currentTarget as HTMLInputElement).showPicker()
                 }
@@ -649,7 +829,7 @@ export default function CustomerSearchResultsPage() {
                 value={eventDateTo}
                 onChange={(e) => setEventDateTo(e.target.value)}
                 placeholder="To Date"
-                className="w-full pl-10 pr-10 py-2.5 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent cursor-pointer"
+                className="w-full pl-10 pr-10 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent cursor-pointer"
                 onClick={(e) =>
                   (e.currentTarget as HTMLInputElement).showPicker()
                 }
@@ -767,7 +947,15 @@ export default function CustomerSearchResultsPage() {
                         tick={{ fontSize: 11, fill: "#6b7280" }}
                       />
                       <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip
+                        content={<CustomTooltip />}
+                        contentStyle={{
+                          backgroundColor: "transparent",
+                          border: "none",
+                          boxShadow: "none",
+                        }}
+                        wrapperStyle={{ outline: "none" }}
+                      />
                       <Bar
                         dataKey="value"
                         fill={colors.reportCharts.palette.color1}
@@ -799,7 +987,15 @@ export default function CustomerSearchResultsPage() {
                         height={60}
                       />
                       <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip
+                        content={<CustomTooltip />}
+                        contentStyle={{
+                          backgroundColor: "transparent",
+                          border: "none",
+                          boxShadow: "none",
+                        }}
+                        wrapperStyle={{ outline: "none" }}
+                      />
                       <Bar
                         dataKey="events"
                         fill={colors.reportCharts.palette.color2}
@@ -831,7 +1027,15 @@ export default function CustomerSearchResultsPage() {
                         height={60}
                       />
                       <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip
+                        content={<CustomTooltip />}
+                        contentStyle={{
+                          backgroundColor: "transparent",
+                          border: "none",
+                          boxShadow: "none",
+                        }}
+                        wrapperStyle={{ outline: "none" }}
+                      />
                       <Bar
                         dataKey="value"
                         fill={colors.reportCharts.palette.color3}
@@ -869,6 +1073,12 @@ export default function CustomerSearchResultsPage() {
                       />
                       <Tooltip
                         content={<CustomTooltip />}
+                        contentStyle={{
+                          backgroundColor: "transparent",
+                          border: "none",
+                          boxShadow: "none",
+                        }}
+                        wrapperStyle={{ outline: "none" }}
                         formatter={(value: number) => `${value}%`}
                       />
                       <Bar
