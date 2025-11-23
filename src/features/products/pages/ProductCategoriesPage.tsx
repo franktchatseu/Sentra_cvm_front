@@ -30,10 +30,10 @@ import {
   buildCatalogTag,
   parseCatalogTag,
 } from "../../../shared/utils/catalogTags";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
 interface ProductsModalProps {
   isOpen: boolean;
@@ -320,8 +320,11 @@ function ProductsModal({
 
 export default function ProductCatalogsPage() {
   const navigate = useNavigate();
-  const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<ProductCategory | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -625,23 +628,23 @@ export default function ProductCatalogsPage() {
     }
   };
 
-  const handleDeleteCatalog = async (category: ProductCategory) => {
-    const confirmed = await confirm({
-      title: "Delete Catalog",
-      message: `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleDeleteCatalog = (category: ProductCategory) => {
+    setCategoryToDelete(category);
+    setShowDeleteModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await productCategoryService.deleteCategory(category.id);
+      await productCategoryService.deleteCategory(categoryToDelete.id);
       success(
         "Catalog Deleted",
-        `"${category.name}" has been deleted successfully.`
+        `"${categoryToDelete.name}" has been deleted successfully.`
       );
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
       // Refresh categories and stats with cache skipped, and reload all products
       await Promise.all([
         loadCategories(true),
@@ -653,7 +656,14 @@ export default function ProductCatalogsPage() {
     } catch (err) {
       console.error("Failed to delete category:", err);
       showError("Failed to delete category", "Please try again later.");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
   };
 
   // Apply client-side search filter
@@ -1633,6 +1643,19 @@ export default function ProductCatalogsPage() {
           </div>,
           document.body
         )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Catalog"
+        description="Are you sure you want to delete this catalog? This action cannot be undone."
+        itemName={categoryToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Catalog"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

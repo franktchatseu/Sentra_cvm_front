@@ -20,7 +20,7 @@ import {
   UploadTypeSchema,
 } from "../types/quicklist";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 import CreateCommunicationModal from "../../communications/components/CreateCommunicationModal";
@@ -31,7 +31,8 @@ export default function QuickListDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { success: showToast, error: showError } = useToast();
-  const { confirm } = useConfirm();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [quicklist, setQuicklist] = useState<QuickList | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,29 +256,32 @@ export default function QuickListDetailsPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    if (!quicklist) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (!quicklist) return;
 
-    const confirmed = await confirm({
-      title: "Delete QuickList",
-      message: `Are you sure you want to delete "${quicklist.name}"? This action cannot be undone and will delete all associated data.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
-
-    if (!confirmed) return;
-
+    setIsDeleting(true);
     try {
       await quicklistService.deleteQuickList(quicklist.id);
       showToast(`QuickList "${quicklist.name}" deleted successfully`);
+      setShowDeleteModal(false);
       navigate("/dashboard/quicklists");
     } catch (err) {
       showError(
         "Error deleting quicklist",
         err instanceof Error ? err.message : "Failed to delete QuickList"
       );
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const loadTableMapping = async () => {
@@ -1062,6 +1066,19 @@ export default function QuickListDetailsPage() {
           initialDescription={quicklist.description || null}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete QuickList"
+        description="Are you sure you want to delete this QuickList? This action cannot be undone and will delete all associated data."
+        itemName={quicklist?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete QuickList"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

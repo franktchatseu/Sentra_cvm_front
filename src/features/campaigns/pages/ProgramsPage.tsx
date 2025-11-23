@@ -15,17 +15,19 @@ import {
   Filter,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { programService } from "../services/programService";
 import { Program } from "../types/program";
 import ProgramModal from "../components/ProgramModal";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
 export default function ProgramsPage() {
   const navigate = useNavigate();
-  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [programToDelete, setProgramToDelete] = useState<Program | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,26 +229,33 @@ export default function ProgramsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteProgram = async (program: Program) => {
-    const confirmed = await confirm({
-      title: "Delete Program",
-      message: `Are you sure you want to delete "${program.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleDeleteProgram = (program: Program) => {
+    setProgramToDelete(program);
+    setShowDeleteModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!programToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await programService.deleteProgram(Number(program.id));
-      showToast(`Program "${program.name}" deleted successfully!`);
+      await programService.deleteProgram(Number(programToDelete.id));
+      showToast(`Program "${programToDelete.name}" deleted successfully!`);
+      setShowDeleteModal(false);
+      setProgramToDelete(null);
       await loadPrograms(true);
       await loadStats();
     } catch (err) {
       console.error("Failed to delete program:", err);
       showError("Failed to delete program", "Please try again later.");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setProgramToDelete(null);
   };
 
   const handleProgramSaved = async (programData: {
@@ -893,6 +902,19 @@ export default function ProgramsPage() {
           </div>,
           document.body
         )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Program"
+        description="Are you sure you want to delete this program? This action cannot be undone."
+        itemName={programToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Program"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

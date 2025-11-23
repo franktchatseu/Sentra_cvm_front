@@ -26,11 +26,11 @@ import {
 import { Segment, SegmentFilters, SortDirection } from "../types/segment";
 import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import SegmentModal from "../components/SegmentModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
@@ -121,7 +121,9 @@ export default function SegmentManagementPage() {
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
 
   const { success, error: showError } = useToast();
-  const { confirm } = useConfirm();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [segmentToDelete, setSegmentToDelete] = useState<Segment | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleActionMenuToggle = (
     segmentId: number,
@@ -505,32 +507,39 @@ export default function SegmentManagementPage() {
     setShowActionMenu(null);
   };
 
-  const handleDeleteSegment = async (segment: Segment) => {
+  const handleDeleteSegment = (segment: Segment) => {
     setShowActionMenu(null);
-    const confirmed = await confirm({
-      title: "Delete Segment",
-      message: `Are you sure you want to delete "${segment.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+    setSegmentToDelete(segment);
+    setShowDeleteModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!segmentToDelete) return;
 
+    setIsDeleting(true);
     try {
-      const segmentId = segment.id;
+      const segmentId = segmentToDelete.id;
       await segmentService.deleteSegment(segmentId);
+      setShowDeleteModal(false);
+      setSegmentToDelete(null);
       await loadSegments();
       success(
         "Segment deleted",
-        `Segment "${segment.name}" has been deleted successfully`
+        `Segment "${segmentToDelete.name}" has been deleted successfully`
       );
     } catch (err: unknown) {
       showError(
         "Error deleting segment",
         (err as Error).message || "Failed to delete segment"
       );
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setSegmentToDelete(null);
   };
 
   const handleDuplicateSegment = async (segment: Segment) => {
@@ -1612,6 +1621,19 @@ export default function SegmentManagementPage() {
           </div>,
           document.body
         )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Segment"
+        description="Are you sure you want to delete this segment? This action cannot be undone."
+        itemName={segmentToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Segment"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

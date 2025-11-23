@@ -12,7 +12,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
@@ -22,8 +22,9 @@ import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 export default function CategoryDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [category, setCategory] = useState<OfferCategoryType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -183,29 +184,34 @@ export default function CategoryDetailsPage() {
     setIsOffersModalOpen(true);
   };
 
-  const handleDeleteCategory = async () => {
+  const handleDeleteCategory = () => {
+    if (!category) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (!category) return;
 
-    const confirmed = await confirm({
-      title: "Delete Category",
-      message: `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
-      type: "danger",
-    });
-
-    if (confirmed) {
-      try {
-        const response = await offerCategoryService.deleteCategory(category.id);
-        if (response.success) {
-          showToast("Category deleted successfully");
-          navigate("/dashboard/offer-catalogs");
-        } else {
-          showError("Failed to delete category");
-        }
-      } catch (err) {
-        // Failed to delete category
+    setIsDeleting(true);
+    try {
+      const response = await offerCategoryService.deleteCategory(category.id);
+      if (response.success) {
+        showToast("Category deleted successfully");
+        setShowDeleteModal(false);
+        navigate("/dashboard/offer-catalogs");
+      } else {
         showError("Failed to delete category");
       }
+    } catch (err) {
+      // Failed to delete category
+      showError("Failed to delete category");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const handleToggleStatus = async () => {
@@ -757,6 +763,19 @@ export default function CategoryDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Category"
+        description="Are you sure you want to delete this category? This action cannot be undone."
+        itemName={category?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Category"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

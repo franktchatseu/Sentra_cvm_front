@@ -24,7 +24,7 @@ export default function ChampionChallengerDisplay({
     challengers.reduce((sum, c) => sum + c.customer_count, 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Champion Section */}
       <div className="space-y-3">
         <div className="flex items-center space-x-2">
@@ -120,7 +120,7 @@ export default function ChampionChallengerDisplay({
 
       {/* Challengers Section */}
       {champion && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Target className="w-5 h-5 text-[#588157]" />

@@ -1,19 +1,45 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Package, Save, AlertCircle } from "lucide-react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { ArrowLeft, Package, AlertCircle } from "lucide-react";
 import { Product, UpdateProductRequest } from "../types/product";
 import { productService } from "../services/productService";
-import CategorySelector from "../../../shared/components/CategorySelector";
+import ProductForm from "../components/ProductForm";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
+import { useToast } from "../../../contexts/ToastContext";
 
 export default function EditProductPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
+  const { success } = useToast();
+
+  // Check if we came from a returnTo state (e.g., from offer details)
+  const returnTo = (
+    location.state as {
+      returnTo?: {
+        pathname: string;
+        fromModal?: boolean;
+      };
+    }
+  )?.returnTo;
+
+  const navigateBack = () => {
+    if (returnTo) {
+      navigate(returnTo.pathname, {
+        state: returnTo.fromModal ? { fromModal: true } : undefined,
+      });
+    } else {
+      navigate(`/dashboard/products/${id}`);
+    }
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [formData, setFormData] = useState<UpdateProductRequest>({
     product_code: "",
     name: "",
@@ -29,6 +55,30 @@ export default function EditProductPage() {
       loadProduct();
     }
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Initialize selectedCategoryIds from formData.category_id
+  useEffect(() => {
+    if (
+      formData.category_id &&
+      !selectedCategoryIds.includes(formData.category_id)
+    ) {
+      setSelectedCategoryIds([formData.category_id]);
+    } else if (!formData.category_id && selectedCategoryIds.length > 0) {
+      setSelectedCategoryIds([]);
+    }
+  }, [formData.category_id]);
+
+  // Update formData.category_id when selectedCategoryIds changes (use first one)
+  useEffect(() => {
+    const firstCategoryId =
+      selectedCategoryIds.length > 0 ? selectedCategoryIds[0] : undefined;
+    if (formData.category_id !== firstCategoryId) {
+      setFormData((prev) => ({
+        ...prev,
+        category_id: firstCategoryId, // Send only first to backend
+      }));
+    }
+  }, [selectedCategoryIds]);
 
   const loadProduct = async () => {
     try {
@@ -53,6 +103,11 @@ export default function EditProductPage() {
         price: productData.price || 0,
         currency: productData.currency || "USD",
       });
+
+      // Set selected category IDs for MultiCategorySelector
+      if (productData.category_id) {
+        setSelectedCategoryIds([productData.category_id]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load product");
     } finally {
@@ -83,7 +138,10 @@ export default function EditProductPage() {
 
       // Update product data
       await productService.updateProduct(Number(id), updateData);
-
+      success(
+        "Product Updated",
+        `"${formData.name}" has been updated successfully.`
+      );
       navigate("/dashboard/products");
     } catch (err) {
       // Extract detailed error message from backend response
@@ -117,6 +175,13 @@ export default function EditProductPage() {
     value: string | number | boolean | undefined
   ) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  const handleCategoryCreated = (categoryId: number) => {
+    // Auto-select the newly created category
+    setSelectedCategoryIds([categoryId]);
+    // Trigger refresh of the MultiCategorySelector
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   if (isLoadingProduct) {
@@ -160,180 +225,60 @@ export default function EditProductPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <button
-          onClick={() => navigate("/dashboard/products")}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 mb-4"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Products
-        </button>
-
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Edit Product
-          </h1>
-          <p className="text-gray-600 text-sm">Update product information</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={navigateBack}
+            className="p-2 rounded-md transition-colors"
+            style={{ color: color.text.secondary }}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+              Edit Product
+            </h1>
+            <p className={`${tw.textSecondary} mt-1 text-sm`}>
+              Update product information
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-          <p className="text-red-700">{error}</p>
+        <div
+          className="rounded-md p-4 flex items-center gap-3"
+          style={{
+            backgroundColor: `${color.status.danger}20`,
+            borderColor: color.status.danger,
+            borderWidth: "1px",
+          }}
+        >
+          <AlertCircle
+            className="w-5 h-5 flex-shrink-0"
+            style={{ color: color.status.danger }}
+          />
+          <p style={{ color: color.status.danger }}>{error}</p>
         </div>
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 transition-shadow hover:shadow-md">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Product Code */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Code <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.product_code}
-                onChange={(e) =>
-                  handleInputChange("product_code", e.target.value)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                placeholder="e.g., VOICE_BUNDLE_001"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Unique identifier for the product
-              </p>
-            </div>
-
-            {/* Product Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
-                placeholder="e.g., Premium Voice Bundle"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.price}
-                onChange={(e) =>
-                  handleInputChange("price", parseFloat(e.target.value) || 0)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                placeholder="0.00"
-              />
-              <p className="text-sm text-gray-500 mt-1">Product price</p>
-            </div>
-
-            {/* DA ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                DA ID <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.da_id}
-                onChange={(e) => handleInputChange("da_id", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all"
-                placeholder="Enter DA ID"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Digital Asset identifier
-              </p>
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Catalog
-              </label>
-              <CategorySelector
-                value={formData.category_id}
-                onChange={(categoryId) =>
-                  handleInputChange("category_id", categoryId)
-                }
-                placeholder="Select Catalog"
-                allowCreate={true}
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                rows={4}
-                value={formData.description}
-                onChange={(e) =>
-                  handleInputChange("description", e.target.value)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#3b8169] focus:border-transparent transition-all resize-none"
-                placeholder="Describe the product features and benefits..."
-              />
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-between pt-6">
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard/products")}
-              className="px-3 py-2 text-sm rounded-md flex items-center gap-2 border transition-colors"
-              style={{
-                borderColor: color.border.default,
-                color: color.text.secondary,
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  color.interactive.hover;
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "transparent";
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-3 py-2 rounded-md text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
-              style={{ backgroundColor: color.primary.action }}
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Save className="w-5 h-5" />
-                  Update Product
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+      <ProductForm
+        formData={formData}
+        onInputChange={handleInputChange}
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        selectedCategoryIds={selectedCategoryIds}
+        onCategoryIdsChange={setSelectedCategoryIds}
+        showCreateModal={showCreateModal}
+        onShowCreateModal={setShowCreateModal}
+        refreshTrigger={refreshTrigger}
+        onCategoryCreated={handleCategoryCreated}
+        submitButtonText="Update Product"
+        loadingText="Updating..."
+        onCancel={() => navigate("/dashboard/products")}
+      />
     </div>
   );
 }

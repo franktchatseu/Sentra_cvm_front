@@ -559,6 +559,7 @@ export interface CreateCampaignRequest {
     | "ab_test"
     | "round_robin"
     | "multiple_level"; // frontend-only field
+  budget_allocated?: string | number; // Budget in currency format
 }
 
 export interface CampaignOfferMapping {

@@ -50,7 +50,7 @@ export default function AudienceConfigurationStep({
   setFormData,
   selectedSegments,
   setSelectedSegments,
-  controlGroup: _controlGroup,
+  controlGroup: _controlGroup, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: AudienceConfigurationStepProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCreateSegmentModal, setShowCreateSegmentModal] = useState(false);
@@ -174,10 +174,10 @@ export default function AudienceConfigurationStep({
   const handleSegmentCreated = (segment: Segment) => {
     // Convert the created segment to CampaignSegment format
     const campaignSegment: CampaignSegment = {
-      id: segment.segment_id?.toString() || segment.id?.toString() || "",
+      id: segment.id?.toString() || "",
       name: segment.name,
-      description: segment.description,
-      customer_count: segment.customer_count || 0,
+      description: segment.description || undefined,
+      customer_count: segment.size_estimate || 0,
       created_at: segment.created_at || new Date().toISOString(),
       criteria: {}, // Empty criteria object - will be populated from conditions if needed
       priority: selectedSegments.length + 1,
@@ -321,10 +321,10 @@ export default function AudienceConfigurationStep({
   return (
     <div className="space-y-4">
       {/* Campaign Type Selection */}
-      <div className="space-y-3">
+      <div className="space-y-3 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className={`${tw.cardTitle} ${tw.textPrimary}`}>
+            <h3 className={`text-sm font-semibold ${tw.textPrimary}`}>
               Campaign Type
             </h3>
           </div>
@@ -348,11 +348,11 @@ export default function AudienceConfigurationStep({
                   <>
                     <IconComponent className="w-5 h-5 text-gray-600" />
                     <div>
-                      <div className={`${tw.body} ${tw.textPrimary}`}>
+                      <div className={`text-sm ${tw.textPrimary}`}>
                         {selectedOption?.label || "Select Campaign Type"}
                       </div>
                       {selectedOption && (
-                        <div className={`${tw.caption} ${tw.textSecondary}`}>
+                        <div className={`text-xs ${tw.textSecondary}`}>
                           {selectedOption.description}
                         </div>
                       )}
@@ -379,7 +379,12 @@ export default function AudienceConfigurationStep({
                     onClick={() => {
                       setFormData({
                         ...formData,
-                        campaign_type: option.value as any,
+                        campaign_type: option.value as
+                          | "multiple_target_group"
+                          | "champion_challenger"
+                          | "ab_test"
+                          | "round_robin"
+                          | "multiple_level",
                       });
                       setSelectedSegments([]);
                       setIsCampaignTypeDropdownOpen(false);
@@ -392,12 +397,10 @@ export default function AudienceConfigurationStep({
                   >
                     <IconComponent className="w-5 h-5 text-gray-600" />
                     <div>
-                      <div
-                        className={`${tw.body} ${tw.textPrimary} font-medium`}
-                      >
+                      <div className={`text-sm ${tw.textPrimary} font-medium`}>
                         {option.label}
                       </div>
-                      <div className={`${tw.caption} ${tw.textSecondary}`}>
+                      <div className={`text-xs ${tw.textSecondary}`}>
                         {option.description}
                       </div>
                     </div>
@@ -429,10 +432,10 @@ export default function AudienceConfigurationStep({
               style={{ accentColor: color.primary.accent }}
             />
             <div>
-              <div className="font-medium text-gray-900">
+              <div className="text-sm font-medium text-gray-900">
                 Mutually Exclusive Segments
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs text-gray-500">
                 Ensure customers can only belong to one segment at a time
               </div>
             </div>
@@ -441,10 +444,10 @@ export default function AudienceConfigurationStep({
       )}
 
       {/* Selected Segments - Adapted by Campaign Type */}
-      <div className="space-y-3">
+      <div className="space-y-3 mt-8 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className={`${tw.cardTitle} ${tw.textPrimary}`}>
+            <h3 className={`text-sm font-semibold ${tw.textPrimary}`}>
               {formData.campaign_type === "champion_challenger" &&
                 "Champion & Challengers"}
               {formData.campaign_type === "ab_test" && "A/B Test Variants"}
@@ -454,7 +457,7 @@ export default function AudienceConfigurationStep({
               {formData.campaign_type === "multiple_target_group" &&
                 "Selected Segments"}
             </h3>
-            <p className={`${tw.caption} ${tw.textSecondary}`}>
+            <p className={`${tw.caption} ${tw.textSecondary} mb-4`}>
               {formData.campaign_type === "champion_challenger" &&
                 "Define champion segment and its challengers"}
               {formData.campaign_type === "ab_test" &&
@@ -556,7 +559,7 @@ export default function AudienceConfigurationStep({
                   <Users className="w-4 h-4 text-gray-400" />
                 </div>
                 <div className="text-center">
-                  <h3 className={`${tw.body} ${tw.textPrimary} font-medium`}>
+                  <h3 className={`text-sm ${tw.textPrimary} font-medium`}>
                     No Segments Selected
                   </h3>
                   <p className={`${tw.caption} ${tw.textSecondary}`}>
@@ -838,7 +841,7 @@ function ControlGroupConfigModal({
     >
       <div className="bg-white rounded-md max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-300">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-gray-900">
             Configure Control Group
           </h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -864,7 +867,7 @@ function ControlGroupConfigModal({
                   className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-900">
                     No Control Group
                   </div>
                   <div className="text-sm text-gray-500">
@@ -889,7 +892,7 @@ function ControlGroupConfigModal({
                   className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-900">
                     With Control Group
                   </div>
                   <div className="text-sm text-gray-500">
@@ -908,7 +911,7 @@ function ControlGroupConfigModal({
                   className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-900">
                     Universal Control Group
                   </div>
                   <div className="text-sm text-gray-500">
@@ -922,7 +925,7 @@ function ControlGroupConfigModal({
           {/* Control Group Method Selection */}
           {config.type === "with_control_group" && (
             <div className="space-y-4 p-4 rounded-md">
-              <h4 className="font-medium text-gray-900">
+              <h4 className="text-sm font-medium text-gray-900">
                 Control Group Configuration Method
               </h4>
 
@@ -943,7 +946,7 @@ function ControlGroupConfigModal({
                     className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                   />
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900">
                       Fixed percentage of Target Base
                     </div>
                     <div className="text-sm text-gray-500">
@@ -968,7 +971,7 @@ function ControlGroupConfigModal({
                     className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                   />
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900">
                       Fixed Number of Target Base
                     </div>
                     <div className="text-sm text-gray-500">
@@ -996,7 +999,7 @@ function ControlGroupConfigModal({
                     className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                   />
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900">
                       Advanced Parameters
                     </div>
                     <div className="text-sm text-gray-500">
@@ -1012,7 +1015,7 @@ function ControlGroupConfigModal({
           {config.type === "with_control_group" &&
             config.control_group_method === "fixed_percentage" && (
               <div className="space-y-4 p-4 rounded-md">
-                <h4 className="font-medium text-gray-900">
+                <h4 className="text-sm font-medium text-gray-900">
                   Fixed Percentage Configuration
                 </h4>
 
@@ -1113,7 +1116,7 @@ function ControlGroupConfigModal({
           {config.type === "with_control_group" &&
             config.control_group_method === "fixed_number" && (
               <div className="space-y-4 p-4 rounded-md">
-                <h4 className="font-medium text-gray-900">
+                <h4 className="text-sm font-medium text-gray-900">
                   Fixed Number Configuration
                 </h4>
 
@@ -1149,7 +1152,7 @@ function ControlGroupConfigModal({
           {/* Multiple Control Group Selection */}
           {config.type === "multiple_control_group" && (
             <div className="space-y-4 p-4">
-              <h4 className="font-medium text-gray-900">
+              <h4 className="text-sm font-medium text-gray-900">
                 Select Universal Control Group
               </h4>
 
@@ -1182,7 +1185,7 @@ function ControlGroupConfigModal({
                         className="mt-1 w-4 h-4 text-[#588157] border-gray-300 focus:ring-[#588157]"
                       />
                       <div className="flex-1">
-                        <div className="font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900">
                           {group.name}
                         </div>
                         <div className="text-sm text-gray-500">
@@ -1204,7 +1207,7 @@ function ControlGroupConfigModal({
           {config.type === "with_control_group" &&
             config.control_group_method === "advanced_parameters" && (
               <div className="space-y-4 p-4 rounded-md">
-                <h4 className="font-medium text-gray-900">
+                <h4 className="text-sm font-medium text-gray-900">
                   Advanced Parameters
                 </h4>
 

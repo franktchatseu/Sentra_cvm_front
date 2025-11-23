@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { offerService } from "../services/offerService";
 import { buildApiUrl, API_CONFIG } from "../../../shared/services/api";
 import {
@@ -895,19 +895,17 @@ function OfferCategoriesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteCategory = async (category: OfferCategoryType) => {
-    const confirmed = await confirm({
-      title: "Delete Category",
-      message: `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleDeleteCategory = (category: OfferCategoryType) => {
+    setCategoryToDelete(category);
+    setShowDeleteModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await offerCategoryService.deleteCategory(category.id);
+      await offerCategoryService.deleteCategory(categoryToDelete.id);
 
       // Refresh from server to ensure cache is cleared
       await loadAllOffers();
@@ -916,15 +914,24 @@ function OfferCategoriesPage() {
 
       success(
         "Category Deleted",
-        `"${category.name}" has been deleted successfully.`
+        `"${categoryToDelete.name}" has been deleted successfully.`
       );
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
     } catch (err) {
       // Error"Error deleting category:", err);
       showError(
         "Error",
         err instanceof Error ? err.message : "Failed to delete category"
       );
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
   };
 
   const handleViewOffers = (category: OfferCategoryType) => {
@@ -1747,6 +1754,19 @@ function OfferCategoriesPage() {
           </div>,
           document.body
         )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Category"
+        description="Are you sure you want to delete this category? This action cannot be undone."
+        itemName={categoryToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Category"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

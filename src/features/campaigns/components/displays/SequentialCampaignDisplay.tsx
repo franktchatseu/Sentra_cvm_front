@@ -16,7 +16,7 @@ export default function SequentialCampaignDisplay({
   onConfigureControlGroup,
 }: SequentialCampaignDisplayProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       {!segment && (
         <div className="text-sm text-gray-600 mb-2">
           {campaignType === "round_robin"

@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { campaignService } from "../services/campaignService";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { BackendCampaignType } from "../types/campaign";
 import {
@@ -187,8 +187,11 @@ function CategoryModal({
 
 export default function CampaignCategoriesPage() {
   const navigate = useNavigate();
-  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<CampaignCategory | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [campaignCategories, setCampaignCategories] = useState<
     CampaignCategory[]
@@ -460,29 +463,36 @@ export default function CampaignCategoriesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteCategory = async (category: CampaignCategory) => {
-    const confirmed = await confirm({
-      title: "Delete Category",
-      message: `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleDeleteCategory = (category: CampaignCategory) => {
+    setCategoryToDelete(category);
+    setShowDeleteModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await campaignService.deleteCampaignCategory(category.id);
+      await campaignService.deleteCampaignCategory(categoryToDelete.id);
       // Refresh from server to ensure cache is cleared
       await loadCategories(true); // skipCache = true
       showToast(
         "Category Deleted",
-        `"${category.name}" has been deleted successfully.`
+        `"${categoryToDelete.name}" has been deleted successfully.`
       );
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
     } catch (err) {
       console.error("Failed to delete category:", err);
       showError("Failed to delete category", "Please try again later.");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
   };
 
   const handleCategorySaved = async (categoryData: {
@@ -1046,6 +1056,19 @@ export default function CampaignCategoriesPage() {
             {campaign.status || "unknown"}
           </span>
         )}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Category"
+        description="Are you sure you want to delete this category? This action cannot be undone."
+        itemName={categoryToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Category"
+        cancelText="Cancel"
       />
     </div>
   );

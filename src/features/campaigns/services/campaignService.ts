@@ -93,9 +93,24 @@ class CampaignService {
         url,
         params: options.body,
       });
-      throw new Error(
-        `HTTP error! status: ${response.status}, details: ${errorBody}`
-      );
+
+      // Try to parse error message from JSON response
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = JSON.parse(errorBody);
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else {
+          errorMessage = `HTTP error! status: ${response.status}, details: ${errorBody}`;
+        }
+      } catch {
+        // If not JSON, use the raw error body
+        errorMessage = errorBody || `HTTP error! status: ${response.status}`;
+      }
+
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -139,14 +154,11 @@ class CampaignService {
   async createCampaign(
     request: CreateCampaignRequest
   ): Promise<CreateCampaignResponse> {
-    console.log("Creating campaign:", { request, url: `${BASE_URL}/` });
-
     const response = await this.request<CreateCampaignResponse>("/", {
       method: "POST",
       body: JSON.stringify(request),
     });
 
-    console.log("Campaign created:", response);
     return response;
   }
 
@@ -161,7 +173,6 @@ class CampaignService {
   }
 
   async deleteCampaign(id: number, deletedBy: number = 1): Promise<void> {
-    console.log("Deleting campaign:", { id, deletedBy });
     return this.request<void>(`/${id}`, {
       method: "DELETE",
       body: JSON.stringify({

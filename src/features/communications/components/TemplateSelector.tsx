@@ -4,6 +4,7 @@ import { color } from "../../../shared/utils/utils";
 import { MessageTemplate } from "../types/template";
 import { CommunicationChannel } from "../types/communication";
 import { templateService } from "../services/templateService";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
 interface TemplateSelectorProps {
   channel: CommunicationChannel;
@@ -20,6 +21,8 @@ export default function TemplateSelector({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] =
     useState<MessageTemplate | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -37,13 +40,24 @@ export default function TemplateSelector({
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this template?")) {
-      templateService.deleteTemplate(id);
-      loadTemplates();
-      if (selectedId === id) {
-        setSelectedId(null);
-      }
+    setTemplateToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!templateToDelete) return;
+    templateService.deleteTemplate(templateToDelete);
+    loadTemplates();
+    if (selectedId === templateToDelete) {
+      setSelectedId(null);
     }
+    setShowDeleteModal(false);
+    setTemplateToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setTemplateToDelete(null);
   };
 
   const handlePreview = (template: MessageTemplate, e: React.MouseEvent) => {
@@ -199,6 +213,19 @@ export default function TemplateSelector({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Template"
+        description="Are you sure you want to delete this template? This action cannot be undone."
+        itemName={templates.find((t) => t.id === templateToDelete)?.name || ""}
+        isLoading={false}
+        confirmText="Delete Template"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

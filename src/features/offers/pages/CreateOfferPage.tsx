@@ -12,7 +12,6 @@ import {
   Target,
   DollarSign,
   ArrowLeft,
-  Check,
   Gift,
   Palette,
   BarChart,
@@ -35,6 +34,9 @@ import MultiCategorySelector from "../../../shared/components/MultiCategorySelec
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
+import ProgressStepper, {
+  Step,
+} from "../../../shared/components/ui/ProgressStepper";
 
 // Import the types from offerCreative instead of defining locally
 import { OfferCreative } from "../types/offerCreative";
@@ -161,7 +163,7 @@ interface StepProps {
 }
 
 // Step definitions for offer creation
-const steps = [
+const steps: Step[] = [
   {
     id: 1,
     name: "Basic Info",
@@ -205,7 +207,7 @@ function BasicInfoStep({
   setFormData,
   validationErrors,
   clearValidationErrors,
-  offerCategories,
+  offerCategories: _offerCategories, // eslint-disable-line @typescript-eslint/no-unused-vars
   categoriesLoading,
 }: Omit<
   StepProps,
@@ -225,9 +227,16 @@ function BasicInfoStep({
   | "onCancel"
 >) {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const userInitiatedUpdateRef = useRef(false);
 
-  // Initialize selectedCategoryIds from formData.category_id
+  // Initialize selectedCategoryIds from formData.category_id (only on mount or when formData changes externally)
   useEffect(() => {
+    // Skip if this update was triggered by user selecting categories
+    if (userInitiatedUpdateRef.current) {
+      userInitiatedUpdateRef.current = false;
+      return;
+    }
+
     if (
       formData.category_id &&
       !selectedCategoryIds.includes(formData.category_id)
@@ -236,19 +245,22 @@ function BasicInfoStep({
     } else if (!formData.category_id && selectedCategoryIds.length > 0) {
       setSelectedCategoryIds([]);
     }
-  }, [formData.category_id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.category_id]); // Only depend on formData.category_id to avoid circular updates
 
   // Update formData.category_id when selectedCategoryIds changes (use first one)
   useEffect(() => {
     const firstCategoryId =
       selectedCategoryIds.length > 0 ? selectedCategoryIds[0] : undefined;
     if (formData.category_id !== firstCategoryId) {
+      userInitiatedUpdateRef.current = true;
       setFormData((prev) => ({
         ...prev,
         category_id: firstCategoryId, // Send only first to backend
       }));
     }
-  }, [selectedCategoryIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategoryIds]); // Only depend on selectedCategoryIds to avoid circular updates
   return (
     <div className="space-y-6">
       <div className="mt-8 mb-8">
@@ -370,16 +382,19 @@ function BasicInfoStep({
           </label>
           <MultiCategorySelector
             value={selectedCategoryIds}
-            onChange={setSelectedCategoryIds}
+            onChange={(ids) => {
+              userInitiatedUpdateRef.current = true;
+              setSelectedCategoryIds(ids);
+            }}
             placeholder="Select catalog(s)"
             entityType="offer"
             disabled={categoriesLoading}
             className="w-full"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          {/* <p className="text-xs text-gray-500 mt-1">
             You can select multiple catalogs. Only the first one will be saved
             to the backend.
-          </p>
+          </p> */}
           {validationErrors?.category_id && (
             <p className="mt-1 text-sm text-red-600">
               {validationErrors.category_id}
@@ -1590,12 +1605,6 @@ export default function CreateOfferPage() {
     ]
   );
 
-  const getStepStatus = (stepId: number) => {
-    if (stepId < currentStep) return "completed";
-    if (stepId === currentStep) return "current";
-    return "upcoming";
-  };
-
   // Render step directly in JSX instead of memoizing to avoid dependency issues
 
   // Show loading state while loading offer data (after all hooks)
@@ -1675,121 +1684,15 @@ export default function CreateOfferPage() {
           </div>
 
           {/* Sticky Progress Navigation */}
-          <nav
-            aria-label="Progress"
-            className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200"
-          >
-            {/* Mobile - Simple dots */}
-            <div className="md:hidden flex items-center justify-center gap-2">
-              {steps.map((step) => {
-                const status = getStepStatus(step.id);
-                return (
-                  <button
-                    key={step.id}
-                    onClick={() => handleStepClick(step.id)}
-                    disabled={!canNavigateToStep(step.id)}
-                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                      status === "completed" || status === "current"
-                        ? "w-8"
-                        : ""
-                    }`}
-                    style={{
-                      backgroundColor:
-                        status === "completed" || status === "current"
-                          ? color.primary.action
-                          : "#d1d5db",
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Desktop - Full stepper */}
-            <div className="hidden md:flex items-center justify-between w-full relative">
-              {/* Background line - starts after first circle, ends before last circle */}
-              <div
-                className="absolute top-4 h-0.5 bg-gray-200"
-                style={{
-                  left: "1rem", // Start after first circle (half of 32px/2rem circle)
-                  right: "1rem", // End before last circle (half of 32px/2rem circle)
-                  zIndex: 0,
-                }}
-              />
-
-              {/* Progress line for completed steps */}
-              {currentStep > 1 && (
-                <div
-                  className="absolute top-4 h-0.5 transition-all duration-500"
-                  style={{
-                    left: "1rem", // Start after first circle
-                    width: `calc((100% - 2rem) * ${
-                      (currentStep - 1) / (steps.length - 1)
-                    })`, // Proportional width
-                    backgroundColor: color.primary.action,
-                    zIndex: 1,
-                  }}
-                />
-              )}
-
-              {steps.map((step, stepIdx) => {
-                const status = getStepStatus(step.id);
-                const Icon = step.icon;
-
-                return (
-                  <div key={step.id} className="relative z-10">
-                    <button
-                      onClick={() => handleStepClick(step.id)}
-                      className="relative flex flex-col items-center group"
-                      disabled={!canNavigateToStep(step.id)}
-                    >
-                      <div
-                        className={`
-                        flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
-                        ${
-                          status === "completed"
-                            ? `bg-[${color.primary.action}] border-[${color.primary.action}] text-white`
-                            : status === "current"
-                            ? `bg-white border-[${color.primary.action}] text-[${color.primary.action}]`
-                            : "bg-white border-gray-300 text-gray-400"
-                        }
-                        ${
-                          step.id <= currentStep + 2
-                            ? "cursor-pointer hover:scale-110"
-                            : "cursor-not-allowed"
-                        }
-                      `}
-                      >
-                        {status === "completed" ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <Icon className="w-4 h-4" />
-                        )}
-                      </div>
-
-                      <div className="mt-2 text-center">
-                        <div
-                          className={`text-sm font-medium ${
-                            status === "current"
-                              ? `text-[${color.primary.action}]`
-                              : status === "completed"
-                              ? tw.textPrimary
-                              : tw.textMuted
-                          }`}
-                        >
-                          {step.name}
-                        </div>
-                        <div
-                          className={`text-xs mt-1 hidden lg:block ${tw.textMuted}`}
-                        >
-                          {step.description}
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </nav>
+          <ProgressStepper
+            steps={steps}
+            currentStep={currentStep}
+            onStepClick={handleStepClick}
+            canNavigateToStep={canNavigateToStep}
+            primaryColor={color.primary.action}
+            textPrimary={tw.textPrimary}
+            textMuted={tw.textMuted}
+          />
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">

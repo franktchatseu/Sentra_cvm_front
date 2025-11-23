@@ -21,10 +21,10 @@ import {
 import { Segment } from "../types/segment";
 import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, button } from "../../../shared/utils/utils";
 import SegmentModal from "../components/SegmentModal";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
 // Mock data for testing
 const MOCK_SEGMENT: Segment = {
@@ -61,7 +61,8 @@ export default function SegmentDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { success, error: showError } = useToast();
-  const { confirm } = useConfirm();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Check if we came from a catalog modal
   const returnTo = (
@@ -780,30 +781,33 @@ export default function SegmentDetailsPage() {
     loadSegment();
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    if (!segment) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (!segment) return;
 
-    const confirmed = await confirm({
-      title: "Delete Segment",
-      message: `Are you sure you want to delete "${segment.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
-
-    if (!confirmed) return;
-
+    setIsDeleting(true);
     try {
       await segmentService.deleteSegment(Number(id));
       success(
         "Segment deleted",
         `Segment "${segment.name}" has been deleted successfully`
       );
+      setShowDeleteModal(false);
       navigate("/dashboard/segments");
     } catch (err) {
       console.error("Failed to delete segment:", err);
       showError("Error deleting segment", "Please try again later.");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const handleCustomExport = async () => {
@@ -2009,6 +2013,19 @@ export default function SegmentDetailsPage() {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSegmentSaved}
         segment={segment}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Segment"
+        description="Are you sure you want to delete this segment? This action cannot be undone."
+        itemName={segment?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Segment"
+        cancelText="Cancel"
       />
     </div>
   );

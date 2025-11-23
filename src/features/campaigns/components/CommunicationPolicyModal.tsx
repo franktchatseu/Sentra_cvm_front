@@ -190,7 +190,7 @@ export default function CommunicationPolicyModal({
                   startTime: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm transition-all"
             />
           </div>
           <div>
@@ -206,7 +206,7 @@ export default function CommunicationPolicyModal({
                   endTime: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm transition-all"
             />
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function CommunicationPolicyModal({
                   type: e.target.value as "daily" | "weekly" | "monthly",
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm bg-white transition-all"
             >
               <option value="daily">Daily Maximum</option>
               <option value="weekly">Weekly Maximum</option>
@@ -285,7 +285,7 @@ export default function CommunicationPolicyModal({
                   maxCount: parseInt(e.target.value) || 1,
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm transition-all"
             />
           </div>
         </div>
@@ -426,7 +426,7 @@ export default function CommunicationPolicyModal({
                   action: e.target.value as "include" | "exclude",
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm bg-white transition-all"
             >
               <option value="include">Include VIP List</option>
               <option value="exclude">Exclude VIP List</option>
@@ -446,7 +446,7 @@ export default function CommunicationPolicyModal({
                   priority: parseInt(e.target.value) || 1,
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm transition-all"
             />
           </div>
         </div>
@@ -481,8 +481,15 @@ export default function CommunicationPolicyModal({
           type="button"
           onClick={() => toggleSection(type)}
           className={`w-full px-4 py-4 flex items-center justify-between transition-all duration-200 rounded-md ${
-            isExpanded ? "bg-blue-50" : "bg-white hover:bg-gray-50"
+            isExpanded ? "" : "bg-white hover:bg-gray-50"
           }`}
+          style={
+            isExpanded
+              ? {
+                  backgroundColor: `${color.primary.accent}05`,
+                }
+              : {}
+          }
         >
           <div className="flex items-center gap-3">
             <div
@@ -577,7 +584,7 @@ export default function CommunicationPolicyModal({
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm transition-all"
                   placeholder="Enter policy name"
                   required
                 />
@@ -590,7 +597,7 @@ export default function CommunicationPolicyModal({
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm resize-none transition-all"
                   placeholder="Enter policy description"
                   rows={3}
                 />
@@ -607,7 +614,7 @@ export default function CommunicationPolicyModal({
                     onClick={() =>
                       setIsChannelDropdownOpen(!isChannelDropdownOpen)
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-md text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-md text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm transition-all bg-white"
                   >
                     <div className="flex items-center space-x-2">
                       {channels.length === 0 ? (

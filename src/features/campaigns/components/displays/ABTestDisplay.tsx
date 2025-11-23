@@ -16,13 +16,13 @@ export default function ABTestDisplay({
   onConfigureControlGroup,
 }: ABTestDisplayProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       <div className="text-sm text-gray-600 mb-2">
         Configure A and B variants for testing
       </div>
 
       {/* A/B Test Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Variant A */}
         <div>
           {variantA ? (

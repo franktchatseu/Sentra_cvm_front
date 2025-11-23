@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronDown, Search, Plus, X, Check } from "lucide-react";
 import { ProductCategory } from "../../features/products/types/productCategory";
 import { productCategoryService } from "../../features/products/services/productCategoryService";
@@ -24,7 +24,7 @@ export default function MultiCategorySelector({
   disabled = false,
   allowCreate = false,
   onCreateCategory,
-//   onCategoryCreated,
+  //   onCategoryCreated,
   className = "",
   refreshTrigger,
   entityType = "product",
@@ -37,10 +37,6 @@ export default function MultiCategorySelector({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    loadCategories();
-  }, [refreshTrigger, entityType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,7 +59,7 @@ export default function MultiCategorySelector({
     }
   }, [isOpen]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -122,7 +118,11 @@ export default function MultiCategorySelector({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [entityType]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [refreshTrigger, loadCategories]);
 
   const filteredCategories = categories.filter(
     (category) =>
@@ -153,15 +153,15 @@ export default function MultiCategorySelector({
     setSearchTerm("");
   };
 
-//   const getDisplayText = () => {
-//     if (selectedCategories.length === 0) {
-//       return placeholder;
-//     }
-//     if (selectedCategories.length === 1) {
-//       return selectedCategories[0].name;
-//     }
-//     return `${selectedCategories.length} catalogs selected`;
-//   };
+  //   const getDisplayText = () => {
+  //     if (selectedCategories.length === 0) {
+  //       return placeholder;
+  //     }
+  //     if (selectedCategories.length === 1) {
+  //       return selectedCategories[0].name;
+  //     }
+  //     return `${selectedCategories.length} catalogs selected`;
+  //   };
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -195,17 +195,28 @@ export default function MultiCategorySelector({
                   {selectedCategories.slice(0, 2).map((cat) => (
                     <span
                       key={cat.id}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 border text-xs font-medium rounded-full"
+                      style={{
+                        borderColor: color.primary.accent,
+                        color: color.primary.accent,
+                      }}
                     >
                       {cat.name}
-                      <button
-                        type="button"
+                      <span
                         onClick={(e) => handleRemove(cat.id, e)}
-                        className="hover:bg-blue-200 rounded-full p-0.5"
-                        disabled={disabled}
+                        className="hover:opacity-70 rounded-full p-0.5 cursor-pointer transition-opacity"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleRemove(cat.id, e as any);
+                          }
+                        }}
+                        aria-label={`Remove ${cat.name}`}
                       >
                         <X className="w-3 h-3" />
-                      </button>
+                      </span>
                     </span>
                   ))}
                   {selectedCategories.length > 2 && (
@@ -215,7 +226,7 @@ export default function MultiCategorySelector({
                   )}
                 </div>
               ) : (
-                <span className="text-gray-500">{placeholder}</span>
+                <span className="text-sm text-gray-500">{placeholder}</span>
               )}
             </div>
             <ChevronDown
@@ -254,7 +265,7 @@ export default function MultiCategorySelector({
                 placeholder="Search categories..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
               />
             </div>
           </div>
@@ -282,7 +293,7 @@ export default function MultiCategorySelector({
                       onClick={() => handleToggle(category.id)}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center justify-between ${
                         isSelected
-                          ? "bg-blue-50 text-blue-700"
+                          ? "bg-gray-50 text-gray-900"
                           : "text-gray-900"
                       }`}
                     >
@@ -290,7 +301,7 @@ export default function MultiCategorySelector({
                         <div
                           className={`w-4 h-4 border-2 rounded flex items-center justify-center flex-shrink-0 ${
                             isSelected
-                              ? "border-blue-600 bg-blue-600"
+                              ? "border-black bg-black"
                               : "border-gray-300"
                           }`}
                         >

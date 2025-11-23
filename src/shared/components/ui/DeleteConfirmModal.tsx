@@ -4,6 +4,7 @@ import {
   ExclamationTriangleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { color } from "../../utils/utils";
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface DeleteConfirmModalProps {
   isLoading?: boolean;
   confirmText?: string;
   cancelText?: string;
+  variant?: "delete" | "warning";
 }
 
 export default function DeleteConfirmModal({
@@ -27,7 +29,10 @@ export default function DeleteConfirmModal({
   isLoading = false,
   confirmText = "Delete",
   cancelText = "Cancel",
+  variant = "delete",
 }: DeleteConfirmModalProps) {
+  const isWarning = variant === "warning";
+  const actionColor = color.primary.action; // Action color from tokens
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -40,7 +45,7 @@ export default function DeleteConfirmModal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" />
         </Transition.Child>
 
         <div className="fixed inset-0 z-10 overflow-y-auto">
@@ -66,9 +71,17 @@ export default function DeleteConfirmModal({
                   </button>
                 </div>
                 <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                  <div
+                    className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
+                      isWarning ? "" : "bg-red-100"
+                    }`}
+                    style={
+                      isWarning ? { backgroundColor: `${actionColor}20` } : {}
+                    }
+                  >
                     <ExclamationTriangleIcon
-                      className="h-6 w-6 text-red-600"
+                      className={`h-6 w-6 ${isWarning ? "" : "text-red-600"}`}
+                      style={isWarning ? { color: actionColor } : {}}
                       aria-hidden="true"
                     />
                   </div>
@@ -90,11 +103,37 @@ export default function DeleteConfirmModal({
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                   <button
                     type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isWarning
+                        ? ""
+                        : "bg-red-600 hover:bg-red-500 focus-visible:outline-red-600"
+                    }`}
+                    style={
+                      isWarning
+                        ? {
+                            backgroundColor: actionColor,
+                          }
+                        : {}
+                    }
+                    onMouseEnter={(e) => {
+                      if (isWarning && !isLoading) {
+                        // Slightly lighter for hover on dark action color
+                        e.currentTarget.style.backgroundColor = "#3a3d3f";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (isWarning && !isLoading) {
+                        e.currentTarget.style.backgroundColor = actionColor;
+                      }
+                    }}
                     onClick={onConfirm}
                     disabled={isLoading}
                   >
-                    {isLoading ? "Deleting..." : confirmText}
+                    {isLoading
+                      ? isWarning
+                        ? "Processing..."
+                        : "Deleting..."
+                      : confirmText}
                   </button>
                   <button
                     type="button"

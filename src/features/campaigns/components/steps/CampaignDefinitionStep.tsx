@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Search, Settings, Plus, X } from "lucide-react";
+import { ChevronDown, Search, Settings, Plus, X, Signal } from "lucide-react";
 import MultiCategorySelector from "../../../../shared/components/MultiCategorySelector";
 import { CreateCampaignRequest } from "../../types/campaign";
 import { campaignService } from "../../services/campaignService";
@@ -151,8 +151,17 @@ export default function CampaignDefinitionStep({
     fetchCategories();
   }, []);
 
-  // Initialize selectedCategoryIds from formData.category_id
+  // Track if update is from user action to prevent infinite loops
+  const isUserUpdateRef = useRef(false);
+
+  // Initialize selectedCategoryIds from formData.category_id (only on mount or external changes)
   useEffect(() => {
+    // Skip if this update came from user action
+    if (isUserUpdateRef.current) {
+      isUserUpdateRef.current = false;
+      return;
+    }
+
     if (
       formData.category_id &&
       !selectedCategoryIds.includes(formData.category_id)
@@ -168,6 +177,7 @@ export default function CampaignDefinitionStep({
     const firstCategoryId =
       selectedCategoryIds.length > 0 ? selectedCategoryIds[0] : undefined;
     if (formData.category_id !== firstCategoryId) {
+      isUserUpdateRef.current = true; // Mark as user update
       setFormData((prev) => ({
         ...prev,
         category_id: firstCategoryId, // Send only first to backend
@@ -354,10 +364,6 @@ export default function CampaignDefinitionStep({
               entityType="campaign"
               className="w-full"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              You can select multiple catalogs. Only the first one will be saved
-              to the backend.
-            </p>
           </div>
         </div>
 
@@ -375,12 +381,12 @@ export default function CampaignDefinitionStep({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
                 <span
-                  className={
+                  className={`text-sm ${
                     (formData as { line_of_business_id?: number })
                       .line_of_business_id
                       ? "text-gray-900"
                       : "text-gray-500"
-                  }
+                  }`}
                 >
                   {(formData as { line_of_business_id?: number })
                     .line_of_business_id
@@ -480,11 +486,11 @@ export default function CampaignDefinitionStep({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
                 <span
-                  className={
+                  className={`text-sm ${
                     (formData as { department_id?: number }).department_id
                       ? "text-gray-900"
                       : "text-gray-500"
-                  }
+                  }`}
                 >
                   {(formData as { department_id?: number }).department_id
                     ? departmentsData.find(
@@ -602,13 +608,17 @@ export default function CampaignDefinitionStep({
                   {formData.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full"
+                      className="inline-flex items-center px-3 py-1 border text-sm font-medium rounded-full"
+                      style={{
+                        borderColor: color.primary.accent,
+                        color: color.primary.accent,
+                      }}
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-2 hover:text-green-900"
+                        className="ml-2 hover:opacity-70 transition-opacity"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -633,11 +643,11 @@ export default function CampaignDefinitionStep({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
                 <span
-                  className={
+                  className={`text-sm ${
                     (formData as { program_id?: number }).program_id
                       ? "text-gray-900"
                       : "text-gray-500"
-                  }
+                  }`}
                 >
                   {(formData as { program_id?: number }).program_id
                     ? programs.find(
@@ -735,9 +745,9 @@ export default function CampaignDefinitionStep({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
               >
                 <span
-                  className={
+                  className={`text-sm ${
                     formData.objective ? "text-gray-900" : "text-gray-500"
-                  }
+                  }`}
                 >
                   {formData.objective
                     ? objectiveOptions.find(
@@ -821,35 +831,77 @@ export default function CampaignDefinitionStep({
             </label>
             <div className="flex items-center gap-2">
               {[
-                { value: "low", label: "Low", icon: "⬇️" },
-                { value: "medium", label: "Medium", icon: "➡️" },
-                { value: "high", label: "High", icon: "⬆️" },
-                { value: "critical", label: "Critical", icon: "🚨" },
-              ].map((priority) => (
-                <button
-                  key={priority.value}
-                  type="button"
-                  onClick={() =>
-                    setFormData({
-                      ...formData,
-                      priority: priority.value as
-                        | "low"
-                        | "medium"
-                        | "high"
-                        | "critical",
-                      priority_rank: 1,
-                    })
-                  }
-                  className={`flex-1 px-2 py-2.5 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1 min-h-[42px] ${
-                    formData.priority === priority.value
-                      ? "bg-[#588157] text-white shadow-sm"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <span className="text-xs">{priority.icon}</span>
-                  <span className="hidden sm:inline">{priority.label}</span>
-                </button>
-              ))}
+                {
+                  value: "low",
+                  label: "Low",
+                  bars: 1,
+                  color: "text-blue-600",
+                },
+                {
+                  value: "medium",
+                  label: "Medium",
+                  bars: 2,
+                  color: "text-yellow-600",
+                },
+                {
+                  value: "high",
+                  label: "High",
+                  bars: 3,
+                  color: "text-orange-600",
+                },
+                {
+                  value: "critical",
+                  label: "Critical",
+                  bars: 4,
+                  color: "text-red-600",
+                },
+              ].map((priority) => {
+                const isSelected = formData.priority === priority.value;
+                return (
+                  <button
+                    key={priority.value}
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        priority: priority.value as
+                          | "low"
+                          | "medium"
+                          | "high"
+                          | "critical",
+                        priority_rank: 1,
+                      })
+                    }
+                    className={`flex-1 px-3 py-2.5 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[42px] border ${
+                      isSelected
+                        ? "border-black bg-white text-gray-900 shadow-sm"
+                        : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-end gap-0.5 h-4">
+                      {[1, 2, 3, 4].map((barNum) => (
+                        <div
+                          key={barNum}
+                          className={`transition-all ${
+                            barNum <= priority.bars
+                              ? isSelected
+                                ? priority.color
+                                : priority.color
+                              : "opacity-20 " + priority.color
+                          }`}
+                          style={{
+                            width: "3px",
+                            height: `${barNum * 3}px`,
+                            backgroundColor: "currentColor",
+                            borderRadius: "1px",
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <span className="hidden sm:inline">{priority.label}</span>
+                  </button>
+                );
+              })}
             </div>
             {/* Priority Rank - Only shows when priority is selected */}
             {formData.priority && (
@@ -868,10 +920,10 @@ export default function CampaignDefinitionStep({
                       onClick={() =>
                         setFormData({ ...formData, priority_rank: rank })
                       }
-                      className={`w-8 h-8 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center ${
+                      className={`w-8 h-8 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center border ${
                         formData.priority_rank === rank
-                          ? "bg-[#588157] text-white shadow-sm"
-                          : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
+                          ? "bg-black text-white border-black shadow-sm"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                       }`}
                     >
                       {rank}
@@ -909,7 +961,7 @@ export default function CampaignDefinitionStep({
                     }`}
                   ></div>
                 )}
-                <span>
+                <span className="text-sm">
                   {selectedPolicy
                     ? selectedPolicy.name
                     : "Choose a communication policy (optional)"}
@@ -1013,6 +1065,34 @@ export default function CampaignDefinitionStep({
           />
         </div>
 
+        {/* Budget Allocation */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Budget Allocated *
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+              $
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.budget_allocated || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData({
+                  ...formData,
+                  budget_allocated: value ? parseFloat(value) : undefined,
+                });
+              }}
+              className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              placeholder="0.00"
+              required
+            />
+          </div>
+        </div>
+
         {/* Campaign Schedule */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
@@ -1032,7 +1112,15 @@ export default function CampaignDefinitionStep({
                   : undefined;
                 setFormData({ ...formData, start_date: dateValue });
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              onClick={(e) => {
+                // Trigger date picker on click
+                (e.target as HTMLInputElement).showPicker?.();
+              }}
+              onFocus={(e) => {
+                // Show picker when focused
+                (e.target as HTMLInputElement).showPicker?.();
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm cursor-pointer"
             />
             <p className="text-xs text-gray-500 mt-1">
               When should this campaign start?
@@ -1056,7 +1144,15 @@ export default function CampaignDefinitionStep({
                   : undefined;
                 setFormData({ ...formData, end_date: dateValue });
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              onClick={(e) => {
+                // Trigger date picker on click
+                (e.target as HTMLInputElement).showPicker?.();
+              }}
+              onFocus={(e) => {
+                // Show picker when focused
+                (e.target as HTMLInputElement).showPicker?.();
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm cursor-pointer"
               min={
                 formData.start_date
                   ? new Date(formData.start_date).toISOString().slice(0, 16)

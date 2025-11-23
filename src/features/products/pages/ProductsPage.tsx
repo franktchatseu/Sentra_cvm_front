@@ -24,8 +24,8 @@ import { productCategoryService } from "../services/productCategoryService";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
 interface ProductFilters {
   search?: string;
@@ -59,8 +59,13 @@ export default function ProductsPage() {
   } | null>(null);
   const [topSelling, setTopSelling] = useState<Product[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
-  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadCategories = async () => {
     try {
@@ -203,31 +208,37 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (productId: string) => {
+  const handleDelete = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     const productName = product?.name || "this product";
+    setProductToDelete({ id: productId, name: productName });
+    setShowDeleteModal(true);
+  };
 
-    const confirmed = await confirm({
-      title: "Delete Product",
-      message: `Are you sure you want to delete "${productName}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
 
-    if (!confirmed) return;
-
+    setIsDeleting(true);
     try {
-      await productService.deleteProduct(Number(productId));
+      await productService.deleteProduct(Number(productToDelete.id));
       showToast(
         "Product Deleted",
-        `"${productName}" has been deleted successfully.`
+        `"${productToDelete.name}" has been deleted successfully.`
       );
+      setShowDeleteModal(false);
+      setProductToDelete(null);
       loadProducts();
     } catch (err) {
       console.error("Failed to delete product:", err);
       showError("Error", "Failed to delete product. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setProductToDelete(null);
   };
 
   return (
@@ -725,6 +736,19 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Product"
+        description="Are you sure you want to delete this product? This action cannot be undone."
+        itemName={productToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Product"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

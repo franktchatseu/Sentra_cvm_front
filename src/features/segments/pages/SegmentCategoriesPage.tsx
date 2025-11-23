@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { segmentService } from "../services/segmentService";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import {
   SegmentCategory,
   CreateSegmentCategoryRequest,
@@ -418,8 +418,11 @@ function SegmentsModal({
 
 export default function SegmentCategoriesPage() {
   const navigate = useNavigate();
-  const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<SegmentCategory | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [categories, setCategories] = useState<SegmentCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -597,28 +600,24 @@ export default function SegmentCategoriesPage() {
     }
   };
 
-  const handleDeleteCategory = async (category: SegmentCategory) => {
-    const segmentCount = segmentCounts[category.id] || 0;
+  const handleDeleteCategory = (category: SegmentCategory) => {
+    setCategoryToDelete(category);
+    setShowDeleteModal(true);
+  };
 
-    const confirmed = await confirm({
-      title: "Delete Segment Catalog",
-      message:
-        segmentCount > 0
-          ? `This catalog contains ${segmentCount} segment(s). Deleting it will unassign all segments. Are you sure you want to continue?`
-          : `Are you sure you want to delete "${category.name}"?`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
 
-    if (!confirmed) return;
-
+    const segmentCount = segmentCounts[categoryToDelete.id] || 0;
+    setIsDeleting(true);
     try {
-      await segmentService.deleteSegmentCategory(category.id);
+      await segmentService.deleteSegmentCategory(categoryToDelete.id);
       success(
         "Catalog deleted",
-        `Segment catalog "${category.name}" has been deleted successfully`
+        `Segment catalog "${categoryToDelete.name}" has been deleted successfully`
       );
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
       // Refresh from server to ensure cache is cleared
       await loadCategories(true); // skipCache = true
     } catch (err) {
@@ -626,7 +625,14 @@ export default function SegmentCategoriesPage() {
         "Error deleting catalog",
         (err as Error).message || "Failed to delete segment catalog"
       );
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
   };
 
   const filteredCategories = categories.filter(
@@ -1020,6 +1026,25 @@ export default function SegmentCategoriesPage() {
         onRefreshCategories={async () => {
           await loadCategories(true); // skipCache = true
         }}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Segment Catalog"
+        description={
+          categoryToDelete && (segmentCounts[categoryToDelete.id] || 0) > 0
+            ? `This catalog contains ${
+                segmentCounts[categoryToDelete.id]
+              } segment(s). Deleting it will unassign all segments. Are you sure you want to continue?`
+            : "Are you sure you want to delete this catalog? This action cannot be undone."
+        }
+        itemName={categoryToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Catalog"
+        cancelText="Cancel"
       />
     </div>
   );

@@ -18,8 +18,8 @@ import { userService } from "../../users/services/userService";
 import { accountService } from "../../account/services/accountService";
 import { UserType, PaginatedResponse } from "../../users/types/user";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import UserModal from "./UserModal";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, components } from "../../../shared/utils/utils";
@@ -95,7 +95,9 @@ export default function UserManagementPage() {
   });
 
   const { success, error: showError } = useToast();
-  const { confirm } = useConfirm();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { user: authUser } = useAuth();
   const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
@@ -630,35 +632,34 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleDeleteUser = async (user: UserType) => {
+  const handleDeleteUser = (user: UserType) => {
     if (!authUser?.user_id) {
       showError("Unable to delete user", "Your session is missing a user id.");
       return;
     }
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
 
-    const confirmed = await confirm({
-      title: "Delete User",
-      message: `Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleConfirmDelete = async () => {
+    if (!userToDelete || !authUser?.user_id) return;
 
-    if (!confirmed) return;
-
+    setIsDeleting(true);
     // Set loading state
     setLoadingActions((prev) => ({
       ...prev,
-      deleting: new Set([...prev.deleting, user.id]),
+      deleting: new Set([...prev.deleting, userToDelete.id]),
     }));
 
     try {
-      await userService.deleteUser(user.id, authUser.user_id);
+      await userService.deleteUser(userToDelete.id, authUser.user_id);
       await loadData({ skipCache: true }); // Skip cache to get fresh data
       success(
         "User deleted",
-        `${user.first_name} ${user.last_name} deleted successfully`
+        `${userToDelete.first_name} ${userToDelete.last_name} deleted successfully`
       );
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     } catch (err) {
       showError(
         "Error deleting user",
@@ -668,9 +669,17 @@ export default function UserManagementPage() {
       // Clear loading state
       setLoadingActions((prev) => ({
         ...prev,
-        deleting: new Set([...prev.deleting].filter((id) => id !== user.id)),
+        deleting: new Set(
+          [...prev.deleting].filter((id) => id !== userToDelete.id)
+        ),
       }));
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   };
 
   // Derived analytics helpers
@@ -2181,6 +2190,23 @@ export default function UserManagementPage() {
           setSelectedUser(null);
           loadData({ skipCache: true }); // Skip cache to get fresh data
         }}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete User"
+        description="Are you sure you want to delete this user? This action cannot be undone."
+        itemName={
+          userToDelete
+            ? `${userToDelete.first_name} ${userToDelete.last_name}`
+            : ""
+        }
+        isLoading={isDeleting}
+        confirmText="Delete User"
+        cancelText="Cancel"
       />
     </div>
   );

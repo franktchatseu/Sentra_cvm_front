@@ -4,6 +4,9 @@ import { ArrowLeft, Check, Target, Users, Gift, Eye } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import ProgressStepper, {
+  Step,
+} from "../../../shared/components/ui/ProgressStepper";
 import {
   CampaignSegment,
   CampaignOffer,
@@ -67,38 +70,30 @@ interface StepProps {
   onCancel?: () => void;
 }
 
-const steps = [
+const steps: Step[] = [
   {
     id: 1,
     name: "Definition",
     description: "Campaign goals & objectives",
     icon: Target,
-    color: "from-blue-100 to-indigo-100",
-    iconColor: "text-blue-600",
   },
   {
     id: 2,
     name: "Audience",
     description: "Segment configuration",
     icon: Users,
-    color: "from-emerald-100 to-teal-100",
-    iconColor: "text-emerald-600",
   },
   {
     id: 3,
     name: "Offers",
     description: "Offer selection & mapping",
     icon: Gift,
-    color: "from-purple-100 to-indigo-100",
-    iconColor: "text-purple-600",
   },
   {
     id: 4,
     name: "Preview",
     description: "Review & launch",
     icon: Eye,
-    color: "from-rose-100 to-pink-100",
-    iconColor: "text-rose-600",
   },
 ];
 
@@ -170,6 +165,13 @@ export default function CreateCampaignPage() {
           tags: campaign?.tags || [],
           // Load department_id if owner_team matches a department name
           department_id: campaign?.owner_team ? undefined : undefined, // Will be set in UI selection
+          // Load budget_allocated - convert string to number for the form
+          budget_allocated: campaign?.budget_allocated
+            ? parseFloat(campaign.budget_allocated)
+            : undefined,
+          // Load priority fields
+          priority: campaign?.priority || undefined,
+          priority_rank: campaign?.priority_rank || undefined,
         };
         setFormData(newFormData);
 
@@ -315,7 +317,10 @@ export default function CreateCampaignPage() {
         return (
           formData.name.trim() !== "" &&
           formData.objective !== undefined &&
-          formData.category_id !== undefined
+          formData.category_id !== undefined &&
+          formData.budget_allocated !== undefined &&
+          formData.budget_allocated !== null &&
+          Number(formData.budget_allocated) > 0
         );
       case 2: // Audience step
         return selectedSegments.length > 0;
@@ -471,6 +476,9 @@ export default function CreateCampaignPage() {
           ...(formData.end_date && { end_date: formData.end_date }),
           ...(tagsArray.length > 0 && { tags: tagsArray }),
           ...(ownerTeam && { owner_team: ownerTeam }),
+          ...(formData.budget_allocated && {
+            budget_allocated: String(formData.budget_allocated),
+          }),
         };
 
         await campaignService.updateCampaign(parseInt(id), updateData);
@@ -515,6 +523,9 @@ export default function CreateCampaignPage() {
           ...(formData.end_date && { end_date: formData.end_date }),
           ...(tagsArray.length > 0 && { tags: tagsArray }),
           ...(ownerTeam && { owner_team: ownerTeam }),
+          ...(formData.budget_allocated && {
+            budget_allocated: String(formData.budget_allocated),
+          }),
         };
         // New campaigns are created with status: 'draft' and approval_status: 'pending'
         const createResponse = await campaignService.createCampaign(
@@ -528,11 +539,29 @@ export default function CreateCampaignPage() {
           throw new Error("Campaign created but ID not returned");
         }
 
-        // Create Campaign-Segment-Offer mappings for Multiple Target campaigns
-        if (
-          formData.campaign_type === "multiple_target_group" &&
-          segmentOfferMappings.length > 0
-        ) {
+        // Save segments (Step 2) for all campaign types
+        if (selectedSegments.length > 0) {
+          try {
+            // Add each segment to the campaign
+            for (const segment of selectedSegments) {
+              await campaignService.addCampaignSegment(createdCampaignId, {
+                segment_id: parseInt(segment.id),
+                is_primary: segment.priority === 1,
+                include_exclude: segment.include_exclude || "include",
+                created_by: 1, // TODO: Get actual user ID from auth context
+              });
+            }
+          } catch (segmentError) {
+            console.error("Error saving segments:", segmentError);
+            showToast(
+              "warning",
+              "Campaign created but some segments failed to save. Please check the campaign details."
+            );
+          }
+        }
+
+        // Create Campaign-Segment-Offer mappings for all campaign types if mappings exist
+        if (segmentOfferMappings && segmentOfferMappings.length > 0) {
           try {
             const mappingsToCreate: CampaignSegmentOfferMapping[] =
               segmentOfferMappings.map((mapping) => ({
@@ -551,6 +580,7 @@ export default function CreateCampaignPage() {
               "Campaign created and mappings configured successfully!"
             );
           } catch (mappingError) {
+            console.error("Error saving mappings:", mappingError);
             showToast(
               "warning",
               "Campaign created but some mappings failed. Please check the campaign details."
@@ -585,21 +615,120 @@ export default function CreateCampaignPage() {
       // Generate unique code from campaign name
       const campaignCode = generateCampaignCode(formData.name);
 
+      // Get objective label from value
+      const objectiveOption = objectiveOptions.find(
+        (o: { value: string; label: string }) => o.value === formData.objective
+      );
+      const objectiveLabel = objectiveOption
+        ? objectiveOption.label
+        : formData.objective;
+
+      // Get tags array directly from formData
+      const tagsArray = formData.tags || [];
+
+      // Get department name from formData.department_id
+      const departmentId = (formData as { department_id?: number })
+        .department_id;
+      const department = departmentId
+        ? departmentsConfig.initialData.find(
+            (d: { id: number | string; name: string }) =>
+              Number(d.id) === Number(departmentId)
+          )
+        : undefined;
+      const ownerTeam = department?.name || undefined;
+
       const draftData: CreateCampaignRequest = {
         name: formData.name,
         code: campaignCode,
-        objective: formData.objective,
+        objective: objectiveLabel,
         status: "draft", // Explicitly set as draft
         created_by: 1, // TODO: Get actual user ID from auth context
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
+        ...(formData.program_id && { program_id: formData.program_id }),
         ...(formData.start_date && { start_date: formData.start_date }),
         ...(formData.end_date && { end_date: formData.end_date }),
+        ...(tagsArray.length > 0 && { tags: tagsArray }),
+        ...(ownerTeam && { owner_team: ownerTeam }),
+        ...(formData.budget_allocated && {
+          budget_allocated: String(formData.budget_allocated),
+        }),
+        ...(formData.campaign_type && {
+          campaign_type: formData.campaign_type,
+        }),
+        ...(formData.priority && { priority: formData.priority }),
+        ...(formData.priority_rank && {
+          priority_rank: formData.priority_rank,
+        }),
       };
 
-      await campaignService.createCampaign(draftData);
-      showToast("success", "Draft saved successfully!");
-    } catch {
+      let campaignId: number;
+
+      if (isEditMode && id) {
+        // Update existing campaign
+        await campaignService.updateCampaign(parseInt(id), draftData);
+        campaignId = parseInt(id);
+        showToast("success", "Draft updated successfully!");
+      } else {
+        // Create new campaign
+        const createResponse = await campaignService.createCampaign(draftData);
+        campaignId = createResponse?.data?.id;
+
+        if (!campaignId) {
+          throw new Error("Campaign created but ID not returned");
+        }
+        showToast("success", "Draft saved successfully!");
+      }
+
+      // Save segments (Step 2) if they exist
+      if (selectedSegments.length > 0 && campaignId) {
+        try {
+          // Add each segment to the campaign
+          for (const segment of selectedSegments) {
+            await campaignService.addCampaignSegment(campaignId, {
+              segment_id: parseInt(segment.id),
+              is_primary: segment.priority === 1,
+              include_exclude: segment.include_exclude || "include",
+              created_by: 1, // TODO: Get actual user ID from auth context
+            });
+          }
+        } catch (segmentError) {
+          console.error("Error saving segments:", segmentError);
+          showToast(
+            "warning",
+            "Campaign saved but some segments failed to save. Please check the campaign details."
+          );
+        }
+      }
+
+      // Save segment-offer mappings (Step 3) if they exist
+      if (
+        segmentOfferMappings &&
+        segmentOfferMappings.length > 0 &&
+        campaignId
+      ) {
+        try {
+          const mappingsToCreate: CampaignSegmentOfferMapping[] =
+            segmentOfferMappings.map((mapping) => ({
+              campaign_id: campaignId,
+              segment_id: mapping.segment_id,
+              offer_id: mapping.offer_id,
+              created_by: 1, // TODO: Get actual user ID from auth context
+            }));
+
+          await campaignSegmentOfferService.createBatchMappings(
+            mappingsToCreate
+          );
+        } catch (mappingError) {
+          console.error("Error saving mappings:", mappingError);
+          showToast(
+            "warning",
+            "Campaign saved but some offer mappings failed to save. Please check the campaign details."
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error saving draft:", error);
       showToast("error", "Failed to save draft. Please try again.");
     } finally {
       setIsSavingDraft(false);
@@ -681,12 +810,6 @@ export default function CreateCampaignPage() {
     }
   };
 
-  const getStepStatus = (stepNumber: number) => {
-    if (stepNumber < currentStep) return "completed";
-    if (stepNumber === currentStep) return "current";
-    return "pending";
-  };
-
   if (isLoadingCampaign) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -745,121 +868,15 @@ export default function CreateCampaignPage() {
           </div>
 
           {/* Sticky Progress Navigation */}
-          <nav
-            aria-label="Progress"
-            className="sticky top-16 z-20 bg-white py-6 border-b border-gray-200"
-          >
-            {/* Mobile - Simple dots */}
-            <div className="md:hidden flex items-center justify-center gap-2">
-              {steps.map((step) => {
-                const status = getStepStatus(step.id);
-                return (
-                  <button
-                    key={step.id}
-                    onClick={() => handleStepClick(step.id)}
-                    disabled={!canNavigateToStep(step.id)}
-                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                      status === "completed" || status === "current"
-                        ? "w-8"
-                        : ""
-                    }`}
-                    style={{
-                      backgroundColor:
-                        status === "completed" || status === "current"
-                          ? color.primary.action
-                          : "#d1d5db",
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Desktop - Full stepper */}
-            <div className="hidden md:flex items-center justify-between w-full relative">
-              {/* Background line - starts after first circle, ends before last circle */}
-              <div
-                className="absolute top-4 h-0.5 bg-gray-200"
-                style={{
-                  left: "1rem", // Start after first circle (half of 32px/2rem circle)
-                  right: "1rem", // End before last circle (half of 32px/2rem circle)
-                  zIndex: 0,
-                }}
-              />
-
-              {/* Progress line for completed steps */}
-              {currentStep > 1 && (
-                <div
-                  className="absolute top-4 h-0.5 transition-all duration-500"
-                  style={{
-                    left: "1rem", // Start after first circle
-                    width: `calc((100% - 2rem) * ${
-                      (currentStep - 1) / (steps.length - 1)
-                    })`, // Proportional width
-                    backgroundColor: color.primary.action,
-                    zIndex: 1,
-                  }}
-                />
-              )}
-
-              {steps.map((step, stepIdx) => {
-                const status = getStepStatus(step.id);
-                const Icon = step.icon;
-
-                return (
-                  <div key={step.id} className="relative z-10">
-                    <button
-                      onClick={() => handleStepClick(step.id)}
-                      className="relative flex flex-col items-center group"
-                      disabled={!canNavigateToStep(step.id)}
-                    >
-                      <div
-                        className={`
-                        flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200
-                        ${
-                          status === "completed"
-                            ? `bg-[${color.primary.action}] border-[${color.primary.action}] text-white`
-                            : status === "current"
-                            ? `bg-white border-[${color.primary.action}] text-[${color.primary.action}]`
-                            : "bg-white border-gray-300 text-gray-400"
-                        }
-                        ${
-                          step.id <= currentStep + 2
-                            ? "cursor-pointer hover:scale-110"
-                            : "cursor-not-allowed"
-                        }
-                      `}
-                      >
-                        {status === "completed" ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <Icon className="w-4 h-4" />
-                        )}
-                      </div>
-
-                      <div className="mt-2 text-center">
-                        <div
-                          className={`text-sm font-medium ${
-                            status === "current"
-                              ? `text-[${color.primary.action}]`
-                              : status === "completed"
-                              ? tw.textPrimary
-                              : tw.textMuted
-                          }`}
-                        >
-                          {step.name}
-                        </div>
-                        <div
-                          className={`text-xs mt-1 hidden lg:block ${tw.textMuted}`}
-                        >
-                          {step.description}
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </nav>
+          <ProgressStepper
+            steps={steps}
+            currentStep={currentStep}
+            onStepClick={handleStepClick}
+            canNavigateToStep={canNavigateToStep}
+            primaryColor={color.primary.action}
+            textPrimary={tw.textPrimary}
+            textMuted={tw.textMuted}
+          />
 
           <div className="py-4">{renderStep()}</div>
 

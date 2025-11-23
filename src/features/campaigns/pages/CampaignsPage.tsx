@@ -104,6 +104,7 @@ export default function CampaignsPage() {
     top: number;
     left: number;
     maxHeight: number;
+    width?: number;
   } | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
   const [allCampaignsUnfiltered, setAllCampaignsUnfiltered] = useState<
@@ -138,104 +139,142 @@ export default function CampaignsPage() {
     } else {
       setShowActionMenu(campaignId);
 
-      // Calculate position from the clicked button - always display below
+      // Calculate position from the clicked button
       if (event && event.currentTarget) {
         const button = event.currentTarget;
         const buttonRect = button.getBoundingClientRect();
-        const dropdownWidth = 256; // w-64 = 256px
-        const spacing = 4;
-        const padding = 8;
+
+        // Responsive dropdown width based on screen size
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
 
-        // Estimate dropdown content height (approximate max height needed)
-        const estimatedDropdownHeight = 450;
-        const requiredSpaceBelow = estimatedDropdownHeight + spacing + padding;
+        // Determine device type for responsive sizing
+        const isVerySmallPhone = viewportWidth < 480; // iPhone SE, small Android
+        const isSmallPhone = viewportWidth >= 480 && viewportWidth < 640; // Standard phones
+        const isTablet = viewportWidth >= 640 && viewportWidth < 1024; // Tablets
+        const isMobile = viewportWidth < 640; // All mobile devices
+        const isLargeScreen = viewportWidth >= 1920; // Large laptops/desktops
 
-        // Check if we need to scroll to show dropdown fully
-        const spaceBelow = viewportHeight - buttonRect.bottom - padding;
-
-        // Find the table row containing this button
-        const tableRow = button.closest("tr");
-
-        if (spaceBelow < requiredSpaceBelow && tableRow) {
-          // Calculate target position: we want the row positioned so dropdown fits below
-          // Add extra buffer to ensure dropdown is fully visible
-          const buffer = 50; // Extra pixels for safety
-          const targetButtonBottom =
-            viewportHeight - requiredSpaceBelow - buffer;
-          const currentButtonBottom = buttonRect.bottom;
-          const scrollOffset = currentButtonBottom - targetButtonBottom;
-
-          // Scroll the window/page to position row correctly
-          if (scrollOffset > 0) {
-            // Get current scroll position
-            const currentScrollY = window.scrollY || window.pageYOffset || 0;
-            const newScrollY = currentScrollY + scrollOffset;
-
-            // Get max scroll position
-            const documentHeight = Math.max(
-              document.documentElement.scrollHeight,
-              document.body.scrollHeight
-            );
-            const maxScrollY = Math.max(0, documentHeight - window.innerHeight);
-            const finalScrollY = Math.min(newScrollY, maxScrollY);
-
-            // Scroll to the calculated position
-            window.scrollTo({
-              top: finalScrollY,
-              behavior: "smooth",
-            });
-          }
-
-          // After scroll completes, recalculate position
-          // Use longer timeout to ensure scroll animation completes
-          setTimeout(() => {
-            const updatedButtonRect = button.getBoundingClientRect();
-            const updatedSpaceBelow =
-              window.innerHeight - updatedButtonRect.bottom - padding;
-
-            // Position dropdown below button
-            const top = updatedButtonRect.bottom + spacing;
-
-            // Calculate left position (right-align with button)
-            let left = updatedButtonRect.right - dropdownWidth;
-            if (left + dropdownWidth > window.innerWidth - padding) {
-              left = window.innerWidth - dropdownWidth - padding;
-            }
-            if (left < padding) {
-              left = padding;
-            }
-
-            // Use large maxHeight or no constraint to show all options
-            // After scrolling, we should have enough space
-            const maxHeight = Math.max(
-              estimatedDropdownHeight,
-              updatedSpaceBelow + 100
-            );
-
-            setDropdownPosition({ top, left, maxHeight });
-          }, 400); // Wait longer for smooth scroll animation to complete
+        // Calculate responsive dropdown width
+        let dropdownWidth: number;
+        if (isVerySmallPhone) {
+          // Very small phones: use 90% of screen width with padding
+          dropdownWidth = Math.min(280, viewportWidth - 32);
+        } else if (isSmallPhone) {
+          // Small phones: use 85% of screen width
+          dropdownWidth = Math.min(300, viewportWidth - 24);
+        } else if (isTablet) {
+          // Tablets: standard width but can be slightly smaller
+          dropdownWidth = Math.min(256, viewportWidth - 32);
         } else {
-          // Enough space - position normally without scrolling
-          const top = buttonRect.bottom + spacing;
-
-          // Calculate left position (right-align with button)
-          let left = buttonRect.right - dropdownWidth;
-          if (left + dropdownWidth > viewportWidth - padding) {
-            left = viewportWidth - dropdownWidth - padding;
-          }
-          if (left < padding) {
-            left = padding;
-          }
-
-          // Use estimated height when we have enough space
-          setDropdownPosition({
-            top,
-            left,
-            maxHeight: estimatedDropdownHeight,
-          });
+          // Desktop and larger: standard width
+          dropdownWidth = 256; // w-64 = 256px
         }
+
+        const spacing = 4;
+        const padding = 8;
+
+        // Calculate available space below and above the button
+        const spaceBelow = viewportHeight - buttonRect.bottom - padding;
+        const spaceAbove = buttonRect.top - padding;
+
+        // Responsive min/max heights based on screen size
+        // Very small phones need smaller heights, large screens can have more
+        let minDropdownHeight: number;
+        let maxDropdownHeight: number;
+
+        if (isVerySmallPhone) {
+          // Very small phones: compact sizing
+          minDropdownHeight = 80;
+          maxDropdownHeight = Math.min(250, viewportHeight * 0.5); // Max 50% of viewport
+        } else if (isSmallPhone) {
+          // Small phones: slightly larger
+          minDropdownHeight = 100;
+          maxDropdownHeight = Math.min(300, viewportHeight * 0.55); // Max 55% of viewport
+        } else if (isTablet) {
+          // Tablets: medium sizing
+          minDropdownHeight = 120;
+          maxDropdownHeight = Math.min(350, viewportHeight * 0.6); // Max 60% of viewport
+        } else if (isLargeScreen) {
+          // Large screens: can show more content
+          minDropdownHeight = 120;
+          maxDropdownHeight = 450; // More space on large screens
+        } else {
+          // Standard desktop/laptop
+          minDropdownHeight = 120;
+          maxDropdownHeight = 400;
+        }
+
+        // Calculate optimal maxHeight based on available space
+        // Ensure it doesn't exceed viewport and allows scrolling
+        let calculatedMaxHeight: number;
+
+        // Determine if we should position above or below
+        const shouldPositionAbove =
+          spaceBelow < minDropdownHeight && spaceAbove > spaceBelow;
+
+        if (shouldPositionAbove) {
+          // Position above button if there's more space above
+          const availableSpace = Math.min(spaceAbove, maxDropdownHeight);
+          calculatedMaxHeight = Math.max(
+            availableSpace - 10,
+            minDropdownHeight
+          );
+        } else {
+          // Position below button (default)
+          if (spaceBelow >= maxDropdownHeight) {
+            // Plenty of space below - use max height
+            calculatedMaxHeight = maxDropdownHeight;
+          } else if (spaceBelow >= minDropdownHeight) {
+            // Some space below - use available space, but ensure scrolling works
+            calculatedMaxHeight = Math.max(spaceBelow - 10, minDropdownHeight);
+          } else {
+            // Very little space below - use minimum height and allow scrolling
+            calculatedMaxHeight = minDropdownHeight;
+          }
+        }
+
+        // Ensure maxHeight never exceeds viewport height (with safety margin)
+        const maxAllowedHeight = viewportHeight - 20;
+        calculatedMaxHeight = Math.min(calculatedMaxHeight, maxAllowedHeight);
+
+        // Ensure minimum height for usability
+        calculatedMaxHeight = Math.max(calculatedMaxHeight, minDropdownHeight);
+
+        // Calculate top position (above or below button)
+        const top = shouldPositionAbove
+          ? buttonRect.top - calculatedMaxHeight - spacing
+          : buttonRect.bottom + spacing;
+
+        // Calculate left position (right-align with button, but adjust for mobile)
+        let left = buttonRect.right - dropdownWidth;
+        if (left + dropdownWidth > viewportWidth - padding) {
+          left = viewportWidth - dropdownWidth - padding;
+        }
+        if (left < padding) {
+          left = padding;
+        }
+
+        // On mobile, center align if button is near edges
+        if (isMobile && left < 8) {
+          left = Math.max(8, (viewportWidth - dropdownWidth) / 2);
+        }
+
+        // Ensure dropdown doesn't go off-screen on very small devices
+        if (left + dropdownWidth > viewportWidth - padding) {
+          left = viewportWidth - dropdownWidth - padding;
+        }
+        if (left < padding) {
+          left = padding;
+        }
+
+        // Set position with calculated maxHeight that allows scrolling
+        setDropdownPosition({
+          top,
+          left,
+          maxHeight: calculatedMaxHeight,
+          width: dropdownWidth,
+        });
       }
     }
   };
@@ -656,6 +695,135 @@ export default function CampaignsPage() {
       };
     }
   }, [showActionMenu]);
+
+  // Recalculate dropdown position on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (showActionMenu !== null && dropdownPosition) {
+        // Find the button that opened the menu
+        const button = actionMenuRefs.current[showActionMenu];
+        if (button) {
+          // Recalculate position using the same responsive logic
+          const buttonRect = button.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+
+          // Determine device type for responsive sizing
+          const isVerySmallPhone = viewportWidth < 480;
+          const isSmallPhone = viewportWidth >= 480 && viewportWidth < 640;
+          const isTablet = viewportWidth >= 640 && viewportWidth < 1024;
+          const isMobile = viewportWidth < 640;
+          const isLargeScreen = viewportWidth >= 1920;
+
+          // Calculate responsive dropdown width
+          let dropdownWidth: number;
+          if (isVerySmallPhone) {
+            dropdownWidth = Math.min(280, viewportWidth - 32);
+          } else if (isSmallPhone) {
+            dropdownWidth = Math.min(300, viewportWidth - 24);
+          } else if (isTablet) {
+            dropdownWidth = Math.min(256, viewportWidth - 32);
+          } else {
+            dropdownWidth = 256;
+          }
+
+          const spacing = 4;
+          const padding = 8;
+
+          const spaceBelow = viewportHeight - buttonRect.bottom - padding;
+          const spaceAbove = buttonRect.top - padding;
+
+          // Responsive min/max heights
+          let minDropdownHeight: number;
+          let maxDropdownHeight: number;
+
+          if (isVerySmallPhone) {
+            minDropdownHeight = 80;
+            maxDropdownHeight = Math.min(250, viewportHeight * 0.5);
+          } else if (isSmallPhone) {
+            minDropdownHeight = 100;
+            maxDropdownHeight = Math.min(300, viewportHeight * 0.55);
+          } else if (isTablet) {
+            minDropdownHeight = 120;
+            maxDropdownHeight = Math.min(350, viewportHeight * 0.6);
+          } else if (isLargeScreen) {
+            minDropdownHeight = 120;
+            maxDropdownHeight = 450;
+          } else {
+            minDropdownHeight = 120;
+            maxDropdownHeight = 400;
+          }
+
+          let calculatedMaxHeight: number;
+          const shouldPositionAbove =
+            spaceBelow < minDropdownHeight && spaceAbove > spaceBelow;
+
+          if (shouldPositionAbove) {
+            const availableSpace = Math.min(spaceAbove, maxDropdownHeight);
+            calculatedMaxHeight = Math.max(
+              availableSpace - 10,
+              minDropdownHeight
+            );
+          } else {
+            if (spaceBelow >= maxDropdownHeight) {
+              calculatedMaxHeight = maxDropdownHeight;
+            } else if (spaceBelow >= minDropdownHeight) {
+              calculatedMaxHeight = Math.max(
+                spaceBelow - 10,
+                minDropdownHeight
+              );
+            } else {
+              calculatedMaxHeight = minDropdownHeight;
+            }
+          }
+
+          const maxAllowedHeight = viewportHeight - 20;
+          calculatedMaxHeight = Math.min(calculatedMaxHeight, maxAllowedHeight);
+          calculatedMaxHeight = Math.max(
+            calculatedMaxHeight,
+            minDropdownHeight
+          );
+
+          const top = shouldPositionAbove
+            ? buttonRect.top - calculatedMaxHeight - spacing
+            : buttonRect.bottom + spacing;
+
+          let left = buttonRect.right - dropdownWidth;
+          if (left + dropdownWidth > viewportWidth - padding) {
+            left = viewportWidth - dropdownWidth - padding;
+          }
+          if (left < padding) {
+            left = padding;
+          }
+          if (isMobile && left < 8) {
+            left = Math.max(8, (viewportWidth - dropdownWidth) / 2);
+          }
+
+          // Ensure dropdown doesn't go off-screen on very small devices
+          if (left + dropdownWidth > viewportWidth - padding) {
+            left = viewportWidth - dropdownWidth - padding;
+          }
+          if (left < padding) {
+            left = padding;
+          }
+
+          setDropdownPosition({
+            top,
+            left,
+            maxHeight: calculatedMaxHeight,
+            width: dropdownWidth,
+          });
+        }
+      }
+    };
+
+    if (showActionMenu !== null) {
+      window.addEventListener("resize", handleResize);
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }
+  }, [showActionMenu, dropdownPosition]);
 
   const statusOptions = [
     { value: "all", label: "All Campaigns", count: totalCampaigns },
@@ -1314,13 +1482,16 @@ export default function CampaignsPage() {
                         ref={(el) => {
                           dropdownMenuRefs.current[campaign.id] = el;
                         }}
-                        className="fixed bg-white border border-gray-200 rounded-md shadow-xl py-3 w-64"
+                        className="fixed bg-white border border-gray-200 rounded-md shadow-xl py-3"
                         style={{
                           zIndex: 99999,
                           top: `${dropdownPosition.top}px`,
                           left: `${dropdownPosition.left}px`,
+                          width: `${dropdownPosition.width || 256}px`,
                           maxHeight: `${dropdownPosition.maxHeight}px`,
                           overflowY: "auto",
+                          overflowX: "hidden",
+                          overscrollBehavior: "contain",
                         }}
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
@@ -1361,24 +1532,41 @@ export default function CampaignsPage() {
                               } catch (error) {
                                 let errorMessage =
                                   "Failed to submit campaign for approval";
+                                let errorTitle = "Submission Failed";
+
                                 if (error instanceof Error) {
-                                  const match =
-                                    error.message.match(/details: ({.*})/);
-                                  if (match) {
-                                    try {
-                                      const errorData = JSON.parse(match[1]);
-                                      errorMessage =
-                                        errorData.error ||
-                                        errorData.message ||
-                                        errorMessage;
-                                    } catch {
+                                  // Check for budget-related errors
+                                  if (
+                                    error.message
+                                      .toLowerCase()
+                                      .includes("budget") ||
+                                    error.message
+                                      .toLowerCase()
+                                      .includes("positive")
+                                  ) {
+                                    errorTitle = "Budget Required";
+                                    errorMessage =
+                                      "This campaign must have a positive budget allocated before it can be submitted for approval. Please set a budget in the campaign details.";
+                                  } else {
+                                    // Try to extract error from response
+                                    const match =
+                                      error.message.match(/details: ({.*})/);
+                                    if (match) {
+                                      try {
+                                        const errorData = JSON.parse(match[1]);
+                                        errorMessage =
+                                          errorData.error ||
+                                          errorData.message ||
+                                          errorMessage;
+                                      } catch {
+                                        errorMessage = error.message;
+                                      }
+                                    } else {
                                       errorMessage = error.message;
                                     }
-                                  } else {
-                                    errorMessage = error.message;
                                   }
                                 }
-                                showToast("error", errorMessage);
+                                showToast("error", errorTitle, errorMessage);
                               }
                             }}
                             className="w-full flex items-center px-4 py-3 text-sm text-black"

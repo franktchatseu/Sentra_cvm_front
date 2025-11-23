@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import DeleteConfirmModal from "../../../../shared/components/ui/DeleteConfirmModal";
 import {
   X,
   Plus,
@@ -71,6 +72,10 @@ export default function UniversalControlGroupModal({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingGroup, setEditingGroup] =
     useState<UniversalControlGroup | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [controlGroupToDelete, setControlGroupToDelete] = useState<
+    string | null
+  >(null);
 
   if (!isOpen) return null;
 
@@ -88,9 +93,22 @@ export default function UniversalControlGroupModal({
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this control group?")) {
-      setControlGroups((prev) => prev.filter((group) => group.id !== id));
-    }
+    setControlGroupToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!controlGroupToDelete) return;
+    setControlGroups((prev) =>
+      prev.filter((group) => group.id !== controlGroupToDelete)
+    );
+    setShowDeleteModal(false);
+    setControlGroupToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setControlGroupToDelete(null);
   };
 
   return createPortal(
@@ -778,6 +796,21 @@ function CreateControlGroupModal({
         </div>
       </div>
     </div>,
+    <>
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Control Group"
+        description="Are you sure you want to delete this control group? This action cannot be undone."
+        itemName={
+          controlGroups.find((g) => g.id === controlGroupToDelete)?.name || ""
+        }
+        isLoading={false}
+        confirmText="Delete Control Group"
+        cancelText="Cancel"
+      />
+    </>,
     document.body
   );
 }

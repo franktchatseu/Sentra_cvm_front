@@ -86,12 +86,7 @@ export default function RejectCampaignModal({
             style={{ borderColor: color.border.default }}
           >
             <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-md flex items-center justify-center"
-                style={{ backgroundColor: "#EF444420" }}
-              >
-                <XCircle className="w-5 h-5 text-red-600" />
-              </div>
+              <XCircle className="w-5 h-5 text-red-600" />
               <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>
                 Reject Campaign
               </h2>
@@ -123,7 +118,7 @@ export default function RejectCampaignModal({
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder="Explain why this campaign is being rejected..."
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors resize-none ${tw.textPrimary}`}
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors resize-none text-sm ${tw.textPrimary}`}
                 style={{ borderColor: color.border.default }}
                 rows={4}
                 disabled={isRejecting}

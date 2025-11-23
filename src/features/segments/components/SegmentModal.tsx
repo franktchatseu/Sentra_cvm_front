@@ -505,10 +505,10 @@ export default function SegmentModal({
                         entityType="segment"
                         className="w-full"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      {/* <p className="text-xs text-gray-500 mt-1">
                         You can select multiple catalogs. Only the first one
                         will be saved to the backend.
-                      </p>
+                      </p> */}
                     </div>
                   </div>
 

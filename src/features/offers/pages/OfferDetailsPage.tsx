@@ -29,11 +29,11 @@ import {
   CreateOfferCreativeRequest,
 } from "../types/offerCreative";
 import { color, tw } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import RegularModal from "../../../shared/components/ui/RegularModal";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { Product } from "../../products/types/product";
 import { Search, Check } from "lucide-react";
 import { productCategoryService } from "../../products/services/productCategoryService";
@@ -78,9 +78,29 @@ export default function OfferDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
   const { user } = useAuth();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteCreativeModal, setShowDeleteCreativeModal] = useState(false);
+  const [creativeToDelete, setCreativeToDelete] =
+    useState<OfferCreative | null>(null);
+  const [isDeletingCreative, setIsDeletingCreative] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [showExpireModal, setShowExpireModal] = useState(false);
+  const [isExpiring, setIsExpiring] = useState(false);
+  const [showUnlinkModal, setShowUnlinkModal] = useState(false);
+  const [productToUnlink, setProductToUnlink] = useState<{
+    linkId: number;
+    name: string;
+  } | null>(null);
+  const [showDeleteProductModal, setShowDeleteProductModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
 
   // Check if we came from a catalog modal
   const returnTo = (
@@ -434,24 +454,32 @@ export default function OfferDetailsPage() {
   };
 
   // Handle delete creative
-  const handleDeleteCreative = async (creative: OfferCreative) => {
-    const confirmed = await confirm({
-      title: "Delete Creative",
-      message: `Are you sure you want to delete this ${creative.channel} creative? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-    });
+  const handleDeleteCreative = (creative: OfferCreative) => {
+    setCreativeToDelete(creative);
+    setShowDeleteCreativeModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmDeleteCreative = async () => {
+    if (!creativeToDelete) return;
 
+    setIsDeletingCreative(true);
     try {
-      await offerCreativeService.delete(creative.id as number);
+      await offerCreativeService.delete(creativeToDelete.id as number);
       success("Creative Deleted", "Creative has been deleted successfully");
+      setShowDeleteCreativeModal(false);
+      setCreativeToDelete(null);
       loadCreatives(true); // Reload with skipCache
     } catch (err) {
       console.error("Failed to delete creative:", err);
       showError("Failed to delete creative", "Please try again later.");
+    } finally {
+      setIsDeletingCreative(false);
     }
+  };
+
+  const handleCancelDeleteCreative = () => {
+    setShowDeleteCreativeModal(false);
+    setCreativeToDelete(null);
   };
 
   const handleCreateCreative = async () => {
@@ -679,29 +707,32 @@ export default function OfferDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    if (!offer) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (!offer) return;
 
-    const confirmed = await confirm({
-      title: "Delete Offer",
-      message: `Are you sure you want to delete "${offer.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
-
-    if (confirmed) {
-      try {
-        await offerService.deleteOffer(Number(id));
-        success(
-          "Offer Deleted",
-          `"${offer.name}" has been deleted successfully.`
-        );
-        navigate("/dashboard/offers");
-      } catch {
-        showError("Failed to delete offer");
-      }
+    setIsDeleting(true);
+    try {
+      await offerService.deleteOffer(Number(id));
+      success(
+        "Offer Deleted",
+        `"${offer.name}" has been deleted successfully.`
+      );
+      setShowDeleteModal(false);
+      navigate("/dashboard/offers");
+    } catch {
+      showError("Failed to delete offer");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const handleApprove = async () => {
@@ -789,19 +820,14 @@ export default function OfferDetailsPage() {
     }
   };
 
-  const handleExpire = async () => {
-    const confirmed = await confirm({
-      title: "Expire Offer",
-      message: `Are you sure you want to expire "${offer?.name}"? This action cannot be undone.`,
-    });
-    if (!confirmed) return;
-
+  const handleConfirmExpire = async () => {
     try {
       setIsExpireLoading(true);
       await offerService.updateOfferStatus(Number(id), {
         status: OfferStatusEnum.EXPIRED,
       });
       success("Offer Expired", `"${offer?.name}" has been expired.`);
+      setShowExpireModal(false);
       loadOffer(true); // Skip cache to get fresh data after expiration
     } catch {
       showError("Failed to expire offer");
@@ -810,48 +836,67 @@ export default function OfferDetailsPage() {
     }
   };
 
-  const handleArchive = async () => {
-    const confirmed = await confirm({
-      title: "Archive Offer",
-      message: `Are you sure you want to archive "${offer?.name}"?`,
-    });
-    if (!confirmed) return;
-
+  const handleConfirmArchive = async () => {
     try {
+      setIsArchiving(true);
       await offerService.updateOfferStatus(Number(id), {
         status: OfferStatusEnum.ARCHIVED,
       });
       success("Offer Archived", `"${offer?.name}" has been archived.`);
+      setShowArchiveModal(false);
       loadOffer(true); // Skip cache to get fresh data after archiving
     } catch {
       showError("Failed to archive offer");
+    } finally {
+      setIsArchiving(false);
     }
   };
 
-  const handleUnlinkProduct = async (linkId: number, productName: string) => {
-    const confirmed = await confirm({
-      title: "Unlink Product",
-      message: `Are you sure you want to unlink "${productName}" from this offer? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Unlink",
-      cancelText: "Cancel",
-    });
-    if (!confirmed) return;
+  const handleConfirmUnlinkProduct = async () => {
+    if (!productToUnlink) return;
 
     try {
-      setUnlinkingProductId(linkId);
-      await offerService.unlinkProductById(linkId);
+      setUnlinkingProductId(productToUnlink.linkId);
+      await offerService.unlinkProductById(productToUnlink.linkId);
       success(
         "Product Unlinked",
-        `"${productName}" has been unlinked from this offer.`
+        `"${productToUnlink.name}" has been unlinked from this offer.`
       );
-      // Reload products with cache bypassed to get fresh data
-      loadProducts(true);
+      setShowUnlinkModal(false);
+      setProductToUnlink(null);
+      loadProducts(true); // Skip cache to get fresh data after unlinking
     } catch {
-      // Failed to unlink product
       showError("Failed to unlink product");
     } finally {
       setUnlinkingProductId(null);
+    }
+  };
+
+  const handleEditProduct = (productId: number) => {
+    navigate(`/dashboard/products/${productId}/edit`, {
+      state: {
+        returnTo: buildOfferReturnState("products"),
+      },
+    });
+  };
+
+  const handleConfirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+
+    try {
+      setIsDeletingProduct(true);
+      await productService.deleteProduct(productToDelete.id);
+      success(
+        "Product Deleted",
+        `"${productToDelete.name}" has been deleted. It will also be unlinked from this offer.`
+      );
+      setShowDeleteProductModal(false);
+      setProductToDelete(null);
+      loadProducts(true); // Skip cache to get fresh data after deletion
+    } catch {
+      showError("Failed to delete product");
+    } finally {
+      setIsDeletingProduct(false);
     }
   };
 
@@ -1217,14 +1262,13 @@ export default function OfferDetailsPage() {
                 {isApproved && isActive && (
                   <button
                     onClick={() => {
-                      handleExpire();
+                      setShowExpireModal(true);
                       setShowMoreMenu(false);
                     }}
-                    disabled={isExpireLoading}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2"
                   >
                     <Clock className="w-4 h-4" />
-                    {isExpireLoading ? "Expiring..." : "Expire Offer"}
+                    Expire Offer
                   </button>
                 )}
 
@@ -1232,7 +1276,7 @@ export default function OfferDetailsPage() {
                 {!isArchived && (
                   <button
                     onClick={() => {
-                      handleArchive();
+                      setShowArchiveModal(true);
                       setShowMoreMenu(false);
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2"
@@ -1506,7 +1550,38 @@ export default function OfferDetailsPage() {
                           className="px-6 py-4 text-sm font-medium"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {hasValidProductId && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleEditProduct(productId as number)
+                                  }
+                                  className="text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                  title="Edit product"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setProductToDelete({
+                                      id: productId as number,
+                                      name: productName,
+                                    });
+                                    setShowDeleteProductModal(true);
+                                  }}
+                                  disabled={isDeletingProduct}
+                                  className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                  title="Delete product"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete
+                                </button>
+                              </>
+                            )}
                             {!isPrimary &&
                               (product.link_id || hasValidProductId) && (
                                 <button
@@ -1530,10 +1605,11 @@ export default function OfferDetailsPage() {
                                     );
                                     return;
                                   }
-                                  handleUnlinkProduct(
-                                    product.link_id,
-                                    productName
-                                  );
+                                  setProductToUnlink({
+                                    linkId: product.link_id,
+                                    name: productName,
+                                  });
+                                  setShowUnlinkModal(true);
                                 }}
                                 disabled={
                                   isUnlinking ||
@@ -2282,6 +2358,98 @@ export default function OfferDetailsPage() {
           </div>
         </div>
       </RegularModal>
+
+      {/* Delete Offer Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Offer"
+        description="Are you sure you want to delete this offer? This action cannot be undone."
+        itemName={offer?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Offer"
+        cancelText="Cancel"
+      />
+
+      {/* Delete Creative Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteCreativeModal}
+        onClose={handleCancelDeleteCreative}
+        onConfirm={handleConfirmDeleteCreative}
+        title="Delete Creative"
+        description={`Are you sure you want to delete this ${
+          creativeToDelete?.channel || ""
+        } creative? This action cannot be undone.`}
+        itemName={
+          creativeToDelete ? `${creativeToDelete.channel} creative` : ""
+        }
+        isLoading={isDeletingCreative}
+        confirmText="Delete Creative"
+        cancelText="Cancel"
+      />
+
+      {/* Expire Offer Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showExpireModal}
+        onClose={() => setShowExpireModal(false)}
+        onConfirm={handleConfirmExpire}
+        title="Expire Offer"
+        description="Are you sure you want to expire this offer? This action cannot be undone."
+        itemName={offer?.name || ""}
+        isLoading={isExpireLoading}
+        confirmText="Expire Offer"
+        cancelText="Cancel"
+        variant="warning"
+      />
+
+      {/* Archive Offer Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showArchiveModal}
+        onClose={() => setShowArchiveModal(false)}
+        onConfirm={handleConfirmArchive}
+        title="Archive Offer"
+        description="Are you sure you want to archive this offer?"
+        itemName={offer?.name || ""}
+        isLoading={isArchiving}
+        confirmText="Archive Offer"
+        cancelText="Cancel"
+        variant="warning"
+      />
+
+      {/* Unlink Product Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showUnlinkModal}
+        onClose={() => {
+          setShowUnlinkModal(false);
+          setProductToUnlink(null);
+        }}
+        onConfirm={handleConfirmUnlinkProduct}
+        title="Unlink Product"
+        description="Are you sure you want to unlink this product from this offer? This action cannot be undone."
+        itemName={productToUnlink?.name || ""}
+        isLoading={!!unlinkingProductId}
+        confirmText="Unlink"
+        cancelText="Cancel"
+        variant="warning"
+      />
+
+      {/* Delete Product Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteProductModal}
+        onClose={() => {
+          setShowDeleteProductModal(false);
+          setProductToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteProduct}
+        title="Delete Product"
+        description="Are you sure you want to delete this product? This will permanently delete the product and it will be unlinked from this offer. This action cannot be undone."
+        itemName={productToDelete?.name || ""}
+        isLoading={isDeletingProduct}
+        confirmText="Delete Product"
+        cancelText="Cancel"
+        variant="delete"
+      />
     </div>
   );
 }

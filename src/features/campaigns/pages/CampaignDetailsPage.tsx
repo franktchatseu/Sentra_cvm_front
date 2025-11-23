@@ -15,17 +15,24 @@ import {
   Clock,
   MoreHorizontal,
   Users,
+  Send,
+  TrendingUp,
+  DollarSign,
+  Package,
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { campaignService } from "../services/campaignService";
+import { campaignSegmentOfferService } from "../services/campaignSegmentOfferService";
+import { offerService } from "../../offers/services/offerService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import {
   Campaign,
   CampaignSegmentDetail,
   CampaignBudgetUtilisation,
 } from "../types/campaign";
+import { Offer } from "../../offers/types/offer";
 
 export default function CampaignDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -70,6 +77,8 @@ export default function CampaignDetailsPage() {
   const [isLoadingPerformance, setIsLoadingPerformance] = useState(false);
   const [segments, setSegments] = useState<CampaignSegmentDetail[]>([]);
   const [isLoadingSegments, setIsLoadingSegments] = useState(false);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [isLoadingOffers, setIsLoadingOffers] = useState(false);
   const [budgetUtilisation, setBudgetUtilisation] =
     useState<CampaignBudgetUtilisation | null>(null);
   const [isLoadingBudgetUtil, setIsLoadingBudgetUtil] = useState(false);
@@ -85,23 +94,6 @@ export default function CampaignDetailsPage() {
           success?: boolean;
         };
         const campaignData = response.data || (response as Campaign);
-
-        // Add dummy segment if not present (same logic as CampaignsPage for consistency)
-        if (!(campaignData as { segment?: string }).segment) {
-          const existingSegments = [
-            "High Value Customers",
-            "At Risk Customers",
-            "New Subscribers",
-            "Voice Heavy Users",
-            "Data Bundle Enthusiasts",
-            "Weekend Warriors",
-            "Business Customers",
-            "Dormant Users",
-          ];
-          const campaignId = parseInt(campaignData.id);
-          (campaignData as { segment?: string }).segment =
-            existingSegments[campaignId % existingSegments.length];
-        }
 
         setCampaign(campaignData);
 
@@ -159,11 +151,12 @@ export default function CampaignDetailsPage() {
         });
         setIsLoadingPerformance(false);
 
-        // Fetch campaign segments and budget utilisation
+        // Fetch campaign segments, offers, and budget utilisation
         if (campaignData.id) {
           const campaignId = parseInt(campaignData.id);
           await Promise.all([
             fetchCampaignSegments(campaignId),
+            fetchCampaignOffers(campaignId),
             fetchBudgetUtilisation(campaignId),
           ]);
         }
@@ -189,16 +182,86 @@ export default function CampaignDetailsPage() {
         true
       );
       if (response && typeof response === "object" && "data" in response) {
-        const segmentsData = response.data as {
-          data?: CampaignSegmentDetail[];
-        };
-        setSegments(segmentsData.data || []);
+        // Backend returns: { success: true, data: CampaignSegmentDetail[], total: number }
+        // Handle both nested and direct array responses
+        let fetchedSegments: CampaignSegmentDetail[] = [];
+        if (Array.isArray(response.data)) {
+          // Direct array: { data: [...] }
+          fetchedSegments = response.data;
+        } else if (
+          response.data &&
+          typeof response.data === "object" &&
+          "data" in response.data &&
+          Array.isArray(
+            (response.data as { data?: CampaignSegmentDetail[] }).data
+          )
+        ) {
+          // Nested: { data: { data: [...] } }
+          fetchedSegments = (response.data as { data: CampaignSegmentDetail[] })
+            .data;
+        }
+        setSegments(fetchedSegments);
+      } else {
+        setSegments([]);
       }
     } catch (error) {
       console.error("Failed to fetch campaign segments:", error);
       // Don't show error toast for segments as it's not critical
+      setSegments([]);
     } finally {
       setIsLoadingSegments(false);
+    }
+  };
+
+  const fetchCampaignOffers = async (campaignId: number) => {
+    try {
+      setIsLoadingOffers(true);
+      const response = await campaignSegmentOfferService.getMappingsByCampaign(
+        campaignId
+      );
+      if (response && response.success && Array.isArray(response.data)) {
+        // Extract unique offer IDs from mappings
+        const offerIds = new Set<number>();
+        response.data.forEach((mapping) => {
+          if (mapping.offer_id) {
+            offerIds.add(mapping.offer_id);
+          }
+        });
+
+        // Fetch full offer details for each offer ID
+        const offerPromises = Array.from(offerIds).map(async (offerId) => {
+          try {
+            const offerResponse = await offerService.getOfferById(
+              offerId,
+              true
+            );
+            // Handle both direct Offer and { success: true, data: Offer } response formats
+            if (offerResponse && typeof offerResponse === "object") {
+              if ("data" in offerResponse && offerResponse.data) {
+                return offerResponse.data as Offer;
+              } else if ("id" in offerResponse) {
+                return offerResponse as Offer;
+              }
+            }
+            return null;
+          } catch (error) {
+            console.error(`Failed to fetch offer ${offerId}:`, error);
+            return null;
+          }
+        });
+
+        const fetchedOffers = await Promise.all(offerPromises);
+        setOffers(
+          fetchedOffers.filter((offer): offer is Offer => offer !== null)
+        );
+      } else {
+        setOffers([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch campaign offers:", error);
+      setOffers([]);
+    } finally {
+      setIsLoadingOffers(false);
     }
   };
 
@@ -456,20 +519,21 @@ export default function CampaignDetailsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           {/* Primary Action - Based on Status */}
-          {campaign.approval_status === "pending" && (
-            <button
-              onClick={handleApproveCampaign}
-              disabled={isApproveLoading}
-              className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 bg-white text-gray-700 border border-gray-200"
-            >
-              {isApproveLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-              ) : (
-                <CheckCircle className="w-4 h-4" />
-              )}
-              {isApproveLoading ? "Approving..." : "Approve"}
-            </button>
-          )}
+          {campaign.approval_status === "pending" &&
+            campaign.status !== "rejected" && (
+              <button
+                onClick={handleApproveCampaign}
+                disabled={isApproveLoading}
+                className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 bg-white text-gray-700 border border-gray-200"
+              >
+                {isApproveLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                ) : (
+                  <CheckCircle className="w-4 h-4" />
+                )}
+                {isApproveLoading ? "Approving..." : "Approve"}
+              </button>
+            )}
 
           {campaign.approval_status === "approved" &&
             campaign.status === "draft" && (
@@ -556,19 +620,20 @@ export default function CampaignDetailsPage() {
 
             {showMoreMenu && (
               <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-md shadow-xl py-2 z-50">
-                {/* Reject - Only if pending */}
-                {campaign.approval_status === "pending" && (
-                  <button
-                    onClick={() => {
-                      setShowRejectModal(true);
-                      setShowMoreMenu(false);
-                    }}
-                    className="w-full flex items-center px-4 py-2 text-sm text-red-600"
-                  >
-                    <XCircle className="w-4 h-4 mr-3" />
-                    Reject Campaign
-                  </button>
-                )}
+                {/* Reject - Only if pending and not already rejected */}
+                {campaign.approval_status === "pending" &&
+                  campaign.status !== "rejected" && (
+                    <button
+                      onClick={() => {
+                        setShowRejectModal(true);
+                        setShowMoreMenu(false);
+                      }}
+                      className="w-full flex items-center px-4 py-2 text-sm text-red-600"
+                    >
+                      <XCircle className="w-4 h-4 mr-3" />
+                      Reject Campaign
+                    </button>
+                  )}
 
                 {/* Delete - Always available */}
                 <button
@@ -587,30 +652,14 @@ export default function CampaignDetailsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Sent Card */}
         <div
-          className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
+          className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
         >
-          <div className="flex items-center">
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Delivered</p>
-              {isLoadingPerformance ? (
-                <div className="animate-pulse h-8 w-24 bg-gray-200 rounded mt-1"></div>
-              ) : (
-                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                  {performanceData?.delivered?.toLocaleString() || 0}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
-        >
-          <div className="flex items-center">
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Sent</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${tw.textMuted} mb-1`}>Sent</p>
               {isLoadingPerformance ? (
                 <div className="animate-pulse h-8 w-24 bg-gray-200 rounded mt-1"></div>
               ) : (
@@ -619,15 +668,56 @@ export default function CampaignDetailsPage() {
                 </p>
               )}
             </div>
+            <div
+              className="w-12 h-12 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}15` }}
+            >
+              <Send
+                className="w-6 h-6"
+                style={{ color: color.primary.accent }}
+              />
+            </div>
           </div>
         </div>
 
+        {/* Delivered Card */}
         <div
-          className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
+          className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
         >
-          <div className="flex items-center">
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Converted</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${tw.textMuted} mb-1`}>
+                Delivered
+              </p>
+              {isLoadingPerformance ? (
+                <div className="animate-pulse h-8 w-24 bg-gray-200 rounded mt-1"></div>
+              ) : (
+                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
+                  {performanceData?.delivered?.toLocaleString() || 0}
+                </p>
+              )}
+            </div>
+            <div
+              className="w-12 h-12 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}15` }}
+            >
+              <CheckCircle
+                className="w-6 h-6"
+                style={{ color: color.primary.accent }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Converted Card */}
+        <div
+          className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${tw.textMuted} mb-1`}>
+                Converted
+              </p>
               {isLoadingPerformance ? (
                 <div className="animate-pulse h-8 w-24 bg-gray-200 rounded mt-1"></div>
               ) : (
@@ -636,15 +726,63 @@ export default function CampaignDetailsPage() {
                 </p>
               )}
             </div>
+            <div
+              className="w-12 h-12 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}15` }}
+            >
+              <TrendingUp
+                className="w-6 h-6"
+                style={{ color: color.primary.accent }}
+              />
+            </div>
           </div>
         </div>
 
+        {/* Conversion Rate Card */}
         <div
-          className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
+          className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
         >
-          <div className="flex items-center">
-            <div className="ml-4">
-              <p className={`text-sm font-medium ${tw.textMuted}`}>Revenue</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${tw.textMuted} mb-1`}>
+                Conversion Rate
+              </p>
+              {isLoadingPerformance ? (
+                <div className="animate-pulse h-8 w-24 bg-gray-200 rounded mt-1"></div>
+              ) : (
+                <p className={`text-2xl font-bold ${tw.textPrimary}`}>
+                  {performanceData?.delivered && performanceData?.converted
+                    ? (
+                        (performanceData.converted /
+                          performanceData.delivered) *
+                        100
+                      ).toFixed(2)
+                    : "0.00"}
+                  %
+                </p>
+              )}
+            </div>
+            <div
+              className="w-12 h-12 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}15` }}
+            >
+              <TrendingUp
+                className="w-6 h-6"
+                style={{ color: color.primary.accent }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Revenue Card */}
+        <div
+          className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${tw.textMuted} mb-1`}>
+                Revenue
+              </p>
               {isLoadingPerformance ? (
                 <div className="animate-pulse h-8 w-24 bg-gray-200 rounded mt-1"></div>
               ) : (
@@ -653,75 +791,109 @@ export default function CampaignDetailsPage() {
                 </p>
               )}
             </div>
+            <div
+              className="w-12 h-12 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: `${color.primary.accent}15` }}
+            >
+              <DollarSign
+                className="w-6 h-6"
+                style={{ color: color.primary.accent }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Campaign Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Campaign Info */}
-        <div className="lg:col-span-2 space-y-6">
-          <div
-            className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
-          >
-            <div className="flex items-start space-x-4">
-              <div className="flex-1">
-                <h2 className={`text-xl font-bold ${tw.textPrimary} mb-2`}>
-                  {campaign.name}
-                </h2>
-                <p className={`${tw.textSecondary} mb-4`}>
-                  {campaign.description}
-                </p>
-                <div className="flex items-center flex-wrap gap-2">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
-                      campaign.status
-                    )}`}
-                  >
-                    {campaign.status?.charAt(0).toUpperCase() +
-                      campaign.status?.slice(1)}
-                  </span>
-                  {campaign.approval_status && (
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getApprovalBadge(
-                        campaign.approval_status
-                      )}`}
-                    >
-                      {campaign.approval_status === "approved" && (
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                      )}
-                      {campaign.approval_status === "rejected" && (
-                        <XCircle className="w-3 h-3 mr-1" />
-                      )}
-                      {campaign.approval_status === "pending" && (
-                        <Clock className="w-3 h-3 mr-1" />
-                      )}
-                      {campaign.approval_status?.charAt(0).toUpperCase() +
-                        campaign.approval_status?.slice(1)}
-                    </span>
+      {/* Campaign Information and Budget Utilization - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Campaign Information Card */}
+        <div
+          className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
+        >
+          {/* Campaign Header */}
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <h2 className={`text-2xl font-bold ${tw.textPrimary} mb-3`}>
+              {campaign.name}
+            </h2>
+            <p className={`${tw.textSecondary} mb-4 text-base leading-relaxed`}>
+              {campaign.description}
+            </p>
+            <div className="flex items-center flex-wrap gap-2">
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
+                  campaign.status
+                )}`}
+              >
+                {campaign.status?.charAt(0).toUpperCase() +
+                  campaign.status?.slice(1)}
+              </span>
+              {campaign.approval_status && (
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getApprovalBadge(
+                    campaign.approval_status
+                  )}`}
+                >
+                  {campaign.approval_status === "approved" && (
+                    <CheckCircle className="w-3 h-3 mr-1" />
                   )}
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.action}]/10 text-[${color.primary.action}]`}
-                  >
-                    <Tag className="w-4 h-4 mr-1" />
-                    {categoryName}
-                  </span>
+                  {campaign.approval_status === "rejected" && (
+                    <XCircle className="w-3 h-3 mr-1" />
+                  )}
+                  {campaign.approval_status === "pending" && (
+                    <Clock className="w-3 h-3 mr-1" />
+                  )}
+                  {campaign.approval_status?.charAt(0).toUpperCase() +
+                    campaign.approval_status?.slice(1)}
+                </span>
+              )}
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.action}]/10 text-[${color.primary.action}]`}
+              >
+                <Tag className="w-4 h-4 mr-1" />
+                {categoryName}
+              </span>
+              {/* Display Tags */}
+              {campaign.tags && campaign.tags.length > 0 && (
+                <>
+                  {campaign.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                    >
+                      <Tag className="w-3 h-3 mr-1" />
+                      {tag.replace("catalog:", "")}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+            {/* Rejection Reason Display */}
+            {campaign.status === "rejected" && campaign.rejection_reason && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-start gap-2">
+                  <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className={`text-sm font-semibold text-red-800 mb-1`}>
+                      Rejection Reason
+                    </p>
+                    <p className={`text-sm text-red-700`}>
+                      {campaign.rejection_reason}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Campaign Details */}
-          <div
-            className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
-          >
-            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
+          {/* Campaign Details Grid */}
+          <div>
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
               Campaign Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
                 >
                   Campaign ID
                 </label>
@@ -731,7 +903,7 @@ export default function CampaignDetailsPage() {
               </div>
               <div>
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
                 >
                   Objective
                 </label>
@@ -741,7 +913,7 @@ export default function CampaignDetailsPage() {
               </div>
               <div>
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
                 >
                   Category
                 </label>
@@ -749,29 +921,29 @@ export default function CampaignDetailsPage() {
               </div>
               <div>
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
                 >
                   Segments
                 </label>
                 <p className={`text-base ${tw.textPrimary}`}>
-                  {(campaign as { segment?: string }).segment ||
-                    "No segments assigned"}
+                  {segments.length} segment{segments.length !== 1 ? "s" : ""}
                 </p>
               </div>
               <div>
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
                 >
                   Offers
                 </label>
                 <p className={`text-base ${tw.textPrimary}`}>
-                  {(campaign as { offers?: unknown[] }).offers?.length || 0}{" "}
-                  offers
+                  {isLoadingOffers
+                    ? "Loading..."
+                    : `${offers.length} offer${offers.length !== 1 ? "s" : ""}`}
                 </p>
               </div>
               <div>
                 <label
-                  className={`text-sm font-medium ${tw.textMuted} block mb-1`}
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
                 >
                   Created Date
                 </label>
@@ -784,110 +956,101 @@ export default function CampaignDetailsPage() {
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Budget Utilization */}
-          {budgetUtilisation && (
-            <div
-              className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
-            >
-              <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
-                Budget Utilization
-              </h3>
-              {isLoadingBudgetUtil ? (
-                <div className="flex items-center justify-center py-4">
-                  <LoadingSpinner variant="modern" size="sm" color="primary" />
+        {/* Budget Utilization Card */}
+        {budgetUtilisation && (
+          <div
+            className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
+          >
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
+              Budget Utilization
+            </h3>
+            {isLoadingBudgetUtil ? (
+              <div className="flex items-center justify-center py-4">
+                <LoadingSpinner variant="modern" size="sm" color="primary" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-sm ${tw.textSecondary}`}>
+                      Utilization:{" "}
+                      {budgetUtilisation.utilization_percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(
+                          budgetUtilisation.utilization_percentage,
+                          100
+                        )}%`,
+                        backgroundColor: color.primary.accent,
+                      }}
+                    />
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className={`text-sm ${tw.textSecondary}`}>
-                        Utilization:{" "}
-                        {budgetUtilisation.utilization_percentage.toFixed(1)}%
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <span className={`text-sm ${tw.textSecondary}`}>
+                    Remaining Budget
+                  </span>
+                  <span className={`text-sm font-semibold ${tw.textPrimary}`}>
+                    $
+                    {budgetUtilisation.remaining_budget.toLocaleString(
+                      undefined,
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }
+                    )}
+                  </span>
+                </div>
+                {campaign.budget_allocated && campaign.budget_spent && (
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                    <div>
+                      <span
+                        className={`text-xs ${tw.textSecondary} block mb-1`}
+                      >
+                        Allocated
+                      </span>
+                      <span className={`text-sm font-medium ${tw.textPrimary}`}>
+                        $
+                        {parseFloat(campaign.budget_allocated).toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }
+                        )}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full transition-all"
-                        style={{
-                          width: `${Math.min(
-                            budgetUtilisation.utilization_percentage,
-                            100
-                          )}%`,
-                          backgroundColor: color.primary.accent,
-                        }}
-                      />
+                    <div>
+                      <span
+                        className={`text-xs ${tw.textSecondary} block mb-1`}
+                      >
+                        Spent
+                      </span>
+                      <span className={`text-sm font-medium ${tw.textPrimary}`}>
+                        $
+                        {parseFloat(campaign.budget_spent).toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }
+                        )}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                    <span className={`text-sm ${tw.textSecondary}`}>
-                      Remaining Budget
-                    </span>
-                    <span className={`text-sm font-semibold ${tw.textPrimary}`}>
-                      $
-                      {budgetUtilisation.remaining_budget.toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}
-                    </span>
-                  </div>
-                  {campaign.budget_allocated && campaign.budget_spent && (
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-                      <div>
-                        <span
-                          className={`text-xs ${tw.textSecondary} block mb-1`}
-                        >
-                          Allocated
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${tw.textPrimary}`}
-                        >
-                          $
-                          {parseFloat(campaign.budget_allocated).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}
-                        </span>
-                      </div>
-                      <div>
-                        <span
-                          className={`text-xs ${tw.textSecondary} block mb-1`}
-                        >
-                          Spent
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${tw.textPrimary}`}
-                        >
-                          $
-                          {parseFloat(campaign.budget_spent).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Campaign Segments */}
-      <div
-        className={`bg-white rounded-md border border-[${color.border.default}] p-6`}
-      >
+      {/* Campaign Segments Table */}
+      <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3
             className={`text-lg font-semibold ${tw.textPrimary} flex items-center gap-2`}
@@ -908,27 +1071,118 @@ export default function CampaignDetailsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {segments.map((segment) => (
-              <div
-                key={segment.id}
-                className="border border-gray-200 rounded-md p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4
-                        className={`text-base font-semibold ${tw.textPrimary}`}
+          <div
+            className={`hidden lg:block overflow-x-auto rounded-md border border-[${color.border.default}]`}
+          >
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Segment
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Description
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Type
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Primary
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Include/Exclude
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {segments.map((segment) => (
+                  <tr key={segment.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/dashboard/segments/${segment.segment_id}`,
+                            {
+                              state: {
+                                returnTo: {
+                                  pathname: `/dashboard/campaigns/${id}`,
+                                },
+                              },
+                            }
+                          )
+                        }
+                        className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                        title={segment.segment_name}
+                        style={{ color: color.primary.accent }}
                       >
                         {segment.segment_name}
-                      </h4>
-                      {segment.is_primary && (
-                        <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
-                          Primary
+                      </button>
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {segment.segment_description ? (
+                        <div
+                          className={`text-xs sm:text-sm ${tw.textMuted} truncate`}
+                          title={segment.segment_description}
+                        >
+                          {segment.segment_description}
+                        </div>
+                      ) : (
+                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                          No description
                         </span>
                       )}
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {segment.segment_type}
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {segment.is_primary ? (
+                        <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
+                          Primary
+                        </span>
+                      ) : (
+                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
                       <span
-                        className={`px-2 py-0.5 text-xs font-medium rounded ${
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                           segment.include_exclude === "include"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
@@ -938,20 +1192,160 @@ export default function CampaignDetailsPage() {
                           ? "Include"
                           : "Exclude"}
                       </span>
-                    </div>
-                    {segment.segment_description && (
-                      <p className={`text-sm ${tw.textSecondary} mb-2`}>
-                        {segment.segment_description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>Type: {segment.segment_type}</span>
-                      <span>ID: {segment.segment_id}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Campaign Offers Table */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3
+            className={`text-lg font-semibold ${tw.textPrimary} flex items-center gap-2`}
+          >
+            <Package className="w-5 h-5" />
+            Campaign Offers ({offers.length})
+          </h3>
+        </div>
+        {isLoadingOffers ? (
+          <div className="flex items-center justify-center py-8">
+            <LoadingSpinner variant="modern" size="md" color="primary" />
+          </div>
+        ) : offers.length === 0 ? (
+          <div className="text-center py-8">
+            <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className={`text-sm ${tw.textSecondary}`}>
+              No offers mapped to this campaign
+            </p>
+          </div>
+        ) : (
+          <div
+            className={`hidden lg:block overflow-x-auto rounded-md border border-[${color.border.default}]`}
+          >
+            <table
+              className="w-full"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Offer
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Description
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Code
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Type
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {offers.map((offer) => (
+                  <tr key={offer.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/dashboard/offers/${offer.id}`, {
+                            state: {
+                              returnTo: {
+                                pathname: `/dashboard/campaigns/${id}`,
+                              },
+                            },
+                          })
+                        }
+                        className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                        title={offer.name}
+                        style={{ color: color.primary.accent }}
+                      >
+                        {offer.name}
+                      </button>
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {offer.description ? (
+                        <div
+                          className={`text-xs sm:text-sm ${tw.textMuted} truncate`}
+                          title={offer.description}
+                        >
+                          {offer.description}
+                        </div>
+                      ) : (
+                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                          No description
+                        </span>
+                      )}
+                    </td>
+                    <td
+                      className={`px-6 py-4 text-sm ${tw.textPrimary} font-mono`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {offer.code || "—"}
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {offer.status ? (
+                        <span
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                            offer.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : offer.status === "draft"
+                              ? "bg-gray-100 text-gray-800"
+                              : offer.status === "expired"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {offer.status}
+                        </span>
+                      ) : (
+                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td
+                      className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {offer.offer_type || "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

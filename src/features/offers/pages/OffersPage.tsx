@@ -25,15 +25,14 @@ import { offerCategoryService } from "../services/offerCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useAuth } from "../../../contexts/AuthContext";
 
 export default function OffersPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
-  const { confirm } = useConfirm();
   const { user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [categories, setCategories] = useState<OfferCategoryType[]>([]);
@@ -78,6 +77,14 @@ export default function OffersPage() {
     offerId: number;
     action: string;
   } | null>(null);
+
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [offerToDelete, setOfferToDelete] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -126,6 +133,13 @@ export default function OffersPage() {
             filteredOffers = filteredOffers.filter(
               (offer) => offer.status === selectedStatus
             );
+          } else if (selectedStatus === "all") {
+            // By default, exclude archived and expired offers
+            filteredOffers = filteredOffers.filter(
+              (offer) =>
+                offer.status !== OfferStatusEnum.ARCHIVED &&
+                offer.status !== OfferStatusEnum.EXPIRED
+            );
           }
 
           // Filter by search term if provided
@@ -147,18 +161,34 @@ export default function OffersPage() {
         // If response.success is false, fall through to error handling
       } else {
         // No category filter - use regular search
+        // Note: Backend doesn't support status filter, so we filter client-side
         const searchParams: SearchParams = {
           ...filters,
           search: debouncedSearchTerm || undefined,
-          status: selectedStatus !== "all" ? selectedStatus : undefined,
+          // Remove status from API call - backend doesn't support it
           skipCache: skipCache,
         };
 
         const response = await offerService.searchOffers(searchParams);
 
         if (response.success && response.data) {
-          setOffers(response.data);
-          const total = response.pagination?.total || response.data.length;
+          // Apply status filter client-side since backend doesn't support it
+          let filteredOffers = response.data;
+          if (selectedStatus && selectedStatus !== "all") {
+            filteredOffers = filteredOffers.filter(
+              (offer) => offer.status === selectedStatus
+            );
+          } else if (selectedStatus === "all") {
+            // By default, exclude archived and expired offers
+            filteredOffers = filteredOffers.filter(
+              (offer) =>
+                offer.status !== OfferStatusEnum.ARCHIVED &&
+                offer.status !== OfferStatusEnum.EXPIRED
+            );
+          }
+
+          setOffers(filteredOffers);
+          const total = response.pagination?.total || filteredOffers.length;
           setTotalOffers(total);
           return; // Success - exit early to avoid catch block
         }
@@ -210,106 +240,92 @@ export default function OffersPage() {
         let expired = 0;
         let pendingApproval = 0;
 
-        // Fetch total and active from stats
+        // Fetch all offers to calculate stats accurately
+        // Backend limit is 100, so we'll fetch in batches if needed
         try {
-          const offersResponse = await offerService.getStats();
-          if (offersResponse.success && offersResponse.data) {
-            // Try different possible field names (camelCase and snake_case)
-            // Backend returns strings, so parse them
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data = offersResponse.data as any;
-            total =
-              parseInt(data.total_offers as string) ||
-              parseInt(data.totalOffers as string) ||
-              parseInt(data.total as string) ||
-              (typeof data.total === "number" ? data.total : 0) ||
-              0;
-            // Use currently_active (offers valid right now) instead of active_offers
-            // Backend returns strings, so parse them
-            active =
-              parseInt(data.currently_active as string) ||
-              parseInt(data.currentlyActive as string) ||
-              parseInt(data.active_offers as string) ||
-              parseInt(data.activeOffers as string) ||
-              (typeof data.active === "number" ? data.active : 0) ||
-              0;
-          }
-        } catch {
-          // Error fetching offer stats
-        }
+          let allOffers: Offer[] = [];
+          let offset = 0;
+          const batchSize = 100;
+          let hasMore = true;
 
-        // If stats don't have total, get from pagination
-        if (total === 0) {
-          try {
-            const offersList = await offerService.searchOffers({ limit: 1 });
-            if (offersList.pagination?.total !== undefined) {
-              total = offersList.pagination.total;
-            }
-          } catch {
-            // Error fetching total offers
-          }
-        }
-
-        // Fetch expired offers count
-        try {
-          const expiredResponse = await offerService.getExpiredOffers({
-            limit: 1,
-          });
-          expired = expiredResponse.pagination?.total || 0;
-        } catch {
-          // Error fetching expired offers
-        }
-
-        // Fetch pending approval offers count
-        // Use status-based endpoint: combine pending_approval + draft (drafts need approval)
-        try {
-          let pendingCount = 0;
-          let draftCount = 0;
-
-          // Get pending_approval status offers
-          try {
-            const pendingResponse = await offerService.getOffersByStatus(
-              OfferStatusEnum.PENDING_APPROVAL,
-              { limit: 1, skipCache: true }
-            );
-            pendingCount = pendingResponse.pagination?.total || 0;
-          } catch {
-            // Error fetching pending_approval status
-          }
-
-          // Get draft status offers (drafts are considered pending approval)
-          try {
-            const draftResponse = await offerService.getOffersByStatus(
-              OfferStatusEnum.DRAFT,
-              { limit: 1, skipCache: true }
-            );
-            draftCount = draftResponse.pagination?.total || 0;
-          } catch {
-            // Error fetching draft status
-          }
-
-          // Combine both counts
-          pendingApproval = pendingCount + draftCount;
-        } catch {
-          // Error in pending approval logic
-          // Final fallback: Filter all offers
-          try {
-            const allOffers = await offerService.searchOffers({
-              limit: 100,
+          // Fetch all offers in batches
+          while (hasMore) {
+            const batchResponse = await offerService.searchOffers({
+              limit: batchSize,
+              offset: offset,
               skipCache: true,
             });
-            const pendingCount =
-              allOffers.data?.filter(
+
+            if (batchResponse.success && batchResponse.data) {
+              allOffers = [...allOffers, ...batchResponse.data];
+
+              // Check if there are more offers to fetch
+              const totalFromPagination = batchResponse.pagination?.total || 0;
+              hasMore =
+                allOffers.length < totalFromPagination &&
+                batchResponse.data.length === batchSize;
+              offset += batchSize;
+            } else {
+              hasMore = false;
+            }
+          }
+
+          if (allOffers.length > 0) {
+            // Total offers - count all regardless of status
+            total = allOffers.length;
+
+            // Active offers = status "active" OR "approved"
+            active = allOffers.filter(
+              (offer) =>
+                offer.status === OfferStatusEnum.ACTIVE ||
+                offer.status === OfferStatusEnum.APPROVED
+            ).length;
+
+            // Expired offers
+            expired = allOffers.filter(
+              (offer) => offer.status === OfferStatusEnum.EXPIRED
+            ).length;
+
+            // Pending approval = pending_approval + draft
+            pendingApproval = allOffers.filter(
+              (offer) =>
+                offer.status === OfferStatusEnum.PENDING_APPROVAL ||
+                offer.status === OfferStatusEnum.DRAFT
+            ).length;
+          } else {
+            // Fallback: try stats endpoint
+            try {
+              const offersResponse = await offerService.getStats();
+              if (offersResponse.success && offersResponse.data) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (o: any) =>
-                  o.status === "pending_approval" ||
-                  o.status === "draft" ||
-                  o.approval_status === "pending"
-              ).length || 0;
-            pendingApproval = pendingCount;
+                const data = offersResponse.data as any;
+                total =
+                  parseInt(data.total_offers as string) ||
+                  parseInt(data.totalOffers as string) ||
+                  parseInt(data.total as string) ||
+                  (typeof data.total === "number" ? data.total : 0) ||
+                  0;
+              }
+            } catch {
+              // Error fetching offer stats
+            }
+          }
+        } catch {
+          // Error fetching offers - try stats endpoint as fallback
+          try {
+            const offersResponse = await offerService.getStats();
+            if (offersResponse.success && offersResponse.data) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const data = offersResponse.data as any;
+              total =
+                parseInt(data.total_offers as string) ||
+                parseInt(data.totalOffers as string) ||
+                parseInt(data.total as string) ||
+                (typeof data.total === "number" ? data.total : 0) ||
+                0;
+            }
           } catch {
-            // All fallbacks failed
-            pendingApproval = 0;
+            // Error fetching offer stats
           }
         }
 
@@ -517,25 +533,29 @@ export default function OffersPage() {
     }
   }, [showActionMenu]);
 
-  const handleDeleteOffer = async (id: number, name: string) => {
-    const confirmed = await confirm({
-      title: "Delete Offer",
-      message: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleDeleteOffer = (id: number, name: string) => {
+    setOfferToDelete({ id, name });
+    setShowDeleteModal(true);
+    setShowActionMenu(null);
+  };
 
-    if (!confirmed) return;
+  const confirmDeleteOffer = async () => {
+    if (!offerToDelete) return;
 
     try {
-      await offerService.deleteOffer(id);
-      success("Offer Deleted", `"${name}" has been deleted successfully.`);
+      setIsDeleting(true);
+      await offerService.deleteOffer(offerToDelete.id);
+      success(
+        "Offer Deleted",
+        `"${offerToDelete.name}" has been deleted successfully.`
+      );
       await loadOffers(true); // Skip cache for immediate update
-      setShowActionMenu(null);
+      setShowDeleteModal(false);
+      setOfferToDelete(null);
     } catch {
       showError("Error", "Failed to delete offer");
-      // Delete offer error
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -878,7 +898,7 @@ export default function OffersPage() {
       color: color.tertiary.tag1, // Purple
     },
     {
-      name: "Currently Active",
+      name: "Active Offers",
       value: offerStats?.active?.toLocaleString() || "0",
       icon: CheckCircle,
       color: color.tertiary.tag4, // Green
@@ -973,6 +993,23 @@ export default function OffersPage() {
             handleFilterChange("categoryId", value ? Number(value) : undefined)
           }
           placeholder="All Categories"
+          className=""
+        />
+
+        <HeadlessSelect
+          options={[
+            { value: "all", label: "All Status" },
+            { value: OfferStatusEnum.DRAFT, label: "Draft" },
+            { value: OfferStatusEnum.ACTIVE, label: "Active" },
+            { value: OfferStatusEnum.PAUSED, label: "Paused" },
+            { value: OfferStatusEnum.EXPIRED, label: "Expired" },
+            { value: OfferStatusEnum.ARCHIVED, label: "Archived" },
+          ]}
+          value={selectedStatus}
+          onChange={(value) =>
+            handleStatusFilter((value as OfferStatusEnum | "all") || "all")
+          }
+          placeholder="All Status"
           className=""
         />
 
@@ -1717,6 +1754,22 @@ export default function OffersPage() {
           </div>,
           document.body
         )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setOfferToDelete(null);
+        }}
+        onConfirm={confirmDeleteOffer}
+        title="Delete Offer"
+        description="Are you sure you want to delete this offer? This action cannot be undone."
+        itemName={offerToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

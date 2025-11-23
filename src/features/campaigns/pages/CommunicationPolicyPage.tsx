@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Edit, Trash2, ArrowLeft } from "lucide-react";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { color, tw, components, helpers } from "../../../shared/utils/utils";
 import {
   CommunicationPolicyConfiguration,
@@ -19,8 +19,11 @@ import { communicationPolicyService } from "../services/communicationPolicyServi
 
 export default function CommunicationPolicyPage() {
   const navigate = useNavigate();
-  const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [policyToDelete, setPolicyToDelete] =
+    useState<CommunicationPolicyConfiguration | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [policies, setPolicies] = useState<CommunicationPolicyConfiguration[]>(
     []
@@ -58,30 +61,37 @@ export default function CommunicationPolicyPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeletePolicy = async (
-    policy: CommunicationPolicyConfiguration
-  ) => {
-    const confirmed = await confirm({
-      title: "Delete Policy",
-      message: `Are you sure you want to delete "${policy.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
+  const handleDeletePolicy = (policy: CommunicationPolicyConfiguration) => {
+    setPolicyToDelete(policy);
+    setShowDeleteModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!policyToDelete) return;
 
+    setIsDeleting(true);
     try {
-      const success = communicationPolicyService.deletePolicy(policy.id);
+      const success = communicationPolicyService.deletePolicy(
+        policyToDelete.id
+      );
       if (success) {
         showToast("Policy deleted successfully");
+        setShowDeleteModal(false);
+        setPolicyToDelete(null);
       } else {
         showError("Policy not found");
       }
     } catch (err) {
       console.error("Failed to delete policy:", err);
       showError("Failed to delete policy");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setPolicyToDelete(null);
   };
 
   const handlePolicySaved = async (
@@ -446,6 +456,19 @@ export default function CommunicationPolicyPage() {
         policy={editingPolicy}
         onSave={handlePolicySaved}
         isSaving={isSaving}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Policy"
+        description="Are you sure you want to delete this policy? This action cannot be undone."
+        itemName={policyToDelete?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Policy"
+        cancelText="Cancel"
       />
     </div>
   );

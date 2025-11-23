@@ -16,15 +16,14 @@ import { ProductCategory } from "../types/productCategory";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
 import { color, tw, button } from "../../../shared/utils/utils";
-import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { confirm } = useConfirm();
   const { success, error: showError } = useToast();
 
   const returnTo = (
@@ -46,6 +45,8 @@ export default function ProductDetailsPage() {
   const [category, setCategory] = useState<ProductCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadProduct = useCallback(async () => {
     try {
@@ -123,30 +124,33 @@ export default function ProductDetailsPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    if (!product) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (!product) return;
 
-    const confirmed = await confirm({
-      title: "Delete Product",
-      message: `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
-      type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
-    });
-
-    if (!confirmed) return;
-
+    setIsDeleting(true);
     try {
       await productService.deleteProduct(Number(id));
       success(
         "Product Deleted",
         `"${product.name}" has been deleted successfully.`
       );
+      setShowDeleteModal(false);
       navigate("/dashboard/products");
     } catch (err) {
       console.error("Failed to delete product:", err);
       showError("Failed to delete product", "Please try again later.");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   if (loading) {
@@ -607,6 +611,19 @@ export default function ProductDetailsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Product"
+        description="Are you sure you want to delete this product? This action cannot be undone."
+        itemName={product?.name || ""}
+        isLoading={isDeleting}
+        confirmText="Delete Product"
+        cancelText="Cancel"
+      />
     </div>
   );
 }
