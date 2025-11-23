@@ -193,8 +193,8 @@ class OfferService {
 
       // Handle filters
       if (params.status) queryParams.append("status", params.status);
-      if (params.categoryId)
-        queryParams.append("categoryId", params.categoryId.toString());
+      // Note: categoryId is NOT supported by the backend on this endpoint
+      // Use getOffersByCategory() method instead for category filtering
 
       // Handle cache
       if (params.skipCache) queryParams.append("skipCache", "true");

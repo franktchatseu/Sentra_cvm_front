@@ -106,66 +106,81 @@ export default function OffersPage() {
     try {
       setLoading(true);
 
-      const searchParams: SearchParams = {
-        ...filters,
-        search: debouncedSearchTerm || undefined,
-        status: selectedStatus !== "all" ? selectedStatus : undefined,
-        skipCache: skipCache,
-      };
-
-      const response = await offerService.searchOffers(searchParams);
-
-      if (response.success && response.data) {
-        let offersList = response.data;
-
-        // Apply client-side sorting by created_at DESC (newest first)
-        if (filters.sortBy && filters.sortDirection) {
-          offersList = [...offersList].sort((a, b) => {
-            let aValue: any;
-            let bValue: any;
-
-            switch (filters.sortBy) {
-              case "created_at":
-                aValue = new Date(a.created_at || 0).getTime();
-                bValue = new Date(b.created_at || 0).getTime();
-                break;
-              case "name":
-                aValue = (a.name || "").toLowerCase();
-                bValue = (b.name || "").toLowerCase();
-                break;
-              case "status":
-                aValue = (a.status || "").toLowerCase();
-                bValue = (b.status || "").toLowerCase();
-                break;
-              default:
-                aValue = a[filters.sortBy as keyof typeof a];
-                bValue = b[filters.sortBy as keyof typeof b];
-            }
-
-            if (aValue < bValue) {
-              return filters.sortDirection === "ASC" ? -1 : 1;
-            }
-            if (aValue > bValue) {
-              return filters.sortDirection === "ASC" ? 1 : -1;
-            }
-            return 0;
-          });
-        }
-
-        setOffers(offersList);
-        const total = response.pagination?.total || offersList.length;
-        setTotalOffers(total);
-      } else {
-        showError(
-          "Failed to load offers",
-          "Unable to retrieve offers. Please try again."
+      // If category filter is applied, use the specific category endpoint
+      if (filters.categoryId) {
+        const response = await offerService.getOffersByCategory(
+          filters.categoryId,
+          {
+            limit: filters.limit || 10,
+            offset: filters.offset || 0,
+            skipCache: skipCache,
+          }
         );
+
+        if (response.success && response.data) {
+          // Apply additional client-side filters if needed
+          let filteredOffers = response.data;
+
+          // Filter by status if selected
+          if (selectedStatus && selectedStatus !== "all") {
+            filteredOffers = filteredOffers.filter(
+              (offer) => offer.status === selectedStatus
+            );
+          }
+
+          // Filter by search term if provided
+          if (debouncedSearchTerm) {
+            const searchLower = debouncedSearchTerm.toLowerCase();
+            filteredOffers = filteredOffers.filter(
+              (offer) =>
+                offer.name?.toLowerCase().includes(searchLower) ||
+                offer.code?.toLowerCase().includes(searchLower) ||
+                offer.description?.toLowerCase().includes(searchLower)
+            );
+          }
+
+          setOffers(filteredOffers);
+          const total = filteredOffers.length;
+          setTotalOffers(total);
+          return; // Success - exit early to avoid catch block
+        }
+        // If response.success is false, fall through to error handling
+      } else {
+        // No category filter - use regular search
+        const searchParams: SearchParams = {
+          ...filters,
+          search: debouncedSearchTerm || undefined,
+          status: selectedStatus !== "all" ? selectedStatus : undefined,
+          skipCache: skipCache,
+        };
+
+        const response = await offerService.searchOffers(searchParams);
+
+        if (response.success && response.data) {
+          setOffers(response.data);
+          const total = response.pagination?.total || response.data.length;
+          setTotalOffers(total);
+          return; // Success - exit early to avoid catch block
+        }
+        // If response.success is false, fall through to error handling
       }
-    } catch {
+
+      // If we reach here, the API call succeeded but response.success is false
+      // Show a single error message
       showError(
         "Failed to load offers",
-        "An error occurred while loading offers"
+        filters.categoryId
+          ? "Unable to retrieve offers for this category."
+          : "Unable to retrieve offers. Please try again."
       );
+    } catch (err) {
+      // Only show error if it's an actual exception (network error, etc.)
+      // Don't show duplicate error if response.success was false (handled above)
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "An error occurred while loading offers";
+      showError("Failed to load offers", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -919,9 +934,7 @@ export default function OffersPage() {
                   className="h-5 w-5"
                   style={{ color: color.primary.accent }}
                 />
-                <p className="text-sm font-medium text-gray-600">
-                  {stat.name}
-                </p>
+                <p className="text-sm font-medium text-gray-600">{stat.name}</p>
               </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">
                 {statsLoading ? "..." : stat.value}

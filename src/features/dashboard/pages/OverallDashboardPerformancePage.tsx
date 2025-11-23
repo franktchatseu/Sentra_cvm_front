@@ -14,71 +14,20 @@ import {
 } from "recharts";
 import { Eye, MousePointerClick, Target, TrendingUp } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import type {
+  RangeOption,
+  OverallDashboardPerformanceResponse,
+  ChannelPerformance,
+} from "../types/ReportsAPI";
 
-type RangeOption = "7d" | "30d" | "90d";
+// Extract types from API response type
+type PerformanceSnapshot = OverallDashboardPerformanceResponse;
+type ChannelData = ChannelPerformance;
+type SMSDeliveryData =
+  OverallDashboardPerformanceResponse["smsDeliverySnapshot"];
+
+// Local UI types
 type ChannelFilter = "All Channels" | "SMS" | "Email" | "Push" | "Social";
-
-type ReachMetrics = {
-  reach: number;
-};
-
-type EngagementMetrics = {
-  clicks: number;
-  ctr: number; // Click-Through Rate
-  openRate: number; // Email/SMS Open Rate
-  engagementRate: number; // Social Media Engagement
-};
-
-type ConversionMetrics = {
-  conversions: number;
-  cvr: number; // Conversion Rate
-  cpc: number; // Cost Per Click
-  cpl: number; // Cost Per Lead
-  cpa: number; // Cost Per Acquisition
-  roas: number; // Return on Ad Spend
-  revenue: number;
-  spend: number;
-};
-
-type ChannelData = {
-  channel: string;
-  reach: number;
-  clicks: number;
-  opens: number;
-  conversions: number;
-  revenue: number;
-  spend: number;
-  ctr: number;
-  openRate: number;
-  cvr: number;
-  cpc: number;
-  cpl: number;
-  cpa: number;
-  roas: number;
-  engagementRate: number;
-};
-
-type SMSDeliveryData = {
-  date: string;
-  sent: number;
-  delivered: number;
-  converted: number;
-};
-
-type PerformanceSnapshot = {
-  reach: ReachMetrics;
-  engagement: EngagementMetrics;
-  conversion: ConversionMetrics;
-  channels: ChannelData[];
-  smsDelivery: SMSDeliveryData[];
-  timeSeries: {
-    date: string;
-    reach: number;
-    clicks: number;
-    conversions: number;
-    revenue: number;
-  }[];
-};
 
 const timeRangeOptions: RangeOption[] = ["7d", "30d", "90d"];
 const rangeDays: Record<RangeOption, number> = {

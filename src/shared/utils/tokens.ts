@@ -93,12 +93,14 @@ export const colors = {
 
   // Standardized report chart colors - 4 color palette for all report graphs
   reportCharts: {
-    // Base color palette (use these 4 colors across all report graphs)
+    // Base color palette (use these 6 colors across all report graphs)
     palette: {
       color1: "#00505C", // Dark teal
       color2: "#C38BFB", // Purple (was dark gray)
       color3: "#92A6B0", // Light gray-blue
       color4: "#4FDFF3", // Cyan/light blue
+      color5: "#FC9C9C", // Light pink/coral (for lifecycle distribution)
+      color6: "#F7B430", // Orange/amber (for lifecycle distribution)
     },
 
     // Customer Profile Reports
@@ -111,12 +113,12 @@ export const colors = {
         revenueShare: "#92A6B0", // color3 (line)
       },
       lifecycleDistribution: {
-        active: "#4FDFF3", // color4 - lighter for multi-bar
-        new: "#92A6B0", // color3 - lighter
+        active: "#4FDFF3", // color4 - cyan
+        new: "#92A6B0", // color3 - light gray-blue
         reactivated: "#00505C", // color1 - dark teal
         atRisk: "#C38BFB", // color2 - purple
-        dormant: "#92A6B0", // color3 (reuse)
-        churned: "#00505C", // color1 (reuse) - dark teal
+        dormant: "#FC9C9C", // color5 - light pink/coral
+        churned: "#F7B430", // color6 - orange/amber
       },
       cohortRetention: {
         jan: "#4FDFF3", // color4 - lighter for multi-bar
@@ -443,10 +445,7 @@ export const buttons = {
     paddingX: "0.75rem", // px-3
     borderRadius: "0.5rem",
     fontSize: "0.875rem", // text-sm (14px)
-    // hover: {
-    //   background: colors.primary.action,
-    //   color: "#FFFFFF",
-    // },
+   
   },
 };
 

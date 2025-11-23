@@ -24,7 +24,7 @@ export default function MultiCategorySelector({
   disabled = false,
   allowCreate = false,
   onCreateCategory,
-  onCategoryCreated,
+//   onCategoryCreated,
   className = "",
   refreshTrigger,
   entityType = "product",
@@ -67,35 +67,43 @@ export default function MultiCategorySelector({
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Load categories based on entity type
       let categoriesData: ProductCategory[] = [];
-      
+
       if (entityType === "campaign") {
-        const { campaignService } = await import("../../features/campaigns/services/campaignService");
+        const { campaignService } = await import(
+          "../../features/campaigns/services/campaignService"
+        );
         const response = await campaignService.getCampaignCategories();
         categoriesData = Array.isArray(response)
           ? response
           : (response as { data: ProductCategory[] }).data || [];
       } else if (entityType === "offer") {
-        const { offerCategoryService } = await import("../../features/offers/services/offerCategoryService");
+        const { offerCategoryService } = await import(
+          "../../features/offers/services/offerCategoryService"
+        );
         const response = await offerCategoryService.getAllCategories({
           limit: 100,
           skipCache: true,
         });
         categoriesData = response.data || [];
       } else if (entityType === "segment") {
-        const { segmentService } = await import("../../features/segments/services/segmentService");
+        const { segmentService } = await import(
+          "../../features/segments/services/segmentService"
+        );
         const response = await segmentService.getSegmentCategories();
         // Convert segment categories to ProductCategory format
-        categoriesData = (response.data || []).map((cat: { id: number; name: string }) => ({
-          id: cat.id,
-          name: cat.name,
-          description: "",
-          is_active: true,
-          created_at: "",
-          updated_at: "",
-        }));
+        categoriesData = (response.data || []).map(
+          (cat: { id: number; name: string }) => ({
+            id: cat.id,
+            name: cat.name,
+            description: "",
+            is_active: true,
+            created_at: "",
+            updated_at: "",
+          })
+        );
       } else {
         // Default to product categories
         const response = await productCategoryService.getAllCategories({
@@ -104,7 +112,7 @@ export default function MultiCategorySelector({
         });
         categoriesData = response.data || [];
       }
-      
+
       setCategories(categoriesData);
     } catch (err) {
       setError(
@@ -123,9 +131,7 @@ export default function MultiCategorySelector({
         category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const selectedCategories = categories.filter((cat) =>
-    value.includes(cat.id)
-  );
+  const selectedCategories = categories.filter((cat) => value.includes(cat.id));
 
   const handleToggle = (categoryId: number) => {
     const newValue = value.includes(categoryId)
@@ -147,15 +153,15 @@ export default function MultiCategorySelector({
     setSearchTerm("");
   };
 
-  const getDisplayText = () => {
-    if (selectedCategories.length === 0) {
-      return placeholder;
-    }
-    if (selectedCategories.length === 1) {
-      return selectedCategories[0].name;
-    }
-    return `${selectedCategories.length} catalogs selected`;
-  };
+//   const getDisplayText = () => {
+//     if (selectedCategories.length === 0) {
+//       return placeholder;
+//     }
+//     if (selectedCategories.length === 1) {
+//       return selectedCategories[0].name;
+//     }
+//     return `${selectedCategories.length} catalogs selected`;
+//   };
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -329,4 +335,3 @@ export default function MultiCategorySelector({
     </div>
   );
 }
-

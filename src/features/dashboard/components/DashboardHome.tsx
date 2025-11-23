@@ -314,45 +314,54 @@ export default function DashboardHome() {
   // Fetch stats for offers, segments, and products
   useEffect(() => {
     const fetchStats = async () => {
+      // Run all stat API calls in parallel for better performance
+      const [offersResponse, segmentsResponse, productsResponse, campaignsStatsResponse] = await Promise.allSettled([
+        offerService.getStats(),
+        segmentService.getSegmentStats(),
+        productService.getStats(),
+        campaignService.getCampaignStats(true)
+      ]);
+
+      const parseMetric = (value: unknown): number => {
+        if (typeof value === "number") return value;
+        if (typeof value === "string") {
+          const parsed = parseInt(value, 10);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+      };
+
+      // Process offers stats
       try {
-        // Fetch offers stats - try getStats first, fallback to searchOffers for total count
-        const offersResponse = await offerService.getStats();
-        const parseMetric = (value: unknown): number => {
-          if (typeof value === "number") return value;
-          if (typeof value === "string") {
-            const parsed = parseInt(value, 10);
-            return Number.isNaN(parsed) ? 0 : parsed;
+        if (offersResponse.status === 'fulfilled') {
+          const response = offersResponse.value;
+          let total = 0;
+          let active = 0;
+          let pendingApproval = 0;
+
+          if (response.success && response.data) {
+            const data = response.data as Record<string, unknown>;
+            total = parseMetric(
+              data.totalOffers ?? data.total_offers ?? data.total
+            );
+            active = parseMetric(
+              data.activeOffers ?? data.active_offers ?? data.active
+            );
+            pendingApproval = parseMetric(
+              data.in_draft ?? data.inDraft ?? data.draft
+            );
           }
-          return 0;
-        };
 
-        let total = 0;
-        let active = 0;
-        let pendingApproval = 0;
-
-        if (offersResponse.success && offersResponse.data) {
-          const data = offersResponse.data as Record<string, unknown>;
-          total = parseMetric(
-            data.totalOffers ?? data.total_offers ?? data.total
-          );
-          active = parseMetric(
-            data.activeOffers ?? data.active_offers ?? data.active
-          );
-          // Use in_draft as the pending approval count (offers awaiting review)
-          pendingApproval = parseMetric(
-            data.in_draft ?? data.inDraft ?? data.draft
-          );
-        }
-
-        // If stats don't have total, get from pagination
-        if (total === 0) {
-          const offersList = await offerService.searchOffers({ limit: 1 });
-          if (offersList.pagination?.total !== undefined) {
-            total = offersList.pagination.total;
+          // If stats don't have total, get from pagination
+          if (total === 0) {
+            const offersList = await offerService.searchOffers({ limit: 1 });
+            if (offersList.pagination?.total !== undefined) {
+              total = offersList.pagination.total;
+            }
           }
-        }
 
-        setOffersStats({ total, active, pendingApproval });
+          setOffersStats({ total, active, pendingApproval });
+        }
       } catch {
         // Final fallback: try to get total from pagination
         try {
@@ -371,118 +380,130 @@ export default function DashboardHome() {
         }
       }
 
+      // Process segments stats
       try {
-        // Fetch segments stats - use getSegmentStats
-        const segmentsResponse = await segmentService.getSegmentStats();
-        if (segmentsResponse.success && segmentsResponse.data) {
-          const data = segmentsResponse.data as Record<string, unknown>;
-          const total =
-            (typeof data.total_segments === "number"
-              ? data.total_segments
-              : typeof data.total_segments === "string"
-              ? parseInt(data.total_segments, 10)
-              : 0) ||
-            (typeof data.total === "number"
-              ? data.total
-              : typeof data.total === "string"
-              ? parseInt(data.total, 10)
-              : 0) ||
-            0;
-          setSegmentsStats({ total });
-        } else {
-          setSegmentsStats({ total: 0 });
+        if (segmentsResponse.status === 'fulfilled') {
+          const response = segmentsResponse.value;
+          if (response.success && response.data) {
+            const data = response.data as Record<string, unknown>;
+            const total =
+              (typeof data.total_segments === "number"
+                ? data.total_segments
+                : typeof data.total_segments === "string"
+                ? parseInt(data.total_segments, 10)
+                : 0) ||
+              (typeof data.total === "number"
+                ? data.total
+                : typeof data.total === "string"
+                ? parseInt(data.total, 10)
+                : 0) ||
+              0;
+            setSegmentsStats({ total });
+          } else {
+            setSegmentsStats({ total: 0 });
+          }
         }
       } catch {
         setSegmentsStats({ total: 0 });
       }
 
+      // Process products stats
       try {
-        // Fetch products stats
-        const productsResponse = await productService.getStats();
-        if (productsResponse.success && productsResponse.data) {
-          setProductsStats({
-            total: productsResponse.data.total_products || 0,
-          });
+        if (productsResponse.status === 'fulfilled') {
+          const response = productsResponse.value;
+          if (response.success && response.data) {
+            setProductsStats({
+              total: response.data.total_products || 0,
+            });
+          }
         }
       } catch {
         setProductsStats({ total: 0 });
       }
 
+      // Process campaigns stats
       try {
-        const campaignsStatsResponse = await campaignService.getCampaignStats(
-          true
-        );
-
-        if (campaignsStatsResponse.success && campaignsStatsResponse.data) {
-          const statsData = campaignsStatsResponse.data as CampaignStatsSummary;
-          const total = parseMetricValue(statsData.total_campaigns);
-          const active = parseMetricValue(
-            statsData.active_campaigns ?? statsData.currently_active
-          );
-          const completed = parseMetricValue(statsData.completed);
-
-          setCampaignsStats({ total, active, completed });
-
-          const initialStatusCounts: Record<string, number> = {
-            draft: parseMetricValue(statsData.in_draft ?? 0),
-            pending_approval: parseMetricValue(statsData.pending_approval ?? 0),
-            active,
-            completed: parseMetricValue(statsData.completed ?? 0),
-            archived: parseMetricValue(statsData.archived ?? 0),
-            rejected: parseMetricValue(statsData.rejected ?? 0),
-          };
-
-          const supplementaryStatuses: CampaignStatus[] = [
-            "paused",
-            "cancelled",
-          ];
-
-          const supplementary = await Promise.all(
-            supplementaryStatuses.map(async (status) => {
-              try {
-                const response = await campaignService.getCampaignsByStatus(
-                  status,
-                  {
-                    limit: 1,
-                    skipCache: true,
-                  }
-                );
-                return {
-                  status,
-                  count: extractCampaignTotal(response),
-                };
-              } catch {
-                return { status, count: 0 };
+        if (campaignsStatsResponse.status === 'fulfilled') {
+          const response = campaignsStatsResponse.value;
+          if (response.success && response.data) {
+            const statsData = response.data as CampaignStatsSummary;
+            const parseMetric = (value: unknown): number => {
+              if (typeof value === "number") return value;
+              if (typeof value === "string") {
+                const parsed = parseInt(value, 10);
+                return Number.isNaN(parsed) ? 0 : parsed;
               }
-            })
-          );
+              return 0;
+            };
+            const total = parseMetric(statsData.total_campaigns);
+            const active = parseMetric(
+              statsData.active_campaigns ?? statsData.currently_active
+            );
+            const completed = parseMetric(statsData.completed);
 
-          supplementary.forEach(({ status, count }) => {
-            if (count > 0) {
-              initialStatusCounts[status] =
-                (initialStatusCounts[status] ?? 0) + count;
-            }
-          });
+            setCampaignsStats({ total, active, completed });
 
-          const statusEntries = Object.entries(initialStatusCounts).filter(
-            ([, count]) => count > 0
-          );
+            const initialStatusCounts: Record<string, number> = {
+              draft: parseMetric(statsData.in_draft ?? 0),
+              pending_approval: parseMetric(statsData.pending_approval ?? 0),
+              active,
+              completed: parseMetric(statsData.completed ?? 0),
+              archived: parseMetric(statsData.archived ?? 0),
+              rejected: parseMetric(statsData.rejected ?? 0),
+            };
 
-          const totalForDistribution =
-            statusEntries.reduce((sum, [, count]) => sum + count, 0) || total;
+            const supplementaryStatuses: CampaignStatus[] = [
+              "paused",
+              "cancelled",
+            ];
 
-          setCampaignStatusDistribution(
-            statusEntries.map(([statusKey, count]) => ({
-              status: formatStatusLabel(statusKey),
-              count,
-              percentage:
-                totalForDistribution > 0
-                  ? (count / totalForDistribution) * 100
-                  : 0,
-              color:
-                statusColorMap[statusKey] ?? color.charts.campaigns.pending,
-            }))
-          );
+            const supplementary = await Promise.all(
+              supplementaryStatuses.map(async (status) => {
+                try {
+                  const response = await campaignService.getCampaignsByStatus(
+                    status,
+                    {
+                      limit: 1,
+                      skipCache: true,
+                    }
+                  );
+                  return {
+                    status,
+                    count: extractCampaignTotal(response),
+                  };
+                } catch {
+                  return { status, count: 0 };
+                }
+              })
+            );
+
+            supplementary.forEach(({ status, count }) => {
+              if (count > 0) {
+                initialStatusCounts[status] =
+                  (initialStatusCounts[status] ?? 0) + count;
+              }
+            });
+
+            const statusEntries = Object.entries(initialStatusCounts).filter(
+              ([, count]) => count > 0
+            );
+
+            const totalForDistribution =
+              statusEntries.reduce((sum, [, count]) => sum + count, 0) || total;
+
+            setCampaignStatusDistribution(
+              statusEntries.map(([statusKey, count]) => ({
+                status: formatStatusLabel(statusKey),
+                count,
+                percentage:
+                  totalForDistribution > 0
+                    ? (count / totalForDistribution) * 100
+                    : 0,
+                color:
+                  statusColorMap[statusKey] ?? color.charts.campaigns.pending,
+              }))
+            );
+          }
         }
       } catch {
         // Error fetching campaign stats

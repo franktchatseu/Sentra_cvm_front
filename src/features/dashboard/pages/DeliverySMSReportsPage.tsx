@@ -21,48 +21,21 @@ import {
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
 import { color } from "../../../shared/utils/utils";
+import type {
+  RangeOption,
+  DeliverySMSReportsResponse,
+  SMSLogEntry,
+} from "../types/ReportsAPI";
 
-type RangeOption = "7d" | "30d" | "90d";
-type MessageStatus = "Delivered" | "Failed" | "Pending" | "Rejected";
+// Extract types from API response type
+type SMSSummary = DeliverySMSReportsResponse["summary"];
+type DeliveryPoint = DeliverySMSReportsResponse["deliveryTimeline"][number];
+type MessageStatus = SMSLogEntry["status"];
 
-type DeliveryPoint = {
-  period: string;
-  sent: number;
-  delivered: number;
-  converted: number;
-};
-
-type SMSSummary = {
-  sent: number;
-  delivered: number;
-  deliveryRate: number;
-  failedRate: number;
-  conversionRate: number;
-  conversions: number;
-  openRate: number;
-  ctr: number;
-  optOutRate: number;
-};
-
+// Mock data structure (combines summary and timeline)
 type SMSRangeData = {
   summary: SMSSummary;
   deliverySeries: DeliveryPoint[];
-};
-
-type MessageLogEntry = {
-  id: string;
-  campaignId: string;
-  campaignName: string;
-  recipient: string;
-  region: string;
-  senderId: string;
-  timestamp: string;
-  status: MessageStatus;
-  sent: number;
-  delivered: number;
-  conversions: number;
-  conversionRate: number;
-  errorCode?: string;
 };
 
 const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];

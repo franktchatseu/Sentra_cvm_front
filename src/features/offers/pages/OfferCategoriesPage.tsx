@@ -546,15 +546,16 @@ function OfferCategoriesPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      // Load stats first
-      await loadStats();
-      // Load analytics data
-      await loadUnusedCategories();
-      await loadPopularCategory();
-      await loadCategoryPerformance();
-      // Load offers first, then categories (to avoid race condition)
-      await loadAllOffers();
-      await loadCategories(true); // Always skip cache for fresh data
+      // Load all data in parallel for better performance
+      await Promise.all([
+        loadStats(),
+        loadUnusedCategories(),
+        loadPopularCategory(),
+        loadCategoryPerformance(),
+        loadAllOffers(),
+      ]);
+      // Load categories after offers to avoid race condition
+      await loadCategories(true);
     };
     loadData();
   }, [debouncedSearchTerm, filterType, advancedSearch]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -22,44 +22,21 @@ import {
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
 import { color } from "../../../shared/utils/utils";
+import type {
+  RangeOption,
+  DeliveryEmailReportsResponse,
+  EmailLogEntry,
+} from "../types/ReportsAPI";
 
-type RangeOption = "7d" | "30d" | "90d";
-type EmailStatus = "Delivered" | "Bounced" | "Deferred" | "Spam";
+// Extract types from API response type
+type EmailSummary = DeliveryEmailReportsResponse["summary"];
+type DeliveryPoint = DeliveryEmailReportsResponse["deliveryTimeline"][number];
+type EmailStatus = EmailLogEntry["status"];
 
-type DeliveryPoint = {
-  period: string;
-  sent: number;
-  delivered: number;
-  converted: number;
-};
-
-type EmailSummary = {
-  sent: number;
-  delivered: number;
-  deliveryRate: number;
-  conversionRate: number;
-  conversions: number;
-  bounceRate: number;
-  openRate: number;
-  ctr: number;
-  unsubscribeRate: number;
-};
-
+// Mock data structure (combines summary and timeline)
 type EmailRangeData = {
   summary: EmailSummary;
   deliverySeries: DeliveryPoint[];
-};
-
-type EmailLogEntry = {
-  id: string;
-  campaignId: string;
-  campaignName: string;
-  status: EmailStatus;
-  sent: number;
-  delivered: number;
-  conversions: number;
-  conversionRate: number;
-  sentDate: string;
 };
 
 const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];

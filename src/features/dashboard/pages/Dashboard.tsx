@@ -48,6 +48,7 @@ import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycl
 import SearchResultsPage from "../../../shared/pages/SearchResultsPage";
 import OverallDashboardPerformancePage from "./OverallDashboardPerformancePage";
 import CustomerProfileReportsPage from "./CustomerProfileReportsPage";
+import CustomerSearchResultsPage from "./CustomerSearchResultsPage";
 import CampaignReportsPage from "./CampaignReportsPage";
 import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
 import DeliveryEmailReportsPage from "./DeliveryEmailReportsPage";
@@ -160,6 +161,10 @@ export default function Dashboard() {
         <Route
           path="/reports/customer-profiles"
           element={<CustomerProfileReportsPage />}
+        />
+        <Route
+          path="/reports/customer-profiles/search"
+          element={<CustomerSearchResultsPage />}
         />
         <Route path="/reports/campaigns" element={<CampaignReportsPage />} />
         <Route path="/reports/offers" element={<OfferReportsPage />} />

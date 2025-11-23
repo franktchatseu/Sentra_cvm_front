@@ -386,12 +386,8 @@ export default function SegmentManagementPage() {
         segmentData = response.data || [];
       }
 
-      // Apply client-side tag filtering if tags are selected
-      if (selectedTags.length > 0) {
-        segmentData = segmentData.filter((segment) =>
-          selectedTags.some((tag) => (segment.tags || []).includes(tag))
-        );
-      }
+      // Note: Tag and type filtering are done client-side in filteredSegments
+      // No need to filter here - just fetch all segments
 
       // Apply client-side sorting
       if (sortBy && sortDirection) {
@@ -468,8 +464,8 @@ export default function SegmentManagementPage() {
     }
   }, [
     debouncedSearchTerm,
-    selectedTags,
-    typeFilter,
+    // Note: typeFilter and selectedTags are applied client-side after fetching,
+    // so they don't need to trigger a new API call
     page,
     pageSize,
     sortBy,

@@ -19,8 +19,17 @@ import {
   Users2,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import type {
+  RangeOption,
+  CampaignReportsResponse,
+  CampaignRow,
+} from "../types/ReportsAPI";
 
-type RangeOption = "7d" | "30d" | "90d";
+// Extract types from API response type
+type CampaignSummary = CampaignReportsResponse["summary"];
+type ChannelReachPoint = CampaignReportsResponse["channelReach"][number];
+type FunnelPoint = CampaignReportsResponse["conversionFunnel"][number];
+type TrendPoint = CampaignReportsResponse["performanceTrend"][number];
 
 const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];
 const rangeDays: Record<RangeOption, number> = {
@@ -89,55 +98,7 @@ const getDateConstraints = () => {
   return { minDate: minDateStr, maxDate };
 };
 
-type CampaignSummary = {
-  eligibleAudience: number;
-  recipients: number;
-  reach: number;
-  impressions: number;
-  opens: number;
-  clickRate: number;
-  engagementRate: number;
-  conversions: number;
-  conversionRate: number;
-  revenue: number;
-  roas: number;
-  cac: number;
-  leads: number;
-  campaignCost: number;
-};
-
-type ChannelReachPoint = {
-  channel: string;
-  reach: number;
-  impressions: number;
-};
-
-type FunnelPoint = {
-  stage: string;
-  value: number;
-};
-
-type TrendPoint = {
-  period: string;
-  ctr: number;
-  engagement: number;
-  revenue: number;
-  spend: number;
-};
-
-type CampaignRow = {
-  id: string;
-  name: string;
-  segment: string;
-  offer: string;
-  targetGroup: number;
-  controlGroup: number;
-  sent: number;
-  delivered: number;
-  conversions: number;
-  messagesGenerated: number;
-  lastRunDate: string;
-};
+// Types are now imported from ReportsAPI.ts above
 
 const campaignSummary: Record<RangeOption, CampaignSummary> = {
   "7d": {

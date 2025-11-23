@@ -22,8 +22,17 @@ import {
   Sparkles,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import type {
+  RangeOption,
+  OfferReportsResponse,
+  OfferRow,
+} from "../types/ReportsAPI";
 
-type RangeOption = "7d" | "30d" | "90d";
+// Extract types from API response type
+type CombinedSummary = OfferReportsResponse["summary"];
+type FunnelStage = OfferReportsResponse["redemptionFunnel"][number];
+type TimeSeriesPoint = OfferReportsResponse["redemptionTimeline"][number];
+type OfferTypePerformance = OfferReportsResponse["offerTypeComparison"][number];
 
 const rangeOptions: RangeOption[] = ["7d", "30d", "90d"];
 const rangeDays: Record<RangeOption, number> = {
@@ -92,50 +101,7 @@ const getDateConstraints = () => {
   return { minDate: minDateStr, maxDate };
 };
 
-// Mock data types
-interface CombinedSummary {
-  totalRedemptions: number;
-  redemptionRate: number;
-  revenueGenerated: number;
-  incrementalRevenue: number;
-  totalCost: number;
-  roi: number;
-}
-
-interface FunnelStage {
-  stage: string;
-  value: number;
-  percentage?: number;
-}
-
-interface TimeSeriesPoint {
-  period: string;
-  redemptions: number;
-  cumulativeRedemptions: number;
-}
-
-interface OfferTypePerformance {
-  type: string;
-  redemptionRate: number;
-  aov: number;
-  marginPercent: number;
-  incrementalRevenue: number;
-}
-
-interface OfferRow {
-  id: string;
-  offerName: string;
-  campaignName: string;
-  segment: string;
-  status: "Active" | "Expired" | "Scheduled" | "Paused";
-  targetGroup: number;
-  controlGroup: number;
-  messagesGenerated: number;
-  sent: number;
-  delivered: number;
-  conversions: number;
-  lastUpdated: string;
-}
+// Types are now imported from ReportsAPI.ts above
 
 const combinedSummary: Record<RangeOption, CombinedSummary> = {
   "7d": {

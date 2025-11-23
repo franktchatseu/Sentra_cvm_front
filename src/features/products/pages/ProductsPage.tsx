@@ -111,40 +111,6 @@ export default function ProductsPage() {
         productsList = response.data || [];
       }
 
-      // Client-side sorting if sortBy and sortDirection are provided
-      if (filters.sortBy && filters.sortDirection) {
-        productsList = [...productsList].sort((a, b) => {
-          let aValue: any;
-          let bValue: any;
-
-          switch (filters.sortBy) {
-            case "created_at":
-              aValue = new Date(a.created_at).getTime();
-              bValue = new Date(b.created_at).getTime();
-              break;
-            case "name":
-              aValue = (a.name || "").toLowerCase();
-              bValue = (b.name || "").toLowerCase();
-              break;
-            case "product_id":
-              aValue = (a.product_code || a.id || "").toString().toLowerCase();
-              bValue = (b.product_code || b.id || "").toString().toLowerCase();
-              break;
-            default:
-              aValue = a[filters.sortBy as keyof Product];
-              bValue = b[filters.sortBy as keyof Product];
-          }
-
-          if (aValue < bValue) {
-            return filters.sortDirection === "ASC" ? -1 : 1;
-          }
-          if (aValue > bValue) {
-            return filters.sortDirection === "ASC" ? 1 : -1;
-          }
-          return 0;
-        });
-      }
-
       setProducts(productsList);
       const totalCount = response.pagination?.total || 0;
       setTotal(totalCount);
@@ -159,11 +125,16 @@ export default function ProductsPage() {
     }
   }, [filters]);
 
+  // Load products and categories when filters change
   useEffect(() => {
     loadProducts();
     loadCategories();
-    loadStats();
   }, [loadProducts]);
+
+  // Load stats only once on mount (stats don't change with filters)
+  useEffect(() => {
+    loadStats();
+  }, []); // Empty dependency array - only run on mount
 
   const loadStats = async () => {
     try {

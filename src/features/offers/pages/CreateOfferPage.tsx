@@ -1705,16 +1705,41 @@ export default function CreateOfferPage() {
             </div>
 
             {/* Desktop - Full stepper */}
-            <div className="hidden md:flex items-center justify-between w-full">
+            <div className="hidden md:flex items-center justify-between w-full relative">
+              {/* Background line - starts after first circle, ends before last circle */}
+              <div
+                className="absolute top-4 h-0.5 bg-gray-200"
+                style={{
+                  left: "1rem", // Start after first circle (half of 32px/2rem circle)
+                  right: "1rem", // End before last circle (half of 32px/2rem circle)
+                  zIndex: 0,
+                }}
+              />
+
+              {/* Progress line for completed steps */}
+              {currentStep > 1 && (
+                <div
+                  className="absolute top-4 h-0.5 transition-all duration-500"
+                  style={{
+                    left: "1rem", // Start after first circle
+                    width: `calc((100% - 2rem) * ${
+                      (currentStep - 1) / (steps.length - 1)
+                    })`, // Proportional width
+                    backgroundColor: color.primary.action,
+                    zIndex: 1,
+                  }}
+                />
+              )}
+
               {steps.map((step, stepIdx) => {
                 const status = getStepStatus(step.id);
                 const Icon = step.icon;
 
                 return (
-                  <div key={step.id} className="relative">
+                  <div key={step.id} className="relative z-10">
                     <button
                       onClick={() => handleStepClick(step.id)}
-                      className="relative flex flex-col items-center group z-10"
+                      className="relative flex flex-col items-center group"
                       disabled={!canNavigateToStep(step.id)}
                     >
                       <div
@@ -1760,24 +1785,6 @@ export default function CreateOfferPage() {
                         </div>
                       </div>
                     </button>
-
-                    {stepIdx !== steps.length - 1 && (
-                      <div
-                        className="absolute top-4 left-1/2 w-full h-0.5 bg-gray-200"
-                        style={{
-                          transform: "translateX(0%)",
-                          zIndex: 1,
-                        }}
-                      >
-                        <div
-                          className={`h-full transition-all duration-500 ${
-                            step.id < currentStep
-                              ? `bg-[${color.primary.action}] w-full`
-                              : "bg-gray-200 w-0"
-                          }`}
-                        />
-                      </div>
-                    )}
                   </div>
                 );
               })}

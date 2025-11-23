@@ -273,6 +273,9 @@ export default function CampaignsPage() {
     try {
       setIsLoading(true);
 
+      let response;
+      const LIMIT = 100; // Fetch reasonable batch size
+
       // Check if we have any filters applied
       const hasFilters =
         (filters.categoryId && filters.categoryId !== "all") ||
@@ -282,116 +285,55 @@ export default function CampaignsPage() {
         (selectedStatus && selectedStatus !== "all") ||
         searchQuery.trim();
 
-      let response;
-      const MAX_LIMIT = 100;
-
       if (hasFilters) {
-        // Use superSearchCampaigns for complex filtering
-        const superSearchParams: any = {
-          limit: MAX_LIMIT,
-          offset: 0,
+        // Use superSearchCampaigns when filters are applied
+        const searchParams: any = {
+          limit: LIMIT,
+          offset: (currentPage - 1) * LIMIT, // Use LIMIT for offset calculation
           skipCache: true,
         };
 
         if (searchQuery.trim()) {
-          superSearchParams.name = searchQuery.trim();
+          searchParams.name = searchQuery.trim();
         }
 
         if (selectedStatus && selectedStatus !== "all") {
-          superSearchParams.status = selectedStatus;
+          searchParams.status = selectedStatus;
+        } else if (selectedStatus === "all") {
+          // When "all" is selected, exclude archived campaigns from default view
+          // Users can still see archived campaigns by selecting "Archived" filter
+          // Note: Backend doesn't support excludeStatus, so we'll filter client-side
         }
 
         if (filters.approvalStatus && filters.approvalStatus !== "all") {
-          superSearchParams.approvalStatus = filters.approvalStatus;
+          searchParams.approvalStatus = filters.approvalStatus;
         }
 
         if (filters.categoryId && filters.categoryId !== "all") {
-          superSearchParams.categoryId = parseInt(filters.categoryId);
+          searchParams.categoryId = parseInt(filters.categoryId);
         }
 
         if (filters.startDateFrom) {
-          superSearchParams.startDateFrom = filters.startDateFrom;
+          searchParams.startDateFrom = filters.startDateFrom;
         }
 
         if (filters.startDateTo) {
-          superSearchParams.startDateTo = filters.startDateTo;
+          searchParams.startDateTo = filters.startDateTo;
         }
 
-        response = await campaignService.superSearchCampaigns(
-          superSearchParams
-        );
+        response = await campaignService.superSearchCampaigns(searchParams);
       } else {
-        // Fetch campaigns in batches of 100 (max allowed by backend)
-        let allCampaignsData: CampaignDisplay[] = [];
-        let offset = 0;
-        let hasMore = true;
-        let totalCampaignsFromAPI = 0;
-
-        while (hasMore) {
-          const batchResponse = await campaignService.getCampaigns({
-            limit: MAX_LIMIT,
-            offset: offset,
-            skipCache: true,
-          });
-
-          // Transform backend campaigns to display format
-          const campaignsData: CampaignDisplay[] = batchResponse.data.map(
-            (campaign) => ({
-              id: campaign.id,
-              name: campaign.name,
-              description: campaign.description || undefined,
-              status: campaign.status,
-              category_id: campaign.category_id || undefined,
-              objective: campaign.objective,
-              startDate: campaign.start_date || undefined,
-              endDate: campaign.end_date || undefined,
-              approval_status: campaign.approval_status,
-              code: campaign.code,
-              created_at: campaign.created_at,
-            })
-          );
-
-          allCampaignsData = [...allCampaignsData, ...campaignsData];
-
-          // Check if there are more campaigns to fetch
-          const pagination = batchResponse.pagination;
-          if (pagination) {
-            // Get total from first response
-            if (totalCampaignsFromAPI === 0 && pagination.total) {
-              totalCampaignsFromAPI = pagination.total;
-            }
-
-            // Check if we've fetched all campaigns
-            hasMore = pagination.hasMore || false;
-
-            // Safety check: stop if we've fetched all campaigns
-            if (
-              totalCampaignsFromAPI > 0 &&
-              allCampaignsData.length >= totalCampaignsFromAPI
-            ) {
-              hasMore = false;
-            }
-
-            // Also stop if we got fewer campaigns than requested (last page)
-            if (campaignsData.length < MAX_LIMIT) {
-              hasMore = false;
-            }
-
-            offset += MAX_LIMIT;
-          } else {
-            // If no pagination info, stop if we got less than MAX_LIMIT
-            hasMore = campaignsData.length === MAX_LIMIT;
-            offset += MAX_LIMIT;
-          }
-        }
-
-        response = { data: allCampaignsData, pagination: undefined };
+        // Use regular getCampaigns when no filters applied (more efficient)
+        response = await campaignService.getCampaigns({
+          limit: LIMIT,
+          offset: (currentPage - 1) * LIMIT,
+          skipCache: true,
+        });
       }
 
       // Transform response data to display format
-      let campaignsData: CampaignDisplay[] = [];
-      if (hasFilters && response) {
-        campaignsData = response.data.map((campaign) => ({
+      const campaignsData: CampaignDisplay[] = response.data.map(
+        (campaign) => ({
           id: campaign.id,
           name: campaign.name,
           description: campaign.description || undefined,
@@ -403,10 +345,8 @@ export default function CampaignsPage() {
           approval_status: campaign.approval_status,
           code: campaign.code,
           created_at: campaign.created_at,
-        }));
-      } else if (response) {
-        campaignsData = response.data;
-      }
+        })
+      );
 
       // Helper function to generate consistent random values based on campaign ID
       const seededRandom = (seed: number, min: number, max: number) => {
@@ -518,51 +458,29 @@ export default function CampaignsPage() {
 
       setAllCampaignsUnfiltered(campaignsWithDummyData);
 
-      // Apply client-side filtering only for status "all" (exclude archived)
-      let filtered = campaignsWithDummyData;
+      // When status is "all", exclude archived campaigns from default view
+      // Users can still see archived campaigns by selecting "Archived" filter
+      let campaignsToDisplay = campaignsWithDummyData;
       if (selectedStatus === "all") {
-        filtered = filtered.filter((c) => c.status !== "archived");
+        campaignsToDisplay = campaignsWithDummyData.filter(
+          (c) => c.status !== "archived"
+        );
       }
 
-      // Sort campaigns
-      if (filters.sortBy) {
-        filtered.sort((a, b) => {
-          let aValue: any;
-          let bValue: any;
-
-          switch (filters.sortBy) {
-            case "created_at":
-              aValue = new Date(a.created_at || 0).getTime();
-              bValue = new Date(b.created_at || 0).getTime();
-              break;
-            case "name":
-              aValue = a.name.toLowerCase();
-              bValue = b.name.toLowerCase();
-              break;
-            case "status":
-              aValue = a.status.toLowerCase();
-              bValue = b.status.toLowerCase();
-              break;
-            default:
-              return 0;
-          }
-
-          if (filters.sortDirection === "ASC") {
-            return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-          } else {
-            return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-          }
-        });
-      }
-
-      // Apply pagination after filtering
-      const totalFiltered = filtered.length;
-      const startIndex = (currentPage - 1) * pageSize;
+      // Apply client-side pagination for display (we fetch 100, display 10 per page)
+      const startIndex = ((currentPage - 1) * pageSize) % LIMIT;
       const endIndex = startIndex + pageSize;
-      const paginatedCampaigns = filtered.slice(startIndex, endIndex);
+      const paginatedCampaigns = campaignsToDisplay.slice(startIndex, endIndex);
 
       setCampaigns(paginatedCampaigns);
-      setTotalCampaigns(totalFiltered);
+
+      // Get total from pagination response
+      // When status is "all", use filtered count (excluding archived)
+      const total =
+        selectedStatus === "all"
+          ? campaignsToDisplay.length
+          : response.pagination?.total || campaignsWithDummyData.length;
+      setTotalCampaigns(total);
     } catch (error) {
       showToast(
         "error",
@@ -573,7 +491,7 @@ export default function CampaignsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedStatus, searchQuery, currentPage, pageSize, showToast]);
+  }, [selectedStatus, searchQuery, currentPage, pageSize, filters, showToast]);
 
   // Fetch campaign stats
   useEffect(() => {
@@ -750,15 +668,6 @@ export default function CampaignsPage() {
           : allCampaignsUnfiltered.filter((c) => c.status === "active").length,
     },
     {
-      value: "scheduled",
-      label: "Scheduled",
-      count:
-        selectedStatus === "scheduled"
-          ? totalCampaigns
-          : allCampaignsUnfiltered.filter((c) => c.status === "scheduled")
-              .length,
-    },
-    {
       value: "paused",
       label: "Paused",
       count:
@@ -819,7 +728,6 @@ export default function CampaignsPage() {
   const getStatusBadge = (status: string) => {
     const badges = {
       active: `bg-[${color.status.success}]/10 text-[${color.status.success}]`,
-      scheduled: `bg-[${color.status.warning}]/10 text-[${color.status.warning}]`,
       paused: `bg-[${color.interactive.hover}] text-[${color.text.secondary}]`,
       completed: `bg-[${color.status.info}]/10 text-[${color.status.info}]`,
     };
