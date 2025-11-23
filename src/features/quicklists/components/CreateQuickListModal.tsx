@@ -1,6 +1,13 @@
 import { useState, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X, Upload, FileText, AlertCircle, Download, Edit3 } from "lucide-react";
+import {
+  X,
+  Upload,
+  FileText,
+  AlertCircle,
+  Download,
+  Edit3,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 import { color, tw } from "../../../shared/utils/utils";
 import { UploadType } from "../types/quicklist";
@@ -220,15 +227,17 @@ export default function CreateQuickListModal({
     const emailColumnIndex = columns.findIndex((col) =>
       col.toLowerCase().includes("email")
     );
-    const phoneColumnIndex = columns.findIndex((col) =>
-      col.toLowerCase().includes("phone") || col.toLowerCase().includes("mobile")
+    const phoneColumnIndex = columns.findIndex(
+      (col) =>
+        col.toLowerCase().includes("phone") ||
+        col.toLowerCase().includes("mobile")
     );
 
     // Add data rows - place contact in the appropriate column
     manualInputValidation.valid.forEach((contact) => {
       const row = new Array(columns.length).fill("");
       const isEmail = contact.includes("@");
-      
+
       if (isEmail && emailColumnIndex !== -1) {
         // Place email in the email column
         row[emailColumnIndex] = contact;
@@ -239,7 +248,7 @@ export default function CreateQuickListModal({
         // Fallback: place in first column if no matching column found
         row[0] = isEmail ? contact : contact.replace(/\s/g, "");
       }
-      
+
       worksheetData.push(row);
     });
 
@@ -330,7 +339,7 @@ export default function CreateQuickListModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div 
+        <div
           className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10"
           style={{ borderColor: color.border.default }}
         >
@@ -346,8 +355,12 @@ export default function CreateQuickListModal({
             onClick={handleClose}
             className="p-2 rounded-md transition-colors"
             style={{ color: color.text.secondary }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = color.interactive.hover}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = color.interactive.hover)
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "transparent")
+            }
             disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
@@ -363,7 +376,9 @@ export default function CreateQuickListModal({
           <div className="space-y-6">
             {/* Upload Type */}
             <div>
-              <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 Upload Type *
               </label>
               <HeadlessSelect
@@ -395,13 +410,16 @@ export default function CreateQuickListModal({
                     : "N/A";
 
                   return (
-                    <div 
+                    <div
                       className="mt-2 p-3 rounded-md"
                       style={{ backgroundColor: `${color.primary.accent}10` }}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <p className="text-xs mb-2" style={{ color: color.primary.accent }}>
+                          <p
+                            className="text-xs mb-2"
+                            style={{ color: color.primary.accent }}
+                          >
                             <strong>Expected columns:</strong> {columnsDisplay}
                           </p>
                         </div>
@@ -409,12 +427,16 @@ export default function CreateQuickListModal({
                           type="button"
                           onClick={downloadTemplate}
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-                          style={{ 
+                          style={{
                             backgroundColor: `${color.primary.accent}20`,
-                            color: color.primary.accent
+                            color: color.primary.accent,
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${color.primary.accent}30`}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${color.primary.accent}20`}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor = `${color.primary.accent}30`)
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor = `${color.primary.accent}20`)
+                          }
                         >
                           <Download className="w-3.5 h-3.5" />
                           Download Template
@@ -427,7 +449,9 @@ export default function CreateQuickListModal({
 
             {/* Input Mode Toggle */}
             <div>
-              <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-3`}
+              >
                 Input Method *
               </label>
               <div className="flex gap-3">
@@ -437,15 +461,19 @@ export default function CreateQuickListModal({
                   disabled={isSubmitting}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
                   style={{
-                    borderColor: inputMode === "file" ? color.primary.accent : color.border.default,
-                    backgroundColor: inputMode === "file" ? `${color.primary.accent}10` : 'white',
-                    color: inputMode === "file" ? color.primary.accent : color.text.primary,
+                    borderColor:
+                      inputMode === "file"
+                        ? color.primary.action
+                        : color.border.default,
+                    backgroundColor:
+                      inputMode === "file" ? color.primary.action : "white",
+                    color: inputMode === "file" ? "white" : color.text.primary,
                     opacity: isSubmitting ? 0.5 : 1,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
                   }}
                 >
                   <Upload className="w-5 h-5" />
-                  <span className="font-medium">Upload File</span>
+                  <span className="text-sm font-medium">Upload File</span>
                 </button>
                 <button
                   type="button"
@@ -453,15 +481,20 @@ export default function CreateQuickListModal({
                   disabled={isSubmitting}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
                   style={{
-                    borderColor: inputMode === "manual" ? color.primary.accent : color.border.default,
-                    backgroundColor: inputMode === "manual" ? `${color.primary.accent}10` : 'white',
-                    color: inputMode === "manual" ? color.primary.accent : color.text.primary,
+                    borderColor:
+                      inputMode === "manual"
+                        ? color.primary.action
+                        : color.border.default,
+                    backgroundColor:
+                      inputMode === "manual" ? color.primary.action : "white",
+                    color:
+                      inputMode === "manual" ? "white" : color.text.primary,
                     opacity: isSubmitting ? 0.5 : 1,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
                   }}
                 >
                   <Edit3 className="w-5 h-5" />
-                  <span className="font-medium">Manual Entry</span>
+                  <span className="text-sm font-medium">Manual Entry</span>
                 </button>
               </div>
             </div>
@@ -469,125 +502,143 @@ export default function CreateQuickListModal({
             {/* File Upload - Only show when file mode is selected */}
             {inputMode === "file" && (
               <div>
-                <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
                   Excel File *
                 </label>
                 {uploadType ? (
-                <label
-                  htmlFor="quicklist-file-upload"
-                  className="block border-2 border-dashed rounded-md p-6 text-center transition-colors"
-                  style={{
-                    borderColor: color.border.muted,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting ? 0.5 : 1
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!isSubmitting) {
-                      e.currentTarget.style.borderColor = color.primary.accent;
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.currentTarget.style.borderColor = color.border.muted;
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.currentTarget.style.borderColor = color.border.muted;
-                    if (!isSubmitting) {
-                      const droppedFile = e.dataTransfer.files[0];
-                      if (droppedFile && fileInputRef.current) {
-                        // Create a DataTransfer object to properly simulate the file input change
-                        const dt = new DataTransfer();
-                        dt.items.add(droppedFile);
-                        fileInputRef.current.files = dt.files;
-                        // Trigger change event
-                        const event = new Event('change', { bubbles: true });
-                        fileInputRef.current.dispatchEvent(event);
+                  <label
+                    htmlFor="quicklist-file-upload"
+                    className="block border-2 border-solid rounded-md p-6 text-center transition-colors"
+                    style={{
+                      borderColor: color.border.default,
+                      cursor: isSubmitting ? "not-allowed" : "pointer",
+                      opacity: isSubmitting ? 0.5 : 1,
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!isSubmitting) {
+                        e.currentTarget.style.borderColor =
+                          color.primary.accent;
                       }
-                    }
-                  }}
-                >
-                  <input
-                    id="quicklist-file-upload"
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    disabled={isSubmitting}
-                  />
-                  {file ? (
-                    <div className="space-y-3">
-                      <FileText className="w-12 h-12 mx-auto" style={{ color: color.status.success }} />
-                      <div>
-                        <p className={`text-sm font-medium ${tw.textPrimary}`}>
-                          {file.name}
-                        </p>
-                        <p className={`text-xs ${tw.textSecondary} mt-1`}>
-                          {formatFileSize(file.size)}
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.currentTarget.style.borderColor = color.border.default;
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.currentTarget.style.borderColor = color.border.default;
+                      if (!isSubmitting) {
+                        const droppedFile = e.dataTransfer.files[0];
+                        if (droppedFile && fileInputRef.current) {
+                          // Create a DataTransfer object to properly simulate the file input change
+                          const dt = new DataTransfer();
+                          dt.items.add(droppedFile);
+                          fileInputRef.current.files = dt.files;
+                          // Trigger change event
+                          const event = new Event("change", { bubbles: true });
+                          fileInputRef.current.dispatchEvent(event);
+                        }
+                      }
+                    }}
+                  >
+                    <input
+                      id="quicklist-file-upload"
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      disabled={isSubmitting}
+                    />
+                    {file ? (
+                      <div className="space-y-3">
+                        <FileText
+                          className="w-12 h-12 mx-auto"
+                          style={{ color: color.status.success }}
+                        />
+                        <div>
+                          <p
+                            className={`text-sm font-medium ${tw.textPrimary}`}
+                          >
+                            {file.name}
+                          </p>
+                          <p className={`text-xs ${tw.textSecondary} mt-1`}>
+                            {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                        <span
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (fileInputRef.current) {
+                              fileInputRef.current.click();
+                            }
+                          }}
+                          className="text-sm font-medium cursor-pointer"
+                          style={{ color: color.primary.accent }}
+                        >
+                          Change file
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Upload
+                          className="w-12 h-12 mx-auto"
+                          style={{ color: color.text.muted }}
+                        />
+                        <div>
+                          <p
+                            className={`text-sm font-medium ${tw.textPrimary}`}
+                          >
+                            Click to upload
+                          </p>
+                          <p className={`text-xs ${tw.textSecondary} mt-1`}>
+                            or drag and drop
+                          </p>
+                        </div>
+                        <p className={`text-xs ${tw.textSecondary}`}>
+                          Excel files (.xlsx, .xls) up to{" "}
+                          {uploadTypes.find((t) => t.upload_type === uploadType)
+                            ?.max_file_size_mb || 10}
+                          MB
                         </p>
                       </div>
-                      <span
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (fileInputRef.current) {
-                            fileInputRef.current.click();
-                          }
-                        }}
-                        className="text-sm font-medium cursor-pointer"
-                        style={{ color: color.primary.accent }}
-                      >
-                        Change file
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <Upload className="w-12 h-12 mx-auto" style={{ color: color.text.muted }} />
-                      <div>
-                        <p className={`text-sm font-medium ${tw.textPrimary}`}>
-                          Click to upload
-                        </p>
-                        <p className={`text-xs ${tw.textSecondary} mt-1`}>
-                          or drag and drop
-                        </p>
-                      </div>
+                    )}
+                  </label>
+                ) : (
+                  <div
+                    className="border-2 border-solid rounded-md p-6 text-center opacity-50 cursor-not-allowed"
+                    style={{ borderColor: color.border.default }}
+                  >
+                    <Upload
+                      className="w-12 h-12 mx-auto"
+                      style={{ color: color.text.muted }}
+                    />
+                    <div className="space-y-3 mt-3">
+                      <p className={`text-sm font-medium ${tw.textPrimary}`}>
+                        Click to upload
+                      </p>
                       <p className={`text-xs ${tw.textSecondary}`}>
-                        Excel files (.xlsx, .xls) up to{" "}
-                        {uploadTypes.find((t) => t.upload_type === uploadType)
-                          ?.max_file_size_mb || 10}
-                        MB
+                        Please select an upload type first
                       </p>
                     </div>
-                  )}
-                </label>
-              ) : (
-                <div 
-                  className="border-2 border-dashed rounded-md p-6 text-center opacity-50 cursor-not-allowed"
-                  style={{ borderColor: color.border.muted }}
-                >
-                  <Upload className="w-12 h-12 mx-auto" style={{ color: color.text.muted }} />
-                  <div className="space-y-3 mt-3">
-                    <p className={`text-sm font-medium ${tw.textPrimary}`}>
-                      Click to upload
-                    </p>
-                    <p className={`text-xs ${tw.textSecondary}`}>
-                      Please select an upload type first
-                    </p>
                   </div>
-                </div>
-              )}
+                )}
               </div>
             )}
 
             {/* Manual Entry - Only show when manual mode is selected */}
             {inputMode === "manual" && (
               <div>
-                <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
                   Enter Contacts Manually *
                 </label>
                 <textarea
@@ -596,45 +647,65 @@ export default function CreateQuickListModal({
                   className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 font-mono"
                   style={{
                     borderColor: color.border.default,
-                    color: color.text.primary
+                    color: color.text.primary,
                   }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = color.primary.accent}
-                  onBlur={(e) => e.currentTarget.style.borderColor = color.border.default}
+                  onFocus={(e) =>
+                    (e.currentTarget.style.borderColor = color.primary.accent)
+                  }
+                  onBlur={(e) =>
+                    (e.currentTarget.style.borderColor = color.border.default)
+                  }
                   placeholder="Enter emails or phone numbers (one per line)&#10;&#10;Example:&#10;john@example.com&#10;jane@example.com&#10;+33612345678&#10;+1234567890"
                   rows={10}
                   disabled={isSubmitting}
                 />
-                
+
                 {/* Validation Summary */}
                 {manualInput.trim() && (
                   <div className="mt-3 flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color.status.success }}></div>
-                      <span className="font-medium" style={{ color: color.status.success }}>
-                        {manualInputValidation.validCount} valid contact{manualInputValidation.validCount !== 1 ? 's' : ''}
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: color.status.success }}
+                      ></div>
+                      <span
+                        className="font-medium"
+                        style={{ color: color.status.success }}
+                      >
+                        {manualInputValidation.validCount} valid contact
+                        {manualInputValidation.validCount !== 1 ? "s" : ""}
                       </span>
                     </div>
                     {manualInputValidation.invalidCount > 0 && (
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color.status.danger }}></div>
-                        <span className="font-medium" style={{ color: color.status.danger }}>
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: color.status.danger }}
+                        ></div>
+                        <span
+                          className="font-medium"
+                          style={{ color: color.status.danger }}
+                        >
                           {manualInputValidation.invalidCount} invalid
                         </span>
                       </div>
                     )}
                   </div>
                 )}
-                
+
                 {/* Helper Text */}
                 <p className={`mt-2 text-xs ${tw.textSecondary}`}>
-                  Enter one email address or phone number per line. Valid formats: email@domain.com or +1234567890
+                  Enter one email address or phone number per line. Valid
+                  formats: email@domain.com or +1234567890
                 </p>
               </div>
             )}
 
             {/* Name */}
             <div>
-              <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 QuickList Name *
               </label>
               <input
@@ -644,10 +715,14 @@ export default function CreateQuickListModal({
                 className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2"
                 style={{
                   borderColor: color.border.default,
-                  color: color.text.primary
+                  color: color.text.primary,
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = color.primary.accent}
-                onBlur={(e) => e.currentTarget.style.borderColor = color.border.default}
+                onFocus={(e) =>
+                  (e.currentTarget.style.borderColor = color.primary.accent)
+                }
+                onBlur={(e) =>
+                  (e.currentTarget.style.borderColor = color.border.default)
+                }
                 placeholder="Enter a descriptive name"
                 required
                 disabled={isSubmitting}
@@ -656,7 +731,9 @@ export default function CreateQuickListModal({
 
             {/* Description */}
             <div>
-              <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 Description (Optional)
               </label>
               <textarea
@@ -665,10 +742,14 @@ export default function CreateQuickListModal({
                 className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2"
                 style={{
                   borderColor: color.border.default,
-                  color: color.text.primary
+                  color: color.text.primary,
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = color.primary.accent}
-                onBlur={(e) => e.currentTarget.style.borderColor = color.border.default}
+                onFocus={(e) =>
+                  (e.currentTarget.style.borderColor = color.primary.accent)
+                }
+                onBlur={(e) =>
+                  (e.currentTarget.style.borderColor = color.border.default)
+                }
                 placeholder="Add a description for this QuickList"
                 rows={3}
                 disabled={isSubmitting}
@@ -678,15 +759,20 @@ export default function CreateQuickListModal({
 
           {/* Error Message */}
           {error && (
-            <div 
+            <div
               className="mt-6 p-3 rounded-md flex items-start space-x-2"
               style={{
                 backgroundColor: `${color.status.danger}10`,
-                border: `1px solid ${color.status.danger}30`
+                border: `1px solid ${color.status.danger}30`,
               }}
             >
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: color.status.danger }} />
-              <p className="text-sm" style={{ color: color.status.danger }}>{error}</p>
+              <AlertCircle
+                className="w-5 h-5 flex-shrink-0 mt-0.5"
+                style={{ color: color.status.danger }}
+              />
+              <p className="text-sm" style={{ color: color.status.danger }}>
+                {error}
+              </p>
             </div>
           )}
 
@@ -699,10 +785,15 @@ export default function CreateQuickListModal({
               style={{
                 backgroundColor: color.surface.cards,
                 border: `1px solid ${color.border.default}`,
-                color: color.text.primary
+                color: color.text.primary,
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = color.interactive.hover}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = color.surface.cards}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  color.interactive.hover)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = color.surface.cards)
+              }
               disabled={isSubmitting}
             >
               Cancel
@@ -714,7 +805,8 @@ export default function CreateQuickListModal({
                 !uploadType ||
                 !name.trim() ||
                 (inputMode === "file" && !file) ||
-                (inputMode === "manual" && manualInputValidation.validCount === 0)
+                (inputMode === "manual" &&
+                  manualInputValidation.validCount === 0)
               }
               className="px-4 py-2 text-white rounded-md transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}

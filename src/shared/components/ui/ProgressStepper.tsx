@@ -88,21 +88,19 @@ export default function ProgressStepper({
           />
         )}
 
-        {/* Cover divs to hide line at edges - adapt width based on step count */}
-        {/* Fewer steps (like 4) need wider covers due to larger spacing between steps */}
-        {/* More steps (like 6) need narrower covers due to tighter spacing */}
+        {/* Cover divs to hide line at edges */}
         {/* Hide right cover when on last step to allow line to reach the circle */}
         <div
           className="absolute top-4 left-0 h-0.5 bg-white z-20"
           style={{
-            width: steps.length <= 4 ? "8rem" : "5rem",
+            width: "5rem",
           }}
         />
         {currentStep < steps.length && (
           <div
             className="absolute top-4 right-0 h-0.5 bg-white z-20"
             style={{
-              width: steps.length <= 4 ? "8rem" : "5rem",
+              width: "5rem",
             }}
           />
         )}
@@ -121,7 +119,6 @@ export default function ProgressStepper({
                 disabled={!canNavigateToStep(step.id)}
               >
                 {/* Background circle to cover the line completely - matches circle background */}
-                {/* Larger (w-10) to ensure complete coverage of the line with no gaps */}
                 <div
                   className="absolute top-4 left-1/2 w-10 h-10 rounded-full -translate-x-1/2 -translate-y-1/2"
                   style={{

@@ -9,7 +9,6 @@ import {
 import SegmentConditionsBuilder from "./SegmentConditionsBuilder";
 import { segmentService } from "../services/segmentService";
 import { color, tw } from "../../../shared/utils/utils";
-import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import MultiCategorySelector from "../../../shared/components/MultiCategorySelector";
 
 interface SegmentModalProps {
@@ -41,10 +40,10 @@ export default function SegmentModal({
   const [previewQuery, setPreviewQuery] = useState<string | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingQueries, setPendingQueries] = useState<{segment_query: string; count_query: string} | null>(null);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
-    []
-  );
+  const [pendingQueries, setPendingQueries] = useState<{
+    segment_query: string;
+    count_query: string;
+  } | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
 
   // Initialize selectedCategoryIds from formData.category
@@ -54,7 +53,7 @@ export default function SegmentModal({
     } else if (!formData.category && selectedCategoryIds.length > 0) {
       setSelectedCategoryIds([]);
     }
-  }, [formData.category]);
+  }, [formData.category, selectedCategoryIds]);
 
   // Update formData.category when selectedCategoryIds changes (use first one)
   useEffect(() => {
@@ -66,23 +65,7 @@ export default function SegmentModal({
         category: firstCategoryId, // Send only first to backend
       }));
     }
-  }, [selectedCategoryIds]);
-
-  // Load categories
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const response = await segmentService.getSegmentCategories();
-        setCategories(response.data || []);
-      } catch (err) {
-        console.error("Failed to load categories:", err);
-      }
-    };
-
-    if (isOpen) {
-      loadCategories();
-    }
-  }, [isOpen]);
+  }, [selectedCategoryIds, formData.category]);
 
   useEffect(() => {
     const loadSegmentData = async () => {
@@ -145,32 +128,32 @@ export default function SegmentModal({
 
   // Format SQL query for better readability
   const formatSQL = (sql: string): string => {
-    if (!sql) return '';
-    
+    if (!sql) return "";
+
     // Add line breaks and indentation for better readability
-    let formatted = sql
+    const formatted = sql
       // Main clauses
-      .replace(/\bSELECT\b/gi, '\nSELECT\n  ')
-      .replace(/\bFROM\b/gi, '\n\nFROM\n  ')
-      .replace(/\bWHERE\b/gi, '\n\nWHERE\n  ')
-      .replace(/\bORDER BY\b/gi, '\n\nORDER BY\n  ')
-      .replace(/\bGROUP BY\b/gi, '\n\nGROUP BY\n  ')
-      .replace(/\bHAVING\b/gi, '\n\nHAVING\n  ')
-      .replace(/\bLIMIT\b/gi, '\n\nLIMIT ')
-      .replace(/\bOFFSET\b/gi, '\nOFFSET ')
+      .replace(/\bSELECT\b/gi, "\nSELECT\n  ")
+      .replace(/\bFROM\b/gi, "\n\nFROM\n  ")
+      .replace(/\bWHERE\b/gi, "\n\nWHERE\n  ")
+      .replace(/\bORDER BY\b/gi, "\n\nORDER BY\n  ")
+      .replace(/\bGROUP BY\b/gi, "\n\nGROUP BY\n  ")
+      .replace(/\bHAVING\b/gi, "\n\nHAVING\n  ")
+      .replace(/\bLIMIT\b/gi, "\n\nLIMIT ")
+      .replace(/\bOFFSET\b/gi, "\nOFFSET ")
       // Joins
-      .replace(/\bJOIN\b/gi, '\nJOIN\n  ')
-      .replace(/\bLEFT JOIN\b/gi, '\nLEFT JOIN\n  ')
-      .replace(/\bINNER JOIN\b/gi, '\nINNER JOIN\n  ')
-      .replace(/\bON\b/gi, '\n  ON ')
+      .replace(/\bJOIN\b/gi, "\nJOIN\n  ")
+      .replace(/\bLEFT JOIN\b/gi, "\nLEFT JOIN\n  ")
+      .replace(/\bINNER JOIN\b/gi, "\nINNER JOIN\n  ")
+      .replace(/\bON\b/gi, "\n  ON ")
       // Logical operators
-      .replace(/\bAND\b/gi, '\n  AND ')
-      .replace(/\bOR\b/gi, '\n  OR ')
+      .replace(/\bAND\b/gi, "\n  AND ")
+      .replace(/\bOR\b/gi, "\n  OR ")
       // Clean up extra spaces and newlines
-      .replace(/\n\s*\n\s*\n/g, '\n\n')
-      .replace(/,\s*/g, ',\n  ')
+      .replace(/\n\s*\n\s*\n/g, "\n\n")
+      .replace(/,\s*/g, ",\n  ")
       .trim();
-    
+
     return formatted;
   };
 
@@ -217,7 +200,9 @@ export default function SegmentModal({
       }
 
       if (queryConditions.length === 0) {
-        setError("No 360 Profile conditions to preview. Please add at least one 360 Profile condition.");
+        setError(
+          "No 360 Profile conditions to preview. Please add at least one 360 Profile condition."
+        );
         setPreviewCount(null);
         setPreviewQuery(null);
         return;
@@ -232,7 +217,12 @@ export default function SegmentModal({
             .map((group) => ({
               logic: group.operator,
               conditions: group.conditions
-                .filter((c) => c.conditionType === "360_profile" && c.field_id && c.operator_id)
+                .filter(
+                  (c) =>
+                    c.conditionType === "360_profile" &&
+                    c.field_id &&
+                    c.operator_id
+                )
                 .map((c) => ({
                   field_id: c.field_id!,
                   operator_id: c.operator_id!,
@@ -326,7 +316,12 @@ export default function SegmentModal({
             .map((group) => ({
               logic: group.operator,
               conditions: group.conditions
-                .filter((c) => c.conditionType === "360_profile" && c.field_id && c.operator_id)
+                .filter(
+                  (c) =>
+                    c.conditionType === "360_profile" &&
+                    c.field_id &&
+                    c.operator_id
+                )
                 .map((c) => ({
                   field_id: c.field_id!,
                   operator_id: c.operator_id!,
@@ -401,7 +396,6 @@ export default function SegmentModal({
     setIsLoading(true);
     setShowConfirmModal(false);
     try {
-
       const queries = pendingQueries;
       // Generate unique code
       const code = generateSegmentCode(formData.name);
@@ -493,7 +487,7 @@ export default function SegmentModal({
               onClick={onClose}
             />
 
-            <div className="relative bg-white rounded-md shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="relative bg-white rounded-md shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
               {/* Header */}
               <div
                 className={`flex items-center justify-between p-6 border-b border-[${tw.borderDefault}] bg-gradient-to-r from-[${color.primary.accent}]/5 to-[${color.primary.accent}]/10 flex-shrink-0`}
@@ -777,19 +771,19 @@ export default function SegmentModal({
 
             {/* SQL Preview Modal (for Preview button) */}
             {showPreviewModal && previewQuery && (
-              <div 
+              <div
                 className="absolute inset-0 z-50 flex items-center justify-center p-4"
                 style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
                 }}
                 onClick={() => setShowPreviewModal(false)}
               >
-                <div 
+                <div
                   className="bg-white rounded-md shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Header */}
-                  <div 
+                  <div
                     className="flex items-center justify-between p-6 border-b flex-shrink-0"
                     style={{
                       borderColor: color.border.default,
@@ -800,7 +794,8 @@ export default function SegmentModal({
                         SQL Query Preview
                       </h3>
                       <p className={`text-sm ${tw.textSecondary} mt-1`}>
-                        Preview of the generated SQL query (360 Profile conditions only)
+                        Preview of the generated SQL query (360 Profile
+                        conditions only)
                       </p>
                     </div>
                     <button
@@ -814,7 +809,7 @@ export default function SegmentModal({
 
                   {/* SQL Preview */}
                   <div className="flex-1 overflow-y-auto p-6">
-                    <div 
+                    <div
                       className="p-4 rounded-md border"
                       style={{
                         backgroundColor: color.surface.background,
@@ -823,7 +818,7 @@ export default function SegmentModal({
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <span 
+                          <span
                             className="px-2 py-1 rounded text-xs font-medium"
                             style={{
                               backgroundColor: `${color.primary.accent}20`,
@@ -832,14 +827,18 @@ export default function SegmentModal({
                           >
                             Generated SQL
                           </span>
-                          <h4 className={`text-sm font-medium ${tw.textPrimary}`}>
+                          <h4
+                            className={`text-sm font-medium ${tw.textPrimary}`}
+                          >
                             Segment Query
                           </h4>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText(formatSQL(previewQuery));
+                            navigator.clipboard.writeText(
+                              formatSQL(previewQuery)
+                            );
                           }}
                           className="text-xs px-3 py-1.5 rounded transition-colors font-medium"
                           style={{
@@ -848,24 +847,26 @@ export default function SegmentModal({
                             color: color.text.primary,
                           }}
                           onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = color.interactive.hover;
+                            e.currentTarget.style.backgroundColor =
+                              color.interactive.hover;
                           }}
                           onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = color.surface.cards;
+                            e.currentTarget.style.backgroundColor =
+                              color.surface.cards;
                           }}
                         >
                           📋 Copy
                         </button>
                       </div>
-                      <pre 
+                      <pre
                         className="text-sm p-4 rounded overflow-auto font-mono"
                         style={{
                           backgroundColor: color.surface.cards,
                           border: `1px solid ${color.border.muted}`,
                           color: color.text.primary,
-                          maxHeight: '450px',
-                          whiteSpace: 'pre',
-                          lineHeight: '1.6',
+                          maxHeight: "450px",
+                          whiteSpace: "pre",
+                          lineHeight: "1.6",
                           tabSize: 2,
                         }}
                       >
@@ -875,7 +876,7 @@ export default function SegmentModal({
                   </div>
 
                   {/* Footer */}
-                  <div 
+                  <div
                     className="flex items-center justify-end space-x-3 p-6 border-t flex-shrink-0"
                     style={{
                       borderColor: color.border.default,
@@ -900,18 +901,18 @@ export default function SegmentModal({
 
             {/* SQL Confirmation Modal (for Create Segment button) */}
             {showConfirmModal && pendingQueries && (
-              <div 
+              <div
                 className="absolute inset-0 z-50 flex items-center justify-center p-4"
                 style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
                 }}
               >
-                <div 
+                <div
                   className="bg-white rounded-md shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Header */}
-                  <div 
+                  <div
                     className="flex items-center justify-between p-6 border-b flex-shrink-0"
                     style={{
                       borderColor: color.border.default,
@@ -922,14 +923,15 @@ export default function SegmentModal({
                         Confirm Segment Creation
                       </h3>
                       <p className={`text-sm ${tw.textSecondary} mt-1`}>
-                        Review the generated SQL query before creating the segment
+                        Review the generated SQL query before creating the
+                        segment
                       </p>
                     </div>
                   </div>
 
                   {/* SQL Preview */}
                   <div className="flex-1 overflow-y-auto p-6">
-                    <div 
+                    <div
                       className="p-4 rounded-md border mb-4"
                       style={{
                         backgroundColor: color.surface.background,
@@ -938,7 +940,7 @@ export default function SegmentModal({
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <span 
+                          <span
                             className="px-2 py-1 rounded text-xs font-medium"
                             style={{
                               backgroundColor: `${color.primary.accent}20`,
@@ -947,14 +949,18 @@ export default function SegmentModal({
                           >
                             Generated SQL
                           </span>
-                          <h4 className={`text-sm font-medium ${tw.textPrimary}`}>
+                          <h4
+                            className={`text-sm font-medium ${tw.textPrimary}`}
+                          >
                             Segment Query (360 Profile conditions only)
                           </h4>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText(formatSQL(pendingQueries.segment_query));
+                            navigator.clipboard.writeText(
+                              formatSQL(pendingQueries.segment_query)
+                            );
                           }}
                           className="text-xs px-3 py-1.5 rounded transition-colors font-medium"
                           style={{
@@ -963,24 +969,26 @@ export default function SegmentModal({
                             color: color.text.primary,
                           }}
                           onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = color.interactive.hover;
+                            e.currentTarget.style.backgroundColor =
+                              color.interactive.hover;
                           }}
                           onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = color.surface.cards;
+                            e.currentTarget.style.backgroundColor =
+                              color.surface.cards;
                           }}
                         >
                           📋 Copy
                         </button>
                       </div>
-                      <pre 
+                      <pre
                         className="text-sm p-4 rounded overflow-auto font-mono"
                         style={{
                           backgroundColor: color.surface.cards,
                           border: `1px solid ${color.border.muted}`,
                           color: color.text.primary,
-                          maxHeight: '450px',
-                          whiteSpace: 'pre',
-                          lineHeight: '1.6',
+                          maxHeight: "450px",
+                          whiteSpace: "pre",
+                          lineHeight: "1.6",
                           tabSize: 2,
                         }}
                       >
@@ -990,7 +998,7 @@ export default function SegmentModal({
                   </div>
 
                   {/* Footer */}
-                  <div 
+                  <div
                     className="flex items-center justify-end space-x-3 p-6 border-t flex-shrink-0"
                     style={{
                       borderColor: color.border.default,

@@ -162,18 +162,43 @@ export default function OffersPage() {
       } else {
         // No category filter - use regular search
         // Note: Backend doesn't support status filter, so we filter client-side
-        const searchParams: SearchParams = {
-          ...filters,
-          search: debouncedSearchTerm || undefined,
-          // Remove status from API call - backend doesn't support it
-          skipCache: skipCache,
-        };
+        // When filtering client-side by status, we need to fetch all offers to get accurate totals
+        const needsClientSideFiltering =
+          (selectedStatus && selectedStatus !== "all") ||
+          selectedStatus === "all";
 
-        const response = await offerService.searchOffers(searchParams);
+        if (needsClientSideFiltering) {
+          // Fetch all offers in batches when we need to filter client-side
+          let allOffers: Offer[] = [];
+          let offset = 0;
+          const batchSize = 100;
+          let hasMore = true;
 
-        if (response.success && response.data) {
-          // Apply status filter client-side since backend doesn't support it
-          let filteredOffers = response.data;
+          // Fetch all offers in batches
+          while (hasMore) {
+            const batchResponse = await offerService.searchOffers({
+              limit: batchSize,
+              offset: offset,
+              search: debouncedSearchTerm || undefined,
+              skipCache: skipCache,
+            });
+
+            if (batchResponse.success && batchResponse.data) {
+              allOffers = [...allOffers, ...batchResponse.data];
+
+              // Check if there are more offers to fetch
+              const totalFromPagination = batchResponse.pagination?.total || 0;
+              hasMore =
+                allOffers.length < totalFromPagination &&
+                batchResponse.data.length === batchSize;
+              offset += batchSize;
+            } else {
+              hasMore = false;
+            }
+          }
+
+          // Apply status filter client-side
+          let filteredOffers = allOffers;
           if (selectedStatus && selectedStatus !== "all") {
             filteredOffers = filteredOffers.filter(
               (offer) => offer.status === selectedStatus
@@ -187,10 +212,33 @@ export default function OffersPage() {
             );
           }
 
-          setOffers(filteredOffers);
-          const total = response.pagination?.total || filteredOffers.length;
-          setTotalOffers(total);
+          // Apply client-side pagination
+          const page = filters.page || 1;
+          const pageSize = filters.pageSize || 10;
+          const startIndex = (page - 1) * pageSize;
+          const endIndex = startIndex + pageSize;
+          const paginatedOffers = filteredOffers.slice(startIndex, endIndex);
+
+          setOffers(paginatedOffers);
+          // Use filtered count as total to match displayed items
+          setTotalOffers(filteredOffers.length);
           return; // Success - exit early to avoid catch block
+        } else {
+          // No client-side filtering needed - use regular paginated search
+          const searchParams: SearchParams = {
+            ...filters,
+            skipCache: skipCache,
+          };
+
+          const response = await offerService.searchOffers(searchParams);
+
+          if (response.success && response.data) {
+            setOffers(response.data);
+            // Use backend pagination total when no client-side filtering
+            const total = response.pagination?.total || response.data.length;
+            setTotalOffers(total);
+            return; // Success - exit early to avoid catch block
+          }
         }
         // If response.success is false, fall through to error handling
       }

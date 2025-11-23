@@ -13,6 +13,7 @@ import { button, color, tw } from "../../../shared/utils/utils";
 import SegmentListModal, {
   SegmentListFormValues,
 } from "../components/SegmentListModal";
+import { MOCK_QUICKLISTS } from "../components/QuickListPickerModal";
 
 interface SegmentList {
   list_id: number;
@@ -42,54 +43,16 @@ export default function SegmentListPage() {
     SegmentListFormValues | undefined
   >(undefined);
 
-  // Mock data - in real app, this would come from API
-  const mockLists: SegmentList[] = [
-    {
-      list_id: 1,
-      name: "High Value Customers",
-      description: "Customers with high lifetime value",
-      subscriber_count: 1250,
-      created_on: "2025-01-15",
-      list_type: "standard",
-      tags: ["premium", "high-value"],
-    },
-    {
-      list_id: 2,
-      name: "Mobile Users",
-      description: "Users who primarily use mobile devices",
-      subscriber_count: 3200,
-      created_on: "2025-01-20",
-      list_type: "standard",
-      tags: ["mobile", "active"],
-    },
-    {
-      list_id: 3,
-      name: "Seed List - VIP",
-      description: "Internal seed list for testing",
-      subscriber_count: 50,
-      created_on: "2025-01-10",
-      list_type: "seed",
-      tags: ["internal", "test"],
-    },
-    {
-      list_id: 4,
-      name: "Churned Customers",
-      description: "Customers who have churned in the last 6 months",
-      subscriber_count: 890,
-      created_on: "2025-01-25",
-      list_type: "standard",
-      tags: ["churned", "retention"],
-    },
-    {
-      list_id: 5,
-      name: "New Subscribers",
-      description: "Recently acquired subscribers",
-      subscriber_count: 2100,
-      created_on: "2025-02-01",
-      list_type: "standard",
-      tags: ["new", "acquisition"],
-    },
-  ];
+  // Convert MOCK_QUICKLISTS to SegmentList format
+  const mockLists: SegmentList[] = MOCK_QUICKLISTS.map((quicklist) => ({
+    list_id: quicklist.id,
+    name: quicklist.name,
+    description: quicklist.description || "",
+    subscriber_count: quicklist.row_count,
+    created_on: quicklist.created_at.split("T")[0], // Extract date part
+    list_type: "standard" as const,
+    tags: [quicklist.upload_type],
+  }));
 
   useEffect(() => {
     loadLists();

@@ -514,11 +514,12 @@ export default function CampaignsPage() {
       setCampaigns(paginatedCampaigns);
 
       // Get total from pagination response
-      // When status is "all", use filtered count (excluding archived)
+      // When filtering client-side, use the filtered count to match displayed items
+      // When a specific status is selected, backend should return correct total
       const total =
         selectedStatus === "all"
-          ? campaignsToDisplay.length
-          : response.pagination?.total || campaignsWithDummyData.length;
+          ? campaignsToDisplay.length // Use filtered count when excluding archived
+          : response.pagination?.total || campaignsToDisplay.length; // Use backend total if available, otherwise filtered count
       setTotalCampaigns(total);
     } catch (error) {
       showToast(
@@ -573,71 +574,6 @@ export default function CampaignsPage() {
             pendingApproval: Number(pendingApproval),
           });
         } else {
-          // Fallback: calculate from all campaigns if stats endpoint fails
-          try {
-            const campaignsResponse = await campaignService.getCampaigns({
-              limit: 1000,
-              skipCache: true,
-            });
-            if (campaignsResponse.success && campaignsResponse.data) {
-              const allCampaigns = campaignsResponse.data;
-              const total = allCampaigns.length;
-              const active = allCampaigns.filter(
-                (c) => c.status === "active"
-              ).length;
-              const draft = allCampaigns.filter(
-                (c) => c.status === "draft"
-              ).length;
-              const pendingApproval = allCampaigns.filter(
-                (c) => c.approval_status === "pending"
-              ).length;
-              setCampaignStats({ total, active, draft, pendingApproval });
-            } else {
-              setCampaignStats({
-                total: 0,
-                active: 0,
-                draft: 0,
-                pendingApproval: 0,
-              });
-            }
-          } catch {
-            setCampaignStats({
-              total: 0,
-              active: 0,
-              draft: 0,
-              pendingApproval: 0,
-            });
-          }
-        }
-      } catch (error) {
-        // Fallback: calculate from all campaigns
-        try {
-          const campaignsResponse = await campaignService.getCampaigns({
-            limit: 1000,
-            skipCache: true,
-          });
-          if (campaignsResponse.success && campaignsResponse.data) {
-            const allCampaigns = campaignsResponse.data;
-            const total = allCampaigns.length;
-            const active = allCampaigns.filter(
-              (c) => c.status === "active"
-            ).length;
-            const draft = allCampaigns.filter(
-              (c) => c.status === "draft"
-            ).length;
-            const pendingApproval = allCampaigns.filter(
-              (c) => c.approval_status === "pending"
-            ).length;
-            setCampaignStats({ total, active, draft, pendingApproval });
-          } else {
-            setCampaignStats({
-              total: 0,
-              active: 0,
-              draft: 0,
-              pendingApproval: 0,
-            });
-          }
-        } catch {
           setCampaignStats({
             total: 0,
             active: 0,
@@ -645,6 +581,13 @@ export default function CampaignsPage() {
             pendingApproval: 0,
           });
         }
+      } catch (error) {
+        setCampaignStats({
+          total: 0,
+          active: 0,
+          draft: 0,
+          pendingApproval: 0,
+        });
       } finally {
         setStatsLoading(false);
       }

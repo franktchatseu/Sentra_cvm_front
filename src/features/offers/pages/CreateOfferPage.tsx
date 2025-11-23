@@ -1718,7 +1718,7 @@ export default function CreateOfferPage() {
           </div>
 
           {/* Sticky Bottom Navigation */}
-          <div className="sticky bottom-0 z-50 bg-white py-4">
+          <div className="sticky bottom-0 z-40 bg-white py-4">
             <div className="flex justify-between items-center">
               <button
                 onClick={handlePrev}

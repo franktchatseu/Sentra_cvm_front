@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2, Loader2, Search, User, Users, List } from "lucide-react";
 import {
   SegmentCondition,
@@ -11,6 +11,9 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useSegmentationFields } from "../hooks/useSegmentationFields";
 import SegmentPickerModal from "./SegmentPickerModal";
 import QuickListPickerModal from "./QuickListPickerModal";
+import CreateQuickListModal from "../../quicklists/components/CreateQuickListModal";
+import { quicklistService } from "../../quicklists/services/quicklistService";
+import { UploadType } from "../../quicklists/types/quicklist";
 
 interface SegmentConditionsBuilderProps {
   conditions: SegmentConditionGroup[];
@@ -24,6 +27,9 @@ export default function SegmentConditionsBuilder({
   const generateId = () => Math.random().toString(36).substr(2, 9);
   const [isSegmentModalOpen, setIsSegmentModalOpen] = useState(false);
   const [isQuickListModalOpen, setIsQuickListModalOpen] = useState(false);
+  const [isCreateQuickListModalOpen, setIsCreateQuickListModalOpen] =
+    useState(false);
+  const [uploadTypes, setUploadTypes] = useState<UploadType[]>([]);
   const [currentEditingCondition, setCurrentEditingCondition] = useState<{
     groupId: string;
     conditionId: string;
@@ -51,6 +57,24 @@ export default function SegmentConditionsBuilder({
     error: fieldsError,
     getFieldByValue,
   } = useSegmentationFields();
+
+  // Load upload types for CreateQuickListModal
+  useEffect(() => {
+    const loadUploadTypes = async () => {
+      try {
+        const response = await quicklistService.getUploadTypes({
+          activeOnly: true,
+          skipCache: true,
+        });
+        if (response.data && Array.isArray(response.data)) {
+          setUploadTypes(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to load upload types:", err);
+      }
+    };
+    loadUploadTypes();
+  }, []);
 
   const addConditionGroup = () => {
     const firstField = allFields.length > 0 ? allFields[0] : null;
@@ -220,7 +244,9 @@ export default function SegmentConditionsBuilder({
     groupId: string,
     condition: SegmentCondition
   ) => {
-    const backendField = condition.field ? getFieldByValue(condition.field) : null;
+    const backendField = condition.field
+      ? getFieldByValue(condition.field)
+      : null;
     const isDropdown = backendField?.ui?.component_type === "dropdown";
     const distinctValues = backendField?.validation?.distinct_values || [];
 
@@ -236,9 +262,12 @@ export default function SegmentConditionsBuilder({
             value={condition.category?.toString() || ""}
             onChange={(value) => {
               const categoryId = parseInt(value as string);
-              const selectedCategory = categories.find((c) => c.id === categoryId);
+              const selectedCategory = categories.find(
+                (c) => c.id === categoryId
+              );
               const categoryFields = selectedCategory?.fields || [];
-              const firstField = categoryFields.length > 0 ? categoryFields[0] : null;
+              const firstField =
+                categoryFields.length > 0 ? categoryFields[0] : null;
 
               updateCondition(groupId, condition.id, {
                 category: categoryId,
@@ -268,10 +297,10 @@ export default function SegmentConditionsBuilder({
                   label: field.field_name,
                 }));
               }
-              const fieldsToShow = allFields.length > 0 ? allFields : SEGMENT_FIELDS;
+              const fieldsToShow =
+                allFields.length > 0 ? allFields : SEGMENT_FIELDS;
               return fieldsToShow.map((field) => ({
-                value:
-                  "field_value" in field ? field.field_value : field.key,
+                value: "field_value" in field ? field.field_value : field.key,
                 label: "field_name" in field ? field.field_name : field.label,
               }));
             })()}
@@ -314,7 +343,9 @@ export default function SegmentConditionsBuilder({
         <div className="min-w-[100px] max-w-[130px] flex-shrink-0">
           <HeadlessSelect
             options={(() => {
-              const field = condition.field ? getFieldByValue(condition.field) : null;
+              const field = condition.field
+                ? getFieldByValue(condition.field)
+                : null;
               if (field && field.operators.length > 0) {
                 return field.operators.map((op) => {
                   const symbolMap: Record<string, string> = {
@@ -377,7 +408,11 @@ export default function SegmentConditionsBuilder({
           </div>
         ) : (
           <input
-            type={getFieldType(condition.field || "") === "number" ? "number" : "text"}
+            type={
+              getFieldType(condition.field || "") === "number"
+                ? "number"
+                : "text"
+            }
             value={condition.value as string | number}
             onChange={(e) => {
               const fieldType = getFieldType(condition.field || "");
@@ -385,7 +420,10 @@ export default function SegmentConditionsBuilder({
                 fieldType === "number"
                   ? parseFloat(e.target.value) || 0
                   : e.target.value;
-              updateCondition(groupId, condition.id, { value, type: fieldType });
+              updateCondition(groupId, condition.id, {
+                value,
+                type: fieldType,
+              });
             }}
             placeholder="Enter value"
             className={`px-3 py-2 border border-[${tw.borderDefault}] rounded-md focus:outline-none text-sm min-w-[160px] flex-1 max-w-[250px]`}
@@ -396,7 +434,10 @@ export default function SegmentConditionsBuilder({
   };
 
   // Render Segment condition fields
-  const renderSegmentFields = (groupId: string, condition: SegmentCondition) => {
+  const renderSegmentFields = (
+    groupId: string,
+    condition: SegmentCondition
+  ) => {
     const handleOpenSegmentModal = () => {
       setCurrentEditingCondition({
         groupId,
@@ -414,7 +455,11 @@ export default function SegmentConditionsBuilder({
             onClick={handleOpenSegmentModal}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm text-left flex items-center justify-between hover:border-gray-400 transition-colors"
           >
-            <span className={condition.segment_name ? "text-gray-900" : "text-gray-500"}>
+            <span
+              className={
+                condition.segment_name ? "text-gray-900" : "text-gray-500"
+              }
+            >
               {condition.segment_name || "Select a segment..."}
             </span>
             <Search className="w-4 h-4 text-gray-400" />
@@ -452,19 +497,39 @@ export default function SegmentConditionsBuilder({
       setIsQuickListModalOpen(true);
     };
 
+    const handleOpenCreateModal = () => {
+      setCurrentEditingCondition({
+        groupId,
+        conditionId: condition.id,
+      });
+      setIsCreateQuickListModalOpen(true);
+    };
+
     return (
       <>
         {/* QuickList Selection */}
-        <div className="min-w-[200px] flex-1 max-w-[350px]">
+        <div className="min-w-[200px] flex-1 max-w-[500px] flex gap-2">
           <button
             type="button"
             onClick={handleOpenQuickListModal}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm text-left flex items-center justify-between hover:border-gray-400 transition-colors"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm text-left flex items-center justify-between hover:border-gray-400 transition-colors"
           >
-            <span className={condition.list_name ? "text-gray-900" : "text-gray-500"}>
+            <span
+              className={
+                condition.list_name ? "text-gray-900" : "text-gray-500"
+              }
+            >
               {condition.list_name || "Select a quicklist..."}
             </span>
             <Search className="w-4 h-4 text-gray-400" />
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="px-4 py-2 text-sm font-medium rounded-md text-white whitespace-nowrap"
+            style={{ backgroundColor: color.primary.action }}
+          >
+            Create List
           </button>
         </div>
 
@@ -586,7 +651,7 @@ export default function SegmentConditionsBuilder({
                   />
                 </div>
               </div>
-              
+
               <span className="text-sm text-gray-600">
                 ({group.conditions.length} condition
                 {group.conditions.length !== 1 ? "s" : ""})
@@ -606,122 +671,131 @@ export default function SegmentConditionsBuilder({
           <div className="space-y-3">
             {group.conditions.map((condition, conditionIndex) => {
               const TypeIcon = getConditionTypeIcon(condition.conditionType);
-              
-              return (
-              <div
-                key={condition.id}
-                className="flex items-center flex-wrap gap-3 p-3 rounded-md border transition-colors hover:border-gray-300"
-                style={{
-                  backgroundColor: color.surface.background,
-                  borderColor: color.border.muted,
-                }}
-              >
-                {conditionIndex > 0 && (
-                  <span
-                    className="px-2.5 py-1 text-xs font-semibold rounded-md"
-                    style={{
-                      backgroundColor: `${color.primary.accent}15`,
-                      color: color.text.primary,
-                    }}
-                  >
-                    {group.operator}
-                  </span>
-                )}
 
-                {/* Condition Type Badge - Selectable appearance */}
-                <div 
-                  className="flex items-center gap-2 px-3 py-2 rounded-md min-w-[160px] flex-shrink-0 cursor-pointer transition-all hover:shadow-md"
+              return (
+                <div
+                  key={condition.id}
+                  className="flex items-center flex-wrap gap-3 p-3 rounded-md border transition-colors hover:border-gray-300"
                   style={{
                     backgroundColor: color.surface.background,
-                    border: `1px solid ${color.border.default}`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = color.primary.accent;
-                    e.currentTarget.style.backgroundColor = `${color.primary.accent}08`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = color.border.default;
-                    e.currentTarget.style.backgroundColor = color.surface.background;
+                    borderColor: color.border.muted,
                   }}
                 >
-                  <TypeIcon 
-                    className="w-4 h-4 flex-shrink-0" 
-                    style={{ color: color.text.secondary }}
-                  />
-                  <div className="flex-1 [&_button]:bg-transparent [&_button]:border-0 [&_button]:p-0 [&_button]:shadow-none [&_button]:font-medium [&_button]:text-sm [&_button]:cursor-pointer"
+                  {conditionIndex > 0 && (
+                    <span
+                      className="px-2.5 py-1 text-xs font-semibold rounded-md"
+                      style={{
+                        backgroundColor: `${color.primary.accent}15`,
+                        color: color.text.primary,
+                      }}
+                    >
+                      {group.operator}
+                    </span>
+                  )}
+
+                  {/* Condition Type Badge - Selectable appearance */}
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 rounded-md min-w-[160px] flex-shrink-0 cursor-pointer transition-all hover:shadow-md"
                     style={{
-                      color: color.text.primary,
+                      backgroundColor: color.surface.background,
+                      border: `1px solid ${color.border.default}`,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = color.primary.accent;
+                      e.currentTarget.style.backgroundColor = `${color.primary.accent}08`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = color.border.default;
+                      e.currentTarget.style.backgroundColor =
+                        color.surface.background;
                     }}
                   >
-                    <HeadlessSelect
-                      options={[
-                        { value: "360_profile", label: "360 Profile" },
-                        { value: "segment", label: "Segment" },
-                        { value: "list", label: "QuickList" },
-                      ]}
-                      value={condition.conditionType}
-                      onChange={(value) => {
-                      const condType = value as "360_profile" | "segment" | "list";
-                      // Reset condition based on type
-                      if (condType === "360_profile") {
-                        const firstField = allFields.length > 0 ? allFields[0] : null;
-                        updateCondition(group.id, condition.id, {
-                          conditionType: condType,
-                          category: categories.length > 0 ? categories[0].id : undefined,
-                          field: firstField?.field_value || "",
-                          field_id: firstField?.id,
-                          operator: "equals",
-                          operator_id: firstField?.operators[0]?.id,
-                          value: "",
-                          segment_id: undefined,
-                          segment_name: undefined,
-                          list_id: undefined,
-                          list_name: undefined,
-                        });
-                      } else if (condType === "segment") {
-                        updateCondition(group.id, condition.id, {
-                          conditionType: condType,
-                          operator: "in",
-                          value: "",
-                          category: undefined,
-                          field: undefined,
-                          field_id: undefined,
-                          list_id: undefined,
-                          list_name: undefined,
-                        });
-                      } else if (condType === "list") {
-                        updateCondition(group.id, condition.id, {
-                          conditionType: condType,
-                          operator: "in",
-                          value: "",
-                          category: undefined,
-                          field: undefined,
-                          field_id: undefined,
-                          segment_id: undefined,
-                          segment_name: undefined,
-                        });
-                      }
-                    }}
-                    placeholder="Select type"
-                    className="text-sm"
-                  />
+                    <TypeIcon
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{ color: color.text.secondary }}
+                    />
+                    <div
+                      className="flex-1 [&_button]:bg-transparent [&_button]:border-0 [&_button]:p-0 [&_button]:shadow-none [&_button]:font-medium [&_button]:text-sm [&_button]:cursor-pointer"
+                      style={{
+                        color: color.text.primary,
+                      }}
+                    >
+                      <HeadlessSelect
+                        options={[
+                          { value: "360_profile", label: "360 Profile" },
+                          { value: "segment", label: "Segment" },
+                          { value: "list", label: "QuickList" },
+                        ]}
+                        value={condition.conditionType}
+                        onChange={(value) => {
+                          const condType = value as
+                            | "360_profile"
+                            | "segment"
+                            | "list";
+                          // Reset condition based on type
+                          if (condType === "360_profile") {
+                            const firstField =
+                              allFields.length > 0 ? allFields[0] : null;
+                            updateCondition(group.id, condition.id, {
+                              conditionType: condType,
+                              category:
+                                categories.length > 0
+                                  ? categories[0].id
+                                  : undefined,
+                              field: firstField?.field_value || "",
+                              field_id: firstField?.id,
+                              operator: "equals",
+                              operator_id: firstField?.operators[0]?.id,
+                              value: "",
+                              segment_id: undefined,
+                              segment_name: undefined,
+                              list_id: undefined,
+                              list_name: undefined,
+                            });
+                          } else if (condType === "segment") {
+                            updateCondition(group.id, condition.id, {
+                              conditionType: condType,
+                              operator: "in",
+                              value: "",
+                              category: undefined,
+                              field: undefined,
+                              field_id: undefined,
+                              list_id: undefined,
+                              list_name: undefined,
+                            });
+                          } else if (condType === "list") {
+                            updateCondition(group.id, condition.id, {
+                              conditionType: condType,
+                              operator: "in",
+                              value: "",
+                              category: undefined,
+                              field: undefined,
+                              field_id: undefined,
+                              segment_id: undefined,
+                              segment_name: undefined,
+                            });
+                          }
+                        }}
+                        placeholder="Select type"
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
+
+                  {/* Render fields based on condition type */}
+                  {renderConditionFields(group.id, condition)}
+
+                  {/* Remove Condition */}
+                  <button
+                    type="button"
+                    onClick={() => removeCondition(group.id, condition.id)}
+                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors flex-shrink-0"
+                    title="Remove Condition"
+                    disabled={group.conditions.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-
-                {/* Render fields based on condition type */}
-                {renderConditionFields(group.id, condition)}
-
-                {/* Remove Condition */}
-                <button
-                  type="button"
-                  onClick={() => removeCondition(group.id, condition.id)}
-                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors flex-shrink-0"
-                  title="Remove Condition"
-                  disabled={group.conditions.length === 1}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
               );
             })}
           </div>
@@ -814,6 +888,26 @@ export default function SegmentConditionsBuilder({
                 )?.list_id
             : undefined
         }
+      />
+
+      {/* Create QuickList Modal */}
+      <CreateQuickListModal
+        isOpen={isCreateQuickListModalOpen}
+        onClose={() => {
+          setIsCreateQuickListModalOpen(false);
+          setCurrentEditingCondition(null);
+        }}
+        onSubmit={async (request) => {
+          try {
+            await quicklistService.createQuickList(request);
+            setIsCreateQuickListModalOpen(false);
+            setCurrentEditingCondition(null);
+            // Optionally refresh the quicklist picker or show success message
+          } catch (err) {
+            throw err; // Let CreateQuickListModal handle the error
+          }
+        }}
+        uploadTypes={uploadTypes}
       />
     </div>
   );
