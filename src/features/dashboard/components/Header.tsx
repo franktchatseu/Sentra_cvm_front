@@ -21,10 +21,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   const loadCurrentUserRole = useCallback(async () => {
     if (!user?.user_id) {
+      setCurrentUserRole("User");
       return;
     }
     try {
-      // Load roles for lookup first (same as user management)
       const { roles } = await roleService.listRoles({
         limit: 100,
         offset: 0,
@@ -34,37 +34,31 @@ export default function Header({ onMenuClick }: HeaderProps) {
         mappedRoles[role.id] = role;
       });
 
-      // Get user by ID
       let fullUser: FullUserType | null = null;
-      if (user?.user_id) {
-        try {
-          const userResponseById = await userService.getUserById(user.user_id);
-          if (userResponseById.success && userResponseById.data) {
-            fullUser = userResponseById.data as FullUserType;
-          }
-        } catch {
-          // Silently handle error and use fallback
+      try {
+        const userResponseById = await userService.getUserById(user.user_id);
+        if (userResponseById.success && userResponseById.data) {
+          fullUser = userResponseById.data as FullUserType;
         }
+      } catch {
+        // fallback to auth context role below
       }
 
       if (fullUser) {
-        // Resolve role name using the same logic as user management
         const primaryRoleId = fullUser.primary_role_id ?? fullUser.role_id;
         const resolvedRoleName =
           primaryRoleId != null ? mappedRoles[primaryRoleId]?.name : undefined;
         const fallbackRoleName = fullUser.role_name;
 
-        const finalRoleName = resolvedRoleName ?? fallbackRoleName ?? "User";
-        setCurrentUserRole(finalRoleName);
+        setCurrentUserRole(resolvedRoleName ?? fallbackRoleName ?? "User");
       } else {
         setCurrentUserRole(
-          user?.role
+          user.role
             ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
             : "User"
         );
       }
     } catch {
-      // Fallback to simple role from auth context
       setCurrentUserRole(
         user?.role
           ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
@@ -85,7 +79,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       }}
     >
       <div className="flex h-16 items-center justify-between px-5 lg:px-8">
-        <div className="flex items-center gap-x-4 flex-1">
+        <div className="flex items-center gap-x-3 flex-1">
           <button
             onClick={onMenuClick}
             className="md:hidden rounded-md p-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors"
@@ -93,10 +87,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </button>
 
-          <GlobalSearch />
+          <div className="flex-1 min-w-0">
+            <GlobalSearch />
+          </div>
         </div>
 
-        <div className="flex items-center gap-x-4">
+        <div className="flex items-center gap-x-2">
           <button
             type="button"
             className="relative p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors"
@@ -107,10 +103,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </span>
           </button>
 
-          <div className="flex items-center gap-x-3">
+          <div className="hidden md:flex items-center gap-x-3">
             <div className="flex items-center gap-x-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10">
+                <User className="w-5 h-5 text-white" />
               </div>
               <div>
                 <div className="text-sm font-medium text-white">
@@ -121,7 +117,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 </div>
               </div>
             </div>
-
             <button
               onClick={logout}
               className="p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors"
@@ -192,7 +187,7 @@ export function GuestHeader({
           {showLogo && (
             <div className="flex items-center">
               <div
-                className="w-32 h-32 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                className="w-24 h-24 sm:w-28 sm:h-28 lg:w-36 lg:h-36 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => navigate("/dashboard")}
               >
                 <img

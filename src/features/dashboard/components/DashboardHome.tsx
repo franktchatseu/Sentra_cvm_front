@@ -22,8 +22,8 @@ type RecentCampaign = {
 };
 
 import {
-  ArrowUpRight,
-  ArrowDownRight,
+  // ArrowUpRight,
+  // ArrowDownRight,
   // Clock,
   ArrowRight,
   Users,

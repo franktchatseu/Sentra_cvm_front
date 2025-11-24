@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import React from "react";
 import {
   Home,
@@ -30,9 +30,16 @@ import {
   LineChart,
   Gift,
   Mail,
+  LogOut,
+  User,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
+import { useAuth } from "../../../contexts/AuthContext";
+import { roleService } from "../../roles/services/roleService";
+import { userService } from "../../users/services/userService";
+import { Role } from "../../roles/types/role";
+import { UserType as FullUserType } from "../../users/types/user";
 
 // Hide scrollbar CSS and custom animations
 const hideScrollbarStyle = `
@@ -91,6 +98,70 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const previousPathnameRef = useRef<string>(location.pathname);
+  const { user, logout } = useAuth();
+  const [currentUserRole, setCurrentUserRole] = useState<string>("User");
+
+  const loadCurrentUserRole = useCallback(async () => {
+    if (!user?.user_id) {
+      setCurrentUserRole("User");
+      return;
+    }
+
+    try {
+      const { roles } = await roleService.listRoles({
+        limit: 100,
+        offset: 0,
+      });
+      const mappedRoles: Record<number, Role> = {};
+      roles.forEach((role) => {
+        mappedRoles[role.id] = role;
+      });
+
+      let fullUser: FullUserType | null = null;
+      try {
+        const userResponseById = await userService.getUserById(user.user_id);
+        if (userResponseById.success && userResponseById.data) {
+          fullUser = userResponseById.data as FullUserType;
+        }
+      } catch {
+        // use fallback below
+      }
+
+      if (fullUser) {
+        const primaryRoleId = fullUser.primary_role_id ?? fullUser.role_id;
+        const resolvedRoleName =
+          primaryRoleId != null ? mappedRoles[primaryRoleId]?.name : undefined;
+        const fallbackRoleName = fullUser.role_name;
+        setCurrentUserRole(resolvedRoleName ?? fallbackRoleName ?? "User");
+      } else {
+        setCurrentUserRole(
+          user.role
+            ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+            : "User"
+        );
+      }
+    } catch {
+      setCurrentUserRole(
+        user?.role
+          ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+          : "User"
+      );
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadCurrentUserRole();
+  }, [loadCurrentUserRole]);
+
+  const handleSidebarLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      onClose();
+    }
+  };
+
+  const userDisplayName = user?.email || "User";
 
   const navigation: NavigationItem[] = [
     {
@@ -486,7 +557,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           >
             <div className="flex h-16 shrink-0 items-center justify-between px-6">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 flex items-center justify-center">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
                   <img
                     src={logo}
                     alt="Sentra Logo"
@@ -665,6 +736,52 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   );
                 })}
               </nav>
+              <div className="mt-6 space-y-2">
+                {secondaryNavigation.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={handleLinkClick}
+                      className={`group flex items-center gap-x-3 rounded-md p-3 text-sm transition-all duration-300 ease-out ${
+                        !isActive ? "hover:scale-105 hover:shadow-lg" : ""
+                      } ${getItemClasses(isActive)}`}
+                    >
+                      <Icon
+                        className={`h-5 w-5 shrink-0 ${getIconClasses(
+                          isActive
+                        )}`}
+                      />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="px-6 pb-6 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-x-3">
+                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {userDisplayName}
+                  </p>
+                  <p className="text-xs tracking-wide text-white/70 truncate">
+                    {currentUserRole}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleSidebarLogout}
+                className="mt-4 inline-flex w-full items-center justify-center gap-x-2 rounded-md border border-white/20 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
             </div>
           </div>
         </div>

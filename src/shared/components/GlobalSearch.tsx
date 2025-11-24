@@ -756,8 +756,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
       {showSuggestions && (
         <div
           ref={suggestionsRef}
-          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 max-h-[600px] overflow-y-auto z-50 w-[500px]"
-          style={{ maxWidth: "calc(100vw - 2rem)" }}
+          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 max-h-[600px] overflow-y-auto z-50 w-full max-w-[calc(100vw-2rem)] sm:max-w-[500px] mx-auto sm:mx-0"
         >
           {isLoading ? (
             <div className="p-12 text-center">
