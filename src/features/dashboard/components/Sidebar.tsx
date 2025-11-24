@@ -314,11 +314,27 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       entity: "configuration",
     },
     {
-      name: "Customer Identity",
-      href: "/dashboard/customer-identity",
-      icon: Fingerprint,
-      type: "single",
+      name: "Customer Management",
+      href: "/dashboard/customers",
+      icon: Users,
+      type: "parent",
       entity: "customers",
+      children: [
+        {
+          name: "Customers",
+          href: "/dashboard/customers",
+          icon: Users,
+          type: "single",
+          entity: "customers",
+        },
+        {
+          name: "Customer Identity",
+          href: "/dashboard/customer-identity",
+          icon: Fingerprint,
+          type: "single",
+          entity: "customers",
+        },
+      ],
     },
   ];
 

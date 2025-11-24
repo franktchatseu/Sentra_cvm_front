@@ -26,6 +26,7 @@ import {
 import { Segment, SegmentFilters, SortDirection } from "../types/segment";
 import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import SegmentModal from "../components/SegmentModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
@@ -34,6 +35,7 @@ import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal
 
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [allSegments, setAllSegments] = useState<Segment[]>([]); // Store all segments for tag calculation
   const [isLoading, setIsLoading] = useState(true);
@@ -120,7 +122,7 @@ export default function SegmentManagementPage() {
   } | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
 
-  const { success, error: showError } = useToast();
+  const { success, error: showError, info: showInfo } = useToast();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [segmentToDelete, setSegmentToDelete] = useState<Segment | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -544,6 +546,13 @@ export default function SegmentManagementPage() {
 
   const handleDuplicateSegment = async (segment: Segment) => {
     setShowActionMenu(null);
+    showInfo(
+      "Duplicate unavailable",
+      "Cannot access this functionality right now."
+    );
+    return;
+    /* eslint-disable-next-line no-unreachable */
+    setShowActionMenu(null);
     const confirmed = await confirm({
       title: "Duplicate Segment",
       message: `Create a copy of "${segment.name}"?`,
@@ -594,6 +603,13 @@ export default function SegmentManagementPage() {
 
   const handleComputeSegment = async (segment: Segment) => {
     setShowActionMenu(null);
+    showInfo(
+      "Compute unavailable",
+      "Cannot access this functionality right now."
+    );
+    return;
+    /* eslint-disable-next-line no-unreachable */
+    setShowActionMenu(null);
     const confirmed = await confirm({
       title: "Compute Segment",
       message: `Do you want to compute the segment "${segment.name}"? This will refresh the member list.`,
@@ -621,6 +637,13 @@ export default function SegmentManagementPage() {
 
   const handleExportSegment = async (segment: Segment) => {
     setShowActionMenu(null);
+    showInfo(
+      "Export unavailable",
+      "Cannot access this functionality right now."
+    );
+    return;
+    /* eslint-disable-next-line no-unreachable */
+    setShowActionMenu(null);
     try {
       const segmentId = segment.id;
       const blob = await segmentService.exportSegment(segmentId, {
@@ -645,28 +668,29 @@ export default function SegmentManagementPage() {
     }
   };
 
-  const handleToggleStatus = async (segment: Segment) => {
-    try {
-      const segmentId = segment.id;
-      if (segment.is_active) {
-        await segmentService.deactivateSegment(segmentId);
-        success(
-          "Segment Deactivated",
-          `"${segment.name}" has been deactivated successfully.`
-        );
-      } else {
-        await segmentService.activateSegment(segmentId);
-        success(
-          "Segment Activated",
-          `"${segment.name}" has been activated successfully.`
-        );
-      }
-      await loadSegments();
-    } catch (err: unknown) {
-      console.error("Failed to update segment status:", err);
-      showError("Failed to update segment status", "Please try again later.");
-    }
-  };
+  // COMMENTED OUT: Activate/Deactivate functionality temporarily disabled
+  // const handleToggleStatus = async (segment: Segment) => {
+  //   try {
+  //     const segmentId = segment.id;
+  //     if (segment.is_active) {
+  //       await segmentService.deactivateSegment(segmentId);
+  //       success(
+  //         "Segment Deactivated",
+  //         `"${segment.name}" has been deactivated successfully.`
+  //       );
+  //     } else {
+  //       await segmentService.activateSegment(segmentId);
+  //       success(
+  //         "Segment Activated",
+  //         `"${segment.name}" has been activated successfully.`
+  //       );
+  //     }
+  //     await loadSegments();
+  //   } catch (err: unknown) {
+  //     console.error("Failed to update segment status:", err);
+  //     showError("Failed to update segment status", "Please try again later.");
+  //   }
+  // };
 
   // Get all unique tags from all segments (not just filtered ones)
   const allTags = Array.from(
@@ -1177,7 +1201,8 @@ export default function SegmentManagementPage() {
                           >
                             <Eye className="w-4 h-4 " />
                           </button>
-                          <button
+                          {/* COMMENTED OUT: Activate/Deactivate button temporarily disabled */}
+                          {/* <button
                             onClick={() => handleToggleStatus(segment)}
                             className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                             title={
@@ -1189,7 +1214,7 @@ export default function SegmentManagementPage() {
                             ) : (
                               <Play className="w-4 h-4" />
                             )}
-                          </button>
+                          </button> */}
                           <button
                             onClick={() => handleEditSegment(segment.id)}
                             className={`group p-3 rounded-md ${tw.textMuted} hover:bg-[${color.primary.accent}]/10 transition-all duration-300`}
@@ -1334,7 +1359,8 @@ export default function SegmentManagementPage() {
 
                     {/* Mobile Actions */}
                     <div className="flex items-center space-x-1">
-                      <button
+                      {/* COMMENTED OUT: Activate/Deactivate button temporarily disabled */}
+                      {/* <button
                         onClick={() => handleToggleStatus(segment)}
                         className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
                         title={segment.is_active ? "Deactivate" : "Activate"}
@@ -1344,7 +1370,7 @@ export default function SegmentManagementPage() {
                         ) : (
                           <Play className="w-4 h-4" />
                         )}
-                      </button>
+                      </button> */}
                       <button
                         onClick={() => handleViewSegment(segment.id)}
                         className="p-2 rounded-md text-gray-500 hover:bg-gray-100"

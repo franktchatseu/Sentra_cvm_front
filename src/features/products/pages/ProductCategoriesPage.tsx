@@ -31,6 +31,7 @@ import {
   parseCatalogTag,
 } from "../../../shared/utils/catalogTags";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -1136,15 +1137,7 @@ export default function ProductCatalogsPage() {
                   </div>
                   <button
                     onClick={() => handleViewProducts(category)}
-                    className={tw.borderedButton}
-                    style={{
-                      borderColor: color.primary.action,
-                      color: color.primary.action,
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor =
-                        "transparent";
-                    }}
+                    className="text-sm font-medium text-gray-700 hover:underline transition-colors"
                     title="View & Assign Products"
                   >
                     View Products

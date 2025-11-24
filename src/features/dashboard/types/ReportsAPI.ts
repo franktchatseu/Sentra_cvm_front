@@ -80,6 +80,7 @@ export interface CustomerRow {
   id: string; // Customer ID
   name: string; // Customer full name
   segment: string; // Customer segment (e.g., "Champions", "Loyalists")
+  segments?: string[]; // optional list of segments if customer belongs to multiple
   lifetimeValue: number; // Total lifetime value in currency units
   clv: number; // CLV score
   orders: number; // Total number of orders

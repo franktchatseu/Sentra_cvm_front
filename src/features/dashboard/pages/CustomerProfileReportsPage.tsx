@@ -485,11 +485,12 @@ export default function CustomerProfileReportsPage() {
 
       // Navigate to search results page with customer data and ID in URL
       navigate(
-        `/dashboard/reports/customer-profiles/search?customerId=${foundCustomer.id}`,
+        `/dashboard/reports/customer-profiles/search?customerId=${foundCustomer.id}&source=reports`,
         {
           state: {
             customer: foundCustomer,
             searchTerm: customerSearchTerm,
+            source: "reports" as const,
           },
         }
       );

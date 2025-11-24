@@ -9,6 +9,8 @@ import {
   FolderKanban,
   UserCheck,
   Settings,
+  FolderTree,
+  List,
 } from "lucide-react";
 import { campaignService } from "../../features/campaigns/services/campaignService";
 import { offerService } from "../../features/offers/services/offerService";
@@ -17,6 +19,9 @@ import { segmentService } from "../../features/segments/services/segmentService"
 import { programService } from "../../features/campaigns/services/programService";
 import { userService } from "../../features/users/services/userService";
 import { roleService } from "../../features/roles/services/roleService";
+import { offerCategoryService } from "../../features/offers/services/offerCategoryService";
+import { productCategoryService } from "../../features/products/services/productCategoryService";
+import { quicklistService } from "../../features/quicklists/services/quicklistService";
 import { Role } from "../../features/roles/types/role";
 import { color, tw } from "../utils/utils";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
@@ -30,7 +35,12 @@ interface SearchResult {
     | "segment"
     | "program"
     | "user"
-    | "configuration";
+    | "configuration"
+    | "offer-catalog"
+    | "product-catalog"
+    | "segment-catalog"
+    | "campaign-catalog"
+    | "quicklist";
   name: string;
   description?: string;
   url: string;
@@ -45,6 +55,11 @@ interface SearchResults {
   programs: SearchResult[];
   users: SearchResult[];
   configurations: SearchResult[];
+  "offer-catalogs": SearchResult[];
+  "product-catalogs": SearchResult[];
+  "segment-catalogs": SearchResult[];
+  "campaign-catalogs": SearchResult[];
+  quicklists: SearchResult[];
 }
 
 export default function SearchResultsPage() {
@@ -59,6 +74,11 @@ export default function SearchResultsPage() {
     programs: [],
     users: [],
     configurations: [],
+    "offer-catalogs": [],
+    "product-catalogs": [],
+    "segment-catalogs": [],
+    "campaign-catalogs": [],
+    quicklists: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +91,7 @@ export default function SearchResultsPage() {
     | "program"
     | "user"
     | "configuration"
+    | "quicklist"
   >("all");
 
   const performSearch = useCallback(async (searchQuery: string) => {
@@ -83,9 +104,16 @@ export default function SearchResultsPage() {
         programs: [],
         users: [],
         configurations: [],
+        "offer-catalogs": [],
+        "product-catalogs": [],
+        "segment-catalogs": [],
+        "campaign-catalogs": [],
+        quicklists: [],
       });
       return;
     }
+
+    const searchQueryLower = searchQuery.toLowerCase();
 
     setIsLoading(true);
     setError(null);
@@ -256,6 +284,11 @@ export default function SearchResultsPage() {
         segmentsRes,
         programsRes,
         usersRes,
+        offerCatalogsRes,
+        productCatalogsRes,
+        segmentCatalogsRes,
+        campaignCatalogsRes,
+        quicklistsRes,
       ] = await Promise.allSettled([
         campaignService.getCampaigns({
           limit: 50,
@@ -286,6 +319,30 @@ export default function SearchResultsPage() {
         userService.getUsers({
           skipCache: true,
         }),
+        offerCategoryService.searchCategories({
+          q: searchQuery,
+          limit: 50,
+          offset: 0,
+          skipCache: true,
+        }),
+        productCategoryService.searchCategories({
+          q: searchQuery,
+          limit: 50,
+          offset: 0,
+          skipCache: true,
+        }),
+        searchQuery.trim()
+          ? segmentService.searchSegmentCategories(searchQuery, true)
+          : segmentService.getSegmentCategories(undefined, true),
+        campaignService.searchCampaignCategories(searchQuery, {
+          limit: 50,
+          offset: 0,
+          skipCache: true,
+        }),
+        quicklistService.getAllQuickLists({
+          limit: 100,
+          offset: 0,
+        }),
       ]);
 
       const searchResults: SearchResults = {
@@ -296,6 +353,11 @@ export default function SearchResultsPage() {
         programs: [],
         users: [],
         configurations: [],
+        "offer-catalogs": [],
+        "product-catalogs": [],
+        "segment-catalogs": [],
+        "campaign-catalogs": [],
+        quicklists: [],
       };
 
       // Process campaigns
@@ -455,6 +517,137 @@ export default function SearchResultsPage() {
           },
         }));
 
+      // Process offer catalogs
+      if (
+        offerCatalogsRes.status === "fulfilled" &&
+        offerCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(offerCatalogsRes.value.data)
+          ? offerCatalogsRes.value.data
+          : offerCatalogsRes.value.data.categories || [];
+        searchResults["offer-catalogs"] = catalogs.map((catalog: any) => ({
+          id: catalog.id,
+          type: "offer-catalog" as const,
+          name: catalog.name || "Unnamed Catalog",
+          description: catalog.description || undefined,
+          url: `/dashboard/offer-catalogs`,
+          metadata: {
+            is_active: catalog.is_active,
+            offer_count: catalog.offer_count,
+          },
+        }));
+      }
+
+      // Process product catalogs
+      if (
+        productCatalogsRes.status === "fulfilled" &&
+        productCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(productCatalogsRes.value.data)
+          ? productCatalogsRes.value.data
+          : [];
+        searchResults["product-catalogs"] = catalogs
+          .filter((catalog: any) => {
+            const nameMatch = catalog.name
+              ?.toLowerCase()
+              .includes(searchQueryLower);
+            const descMatch = catalog.description
+              ?.toLowerCase()
+              .includes(searchQueryLower);
+            return nameMatch || descMatch;
+          })
+          .map((catalog: any) => ({
+            id: catalog.id,
+            type: "product-catalog" as const,
+            name: catalog.name || "Unnamed Catalog",
+            description: catalog.description || undefined,
+            url: `/dashboard/products/catalogs`,
+            metadata: {
+              is_active: catalog.is_active,
+              product_count: catalog.product_count,
+            },
+          }));
+      }
+
+      // Process segment catalogs
+      if (
+        segmentCatalogsRes.status === "fulfilled" &&
+        segmentCatalogsRes.value.success &&
+        segmentCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(segmentCatalogsRes.value.data)
+          ? segmentCatalogsRes.value.data
+          : [];
+        searchResults["segment-catalogs"] = catalogs.map((catalog: any) => ({
+          id: catalog.id,
+          type: "segment-catalog" as const,
+          name: catalog.name || "Unnamed Catalog",
+          description: catalog.description || undefined,
+          url: `/dashboard/segment-catalogs`,
+          metadata: {
+            segment_count: catalog.segment_count,
+          },
+        }));
+      }
+
+      // Process campaign catalogs
+      if (
+        campaignCatalogsRes.status === "fulfilled" &&
+        campaignCatalogsRes.value.success &&
+        campaignCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(campaignCatalogsRes.value.data)
+          ? campaignCatalogsRes.value.data
+          : [];
+        searchResults["campaign-catalogs"] = catalogs.map((catalog: any) => ({
+          id: catalog.id,
+          type: "campaign-catalog" as const,
+          name: catalog.name || "Unnamed Catalog",
+          description: catalog.description || undefined,
+          url: `/dashboard/campaign-catalogs`,
+          metadata: {
+            campaign_count: catalog.campaign_count,
+          },
+        }));
+      }
+
+      // Process quicklists
+      if (
+        quicklistsRes.status === "fulfilled" &&
+        quicklistsRes.value.success &&
+        quicklistsRes.value.data
+      ) {
+        const quicklists = Array.isArray(quicklistsRes.value.data)
+          ? quicklistsRes.value.data
+          : [];
+        searchResults.quicklists = quicklists
+          .filter((quicklist: any) => {
+            const nameMatch = quicklist.name
+              ?.toLowerCase()
+              .includes(searchQueryLower);
+            const descMatch = quicklist.description
+              ?.toLowerCase()
+              .includes(searchQueryLower);
+            const typeMatch = quicklist.upload_type
+              ?.toLowerCase()
+              .includes(searchQueryLower);
+            return nameMatch || descMatch || typeMatch;
+          })
+          .map((quicklist: any) => ({
+            id: quicklist.id,
+            type: "quicklist" as const,
+            name: quicklist.name || "Unnamed Quicklist",
+            description:
+              quicklist.description || quicklist.upload_type || undefined,
+            url: `/dashboard/quicklists/${quicklist.id}`,
+            metadata: {
+              upload_type: quicklist.upload_type,
+              rows_imported: quicklist.rows_imported,
+              processing_status: quicklist.processing_status,
+            },
+          }));
+      }
+
       setResults(searchResults);
     } catch (err) {
       console.error("Search failed:", err);
@@ -482,27 +675,32 @@ export default function SearchResultsPage() {
         results.segments.length +
         results.programs.length +
         results.users.length +
-        results.configurations.length,
+        results.configurations.length +
+        results["offer-catalogs"].length +
+        results["product-catalogs"].length +
+        results["segment-catalogs"].length +
+        results["campaign-catalogs"].length +
+        results.quicklists.length,
     },
     {
       id: "campaign" as const,
       name: "Campaigns",
-      count: results.campaigns.length,
+      count: results.campaigns.length + results["campaign-catalogs"].length,
     },
     {
       id: "offer" as const,
       name: "Offers",
-      count: results.offers.length,
+      count: results.offers.length + results["offer-catalogs"].length,
     },
     {
       id: "product" as const,
       name: "Products",
-      count: results.products.length,
+      count: results.products.length + results["product-catalogs"].length,
     },
     {
       id: "segment" as const,
       name: "Segments",
-      count: results.segments.length,
+      count: results.segments.length + results["segment-catalogs"].length,
     },
     {
       id: "program" as const,
@@ -518,6 +716,11 @@ export default function SearchResultsPage() {
       id: "configuration" as const,
       name: "Configurations",
       count: results.configurations.length,
+    },
+    {
+      id: "quicklist" as const,
+      name: "Quicklists",
+      count: results.quicklists.length,
     },
   ];
 
@@ -535,22 +738,33 @@ export default function SearchResultsPage() {
       programs: [],
       users: [],
       configurations: [],
+      "offer-catalogs": [],
+      "product-catalogs": [],
+      "segment-catalogs": [],
+      "campaign-catalogs": [],
+      quicklists: [],
     };
 
     if (selectedCategory === "campaign") {
       filtered.campaigns = results.campaigns;
+      filtered["campaign-catalogs"] = results["campaign-catalogs"];
     } else if (selectedCategory === "offer") {
       filtered.offers = results.offers;
+      filtered["offer-catalogs"] = results["offer-catalogs"];
     } else if (selectedCategory === "product") {
       filtered.products = results.products;
+      filtered["product-catalogs"] = results["product-catalogs"];
     } else if (selectedCategory === "segment") {
       filtered.segments = results.segments;
+      filtered["segment-catalogs"] = results["segment-catalogs"];
     } else if (selectedCategory === "program") {
       filtered.programs = results.programs;
     } else if (selectedCategory === "user") {
       filtered.users = results.users;
     } else if (selectedCategory === "configuration") {
       filtered.configurations = results.configurations;
+    } else if (selectedCategory === "quicklist") {
+      filtered.quicklists = results.quicklists;
     }
 
     return filtered;
@@ -588,6 +802,26 @@ export default function SearchResultsPage() {
         label: "Configuration",
         icon: Settings,
       },
+      "offer-catalog": {
+        label: "Offer Catalog",
+        icon: FolderTree,
+      },
+      "product-catalog": {
+        label: "Product Catalog",
+        icon: FolderTree,
+      },
+      "segment-catalog": {
+        label: "Segment Catalog",
+        icon: FolderTree,
+      },
+      "campaign-catalog": {
+        label: "Campaign Catalog",
+        icon: FolderTree,
+      },
+      quicklist: {
+        label: "Quicklist",
+        icon: List,
+      },
     };
     return types[type];
   };
@@ -599,7 +833,12 @@ export default function SearchResultsPage() {
     filteredResults.segments.length +
     filteredResults.programs.length +
     filteredResults.users.length +
-    filteredResults.configurations.length;
+    filteredResults.configurations.length +
+    filteredResults["offer-catalogs"].length +
+    filteredResults["product-catalogs"].length +
+    filteredResults["segment-catalogs"].length +
+    filteredResults["campaign-catalogs"].length +
+    filteredResults.quicklists.length;
 
   const renderResultsSection = (
     title: string,
@@ -738,16 +977,36 @@ export default function SearchResultsPage() {
                 filteredResults.campaigns,
                 "campaign"
               )}
+              {renderResultsSection(
+                "Campaign Catalogs",
+                filteredResults["campaign-catalogs"],
+                "campaign-catalog"
+              )}
               {renderResultsSection("Offers", filteredResults.offers, "offer")}
+              {renderResultsSection(
+                "Offer Catalogs",
+                filteredResults["offer-catalogs"],
+                "offer-catalog"
+              )}
               {renderResultsSection(
                 "Products",
                 filteredResults.products,
                 "product"
               )}
               {renderResultsSection(
+                "Product Catalogs",
+                filteredResults["product-catalogs"],
+                "product-catalog"
+              )}
+              {renderResultsSection(
                 "Segments",
                 filteredResults.segments,
                 "segment"
+              )}
+              {renderResultsSection(
+                "Segment Catalogs",
+                filteredResults["segment-catalogs"],
+                "segment-catalog"
               )}
               {renderResultsSection(
                 "Programs",
@@ -759,6 +1018,11 @@ export default function SearchResultsPage() {
                 "Configurations",
                 filteredResults.configurations,
                 "configuration"
+              )}
+              {renderResultsSection(
+                "Quicklists",
+                filteredResults.quicklists,
+                "quicklist"
               )}
             </div>
           )}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import { colors } from "../../../shared/utils/tokens";
 import {
@@ -51,7 +51,7 @@ export default function AuthenticatedLandingPage() {
       description:
         "Gain insights with powerful analytics and customizable reporting tools.",
       icon: "bar-chart",
-      path: "/dashboard/analytics",
+      path: "/dashboard/reports/overview",
       color: "from-purple-500 to-blue-600",
       iconColor: "cyan",
     },
@@ -135,10 +135,6 @@ export default function AuthenticatedLandingPage() {
     return iconMap[iconName] || Target;
   };
 
-  const handleModuleClick = (module: { path: string }) => {
-    navigate(module.path);
-  };
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -173,22 +169,20 @@ export default function AuthenticatedLandingPage() {
             </div>
 
             {/* Modules Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-6 xl:gap-8 max-w-7xl mx-auto [&>div:last-child:nth-child(3n+1)]:lg:col-start-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-6 xl:gap-8 max-w-7xl mx-auto [&>*:nth-child(7)]:lg:col-start-2">
               {coreModules.map((module, index) => {
                 const IconComponent = getModuleIcon(module.icon);
-                return (
-                  <div
-                    key={module.id}
-                    onClick={() => handleModuleClick(module)}
-                    className={`group cursor-pointer transform transition-all duration-500 ease-out ${
-                      isLoaded
-                        ? "translate-y-0 opacity-100"
-                        : "translate-y-8 opacity-0"
-                    }`}
-                    style={{ transitionDelay: `${index * 100}ms` }}
-                  >
+                const navigableModules = [
+                  "cm",
+                  "analytics",
+                  "target",
+                  "config",
+                ];
+                const isClickable = navigableModules.includes(module.id);
+                const cardContent = (
+                  <>
                     {/* Module Card Container */}
-                    <div className="bg-[#394247] border border-gray-600 rounded-md transition-all duration-300 ease-out p-8 flex flex-col items-center justify-center min-h-[220px] relative overflow-hidden shadow-lg hover:bg-[#4A5257] hover:scale-105 hover:-translate-y-2 hover:shadow-xl hover:border-gray-500 group">
+                    <div className="bg-[#394247] border border-gray-600 rounded-md transition-all duration-200 ease-out p-8 flex flex-col items-center justify-center min-h-[220px] relative overflow-hidden shadow-lg hover:bg-[#4A5257] hover:scale-105 hover:-translate-y-2 hover:shadow-xl hover:border-gray-500 group">
                       {/* Icon */}
                       <div className="w-14 h-14 mb-4 rounded-md flex items-center justify-center transition-all duration-300 relative overflow-hidden bg-transparent border border-gray-500 hover:scale-110 hover:rotate-3 hover:border-gray-400">
                         <IconComponent
@@ -214,6 +208,37 @@ export default function AuthenticatedLandingPage() {
                         {module.description}
                       </p>
                     </div>
+                  </>
+                );
+
+                if (isClickable) {
+                  return (
+                    <Link
+                      key={module.id}
+                      to={module.path}
+                      className={`group transform transition-all duration-300 ease-out block ${
+                        isLoaded
+                          ? "translate-y-0 opacity-100"
+                          : "translate-y-8 opacity-0"
+                      }`}
+                      style={{ transitionDelay: `${index * 100}ms` }}
+                    >
+                      {cardContent}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div
+                    key={module.id}
+                    className={`group transform transition-all duration-300 ease-out ${
+                      isLoaded
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-8 opacity-0"
+                    }`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
+                  >
+                    {cardContent}
                   </div>
                 );
               })}

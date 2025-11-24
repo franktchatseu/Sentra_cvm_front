@@ -14,6 +14,7 @@ import {
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import { campaignService } from "../services/campaignService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -188,6 +189,7 @@ function CategoryModal({
 export default function CampaignCategoriesPage() {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
+  const { confirm } = useConfirm();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] =
     useState<CampaignCategory | null>(null);
@@ -926,15 +928,7 @@ export default function CampaignCategoriesPage() {
                 </span>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className={tw.borderedButton}
-                  style={{
-                    borderColor: color.primary.action,
-                    color: color.primary.action,
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      "transparent";
-                  }}
+                  className="text-sm font-medium text-gray-700 hover:underline transition-colors"
                   title="View & Assign Campaigns"
                 >
                   View Campaigns
@@ -971,15 +965,7 @@ export default function CampaignCategoriesPage() {
                 </div>
                 <button
                   onClick={() => handleViewCampaigns(category)}
-                  className={tw.borderedButton}
-                  style={{
-                    borderColor: color.primary.action,
-                    color: color.primary.action,
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      "transparent";
-                  }}
+                  className="text-sm font-medium text-gray-700 hover:underline transition-colors"
                   title="View & Assign Campaigns"
                 >
                   View Campaigns

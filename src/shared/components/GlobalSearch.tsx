@@ -13,6 +13,8 @@ import {
   Sparkles,
   UserCheck,
   Settings,
+  FolderTree,
+  List,
 } from "lucide-react";
 import { campaignService } from "../../features/campaigns/services/campaignService";
 import { offerService } from "../../features/offers/services/offerService";
@@ -21,6 +23,9 @@ import { segmentService } from "../../features/segments/services/segmentService"
 import { programService } from "../../features/campaigns/services/programService";
 import { userService } from "../../features/users/services/userService";
 import { roleService } from "../../features/roles/services/roleService";
+import { offerCategoryService } from "../../features/offers/services/offerCategoryService";
+import { productCategoryService } from "../../features/products/services/productCategoryService";
+import { quicklistService } from "../../features/quicklists/services/quicklistService";
 import { Role } from "../../features/roles/types/role";
 import { color, tw } from "../utils/utils";
 
@@ -33,7 +38,12 @@ interface SearchSuggestion {
     | "segment"
     | "program"
     | "user"
-    | "configuration";
+    | "configuration"
+    | "offer-catalog"
+    | "product-catalog"
+    | "segment-catalog"
+    | "campaign-catalog"
+    | "quicklist";
   name: string;
   description?: string;
   url: string;
@@ -256,6 +266,8 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
         },
       ];
 
+      const queryLower = query.toLowerCase();
+
       const [
         campaignsRes,
         offersRes,
@@ -263,6 +275,11 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
         segmentsRes,
         programsRes,
         usersRes,
+        offerCatalogsRes,
+        productCatalogsRes,
+        segmentCatalogsRes,
+        campaignCatalogsRes,
+        quicklistsRes,
       ] = await Promise.allSettled([
         campaignService.getCampaigns({
           limit: 20,
@@ -292,6 +309,30 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
         }),
         userService.getUsers({
           skipCache: true,
+        }),
+        offerCategoryService.searchCategories({
+          q: query,
+          limit: 5,
+          offset: 0,
+          skipCache: true,
+        }),
+        productCategoryService.searchCategories({
+          q: query,
+          limit: 5,
+          offset: 0,
+          skipCache: true,
+        }),
+        query.trim()
+          ? segmentService.searchSegmentCategories(query, true)
+          : segmentService.getSegmentCategories(undefined, true),
+        campaignService.searchCampaignCategories(query, {
+          limit: 5,
+          offset: 0,
+          skipCache: true,
+        }),
+        quicklistService.getAllQuickLists({
+          limit: 50,
+          offset: 0,
         }),
       ]);
 
@@ -418,6 +459,146 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
           });
       }
 
+      // Process offer catalogs
+      if (
+        offerCatalogsRes.status === "fulfilled" &&
+        offerCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(offerCatalogsRes.value.data)
+          ? offerCatalogsRes.value.data
+          : offerCatalogsRes.value.data.categories || [];
+        catalogs.slice(0, 3).forEach((catalog: any) => {
+          allSuggestions.push({
+            id: catalog.id,
+            type: "offer-catalog",
+            name: catalog.name || "Unnamed Catalog",
+            description: catalog.description || undefined,
+            url: `/dashboard/offer-catalogs`,
+          });
+        });
+      }
+
+      // Process product catalogs
+      if (
+        productCatalogsRes.status === "fulfilled" &&
+        productCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(productCatalogsRes.value.data)
+          ? productCatalogsRes.value.data
+          : [];
+        catalogs
+          .filter((catalog: any) => {
+            const nameMatch = catalog.name?.toLowerCase().includes(queryLower);
+            const descMatch = catalog.description
+              ?.toLowerCase()
+              .includes(queryLower);
+            return nameMatch || descMatch;
+          })
+          .slice(0, 3)
+          .forEach((catalog: any) => {
+            allSuggestions.push({
+              id: catalog.id,
+              type: "product-catalog",
+              name: catalog.name || "Unnamed Catalog",
+              description: catalog.description || undefined,
+              url: `/dashboard/products/catalogs`,
+            });
+          });
+      }
+
+      // Process segment catalogs
+      if (
+        segmentCatalogsRes.status === "fulfilled" &&
+        segmentCatalogsRes.value.success &&
+        segmentCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(segmentCatalogsRes.value.data)
+          ? segmentCatalogsRes.value.data
+          : [];
+        catalogs
+          .filter((catalog: any) => {
+            const nameMatch = catalog.name?.toLowerCase().includes(queryLower);
+            const descMatch = catalog.description
+              ?.toLowerCase()
+              .includes(queryLower);
+            return nameMatch || descMatch;
+          })
+          .slice(0, 3)
+          .forEach((catalog: any) => {
+            allSuggestions.push({
+              id: catalog.id,
+              type: "segment-catalog",
+              name: catalog.name || "Unnamed Catalog",
+              description: catalog.description || undefined,
+              url: `/dashboard/segment-catalogs`,
+            });
+          });
+      }
+
+      // Process campaign catalogs
+      if (
+        campaignCatalogsRes.status === "fulfilled" &&
+        campaignCatalogsRes.value.success &&
+        campaignCatalogsRes.value.data
+      ) {
+        const catalogs = Array.isArray(campaignCatalogsRes.value.data)
+          ? campaignCatalogsRes.value.data
+          : [];
+        catalogs
+          .filter((catalog: any) => {
+            const nameMatch = catalog.name?.toLowerCase().includes(queryLower);
+            const descMatch = catalog.description
+              ?.toLowerCase()
+              .includes(queryLower);
+            return nameMatch || descMatch;
+          })
+          .slice(0, 3)
+          .forEach((catalog: any) => {
+            allSuggestions.push({
+              id: catalog.id,
+              type: "campaign-catalog",
+              name: catalog.name || "Unnamed Catalog",
+              description: catalog.description || undefined,
+              url: `/dashboard/campaign-catalogs`,
+            });
+          });
+      }
+
+      // Process quicklists
+      if (
+        quicklistsRes.status === "fulfilled" &&
+        quicklistsRes.value.success &&
+        quicklistsRes.value.data
+      ) {
+        const quicklists = Array.isArray(quicklistsRes.value.data)
+          ? quicklistsRes.value.data
+          : [];
+        quicklists
+          .filter((quicklist: any) => {
+            const nameMatch = quicklist.name
+              ?.toLowerCase()
+              .includes(queryLower);
+            const descMatch = quicklist.description
+              ?.toLowerCase()
+              .includes(queryLower);
+            const typeMatch = quicklist.upload_type
+              ?.toLowerCase()
+              .includes(queryLower);
+            return nameMatch || descMatch || typeMatch;
+          })
+          .slice(0, 3)
+          .forEach((quicklist: any) => {
+            allSuggestions.push({
+              id: quicklist.id,
+              type: "quicklist",
+              name: quicklist.name || "Unnamed Quicklist",
+              description:
+                quicklist.description || quicklist.upload_type || undefined,
+              url: `/dashboard/quicklists/${quicklist.id}`,
+            });
+          });
+      }
+
       // Process configurations (frontend filtering)
       allConfigurations
         .filter(
@@ -501,13 +682,10 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-        navigate(suggestions[selectedIndex].url);
-        setShowSuggestions(false);
-        onClose?.();
-      } else {
-        handleSearch();
-      }
+      e.preventDefault();
+      // Always go to search results page when Enter is pressed
+      // Users can click on suggestions if they want to navigate directly
+      handleSearch();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) =>
@@ -532,6 +710,11 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
       program: { label: "Program", icon: FolderKanban },
       user: { label: "User", icon: UserCheck },
       configuration: { label: "Configuration", icon: Settings },
+      "offer-catalog": { label: "Offer Catalog", icon: FolderTree },
+      "product-catalog": { label: "Product Catalog", icon: FolderTree },
+      "segment-catalog": { label: "Segment Catalog", icon: FolderTree },
+      "campaign-catalog": { label: "Campaign Catalog", icon: FolderTree },
+      quicklist: { label: "Quicklist", icon: List },
     };
     return types[type];
   };
@@ -546,7 +729,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={handleFocus}

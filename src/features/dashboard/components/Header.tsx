@@ -18,16 +18,11 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
   const [currentUserRole, setCurrentUserRole] = useState<string>("User");
-  const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
-  const [isLoadingRole, setIsLoadingRole] = useState<boolean>(true);
 
   const loadCurrentUserRole = useCallback(async () => {
     if (!user?.user_id) {
-      setIsLoadingRole(false);
       return;
     }
-
-    setIsLoadingRole(true);
     try {
       // Load roles for lookup first (same as user management)
       const { roles } = await roleService.listRoles({
@@ -38,7 +33,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
       roles.forEach((role) => {
         mappedRoles[role.id] = role;
       });
-      setRoleLookup(mappedRoles);
 
       // Get user by ID
       let fullUser: FullUserType | null = null;
@@ -48,7 +42,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           if (userResponseById.success && userResponseById.data) {
             fullUser = userResponseById.data as FullUserType;
           }
-        } catch (idErr) {
+        } catch {
           // Silently handle error and use fallback
         }
       }
@@ -69,15 +63,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
             : "User"
         );
       }
-    } catch (err) {
+    } catch {
       // Fallback to simple role from auth context
       setCurrentUserRole(
         user?.role
           ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
           : "User"
       );
-    } finally {
-      setIsLoadingRole(false);
     }
   }, [user]);
 
@@ -170,7 +162,7 @@ export function GuestHeader({
     } else {
       try {
         await logout();
-      } catch (error) {
+      } catch {
         // Silently handle logout error
       }
     }

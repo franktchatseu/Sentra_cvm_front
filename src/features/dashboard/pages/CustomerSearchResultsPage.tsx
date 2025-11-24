@@ -32,12 +32,17 @@ import type {
   CustomerRow,
   CustomerSearchResultsResponse,
 } from "../types/ReportsAPI";
+import {
+  CustomerWithContact,
+  generateMockCustomers,
+} from "../utils/mockCustomers";
 
 // Extract types from API response
 type CustomerSegment = CustomerSearchResultsResponse["segments"][number];
 type CustomerOffer = CustomerSearchResultsResponse["offers"][number];
 type CustomerEvent = CustomerSearchResultsResponse["events"][number];
 type SubscribedList = CustomerSearchResultsResponse["subscribedLists"][number];
+type OriginSource = "customers" | "reports";
 
 // Custom Tooltip Component
 type ChartTooltipEntry = {
@@ -279,144 +284,87 @@ export default function CustomerSearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const mockCustomers = useMemo(() => generateMockCustomers(), []);
+
+  const stateSource = location.state?.source as OriginSource | undefined;
+  const sourceParam = searchParams.get("source");
+  const urlSource =
+    sourceParam === "customers" || sourceParam === "reports"
+      ? (sourceParam as OriginSource)
+      : undefined;
+
+  const [origin, setOrigin] = useState<OriginSource | undefined>(
+    stateSource ?? urlSource
+  );
+
+  useEffect(() => {
+    if (stateSource && stateSource !== origin) {
+      setOrigin(stateSource);
+    }
+  }, [stateSource, origin]);
+
+  useEffect(() => {
+    if (urlSource && urlSource !== origin) {
+      setOrigin(urlSource);
+    }
+  }, [urlSource, origin]);
+
   // Get customer from state (initial navigation) or from URL params (on refresh)
   const customerFromState = location.state?.customer as CustomerRow | undefined;
   const customerIdFromUrl = searchParams.get("customerId");
 
-  // Generate customer data if we have ID from URL (recreate the same customer generation logic)
   const customerFromUrl = useMemo(() => {
     if (!customerIdFromUrl) return undefined;
+    return mockCustomers.find((customer) => customer.id === customerIdFromUrl);
+  }, [customerIdFromUrl, mockCustomers]);
 
-    // Recreate customer generation to find customer by ID
-    // This matches the logic from CustomerProfileReportsPage
-    const segments = [
-      "Champions",
-      "Loyalists",
-      "Potential Loyalist",
-      "At-Risk",
-      "Reactivated",
-    ];
-    const channels = ["Email", "SMS", "Push"];
-    const locations = [
-      "Nairobi, KE",
-      "Kampala, UG",
-      "Lagos, NG",
-      "Accra, GH",
-      "Dar es Salaam, TZ",
-      "Kigali, RW",
-      "Addis Ababa, ET",
-    ];
-    const names = [
-      "Sophia K",
-      "Michael O",
-      "Amy T",
-      "David R",
-      "Grace I",
-      "James M",
-      "Emma L",
-      "Robert N",
-      "Olivia P",
-      "William Q",
-      "Isabella S",
-      "Benjamin T",
-      "Mia U",
-      "Daniel V",
-      "Charlotte W",
-      "Matthew X",
-      "Amelia Y",
-      "Joseph Z",
-      "Harper A",
-      "Samuel B",
-      "Evelyn C",
-      "Henry D",
-      "Abigail E",
-      "Alexander F",
-      "Emily G",
-    ];
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    CustomerRow | undefined
+  >(customerFromState || customerFromUrl);
 
-    const rows: CustomerRow[] = [];
-    const today = new Date();
+  useEffect(() => {
+    if (customerFromUrl) {
+      setSelectedCustomer(customerFromUrl);
+    }
+  }, [customerFromUrl]);
 
-    segments.forEach((segment, segIdx) => {
-      for (let i = 0; i < 5; i++) {
-        const baseIdx = segIdx * 5 + i;
-        const daysAgo = i * 15 + Math.floor(Math.random() * 10);
-        const interactionDate = new Date(today);
-        interactionDate.setDate(today.getDate() - daysAgo);
-
-        let churnRisk = 15;
-        if (segment === "At-Risk")
-          churnRisk = 65 + Math.floor(Math.random() * 20);
-        else if (segment === "Potential Loyalist")
-          churnRisk = 25 + Math.floor(Math.random() * 10);
-        else if (segment === "Reactivated")
-          churnRisk = 20 + Math.floor(Math.random() * 15);
-        else if (daysAgo > 30) churnRisk = 30 + Math.floor(Math.random() * 20);
-
-        const engagementScore = Math.max(
-          30,
-          100 - churnRisk + Math.floor(Math.random() * 20)
-        );
-
-        let lifetimeValue = 2000 + Math.floor(Math.random() * 3000);
-        let clv = lifetimeValue * 1.2;
-        let orders = 5 + Math.floor(Math.random() * 20);
-        let aov = 150 + Math.floor(Math.random() * 150);
-
-        if (segment === "Champions") {
-          lifetimeValue = 8000 + Math.floor(Math.random() * 6000);
-          clv = lifetimeValue * 1.15;
-          orders = 30 + Math.floor(Math.random() * 25);
-          aov = 250 + Math.floor(Math.random() * 100);
-        } else if (segment === "Loyalists") {
-          lifetimeValue = 5000 + Math.floor(Math.random() * 4000);
-          clv = lifetimeValue * 1.18;
-          orders = 20 + Math.floor(Math.random() * 15);
-          aov = 200 + Math.floor(Math.random() * 80);
-        }
-
-        const lastPurchaseText =
-          daysAgo === 0
-            ? "Today"
-            : daysAgo === 1
-            ? "1 day ago"
-            : `${daysAgo} days ago`;
-
-        rows.push({
-          id: `CUST-${String(34000 + baseIdx).padStart(5, "0")}`,
-          name: names[baseIdx % names.length],
-          segment,
-          lifetimeValue,
-          clv: Math.round(clv),
-          orders,
-          aov: Math.round(aov),
-          lastPurchase: lastPurchaseText,
-          lastInteractionDate: interactionDate.toISOString().split("T")[0],
-          engagementScore,
-          churnRisk,
-          preferredChannel: channels[baseIdx % channels.length] as
-            | "Email"
-            | "SMS"
-            | "Push",
-          location: locations[baseIdx % locations.length],
-        });
+  useEffect(() => {
+    if (customerFromState) {
+      setSelectedCustomer(customerFromState);
+      if (stateSource) {
+        setOrigin(stateSource);
       }
-    });
+    }
+  }, [customerFromState, stateSource]);
 
-    return rows.find((c) => c.id === customerIdFromUrl);
-  }, [customerIdFromUrl]);
-
-  const customer = customerFromState || customerFromUrl;
+  const customer = selectedCustomer;
 
   // Update URL when customer changes to persist on refresh
   useEffect(() => {
-    if (customer && !customerIdFromUrl) {
+    if (customer && customer.id !== customerIdFromUrl) {
+      const params = new URLSearchParams();
+      params.set("customerId", customer.id);
+      if (origin) {
+        params.set("source", origin);
+      }
+
       navigate(
-        `/dashboard/reports/customer-profiles/search?customerId=${customer.id}`,
-        { replace: true }
+        `/dashboard/reports/customer-profiles/search?${params.toString()}`,
+        {
+          replace: true,
+          state: origin ? { customer, source: origin } : { customer },
+        }
       );
     }
-  }, [customer, customerIdFromUrl, navigate]);
+  }, [customer, customerIdFromUrl, origin, navigate]);
+
+  const handleBackNavigation = () => {
+    if (origin === "customers") {
+      navigate("/dashboard/customers");
+    } else if (origin === "reports") {
+      navigate("/dashboard/reports/customer-profiles");
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [eventSearchTerm, setEventSearchTerm] = useState<string>("");
@@ -424,6 +372,12 @@ export default function CustomerSearchResultsPage() {
   const [eventDateFrom, setEventDateFrom] = useState<string>("");
   const [eventDateTo, setEventDateTo] = useState<string>("");
   const [eventStatusFilter, setEventStatusFilter] = useState<string>("all");
+
+  useEffect(() => {
+    if (customer) {
+      setActiveTab("overview");
+    }
+  }, [customer?.id]);
 
   const { segments, offers, events, lists } = useMemo(() => {
     if (!customer) return { segments: [], offers: [], events: [], lists: [] };
@@ -541,31 +495,35 @@ export default function CustomerSearchResultsPage() {
 
   if (!customer) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate("/dashboard/reports/customer-profiles")}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Customer Not Found
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              The customer you're looking for doesn't exist.
-            </p>
-          </div>
+      <div className="space-y-4">
+        <div className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+          {origin === "reports"
+            ? "We couldn't load that customer profile. Please return to Customer Reports and run your search again."
+            : "We couldn't load that customer profile. Please return to the Customers list and select a profile to view its insights."}
         </div>
+        {origin && (
+          <button
+            onClick={handleBackNavigation}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-900"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {origin === "reports"
+              ? "Go to Customer Reports"
+              : "Go to Customers"}
+          </button>
+        )}
       </div>
     );
   }
 
-  const email = `${customer.name
-    .toLowerCase()
-    .replace(/\s+/g, ".")}@example.com`;
-  const phone = `+254${Math.floor(Math.random() * 900000000 + 100000000)}`;
+  const enrichedCustomer = customer as CustomerWithContact;
+  const email =
+    enrichedCustomer?.email ??
+    `${customer.name.toLowerCase().replace(/\s+/g, ".")}@example.com`;
+  const phone =
+    enrichedCustomer?.phone ??
+    `+254${Math.floor(Math.random() * 900000000 + 100000000)}`;
+  const deviceType = enrichedCustomer?.deviceType ?? "Mobile";
 
   const getStatusConfig = () => {
     if (customer.churnRisk < 30) {
@@ -591,20 +549,27 @@ export default function CustomerSearchResultsPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {origin && (
           <button
-            onClick={() => navigate("/dashboard/reports/customer-profiles")}
-            className="p-2 text-gray-600 rounded-md transition-colors"
+            onClick={handleBackNavigation}
+            className="inline-flex items-center justify-center rounded-md border border-gray-200 p-2 text-gray-600 hover:text-gray-900 transition-colors"
+            aria-label={
+              origin === "customers"
+                ? "Back to customers"
+                : "Back to customer reports"
+            }
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-              {customer.name}
-            </h1>
-            <p className={`${tw.textSecondary} text-sm mt-1`}>{customer.id}</p>
-          </div>
+        )}
+        <div>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+            {customer.name}
+          </h1>
+          <p className={`${tw.textSecondary} text-sm mt-1 font-mono`}>
+            {customer.id}
+          </p>
         </div>
       </div>
 
@@ -690,7 +655,7 @@ export default function CustomerSearchResultsPage() {
                   <div className="flex justify-between items-start py-2">
                     <span className="text-sm text-gray-600">Device Type</span>
                     <span className="text-sm font-medium text-gray-900">
-                      Mobile
+                      {deviceType}
                     </span>
                   </div>
                 </div>
@@ -949,12 +914,7 @@ export default function CustomerSearchResultsPage() {
                       <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
                       <Tooltip
                         content={<CustomTooltip />}
-                        contentStyle={{
-                          backgroundColor: "transparent",
-                          border: "none",
-                          boxShadow: "none",
-                        }}
-                        wrapperStyle={{ outline: "none" }}
+                        cursor={{ fill: "transparent" }}
                       />
                       <Bar
                         dataKey="value"
@@ -989,12 +949,7 @@ export default function CustomerSearchResultsPage() {
                       <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
                       <Tooltip
                         content={<CustomTooltip />}
-                        contentStyle={{
-                          backgroundColor: "transparent",
-                          border: "none",
-                          boxShadow: "none",
-                        }}
-                        wrapperStyle={{ outline: "none" }}
+                        cursor={{ fill: "transparent" }}
                       />
                       <Bar
                         dataKey="events"
@@ -1029,12 +984,7 @@ export default function CustomerSearchResultsPage() {
                       <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
                       <Tooltip
                         content={<CustomTooltip />}
-                        contentStyle={{
-                          backgroundColor: "transparent",
-                          border: "none",
-                          boxShadow: "none",
-                        }}
-                        wrapperStyle={{ outline: "none" }}
+                        cursor={{ fill: "transparent" }}
                       />
                       <Bar
                         dataKey="value"
@@ -1073,12 +1023,7 @@ export default function CustomerSearchResultsPage() {
                       />
                       <Tooltip
                         content={<CustomTooltip />}
-                        contentStyle={{
-                          backgroundColor: "transparent",
-                          border: "none",
-                          boxShadow: "none",
-                        }}
-                        wrapperStyle={{ outline: "none" }}
+                        cursor={{ fill: "transparent" }}
                         formatter={(value: number) => `${value}%`}
                       />
                       <Bar

@@ -19,6 +19,7 @@ import {
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import { offerCategoryService } from "../services/offerCategoryService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { offerService } from "../services/offerService";
@@ -461,6 +462,10 @@ function OfferCategoriesPage() {
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<OfferCategoryType | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<OfferCategoryType | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [stats, setStats] = useState<{
     totalCategories: number;
@@ -1356,15 +1361,7 @@ function OfferCategoriesPage() {
                   </span>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className={tw.borderedButton}
-                    style={{
-                      borderColor: color.primary.action,
-                      color: color.primary.action,
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor =
-                        "transparent";
-                    }}
+                    className="text-sm font-medium text-gray-700 hover:underline transition-colors"
                     title="View & Assign Offers"
                   >
                     View Offers
@@ -1489,15 +1486,7 @@ function OfferCategoriesPage() {
                   </div>
                   <button
                     onClick={() => handleViewOffers(category)}
-                    className={tw.borderedButton}
-                    style={{
-                      borderColor: color.primary.action,
-                      color: color.primary.action,
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLButtonElement).style.backgroundColor =
-                        "transparent";
-                    }}
+                    className="text-sm font-medium text-gray-700 hover:underline transition-colors"
                     title="View & Assign Offers"
                   >
                     View Offers

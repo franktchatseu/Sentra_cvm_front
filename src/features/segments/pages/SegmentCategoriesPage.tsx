@@ -20,6 +20,7 @@ import {
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import { segmentService } from "../services/segmentService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import {
@@ -928,15 +929,7 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsSegmentsModalOpen(true);
                   }}
-                  className={tw.borderedButton}
-                  style={{
-                    borderColor: color.primary.action,
-                    color: color.primary.action,
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      "transparent";
-                  }}
+                  className="text-sm font-medium text-gray-700 hover:underline transition-colors"
                   title="View Segments"
                 >
                   View Segments
@@ -969,15 +962,7 @@ export default function SegmentCategoriesPage() {
                     setSelectedCategory(category);
                     setIsSegmentsModalOpen(true);
                   }}
-                  className={tw.borderedButton}
-                  style={{
-                    borderColor: color.primary.action,
-                    color: color.primary.action,
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      "transparent";
-                  }}
+                  className="text-sm font-medium text-gray-700 hover:underline transition-colors"
                   title="View Segments"
                 >
                   View Segments

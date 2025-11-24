@@ -48,6 +48,7 @@ import CampaignLifecycleHistoryPage from "../../campaigns/pages/CampaignLifecycl
 import SearchResultsPage from "../../../shared/pages/SearchResultsPage";
 import OverallDashboardPerformancePage from "./OverallDashboardPerformancePage";
 import CustomerProfileReportsPage from "./CustomerProfileReportsPage";
+import CustomersPage from "./CustomersPage";
 import CustomerSearchResultsPage from "./CustomerSearchResultsPage";
 import CampaignReportsPage from "./CampaignReportsPage";
 import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
@@ -143,6 +144,7 @@ export default function Dashboard() {
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/quicklists" element={<QuickListsPage />} />
         <Route path="/quicklists/:id" element={<QuickListDetailsPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
         <Route
           path="/configuration/:id"

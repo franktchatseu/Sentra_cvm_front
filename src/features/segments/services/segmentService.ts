@@ -245,7 +245,7 @@ class SegmentService {
     query: string,
     skipCache: boolean = false
   ): Promise<SegmentCategoriesResponse> {
-    const queryString = this.buildQueryParams({ q: query, skipCache });
+    const queryString = this.buildQueryParams({ searchTerm: query, skipCache });
     return this.requestCategories<SegmentCategoriesResponse>(
       `/search${queryString}`
     );
@@ -634,60 +634,61 @@ class SegmentService {
   }
 
   // ==================== ACTIVATION ENDPOINTS (4 endpoints) ====================
+  // COMMENTED OUT: Activate/Deactivate functionality temporarily disabled
 
   /**
    * PATCH /segments/:id/activate - Activate segment
    */
-  async activateSegment(id: number): Promise<ApiSuccessResponse<SegmentType>> {
-    return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/activate`, {
-      method: "PATCH",
-    });
-  }
+  // async activateSegment(id: number): Promise<ApiSuccessResponse<SegmentType>> {
+  //   return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/activate`, {
+  //     method: "PATCH",
+  //   });
+  // }
 
   /**
    * PATCH /segments/:id/deactivate - Deactivate segment
    */
-  async deactivateSegment(
-    id: number
-  ): Promise<ApiSuccessResponse<SegmentType>> {
-    return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/deactivate`, {
-      method: "PATCH",
-      body: JSON.stringify({}),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
+  // async deactivateSegment(
+  //   id: number
+  // ): Promise<ApiSuccessResponse<SegmentType>> {
+  //   return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/deactivate`, {
+  //     method: "PATCH",
+  //     body: JSON.stringify({}),
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //   });
+  // }
 
   /**
    * POST /segments/batch/activate - Batch activate segments
    */
-  async batchActivateSegments(
-    request: BatchActivationRequest
-  ): Promise<ApiSuccessResponse<BatchActivationResponse>> {
-    return this.request<ApiSuccessResponse<BatchActivationResponse>>(
-      "/batch/activate",
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
-  }
+  // async batchActivateSegments(
+  //   request: BatchActivationRequest
+  // ): Promise<ApiSuccessResponse<BatchActivationResponse>> {
+  //   return this.request<ApiSuccessResponse<BatchActivationResponse>>(
+  //     "/batch/activate",
+  //     {
+  //       method: "POST",
+  //       body: JSON.stringify(request),
+  //     }
+  //   );
+  // }
 
   /**
    * POST /segments/batch/deactivate - Batch deactivate segments
    */
-  async batchDeactivateSegments(
-    request: BatchActivationRequest
-  ): Promise<ApiSuccessResponse<BatchActivationResponse>> {
-    return this.request<ApiSuccessResponse<BatchActivationResponse>>(
-      "/batch/deactivate",
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
-  }
+  // async batchDeactivateSegments(
+  //   request: BatchActivationRequest
+  // ): Promise<ApiSuccessResponse<BatchActivationResponse>> {
+  //   return this.request<ApiSuccessResponse<BatchActivationResponse>>(
+  //     "/batch/deactivate",
+  //     {
+  //       method: "POST",
+  //       body: JSON.stringify(request),
+  //     }
+  //   );
+  // }
 
   // ==================== ADVANCED ENDPOINTS (12 endpoints) ====================
 

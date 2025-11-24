@@ -248,12 +248,11 @@ export default function SegmentDetailsPage() {
 
       const response = await segmentService.getSegmentMembersCount(Number(id));
       const count = response.data?.count ?? 0;
-      // Show dummy count if API returns 0 or fails (for display purposes)
-      setMembersCount(count > 0 ? count : 20);
+      setMembersCount(count);
     } catch (err) {
       // Silently fail for members count - don't show error to avoid loops
       console.warn("Failed to load members count:", err);
-      setMembersCount(20); // Default to 20 dummy members
+      setMembersCount(0);
     } finally {
       setIsLoadingMembers(false);
     }
@@ -274,155 +273,10 @@ export default function SegmentDetailsPage() {
     setIsLoadingMembersList(true);
     try {
       if (USE_MOCK_DATA) {
-        // Use dummy data for testing - 20 members to match count
-        setTimeout(() => {
-          const dummyMembers = [
-            {
-              customer_id: "1",
-              joined_at: "2025-01-15T10:30:00Z",
-              name: "John Doe",
-              email: "john@example.com",
-              total_spent: 1250,
-            },
-            {
-              customer_id: "2",
-              joined_at: "2025-01-14T14:20:00Z",
-              name: "Jane Smith",
-              email: "jane@example.com",
-              total_spent: 890,
-            },
-            {
-              customer_id: "3",
-              joined_at: "2025-01-13T09:15:00Z",
-              name: "Bob Wilson",
-              email: "bob@example.com",
-              total_spent: 2100,
-            },
-            {
-              customer_id: "4",
-              joined_at: "2025-01-12T16:45:00Z",
-              name: "Alice Johnson",
-              email: "alice@example.com",
-              total_spent: 450,
-            },
-            {
-              customer_id: "5",
-              joined_at: "2025-01-11T11:30:00Z",
-              name: "Charlie Brown",
-              email: "charlie@example.com",
-              total_spent: 3200,
-            },
-            {
-              customer_id: "6",
-              joined_at: "2025-01-10T08:20:00Z",
-              name: "David Lee",
-              email: "david@example.com",
-              total_spent: 1800,
-            },
-            {
-              customer_id: "7",
-              joined_at: "2025-01-09T15:10:00Z",
-              name: "Emma Davis",
-              email: "emma@example.com",
-              total_spent: 950,
-            },
-            {
-              customer_id: "8",
-              joined_at: "2025-01-08T11:45:00Z",
-              name: "Frank Miller",
-              email: "frank@example.com",
-              total_spent: 2200,
-            },
-            {
-              customer_id: "9",
-              joined_at: "2025-01-07T13:30:00Z",
-              name: "Grace Taylor",
-              email: "grace@example.com",
-              total_spent: 1400,
-            },
-            {
-              customer_id: "10",
-              joined_at: "2025-01-06T09:15:00Z",
-              name: "Henry Wilson",
-              email: "henry@example.com",
-              total_spent: 3100,
-            },
-            {
-              customer_id: "11",
-              joined_at: "2025-01-05T16:20:00Z",
-              name: "Ivy Anderson",
-              email: "ivy@example.com",
-              total_spent: 750,
-            },
-            {
-              customer_id: "12",
-              joined_at: "2025-01-04T10:00:00Z",
-              name: "Jack Martinez",
-              email: "jack@example.com",
-              total_spent: 1900,
-            },
-            {
-              customer_id: "13",
-              joined_at: "2025-01-03T14:35:00Z",
-              name: "Kate White",
-              email: "kate@example.com",
-              total_spent: 2600,
-            },
-            {
-              customer_id: "14",
-              joined_at: "2025-01-02T12:50:00Z",
-              name: "Liam Harris",
-              email: "liam@example.com",
-              total_spent: 1100,
-            },
-            {
-              customer_id: "15",
-              joined_at: "2025-01-01T08:25:00Z",
-              name: "Mia Clark",
-              email: "mia@example.com",
-              total_spent: 1700,
-            },
-            {
-              customer_id: "16",
-              joined_at: "2025-01-31T15:40:00Z",
-              name: "Noah Lewis",
-              email: "noah@example.com",
-              total_spent: 2800,
-            },
-            {
-              customer_id: "17",
-              joined_at: "2025-01-30T11:55:00Z",
-              name: "Olivia Walker",
-              email: "olivia@example.com",
-              total_spent: 1300,
-            },
-            {
-              customer_id: "18",
-              joined_at: "2025-01-29T09:10:00Z",
-              name: "Paul Hall",
-              email: "paul@example.com",
-              total_spent: 2400,
-            },
-            {
-              customer_id: "19",
-              joined_at: "2025-01-28T13:20:00Z",
-              name: "Quinn Allen",
-              email: "quinn@example.com",
-              total_spent: 1600,
-            },
-            {
-              customer_id: "20",
-              joined_at: "2025-01-27T10:05:00Z",
-              name: "Rachel Young",
-              email: "rachel@example.com",
-              total_spent: 2900,
-            },
-          ];
-
-          setMembers(dummyMembers);
-          setMembersTotalPages(1);
-          setIsLoadingMembersList(false);
-        }, 500); // Simulate API delay
+        // no dummy members when using mock data
+        setMembers([]);
+        setMembersTotalPages(1);
+        setIsLoadingMembersList(false);
         return;
       }
 
@@ -442,160 +296,11 @@ export default function SegmentDetailsPage() {
       }
 
       const membersData = response.data || [];
-
-      // If no members returned or API returned empty, use dummy data (20 members)
-      if (membersData.length === 0) {
-        const dummyMembers = [
-          {
-            customer_id: "1",
-            joined_at: "2025-01-15T10:30:00Z",
-            name: "John Doe",
-            email: "john@example.com",
-            total_spent: 1250,
-          },
-          {
-            customer_id: "2",
-            joined_at: "2025-01-14T14:20:00Z",
-            name: "Jane Smith",
-            email: "jane@example.com",
-            total_spent: 890,
-          },
-          {
-            customer_id: "3",
-            joined_at: "2025-01-13T09:15:00Z",
-            name: "Bob Wilson",
-            email: "bob@example.com",
-            total_spent: 2100,
-          },
-          {
-            customer_id: "4",
-            joined_at: "2025-01-12T16:45:00Z",
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            total_spent: 450,
-          },
-          {
-            customer_id: "5",
-            joined_at: "2025-01-11T11:30:00Z",
-            name: "Charlie Brown",
-            email: "charlie@example.com",
-            total_spent: 3200,
-          },
-          {
-            customer_id: "6",
-            joined_at: "2025-01-10T08:20:00Z",
-            name: "David Lee",
-            email: "david@example.com",
-            total_spent: 1800,
-          },
-          {
-            customer_id: "7",
-            joined_at: "2025-01-09T15:10:00Z",
-            name: "Emma Davis",
-            email: "emma@example.com",
-            total_spent: 950,
-          },
-          {
-            customer_id: "8",
-            joined_at: "2025-01-08T11:45:00Z",
-            name: "Frank Miller",
-            email: "frank@example.com",
-            total_spent: 2200,
-          },
-          {
-            customer_id: "9",
-            joined_at: "2025-01-07T13:30:00Z",
-            name: "Grace Taylor",
-            email: "grace@example.com",
-            total_spent: 1400,
-          },
-          {
-            customer_id: "10",
-            joined_at: "2025-01-06T09:15:00Z",
-            name: "Henry Wilson",
-            email: "henry@example.com",
-            total_spent: 3100,
-          },
-          {
-            customer_id: "11",
-            joined_at: "2025-01-05T16:20:00Z",
-            name: "Ivy Anderson",
-            email: "ivy@example.com",
-            total_spent: 750,
-          },
-          {
-            customer_id: "12",
-            joined_at: "2025-01-04T10:00:00Z",
-            name: "Jack Martinez",
-            email: "jack@example.com",
-            total_spent: 1900,
-          },
-          {
-            customer_id: "13",
-            joined_at: "2025-01-03T14:35:00Z",
-            name: "Kate White",
-            email: "kate@example.com",
-            total_spent: 2600,
-          },
-          {
-            customer_id: "14",
-            joined_at: "2025-01-02T12:50:00Z",
-            name: "Liam Harris",
-            email: "liam@example.com",
-            total_spent: 1100,
-          },
-          {
-            customer_id: "15",
-            joined_at: "2025-01-01T08:25:00Z",
-            name: "Mia Clark",
-            email: "mia@example.com",
-            total_spent: 1700,
-          },
-          {
-            customer_id: "16",
-            joined_at: "2024-12-31T15:40:00Z",
-            name: "Noah Lewis",
-            email: "noah@example.com",
-            total_spent: 2800,
-          },
-          {
-            customer_id: "17",
-            joined_at: "2024-12-30T11:55:00Z",
-            name: "Olivia Walker",
-            email: "olivia@example.com",
-            total_spent: 1300,
-          },
-          {
-            customer_id: "18",
-            joined_at: "2024-12-29T09:10:00Z",
-            name: "Paul Hall",
-            email: "paul@example.com",
-            total_spent: 2400,
-          },
-          {
-            customer_id: "19",
-            joined_at: "2024-12-28T13:20:00Z",
-            name: "Quinn Allen",
-            email: "quinn@example.com",
-            total_spent: 1600,
-          },
-          {
-            customer_id: "20",
-            joined_at: "2024-12-27T10:05:00Z",
-            name: "Rachel Young",
-            email: "rachel@example.com",
-            total_spent: 2900,
-          },
-        ];
-        setMembers(dummyMembers);
-        setMembersTotalPages(1);
+      setMembers(membersData);
+      if (response.meta) {
+        setMembersTotalPages(response.meta.totalPages || 1);
       } else {
-        setMembers(membersData);
-        if (response.meta) {
-          setMembersTotalPages(response.meta.totalPages || 1);
-        } else {
-          setMembersTotalPages(1);
-        }
+        setMembersTotalPages(1);
       }
     } catch (err) {
       // Only show error if it's not a 404 (endpoint might not exist)
@@ -603,156 +308,12 @@ export default function SegmentDetailsPage() {
       if (error.status !== 404) {
         console.error("Failed to load segment members:", err);
       }
-
-      // Use dummy members when API fails (for display purposes)
-      const dummyMembers = [
-        {
-          customer_id: "1",
-          joined_at: "2025-01-15T10:30:00Z",
-          name: "John Doe",
-          email: "john@example.com",
-          total_spent: 1250,
-        },
-        {
-          customer_id: "2",
-          joined_at: "2025-01-14T14:20:00Z",
-          name: "Jane Smith",
-          email: "jane@example.com",
-          total_spent: 890,
-        },
-        {
-          customer_id: "3",
-          joined_at: "2025-01-13T09:15:00Z",
-          name: "Bob Wilson",
-          email: "bob@example.com",
-          total_spent: 2100,
-        },
-        {
-          customer_id: "4",
-          joined_at: "2025-01-12T16:45:00Z",
-          name: "Alice Johnson",
-          email: "alice@example.com",
-          total_spent: 450,
-        },
-        {
-          customer_id: "5",
-          joined_at: "2025-01-11T11:30:00Z",
-          name: "Charlie Brown",
-          email: "charlie@example.com",
-          total_spent: 3200,
-        },
-        {
-          customer_id: "6",
-          joined_at: "2025-01-10T08:20:00Z",
-          name: "David Lee",
-          email: "david@example.com",
-          total_spent: 1800,
-        },
-        {
-          customer_id: "7",
-          joined_at: "2025-01-09T15:10:00Z",
-          name: "Emma Davis",
-          email: "emma@example.com",
-          total_spent: 950,
-        },
-        {
-          customer_id: "8",
-          joined_at: "2025-01-08T11:45:00Z",
-          name: "Frank Miller",
-          email: "frank@example.com",
-          total_spent: 2200,
-        },
-        {
-          customer_id: "9",
-          joined_at: "2025-01-07T13:30:00Z",
-          name: "Grace Taylor",
-          email: "grace@example.com",
-          total_spent: 1400,
-        },
-        {
-          customer_id: "10",
-          joined_at: "2025-01-06T09:15:00Z",
-          name: "Henry Wilson",
-          email: "henry@example.com",
-          total_spent: 3100,
-        },
-        {
-          customer_id: "11",
-          joined_at: "2025-01-05T16:20:00Z",
-          name: "Ivy Anderson",
-          email: "ivy@example.com",
-          total_spent: 750,
-        },
-        {
-          customer_id: "12",
-          joined_at: "2025-01-04T10:00:00Z",
-          name: "Jack Martinez",
-          email: "jack@example.com",
-          total_spent: 1900,
-        },
-        {
-          customer_id: "13",
-          joined_at: "2025-01-03T14:35:00Z",
-          name: "Kate White",
-          email: "kate@example.com",
-          total_spent: 2600,
-        },
-        {
-          customer_id: "14",
-          joined_at: "2025-01-02T12:50:00Z",
-          name: "Liam Harris",
-          email: "liam@example.com",
-          total_spent: 1100,
-        },
-        {
-          customer_id: "15",
-          joined_at: "2025-01-01T08:25:00Z",
-          name: "Mia Clark",
-          email: "mia@example.com",
-          total_spent: 1700,
-        },
-        {
-          customer_id: "16",
-          joined_at: "2024-12-31T15:40:00Z",
-          name: "Noah Lewis",
-          email: "noah@example.com",
-          total_spent: 2800,
-        },
-        {
-          customer_id: "17",
-          joined_at: "2024-12-30T11:55:00Z",
-          name: "Olivia Walker",
-          email: "olivia@example.com",
-          total_spent: 1300,
-        },
-        {
-          customer_id: "18",
-          joined_at: "2024-12-29T09:10:00Z",
-          name: "Paul Hall",
-          email: "paul@example.com",
-          total_spent: 2400,
-        },
-        {
-          customer_id: "19",
-          joined_at: "2024-12-28T13:20:00Z",
-          name: "Quinn Allen",
-          email: "quinn@example.com",
-          total_spent: 1600,
-        },
-        {
-          customer_id: "20",
-          joined_at: "2024-12-27T10:05:00Z",
-          name: "Rachel Young",
-          email: "rachel@example.com",
-          total_spent: 2900,
-        },
-      ];
-      setMembers(dummyMembers);
+      setMembers([]);
       setMembersTotalPages(1);
     } finally {
       setIsLoadingMembersList(false);
     }
-  }, [id, membersPage, debouncedMembersSearchTerm, showError]);
+  }, [id, membersPage, debouncedMembersSearchTerm]);
 
   useEffect(() => {
     if (id) {
@@ -1005,10 +566,7 @@ export default function SegmentDetailsPage() {
                 </p>
               )}
             </div>
-            <div
-              className="p-3 rounded-md flex-shrink-0"
-              style={{ backgroundColor: `${color.primary.accent}15` }}
-            >
+            <div className="flex-shrink-0">
               <Users
                 className="w-6 h-6"
                 style={{ color: color.primary.accent }}
@@ -1029,10 +587,7 @@ export default function SegmentDetailsPage() {
                 {segment.type || "dynamic"}
               </p>
             </div>
-            <div
-              className="p-3 rounded-md flex-shrink-0"
-              style={{ backgroundColor: `${color.primary.accent}15` }}
-            >
+            <div className="flex-shrink-0">
               <Activity
                 className="w-6 h-6"
                 style={{ color: color.primary.accent }}
@@ -1062,11 +617,7 @@ export default function SegmentDetailsPage() {
                   : "Only you can see this"}
               </p>
             </div>
-            <div
-              className={`p-3 rounded-md flex-shrink-0 ${
-                segment.visibility === "public" ? "bg-green-100" : "bg-gray-100"
-              }`}
-            >
+            <div className="flex-shrink-0">
               {segment.visibility === "public" ? (
                 <Eye className="w-6 h-6 text-green-600" />
               ) : (
@@ -1490,7 +1041,7 @@ export default function SegmentDetailsPage() {
               className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md transition-all text-sm font-medium flex items-center gap-2 hover:bg-gray-50"
             >
               <Eye className="w-4 h-4" />
-              View All Members
+              View Members
             </button>
             <button
               onClick={() => {
