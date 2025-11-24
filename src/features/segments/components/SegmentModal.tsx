@@ -45,6 +45,10 @@ export default function SegmentModal({
     count_query: string;
   } | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<{
+    description?: string;
+    conditions?: string;
+  }>({});
 
   // Initialize selectedCategoryIds from formData.category
   useEffect(() => {
@@ -92,6 +96,7 @@ export default function SegmentModal({
             category: undefined,
           });
         }
+        setFieldErrors({});
         // Reset modal states
         setShowPreviewModal(false);
         setShowConfirmModal(false);
@@ -356,15 +361,26 @@ export default function SegmentModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
 
     if (!formData.name.trim()) {
       setError("Segment name is required");
       return;
     }
 
-    if (formData.conditions.length === 0) {
-      setError("Please add at least one condition");
+    if (!formData.description.trim()) {
+      setFieldErrors({ description: "Description is required" });
       return;
+    }
+
+    if (formData.conditions.length === 0) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        conditions: "Please add at least one condition",
+      }));
+      return;
+    } else {
+      setFieldErrors((prev) => ({ ...prev, conditions: undefined }));
     }
 
     setIsLoading(true);
@@ -470,7 +486,12 @@ export default function SegmentModal({
       onClose();
     } catch (err: unknown) {
       console.error("Failed to save segment:", err);
-      setError((err as Error).message || "Failed to save segment");
+      const message = (err as Error).message || "Failed to save segment";
+      if (message.toLowerCase().includes("description")) {
+        setFieldErrors({ description: message });
+      } else {
+        setError(message);
+      }
       setShowConfirmModal(false);
       setPendingQueries(null);
     } finally {
@@ -644,13 +665,19 @@ export default function SegmentModal({
                             {formData.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className={`inline-flex items-center px-3 py-1 bg-[${color.primary.accent}]/10 text-[${color.primary.accent}] text-sm font-medium rounded-full`}
+                                className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border"
+                                style={{
+                                  backgroundColor: `${color.primary.accent}20`,
+                                  borderColor: color.primary.accent,
+                                  color: color.primary.accent,
+                                }}
                               >
                                 {tag}
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveTag(tag)}
-                                  className={`ml-2 text-[${color.primary.accent}] hover:text-[${color.primary.accent}]/80`}
+                                  className="ml-2 hover:opacity-80"
+                                  style={{ color: color.primary.accent }}
                                 >
                                   ×
                                 </button>
@@ -666,7 +693,7 @@ export default function SegmentModal({
                     <label
                       className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
                     >
-                      Description
+                      Description *
                     </label>
                     <textarea
                       value={formData.description}
@@ -676,10 +703,34 @@ export default function SegmentModal({
                           description: e.target.value,
                         }))
                       }
+                      onBlur={() => {
+                        if (!formData.description.trim()) {
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            description: "Description is required",
+                          }));
+                        }
+                      }}
+                      onFocus={() =>
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          description: undefined,
+                        }))
+                      }
                       placeholder="Describe this segment..."
                       rows={3}
-                      className={`w-full px-4 py-3 border border-[${tw.borderDefault}] rounded-md text-sm`}
+                      className={`w-full px-4 py-3 border rounded-md text-sm focus:outline-none`}
+                      style={{
+                        borderColor: fieldErrors.description
+                          ? "#ef4444"
+                          : tw.borderDefault,
+                      }}
                     />
+                    {fieldErrors.description && (
+                      <p className="mt-2 text-sm text-red-600">
+                        {fieldErrors.description}
+                      </p>
+                    )}
                   </div>
 
                   {/* Segment Conditions */}
@@ -713,15 +764,32 @@ export default function SegmentModal({
                     </div>
 
                     <div
-                      className={`border border-[${tw.borderDefault}] rounded-md p-4 bg-[${color.surface.cards}]`}
+                      className="rounded-md p-4"
+                      style={{
+                        border: `1px solid ${
+                          fieldErrors.conditions ? "#ef4444" : tw.borderDefault
+                        }`,
+                        backgroundColor: color.surface.cards,
+                      }}
                     >
                       <SegmentConditionsBuilder
                         conditions={formData.conditions}
                         onChange={(conditions) =>
-                          setFormData((prev) => ({ ...prev, conditions }))
+                          setFormData((prev) => {
+                            setFieldErrors((errors) => ({
+                              ...errors,
+                              conditions: undefined,
+                            }));
+                            return { ...prev, conditions };
+                          })
                         }
                       />
                     </div>
+                    {fieldErrors.conditions && (
+                      <p className="mt-2 text-sm text-red-600">
+                        {fieldErrors.conditions}
+                      </p>
+                    )}
                   </div>
                 </form>
               </div>
