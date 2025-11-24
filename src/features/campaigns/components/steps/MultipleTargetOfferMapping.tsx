@@ -220,7 +220,9 @@ export default function MultipleTargetOfferMapping({
           setEditingSegmentId(null);
         }}
         onSelect={handleOfferSelect}
-        selectedOffers={selectedOffers}
+        selectedOffers={
+          editingSegmentId ? getOffersForSegment(editingSegmentId) : []
+        }
       />
     </div>
   );

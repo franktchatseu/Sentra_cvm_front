@@ -977,15 +977,12 @@ export default function SegmentManagementPage() {
             </p>
           </div>
         ) : error ? (
-          <div className="p-8 text-center">
-            <div className="bg-red-50 border border-red-200 rounded-md p-6">
-              <button
-                onClick={loadSegments}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
-              >
-                Try Again
-              </button>
-            </div>
+          <div className="p-8">
+            <ErrorState
+              title="Unable to load segments"
+              message="Please check your connection or try again."
+              onRetry={loadSegments}
+            />
           </div>
         ) : filteredSegments.length === 0 ? (
           <div className="p-8 md:p-16 text-center">

@@ -1091,19 +1091,12 @@ export default function UserManagementPage() {
             </p>
           </div>
         ) : errorState ? (
-          <div className="p-8 text-center">
-            <div
-              className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 text-[${color.status.danger}] rounded-md p-6`}
-            >
-              <p className="font-medium mb-3">{errorState}</p>
-              <button
-                onClick={() => loadData({ skipCache: true })}
-                className="px-4 py-2 text-white rounded-md hover:opacity-90 transition-colors font-medium"
-                style={{ backgroundColor: color.status.danger }}
-              >
-                Try Again
-              </button>
-            </div>
+          <div className="p-8">
+            <ErrorState
+              title={`Unable to load ${activeTab}`}
+              message={errorState}
+              onRetry={() => loadData({ skipCache: true })}
+            />
           </div>
         ) : activeTab === "users" ? (
           filteredUsers.length === 0 ? (

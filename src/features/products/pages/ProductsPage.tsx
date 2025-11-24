@@ -456,19 +456,13 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
-        <div
-          className={`bg-[${color.status.danger}]/10 border border-[${color.status.danger}]/20 rounded-md p-4 mb-6 flex items-center justify-end`}
-        >
-          <button
-            onClick={() => loadProducts()}
-            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
-            style={{ backgroundColor: color.status.danger }}
-          >
-            Try Again
-          </button>
-        </div>
+        <ErrorState
+          className="mb-6"
+          title="Unable to load products"
+          message="Please check your connection or try again."
+          onRetry={loadProducts}
+        />
       )}
 
       {/* Products Table */}

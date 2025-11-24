@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import {
-  X,
-  Search,
-  Plus,
-  Gift,
-  Check,
-  DollarSign,
-  Calendar,
-} from "lucide-react";
+import { X, Search, Plus, Gift, Calendar } from "lucide-react";
 import { CampaignOffer } from "../../types/campaign";
 import HeadlessSelect from "../../../../shared/components/ui/HeadlessSelect";
 import { color } from "../../../../shared/utils/utils";
@@ -204,37 +196,35 @@ export default function OfferSelectionModal({
               Create New
             </button>
           </div>
+        </div>
 
-          {/* Selection Summary */}
-          {tempSelectedOffers.length > 0 && (
+        {/* Selection Summary */}
+        {tempSelectedOffers.length > 0 && (
+          <div className="px-6 flex-shrink-0 my-3">
             <div
-              className="rounded-md p-4 border"
+              className="rounded-md p-4 border text-sm"
               style={{
                 backgroundColor: `${color.primary.accent}15`,
                 borderColor: `${color.primary.accent}40`,
+                color: color.primary.accent,
               }}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: color.primary.accent }}
-                  >
-                    {tempSelectedOffers.length} offer
-                    {tempSelectedOffers.length !== 1 ? "s" : ""} selected
-                  </span>
-                </div>
+                <span>
+                  {tempSelectedOffers.length} offer
+                  {tempSelectedOffers.length !== 1 ? "s" : ""} selected
+                </span>
                 <button
                   onClick={() => setTempSelectedOffers([])}
-                  className="text-sm font-medium hover:opacity-80 transition-opacity"
+                  className="font-medium hover:opacity-80 transition-opacity"
                   style={{ color: color.primary.accent }}
                 >
                   Clear All
                 </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Offers List */}
         <div className="flex-1 overflow-y-auto p-6">
@@ -310,59 +300,25 @@ export default function OfferSelectionModal({
                       <tr
                         key={offer.id}
                         onClick={() => handleOfferToggle(offer)}
-                        className="cursor-pointer transition-colors"
-                        style={{
-                          backgroundColor: isSelected
-                            ? `${color.primary.accent}10`
-                            : "white",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected)
-                            e.currentTarget.style.backgroundColor =
-                              color.surface.cards;
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected)
-                            e.currentTarget.style.backgroundColor = "white";
-                        }}
+                        className="cursor-pointer transition-colors hover:bg-gray-50"
                       >
                         <td className="px-4 py-3">
-                          <div
-                            className="w-5 h-5 rounded border-2 flex items-center justify-center"
-                            style={{
-                              borderColor: isSelected
-                                ? color.primary.accent
-                                : "#d1d5db",
-                              backgroundColor: isSelected
-                                ? color.primary.accent
-                                : "transparent",
-                            }}
-                          >
-                            {isSelected && (
-                              <Check className="w-3 h-3 text-white" />
-                            )}
-                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleOfferToggle(offer)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 border-gray-400 rounded"
+                            style={{ accentColor: "#111827" }}
+                          />
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-                              style={{
-                                backgroundColor: `${color.primary.accent}20`,
-                              }}
-                            >
-                              <Gift
-                                className="w-4 h-4"
-                                style={{ color: color.primary.accent }}
-                              />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">
+                              {offer.name}
                             </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium text-gray-900 truncate">
-                                {offer.name}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {offer.description}
-                              </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {offer.description}
                             </div>
                           </div>
                         </td>
@@ -378,18 +334,9 @@ export default function OfferSelectionModal({
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center space-x-1">
-                            <DollarSign
-                              className="w-4 h-4"
-                              style={{ color: color.primary.accent }}
-                            />
-                            <span
-                              className="text-sm font-medium"
-                              style={{ color: color.primary.accent }}
-                            >
-                              {offer.reward_value}
-                            </span>
-                          </div>
+                          <span className="text-sm font-medium text-gray-900">
+                            {offer.reward_value}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center space-x-1">

@@ -89,6 +89,11 @@ export default function SegmentSelectionModal({
 
   if (!isOpen) return null;
 
+  const totalSelectedCustomers = tempSelectedSegments.reduce(
+    (total, segment) => total + segment.customer_count,
+    0
+  );
+
   const filteredSegments = segments.filter((segment) => {
     const matchesSearch =
       segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,11 +121,6 @@ export default function SegmentSelectionModal({
   const handleConfirm = () => {
     onSelect(tempSelectedSegments);
   };
-
-  const totalSelectedCustomers = tempSelectedSegments.reduce(
-    (total, segment) => total + segment.customer_count,
-    0
-  );
 
   return createPortal(
     <div
@@ -152,6 +152,23 @@ export default function SegmentSelectionModal({
           >
             <X className="w-5 h-5" />
           </button>
+          {tempSelectedSegments.length > 0 && (
+            <div className="rounded-md p-4 border border-gray-200 bg-gray-50 text-sm text-gray-700">
+              <div className="flex items-center justify-between">
+                <span>
+                  {tempSelectedSegments.length} segment
+                  {tempSelectedSegments.length !== 1 ? "s" : ""} selected (
+                  {totalSelectedCustomers.toLocaleString()} customers)
+                </span>
+                <button
+                  onClick={() => setTempSelectedSegments([])}
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="px-6 pt-6 space-y-4 flex-shrink-0">
@@ -190,48 +207,35 @@ export default function SegmentSelectionModal({
               Create New
             </button>
           </div>
+        </div>
 
-          {tempSelectedSegments.length > 0 && (
+        {tempSelectedSegments.length > 0 && (
+          <div className="px-6 flex-shrink-0 my-3">
             <div
-              className="rounded-md p-4 border"
+              className="rounded-md p-4 border text-sm"
               style={{
                 backgroundColor: `${color.primary.accent}15`,
                 borderColor: `${color.primary.accent}40`,
+                color: color.primary.accent,
               }}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: color.text.primary }}
-                  >
-                    {tempSelectedSegments.length} segment
-                    {tempSelectedSegments.length !== 1 ? "s" : ""} selected
-                  </span>
-                  <span
-                    className="text-sm ml-2"
-                    style={{ color: color.text.secondary }}
-                  >
-                    ({totalSelectedCustomers.toLocaleString()} total customers)
-                  </span>
-                </div>
+                <span>
+                  {tempSelectedSegments.length} segment
+                  {tempSelectedSegments.length !== 1 ? "s" : ""} selected (
+                  {totalSelectedCustomers.toLocaleString()} customers)
+                </span>
                 <button
                   onClick={() => setTempSelectedSegments([])}
-                  className="text-sm font-medium transition-colors"
+                  className="font-medium hover:opacity-80 transition-opacity"
                   style={{ color: color.primary.accent }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = `${color.primary.accent}cc`)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = color.primary.accent)
-                  }
                 >
                   Clear All
                 </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-6">
           {isLoading ? (
@@ -269,9 +273,9 @@ export default function SegmentSelectionModal({
                             setTempSelectedSegments([]);
                           }
                         }}
-                        className="w-4 h-4 border-gray-300 rounded"
+                        className="w-4 h-4 border-gray-400 rounded"
                         style={{
-                          accentColor: color.primary.accent,
+                          accentColor: "#111827",
                         }}
                       />
                     </th>
@@ -300,11 +304,6 @@ export default function SegmentSelectionModal({
                         key={segment.id}
                         onClick={() => handleSegmentToggle(segment)}
                         className="cursor-pointer transition-colors hover:bg-gray-50"
-                        style={{
-                          backgroundColor: isSelected
-                            ? `${color.primary.accent}10`
-                            : "white",
-                        }}
                       >
                         <td className="px-4 py-4 whitespace-nowrap">
                           <input
@@ -312,28 +311,15 @@ export default function SegmentSelectionModal({
                             checked={isSelected}
                             onChange={() => handleSegmentToggle(segment)}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-4 h-4 border-gray-300 rounded"
+                            className="w-4 h-4 border-gray-400 rounded"
                             style={{
-                              accentColor: color.primary.accent,
+                              accentColor: "#111827",
                             }}
                           />
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
-                              style={{
-                                backgroundColor: `${color.primary.accent}20`,
-                              }}
-                            >
-                              <Users
-                                className="w-5 h-5"
-                                style={{ color: color.primary.accent }}
-                              />
-                            </div>
-                            <div className="font-medium text-gray-900">
-                              {segment.name}
-                            </div>
+                          <div className="font-medium text-gray-900">
+                            {segment.name}
                           </div>
                         </td>
                         <td className="px-4 py-4">

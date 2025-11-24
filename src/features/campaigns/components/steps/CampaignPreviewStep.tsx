@@ -81,85 +81,46 @@ export default function CampaignPreviewStep({
 
       {/* Campaign Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className={`${components.card.default} rounded-md p-4`}>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-md flex items-center justify-center"
-              style={{ backgroundColor: `${color.primary.accent}20` }}
-            >
-              <Target
-                className="w-5 h-5"
+        {[
+          {
+            icon: Target,
+            label: "Segments",
+            value: selectedSegments.length.toString(),
+          },
+          {
+            icon: Users,
+            label: "Total Reach",
+            value: totalAudienceSize.toLocaleString(),
+          },
+          {
+            icon: Gift,
+            label: "Offers",
+            value: selectedOffers.length.toString(),
+          },
+          {
+            icon: TrendingUp,
+            label: "Est. ROI",
+            value: `${estimatedROI.toFixed(0)}%`,
+          },
+        ].map(({ icon: Icon, label, value }) => (
+          <div
+            key={label}
+            className="rounded-xl bg-white shadow-sm border border-gray-100 p-5 flex items-center gap-4"
+          >
+            <div className="w-12 h-12 flex items-center justify-center">
+              <Icon
+                className="w-6 h-6"
                 style={{ color: color.primary.accent }}
               />
             </div>
             <div>
-              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {selectedSegments.length}
-              </div>
-              <div className={`text-xs ${tw.textSecondary}`}>Segments</div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                {label}
+              </p>
+              <p className="text-2xl font-semibold text-gray-900">{value}</p>
             </div>
           </div>
-        </div>
-
-        <div className={`${components.card.default} rounded-md p-4`}>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-md flex items-center justify-center"
-              style={{ backgroundColor: `${color.primary.accent}20` }}
-            >
-              <Users
-                className="w-5 h-5"
-                style={{ color: color.primary.accent }}
-              />
-            </div>
-            <div>
-              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {totalAudienceSize.toLocaleString()}
-              </div>
-              <div className={`text-xs ${tw.textSecondary}`}>Total Reach</div>
-            </div>
-          </div>
-        </div>
-
-        <div className={`${components.card.default} rounded-md p-4`}>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-md flex items-center justify-center"
-              style={{ backgroundColor: `${color.primary.accent}20` }}
-            >
-              <Gift
-                className="w-5 h-5"
-                style={{ color: color.primary.accent }}
-              />
-            </div>
-            <div>
-              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {selectedOffers.length}
-              </div>
-              <div className={`text-xs ${tw.textSecondary}`}>Offers</div>
-            </div>
-          </div>
-        </div>
-
-        <div className={`${components.card.default} rounded-md p-4`}>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-md flex items-center justify-center"
-              style={{ backgroundColor: `${color.primary.accent}20` }}
-            >
-              <TrendingUp
-                className="w-5 h-5"
-                style={{ color: color.primary.accent }}
-              />
-            </div>
-            <div>
-              <div className={`text-2xl font-bold ${tw.textPrimary}`}>
-                {estimatedROI.toFixed(0)}%
-              </div>
-              <div className={`text-xs ${tw.textSecondary}`}>Est. ROI</div>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -233,18 +194,13 @@ export default function CampaignPreviewStep({
                 {selectedSegments.map((segment) => (
                   <div
                     key={segment.id}
-                    className="flex items-center justify-between p-4 rounded-md border border-gray-100"
+                    className="flex items-center justify-between p-4 rounded-md border border-gray-100 bg-white"
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-md flex items-center justify-center"
-                        style={{ backgroundColor: `${color.primary.accent}20` }}
-                      >
-                        <Users
-                          className="w-5 h-5"
-                          style={{ color: color.primary.accent }}
-                        />
-                      </div>
+                      <Users
+                        className="w-5 h-5"
+                        style={{ color: color.primary.accent }}
+                      />
                       <div>
                         <div
                           className={`text-sm font-semibold ${tw.textPrimary}`}
@@ -287,23 +243,29 @@ export default function CampaignPreviewStep({
                 {selectedOffers.map((offer) => (
                   <div
                     key={offer.id}
-                    className="flex items-center justify-between p-3 rounded-md border border-gray-100"
+                    className="flex items-center justify-between p-3 rounded-md border border-gray-100 bg-white"
                   >
-                    <div>
+                    <div className="flex items-center gap-3">
+                      <Gift
+                        className="w-5 h-5"
+                        style={{ color: color.primary.accent }}
+                      />
                       <div className={`text-sm font-medium ${tw.textPrimary}`}>
                         {offer.name || `Offer #${offer.id}`}
                       </div>
-                      <div className={`text-xs ${tw.textSecondary}`}>
-                        {offer.offer_type || "N/A"} •{" "}
+                    </div>
+                    <div className="text-right text-xs text-gray-500">
+                      <div className="font-medium text-gray-900">
+                        {offer.offer_type || "N/A"}
+                      </div>
+                      <div className="text-gray-500">
                         {offer.start_date
                           ? `${formatDate(offer.start_date)} - ${formatDate(
                               offer.end_date
                             )}`
                           : "No schedule"}
                       </div>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      ID: <span className="font-medium">{offer.id}</span>
+                      <div className="text-gray-400">ID: {offer.id}</div>
                     </div>
                   </div>
                 ))}

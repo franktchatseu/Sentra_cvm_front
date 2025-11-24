@@ -58,7 +58,7 @@ export default function OfferMappingStep({
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showCreateOfferModal, setShowCreateOfferModal] = useState(false);
   const [offerMappings, setOfferMappings] = useState<{
-    [segmentId: string]: { offerIds: string[]; priority: number };
+    [segmentId: string]: CampaignOffer[];
   }>({});
   const [sequentialMappings, setSequentialMappings] = useState<
     SequentialOfferMapping[]
@@ -68,6 +68,20 @@ export default function OfferMappingStep({
   const isRoundRobinOrMultiLevel =
     formData.campaign_type === "round_robin" ||
     formData.campaign_type === "multiple_level";
+
+  const syncSelectedOffersFromMappings = (
+    mappings: Record<string, CampaignOffer[]>
+  ) => {
+    const uniqueOffers = new Map<string, CampaignOffer>();
+    Object.values(mappings).forEach((offers) => {
+      offers.forEach((offer) => {
+        if (offer.id) {
+          uniqueOffers.set(offer.id, offer);
+        }
+      });
+    });
+    setSelectedOffers(Array.from(uniqueOffers.values()));
+  };
 
   const handleNext = () => {
     if (isRoundRobinOrMultiLevel) {
@@ -95,12 +109,12 @@ export default function OfferMappingStep({
           segment_ids: string[];
           priority: number;
         }[] = [];
-        Object.entries(offerMappings).forEach(([segmentId, mapping]) => {
-          mapping.offerIds.forEach((offerId) => {
+        Object.entries(offerMappings).forEach(([segmentId, offers]) => {
+          offers.forEach((offer) => {
             offerMappingsList.push({
-              offer_id: offerId,
+              offer_id: offer.id,
               segment_ids: [segmentId],
-              priority: mapping.priority,
+              priority: 1,
             });
           });
         });
@@ -149,22 +163,14 @@ export default function OfferMappingStep({
       setSelectedOffers(newOffers);
     } else if (editingSegmentId && offers.length > 0) {
       // For other types: map all selected offers to the current segment
-      setOfferMappings((prev) => ({
-        ...prev,
-        [editingSegmentId]: {
-          offerIds: offers.map((o) => o.id),
-          priority: 1,
-        },
-      }));
-
-      // Add to selected offers if not already present
-      const newOffers = [...selectedOffers];
-      offers.forEach((offer) => {
-        if (!newOffers.find((o) => o.id === offer.id)) {
-          newOffers.push(offer);
-        }
+      setOfferMappings((prev) => {
+        const updatedMappings = {
+          ...prev,
+          [editingSegmentId]: offers,
+        };
+        syncSelectedOffersFromMappings(updatedMappings);
+        return updatedMappings;
       });
-      setSelectedOffers(newOffers);
     }
     setShowOfferModal(false);
     setEditingSegmentId(null);
@@ -173,42 +179,34 @@ export default function OfferMappingStep({
   const handleRemoveOfferFromSegment = (segmentId: string, offerId: string) => {
     const currentMapping = offerMappings[segmentId];
     if (currentMapping) {
-      const updatedOfferIds = currentMapping.offerIds.filter(
-        (id) => id !== offerId
+      const updatedOffers = currentMapping.filter(
+        (offer) => offer.id !== offerId
       );
 
-      if (updatedOfferIds.length > 0) {
-        // Update mapping with remaining offers
-        setOfferMappings((prev) => ({
-          ...prev,
-          [segmentId]: {
-            ...currentMapping,
-            offerIds: updatedOfferIds,
-          },
-        }));
+      const newMappings = { ...offerMappings };
+      if (updatedOffers.length > 0) {
+        newMappings[segmentId] = updatedOffers;
       } else {
-        // Remove mapping entirely if no offers left
-        const newMappings = { ...offerMappings };
         delete newMappings[segmentId];
-        setOfferMappings(newMappings);
       }
+
+      setOfferMappings(newMappings);
+      syncSelectedOffersFromMappings(newMappings);
     }
   };
 
   // Transform offerMappings for specialized components (extract offerIds only)
   const simplifiedOfferMappings: { [segmentId: string]: string[] } = {};
   Object.keys(offerMappings).forEach((segmentId) => {
-    simplifiedOfferMappings[segmentId] = offerMappings[segmentId].offerIds;
+    simplifiedOfferMappings[segmentId] = offerMappings[segmentId].map(
+      (offer) => offer.id
+    );
   });
 
   const isFormValid = isRoundRobinOrMultiLevel
     ? selectedSegments.length > 0 && sequentialMappings.length > 0
     : selectedSegments.length > 0 &&
-      selectedSegments.every(
-        (segment) =>
-          offerMappings[segment.id] &&
-          offerMappings[segment.id].offerIds.length > 0
-      );
+      selectedSegments.every((segment) => offerMappings[segment.id]?.length);
 
   return (
     <div className="space-y-8">
@@ -309,13 +307,7 @@ export default function OfferMappingStep({
           }}
           onSelect={handleOfferSelect}
           selectedOffers={
-            editingSegmentId
-              ? offerMappings[editingSegmentId]?.offerIds
-                  .map((id) => selectedOffers.find((o) => o.id === id))
-                  .filter(
-                    (offer): offer is CampaignOffer => offer !== undefined
-                  ) || []
-              : []
+            editingSegmentId ? offerMappings[editingSegmentId] || [] : []
           }
           onCreateNew={() => {
             setShowOfferModal(false);
