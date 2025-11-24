@@ -31,29 +31,38 @@ export default function MultipleTargetOfferMapping({
   const handleOfferSelect = (offers: CampaignOffer[]) => {
     if (!editingSegmentId) return;
 
-    // For each selected offer, create or update a mapping
-    offers.forEach((offer) => {
-      // Check if mapping already exists
-      const existingMappingIndex = segmentOfferMappings.findIndex(
-        (m) =>
-          m.segment_id === editingSegmentId && m.offer_id === parseInt(offer.id)
-      );
+    setSegmentOfferMappings((prevMappings) => {
+      const updatedMappings = [...prevMappings];
 
-      if (existingMappingIndex === -1) {
-        // Add new mapping
-        setSegmentOfferMappings([
-          ...segmentOfferMappings,
-          {
+      offers.forEach((offer) => {
+        const offerId = parseInt(offer.id);
+        const exists = updatedMappings.some(
+          (mapping) =>
+            mapping.segment_id === editingSegmentId &&
+            mapping.offer_id === offerId
+        );
+
+        if (!exists) {
+          updatedMappings.push({
             segment_id: editingSegmentId,
-            offer_id: parseInt(offer.id),
-          },
-        ]);
-      }
+            offer_id: offerId,
+          });
+        }
+      });
 
-      // Add to selected offers if not already present
-      if (!selectedOffers.find((o) => o.id === offer.id)) {
-        setSelectedOffers([...selectedOffers, offer]);
-      }
+      return updatedMappings;
+    });
+
+    setSelectedOffers((prevOffers) => {
+      const offerMap = new Map(prevOffers.map((offer) => [offer.id, offer]));
+
+      offers.forEach((offer) => {
+        if (!offerMap.has(offer.id)) {
+          offerMap.set(offer.id, offer);
+        }
+      });
+
+      return Array.from(offerMap.values());
     });
 
     setShowOfferModal(false);
@@ -110,15 +119,10 @@ export default function MultipleTargetOfferMapping({
                 {/* Segment Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-md flex items-center justify-center"
-                      style={{ backgroundColor: `${color.primary.accent}20` }}
-                    >
-                      <Users
-                        className="w-5 h-5"
-                        style={{ color: color.primary.accent }}
-                      />
-                    </div>
+                    <Users
+                      className="w-5 h-5"
+                      style={{ color: color.primary.accent }}
+                    />
                     <div>
                       <h4 className={`text-sm font-medium ${tw.textPrimary}`}>
                         {segment.name}
@@ -167,17 +171,10 @@ export default function MultipleTargetOfferMapping({
                           style={{ backgroundColor: color.surface.cards }}
                         >
                           <div className="flex items-center gap-3">
-                            <div
-                              className="w-8 h-8 rounded-md flex items-center justify-center"
-                              style={{
-                                backgroundColor: `${color.tertiary.tag1}20`,
-                              }}
-                            >
-                              <Gift
-                                className="w-4 h-4"
-                                style={{ color: color.tertiary.tag1 }}
-                              />
-                            </div>
+                            <Gift
+                              className="w-5 h-5"
+                              style={{ color: color.primary.accent }}
+                            />
                             <div>
                               <div
                                 className={`text-sm font-medium ${tw.textPrimary}`}

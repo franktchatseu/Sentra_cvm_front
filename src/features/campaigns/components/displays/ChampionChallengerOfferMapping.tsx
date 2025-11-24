@@ -77,7 +77,7 @@ export default function ChampionChallengerOfferMapping({
       {/* Champion Section */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Award className="w-5 h-5 text-gray-600" />
+          <Award className="w-5 h-5" style={{ color: color.primary.accent }} />
           <h3 className="text-lg font-semibold text-gray-900">
             Champion Offers
           </h3>
@@ -86,15 +86,16 @@ export default function ChampionChallengerOfferMapping({
         <div className="bg-white border border-gray-200 rounded-md p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
-                <Award className="w-5 h-5 text-gray-600" />
-              </div>
+              <Award
+                className="w-5 h-5"
+                style={{ color: color.primary.accent }}
+              />
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-gray-900">
                     {champion.name}
                   </span>
-                  <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">
+                  <span className="px-2.5 py-0.5 text-gray-700 text-xs font-bold rounded-full border border-gray-200">
                     🏆 CHAMPION
                   </span>
                 </div>
@@ -121,12 +122,13 @@ export default function ChampionChallengerOfferMapping({
               {getOffersForSegment(champion.id).map((offer) => (
                 <div
                   key={offer.id}
-                  className="bg-gray-50 border border-gray-200 rounded-md p-4 flex items-center justify-between"
+                  className="bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center">
-                      <Gift className="w-4 h-4 text-gray-600" />
-                    </div>
+                    <Gift
+                      className="w-5 h-5"
+                      style={{ color: color.primary.accent }}
+                    />
                     <div>
                       <div className="font-medium text-gray-900">
                         {offer.name}
@@ -160,7 +162,10 @@ export default function ChampionChallengerOfferMapping({
       {challengers.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <Target className="w-5 h-5 text-gray-600" />
+            <Target
+              className="w-5 h-5"
+              style={{ color: color.primary.accent }}
+            />
             <h3 className="text-lg font-semibold text-gray-900">
               Challenger Offers
             </h3>
@@ -177,7 +182,7 @@ export default function ChampionChallengerOfferMapping({
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-md flex items-center justify-center border border-gray-200">
                       <span className="text-gray-700 font-bold text-sm">
                         C{index + 1}
                       </span>
@@ -187,7 +192,7 @@ export default function ChampionChallengerOfferMapping({
                         <span className="font-semibold text-gray-900 text-sm">
                           {challenger.name}
                         </span>
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+                        <span className="px-2 py-0.5 text-gray-700 text-xs font-medium rounded-full border border-gray-200">
                           Challenger
                         </span>
                       </div>
@@ -212,10 +217,13 @@ export default function ChampionChallengerOfferMapping({
                     {getOffersForSegment(challenger.id).map((offer) => (
                       <div
                         key={offer.id}
-                        className="bg-gray-50 border border-gray-200 rounded-md p-3 flex items-center justify-between"
+                        className="bg-white border border-gray-200 rounded-md p-3 flex items-center justify-between"
                       >
                         <div className="flex items-center space-x-2 flex-1 min-w-0">
-                          <Gift className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+                          <Gift
+                            className="w-4 h-4 flex-shrink-0"
+                            style={{ color: color.primary.accent }}
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-gray-900 text-sm truncate">
                               {offer.name}
@@ -252,9 +260,10 @@ export default function ChampionChallengerOfferMapping({
       {totalOffersMapped > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center flex-shrink-0">
-              <ArrowRight className="w-4 h-4 text-gray-600" />
-            </div>
+            <ArrowRight
+              className="w-4 h-4 mt-1"
+              style={{ color: color.primary.accent }}
+            />
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">
                 Mapping Summary

@@ -79,7 +79,7 @@ export default function ABTestOfferMapping({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center">
+              <div className="w-8 h-8 rounded-md flex items-center justify-center border border-gray-200">
                 <span className="text-gray-700 font-bold text-sm">A</span>
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
@@ -114,12 +114,13 @@ export default function ABTestOfferMapping({
                 {getOffersForSegment(variantA.id).map((offer) => (
                   <div
                     key={offer.id}
-                    className="bg-gray-50 border border-gray-200 rounded-md p-4 flex items-start justify-between"
+                    className="bg-white border border-gray-200 rounded-md p-4 flex items-start justify-between"
                   >
                     <div className="flex items-start space-x-3 flex-1 min-w-0">
-                      <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
-                        <Gift className="w-4 h-4 text-gray-600" />
-                      </div>
+                      <Gift
+                        className="w-5 h-5 flex-shrink-0"
+                        style={{ color: color.primary.accent }}
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="font-medium text-gray-900">
                           {offer.name}
@@ -161,7 +162,7 @@ export default function ABTestOfferMapping({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center">
+              <div className="w-8 h-8 rounded-md flex items-center justify-center border border-gray-200">
                 <span className="text-gray-700 font-bold text-sm">B</span>
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
@@ -196,12 +197,13 @@ export default function ABTestOfferMapping({
                 {getOffersForSegment(variantB.id).map((offer) => (
                   <div
                     key={offer.id}
-                    className="bg-gray-50 border border-gray-200 rounded-md p-4 flex items-start justify-between"
+                    className="bg-white border border-gray-200 rounded-md p-4 flex items-start justify-between"
                   >
                     <div className="flex items-start space-x-3 flex-1 min-w-0">
-                      <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
-                        <Gift className="w-4 h-4 text-gray-600" />
-                      </div>
+                      <Gift
+                        className="w-5 h-5 flex-shrink-0"
+                        style={{ color: color.primary.accent }}
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="font-medium text-gray-900">
                           {offer.name}
@@ -252,9 +254,10 @@ export default function ABTestOfferMapping({
             </div>
 
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-gray-600" />
-              </div>
+              <TrendingUp
+                className="w-6 h-6"
+                style={{ color: color.primary.accent }}
+              />
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wide">
                   VS
@@ -279,9 +282,10 @@ export default function ABTestOfferMapping({
       {hasOffersA && hasOffersB && (
         <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center flex-shrink-0">
-              <ArrowRight className="w-4 h-4 text-gray-600" />
-            </div>
+            <ArrowRight
+              className="w-4 h-4 mt-1"
+              style={{ color: color.primary.accent }}
+            />
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">
                 A/B Test Configuration Complete
@@ -302,9 +306,10 @@ export default function ABTestOfferMapping({
         (!hasOffersA && hasOffersB && (
           <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
             <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center flex-shrink-0">
-                <ArrowRight className="w-4 h-4 text-gray-600" />
-              </div>
+              <ArrowRight
+                className="w-4 h-4 mt-1"
+                style={{ color: color.primary.accent }}
+              />
               <div>
                 <h4 className="font-semibold text-gray-900 mb-1">
                   Incomplete A/B Test
