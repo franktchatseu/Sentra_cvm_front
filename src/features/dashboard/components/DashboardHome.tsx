@@ -315,11 +315,16 @@ export default function DashboardHome() {
   useEffect(() => {
     const fetchStats = async () => {
       // Run all stat API calls in parallel for better performance
-      const [offersResponse, segmentsResponse, productsResponse, campaignsStatsResponse] = await Promise.allSettled([
+      const [
+        offersResponse,
+        segmentsResponse,
+        productsResponse,
+        campaignsStatsResponse,
+      ] = await Promise.allSettled([
         offerService.getStats(),
         segmentService.getSegmentStats(),
         productService.getStats(),
-        campaignService.getCampaignStats(true)
+        campaignService.getCampaignStats(true),
       ]);
 
       const parseMetric = (value: unknown): number => {
@@ -333,7 +338,7 @@ export default function DashboardHome() {
 
       // Process offers stats
       try {
-        if (offersResponse.status === 'fulfilled') {
+        if (offersResponse.status === "fulfilled") {
           const response = offersResponse.value;
           let total = 0;
           let active = 0;
@@ -382,7 +387,7 @@ export default function DashboardHome() {
 
       // Process segments stats
       try {
-        if (segmentsResponse.status === 'fulfilled') {
+        if (segmentsResponse.status === "fulfilled") {
           const response = segmentsResponse.value;
           if (response.success && response.data) {
             const data = response.data as Record<string, unknown>;
@@ -409,7 +414,7 @@ export default function DashboardHome() {
 
       // Process products stats
       try {
-        if (productsResponse.status === 'fulfilled') {
+        if (productsResponse.status === "fulfilled") {
           const response = productsResponse.value;
           if (response.success && response.data) {
             setProductsStats({
@@ -423,7 +428,7 @@ export default function DashboardHome() {
 
       // Process campaigns stats
       try {
-        if (campaignsStatsResponse.status === 'fulfilled') {
+        if (campaignsStatsResponse.status === "fulfilled") {
           const response = campaignsStatsResponse.value;
           if (response.success && response.data) {
             const statsData = response.data as CampaignStatsSummary;
@@ -1335,7 +1340,7 @@ export default function DashboardHome() {
           Welcome back, {getFirstName()}
         </h1>
         {/* <p className={`${tw.textSecondary} ${tw.body}`}> */}
-        <p className="text-gray-900 text-base">
+        <p className="text-gray-900 text-sm md:text-base">
           Here's what's happening with your campaigns today. Your performance is
           looking great!
         </p>
@@ -1417,7 +1422,7 @@ export default function DashboardHome() {
       </div>
 
       {/* Recently Added and Quick Actions - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Recently Added - Takes 2 columns */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-md border border-gray-200 overflow-hidden h-full">
@@ -1544,7 +1549,7 @@ export default function DashboardHome() {
                   recentCampaigns.slice(0, 3).map((campaign) => (
                     <div
                       key={campaign.id}
-                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-start gap-4 flex-wrap p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() =>
                         navigate(`/dashboard/campaigns/${campaign.id}`)
@@ -1559,8 +1564,11 @@ export default function DashboardHome() {
                         <Target className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-base text-gray-900 truncate">
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
+                          <h3
+                            className="font-semibold text-base text-gray-900 truncate max-w-[60vw] sm:max-w-xs"
+                            title={campaign.name}
+                          >
                             {campaign.name}
                           </h3>
                           <span
@@ -1571,23 +1579,19 @@ export default function DashboardHome() {
                             {campaign.statusDisplay}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-black">
-                          <span className="flex items-center gap-1">
-                            <Target className="h-4 w-4" />
+                        <div className="flex flex-wrap gap-3 text-sm text-black">
+                          <span className="text-black/80">
                             {campaign.objective}
                           </span>
                           {campaign.performance && (
-                            <>
-                              <span>•</span>
-                              <span>
-                                {campaign.performance.converted.toLocaleString()}{" "}
-                                converted
-                              </span>
-                            </>
+                            <span className="text-black/80">
+                              {campaign.performance.converted.toLocaleString()}{" "}
+                              converted
+                            </span>
                           )}
                         </div>
                       </div>
-                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0 self-start" />
                     </div>
                   ))}
 
@@ -1597,7 +1601,7 @@ export default function DashboardHome() {
                   recentOffers.slice(0, 3).map((offer) => (
                     <div
                       key={offer.id}
-                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-start gap-4 flex-wrap p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() => navigate(`/dashboard/offers/${offer.id}`)}
                     >
@@ -1610,8 +1614,11 @@ export default function DashboardHome() {
                         <Package className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-base text-gray-900 truncate">
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
+                          <h3
+                            className="font-semibold text-base text-gray-900 truncate max-w-[60vw] sm:max-w-xs"
+                            title={offer.name}
+                          >
                             {offer.name}
                           </h3>
                           <span
@@ -1622,13 +1629,12 @@ export default function DashboardHome() {
                             {offer.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-black">
-                          <span>{offer.type}</span>
-                          <span>•</span>
-                          <span>{offer.created}</span>
+                        <div className="flex flex-wrap gap-3 text-sm text-black">
+                          <span className="text-black/80">{offer.type}</span>
+                          <span className="text-black/80">{offer.created}</span>
                         </div>
                       </div>
-                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0 self-start" />
                     </div>
                   ))}
 
@@ -1638,7 +1644,7 @@ export default function DashboardHome() {
                   recentSegments.slice(0, 3).map((segment) => (
                     <div
                       key={segment.id}
-                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-start gap-4 flex-wrap p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() =>
                         navigate(`/dashboard/segments/${segment.id}`)
@@ -1653,23 +1659,27 @@ export default function DashboardHome() {
                         <Users className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-base text-gray-900 truncate">
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
+                          <h3
+                            className="font-semibold text-base text-gray-900 truncate max-w-[60vw] sm:max-w-xs"
+                            title={segment.name}
+                          >
                             {segment.name}
                           </h3>
                           <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200 flex-shrink-0">
                             {segment.type}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-black">
-                          <span>
+                        <div className="flex flex-wrap gap-3 text-sm text-black">
+                          <span className="text-black/80">
                             {segment.members.toLocaleString()} members
                           </span>
-                          <span>•</span>
-                          <span>{segment.created}</span>
+                          <span className="text-black/80">
+                            {segment.created}
+                          </span>
                         </div>
                       </div>
-                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0 self-start" />
                     </div>
                   ))}
 
@@ -1679,7 +1689,7 @@ export default function DashboardHome() {
                   recentProducts.slice(0, 3).map((product) => (
                     <div
                       key={product.id}
-                      className="flex items-center gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                      className="flex items-start gap-4 flex-wrap p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
                       style={{ backgroundColor: color.surface.background }}
                       onClick={() =>
                         navigate(`/dashboard/products/${product.id}`)
@@ -1694,8 +1704,11 @@ export default function DashboardHome() {
                         <ShoppingBag className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-base text-gray-900 truncate">
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
+                          <h3
+                            className="font-semibold text-base text-gray-900 truncate max-w-[60vw] sm:max-w-xs"
+                            title={product.name}
+                          >
                             {product.name}
                           </h3>
                           <span
@@ -1706,13 +1719,16 @@ export default function DashboardHome() {
                             {product.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-black">
-                          <span>Code: {product.code}</span>
-                          <span>•</span>
-                          <span>{product.created}</span>
+                        <div className="flex flex-wrap gap-3 text-sm text-black">
+                          <span className="text-black/80">
+                            Code: {product.code}
+                          </span>
+                          <span className="text-black/80">
+                            {product.created}
+                          </span>
                         </div>
                       </div>
-                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0 self-start" />
                     </div>
                   ))}
 
@@ -1795,392 +1811,373 @@ export default function DashboardHome() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Offer Type Distribution */}
-            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className={tw.cardHeading}>Offer Type Distribution</h2>
-                <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                  Breakdown by offer type
-                </p>
-              </div>
-              <div className="p-6">
-                {offerDistributionLoading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                      <p className="text-sm text-black">
-                        Loading distribution...
-                      </p>
-                    </div>
-                  </div>
-                ) : offerTypeDistribution.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="text-center">
-                      <p className="text-sm text-black">
-                        No offer type data available
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-64 w-full min-h-[256px]">
-                    <ResponsiveContainer width="100%" height={256}>
-                      <PieChart>
-                        <Pie
-                          data={offerTypeDistribution}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={false}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          isAnimationActive={true}
-                          animationDuration={300}
-                        >
-                          {offerTypeDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number) => value.toLocaleString()}
-                          contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                            padding: "8px",
-                          }}
-                        />
-                        <Legend
-                          verticalAlign="bottom"
-                          height={36}
-                          formatter={(value) => (
-                            <span
-                              style={{ fontSize: "12px", color: "#000000" }}
-                            >
-                              {value}
-                            </span>
-                          )}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Segment Type Distribution */}
-            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className={tw.cardHeading}>Segment Type Distribution</h2>
-                <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                  Breakdown by segment type
-                </p>
-              </div>
-              <div className="p-6">
-                {segmentTypeDistribution.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="text-center">
-                      <p className="text-sm text-black">
-                        No segment type data available
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-64 w-full min-h-[256px]">
-                    <ResponsiveContainer width="100%" height={256}>
-                      <PieChart>
-                        <Pie
-                          data={segmentTypeDistribution.map((item) => ({
-                            name: item.type,
-                            value: item.count,
-                            color: item.color,
-                          }))}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={false}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          isAnimationActive={true}
-                          animationDuration={300}
-                        >
-                          {segmentTypeDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number) => value.toLocaleString()}
-                          contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                            padding: "8px",
-                          }}
-                        />
-                        <Legend
-                          verticalAlign="bottom"
-                          height={36}
-                          formatter={(value) => (
-                            <span
-                              style={{ fontSize: "12px", color: "#000000" }}
-                            >
-                              {value}
-                            </span>
-                          )}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* Offer Type */}
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className={tw.cardHeading}>Offer Type Distribution</h2>
+            <p className={`${tw.cardSubHeading} text-black mt-1`}>
+              Breakdown by offer type
+            </p>
           </div>
-
-          {/* Top Performers - CVM Focus */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Top Performing Campaigns */}
-            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className={tw.cardHeading}>Top Performing Campaigns</h2>
-                <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                  Campaigns by conversion rate
-                </p>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {topCampaigns.map((campaign, index) => (
-                    <div
-                      key={campaign.id}
-                      className="flex items-center justify-between p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
-                      style={{ backgroundColor: color.surface.background }}
-                      onClick={() =>
-                        navigate(`/dashboard/campaigns/${campaign.id}`)
-                      }
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-                          style={{
-                            backgroundColor: color.primary.accent,
-                            color: "#FFFFFF",
-                          }}
-                        >
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-base text-black">
-                            {campaign.name}
-                          </p>
-                          <p className="text-sm text-black">
-                            Conversion: {campaign.conversionRate}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
-                              campaign.status.toLowerCase() === "active"
-                                ? "text-black bg-transparent border-0 font-normal"
-                                : `font-bold border ${getStatusColor(
-                                    campaign.status
-                                  )}`
-                            }`}
-                          >
-                            {campaign.status}
-                          </span>
-                        </div>
-                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
-                      </div>
-                    </div>
-                  ))}
+          <div className="p-6">
+            {offerDistributionLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                  <p className="text-sm text-black">Loading distribution...</p>
                 </div>
               </div>
-            </div>
-
-            {/* Top Performing Offers */}
-            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className={tw.cardHeading}>Top Performing Offers</h2>
-                <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                  Offers by acceptance rate
-                </p>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {topOffers.map((offer, index) => (
-                    <div
-                      key={offer.id}
-                      className="flex items-center justify-between p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
-                      style={{ backgroundColor: color.surface.background }}
-                      onClick={() => navigate(`/dashboard/offers/${offer.id}`)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-                          style={{
-                            backgroundColor: color.primary.accent,
-                            color: "#FFFFFF",
-                          }}
-                        >
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-base text-black">
-                            {offer.name}
-                          </p>
-                          <p className="text-sm text-black">
-                            Acceptance: {offer.acceptanceRate}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p
-                            className="font-bold text-sm"
-                            style={{ color: "#2563eb" }}
-                          >
-                            {offer.engagement.toLocaleString()} engaged
-                          </p>
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
-                              offer.status.toLowerCase() === "active"
-                                ? "text-black bg-transparent border-0 font-normal"
-                                : `font-bold border ${getStatusColor(
-                                    offer.status
-                                  )}`
-                            }`}
-                          >
-                            {offer.status}
-                          </span>
-                        </div>
-                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
-                      </div>
-                    </div>
-                  ))}
+            ) : offerTypeDistribution.length === 0 ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <p className="text-sm text-black">
+                    No offer type data available
+                  </p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="h-64 w-full min-h-[256px]">
+                <ResponsiveContainer width="100%" height={256}>
+                  <PieChart>
+                    <Pie
+                      data={offerTypeDistribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      isAnimationActive={true}
+                      animationDuration={300}
+                    >
+                      {offerTypeDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => value.toLocaleString()}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        padding: "8px",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => (
+                        <span style={{ fontSize: "12px", color: "#000000" }}>
+                          {value}
+                        </span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Campaign Status Distribution */}
-          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className={tw.cardHeading}>Campaign Status</h2>
-              <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                Campaign status distribution
-              </p>
-            </div>
-            <div className="p-6">
-              {campaignStatusDistribution.length === 0 ? (
-                <div className="h-64 w-full min-h-[256px] flex items-center justify-center">
-                  <p className={`${tw.textSecondary} text-sm`}>
-                    No campaign status data available yet.
+        {/* Segment Type */}
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className={tw.cardHeading}>Segment Type Distribution</h2>
+            <p className={`${tw.cardSubHeading} text-black mt-1`}>
+              Breakdown by segment type
+            </p>
+          </div>
+          <div className="p-6">
+            {segmentTypeDistribution.length === 0 ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <p className="text-sm text-black">
+                    No segment type data available
                   </p>
                 </div>
-              ) : (
-                <div className="h-64 w-full min-h-[256px]">
-                  <ResponsiveContainer width="100%" height={256}>
-                    <PieChart>
-                      <Pie
-                        data={campaignStatusDistribution.map((item) => ({
-                          name: item.status,
-                          value: item.count,
-                          color: item.color,
-                        }))}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        isAnimationActive={true}
-                        animationDuration={300}
-                      >
-                        {campaignStatusDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => value.toLocaleString()}
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          padding: "8px",
-                        }}
-                      />
-                      <Legend
-                        verticalAlign="bottom"
-                        height={36}
-                        formatter={(value) => (
-                          <span style={{ fontSize: "12px", color: "#000000" }}>
-                            {value}
-                          </span>
-                        )}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Requires Attention */}
-          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className={tw.cardHeading}>Requires Attention</h2>
-              <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                Action items that need your review
-              </p>
-            </div>
-            <div className="p-6 space-y-4">
-              {requiresAttention.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-md p-5 border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="font-semibold text-base text-black">
-                          {item.title}
-                        </p>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium border ${
-                            item.priority === "high"
-                              ? "bg-red-100 text-red-700 border-red-200"
-                              : "bg-yellow-100 text-yellow-700 border-yellow-200"
-                          }`}
-                        >
-                          {item.priority === "high" ? "High" : "Medium"}
+              </div>
+            ) : (
+              <div className="h-64 w-full min-h-[256px]">
+                <ResponsiveContainer width="100%" height={256}>
+                  <PieChart>
+                    <Pie
+                      data={segmentTypeDistribution.map((item) => ({
+                        name: item.type,
+                        value: item.count,
+                        color: item.color,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      isAnimationActive={true}
+                      animationDuration={300}
+                    >
+                      {segmentTypeDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => value.toLocaleString()}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        padding: "8px",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => (
+                        <span style={{ fontSize: "12px", color: "#000000" }}>
+                          {value}
                         </span>
-                      </div>
-                      <p className="text-sm text-black mb-2">
-                        {item.description}
-                      </p>
-                      <button
-                        className="text-sm font-medium hover:opacity-80 transition-opacity"
-                        style={{ color: "#2563eb" }}
-                        onClick={() => {
-                          // Navigate to appropriate page based on type
-                          // This will be implemented when routing is ready
-                        }}
-                      >
-                        {item.action} →
-                      </button>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Campaign Status */}
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className={tw.cardHeading}>Campaign Status</h2>
+            <p className={`${tw.cardSubHeading} text-black mt-1`}>
+              Campaign status distribution
+            </p>
+          </div>
+          <div className="p-6">
+            {campaignStatusDistribution.length === 0 ? (
+              <div className="h-64 w-full min-h-[256px] flex items-center justify-center">
+                <p className={`${tw.textSecondary} text-sm`}>
+                  No campaign status data available yet.
+                </p>
+              </div>
+            ) : (
+              <div className="h-64 w-full min-h-[256px]">
+                <ResponsiveContainer width="100%" height={256}>
+                  <PieChart>
+                    <Pie
+                      data={campaignStatusDistribution.map((item) => ({
+                        name: item.status,
+                        value: item.count,
+                        color: item.color,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      isAnimationActive={true}
+                      animationDuration={300}
+                    >
+                      {campaignStatusDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => value.toLocaleString()}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        padding: "8px",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => (
+                        <span style={{ fontSize: "12px", color: "#000000" }}>
+                          {value}
+                        </span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Top Performers + Requires Attention */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Top Performing Campaigns */}
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden self-start">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className={tw.cardHeading}>Top Performing Campaigns</h2>
+            <p className={`${tw.cardSubHeading} text-black mt-1`}>
+              Campaigns by conversion rate
+            </p>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {topCampaigns.map((campaign, index) => (
+                <div
+                  key={campaign.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                  style={{ backgroundColor: color.surface.background }}
+                  onClick={() =>
+                    navigate(`/dashboard/campaigns/${campaign.id}`)
+                  }
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                      style={{
+                        backgroundColor: color.primary.accent,
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      {index + 1}
                     </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-base text-black truncate">
+                        {campaign.name}
+                      </p>
+                      <p className="text-sm text-black">
+                        Conversion: {campaign.conversionRate}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
+                        campaign.status.toLowerCase() === "active"
+                          ? "text-black bg-transparent border-0 font-normal"
+                          : `font-bold border ${getStatusColor(
+                              campaign.status
+                            )}`
+                      }`}
+                    >
+                      {campaign.status}
+                    </span>
+                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Top Performing Offers */}
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden self-start">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className={tw.cardHeading}>Top Performing Offers</h2>
+            <p className={`${tw.cardSubHeading} text-black mt-1`}>
+              Offers by acceptance rate
+            </p>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {topOffers.map((offer, index) => (
+                <div
+                  key={offer.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                  style={{ backgroundColor: color.surface.background }}
+                  onClick={() => navigate(`/dashboard/offers/${offer.id}`)}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                      style={{
+                        backgroundColor: color.primary.accent,
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-base text-black truncate">
+                        {offer.name}
+                      </p>
+                      <p className="text-sm text-black">
+                        Acceptance: {offer.acceptanceRate}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                    <div className="text-right">
+                      <p
+                        className="font-bold text-sm"
+                        style={{ color: "#2563eb" }}
+                      >
+                        {offer.engagement.toLocaleString()} engaged
+                      </p>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
+                          offer.status.toLowerCase() === "active"
+                            ? "text-black bg-transparent border-0 font-normal"
+                            : `font-bold border ${getStatusColor(offer.status)}`
+                        }`}
+                      >
+                        {offer.status}
+                      </span>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Requires Attention */}
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden self-start">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className={tw.cardHeading}>Requires Attention</h2>
+            <p className={`${tw.cardSubHeading} text-black mt-1`}>
+              Action items that need your review
+            </p>
+          </div>
+          <div className="p-6 space-y-4">
+            {requiresAttention.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-md p-5 border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="font-semibold text-base text-black">
+                        {item.title}
+                      </p>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                          item.priority === "high"
+                            ? "bg-red-100 text-red-700 border-red-200"
+                            : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                        }`}
+                      >
+                        {item.priority === "high" ? "High" : "Medium"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-black mb-2">
+                      {item.description}
+                    </p>
+                    <button
+                      className="text-sm font-medium hover:opacity-80 transition-opacity"
+                      style={{ color: "#2563eb" }}
+                      onClick={() => {
+                        // Placeholder for navigation action
+                      }}
+                    >
+                      {item.action} →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
