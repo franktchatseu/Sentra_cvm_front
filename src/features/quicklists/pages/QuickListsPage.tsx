@@ -388,7 +388,7 @@ export default function QuickListsPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => navigate("/dashboard/quicklists/create")}
             className={`${tw.button} flex items-center gap-2`}
           >
             <Plus className="w-4 h-4" />

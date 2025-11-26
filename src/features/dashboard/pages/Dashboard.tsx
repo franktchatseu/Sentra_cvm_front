@@ -41,6 +41,7 @@ import AssignItemsPage from "../../../shared/pages/AssignItemsPage";
 import OfferCreativeDetailsPage from "../../offers/pages/OfferCreativeDetailsPage";
 import QuickListsPage from "../../quicklists/pages/QuickListsPage";
 import QuickListDetailsPage from "../../quicklists/pages/QuickListDetailsPage";
+import CreateManualBroadcastPage from "../../manual-broadcast/pages/CreateManualBroadcastPage";
 import CustomerIdentityPage from "../../customer/pages/CustomerIdentityPage";
 import CustomerIdentityFieldDetailsPage from "../../customer/pages/CustomerIdentityFieldDetailsPage";
 import CampaignApprovalHistoryPage from "../../campaigns/pages/CampaignApprovalHistoryPage";
@@ -143,6 +144,7 @@ export default function Dashboard() {
         <Route path="/segment-types" element={<SegmentTypesPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/quicklists" element={<QuickListsPage />} />
+        <Route path="/quicklists/create" element={<CreateManualBroadcastPage />} />
         <Route path="/quicklists/:id" element={<QuickListDetailsPage />} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
