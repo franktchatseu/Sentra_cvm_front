@@ -79,7 +79,7 @@ export default function OfferDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { success, error: showError } = useToast();
+  const { success, error: showError, info } = useToast();
   const { user } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -914,7 +914,7 @@ export default function OfferDetailsPage() {
   const handleSetPrimaryProduct = async () => {
     // Handler commented out - waiting for backend endpoint to update is_primary flag
     // without unlinking products
-    showError(
+    info(
       "Feature Unavailable",
       "Setting primary product is temporarily disabled. Backend endpoint needed to update primary status without unlinking products."
     );
@@ -2345,13 +2345,13 @@ export default function OfferDetailsPage() {
             <button
               onClick={handleConfirmAddProducts}
               disabled={isLinkingProducts || selectedProductsToAdd.length === 0}
-              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
               style={{ backgroundColor: color.primary.action }}
             >
               {isLinkingProducts ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Linking...
+                  <span>Linking Products...</span>
                 </>
               ) : (
                 <span>
