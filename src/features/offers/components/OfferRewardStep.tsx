@@ -161,7 +161,9 @@ export default function OfferRewardStep({
     <div className="space-y-6">
       {rewards.length === 0 ? (
         <div className="bg-white rounded-md border border-gray-200 p-8 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"></div>
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Gift className="w-8 h-8 text-gray-400" />
+          </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             No Rewards Added
           </h3>
@@ -223,7 +225,9 @@ export default function OfferRewardStep({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-md flex items-center justify-center bg-gray-100"></div>
+                        <div className="w-8 h-8 rounded-md flex items-center justify-center bg-gray-100">
+                          <Gift className="w-4 h-4 text-gray-600" />
+                        </div>
                         <div>
                           <div className="font-medium text-sm text-gray-900">
                             {reward.name}
@@ -419,7 +423,9 @@ export default function OfferRewardStep({
               </div>
             ) : (
               <div className="bg-gray-50 rounded-md border border-gray-200 p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"></div>
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Gift className="w-8 h-8 text-gray-400" />
+                </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   No Reward Selected
                 </h3>

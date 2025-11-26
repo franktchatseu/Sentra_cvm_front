@@ -1174,7 +1174,7 @@ export default function CreateOfferPage() {
       case 4: // Tracking step
         return trackingSources.length > 0;
       case 5: // Rewards step
-        return rewards.length > 0;
+        return true; // Rewards are optional; allow proceeding
       case 6: // Review step
         return true; // Review step doesn't need validation
       default:

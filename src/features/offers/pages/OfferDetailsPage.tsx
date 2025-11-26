@@ -914,10 +914,7 @@ export default function OfferDetailsPage() {
   const handleSetPrimaryProduct = async () => {
     // Handler commented out - waiting for backend endpoint to update is_primary flag
     // without unlinking products
-    info(
-      "Feature Unavailable",
-      "Setting primary product is temporarily disabled. Backend endpoint needed to update primary status without unlinking products."
-    );
+    info("Feature Unavailable", "Can't access this feature right now.");
     return;
 
     /* COMMENTED OUT - Waiting for backend endpoint
