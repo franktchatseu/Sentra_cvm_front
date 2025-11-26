@@ -23,6 +23,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
+import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import CreateCommunicationModal from "../../communications/components/CreateCommunicationModal";
 import EditQuickListModal from "../components/EditQuickListModal";
 
@@ -334,9 +335,10 @@ export default function QuickListDetailsPage() {
         replace: true,
         state: returnTo.state,
       });
-    } else {
-      navigate("/dashboard/quicklists");
+      return;
     }
+
+    navigateBackOrFallback(navigate, "/dashboard/quicklists");
   };
 
   const formatFileSize = (bytes: number): string => {

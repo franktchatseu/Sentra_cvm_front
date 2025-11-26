@@ -20,6 +20,7 @@ import {
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
+import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
 
@@ -151,9 +152,10 @@ export default function UserDetailsPage() {
         replace: true,
         state: returnTo.state,
       });
-    } else {
-      navigate("/dashboard/user-management");
+      return;
     }
+
+    navigateBackOrFallback(navigate, "/dashboard/user-management");
   };
 
   if (isLoading) {

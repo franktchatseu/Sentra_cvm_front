@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw, button } from "../../../shared/utils/utils";
+import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { programService } from "../services/programService";
 import { Program } from "../types/program";
@@ -271,6 +272,10 @@ export default function ProgramDetailsPage() {
     setShowDeleteModal(true);
   };
 
+  const handleBack = () => {
+    navigateBackOrFallback(navigate, "/dashboard/programs");
+  };
+
   const handleConfirmDelete = async () => {
     if (!id || !program) return;
 
@@ -355,7 +360,7 @@ export default function ProgramDetailsPage() {
             The program you are looking for does not exist.
           </p>
           <button
-            onClick={() => navigate("/dashboard/programs")}
+            onClick={handleBack}
             className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 mx-auto text-base text-white"
             style={{ backgroundColor: color.primary.action }}
           >
@@ -372,10 +377,7 @@ export default function ProgramDetailsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate("/dashboard/programs")}
-            className="p-2 text-gray-600 rounded-md"
-          >
+          <button onClick={handleBack} className="p-2 text-gray-600 rounded-md">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
