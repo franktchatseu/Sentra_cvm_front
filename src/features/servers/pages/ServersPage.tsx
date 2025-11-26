@@ -55,16 +55,16 @@ export default function ServersPage() {
   const [visibleServers, setVisibleServers] = useState<ServerType[]>([]);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [selectedServerIds, setSelectedServerIds] = useState<Set<number>>(
-    () => new Set()
-  );
-  const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
+  // const [selectedServerIds, setSelectedServerIds] = useState<Set<number>>(
+  //   () => new Set()
+  // );
+  // const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
   const [actionState, setActionState] = useState<{
     id: number;
     action: "activate" | "deactivate" | "health" | "deprecate";
   } | null>(null);
   const userId = user?.user_id;
-  const headerCheckboxRef = useRef<HTMLInputElement | null>(null);
+  // const headerCheckboxRef = useRef<HTMLInputElement | null>(null);
 
   const [healthStats, setHealthStats] = useState<ServerHealthStats | null>(
     null

@@ -72,6 +72,7 @@ export interface CreateOfferCreativeRequest {
   offer_id: number; // Must be positive integer, offer must exist
   channel: CreativeChannel; // Must be one of VALID_CHANNELS (case-sensitive)
   locale: Locale; // Must match pattern ^[a-z]{2}(-[A-Z]{2})?$, defaults to "en" if not provided
+  name: string; // Required: name for the creative
 
   // Optional fields
   title?: string; // Trimmed if provided, at least one of title/text_body/html_body should be provided

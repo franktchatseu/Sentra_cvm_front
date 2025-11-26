@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -15,9 +15,12 @@ import {
   Activity,
   ArrowUpRight,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   Crown,
   DollarSign,
   Download,
+  Eye,
   Repeat,
   Users,
   Search,
@@ -29,6 +32,14 @@ import type {
   CustomerProfileReportsResponse,
   CustomerRow,
 } from "../types/ReportsAPI";
+import customerSubscriptionsData from "../data/customerSubscriptions.json";
+import type { CustomerSubscriptionRecord } from "../types/customerSubscription";
+import {
+  getSubscriptionDisplayName,
+  formatMsisdn,
+  formatDateTime,
+  convertSubscriptionToCustomerRow,
+} from "../utils/customerSubscriptionHelpers";
 
 // Extract types from API response type
 type ValueMatrixPoint = CustomerProfileReportsResponse["valueMatrix"][number];
@@ -192,6 +203,7 @@ const baseCohortRetention: CohortPoint[] = [
 ];
 
 // Generate comprehensive dummy data that covers all filter combinations
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const generateCustomerRows = (): CustomerRow[] => {
   const segments = [
     "Champions",
@@ -324,7 +336,61 @@ const generateCustomerRows = (): CustomerRow[] => {
   return rows;
 };
 
-const customerRows: CustomerRow[] = generateCustomerRows();
+const fallbackCustomerRows: CustomerRow[] = generateCustomerRows();
+const customerSubscriptions: CustomerSubscriptionRecord[] =
+  customerSubscriptionsData as CustomerSubscriptionRecord[];
+const activationTimestamps = customerSubscriptions
+  .map((record) =>
+    record.activationDate ? new Date(record.activationDate).getTime() : NaN
+  )
+  .filter((value) => !Number.isNaN(value));
+const datasetReferenceTime = activationTimestamps.length
+  ? Math.max(...activationTimestamps)
+  : Date.now();
+const excelCustomerRows: CustomerRow[] = customerSubscriptions.map(
+  convertSubscriptionToCustomerRow
+);
+const offsetBuckets = [2, 6, 14, 38, 75];
+excelCustomerRows.forEach((row, index) => {
+  const offset = offsetBuckets[index % offsetBuckets.length];
+  const adjusted = new Date(datasetReferenceTime);
+  adjusted.setDate(adjusted.getDate() - offset);
+  row.lastInteractionDate = adjusted.toISOString().split("T")[0];
+});
+const baseCustomerRows =
+  excelCustomerRows.length > 0 ? excelCustomerRows : fallbackCustomerRows;
+const subscriptionLookup: Record<string, CustomerSubscriptionRecord> = {};
+excelCustomerRows.forEach((row, index) => {
+  const record = customerSubscriptions[index];
+  subscriptionLookup[row.id] = record;
+});
+const referenceTimeFallback = datasetReferenceTime;
+const customerTypeOptions = [
+  "All",
+  ...Array.from(
+    new Set(
+      customerSubscriptions
+        .map((record) => record.customerType)
+        .filter((value): value is string => Boolean(value))
+    )
+  ).sort(),
+];
+const CUSTOMER_TABLE_PAGE_SIZE = 10;
+const customerTableHeaders = [
+  "Customer",
+  "MSISDN",
+  "Subscription ID",
+  "Customer Type",
+  "Tariff",
+  "SIM Type",
+  "Status",
+  "Activation Date",
+  "City",
+  "Actions",
+] as const;
+const tableCellBackground: CSSProperties = {
+  backgroundColor: color.surface.tablebodybg,
+};
 
 type ChartTooltipEntry = {
   color?: string;
@@ -441,7 +507,9 @@ const getDateConstraints = () => {
 
 export default function CustomerProfileReportsPage() {
   const navigate = useNavigate();
-  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("90d");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [appliedCustomRange, setAppliedCustomRange] = useState({
     start: "",
@@ -449,13 +517,86 @@ export default function CustomerProfileReportsPage() {
   });
   const [tableSegment, setTableSegment] = useState("All");
   const [tableRiskFilter, setTableRiskFilter] = useState("All");
+  const [tablePage, setTablePage] = useState(1);
   const [useDummyData, setUseDummyData] = useState(true);
+  const locationState = location.state as
+    | { subscription?: CustomerSubscriptionRecord }
+    | undefined;
+  const subscriptionIdParam = searchParams.get("subscriptionId");
+
+  const selectedSubscription = useMemo(() => {
+    if (locationState?.subscription) {
+      return locationState.subscription;
+    }
+    if (subscriptionIdParam) {
+      return customerSubscriptions.find(
+        (record) =>
+          record.subscriptionId?.toString() === subscriptionIdParam ||
+          record.customerId?.toString() === subscriptionIdParam
+      );
+    }
+    return undefined;
+  }, [locationState, subscriptionIdParam]);
 
   // Customer search state
   const [customerSearchTerm, setCustomerSearchTerm] = useState<string>("");
   const [isSearchingCustomer, setIsSearchingCustomer] =
     useState<boolean>(false);
   const [customerError, setCustomerError] = useState<string | null>(null);
+
+  const subscriptionDetailItems = useMemo(() => {
+    if (!selectedSubscription) return [];
+    return [
+      {
+        label: "MSISDN",
+        value: formatMsisdn(selectedSubscription.msisdn),
+      },
+      {
+        label: "Status",
+        value: selectedSubscription.status ?? "—",
+      },
+      {
+        label: "Activation Date",
+        value: formatDateTime(selectedSubscription.activationDate),
+      },
+      {
+        label: "Customer Type",
+        value: selectedSubscription.customerType ?? "—",
+      },
+      {
+        label: "Tariff",
+        value: selectedSubscription.tariff ?? "—",
+      },
+      {
+        label: "SIM Type",
+        value: selectedSubscription.simType ?? "—",
+      },
+      {
+        label: "Banking Services",
+        value: selectedSubscription.bankingServices ?? "—",
+      },
+      {
+        label: "Preferred Language",
+        value: selectedSubscription.preferredLanguage ?? "—",
+      },
+      {
+        label: "City",
+        value: selectedSubscription.city ?? "—",
+      },
+      {
+        label: "Estate",
+        value: selectedSubscription.estate ?? "—",
+      },
+      {
+        label: "Branch Code",
+        value: selectedSubscription.branchCode ?? "—",
+      },
+      {
+        label: "County ID",
+        value: selectedSubscription.customerCountyId ?? "—",
+      },
+    ];
+  }, [selectedSubscription]);
 
   const handleRun = () => {
     setAppliedCustomRange(customRange);
@@ -477,7 +618,7 @@ export default function CustomerProfileReportsPage() {
       const searchLower = customerSearchTerm.toLowerCase().trim();
 
       // Search in all customerRows (not just filtered) to allow searching any customer
-      const foundCustomer = customerRows.find((customer) => {
+      const foundCustomer = baseCustomerRows.find((customer) => {
         return (
           customer.id.toLowerCase().includes(searchLower) ||
           customer.name.toLowerCase().includes(searchLower) ||
@@ -493,12 +634,14 @@ export default function CustomerProfileReportsPage() {
         return;
       }
 
-      // Navigate to search results page with customer data and ID in URL
+      const linkedSubscription = subscriptionLookup[foundCustomer.id];
+
       navigate(
         `/dashboard/reports/customer-profiles/search?customerId=${foundCustomer.id}&source=reports`,
         {
           state: {
             customer: foundCustomer,
+            subscription: linkedSubscription,
             searchTerm: customerSearchTerm,
             source: "reports" as const,
           },
@@ -511,6 +654,27 @@ export default function CustomerProfileReportsPage() {
     } finally {
       setIsSearchingCustomer(false);
     }
+  };
+
+  const handleOpenCustomerProfile = (customer: CustomerRow) => {
+    const subscription = subscriptionLookup[customer.id];
+    const params = new URLSearchParams();
+    params.set("customerId", customer.id);
+    params.set("source", "reports");
+    if (subscription?.subscriptionId) {
+      params.set("subscriptionId", subscription.subscriptionId.toString());
+    }
+
+    navigate(
+      `/dashboard/reports/customer-profiles/search?${params.toString()}`,
+      {
+        state: {
+          customer,
+          subscription,
+          source: "reports" as const,
+        },
+      }
+    );
   };
 
   const customDays = getDaysBetween(
@@ -534,6 +698,29 @@ export default function CustomerProfileReportsPage() {
     customDays,
     activeRangeKey,
   ]);
+
+  useEffect(() => {
+    setTablePage(1);
+  }, [
+    tableSegment,
+    tableRiskFilter,
+    activeRangeKey,
+    appliedCustomRange.start,
+    appliedCustomRange.end,
+  ]);
+
+  const referenceTime = useMemo(() => {
+    if (useDummyData) {
+      return Date.now();
+    }
+    const timestamps = baseCustomerRows
+      .map((row) => new Date(row.lastInteractionDate).getTime())
+      .filter((value) => !Number.isNaN(value));
+    if (!timestamps.length) {
+      return referenceTimeFallback;
+    }
+    return Math.max(...timestamps);
+  }, [baseCustomerRows, useDummyData]);
 
   const valueMatrixSeries = useMemo(() => {
     if (!useDummyData) {
@@ -644,9 +831,6 @@ export default function CustomerProfileReportsPage() {
   }, [cohortSeries]);
 
   const filteredCustomers = useMemo(() => {
-    if (!useDummyData) {
-      return [];
-    }
     const maxDays =
       appliedCustomRange.start && appliedCustomRange.end
         ? customDays ?? rangeDays[activeRangeKey]
@@ -658,9 +842,11 @@ export default function CustomerProfileReportsPage() {
       ? new Date(appliedCustomRange.end).getTime()
       : null;
 
-    return customerRows.filter((row) => {
+    return baseCustomerRows.filter((row) => {
+      const subscription = subscriptionLookup[row.id];
+      const segmentValue = subscription?.customerType ?? row.segment;
       const matchesSegment =
-        tableSegment === "All" ? true : row.segment === tableSegment;
+        tableSegment === "All" ? true : segmentValue === tableSegment;
       const matchesRisk =
         tableRiskFilter === "All"
           ? true
@@ -670,7 +856,7 @@ export default function CustomerProfileReportsPage() {
           ? row.churnRisk >= 30 && row.churnRisk < 60
           : row.churnRisk < 30;
       const rowDate = new Date(row.lastInteractionDate).getTime();
-      const now = Date.now();
+      const now = referenceTime;
       const matchesRange =
         appliedCustomRange.start && appliedCustomRange.end && startMs && endMs
           ? rowDate >= startMs && rowDate <= endMs
@@ -683,33 +869,61 @@ export default function CustomerProfileReportsPage() {
     customRange,
     customDays,
     activeRangeKey,
-    useDummyData,
+    baseCustomerRows,
+    referenceTime,
   ]);
+
+  useEffect(() => {
+    setTablePage((prev) => {
+      const maxPage = Math.max(
+        1,
+        Math.ceil(filteredCustomers.length / CUSTOMER_TABLE_PAGE_SIZE)
+      );
+      return Math.min(prev, maxPage);
+    });
+  }, [filteredCustomers.length]);
+
+  const tableOffset = Math.max(0, (tablePage - 1) * CUSTOMER_TABLE_PAGE_SIZE);
+  const paginatedCustomers = useMemo(() => {
+    return filteredCustomers.slice(
+      tableOffset,
+      tableOffset + CUSTOMER_TABLE_PAGE_SIZE
+    );
+  }, [filteredCustomers, tableOffset]);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredCustomers.length / CUSTOMER_TABLE_PAGE_SIZE)
+  );
 
   const handleDownloadCsv = () => {
     if (!filteredCustomers.length) return;
 
     const headers = [
-      "Customer ID",
-      "Name",
+      "Customer",
       "MSISDN",
-      "Segment",
-      "Lifetime Revenue",
-      "Transactions",
-      "Last Transaction",
-      "Churn Risk",
+      "Subscription ID",
+      "Customer Type",
+      "Tariff",
+      "SIM Type",
+      "Status",
+      "Activation Date",
+      "City",
     ];
 
-    const rows = filteredCustomers.map((row) => [
-      row.id,
-      row.name,
-      row.msisdn ?? "",
-      row.segment,
-      row.lifetimeValue,
-      row.orders,
-      row.lastPurchase,
-      `${row.churnRisk}%`,
-    ]);
+    const rows = filteredCustomers.map((row) => {
+      const subscription = subscriptionLookup[row.id];
+      return [
+        row.name,
+        formatMsisdn(subscription?.msisdn),
+        subscription?.subscriptionId ?? "",
+        subscription?.customerType ?? "",
+        subscription?.tariff ?? "",
+        subscription?.simType ?? "",
+        subscription?.status ?? "",
+        subscription ? formatDateTime(subscription.activationDate) : "",
+        subscription?.city ?? "",
+      ];
+    });
 
     const csvContent = [headers, ...rows]
       .map((line) => line.map((value) => `"${value}"`).join(","))
@@ -887,6 +1101,43 @@ export default function CustomerProfileReportsPage() {
         </div>
       </header>
 
+      {selectedSubscription && (
+        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-gray-500">
+                Viewing subscription
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-gray-900">
+                {getSubscriptionDisplayName(selectedSubscription, "Customer")}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
+                <span>Customer #{selectedSubscription.customerId}</span>
+                <span>Subscription #{selectedSubscription.subscriptionId}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+                {selectedSubscription.email && (
+                  <span>{selectedSubscription.email}</span>
+                )}
+                {selectedSubscription.birthDate && (
+                  <span>
+                    Birth: {selectedSubscription.birthDate.split(" ")[0]}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 lg:w-1/2">
+              {subscriptionDetailItems.map(({ label, value }) => (
+                <div key={label}>
+                  <p className="text-xs uppercase text-gray-400">{label}</p>
+                  <p className="mt-1 font-semibold text-gray-900">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section>
         {(() => {
           // Use actual multiplier for custom dates, otherwise use preset scale
@@ -1030,10 +1281,9 @@ export default function CustomerProfileReportsPage() {
                   className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <metric.icon
-                      className="h-5 w-5"
-                      style={{ color: colors.primary.accent }}
-                    />
+                    <span style={{ color: colors.primary.accent }}>
+                      <metric.icon className="h-5 w-5" />
+                    </span>
                     <p className="text-sm font-medium text-gray-600">
                       {metric.label}
                     </p>
@@ -1367,14 +1617,7 @@ export default function CustomerProfileReportsPage() {
               onChange={(event) => setTableSegment(event.target.value)}
               className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
             >
-              {[
-                "All",
-                "Champions",
-                "Loyalists",
-                "Potential Loyalist",
-                "At-Risk",
-                "Reactivated",
-              ].map((segment) => (
+              {customerTypeOptions.map((segment) => (
                 <option key={segment} value={segment}>
                   {segment}
                 </option>
@@ -1403,30 +1646,21 @@ export default function CustomerProfileReportsPage() {
           </div>
         </div>
 
-        <div
-          className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
-        >
-          <div className="hidden lg:block overflow-x-auto">
+        <div>
+          <div className="overflow-x-auto">
             <table
-              className="w-full"
-              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+              className="w-full text-sm"
+              style={{ borderCollapse: "separate", borderSpacing: "0 12px" }}
             >
-              <thead style={{ background: color.surface.tableHeader }}>
-                <tr className="text-left text-sm font-medium uppercase tracking-wider">
-                  {[
-                    "Customer ID",
-                    "Name",
-                    "MSISDN",
-                    "Segment",
-                    "Lifetime Revenue",
-                    "Transactions",
-                    "Last Transaction",
-                    "Churn Risk",
-                  ].map((header) => (
+              <thead
+                className="text-xs uppercase tracking-wide"
+                style={{ background: color.surface.tableHeader }}
+              >
+                <tr>
+                  {customerTableHeaders.map((header) => (
                     <th
                       key={header}
-                      className="px-6 py-3"
-                      style={{ color: color.surface.tableHeaderText }}
+                      className="px-6 py-3 text-left font-semibold text-gray-900"
                     >
                       {header}
                     </th>
@@ -1434,79 +1668,143 @@ export default function CustomerProfileReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="transition-colors">
-                    <td
-                      className="px-6 py-4 font-semibold text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {customer.id}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {customer.name}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {customer.msisdn || "—"}
-                    </td>
-                    <td
-                      className="px-6 py-4"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      <span className="rounded-full border border-gray-200 px-3 py-1 text-sm font-medium text-gray-900">
-                        {customer.segment}
-                      </span>
-                    </td>
-                    <td
-                      className="px-6 py-4 font-semibold text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      ${formatNumber(customer.lifetimeValue)}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {customer.orders}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-gray-900"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {customer.lastPurchase}
-                    </td>
-                    <td
-                      className="px-6 py-4"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      <span
-                        className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                          customer.churnRisk >= 60
-                            ? "bg-rose-50 text-rose-700"
-                            : customer.churnRisk >= 30
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-emerald-50 text-emerald-700"
-                        }`}
+                {paginatedCustomers.map((customer) => {
+                  const subscription = subscriptionLookup[customer.id];
+                  const status = subscription?.status ?? "Unknown";
+                  const statusLower = status.toLowerCase();
+                  const statusStyles =
+                    statusLower === "active"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : statusLower === "pending"
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-gray-100 text-gray-700";
+
+                  return (
+                    <tr key={customer.id}>
+                      <td
+                        className="rounded-l-md px-6 py-5"
+                        style={tableCellBackground}
                       >
-                        {customer.churnRisk}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCustomerProfile(customer)}
+                          className="text-left"
+                        >
+                          <p className="font-semibold text-gray-900 hover:underline">
+                            {customer.name}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Customer #{subscription?.customerId ?? customer.id}
+                          </p>
+                          {(subscription?.email || customer.email) && (
+                            <p className="mt-0.5 text-xs text-gray-500 truncate">
+                              {subscription?.email ?? customer.email}
+                            </p>
+                          )}
+                        </button>
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={tableCellBackground}
+                      >
+                        {formatMsisdn(subscription?.msisdn ?? customer.msisdn)}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={tableCellBackground}
+                      >
+                        {subscription?.subscriptionId ?? "—"}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={tableCellBackground}
+                      >
+                        {subscription?.customerType ?? customer.segment ?? "—"}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={tableCellBackground}
+                      >
+                        {subscription?.tariff ?? "—"}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={tableCellBackground}
+                      >
+                        {subscription?.simType ?? "—"}
+                      </td>
+                      <td className="px-6 py-5" style={tableCellBackground}>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${statusStyles}`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={tableCellBackground}
+                      >
+                        {formatDateTime(subscription?.activationDate)}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={tableCellBackground}
+                      >
+                        {subscription?.city ?? customer.location ?? "—"}
+                      </td>
+                      <td
+                        className="rounded-r-md px-6 py-5 text-right"
+                        style={tableCellBackground}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCustomerProfile(customer)}
+                          className="inline-flex items-center justify-center p-2 text-gray-700 hover:text-gray-900"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-            {!filteredCustomers.length && (
-              <div className="py-10 text-center text-sm text-gray-500">
-                No customers match your filters yet.
-              </div>
-            )}
           </div>
+          {!filteredCustomers.length && (
+            <div className="px-6 py-10 text-center text-sm text-gray-500">
+              No customers match your filters yet.
+            </div>
+          )}
         </div>
+        {filteredCustomers.length > 0 && (
+          <div className="px-4 py-3 sm:flex sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-600">
+              Page {tablePage} of {totalPages}
+            </p>
+            <div className="mt-2 flex items-center gap-2 sm:mt-0">
+              <button
+                type="button"
+                onClick={() => setTablePage((prev) => Math.max(1, prev - 1))}
+                disabled={tablePage === 1}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setTablePage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={tablePage >= totalPages}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

@@ -314,6 +314,9 @@ export default function CampaignsPage() {
 
       let response;
       const LIMIT = 100; // Fetch reasonable batch size
+      const currentIndex = (currentPage - 1) * pageSize;
+      const chunkOffset = Math.floor(currentIndex / LIMIT) * LIMIT;
+      const chunkStartIndex = currentIndex % LIMIT;
 
       // Check if we have any filters applied
       const hasFilters =
@@ -328,7 +331,7 @@ export default function CampaignsPage() {
         // Use superSearchCampaigns when filters are applied
         const searchParams: any = {
           limit: LIMIT,
-          offset: (currentPage - 1) * LIMIT, // Use LIMIT for offset calculation
+          offset: chunkOffset,
           skipCache: true,
         };
 
@@ -365,7 +368,7 @@ export default function CampaignsPage() {
         // Use regular getCampaigns when no filters applied (more efficient)
         response = await campaignService.getCampaigns({
           limit: LIMIT,
-          offset: (currentPage - 1) * LIMIT,
+          offset: chunkOffset,
           skipCache: true,
         });
       }
@@ -507,7 +510,7 @@ export default function CampaignsPage() {
       }
 
       // Apply client-side pagination for display (we fetch 100, display 10 per page)
-      const startIndex = ((currentPage - 1) * pageSize) % LIMIT;
+      const startIndex = chunkStartIndex;
       const endIndex = startIndex + pageSize;
       const paginatedCampaigns = campaignsToDisplay.slice(startIndex, endIndex);
 

@@ -529,10 +529,16 @@ export default function OfferDetailsPage() {
     try {
       setIsCreatingCreative(true);
 
+      // Generate a name for the creative (use title if available, otherwise channel + locale)
+      const creativeName = newCreativeForm.title.trim()
+        ? newCreativeForm.title.trim()
+        : `${newCreativeForm.channel} - ${newCreativeForm.locale}`;
+
       const payload: CreateOfferCreativeRequest = {
         offer_id: Number(id),
         channel: newCreativeForm.channel,
         locale: newCreativeForm.locale,
+        name: creativeName,
         is_active: newCreativeForm.is_active,
         created_by: user.user_id,
       };

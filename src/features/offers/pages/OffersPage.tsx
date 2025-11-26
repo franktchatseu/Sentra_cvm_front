@@ -153,6 +153,13 @@ export default function OffersPage() {
             );
           }
 
+          // Sort offers by created_at descending (newest first)
+          filteredOffers.sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return dateB - dateA; // Descending order (newest first)
+          });
+
           setOffers(filteredOffers);
           const total = filteredOffers.length;
           setTotalOffers(total);
@@ -180,6 +187,8 @@ export default function OffersPage() {
               limit: batchSize,
               offset: offset,
               search: debouncedSearchTerm || undefined,
+              sortBy: filters.sortBy || "created_at",
+              sortDirection: filters.sortDirection || "DESC",
               skipCache: skipCache,
             });
 
@@ -196,6 +205,13 @@ export default function OffersPage() {
               hasMore = false;
             }
           }
+
+          // Sort offers by created_at descending (newest first)
+          allOffers.sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return dateB - dateA; // Descending order (newest first)
+          });
 
           // Apply status filter client-side
           let filteredOffers = allOffers;

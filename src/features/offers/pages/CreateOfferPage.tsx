@@ -1392,10 +1392,16 @@ export default function CreateOfferPage() {
 
           // Create creatives for each channel/locale combination
           const creativePromises = creatives.map(async (creative) => {
+            // Generate a name for the creative (use title if available, otherwise channel + locale)
+            const creativeName = creative.title
+              ? creative.title.trim()
+              : `${creative.channel} - ${creative.locale}`;
+
             const creativePayload = {
               offer_id: offerId,
               channel: creative.channel,
               locale: creative.locale,
+              name: creativeName,
               title: creative.title || undefined,
               text_body: creative.text_body || undefined,
               html_body: creative.html_body || undefined,
@@ -1734,25 +1740,25 @@ export default function CreateOfferPage() {
                     ? isLoading || !validateCurrentStep()
                     : !validateCurrentStep()
                 }
-                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
                 onMouseEnter={(e) => {
-                  if (
-                    currentStep === 6
-                      ? !isLoading && validateCurrentStep()
-                      : validateCurrentStep()
-                  )
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.interactive.hover;
+                  const btn = e.currentTarget;
+                  btn.style.setProperty(
+                    "background-color",
+                    color.primary.action,
+                    "important"
+                  );
+                  btn.style.setProperty("color", "white", "important");
                 }}
                 onMouseLeave={(e) => {
-                  if (
-                    currentStep === 6
-                      ? !isLoading && validateCurrentStep()
-                      : validateCurrentStep()
-                  )
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
+                  const btn = e.currentTarget;
+                  btn.style.setProperty(
+                    "background-color",
+                    color.primary.action,
+                    "important"
+                  );
+                  btn.style.setProperty("color", "white", "important");
                 }}
               >
                 {currentStep === 6 ? (

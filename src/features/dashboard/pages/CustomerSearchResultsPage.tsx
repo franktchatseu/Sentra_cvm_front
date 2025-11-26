@@ -14,17 +14,17 @@ import {
 import {
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
+  // PieChart,
+  // Pie,
+  // Cell,
   ResponsiveContainer,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  LineChart,
-  Line,
-  Legend,
+  // LineChart,
+  // Line,
+  // Legend,
 } from "recharts";
 import { colors } from "../../../shared/utils/tokens";
 import { color, tw } from "../../../shared/utils/utils";
@@ -36,6 +36,13 @@ import {
   CustomerWithContact,
   generateMockCustomers,
 } from "../utils/mockCustomers";
+import customerSubscriptionsData from "../data/customerSubscriptions.json";
+import type { CustomerSubscriptionRecord } from "../types/customerSubscription";
+import {
+  convertSubscriptionToCustomerRow,
+  formatDateTime,
+  formatMsisdn,
+} from "../utils/customerSubscriptionHelpers";
 
 // Extract types from API response
 type CustomerSegment = CustomerSearchResultsResponse["segments"][number];
@@ -85,6 +92,16 @@ const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
 };
 
 // Generate realistic related data
+const customerSubscriptions =
+  customerSubscriptionsData as CustomerSubscriptionRecord[];
+const excelCustomerRows: CustomerRow[] = customerSubscriptions.map(
+  convertSubscriptionToCustomerRow
+);
+const subscriptionLookup: Record<string, CustomerSubscriptionRecord> = {};
+excelCustomerRows.forEach((row, index) => {
+  subscriptionLookup[row.id] = customerSubscriptions[index];
+});
+
 const generateCustomerRelatedData = (customer: CustomerRow) => {
   const segmentNames = [
     customer.segment,
@@ -124,7 +141,13 @@ const generateCustomerRelatedData = (customer: CustomerRow) => {
     "Discount",
     "Cashback",
   ];
-  const offerStatuses = ["Redeemed", "Active", "Expired", "Active", "Redeemed"];
+  const offerStatuses: Array<CustomerOffer["status"]> = [
+    "Redeemed",
+    "Active",
+    "Redeemed",
+    "Active",
+    "Redeemed",
+  ];
 
   const offers: CustomerOffer[] = offerNames.map((name, index) => {
     const baseDate = new Date(customer.lastInteractionDate);
@@ -272,6 +295,17 @@ const generateCustomerRelatedData = (customer: CustomerRow) => {
   return { segments, offers, events, lists };
 };
 
+const formatDisplayDate = (value?: string | null) => {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
 type TabType =
   | "overview"
   | "activity"
@@ -311,16 +345,53 @@ export default function CustomerSearchResultsPage() {
 
   // Get customer from state (initial navigation) or from URL params (on refresh)
   const customerFromState = location.state?.customer as CustomerRow | undefined;
+  const subscriptionFromState = location.state?.subscription as
+    | CustomerSubscriptionRecord
+    | undefined;
   const customerIdFromUrl = searchParams.get("customerId");
+  const subscriptionIdFromUrl = searchParams.get("subscriptionId");
 
   const customerFromUrl = useMemo(() => {
     if (!customerIdFromUrl) return undefined;
-    return mockCustomers.find((customer) => customer.id === customerIdFromUrl);
+    return (
+      mockCustomers.find((customer) => customer.id === customerIdFromUrl) ||
+      excelCustomerRows.find((customer) => customer.id === customerIdFromUrl)
+    );
   }, [customerIdFromUrl, mockCustomers]);
+
+  const subscriptionFromDataset = useMemo(() => {
+    if (subscriptionFromState) {
+      return subscriptionFromState;
+    }
+    if (subscriptionIdFromUrl) {
+      return customerSubscriptions.find(
+        (record) =>
+          record.subscriptionId?.toString() === subscriptionIdFromUrl ||
+          record.customerId?.toString() === subscriptionIdFromUrl
+      );
+    }
+    if (customerIdFromUrl) {
+      const numericId = customerIdFromUrl.replace("CUST-", "");
+      return customerSubscriptions.find(
+        (record) =>
+          record.customerId?.toString() === numericId ||
+          `CUST-${record.customerId}` === customerIdFromUrl
+      );
+    }
+    return undefined;
+  }, [subscriptionFromState, subscriptionIdFromUrl, customerIdFromUrl]);
+
+  const derivedCustomerFromSubscription = useMemo(() => {
+    if (!subscriptionFromDataset) return undefined;
+    return convertSubscriptionToCustomerRow(subscriptionFromDataset);
+  }, [subscriptionFromDataset]);
 
   const [selectedCustomer, setSelectedCustomer] = useState<
     CustomerRow | undefined
-  >(customerFromState || customerFromUrl);
+  >(customerFromState || customerFromUrl || derivedCustomerFromSubscription);
+  const [selectedSubscription, setSelectedSubscription] = useState<
+    CustomerSubscriptionRecord | undefined
+  >(subscriptionFromState || subscriptionFromDataset);
 
   useEffect(() => {
     if (customerFromUrl) {
@@ -337,13 +408,40 @@ export default function CustomerSearchResultsPage() {
     }
   }, [customerFromState, stateSource]);
 
-  const customer = selectedCustomer;
+  useEffect(() => {
+    if (subscriptionFromDataset) {
+      setSelectedSubscription(subscriptionFromDataset);
+    }
+  }, [subscriptionFromDataset]);
+
+  useEffect(() => {
+    if (!selectedCustomer && derivedCustomerFromSubscription) {
+      setSelectedCustomer(derivedCustomerFromSubscription);
+    }
+  }, [selectedCustomer, derivedCustomerFromSubscription]);
+
+  useEffect(() => {
+    if (!selectedSubscription && selectedCustomer) {
+      const inferred = subscriptionLookup[selectedCustomer.id];
+      if (inferred) {
+        setSelectedSubscription(inferred);
+      }
+    }
+  }, [selectedCustomer, selectedSubscription]);
+
+  const customer = selectedCustomer || derivedCustomerFromSubscription;
 
   // Update URL when customer changes to persist on refresh
   useEffect(() => {
     if (customer && customer.id !== customerIdFromUrl) {
       const params = new URLSearchParams();
       params.set("customerId", customer.id);
+      if (selectedSubscription?.subscriptionId) {
+        params.set(
+          "subscriptionId",
+          selectedSubscription.subscriptionId.toString()
+        );
+      }
       if (origin) {
         params.set("source", origin);
       }
@@ -352,11 +450,13 @@ export default function CustomerSearchResultsPage() {
         `/dashboard/reports/customer-profiles/search?${params.toString()}`,
         {
           replace: true,
-          state: origin ? { customer, source: origin } : { customer },
+          state: origin
+            ? { customer, subscription: selectedSubscription, source: origin }
+            : { customer, subscription: selectedSubscription },
         }
       );
     }
-  }, [customer, customerIdFromUrl, origin, navigate]);
+  }, [customer, customerIdFromUrl, origin, navigate, selectedSubscription]);
 
   const handleBackNavigation = () => {
     if (origin === "customers") {
@@ -377,7 +477,7 @@ export default function CustomerSearchResultsPage() {
     if (customer) {
       setActiveTab("overview");
     }
-  }, [customer?.id]);
+  }, [customer]);
 
   const { segments, offers, events, lists } = useMemo(() => {
     if (!customer) return { segments: [], offers: [], events: [], lists: [] };
@@ -486,12 +586,142 @@ export default function CustomerSearchResultsPage() {
     }));
   }, [events]);
 
-  const CHART_COLORS = [
-    colors.reportCharts.palette.color1,
-    colors.reportCharts.palette.color2,
-    colors.reportCharts.palette.color3,
-    colors.reportCharts.palette.color4,
-  ];
+  const enrichedCustomer = customer as CustomerWithContact | undefined;
+  const fallbackEmail = customer
+    ? `${customer.name.toLowerCase().replace(/\s+/g, ".")}@example.com`
+    : "customer@example.com";
+  const email =
+    selectedSubscription?.email ?? enrichedCustomer?.email ?? fallbackEmail;
+  const phone = formatMsisdn(
+    selectedSubscription?.msisdn ?? enrichedCustomer?.phone ?? null
+  );
+
+  const overviewSections = useMemo(() => {
+    if (!customer) {
+      return [];
+    }
+
+    if (selectedSubscription) {
+      return [
+        {
+          title: "Identity",
+          items: [
+            { label: "Customer ID", value: customer.id },
+            {
+              label: "Subscription ID",
+              value: selectedSubscription.subscriptionId ?? "—",
+            },
+            {
+              label: "First Name",
+              value: selectedSubscription.firstName ?? "—",
+            },
+            { label: "Last Name", value: selectedSubscription.lastName ?? "—" },
+            {
+              label: "Birth Date",
+              value: selectedSubscription.birthDate
+                ? selectedSubscription.birthDate.split(" ")[0]
+                : "—",
+            },
+            {
+              label: "Birth Place",
+              value: selectedSubscription.birthPlaceOther ?? "—",
+            },
+          ],
+        },
+        {
+          title: "Contact & Service",
+          items: [
+            {
+              label: "MSISDN",
+              value: formatMsisdn(selectedSubscription.msisdn),
+            },
+            { label: "Email", value: selectedSubscription.email ?? email },
+            {
+              label: "Customer Type",
+              value: selectedSubscription.customerType ?? "—",
+            },
+            { label: "Tariff", value: selectedSubscription.tariff ?? "—" },
+            {
+              label: "Banking Services",
+              value: selectedSubscription.bankingServices ?? "—",
+            },
+            {
+              label: "Preferred Language",
+              value: selectedSubscription.preferredLanguage ?? "—",
+            },
+          ],
+        },
+        {
+          title: "Network & SIM",
+          items: [
+            { label: "SIM Type", value: selectedSubscription.simType ?? "—" },
+            {
+              label: "Activation Date",
+              value: formatDateTime(selectedSubscription.activationDate),
+            },
+            { label: "Status", value: selectedSubscription.status ?? "—" },
+            { label: "SMS", value: selectedSubscription.sms ?? "—" },
+            {
+              label: "Data Services",
+              value: selectedSubscription.dataServices ?? "—",
+            },
+            { label: "ICCID", value: selectedSubscription.iccid ?? "—" },
+            { label: "IMSI", value: selectedSubscription.imsi ?? "—" },
+          ],
+        },
+        {
+          title: "Out of Bundle Limits",
+          items: [
+            {
+              label: "Limit OOB Data",
+              value: selectedSubscription.limitOutOfBundleData ?? "—",
+            },
+            {
+              label: "Limit OOB Voice",
+              value: selectedSubscription.limitOutOfBundleVoice ?? "—",
+            },
+            {
+              label: "Limit OOB SMS",
+              value: selectedSubscription.limitOutOfBundleSms ?? "—",
+            },
+          ],
+        },
+        {
+          title: "Location",
+          items: [
+            { label: "City", value: selectedSubscription.city ?? "—" },
+            { label: "Estate", value: selectedSubscription.estate ?? "—" },
+            { label: "Road", value: selectedSubscription.road ?? "—" },
+            { label: "Building", value: selectedSubscription.building ?? "—" },
+            {
+              label: "Branch Code",
+              value: selectedSubscription.branchCode ?? "—",
+            },
+            {
+              label: "County ID",
+              value: selectedSubscription.customerCountyId ?? "—",
+            },
+            { label: "Ward", value: selectedSubscription.ward ?? "—" },
+          ],
+        },
+      ];
+    }
+
+    return [
+      {
+        title: "Customer Information",
+        items: [
+          { label: "Customer ID", value: customer.id },
+          { label: "Name", value: customer.name },
+          { label: "Email", value: email },
+          { label: "Phone", value: phone },
+          { label: "Location", value: customer.location },
+          { label: "Segment", value: customer.segment },
+          { label: "Preferred Channel", value: customer.preferredChannel },
+        ],
+      },
+    ];
+  }, [selectedSubscription, customer, email, phone]);
 
   if (!customer) {
     return (
@@ -515,36 +745,6 @@ export default function CustomerSearchResultsPage() {
       </div>
     );
   }
-
-  const enrichedCustomer = customer as CustomerWithContact;
-  const email =
-    enrichedCustomer?.email ??
-    `${customer.name.toLowerCase().replace(/\s+/g, ".")}@example.com`;
-  const phone =
-    enrichedCustomer?.phone ??
-    `+254${Math.floor(Math.random() * 900000000 + 100000000)}`;
-  const deviceType = enrichedCustomer?.deviceType ?? "Mobile";
-
-  const getStatusConfig = () => {
-    if (customer.churnRisk < 30) {
-      return {
-        label: "Active",
-        className: "bg-green-100 text-green-800",
-      };
-    } else if (customer.churnRisk < 60) {
-      return {
-        label: "At Risk",
-        className: "bg-yellow-100 text-yellow-800",
-      };
-    } else {
-      return {
-        label: "High Risk",
-        className: "bg-red-100 text-red-800",
-      };
-    }
-  };
-
-  const statusConfig = getStatusConfig();
 
   return (
     <div className="space-y-4">
@@ -606,116 +806,34 @@ export default function CustomerSearchResultsPage() {
       {/* Content */}
       {activeTab === "overview" && (
         <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Customer Information */}
-              <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900 mb-3">
-                  Customer Information
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Customer ID</span>
-                    <span className="text-sm font-medium text-gray-900 text-right font-mono">
-                      {customer.id}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Email</span>
-                    <span className="text-sm font-medium text-gray-900 text-right">
-                      {email}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Phone</span>
-                    <span className="text-sm font-medium text-gray-900 text-right">
-                      {phone}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Location</span>
-                    <span className="text-sm font-medium text-gray-900 text-right">
-                      {customer.location}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Segment</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {customer.segment}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">
-                      Preferred Channel
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {customer.preferredChannel}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Device Type</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {deviceType}
-                    </span>
-                  </div>
+          <div className="p-6 space-y-6">
+            {overviewSections.map((section) => (
+              <div key={section.title} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {section.title}
+                  </h3>
                 </div>
-              </div>
-
-              {/* Financial Information */}
-              <div className="bg-gray-50 rounded-md p-4 border border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900 mb-3">
-                  Financial Information
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">
-                      Lifetime Value
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      ${(customer.lifetimeValue / 1000).toFixed(1)}K
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">
-                      Total Transactions
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {customer.orders}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">
-                      Average Transaction Value
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      ${customer.aov.toFixed(0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">
-                      Engagement Score
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {customer.engagementScore}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Last Purchase</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {customer.lastPurchase}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-start py-2">
-                    <span className="text-sm text-gray-600">Status</span>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.className}`}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {section.items.map(({ label, value }) => (
+                    <div
+                      key={`${section.title}-${label}`}
+                      className="rounded-md border border-gray-100 bg-gray-50 px-4 py-3"
                     >
-                      {statusConfig.label}
-                    </span>
-                  </div>
+                      <p className="text-xs uppercase text-gray-500">{label}</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-900 break-words">
+                        {value ?? "—"}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            ))}
+            {!selectedSubscription && (
+              <p className="text-sm text-gray-500">
+                Detailed subscription data is unavailable for this record.
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -1104,14 +1222,7 @@ export default function CustomerSearchResultsPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            {new Date(segment.addedDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
+                            {formatDisplayDate(segment.addedDate)}
                           </td>
                         </tr>
                       ))
@@ -1204,14 +1315,7 @@ export default function CustomerSearchResultsPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            {new Date(offer.redeemedDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
+                            {formatDisplayDate(offer.redeemedDate)}
                           </td>
                         </tr>
                       ))
@@ -1287,14 +1391,7 @@ export default function CustomerSearchResultsPage() {
                             backgroundColor: color.surface.tablebodybg,
                           }}
                         >
-                          {new Date(list.subscribedDate).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
+                          {formatDisplayDate(list.subscribedDate)}
                         </td>
                         <td
                           className="px-6 py-4 text-sm text-gray-900"

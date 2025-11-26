@@ -57,24 +57,25 @@ export default function SegmentSelectionModal({
     { value: "inactive", label: "Inactive" },
   ];
 
-  // Load segments from backend
+  // Load only active segments from backend
   useEffect(() => {
     const loadSegments = async () => {
-      if (isOpen) {
-        setIsLoading(true);
-        try {
-          const response = await segmentService.getSegments({ pageSize: 100 });
-          const backendSegments = response.data || [];
-          const campaignSegments = backendSegments.map(
-            convertToCampaignSegment
-          );
-          setSegments(campaignSegments);
-        } catch (error) {
-          console.error("Failed to load segments:", error);
-          setSegments([]);
-        } finally {
-          setIsLoading(false);
-        }
+      if (!isOpen) return;
+
+      setIsLoading(true);
+      try {
+        const response = await segmentService.getActiveSegments({
+          pageSize: 100,
+          skipCache: true,
+        });
+        const backendSegments = response.data || [];
+        const campaignSegments = backendSegments.map(convertToCampaignSegment);
+        setSegments(campaignSegments);
+      } catch (error) {
+        console.error("Failed to load active segments:", error);
+        setSegments([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 

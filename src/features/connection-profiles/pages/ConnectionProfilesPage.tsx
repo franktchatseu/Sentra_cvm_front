@@ -1,7 +1,9 @@
+import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
+  AlertTriangle,
   CheckCircle,
   Database,
   Edit,
@@ -16,6 +18,7 @@ import {
   Search,
   Server,
   Shield,
+  Star,
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -42,6 +45,15 @@ const CLASSIFICATION_OPTIONS = [
 ];
 
 const ENVIRONMENT_FALLBACKS = ["development", "staging", "uat", "production"];
+
+const DEFAULT_FILTERS = {
+  connectionType: "all",
+  environment: "all",
+  classification: "all",
+  status: "all" as StatusFilter,
+  pii: "all" as PiiFilter,
+  health: "all" as HealthFilter,
+};
 
 export default function ConnectionProfilesPage() {
   const navigate = useNavigate();
@@ -73,6 +85,8 @@ export default function ConnectionProfilesPage() {
   const [expiredProfiles, setExpiredProfiles] = useState<
     ConnectionProfileType[]
   >([]);
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [closingFiltersPanel, setClosingFiltersPanel] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -87,14 +101,26 @@ export default function ConnectionProfilesPage() {
     "activate" | "auto" | null
   >(null);
 
-  const [filters, setFilters] = useState({
-    connectionType: "all",
-    environment: "all",
-    classification: "all",
-    status: "all" as StatusFilter,
-    pii: "all" as PiiFilter,
-    health: "all" as HealthFilter,
-  });
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+
+  const openFiltersPanel = () => setShowFiltersPanel(true);
+
+  const closeFiltersPanel = () => {
+    setClosingFiltersPanel(true);
+    setTimeout(() => {
+      setShowFiltersPanel(false);
+      setClosingFiltersPanel(false);
+    }, 250);
+  };
+
+  const handleApplyFilters = () => {
+    closeFiltersPanel();
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ ...DEFAULT_FILTERS });
+    setServerFilter("");
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -309,31 +335,6 @@ export default function ConnectionProfilesPage() {
     setFilteredProfiles(profiles.filter(matchesFilters));
   }, [profiles, debouncedSearchTerm, filters]);
 
-  const loadProfiles = async () => {
-    try {
-      setLoadingProfiles(true);
-      const { data = [] } = await connectionProfileService.listProfiles({
-        limit: DEFAULT_FETCH_LIMIT,
-        skipCache: true,
-      });
-      setProfiles(data);
-      setStatsSummary((prev) => ({
-        ...prev,
-        total: data.length,
-        active: data.filter((profile) => profile.is_active).length,
-      }));
-    } catch (err) {
-      console.error("Failed to load connection profiles", err);
-      showError(
-        "Failed to load connection profiles",
-        err instanceof Error ? err.message : "Please try again later."
-      );
-      setProfiles([]);
-    } finally {
-      setLoadingProfiles(false);
-    }
-  };
-
   const loadStats = async () => {
     try {
       setLoadingStats(true);
@@ -513,6 +514,53 @@ export default function ConnectionProfilesPage() {
     return combined.length ? combined : ENVIRONMENT_FALLBACKS;
   }, [environmentStats, profiles]);
 
+  const advancedFilterChips: Array<{ label: string; onClear: () => void }> = [];
+
+  if (filters.connectionType !== "all") {
+    advancedFilterChips.push({
+      label: `Type: ${filters.connectionType}`,
+      onClear: () => setFilters((prev) => ({ ...prev, connectionType: "all" })),
+    });
+  }
+
+  if (filters.environment !== "all") {
+    advancedFilterChips.push({
+      label: `Environment: ${filters.environment}`,
+      onClear: () => setFilters((prev) => ({ ...prev, environment: "all" })),
+    });
+  }
+
+  if (filters.classification !== "all") {
+    advancedFilterChips.push({
+      label: `Classification: ${filters.classification}`,
+      onClear: () => setFilters((prev) => ({ ...prev, classification: "all" })),
+    });
+  }
+
+  if (filters.pii !== "all") {
+    advancedFilterChips.push({
+      label: filters.pii === "with" ? "Contains PII" : "No PII",
+      onClear: () => setFilters((prev) => ({ ...prev, pii: "all" })),
+    });
+  }
+
+  if (filters.health !== "all") {
+    advancedFilterChips.push({
+      label:
+        filters.health === "enabled" ? "Health Enabled" : "Health Disabled",
+      onClear: () => setFilters((prev) => ({ ...prev, health: "all" })),
+    });
+  }
+
+  if (serverFilter.trim()) {
+    advancedFilterChips.push({
+      label: `Server: ${serverFilter.trim()}`,
+      onClear: () => setServerFilter(""),
+    });
+  }
+
+  const hasAdvancedFilters = advancedFilterChips.length > 0;
+
   const getConnectionTypeIcon = (type: string) => {
     switch (type) {
       case "database":
@@ -577,16 +625,18 @@ export default function ConnectionProfilesPage() {
       color: color.tertiary.tag4,
     },
     {
-      name: "Profiles with PII",
-      value: formatNumber(statsSummary.withPii),
-      icon: Shield,
-      color: color.tertiary.tag2,
+      name: "Expired Profiles",
+      value: formatNumber(
+        expiredProfiles.length || statsSummary.total - statsSummary.active
+      ),
+      icon: AlertTriangle,
+      color: color.tertiary.tag3,
     },
     {
-      name: "Health Check Enabled",
-      value: formatNumber(statsSummary.healthEnabled),
-      icon: Activity,
-      color: color.tertiary.tag1,
+      name: "Most Used Profiles",
+      value: formatNumber(mostUsedProfiles.length),
+      icon: Star,
+      color: color.primary.accent,
     },
     {
       name: "Environments Covered",
@@ -781,393 +831,519 @@ export default function ConnectionProfilesPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div>
-          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-            Connection Profiles
-          </h1>
-          <p className={`${tw.textSecondary} mt-2 text-sm`}>
-            Manage secure connections, performance tuning, and governance
-            controls for every integration endpoint
-          </p>
+    <>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div>
+            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+              Connection Profiles
+            </h1>
+            <p className={`${tw.textSecondary} mt-2 text-sm`}>
+              Manage secure connections, performance tuning, and governance
+              controls for every integration endpoint
+            </p>
+          </div>
+          <button
+            onClick={handleCreate}
+            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+            style={{ backgroundColor: color.primary.action }}
+          >
+            <Plus className="w-4 h-4" />
+            Create Connection Profile
+          </button>
         </div>
-        <button
-          onClick={handleCreate}
-          className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-          style={{ backgroundColor: color.primary.action }}
-        >
-          <Plus className="w-4 h-4" />
-          Create Connection Profile
-        </button>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {(loadingStats ? Array(5).fill(null) : statsCards).map(
-          (card, index) => {
-            if (loadingStats) {
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {(loadingStats ? Array(5).fill(null) : statsCards).map(
+            (card, index) => {
+              if (loadingStats) {
+                return (
+                  <div
+                    key={`stats-skeleton-${index}`}
+                    className="rounded-md border border-gray-200 bg-white p-6 shadow-sm animate-pulse"
+                  >
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
+                    <div className="h-8 bg-gray-200 rounded w-2/3" />
+                  </div>
+                );
+              }
+
+              const Icon = card.icon;
               return (
                 <div
-                  key={`stats-skeleton-${index}`}
-                  className="rounded-md border border-gray-200 bg-white p-6 shadow-sm animate-pulse"
+                  key={card.name}
+                  className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
                 >
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
-                  <div className="h-8 bg-gray-200 rounded w-2/3" />
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5" style={{ color: card.color }} />
+                    <p className="text-sm font-medium text-gray-600">
+                      {card.name}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
+                    {card.value}
+                  </p>
                 </div>
               );
             }
+          )}
+        </div>
 
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.name}
-                className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
+        {filteredProfiles.length > 0 && (
+          <div className="rounded-md border border-gray-200 bg-white px-4 py-3 shadow-sm flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <button
+                type="button"
+                onClick={selectAllVisible}
+                className="px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <Icon className="h-5 w-5" style={{ color: card.color }} />
-                  <p className="text-sm font-medium text-gray-600">
-                    {card.name}
-                  </p>
-                </div>
-                <p className="mt-2 text-3xl font-bold text-gray-900">
-                  {card.value}
+                {selectedProfileIds.size === filteredProfiles.length
+                  ? "Clear Selection"
+                  : "Select All"}
+              </button>
+              <span>
+                {selectedCount} selected / {filteredProfiles.length} visible
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <button
+                type="button"
+                onClick={handleBulkActivateSelected}
+                disabled={!selectedCount || bulkActionLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ backgroundColor: color.primary.action }}
+              >
+                {bulkActionLoading && bulkActionType === "activate" && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
+                Activate Selected
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoDeactivateExpired}
+                disabled={bulkActionLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {bulkActionLoading && bulkActionType === "auto" ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Auto Deactivate Expired
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div
+            className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
+            style={{ backgroundColor: color.surface.cards }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Most Used Profiles
+                </p>
+                <p className="text-xs text-gray-500">
+                  Top 5 profiles by recent usage
                 </p>
               </div>
-            );
-          }
+              <button
+                type="button"
+                onClick={handleRefreshInsights}
+                className="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${
+                    insightsLoading ? "animate-spin text-gray-400" : ""
+                  }`}
+                />
+              </button>
+            </div>
+            {insightsLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <LoadingSpinner variant="modern" size="lg" color="primary" />
+              </div>
+            ) : mostUsedProfiles.length === 0 ? (
+              <p className="text-sm text-gray-500">No usage data available.</p>
+            ) : (
+              <ul className="space-y-3">
+                {mostUsedProfiles.map((profile) => (
+                  <li
+                    key={`most-used-${profile.id}`}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {profile.profile_name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Last used:{" "}
+                        {profile.last_used_at
+                          ? new Date(profile.last_used_at).toLocaleString()
+                          : "Unknown"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleView(profile.id)}
+                      className="text-xs text-gray-700 hover:underline"
+                    >
+                      View
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div
+            className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
+            style={{ backgroundColor: color.surface.cards }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Expired Profiles
+                </p>
+                <p className="text-xs text-gray-500">
+                  Profiles past their validity date
+                </p>
+              </div>
+            </div>
+            {insightsLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <LoadingSpinner variant="modern" size="lg" color="primary" />
+              </div>
+            ) : expiredProfiles.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No expired profiles found.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {expiredProfiles.map((profile) => (
+                  <li
+                    key={`expired-${profile.id}`}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {profile.profile_name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Expired on:{" "}
+                        {profile.valid_to
+                          ? new Date(profile.valid_to).toLocaleDateString()
+                          : "Unknown"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleEdit(profile.id)}
+                      className="text-xs text-gray-700 hover:underline"
+                    >
+                      Update
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by profile name, code, or type..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openFiltersPanel}
+                className="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-gray-200 text-gray-900"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+                title="Grid View"
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === "list"
+                    ? "bg-gray-200 text-gray-900"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+                title="List View"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={filters.status}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  status: e.target.value as StatusFilter,
+                }))
+              }
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+            >
+              <option value="all">Any Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+          {hasAdvancedFilters && (
+            <div className="flex flex-wrap gap-2">
+              {advancedFilterChips.map((chip, index) => (
+                <span
+                  key={`${chip.label}-${index}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border border-gray-200 bg-gray-50 text-gray-700"
+                >
+                  {chip.label}
+                  <button
+                    type="button"
+                    onClick={chip.onClear}
+                    className="text-gray-500 hover:text-gray-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Profiles */}
+        {loadingProfiles ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <LoadingSpinner
+              variant="modern"
+              size="xl"
+              color="primary"
+              className="mb-4"
+            />
+            <p className={`${tw.textMuted} font-medium`}>
+              Loading connection profiles...
+            </p>
+          </div>
+        ) : filteredProfiles.length === 0 ? (
+          renderEmptyState()
+        ) : viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredProfiles.map(renderGridCard)}
+          </div>
+        ) : (
+          <div className="space-y-3">{filteredProfiles.map(renderListRow)}</div>
         )}
       </div>
 
-      {filteredProfiles.length > 0 && (
-        <div className="rounded-md border border-gray-200 bg-white px-4 py-3 shadow-sm flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3 text-sm text-gray-600">
-            <button
-              type="button"
-              onClick={selectAllVisible}
-              className="px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              {selectedProfileIds.size === filteredProfiles.length
-                ? "Clear Selection"
-                : "Select All"}
-            </button>
-            <span>
-              {selectedCount} selected / {filteredProfiles.length} visible
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <button
-              type="button"
-              onClick={handleBulkActivateSelected}
-              disabled={!selectedCount || bulkActionLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-white disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: color.primary.action }}
-            >
-              {bulkActionLoading && bulkActionType === "activate" && (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              )}
-              Activate Selected
-            </button>
-            <button
-              type="button"
-              onClick={handleAutoDeactivateExpired}
-              disabled={bulkActionLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {bulkActionLoading && bulkActionType === "auto" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              Auto Deactivate Expired
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div
-          className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
-          style={{ backgroundColor: color.surface.cards }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Most Used Profiles
-              </p>
-              <p className="text-xs text-gray-500">
-                Top 5 profiles by recent usage
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleRefreshInsights}
-              className="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${
-                  insightsLoading ? "animate-spin text-gray-400" : ""
-                }`}
-              />
-            </button>
-          </div>
-          {insightsLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <LoadingSpinner variant="modern" size="lg" color="primary" />
-            </div>
-          ) : mostUsedProfiles.length === 0 ? (
-            <p className="text-sm text-gray-500">No usage data available.</p>
-          ) : (
-            <ul className="space-y-3">
-              {mostUsedProfiles.map((profile) => (
-                <li
-                  key={`most-used-${profile.id}`}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {profile.profile_name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Last used:{" "}
-                      {profile.last_used_at
-                        ? new Date(profile.last_used_at).toLocaleString()
-                        : "Unknown"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleView(profile.id)}
-                    className="text-xs text-gray-700 hover:underline"
-                  >
-                    View
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div
-          className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
-          style={{ backgroundColor: color.surface.cards }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Expired Profiles
-              </p>
-              <p className="text-xs text-gray-500">
-                Profiles past their validity date
-              </p>
-            </div>
-          </div>
-          {insightsLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <LoadingSpinner variant="modern" size="lg" color="primary" />
-            </div>
-          ) : expiredProfiles.length === 0 ? (
-            <p className="text-sm text-gray-500">No expired profiles found.</p>
-          ) : (
-            <ul className="space-y-3">
-              {expiredProfiles.map((profile) => (
-                <li
-                  key={`expired-${profile.id}`}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {profile.profile_name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Expired on:{" "}
-                      {profile.valid_to
-                        ? new Date(profile.valid_to).toLocaleDateString()
-                        : "Unknown"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleEdit(profile.id)}
-                    className="text-xs text-gray-700 hover:underline"
-                  >
-                    Update
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      {/* Search & Filters */}
-      <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by profile name, code, or type..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+      {(showFiltersPanel || closingFiltersPanel) &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999]">
+            <div
+              className="absolute inset-0 bg-black bg-opacity-50"
+              onClick={closeFiltersPanel}
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded transition-colors ${
-                viewMode === "grid"
-                  ? "bg-gray-200 text-gray-900"
-                  : "text-gray-500 hover:text-gray-700"
+            <div
+              className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transform transition-transform duration-300 ${
+                closingFiltersPanel ? "translate-x-full" : "translate-x-0"
               }`}
-              title="Grid View"
             >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded transition-colors ${
-                viewMode === "list"
-                  ? "bg-gray-200 text-gray-900"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              title="List View"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <select
-              value={filters.connectionType}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  connectionType: e.target.value,
-                }))
-              }
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-            >
-              <option value="all">All Connection Types</option>
-              {connectionTypeOptions.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-          <select
-            value={filters.environment}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                environment: e.target.value,
-              }))
-            }
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-          >
-            <option value="all">All Environments</option>
-            {environmentOptions.map((env) => (
-              <option key={env} value={env}>
-                {env}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.classification}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                classification: e.target.value,
-              }))
-            }
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-          >
-            <option value="all">All Classifications</option>
-            {CLASSIFICATION_OPTIONS.map((classification) => (
-              <option key={classification} value={classification}>
-                {classification}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            min={1}
-            value={serverFilter}
-            onChange={(e) => setServerFilter(e.target.value)}
-            placeholder="Server ID"
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-          />
-          <select
-            value={filters.status}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                status: e.target.value as StatusFilter,
-              }))
-            }
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-          >
-            <option value="all">Any Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="expired">Expired</option>
-          </select>
-          <div className="grid grid-cols-2 gap-3 md:col-span-2 lg:col-span-1">
-            <select
-              value={filters.pii}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  pii: e.target.value as PiiFilter,
-                }))
-              }
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-            >
-              <option value="all">PII (Any)</option>
-              <option value="with">Contains PII</option>
-              <option value="without">No PII</option>
-            </select>
-            <select
-              value={filters.health}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  health: e.target.value as HealthFilter,
-                }))
-              }
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-            >
-              <option value="all">Health (Any)</option>
-              <option value="enabled">Health Enabled</option>
-              <option value="disabled">Health Disabled</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Profiles */}
-      {loadingProfiles ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <LoadingSpinner
-            variant="modern"
-            size="xl"
-            color="primary"
-            className="mb-4"
-          />
-          <p className={`${tw.textMuted} font-medium`}>
-            Loading connection profiles...
-          </p>
-        </div>
-      ) : filteredProfiles.length === 0 ? (
-        renderEmptyState()
-      ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProfiles.map(renderGridCard)}
-        </div>
-      ) : (
-        <div className="space-y-3">{filteredProfiles.map(renderListRow)}</div>
-      )}
-    </div>
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Filter Profiles
+                </h3>
+                <button
+                  type="button"
+                  onClick={closeFiltersPanel}
+                  className="text-gray-500 hover:text-gray-800"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-120px)]">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        status: e.target.value as StatusFilter,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+                  >
+                    <option value="all">Any Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Connection Type
+                  </label>
+                  <select
+                    value={filters.connectionType}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        connectionType: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+                  >
+                    <option value="all">All Connection Types</option>
+                    {connectionTypeOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Environment
+                  </label>
+                  <select
+                    value={filters.environment}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        environment: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+                  >
+                    <option value="all">All Environments</option>
+                    {environmentOptions.map((env) => (
+                      <option key={env} value={env}>
+                        {env}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Data Classification
+                  </label>
+                  <select
+                    value={filters.classification}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        classification: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+                  >
+                    <option value="all">All Classifications</option>
+                    {CLASSIFICATION_OPTIONS.map((classification) => (
+                      <option key={classification} value={classification}>
+                        {classification}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Server ID
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={serverFilter}
+                    onChange={(e) => setServerFilter(e.target.value)}
+                    placeholder="Enter server ID"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      PII
+                    </label>
+                    <select
+                      value={filters.pii}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          pii: e.target.value as PiiFilter,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+                    >
+                      <option value="all">Any</option>
+                      <option value="with">Contains PII</option>
+                      <option value="without">No PII</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Health Checks
+                    </label>
+                    <select
+                      value={filters.health}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          health: e.target.value as HealthFilter,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
+                    >
+                      <option value="all">Any</option>
+                      <option value="enabled">Enabled</option>
+                      <option value="disabled">Disabled</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border-t border-gray-200 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Clear Filters
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyFilters}
+                  className="px-4 py-2 text-sm text-white rounded-md"
+                  style={{ backgroundColor: color.primary.action }}
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }

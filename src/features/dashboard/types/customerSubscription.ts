@@ -1,0 +1,33 @@
+export interface CustomerSubscriptionRecord {
+  customerId: number;
+  subscriptionId: number;
+  amdocsSubsId?: number | null;
+  msisdn?: string | number | null;
+  iccid?: string | null;
+  imsi?: string | number | null;
+  activationDate?: string | null;
+  customerType?: string | null;
+  tariff?: string | null;
+  bankingServices?: string | null;
+  simType?: string | null;
+  status?: string | null;
+  sms?: string | null;
+  dataServices?: string | null;
+  limitOutOfBundleData?: string | null;
+  limitOutOfBundleVoice?: string | null;
+  limitOutOfBundleSms?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  birthDate?: string | null;
+  gender?: string | number | null;
+  email?: string | null;
+  birthPlaceOther?: string | null;
+  preferredLanguage?: string | null;
+  city?: string | null;
+  branchCode?: string | number | null;
+  customerCountyId?: number | null;
+  building?: string | number | null;
+  road?: string | null;
+  estate?: string | null;
+  ward?: string | null;
+}

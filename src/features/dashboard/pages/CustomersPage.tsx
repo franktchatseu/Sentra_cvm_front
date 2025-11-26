@@ -13,23 +13,30 @@ import {
   Eye,
   X,
 } from "lucide-react";
-import type { CustomerRow } from "../types/ReportsAPI";
-import { generateMockCustomers } from "../utils/mockCustomers";
+import customerSubscriptionsData from "../data/customerSubscriptions.json";
+import type { CustomerSubscriptionRecord } from "../types/customerSubscription";
+import {
+  convertSubscriptionToCustomerRow,
+  formatDateTime,
+  formatMsisdn,
+  getSubscriptionDisplayName,
+} from "../utils/customerSubscriptionHelpers";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import RegularModal from "../../../shared/components/ui/RegularModal";
 import { color, tw } from "../../../shared/utils/utils";
 
 const pageSize = 10;
 
+const customerSubscriptions: CustomerSubscriptionRecord[] = (
+  customerSubscriptionsData as CustomerSubscriptionRecord[]
+).map((record) => ({
+  ...record,
+  msisdn: record.msisdn ? String(record.msisdn) : undefined,
+}));
+
 export default function CustomersPage() {
   const navigate = useNavigate();
-  const mockCustomers = useMemo<CustomerRow[]>(
-    () => generateMockCustomers(),
-    []
-  );
-
   const [searchTerm, setSearchTerm] = useState("");
-
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
@@ -38,6 +45,7 @@ export default function CustomersPage() {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [modalSearchTerm, setModalSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const dataset = customerSubscriptions;
 
   // Simulate async loading when inputs change (placeholder until API wiring exists)
   useEffect(() => {
@@ -55,41 +63,54 @@ export default function CustomersPage() {
 
   // Search function that can be reused
   const searchCustomers = useCallback(
-    (term: string, customers: CustomerRow[]) => {
+    (term: string, customers: CustomerSubscriptionRecord[]) => {
       if (!term.trim()) return customers;
 
       const normalizedTerm = term.toLowerCase();
       const numericTerm = term.replace(/\D/g, "");
 
       return customers.filter((customer) => {
-        const matchesId = customer.id.toLowerCase().includes(normalizedTerm);
-        const matchesName = customer.name
-          .toLowerCase()
-          .includes(normalizedTerm);
+        const customerName = `${customer.firstName ?? ""} ${
+          customer.lastName ?? ""
+        }`
+          .trim()
+          .toLowerCase();
+        const matchesName =
+          customerName.length > 0 && customerName.includes(normalizedTerm);
         const matchesEmail = customer.email
           ? customer.email.toLowerCase().includes(normalizedTerm)
           : false;
-
-        const phoneDigits = customer.phone
-          ? customer.phone.replace(/\D/g, "")
-          : "";
-        const msisdnDigits = customer.msisdn
-          ? customer.msisdn.replace(/\D/g, "")
-          : "";
-        const matchesPhoneOrMsisdn =
-          numericTerm.length > 0 &&
-          ((phoneDigits && phoneDigits.includes(numericTerm)) ||
-            (msisdnDigits && msisdnDigits.includes(numericTerm)));
-        const matchesMsisdnText = customer.msisdn
-          ? customer.msisdn.toLowerCase().includes(normalizedTerm)
+        const matchesCustomerType = customer.customerType
+          ? customer.customerType.toLowerCase().includes(normalizedTerm)
           : false;
+        const matchesTariff = customer.tariff
+          ? customer.tariff.toLowerCase().includes(normalizedTerm)
+          : false;
+        const matchesCity = customer.city
+          ? customer.city.toLowerCase().includes(normalizedTerm)
+          : false;
+        const matchesCustomerId =
+          numericTerm.length > 0 &&
+          customer.customerId.toString().includes(numericTerm);
+        const matchesSubscriptionId =
+          numericTerm.length > 0 &&
+          customer.subscriptionId.toString().includes(numericTerm);
+
+        const msisdnDigits = customer.msisdn
+          ? customer.msisdn.toString().replace(/\D/g, "")
+          : "";
+        const matchesMsisdn =
+          numericTerm.length > 0 && msisdnDigits.includes(numericTerm);
 
         return (
-          matchesId ||
           matchesName ||
           matchesEmail ||
-          matchesPhoneOrMsisdn ||
-          matchesMsisdnText
+          matchesCustomerType ||
+          matchesTariff ||
+          matchesCity ||
+          matchesCustomerId ||
+          matchesSubscriptionId ||
+          matchesMsisdn
         );
       });
     },
@@ -97,19 +118,19 @@ export default function CustomersPage() {
   );
 
   const filteredCustomers = useMemo(() => {
-    let results = mockCustomers;
+    let results = customerSubscriptions;
 
     if (searchTerm.trim()) {
       results = searchCustomers(searchTerm, results);
     }
 
     return results;
-  }, [mockCustomers, searchTerm, searchCustomers]);
+  }, [searchTerm, searchCustomers]);
 
   // Debounced search results for modal
-  const [modalSearchResults, setModalSearchResults] = useState<CustomerRow[]>(
-    []
-  );
+  const [modalSearchResults, setModalSearchResults] = useState<
+    CustomerSubscriptionRecord[]
+  >([]);
 
   useEffect(() => {
     if (!isSearchModalOpen) {
@@ -125,7 +146,7 @@ export default function CustomersPage() {
 
     setIsSearching(true);
     const debounceTimer = setTimeout(() => {
-      const results = searchCustomers(modalSearchTerm, mockCustomers);
+      const results = searchCustomers(modalSearchTerm, dataset);
       // Limit to top 50 results for performance
       setModalSearchResults(results.slice(0, 50));
       setIsSearching(false);
@@ -135,14 +156,14 @@ export default function CustomersPage() {
       clearTimeout(debounceTimer);
       setIsSearching(false);
     };
-  }, [modalSearchTerm, mockCustomers, isSearchModalOpen, searchCustomers]);
+  }, [modalSearchTerm, dataset, isSearchModalOpen, searchCustomers]);
 
   const totalResults = filteredCustomers.length;
   const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
   const paginatedResults = useMemo(
     () =>
       filteredCustomers.slice((page - 1) * pageSize, page * pageSize) as
-        | CustomerRow[]
+        | CustomerSubscriptionRecord[]
         | [],
     [filteredCustomers, page]
   );
@@ -152,98 +173,123 @@ export default function CustomersPage() {
   const formatNumber = (value: number) =>
     value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
-  const formatCurrency = (value: number) =>
-    value >= 1000 ? `$${(value / 1000).toFixed(1)}K` : `$${value.toFixed(0)}`;
-
   const customerStats = useMemo(() => {
-    const total = mockCustomers.length;
-    if (!total) {
+    if (!dataset.length) {
       return {
-        total: 0,
-        active: 0,
-        highRisk: 0,
-        avgLifetime: 0,
-        avgEngagement: 0,
-        newThisWeek: 0,
+        uniqueCustomers: 0,
+        totalSubscriptions: 0,
+        activeSubscriptions: 0,
+        pendingActivations: 0,
+        atRiskSubscriptions: 0,
+        avgTenureDays: 0,
       };
     }
 
-    const active = mockCustomers.filter(
-      (customer) => customer.churnRisk < 30
-    ).length;
-    const highRisk = mockCustomers.filter(
-      (customer) => customer.churnRisk >= 60
-    ).length;
-    const lifetimeSum = mockCustomers.reduce(
-      (sum, customer) => sum + customer.lifetimeValue,
-      0
-    );
-    const engagementSum = mockCustomers.reduce(
-      (sum, customer) => sum + customer.engagementScore,
-      0
-    );
-    const newThisWeek = mockCustomers.filter((customer) => {
-      const last = new Date(customer.lastInteractionDate);
-      if (Number.isNaN(last.getTime())) return false;
-      const diff = Date.now() - last.getTime();
-      return diff <= 7 * 24 * 60 * 60 * 1000;
-    }).length;
+    const uniqueCustomers = new Set<number>();
+    let activeSubscriptions = 0;
+    let pendingActivations = 0;
+    let atRiskSubscriptions = 0;
+    let tenureDaysTotal = 0;
+    let tenureSamples = 0;
+    const now = Date.now();
+
+    dataset.forEach((record) => {
+      uniqueCustomers.add(record.customerId);
+      const status = record.status?.toLowerCase();
+      if (status === "active") {
+        activeSubscriptions += 1;
+      } else if (status === "pending") {
+        pendingActivations += 1;
+      } else if (
+        status &&
+        ["deactivation", "deactivating", "suspending"].includes(status)
+      ) {
+        atRiskSubscriptions += 1;
+      }
+
+      if (record.activationDate) {
+        const activation = new Date(record.activationDate);
+        if (!Number.isNaN(activation.getTime())) {
+          const diffDays = (now - activation.getTime()) / (1000 * 60 * 60 * 24);
+          tenureDaysTotal += diffDays;
+          tenureSamples += 1;
+        }
+      }
+    });
 
     return {
-      total,
-      active,
-      highRisk,
-      avgLifetime: lifetimeSum / total,
-      avgEngagement: engagementSum / total,
-      newThisWeek,
+      uniqueCustomers: uniqueCustomers.size,
+      totalSubscriptions: dataset.length,
+      activeSubscriptions,
+      pendingActivations,
+      atRiskSubscriptions,
+      avgTenureDays:
+        tenureSamples > 0 ? Math.round(tenureDaysTotal / tenureSamples) : 0,
     };
-  }, [mockCustomers]);
+  }, [dataset]);
 
   const statCards = useMemo(
     () => [
       {
-        title: "Total Customers",
-        value: formatNumber(customerStats.total),
-        helper: "+3.2% vs last week",
+        title: "Unique Customers",
+        value: formatNumber(customerStats.uniqueCustomers),
+        helper: `${formatNumber(
+          customerStats.totalSubscriptions
+        )} total subscriptions`,
         icon: Users,
       },
       {
-        title: "New (7 days)",
-        value: formatNumber(customerStats.newThisWeek),
+        title: "Active Subscriptions",
+        value: formatNumber(customerStats.activeSubscriptions),
         helper:
-          customerStats.total > 0
+          customerStats.totalSubscriptions > 0
             ? `${Math.round(
-                (customerStats.newThisWeek / customerStats.total) * 100
-              )}% of total`
+                (customerStats.activeSubscriptions /
+                  customerStats.totalSubscriptions) *
+                  100
+              )}% of base`
             : "—",
         icon: Activity,
       },
       {
-        title: "High Risk Customers",
-        value: formatNumber(customerStats.highRisk),
+        title: "Pending Activations",
+        value: formatNumber(customerStats.pendingActivations),
         helper:
-          customerStats.total > 0
+          customerStats.totalSubscriptions > 0
             ? `${Math.round(
-                (customerStats.highRisk / customerStats.total) * 100
-              )}% of base`
+                (customerStats.pendingActivations /
+                  customerStats.totalSubscriptions) *
+                  100
+              )}% awaiting SIM swap`
             : "—",
         icon: AlertTriangle,
       },
       {
-        title: "Avg Lifetime Value",
-        value: formatCurrency(customerStats.avgLifetime),
-        helper: `Engagement ${Math.round(customerStats.avgEngagement)} / 100`,
+        title: "Avg Tenure (days)",
+        value: formatNumber(customerStats.avgTenureDays),
+        helper: "Since activation",
         icon: Target,
       },
     ],
     [customerStats]
   );
 
-  const handleSelectCustomer = (customerToSelect: CustomerRow) => {
+  const handleSelectCustomer = (
+    customerToSelect: CustomerSubscriptionRecord
+  ) => {
+    const derivedCustomer = convertSubscriptionToCustomerRow(customerToSelect);
+    const params = new URLSearchParams();
+    params.set("customerId", derivedCustomer.id);
+    params.set("source", "customers");
+
     navigate(
-      `/dashboard/reports/customer-profiles/search?customerId=${customerToSelect.id}&source=customers`,
+      `/dashboard/reports/customer-profiles/search?${params.toString()}`,
       {
-        state: { customer: customerToSelect, source: "customers" as const },
+        state: {
+          customer: derivedCustomer,
+          subscription: customerToSelect,
+          source: "customers" as const,
+        },
       }
     );
   };
@@ -264,7 +310,9 @@ export default function CustomersPage() {
     handleCloseSearchModal();
   };
 
-  const handleSelectCustomerFromModal = (customer: CustomerRow) => {
+  const handleSelectCustomerFromModal = (
+    customer: CustomerSubscriptionRecord
+  ) => {
     handleCloseSearchModal();
     handleSelectCustomer(customer);
   };
@@ -360,7 +408,7 @@ export default function CustomersPage() {
         ) : paginatedResults.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-gray-500">
             {hasSearchFilters
-              ? "No customers match your filters. Try adjusting the search criteria."
+              ? "No customers match your search. Try a different query."
               : "Start by searching for a customer above."}
           </div>
         ) : (
@@ -377,12 +425,13 @@ export default function CustomersPage() {
                   {[
                     "Customer",
                     "MSISDN",
-                    "Segment",
-                    "Transactions",
-                    "Last Interaction",
-                    "Preferred Channel",
-                    "Location",
-                    "Churn Risk",
+                    "Subscription ID",
+                    "Customer Type",
+                    "Tariff",
+                    "SIM Type",
+                    "Status",
+                    "Activation Date",
+                    "City",
                     "Actions",
                   ].map((header) => (
                     <th
@@ -396,82 +445,91 @@ export default function CustomersPage() {
               </thead>
               <tbody>
                 {paginatedResults.map((row) => {
-                  const rowSegments =
-                    row.segments && row.segments.length > 0
-                      ? row.segments
-                      : row.segment
-                      ? [row.segment]
-                      : [];
+                  const name = getSubscriptionDisplayName(
+                    row,
+                    `Customer ${row.customerId}`
+                  );
+                  const status = row.status ?? "Unknown";
+                  const statusLower = status.toLowerCase();
+                  const statusStyles =
+                    statusLower === "active"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : statusLower === "pending"
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-gray-100 text-gray-700";
+
                   return (
-                    <tr key={row.id}>
+                    <tr key={`${row.customerId}-${row.subscriptionId}`}>
                       <td
                         className="rounded-l-md px-6 py-5"
                         style={cellBackground}
                       >
-                        <p className="font-semibold text-gray-900">
-                          {row.name}
-                        </p>
-                      </td>
-                      <td
-                        className="px-6 py-5 text-gray-900"
-                        style={cellBackground}
-                      >
-                        {row.msisdn || "—"}
-                      </td>
-                      <td className="px-6 py-5" style={cellBackground}>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-gray-900">
-                          {rowSegments.slice(0, 3).map((segment, index) => (
-                            <span key={`${row.id}-segment-${segment}-${index}`}>
-                              {segment}
-                            </span>
-                          ))}
-                          {rowSegments.length > 3 && (
-                            <span className="text-xs text-gray-500">
-                              +{rowSegments.length - 3} more
-                            </span>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCustomer(row)}
+                          className="text-left"
+                        >
+                          <p className="font-semibold text-gray-900 hover:underline">
+                            {name}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Customer #{row.customerId}
+                          </p>
+                          {row.email && (
+                            <p className="text-xs text-gray-500 mt-0.5 truncate">
+                              {row.email}
+                            </p>
                           )}
-                        </div>
-                      </td>
-                      <td
-                        className="px-6 py-5 font-semibold text-gray-900"
-                        style={cellBackground}
-                      >
-                        {row.orders}
+                        </button>
                       </td>
                       <td
                         className="px-6 py-5 text-gray-900"
                         style={cellBackground}
                       >
-                        {row.lastPurchase}
+                        {formatMsisdn(row.msisdn)}
                       </td>
                       <td
                         className="px-6 py-5 text-gray-900"
                         style={cellBackground}
                       >
-                        {row.preferredChannel}
+                        {row.subscriptionId}
                       </td>
                       <td
                         className="px-6 py-5 text-gray-900"
                         style={cellBackground}
                       >
-                        {row.location}
+                        {row.customerType ?? "—"}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={cellBackground}
+                      >
+                        {row.tariff ?? "—"}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={cellBackground}
+                      >
+                        {row.simType ?? "—"}
                       </td>
                       <td className="px-6 py-5" style={cellBackground}>
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
-                            row.churnRisk >= 60
-                              ? "bg-red-50 text-red-700"
-                              : row.churnRisk >= 30
-                              ? "bg-yellow-50 text-yellow-700"
-                              : "bg-emerald-50 text-emerald-700"
-                          }`}
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${statusStyles}`}
                         >
-                          {row.churnRisk >= 60
-                            ? "High"
-                            : row.churnRisk >= 30
-                            ? "Medium"
-                            : "Low"}
+                          {status}
                         </span>
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={cellBackground}
+                      >
+                        {formatDateTime(row.activationDate)}
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={cellBackground}
+                      >
+                        {row.city ?? "—"}
                       </td>
                       <td
                         className="rounded-r-md px-6 py-5 text-right"
@@ -589,28 +647,26 @@ export default function CustomersPage() {
                 )}
                 {modalSearchResults.map((customer) => (
                   <button
-                    key={customer.id}
+                    key={`${customer.customerId}-${customer.subscriptionId}`}
                     onClick={() => handleSelectCustomerFromModal(customer)}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate">
-                          {customer.name}
+                          {getSubscriptionDisplayName(
+                            customer,
+                            `Customer ${customer.customerId}`
+                          )}
                         </p>
                         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                          <span>ID: {customer.id}</span>
-                          {customer.email && (
-                            <span className="truncate">
-                              Email: {customer.email}
-                            </span>
-                          )}
-                          {customer.phone && (
-                            <span>Phone: {customer.phone}</span>
-                          )}
+                          <span>ID: {customer.customerId}</span>
+                          <span>Sub #{customer.subscriptionId}</span>
                           {customer.msisdn && (
-                            <span>MSISDN: {customer.msisdn}</span>
+                            <span>MSISDN: {formatMsisdn(customer.msisdn)}</span>
                           )}
+                          {customer.tariff && <span>{customer.tariff}</span>}
+                          {customer.city && <span>{customer.city}</span>}
                         </div>
                       </div>
                       <Eye className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
