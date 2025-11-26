@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { Calendar, AlertCircle } from "lucide-react";
-import {
-  CampaignScheduling,
-} from "../../types/campaign";
-import { tw } from "../../../../shared/utils/utils";
+import { CampaignScheduling } from "../../types/campaign";
+import { tw, color } from "../../../../shared/utils/utils";
 
 interface SchedulingStepProps {
   formData: any; // Use any to accept both CreateCampaignRequest and CampaignFormData
@@ -502,7 +500,8 @@ export default function SchedulingStep({
       {/* Preview Schedule Button */}
       <div className="flex justify-center">
         <button
-          className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-[#3b8169] hover:bg-[#2d5f4e] text-white"
+          className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors text-white"
+          style={{ backgroundColor: color.primary.action }}
         >
           <Calendar className="w-4 h-4 mr-2" />
           Preview Schedule
