@@ -16,6 +16,7 @@ import { ProductCategory } from "../types/productCategory";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
 import { color, tw, button } from "../../../shared/utils/utils";
+import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -36,9 +37,10 @@ export default function ProductDetailsPage() {
         replace: true,
         state: { focusSection: returnTo.section },
       });
-    } else {
-      navigate("/dashboard/products");
+      return;
     }
+
+    navigateBackOrFallback(navigate, "/dashboard/products");
   };
 
   const [product, setProduct] = useState<Product | null>(null);

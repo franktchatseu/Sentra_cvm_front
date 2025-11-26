@@ -32,8 +32,8 @@ import {
   Mail,
   LogOut,
   User,
-  // Server,
-  // Database,
+   Server,
+  Database,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";

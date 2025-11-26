@@ -29,6 +29,7 @@ import {
   CreateOfferCreativeRequest,
 } from "../types/offerCreative";
 import { color, tw } from "../../../shared/utils/utils";
+import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -116,9 +117,10 @@ export default function OfferDetailsPage() {
   const handleBack = () => {
     if (returnTo?.pathname) {
       navigate(returnTo.pathname, { replace: true });
-    } else {
-      navigate("/dashboard/offers");
+      return;
     }
+
+    navigateBackOrFallback(navigate, "/dashboard/offers");
   };
 
   const [offer, setOffer] = useState<Offer | null>(null);

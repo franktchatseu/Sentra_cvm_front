@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
+import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { campaignService } from "../services/campaignService";
 import { campaignSegmentOfferService } from "../services/campaignSegmentOfferService";
@@ -54,9 +55,10 @@ export default function CampaignDetailsPage() {
   const handleBack = () => {
     if (returnTo?.pathname) {
       navigate(returnTo.pathname, { replace: true });
-    } else {
-      navigate("/dashboard/campaigns");
+      return;
     }
+
+    navigateBackOrFallback(navigate, "/dashboard/campaigns");
   };
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(true);

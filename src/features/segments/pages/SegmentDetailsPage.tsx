@@ -23,6 +23,7 @@ import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, button } from "../../../shared/utils/utils";
+import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import SegmentModal from "../components/SegmentModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 
@@ -78,9 +79,10 @@ export default function SegmentDetailsPage() {
   const handleBack = () => {
     if (returnTo?.pathname) {
       navigate(returnTo.pathname, { replace: true });
-    } else {
-      navigate("/dashboard/segments");
+      return;
     }
+
+    navigateBackOrFallback(navigate, "/dashboard/segments");
   };
 
   const [segment, setSegment] = useState<Segment | null>(null);
