@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Check, Target, Users, Gift, Eye } from "lucide-react";
+import { ArrowLeft, Target, Users, Gift, Calendar, Eye } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -47,6 +47,7 @@ const objectiveOptions = [
 import CampaignDefinitionStep from "../components/steps/CampaignDefinitionStep";
 import AudienceConfigurationStep from "../components/steps/AudienceConfigurationStep";
 import OfferMappingStep from "../components/steps/OfferMappingStep";
+import SchedulingStep from "../components/steps/SchedulingStep";
 import CampaignPreviewStep from "../components/steps/CampaignPreviewStep";
 
 interface StepProps {
@@ -91,6 +92,12 @@ const steps: Step[] = [
   },
   {
     id: 4,
+    name: "Scheduling",
+    description: "Broadcast schedule",
+    icon: Calendar,
+  },
+  {
+    id: 5,
     name: "Preview",
     description: "Review & launch",
     icon: Eye,
@@ -337,7 +344,9 @@ export default function CreateCampaignPage() {
           );
         }
         return selectedOffers.length > 0;
-      case 4: // Preview step
+      case 4: // Scheduling step
+        return true; // Scheduling step has default values, no validation needed
+      case 5: // Preview step
         return true; // Preview step doesn't need validation
       default:
         return false;
@@ -804,6 +813,8 @@ export default function CreateCampaignPage() {
       case 3:
         return <OfferMappingStep {...stepProps} />;
       case 4:
+        return <SchedulingStep {...stepProps} />;
+      case 5:
         return <CampaignPreviewStep {...stepProps} />;
       default:
         return <CampaignDefinitionStep {...stepProps} />;
@@ -840,7 +851,7 @@ export default function CreateCampaignPage() {
                   : "Create Campaign"}
               </h1>
             </div>
-            {currentStep !== 4 && (
+            {currentStep !== 5 && (
               <div className="flex items-center space-x-3">
                 <button
                   onClick={handleCancel}
@@ -891,7 +902,7 @@ export default function CreateCampaignPage() {
                 Previous
               </button>
               <button
-                onClick={currentStep === 4 ? handleSubmit : handleNext}
+                onClick={currentStep === 5 ? handleSubmit : handleNext}
                 disabled={isLoading || !validateCurrentStep()}
                 className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: color.primary.action }}
@@ -899,13 +910,13 @@ export default function CreateCampaignPage() {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {currentStep === 4
+                    {currentStep === 5
                       ? isEditMode
                         ? "Updating..."
                         : "Creating..."
                       : "Loading..."}
                   </>
-                ) : currentStep === 4 ? (
+                ) : currentStep === 5 ? (
                   isEditMode ? (
                     "Update Campaign"
                   ) : (
