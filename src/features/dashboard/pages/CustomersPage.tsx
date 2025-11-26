@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -8,45 +7,37 @@ import {
   Activity,
   Target,
   AlertTriangle,
-  Filter as FilterIcon,
   Plus,
   ChevronLeft,
   ChevronRight,
   Eye,
+  X,
 } from "lucide-react";
 import type { CustomerRow } from "../types/ReportsAPI";
-import {
-  generateMockCustomers,
-  CUSTOMER_SEGMENTS,
-} from "../utils/mockCustomers";
-import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import { generateMockCustomers } from "../utils/mockCustomers";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import RegularModal from "../../../shared/components/ui/RegularModal";
 import { color, tw } from "../../../shared/utils/utils";
 
 const pageSize = 10;
 
 export default function CustomersPage() {
   const navigate = useNavigate();
-  const mockCustomers = useMemo(() => generateMockCustomers(), []);
+  const mockCustomers = useMemo<CustomerRow[]>(
+    () => generateMockCustomers(),
+    []
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [segmentFilter, setSegmentFilter] = useState<string>("all");
-  const [channelFilter, setChannelFilter] = useState<string>("all");
-  const [riskFilter, setRiskFilter] = useState<
-    "all" | "low" | "medium" | "high"
-  >("all");
-  const [regionFilter, setRegionFilter] = useState<string>("all");
-  const [lastActiveFilter, setLastActiveFilter] = useState<
-    "any" | "7" | "30" | "90"
-  >("any");
-
-  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
-  const [isClosingAdvancedFilters, setIsClosingAdvancedFilters] =
-    useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
+
+  // Search modal state
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [modalSearchTerm, setModalSearchTerm] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   // Simulate async loading when inputs change (placeholder until API wiring exists)
   useEffect(() => {
@@ -56,104 +47,95 @@ export default function CustomersPage() {
       setIsLoading(false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [
-    searchTerm,
-    segmentFilter,
-    channelFilter,
-    riskFilter,
-    regionFilter,
-    lastActiveFilter,
-  ]);
+  }, [searchTerm]);
 
   useEffect(() => {
     setPage(1);
-  }, [
-    searchTerm,
-    segmentFilter,
-    channelFilter,
-    riskFilter,
-    regionFilter,
-    lastActiveFilter,
-  ]);
+  }, [searchTerm]);
 
-  const channelOptions: Array<"all" | "email" | "sms" | "push"> = [
-    "all",
-    "email",
-    "sms",
-    "push",
-  ];
+  // Search function that can be reused
+  const searchCustomers = useCallback(
+    (term: string, customers: CustomerRow[]) => {
+      if (!term.trim()) return customers;
 
-  const filteredCustomers = useMemo(() => {
-    let results = mockCustomers;
+      const normalizedTerm = term.toLowerCase();
+      const numericTerm = term.replace(/\D/g, "");
 
-    if (searchTerm.trim()) {
-      const normalizedTerm = searchTerm.toLowerCase();
-      const numericTerm = searchTerm.replace(/\D/g, "");
-
-      results = results.filter((customer) => {
+      return customers.filter((customer) => {
         const matchesId = customer.id.toLowerCase().includes(normalizedTerm);
         const matchesName = customer.name
           .toLowerCase()
           .includes(normalizedTerm);
         const matchesEmail = customer.email
-          .toLowerCase()
-          .includes(normalizedTerm);
-        const matchesPhone =
+          ? customer.email.toLowerCase().includes(normalizedTerm)
+          : false;
+
+        const phoneDigits = customer.phone
+          ? customer.phone.replace(/\D/g, "")
+          : "";
+        const msisdnDigits = customer.msisdn
+          ? customer.msisdn.replace(/\D/g, "")
+          : "";
+        const matchesPhoneOrMsisdn =
           numericTerm.length > 0 &&
-          customer.phone.replace(/\D/g, "").includes(numericTerm);
+          ((phoneDigits && phoneDigits.includes(numericTerm)) ||
+            (msisdnDigits && msisdnDigits.includes(numericTerm)));
+        const matchesMsisdnText = customer.msisdn
+          ? customer.msisdn.toLowerCase().includes(normalizedTerm)
+          : false;
 
-        return matchesId || matchesName || matchesEmail || matchesPhone;
+        return (
+          matchesId ||
+          matchesName ||
+          matchesEmail ||
+          matchesPhoneOrMsisdn ||
+          matchesMsisdnText
+        );
       });
-    }
+    },
+    []
+  );
 
-    if (segmentFilter !== "all") {
-      results = results.filter(
-        (customer) => customer.segment === segmentFilter
-      );
-    }
+  const filteredCustomers = useMemo(() => {
+    let results = mockCustomers;
 
-    if (channelFilter !== "all") {
-      results = results.filter(
-        (customer) =>
-          customer.preferredChannel.toLowerCase() ===
-          channelFilter.toLowerCase()
-      );
-    }
-
-    if (riskFilter !== "all") {
-      results = results.filter((customer) => {
-        if (riskFilter === "low") return customer.churnRisk < 30;
-        if (riskFilter === "medium")
-          return customer.churnRisk >= 30 && customer.churnRisk < 60;
-        return customer.churnRisk >= 60;
-      });
-    }
-
-    if (regionFilter !== "all") {
-      results = results.filter((customer) =>
-        customer.location.toLowerCase().includes(regionFilter.toLowerCase())
-      );
-    }
-
-    if (lastActiveFilter !== "any") {
-      results = results.filter((customer) => {
-        const last = new Date(customer.lastInteractionDate);
-        if (Number.isNaN(last.getTime())) return false;
-        const diffDays = (Date.now() - last.getTime()) / (1000 * 60 * 60 * 24);
-        return diffDays <= Number(lastActiveFilter);
-      });
+    if (searchTerm.trim()) {
+      results = searchCustomers(searchTerm, results);
     }
 
     return results;
-  }, [
-    mockCustomers,
-    searchTerm,
-    segmentFilter,
-    channelFilter,
-    riskFilter,
-    regionFilter,
-    lastActiveFilter,
-  ]);
+  }, [mockCustomers, searchTerm, searchCustomers]);
+
+  // Debounced search results for modal
+  const [modalSearchResults, setModalSearchResults] = useState<CustomerRow[]>(
+    []
+  );
+
+  useEffect(() => {
+    if (!isSearchModalOpen) {
+      setModalSearchTerm("");
+      setModalSearchResults([]);
+      return;
+    }
+
+    if (!modalSearchTerm.trim()) {
+      setModalSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    const debounceTimer = setTimeout(() => {
+      const results = searchCustomers(modalSearchTerm, mockCustomers);
+      // Limit to top 50 results for performance
+      setModalSearchResults(results.slice(0, 50));
+      setIsSearching(false);
+    }, 400); // 400ms debounce
+
+    return () => {
+      clearTimeout(debounceTimer);
+      setIsSearching(false);
+    };
+  }, [modalSearchTerm, mockCustomers, isSearchModalOpen, searchCustomers]);
 
   const totalResults = filteredCustomers.length;
   const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
@@ -165,13 +147,7 @@ export default function CustomersPage() {
     [filteredCustomers, page]
   );
 
-  const hasSearchFilters =
-    searchTerm.trim().length > 0 ||
-    segmentFilter !== "all" ||
-    channelFilter !== "all" ||
-    riskFilter !== "all" ||
-    regionFilter !== "all" ||
-    lastActiveFilter !== "any";
+  const hasSearchFilters = searchTerm.trim().length > 0;
 
   const formatNumber = (value: number) =>
     value.toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -272,21 +248,25 @@ export default function CustomersPage() {
     );
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setSegmentFilter("all");
-    setChannelFilter("all");
-    setRiskFilter("all");
-    setRegionFilter("all");
-    setLastActiveFilter("any");
+  const handleOpenSearchModal = () => {
+    setModalSearchTerm(searchTerm); // Pre-fill with current search if exists
+    setIsSearchModalOpen(true);
   };
 
-  const handleCloseAdvancedFilters = () => {
-    setIsClosingAdvancedFilters(true);
-    setTimeout(() => {
-      setIsAdvancedFiltersOpen(false);
-      setIsClosingAdvancedFilters(false);
-    }, 250);
+  const handleCloseSearchModal = () => {
+    setIsSearchModalOpen(false);
+    setModalSearchTerm("");
+    setModalSearchResults([]);
+  };
+
+  const handleApplySearch = () => {
+    setSearchTerm(modalSearchTerm);
+    handleCloseSearchModal();
+  };
+
+  const handleSelectCustomerFromModal = (customer: CustomerRow) => {
+    handleCloseSearchModal();
+    handleSelectCustomer(customer);
   };
 
   const cellBackground: CSSProperties = {
@@ -303,7 +283,33 @@ export default function CustomersPage() {
             Manage all customers from a single workspace.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3 justify-start lg:justify-end">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenSearchModal}
+              className={`${tw.button} inline-flex items-center gap-2`}
+            >
+              <Search className="h-4 w-4" />
+              {searchTerm ? (
+                <span className="truncate max-w-[140px]">
+                  Search: {searchTerm}
+                </span>
+              ) : (
+                "Search Customer"
+              )}
+            </button>
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                title="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           <button className={`${tw.button} flex items-center gap-2`}>
             <Plus className="h-4 w-4" />
             Add Customer
@@ -338,51 +344,6 @@ export default function CustomersPage() {
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search customers..."
-              className="w-full rounded-md border border-gray-200 py-3 pl-10 pr-3 text-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[--accent-color]"
-              style={
-                {
-                  "--accent-color": `${color.primary.accent}33`,
-                } as CSSProperties
-              }
-            />
-          </div>
-        </div>
-        <div className="flex flex-wrap items-end gap-3 lg:justify-end">
-          <div className="min-w-[160px] pt-1">
-            <HeadlessSelect
-              options={[
-                { value: "all", label: "All segments" },
-                ...CUSTOMER_SEGMENTS.map((segment) => ({
-                  value: segment,
-                  label: segment,
-                })),
-              ]}
-              value={segmentFilter}
-              onChange={(value) => setSegmentFilter((value as string) || "all")}
-            />
-          </div>
-          <div className="min-w-[160px] pt-1">
-            <HeadlessSelect
-              options={channelOptions.map((option) => ({
-                value: option,
-                label: option === "all" ? "All channels" : option.toUpperCase(),
-              }))}
-              value={channelFilter}
-              onChange={(value) => setChannelFilter((value as string) || "all")}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Table card */}
       <div>
         {error ? (
@@ -415,6 +376,7 @@ export default function CustomersPage() {
                 <tr>
                   {[
                     "Customer",
+                    "MSISDN",
                     "Segment",
                     "Transactions",
                     "Last Interaction",
@@ -449,6 +411,12 @@ export default function CustomersPage() {
                         <p className="font-semibold text-gray-900">
                           {row.name}
                         </p>
+                      </td>
+                      <td
+                        className="px-6 py-5 text-gray-900"
+                        style={cellBackground}
+                      >
+                        {row.msisdn || "—"}
                       </td>
                       <td className="px-6 py-5" style={cellBackground}>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-gray-900">
@@ -554,6 +522,136 @@ export default function CustomersPage() {
           </div>
         )}
       </div>
+
+      {/* Search Customer Modal */}
+      <RegularModal
+        isOpen={isSearchModalOpen}
+        onClose={handleCloseSearchModal}
+        title="Search Customer"
+        size="xl"
+      >
+        <div className="space-y-4">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={modalSearchTerm}
+              onChange={(e) => setModalSearchTerm(e.target.value)}
+              placeholder="Enter customer name, ID, email, MSISDN, or phone number..."
+              className="w-full rounded-md border border-gray-300 py-3 pl-10 pr-3 text-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[--accent-color]"
+              style={
+                {
+                  "--accent-color": `${color.primary.accent}33`,
+                } as CSSProperties
+              }
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && modalSearchTerm.trim()) {
+                  handleApplySearch();
+                }
+              }}
+            />
+          </div>
+
+          {/* Helper Text */}
+          <p className="text-xs text-gray-500">
+            Search by customer name, ID, email address, MSISDN, or phone number.
+          </p>
+
+          {/* Search Results */}
+          <div className="max-h-[400px] overflow-y-auto border border-gray-200 rounded-md">
+            {isSearching ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <LoadingSpinner variant="modern" size="md" />
+                <p className={`${tw.textMuted} mt-3 text-sm`}>
+                  Searching customers...
+                </p>
+              </div>
+            ) : modalSearchTerm.trim() && modalSearchResults.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <p className="text-sm text-gray-500">
+                  No customers found matching "{modalSearchTerm}"
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Try a different search term or check your spelling
+                </p>
+              </div>
+            ) : modalSearchTerm.trim() && modalSearchResults.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {modalSearchResults.length > 50 && (
+                  <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-200">
+                    <p className="text-xs text-yellow-800">
+                      Showing top 50 results. Use filters to narrow down your
+                      search.
+                    </p>
+                  </div>
+                )}
+                {modalSearchResults.map((customer) => (
+                  <button
+                    key={customer.id}
+                    onClick={() => handleSelectCustomerFromModal(customer)}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {customer.name}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                          <span>ID: {customer.id}</span>
+                          {customer.email && (
+                            <span className="truncate">
+                              Email: {customer.email}
+                            </span>
+                          )}
+                          {customer.phone && (
+                            <span>Phone: {customer.phone}</span>
+                          )}
+                          {customer.msisdn && (
+                            <span>MSISDN: {customer.msisdn}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Eye className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="px-6 py-12 text-center">
+                <Search className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">
+                  Start typing to search for customers
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  You can search by name, ID, email, MSISDN, or phone number
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={handleCloseSearchModal}
+              className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleApplySearch}
+              disabled={!modalSearchTerm.trim()}
+              className="px-4 py-2 text-sm text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              Apply Search
+            </button>
+          </div>
+        </div>
+      </RegularModal>
 
       {/* Advanced filters modal */}
     </div>

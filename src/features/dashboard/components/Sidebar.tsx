@@ -32,6 +32,8 @@ import {
   Mail,
   LogOut,
   User,
+  // Server,
+  // Database,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
@@ -91,7 +93,8 @@ interface NavigationItem {
     | "users"
     | "analytics"
     | "configuration"
-    | "customers";
+    | "customers"
+    | "servers";
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -312,20 +315,31 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         },
       ],
     },
-    {
-      name: "Manual Broadcast",
-      href: "/dashboard/quicklists",
-      icon: Upload,
-      type: "single",
-      entity: "segments",
-    },
-    {
-      name: "User Management",
-      href: "/dashboard/user-management",
-      icon: UserCheck,
-      type: "single",
-      entity: "users",
-    },
+
+    // {
+    //   name: "Infrastructure",
+    //   href: "/dashboard/servers",
+    //   icon: Server,
+    //   type: "parent",
+    //   entity: "servers",
+    //   children: [
+    //     {
+    //       name: "Servers",
+    //       href: "/dashboard/servers",
+    //       icon: Server,
+    //       type: "single",
+    //       entity: "servers",
+    //     },
+    //     {
+    //       name: "Connection Profiles",
+    //       href: "/dashboard/connection-profiles",
+    //       icon: Database,
+    //       type: "single",
+    //       entity: "servers",
+    //     },
+    //   ],
+    // },
+
     {
       name: "Reports & Analytics",
       href: "/dashboard/reports",
@@ -377,13 +391,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         },
       ],
     },
-    {
-      name: "Configuration",
-      href: "/dashboard/configuration",
-      icon: Cog,
-      type: "single",
-      entity: "configuration",
-    },
+
     {
       name: "Customer Management",
       href: "/dashboard/customers",
@@ -406,6 +414,50 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           entity: "customers",
         },
       ],
+    },
+    {
+      name: "Job Management",
+      href: "/dashboard/jobs",
+      icon: Briefcase,
+      type: "parent",
+      entity: "campaigns",
+      children: [
+        {
+          name: "Scheduled Jobs",
+          href: "/dashboard/jobs",
+          icon: Briefcase,
+          type: "single",
+          entity: "campaigns",
+        },
+        {
+          name: "Job Types",
+          href: "/dashboard/job-types",
+          icon: Layers,
+          type: "single",
+          entity: "campaigns",
+        },
+      ],
+    },
+    {
+      name: "Manual Broadcast",
+      href: "/dashboard/quicklists",
+      icon: Upload,
+      type: "single",
+      entity: "segments",
+    },
+    {
+      name: "User Management",
+      href: "/dashboard/user-management",
+      icon: UserCheck,
+      type: "single",
+      entity: "users",
+    },
+    {
+      name: "Configuration",
+      href: "/dashboard/configuration",
+      icon: Cog,
+      type: "single",
+      entity: "configuration",
     },
   ];
 
@@ -557,13 +609,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           >
             <div className="flex h-16 shrink-0 items-center justify-between px-6">
               <div className="flex items-center space-x-3">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
+                <Link
+                  to="/landingpage"
+                  onClick={handleLinkClick}
+                  className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                >
                   <img
                     src={logo}
                     alt="Sentra Logo"
                     className="w-full h-full object-contain"
                   />
-                </div>
+                </Link>
               </div>
               <button
                 onClick={onClose}
@@ -796,13 +852,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           }}
         >
           <div className="md:h-0 xl:h-16 md:hidden xl:flex items-center flex-shrink-0 xl:justify-start">
-            <div className="w-32 h-32 flex items-center justify-center">
+            <Link
+              to="/landingpage"
+              onClick={handleLinkClick}
+              className="w-32 h-32 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <img
                 src={logo}
                 alt="Sentra Logo"
                 className="w-full h-full object-contain"
               />
-            </div>
+            </Link>
           </div>
 
           <nav className="flex-1 overflow-y-auto md:py-2 xl:py-4 hide-scrollbar">

@@ -213,7 +213,11 @@ export default function QuickListsPage() {
       setIsCreateModalOpen(false);
 
       // If manual entry, open communication modal automatically
-      if (request.isManualEntry && response.data && response.data.quicklist_id) {
+      if (
+        request.isManualEntry &&
+        response.data &&
+        response.data.quicklist_id
+      ) {
         // Fetch the complete quicklist data by ID
         const quicklistResponse = await quicklistService.getQuickListById(
           response.data.quicklist_id
@@ -422,7 +426,7 @@ export default function QuickListsPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-4">
         <div className="flex-1 relative">
           <Search
             className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${tw.textMuted}`}
@@ -436,7 +440,7 @@ export default function QuickListsPage() {
           />
         </div>
 
-        <div className="flex gap-3 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
           <HeadlessSelect
             options={[
               { value: "", label: "All Upload Types" },
@@ -448,7 +452,7 @@ export default function QuickListsPage() {
             value={selectedUploadType}
             onChange={(value) => setSelectedUploadType(value as string)}
             placeholder="Select upload type"
-            className="w-full sm:w-auto sm:min-w-[220px]"
+            className="w-full sm:min-w-[220px]"
           />
         </div>
       </div>
@@ -489,9 +493,9 @@ export default function QuickListsPage() {
             )}
           </div>
         ) : (
-          <div className="hidden lg:block overflow-x-auto">
+          <div className="overflow-x-auto">
             <table
-              className="w-full"
+              className="w-full min-w-[900px]"
               style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
             >
               <thead style={{ background: color.surface.tableHeader }}>
@@ -660,7 +664,7 @@ export default function QuickListsPage() {
       {/* Pagination - Outside table container */}
       {!loading && pagination.total > 0 && (
         <div
-          className={`bg-white rounded-md shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4`}
+          className={`bg-white rounded-md shadow-sm border ${tw.borderDefault} px-4 sm:px-6 py-4 overflow-x-auto`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div

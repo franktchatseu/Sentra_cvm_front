@@ -463,140 +463,89 @@ export default function GenericConfigurationPage({
             )}
           </div>
         ) : (
-          <>
-            <div className="hidden lg:block overflow-x-auto">
-              <table
-                className="w-full"
-                style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
-              >
-                <thead>
-                  <tr>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{
-                        color: color.surface.tableHeaderText,
-                        backgroundColor: color.surface.tableHeader,
-                        borderTopLeftRadius: "0.375rem",
-                      }}
-                    >
-                      {config.entityName}
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{
-                        color: color.surface.tableHeaderText,
-                        backgroundColor: color.surface.tableHeader,
-                      }}
-                    >
-                      Description
-                    </th>
-                    <th
-                      className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
-                      style={{
-                        color: color.surface.tableHeaderText,
-                        backgroundColor: color.surface.tableHeader,
-                        borderTopRightRadius: "0.375rem",
-                      }}
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
+          <div className="overflow-x-auto">
+            <table
+              className="w-full min-w-[720px]"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead>
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{
+                      color: color.surface.tableHeaderText,
+                      backgroundColor: color.surface.tableHeader,
+                      borderTopLeftRadius: "0.375rem",
+                    }}
+                  >
+                    {config.entityName}
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{
+                      color: color.surface.tableHeaderText,
+                      backgroundColor: color.surface.tableHeader,
+                    }}
+                  >
+                    Description
+                  </th>
+                  <th
+                    className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
+                    style={{
+                      color: color.surface.tableHeaderText,
+                      backgroundColor: color.surface.tableHeader,
+                      borderTopRightRadius: "0.375rem",
+                    }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
 
-                <tbody>
-                  {filteredItems.map((item) => (
-                    <tr key={item.id} className="transition-colors">
-                      <td
-                        className="px-6 py-4"
-                        style={{
-                          backgroundColor: color.surface.tablebodybg,
-                          borderTopLeftRadius: "0.375rem",
-                          borderBottomLeftRadius: "0.375rem",
-                        }}
-                      >
-                        <div className="flex items-center">
-                          <div>
-                            <div
-                              className={`text-base font-semibold ${tw.textPrimary}`}
-                            >
-                              {item.name}
-                            </div>
-                            <div className={`text-sm ${tw.textMuted}`}>
-                              ID: {item.id}
-                            </div>
+              <tbody>
+                {filteredItems.map((item) => (
+                  <tr key={item.id} className="transition-colors">
+                    <td
+                      className="px-6 py-4"
+                      style={{
+                        backgroundColor: color.surface.tablebodybg,
+                        borderTopLeftRadius: "0.375rem",
+                        borderBottomLeftRadius: "0.375rem",
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <div>
+                          <div
+                            className={`text-base font-semibold ${tw.textPrimary}`}
+                          >
+                            {item.name}
+                          </div>
+                          <div className={`text-sm ${tw.textMuted}`}>
+                            ID: {item.id}
                           </div>
                         </div>
-                      </td>
-
-                      {/* DESCRIPTION */}
-                      <td
-                        className="px-6 py-4"
-                        style={{ backgroundColor: color.surface.tablebodybg }}
-                      >
-                        <div className={`text-sm ${tw.textSecondary} max-w-md`}>
-                          {item.description || "No description"}
-                        </div>
-                      </td>
-
-                      <td
-                        className="px-6 py-4 text-center"
-                        style={{
-                          backgroundColor: color.surface.tablebodybg,
-                          borderTopRightRadius: "0.375rem",
-                          borderBottomRightRadius: "0.375rem",
-                        }}
-                      >
-                        <div className="flex items-center justify-center space-x-2">
-                          <button
-                            onClick={() => handleEditItem(item)}
-                            className="p-2 rounded-md transition-colors"
-                            style={{
-                              color: color.primary.action,
-                              backgroundColor: "transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = `${color.primary.action}10`;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteItem(item)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="lg:hidden">
-              {filteredItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 mb-3 last:mb-0 rounded-md"
-                  style={{ backgroundColor: color.surface.tablebodybg }}
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-base font-semibold ${tw.textPrimary} mb-1`}
-                      >
-                        {item.name}
                       </div>
-                      <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                    </td>
+
+                    {/* DESCRIPTION */}
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <div className={`text-sm ${tw.textSecondary} max-w-md`}>
                         {item.description || "No description"}
                       </div>
-                      <div className="flex items-center justify-end space-x-2">
+                    </td>
+
+                    <td
+                      className="px-6 py-4 text-center"
+                      style={{
+                        backgroundColor: color.surface.tablebodybg,
+                        borderTopRightRadius: "0.375rem",
+                        borderBottomRightRadius: "0.375rem",
+                      }}
+                    >
+                      <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => handleEditItem(item)}
                           className="p-2 rounded-md transition-colors"
@@ -605,18 +554,16 @@ export default function GenericConfigurationPage({
                             backgroundColor: "transparent",
                           }}
                           onMouseEnter={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = `${color.primary.action}10`;
+                            e.currentTarget.style.backgroundColor = `${color.primary.action}10`;
                           }}
                           onMouseLeave={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = "transparent";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
                           }}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
+
                         <button
                           onClick={() => handleDeleteItem(item)}
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
@@ -624,12 +571,12 @@ export default function GenericConfigurationPage({
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

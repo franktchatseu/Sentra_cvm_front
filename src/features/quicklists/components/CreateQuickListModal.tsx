@@ -454,12 +454,12 @@ export default function CreateQuickListModal({
               >
                 Input Method *
               </label>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
                   onClick={() => setInputMode("file")}
                   disabled={isSubmitting}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
+                  className="flex-1 w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
                   style={{
                     borderColor:
                       inputMode === "file"
@@ -479,7 +479,7 @@ export default function CreateQuickListModal({
                   type="button"
                   onClick={() => setInputMode("manual")}
                   disabled={isSubmitting}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
+                  className="flex-1 w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
                   style={{
                     borderColor:
                       inputMode === "manual"

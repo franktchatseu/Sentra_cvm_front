@@ -214,8 +214,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-        <div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between pb-4 border-b border-gray-200">
+        <div className="min-w-0">
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>Settings</h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
             Manage your system preferences and regional settings
@@ -223,17 +223,17 @@ export default function SettingsPage() {
         </div>
 
         {/* Save and Cancel Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-row items-center gap-2 md:gap-3 w-full md:w-auto overflow-x-auto whitespace-nowrap">
           <button
             onClick={handleReset}
-            className="px-5 py-2.5 text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200"
+            className="px-5 py-2.5 text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 flex-shrink-0 whitespace-nowrap"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-5 py-2.5 text-sm font-medium rounded-md text-white flex items-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 text-sm font-medium rounded-md text-white flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
             style={{ backgroundColor: color.primary.action }}
             onMouseEnter={(e) => {
               if (!isSaving) {
@@ -262,9 +262,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-0">
         {/* Location Card */}
-        <div className="bg-white rounded-md border border-gray-200 p-8">
+        <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 lg:p-8">
           <div className="mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Location
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                 id="country"
                 value={settings.country}
                 onChange={(e) => handleCountryChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
+                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
                 onFocus={(e) => {
                   Object.assign(e.target.style, selectStyle(true));
                 }}
@@ -324,7 +324,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Localization Card */}
-        <div className="bg-white rounded-md border border-gray-200 p-8">
+        <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 lg:p-8">
           <div className="mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Localization
@@ -346,7 +346,7 @@ export default function SettingsPage() {
                 id="language"
                 value={settings.language}
                 onChange={(e) => handleLanguageChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
+                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
                 onFocus={(e) => {
                   Object.assign(e.target.style, selectStyle(true));
                 }}
@@ -373,7 +373,7 @@ export default function SettingsPage() {
                 id="timezone"
                 value={settings.timezone}
                 onChange={(e) => handleTimezoneChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
+                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
                 onFocus={(e) => {
                   Object.assign(e.target.style, selectStyle(true));
                 }}
@@ -392,7 +392,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Date Format Card */}
-        <div className="bg-white rounded-md border border-gray-200 p-8">
+        <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 lg:p-8">
           <div className="mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Date Format
@@ -413,7 +413,7 @@ export default function SettingsPage() {
               id="date-format"
               value={settings.date_format}
               onChange={(e) => handleDateFormatChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white hover:border-gray-400 cursor-pointer"
+              className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white hover:border-gray-400 cursor-pointer"
               onFocus={(e) => {
                 Object.assign(e.target.style, selectStyle(true));
               }}
@@ -445,7 +445,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Currency & Number Formatting Card */}
-        <div className="bg-white rounded-md border border-gray-200 p-8">
+        <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 lg:p-8">
           <div className="mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Currency & Formatting
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                 id="currency"
                 value={settings.currency}
                 onChange={(e) => handleCurrencyChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
+                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
                 onFocus={(e) => {
                   Object.assign(e.target.style, selectStyle(true));
                 }}
@@ -494,7 +494,7 @@ export default function SettingsPage() {
                 id="number-format"
                 value={settings.number_formatting}
                 onChange={(e) => handleNumberFormatChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
+                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
                 onFocus={(e) => {
                   Object.assign(e.target.style, selectStyle(true));
                 }}

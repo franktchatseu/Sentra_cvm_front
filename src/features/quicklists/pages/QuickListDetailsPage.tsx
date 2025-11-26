@@ -357,6 +357,14 @@ export default function QuickListDetailsPage() {
     });
   };
 
+  const infoRowClass =
+    "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 py-2";
+  const infoValueClass =
+    "text-sm font-medium text-left sm:text-right break-words";
+  const timelineRowClass =
+    "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 py-2";
+  const tableBodyBackground = color.surface.tablebodybg;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -392,46 +400,48 @@ export default function QuickListDetailsPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-start gap-4 flex-wrap">
           <button
             onClick={navigateBack}
             className="p-2 text-gray-600 rounded-md transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+          <div className="min-w-0">
+            <h1
+              className={`${tw.mainHeading} ${tw.textPrimary} break-words text-base sm:text-2xl`}
+            >
               {quicklist.name}
             </h1>
             {quicklist.description && (
-              <p className={`${tw.textSecondary} text-sm mt-1`}>
+              <p className={`${tw.textSecondary} text-sm mt-1 break-words`}>
                 {quicklist.description}
               </p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap gap-3 w-full lg:w-auto">
           <button
             onClick={handleEdit}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
           >
             <Edit className="w-4 h-4" />
             Edit
           </button>
           <button
             onClick={handleCommunicate}
-            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             style={{ backgroundColor: color.primary.action }}
           >
             <Send className="w-4 h-4" />
             Send Communication
           </button>
           {/* More Menu */}
-          <div className="relative" ref={moreMenuRef}>
+          <div className="relative flex-shrink-0" ref={moreMenuRef}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <MoreVertical className="w-4 h-4" />
               More
@@ -475,7 +485,18 @@ export default function QuickListDetailsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200">
+      <style>{`
+        @media (max-width: 640px) {
+          .quicklist-tabs::-webkit-scrollbar {
+            display: none;
+          }
+          .quicklist-tabs {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        }
+      `}</style>
+      <div className="quicklist-tabs flex gap-1 border-b border-gray-200 overflow-x-auto">
         {[
           { id: "overview", label: "Overview", icon: FileText },
           { id: "data", label: "Data", icon: Database },
@@ -486,7 +507,7 @@ export default function QuickListDetailsPage() {
             onClick={() =>
               setActiveSection(tab.id as "overview" | "data" | "logs")
             }
-            className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative ${
+            className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative flex-shrink-0 ${
               activeSection === tab.id
                 ? "text-black"
                 : "text-gray-600 hover:text-gray-900"
@@ -517,42 +538,42 @@ export default function QuickListDetailsPage() {
                     QuickList Information
                   </h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start py-2">
+                    <div className={infoRowClass}>
                       <span className="text-sm text-gray-600">Name</span>
-                      <span className="text-sm font-medium text-gray-900 text-right">
+                      <span className={`${infoValueClass} text-gray-900`}>
                         {quicklist.name}
                       </span>
                     </div>
                     {quicklist.description && (
-                      <div className="flex justify-between items-start py-2">
+                      <div className={infoRowClass}>
                         <span className="text-sm text-gray-600">
                           Description
                         </span>
-                        <span className="text-sm font-medium text-gray-900 text-right">
+                        <span className={`${infoValueClass} text-gray-900`}>
                           {quicklist.description}
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between items-start py-2">
+                    <div className={infoRowClass}>
                       <span className="text-sm text-gray-600">Upload Type</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className={`${infoValueClass} text-gray-900`}>
                         {quicklist.upload_type}
                       </span>
                     </div>
                     {quicklist.original_filename && (
-                      <div className="flex justify-between items-start py-2">
+                      <div className={infoRowClass}>
                         <span className="text-sm text-gray-600">File Name</span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className={`${infoValueClass} text-gray-900`}>
                           {quicklist.original_filename}
                         </span>
                       </div>
                     )}
                     {quicklist.created_by && (
-                      <div className="flex justify-between items-start py-2">
+                      <div className={infoRowClass}>
                         <span className="text-sm text-gray-600">
                           Created By
                         </span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className={`${infoValueClass} text-gray-900`}>
                           {quicklist.created_by}
                         </span>
                       </div>
@@ -566,38 +587,38 @@ export default function QuickListDetailsPage() {
                     File Information
                   </h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start py-2">
+                    <div className={infoRowClass}>
                       <span className="text-sm text-gray-600">File Size</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className={`${infoValueClass} text-gray-900`}>
                         {quicklist.file_size_bytes != null
                           ? formatFileSize(quicklist.file_size_bytes)
                           : "N/A"}
                       </span>
                     </div>
-                    <div className="flex justify-between items-start py-2">
+                    <div className={infoRowClass}>
                       <span className="text-sm text-gray-600">
                         Rows Imported
                       </span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className={`${infoValueClass} text-gray-900`}>
                         {quicklist.rows_imported != null
                           ? quicklist.rows_imported.toLocaleString()
                           : "N/A"}
                       </span>
                     </div>
-                    <div className="flex justify-between items-start py-2">
+                    <div className={infoRowClass}>
                       <span className="text-sm text-gray-600">Rows Failed</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className={`${infoValueClass} text-gray-900`}>
                         {quicklist.rows_failed != null
                           ? quicklist.rows_failed.toLocaleString()
                           : "N/A"}
                       </span>
                     </div>
-                    <div className="flex justify-between items-start py-2">
+                    <div className={infoRowClass}>
                       <span className="text-sm text-gray-600">
                         Processing Status
                       </span>
                       <span
-                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white"
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white self-start sm:self-auto"
                         style={{ backgroundColor: color.primary.accent }}
                       >
                         {quicklist.processing_status
@@ -609,28 +630,28 @@ export default function QuickListDetailsPage() {
                       </span>
                     </div>
                     {quicklist.processing_error && (
-                      <div className="flex justify-between items-start py-2">
+                      <div className={infoRowClass}>
                         <span className="text-sm text-gray-600">
                           Processing Error
                         </span>
-                        <span className="text-sm font-medium text-red-600">
+                        <span className={`${infoValueClass} text-red-600`}>
                           {quicklist.processing_error}
                         </span>
                       </div>
                     )}
                     {quicklist.processing_time_ms != null && (
-                      <div className="flex justify-between items-start py-2">
+                      <div className={infoRowClass}>
                         <span className="text-sm text-gray-600">
                           Processing Time
                         </span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className={`${infoValueClass} text-gray-900`}>
                           {quicklist.processing_time_ms}ms
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between items-start py-2">
+                    <div className={infoRowClass}>
                       <span className="text-sm text-gray-600">Table Name</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className={`${infoValueClass} text-gray-900`}>
                         {quicklist.data_table_name || "N/A"}
                       </span>
                     </div>
@@ -826,16 +847,16 @@ export default function QuickListDetailsPage() {
                     Activity Timeline
                   </h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2">
+                    <div className={timelineRowClass}>
                       <span className="text-sm text-gray-600">Created</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className={`${infoValueClass} text-gray-900`}>
                         {formatDate(quicklist.created_at)}
                       </span>
                     </div>
                     {quicklist.updated_at && (
-                      <div className="flex justify-between items-center py-2">
+                      <div className={timelineRowClass}>
                         <span className="text-sm text-gray-600">Updated</span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className={`${infoValueClass} text-gray-900`}>
                           {formatDate(quicklist.updated_at)}
                         </span>
                       </div>
@@ -873,7 +894,7 @@ export default function QuickListDetailsPage() {
           ) : (
             <div className="space-y-4">
               {dataPagination && dataPagination.total > data.length && (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <p className="text-sm text-gray-600">
                     Showing {data.length} of {dataPagination.total} rows
                   </p>
@@ -881,7 +902,13 @@ export default function QuickListDetailsPage() {
               )}
               <div className="border border-gray-200 rounded-md overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table
+                    className="w-full text-sm"
+                    style={{
+                      borderCollapse: "separate",
+                      borderSpacing: "0 6px",
+                    }}
+                  >
                     <thead
                       className={`border-b ${tw.borderDefault}`}
                       style={{ background: color.surface.tableHeader }}
@@ -904,19 +931,27 @@ export default function QuickListDetailsPage() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                       {data.map((row, index) => (
                         <tr
                           key={row.id}
-                          className="hover:bg-gray-50/30 transition-colors"
+                          className="hover:bg-gray-50/40 transition-colors rounded"
                         >
-                          <td className="px-6 py-4 text-gray-900 font-medium">
+                          <td
+                            className="px-6 py-4 text-gray-900 font-medium rounded-l"
+                            style={{ backgroundColor: tableBodyBackground }}
+                          >
                             {index + 1}
                           </td>
-                          {dataColumns.map((column) => (
+                          {dataColumns.map((column, columnIndex) => (
                             <td
                               key={column}
-                              className="px-6 py-4 text-gray-600"
+                              className={`px-6 py-4 text-gray-600 ${
+                                columnIndex === dataColumns.length - 1
+                                  ? "rounded-r"
+                                  : ""
+                              }`}
+                              style={{ backgroundColor: tableBodyBackground }}
                             >
                               {(row as any)[column] !== undefined &&
                               (row as any)[column] !== null
@@ -962,7 +997,7 @@ export default function QuickListDetailsPage() {
           ) : (
             <div className="space-y-4">
               {logsPagination && logsPagination.total > importLogs.length && (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <p className="text-sm text-gray-600">
                     Showing {importLogs.length} of {logsPagination.total} logs
                   </p>
@@ -970,7 +1005,13 @@ export default function QuickListDetailsPage() {
               )}
               <div className="border border-gray-200 rounded-md overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table
+                    className="w-full text-sm"
+                    style={{
+                      borderCollapse: "separate",
+                      borderSpacing: "0 6px",
+                    }}
+                  >
                     <thead
                       className={`border-b ${tw.borderDefault}`}
                       style={{ background: color.surface.tableHeader }}
@@ -1002,16 +1043,22 @@ export default function QuickListDetailsPage() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                       {importLogs.map((log) => (
                         <tr
                           key={log.id}
-                          className="hover:bg-gray-50/30 transition-colors"
+                          className="hover:bg-gray-50/30 transition-colors rounded"
                         >
-                          <td className="px-6 py-4 text-gray-900 font-medium">
+                          <td
+                            className="px-6 py-4 text-gray-900 font-medium rounded-l"
+                            style={{ backgroundColor: tableBodyBackground }}
+                          >
                             {log.row_number}
                           </td>
-                          <td className="px-6 py-4">
+                          <td
+                            className="px-6 py-4"
+                            style={{ backgroundColor: tableBodyBackground }}
+                          >
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium ${
                                 log.import_status === "success"
@@ -1024,10 +1071,16 @@ export default function QuickListDetailsPage() {
                               {log.import_status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-gray-600">
+                          <td
+                            className="px-6 py-4 text-gray-600"
+                            style={{ backgroundColor: tableBodyBackground }}
+                          >
                             {log.error_message || "-"}
                           </td>
-                          <td className="px-6 py-4 text-gray-600">
+                          <td
+                            className="px-6 py-4 text-gray-600 rounded-r"
+                            style={{ backgroundColor: tableBodyBackground }}
+                          >
                             {formatDate(log.created_at)}
                           </td>
                         </tr>

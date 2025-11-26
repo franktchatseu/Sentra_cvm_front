@@ -202,13 +202,14 @@ const generateCustomerRows = (): CustomerRow[] => {
   ];
   const channels = ["Email", "SMS", "Push"];
   const locations = [
-    "Nairobi, KE",
-    "Kampala, UG",
-    "Lagos, NG",
-    "Accra, GH",
-    "Dar es Salaam, TZ",
-    "Kigali, RW",
-    "Addis Ababa, ET",
+    "Nairobi CBD, KE",
+    "Westlands, Nairobi",
+    "Kilimani, Nairobi",
+    "Karen, Nairobi",
+    "Runda, Nairobi",
+    "Mombasa, KE",
+    "Nakuru, KE",
+    "Kisumu, KE",
   ];
   const names = [
     "Sophia K",
@@ -290,9 +291,18 @@ const generateCustomerRows = (): CustomerRow[] => {
           ? "1 day ago"
           : `${daysAgo} days ago`;
 
+      const normalizedName = names[baseIdx % names.length]
+        .toLowerCase()
+        .replace(/\s+/g, ".");
+      const phone = `+2547${(1000000 + baseIdx * 37).toString().slice(-7)}`;
+      const msisdn = phone.replace("+", "");
+
       rows.push({
         id: `CUST-${String(34000 + baseIdx).padStart(5, "0")}`,
         name: names[baseIdx % names.length],
+        email: `${normalizedName}@example.com`,
+        phone,
+        msisdn,
         segment,
         lifetimeValue,
         clv: Math.round(clv),
@@ -682,6 +692,7 @@ export default function CustomerProfileReportsPage() {
     const headers = [
       "Customer ID",
       "Name",
+      "MSISDN",
       "Segment",
       "Lifetime Revenue",
       "Transactions",
@@ -692,6 +703,7 @@ export default function CustomerProfileReportsPage() {
     const rows = filteredCustomers.map((row) => [
       row.id,
       row.name,
+      row.msisdn ?? "",
       row.segment,
       row.lifetimeValue,
       row.orders,
@@ -1404,6 +1416,7 @@ export default function CustomerProfileReportsPage() {
                   {[
                     "Customer ID",
                     "Name",
+                    "MSISDN",
                     "Segment",
                     "Lifetime Revenue",
                     "Transactions",
@@ -1434,6 +1447,12 @@ export default function CustomerProfileReportsPage() {
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       {customer.name}
+                    </td>
+                    <td
+                      className="px-6 py-4 text-gray-900"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {customer.msisdn || "—"}
                     </td>
                     <td
                       className="px-6 py-4"
