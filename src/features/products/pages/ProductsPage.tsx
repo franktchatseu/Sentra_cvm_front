@@ -228,6 +228,7 @@ export default function ProductsPage() {
       setShowDeleteModal(false);
       setProductToDelete(null);
       loadProducts();
+      loadStats(); // Refresh stats cards
     } catch (err) {
       console.error("Failed to delete product:", err);
       showError("Error", "Failed to delete product. Please try again.");

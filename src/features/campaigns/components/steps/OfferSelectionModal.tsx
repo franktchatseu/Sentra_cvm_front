@@ -60,16 +60,33 @@ export default function OfferSelectionModal({
       setLoading(true);
       setError(null);
 
-      const response = await offerService.searchOffers({
-        limit: 100, // Get all offers for selection
-        skipCache: true,
-        //  Re-enable lifecycleStatus filter when offers have proper lifecycle status
-        // status: 'active' // Only show active offers (currently commented out because offers are in 'draft' status)
+      // Fetch both active and approved offers (both are valid for campaigns)
+      const [activeResponse, approvedResponse] = await Promise.all([
+        offerService.getActiveOffers({
+          limit: 100,
+          skipCache: true,
+        }),
+        offerService.getApprovedOffers({
+          limit: 100,
+          skipCache: true,
+        }),
+      ]);
+
+      // Combine active and approved offers, removing duplicates by ID
+      const activeOffers = activeResponse.data || [];
+      const approvedOffers = approvedResponse.data || [];
+
+      // Create a map to avoid duplicates
+      const offersMap = new Map<number, Offer>();
+      [...activeOffers, ...approvedOffers].forEach((offer) => {
+        if (offer.id) {
+          offersMap.set(offer.id, offer);
+        }
       });
 
       // Convert Offer objects to CampaignOffer format
-      const offersData = response.data || [];
-      const campaignOffers: CampaignOffer[] = offersData.map(
+      const uniqueOffers = Array.from(offersMap.values());
+      const campaignOffers: CampaignOffer[] = uniqueOffers.map(
         (offer: Offer) => ({
           id: offer.id?.toString() || "",
           name: offer.name,

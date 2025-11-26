@@ -537,67 +537,65 @@ export default function CampaignsPage() {
   }, [selectedStatus, searchQuery, currentPage, pageSize, filters, showToast]);
 
   // Fetch campaign stats
-  useEffect(() => {
-    const fetchCampaignStats = async () => {
-      try {
-        setStatsLoading(true);
-        const response = await campaignService.getCampaignStats(true);
+  const fetchCampaignStats = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const response = await campaignService.getCampaignStats(true);
 
-        if (response.success && response.data) {
-          const data = response.data;
-          // Parse the stats (they may come as strings or numbers)
-          const total =
-            parseInt(String(data.total_campaigns)) ||
-            (typeof data.total_campaigns === "number"
-              ? data.total_campaigns
-              : 0);
+      if (response.success && response.data) {
+        const data = response.data;
+        // Parse the stats (they may come as strings or numbers)
+        const total =
+          parseInt(String(data.total_campaigns)) ||
+          (typeof data.total_campaigns === "number" ? data.total_campaigns : 0);
 
-          const activeNum = data.active_campaigns || data.currently_active;
-          const active =
-            typeof activeNum === "number"
-              ? activeNum
-              : parseInt(String(activeNum || "0"), 10) || 0;
+        const activeNum = data.active_campaigns || data.currently_active;
+        const active =
+          typeof activeNum === "number"
+            ? activeNum
+            : parseInt(String(activeNum || "0"), 10) || 0;
 
-          const draftNum = data.in_draft;
-          const draft =
-            typeof draftNum === "number"
-              ? draftNum
-              : parseInt(String(draftNum || "0"), 10) || 0;
+        const draftNum = data.in_draft;
+        const draft =
+          typeof draftNum === "number"
+            ? draftNum
+            : parseInt(String(draftNum || "0"), 10) || 0;
 
-          const pendingApprovalNum = data.pending_approval;
-          const pendingApproval =
-            typeof pendingApprovalNum === "number"
-              ? pendingApprovalNum
-              : parseInt(String(pendingApprovalNum || "0"), 10) || 0;
+        const pendingApprovalNum = data.pending_approval;
+        const pendingApproval =
+          typeof pendingApprovalNum === "number"
+            ? pendingApprovalNum
+            : parseInt(String(pendingApprovalNum || "0"), 10) || 0;
 
-          setCampaignStats({
-            total: Number(total),
-            active: Number(active),
-            draft: Number(draft),
-            pendingApproval: Number(pendingApproval),
-          });
-        } else {
-          setCampaignStats({
-            total: 0,
-            active: 0,
-            draft: 0,
-            pendingApproval: 0,
-          });
-        }
-      } catch (error) {
+        setCampaignStats({
+          total: Number(total),
+          active: Number(active),
+          draft: Number(draft),
+          pendingApproval: Number(pendingApproval),
+        });
+      } else {
         setCampaignStats({
           total: 0,
           active: 0,
           draft: 0,
           pendingApproval: 0,
         });
-      } finally {
-        setStatsLoading(false);
       }
-    };
-
-    fetchCampaignStats();
+    } catch (error) {
+      setCampaignStats({
+        total: 0,
+        active: 0,
+        draft: 0,
+        pendingApproval: 0,
+      });
+    } finally {
+      setStatsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchCampaignStats();
+  }, [fetchCampaignStats]);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -858,6 +856,7 @@ export default function CampaignsPage() {
       showToast("success", "Campaign archived successfully!");
       setShowActionMenu(null);
       fetchCampaigns(); // Refresh campaigns list
+      fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
       // Extract error message from backend response
       let errorMessage = "Failed to archive campaign";
@@ -901,6 +900,7 @@ export default function CampaignsPage() {
       setShowDeleteModal(false);
       setCampaignToDelete(null);
       fetchCampaigns(); // Refresh campaigns list
+      fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
       // Extract error message from backend response
       let errorMessage = "Failed to delete campaign";
@@ -951,6 +951,7 @@ export default function CampaignsPage() {
       }
 
       showToast("success", "Campaign paused successfully");
+      fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
       showToast("error", "Failed to pause campaign");
     }
@@ -977,6 +978,7 @@ export default function CampaignsPage() {
       }
 
       showToast("success", "Campaign resumed successfully");
+      fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
       showToast("error", "Failed to resume campaign");
     }

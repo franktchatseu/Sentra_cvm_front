@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
@@ -295,87 +295,68 @@ export default function OffersPage() {
   }, []);
 
   // Load offer stats
-  useEffect(() => {
-    const fetchOfferStats = async () => {
+  const fetchOfferStats = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      let total = 0;
+      let active = 0;
+      let expired = 0;
+      let pendingApproval = 0;
+
+      // Fetch all offers to calculate stats accurately
+      // Backend limit is 100, so we'll fetch in batches if needed
       try {
-        setStatsLoading(true);
-        let total = 0;
-        let active = 0;
-        let expired = 0;
-        let pendingApproval = 0;
+        let allOffers: Offer[] = [];
+        let offset = 0;
+        const batchSize = 100;
+        let hasMore = true;
 
-        // Fetch all offers to calculate stats accurately
-        // Backend limit is 100, so we'll fetch in batches if needed
-        try {
-          let allOffers: Offer[] = [];
-          let offset = 0;
-          const batchSize = 100;
-          let hasMore = true;
+        // Fetch all offers in batches
+        while (hasMore) {
+          const batchResponse = await offerService.searchOffers({
+            limit: batchSize,
+            offset: offset,
+            skipCache: true,
+          });
 
-          // Fetch all offers in batches
-          while (hasMore) {
-            const batchResponse = await offerService.searchOffers({
-              limit: batchSize,
-              offset: offset,
-              skipCache: true,
-            });
+          if (batchResponse.success && batchResponse.data) {
+            allOffers = [...allOffers, ...batchResponse.data];
 
-            if (batchResponse.success && batchResponse.data) {
-              allOffers = [...allOffers, ...batchResponse.data];
-
-              // Check if there are more offers to fetch
-              const totalFromPagination = batchResponse.pagination?.total || 0;
-              hasMore =
-                allOffers.length < totalFromPagination &&
-                batchResponse.data.length === batchSize;
-              offset += batchSize;
-            } else {
-              hasMore = false;
-            }
-          }
-
-          if (allOffers.length > 0) {
-            // Total offers - count all regardless of status
-            total = allOffers.length;
-
-            // Active offers = status "active" OR "approved"
-            active = allOffers.filter(
-              (offer) =>
-                offer.status === OfferStatusEnum.ACTIVE ||
-                offer.status === OfferStatusEnum.APPROVED
-            ).length;
-
-            // Expired offers
-            expired = allOffers.filter(
-              (offer) => offer.status === OfferStatusEnum.EXPIRED
-            ).length;
-
-            // Pending approval = pending_approval + draft
-            pendingApproval = allOffers.filter(
-              (offer) =>
-                offer.status === OfferStatusEnum.PENDING_APPROVAL ||
-                offer.status === OfferStatusEnum.DRAFT
-            ).length;
+            // Check if there are more offers to fetch
+            const totalFromPagination = batchResponse.pagination?.total || 0;
+            hasMore =
+              allOffers.length < totalFromPagination &&
+              batchResponse.data.length === batchSize;
+            offset += batchSize;
           } else {
-            // Fallback: try stats endpoint
-            try {
-              const offersResponse = await offerService.getStats();
-              if (offersResponse.success && offersResponse.data) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const data = offersResponse.data as any;
-                total =
-                  parseInt(data.total_offers as string) ||
-                  parseInt(data.totalOffers as string) ||
-                  parseInt(data.total as string) ||
-                  (typeof data.total === "number" ? data.total : 0) ||
-                  0;
-              }
-            } catch {
-              // Error fetching offer stats
-            }
+            hasMore = false;
           }
-        } catch {
-          // Error fetching offers - try stats endpoint as fallback
+        }
+
+        if (allOffers.length > 0) {
+          // Total offers - count all regardless of status
+          total = allOffers.length;
+
+          // Active offers = status "active" OR "approved"
+          active = allOffers.filter(
+            (offer) =>
+              offer.status === OfferStatusEnum.ACTIVE ||
+              offer.status === OfferStatusEnum.APPROVED
+          ).length;
+
+          // Expired offers
+          expired = allOffers.filter(
+            (offer) => offer.status === OfferStatusEnum.EXPIRED
+          ).length;
+
+          // Pending approval = pending_approval + draft
+          pendingApproval = allOffers.filter(
+            (offer) =>
+              offer.status === OfferStatusEnum.PENDING_APPROVAL ||
+              offer.status === OfferStatusEnum.DRAFT
+          ).length;
+        } else {
+          // Fallback: try stats endpoint
           try {
             const offersResponse = await offerService.getStats();
             if (offersResponse.success && offersResponse.data) {
@@ -392,17 +373,36 @@ export default function OffersPage() {
             // Error fetching offer stats
           }
         }
-
-        setOfferStats({ total, active, expired, pendingApproval });
       } catch {
-        setOfferStats({ total: 0, active: 0, expired: 0, pendingApproval: 0 });
-      } finally {
-        setStatsLoading(false);
+        // Error fetching offers - try stats endpoint as fallback
+        try {
+          const offersResponse = await offerService.getStats();
+          if (offersResponse.success && offersResponse.data) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = offersResponse.data as any;
+            total =
+              parseInt(data.total_offers as string) ||
+              parseInt(data.totalOffers as string) ||
+              parseInt(data.total as string) ||
+              (typeof data.total === "number" ? data.total : 0) ||
+              0;
+          }
+        } catch {
+          // Error fetching offer stats
+        }
       }
-    };
 
-    fetchOfferStats();
+      setOfferStats({ total, active, expired, pendingApproval });
+    } catch {
+      setOfferStats({ total: 0, active: 0, expired: 0, pendingApproval: 0 });
+    } finally {
+      setStatsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchOfferStats();
+  }, [fetchOfferStats]);
 
   // Load offers on component mount and filter changes
   useEffect(() => {
@@ -614,6 +614,7 @@ export default function OffersPage() {
         `"${offerToDelete.name}" has been deleted successfully.`
       );
       await loadOffers(true); // Skip cache for immediate update
+      fetchOfferStats(); // Refresh stats cards
       setShowDeleteModal(false);
       setOfferToDelete(null);
     } catch {
@@ -649,6 +650,7 @@ export default function OffersPage() {
 
       success("Offer Activated", "Offer has been activated successfully.");
       setShowActionMenu(null);
+      fetchOfferStats(); // Refresh stats cards
     } catch {
       showError("Error", "Failed to activate offer");
       // Activate offer error
@@ -717,6 +719,7 @@ export default function OffersPage() {
 
       success("Offer Paused", "Offer has been paused successfully.");
       setShowActionMenu(null);
+      fetchOfferStats(); // Refresh stats cards
     } catch {
       showError("Error", "Failed to pause offer");
       // Pause offer error
