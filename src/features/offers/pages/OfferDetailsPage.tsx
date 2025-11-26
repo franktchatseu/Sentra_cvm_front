@@ -2023,13 +2023,13 @@ export default function OfferDetailsPage() {
             <button
               onClick={handleCreateCreative}
               disabled={isCreatingCreative}
-              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
               style={{ backgroundColor: color.primary.action }}
             >
               {isCreatingCreative ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating...
+                  <span>Creating Creative...</span>
                 </>
               ) : (
                 <span>Create Creative</span>
