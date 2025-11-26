@@ -55,6 +55,16 @@ import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
 import DeliveryEmailReportsPage from "./DeliveryEmailReportsPage";
 import OfferReportsPage from "./OfferReportsPage";
 import SettingsPage from "../../settings/pages/SettingsPage";
+import ServersPage from "../../servers/pages/ServersPage";
+import ServerDetailsPage from "../../servers/pages/ServerDetailsPage";
+import ServerFormPage from "../../servers/pages/ServerFormPage";
+import ConnectionProfilesPage from "../../connection-profiles/pages/ConnectionProfilesPage";
+import ConnectionProfileDetailsPage from "../../connection-profiles/pages/ConnectionProfileDetailsPage";
+import ConnectionProfileFormPage from "../../connection-profiles/pages/ConnectionProfileFormPage";
+import JobTypesPage from "../../jobs/pages/JobTypesPage";
+import ScheduledJobsPage from "../../jobs/pages/ScheduledJobsPage";
+import ScheduledJobDetailsPage from "../../jobs/pages/ScheduledJobDetailsPage";
+import CreateScheduledJobPage from "../../jobs/pages/CreateScheduledJobPage";
 
 export default function Dashboard() {
   return (
@@ -176,6 +186,44 @@ export default function Dashboard() {
           element={<DeliveryEmailReportsPage />}
         />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/servers" element={<ServersPage />} />
+        <Route path="/servers/new" element={<ServerFormPage mode="create" />} />
+        <Route
+          path="/servers/:id/edit"
+          element={<ServerFormPage mode="edit" />}
+        />
+        <Route path="/servers/:id" element={<ServerDetailsPage />} />
+        <Route
+          path="/connection-profiles"
+          element={<ConnectionProfilesPage />}
+        />
+        <Route
+          path="/connection-profiles/new"
+          element={<ConnectionProfileFormPage mode="create" />}
+        />
+        <Route
+          path="/connection-profiles/:id/edit"
+          element={<ConnectionProfileFormPage mode="edit" />}
+        />
+        <Route
+          path="/connection-profiles/:id"
+          element={<ConnectionProfileDetailsPage />}
+        />
+        <Route path="/jobs" element={<ScheduledJobsPage />} />
+        <Route path="/scheduled-jobs" element={<ScheduledJobsPage />} />
+        <Route
+          path="/scheduled-jobs/:id"
+          element={<ScheduledJobDetailsPage />}
+        />
+        <Route
+          path="/scheduled-jobs/:id/edit"
+          element={<CreateScheduledJobPage />}
+        />
+        <Route
+          path="/scheduled-jobs/create"
+          element={<CreateScheduledJobPage />}
+        />
+        <Route path="/job-types" element={<JobTypesPage />} />
       </Routes>
     </DashboardLayout>
   );

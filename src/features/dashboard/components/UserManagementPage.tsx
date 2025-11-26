@@ -18,10 +18,12 @@ import { userService } from "../../users/services/userService";
 import { accountService } from "../../account/services/accountService";
 import { UserType, PaginatedResponse } from "../../users/types/user";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import UserModal from "./UserModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import ErrorState from "../../../shared/components/ui/ErrorState";
 import { color, tw, components } from "../../../shared/utils/utils";
 import { useAuth } from "../../../contexts/AuthContext";
 import { roleService } from "../../roles/services/roleService";
@@ -54,7 +56,9 @@ type AccountRequestListItem = {
 
 export default function UserManagementPage() {
   const navigate = useNavigate();
-  const [users, setUsers] = useState<UserType[]>([]);
+  type UserWithResolvedRole = UserType & { resolvedRoleName?: string };
+
+  const [users, setUsers] = useState<UserWithResolvedRole[]>([]);
   const [accountRequests, setAccountRequests] = useState<
     AccountRequestListItem[]
   >([]);
@@ -95,11 +99,14 @@ export default function UserManagementPage() {
   });
 
   const { success, error: showError } = useToast();
+  const { confirm } = useConfirm();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { user: authUser } = useAuth();
   const [roleLookup, setRoleLookup] = useState<Record<number, Role>>({});
+  const roleLookupRef = useRef<Record<number, Role>>({});
+  const [rolesReady, setRolesReady] = useState(false);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [departmentCounts, setDepartmentCounts] = useState<
     Record<string, number>
@@ -199,7 +206,23 @@ export default function UserManagementPage() {
             );
           });
 
-          setUsers(activeUsers);
+          const currentRoleLookup = roleLookupRef.current;
+          const usersWithResolvedRoles = activeUsers.map((user) => {
+            const primaryRoleId = user.primary_role_id ?? user.role_id;
+            const resolvedRoleName =
+              (primaryRoleId != null
+                ? currentRoleLookup[primaryRoleId]?.name
+                : undefined) ||
+              user.role_name ||
+              "N/A";
+
+            return {
+              ...user,
+              resolvedRoleName,
+            };
+          }) as UserWithResolvedRole[];
+
+          setUsers(usersWithResolvedRoles);
           setAccountRequests(
             pendingActivationUsers.map((pending) => {
               const primaryRoleId = (
@@ -214,7 +237,7 @@ export default function UserManagementPage() {
               )?.role_name;
               const resolvedRoleName =
                 (primaryRoleId != null
-                  ? roleLookup[primaryRoleId]?.name
+                  ? currentRoleLookup[primaryRoleId]?.name
                   : undefined) ?? fallbackRoleName;
 
               return {
@@ -254,12 +277,160 @@ export default function UserManagementPage() {
         setIsLoading(false);
       }
     },
-    [fetchUsers, showError, roleLookup]
+    [fetchUsers, showError]
   );
 
+  // Load both users and roles in parallel on initial mount
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let cancelled = false;
+
+    const loadInitialData = async () => {
+      try {
+        setIsLoading(true);
+        setErrorState("");
+
+        // Fetch both users and roles in parallel
+        const [usersResponse, rolesResponse] = await Promise.allSettled([
+          fetchUsers({ skipCache: false }),
+          roleService.listRoles({
+            limit: 100,
+            offset: 0,
+            skipCache: true,
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        // Process roles
+        if (rolesResponse.status === "fulfilled") {
+          try {
+            const { roles } = rolesResponse.value;
+            const mappedRoles: Record<number, Role> = {};
+            roles.forEach((role) => {
+              mappedRoles[role.id] = role;
+            });
+            setRoleLookup(mappedRoles);
+            roleLookupRef.current = mappedRoles;
+          } catch (err) {
+            console.error("Failed to process roles", err);
+          }
+        } else {
+          console.error("Failed to load roles", rolesResponse.reason);
+        }
+        setRolesReady(true);
+
+        // Process users
+        if (
+          usersResponse.status === "fulfilled" &&
+          usersResponse.value.success
+        ) {
+          const usersData = usersResponse.value.data;
+          const pendingActivationUsers = usersData.filter((candidate) => {
+            const candidateStatus = (
+              candidate as unknown as { account_status?: string }
+            )?.account_status;
+            return (
+              typeof candidateStatus === "string" &&
+              candidateStatus.toLowerCase() === "pending_activation"
+            );
+          });
+
+          const activeUsers = usersData.filter((candidate) => {
+            const candidateStatus = (
+              candidate as unknown as { account_status?: string }
+            )?.account_status;
+            return !(
+              typeof candidateStatus === "string" &&
+              candidateStatus.toLowerCase() === "pending_activation"
+            );
+          });
+
+          const currentRoleLookup = roleLookupRef.current;
+          const usersWithResolvedRoles = activeUsers.map((user) => {
+            const primaryRoleId = user.primary_role_id ?? user.role_id;
+            const resolvedRoleName =
+              (primaryRoleId != null
+                ? currentRoleLookup[primaryRoleId]?.name
+                : undefined) ||
+              user.role_name ||
+              "N/A";
+
+            return {
+              ...user,
+              resolvedRoleName,
+            };
+          }) as UserWithResolvedRole[];
+
+          setUsers(usersWithResolvedRoles);
+          setAccountRequests(
+            pendingActivationUsers.map((pending) => {
+              const primaryRoleId = (
+                pending as unknown as {
+                  primary_role_id?: number;
+                }
+              )?.primary_role_id;
+              const fallbackRoleName = (
+                pending as unknown as {
+                  role_name?: string;
+                }
+              )?.role_name;
+              const resolvedRoleName =
+                (primaryRoleId != null
+                  ? currentRoleLookup[primaryRoleId]?.name
+                  : undefined) ?? fallbackRoleName;
+
+              return {
+                id: pending.id,
+                requestId: (
+                  pending as unknown as { onboarding_request_id?: number }
+                )?.onboarding_request_id,
+                first_name: pending.first_name,
+                last_name: pending.last_name,
+                email_address:
+                  pending.email_address ||
+                  (pending as { email?: string }).email,
+                department: pending.department || undefined,
+                roleId: primaryRoleId ?? undefined,
+                roleName: resolvedRoleName,
+                created_at: pending.created_at,
+              };
+            })
+          );
+          const totalFromResponse =
+            (usersResponse.value.meta?.total as number | undefined) ??
+            usersData.length;
+
+          setUserSummary({
+            total: totalFromResponse,
+            cached: Boolean(usersResponse.value.meta?.isCachedResponse),
+          });
+        } else if (usersResponse.status === "rejected") {
+          const message =
+            usersResponse.reason instanceof Error
+              ? usersResponse.reason.message
+              : "Failed to load users";
+          setErrorState(message);
+          showError("Error loading users", message);
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load data";
+        setErrorState(message);
+        showError("Error loading data", message);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // Load reports after roles are loaded (needed for role name resolution)
@@ -344,34 +515,8 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadRoles = async () => {
-      try {
-        const { roles } = await roleService.listRoles({
-          limit: 100,
-          offset: 0,
-          skipCache: true,
-        });
-
-        if (cancelled) return;
-
-        const mappedRoles: Record<number, Role> = {};
-        roles.forEach((role) => {
-          mappedRoles[role.id] = role;
-        });
-        setRoleLookup(mappedRoles);
-      } catch (err) {
-        console.error("Failed to load roles", err);
-      }
-    };
-
-    loadRoles();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    roleLookupRef.current = roleLookup;
+  }, [roleLookup]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -737,8 +882,16 @@ export default function UserManagementPage() {
   ).sort((a, b) => a.localeCompare(b));
 
   // Get unique roles from users
+  const hasResolvedRoleName = (user: UserType): user is UserWithResolvedRole =>
+    "resolvedRoleName" in user &&
+    typeof (user as UserWithResolvedRole).resolvedRoleName === "string" &&
+    Boolean((user as UserWithResolvedRole).resolvedRoleName);
+
   const getUserRoleName = useCallback(
     (user: UserType): string => {
+      if (hasResolvedRoleName(user)) {
+        return user.resolvedRoleName as string;
+      }
       const primaryRoleId = user.primary_role_id ?? user.role_id;
       if (primaryRoleId != null) {
         const resolvedRole = roleLookup[primaryRoleId];
@@ -878,8 +1031,8 @@ export default function UserManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
             User Management
           </h1>
@@ -887,7 +1040,7 @@ export default function UserManagementPage() {
             Manage users and account requests
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <button
             onClick={() => {
               setSelectedUser(null);
@@ -901,31 +1054,31 @@ export default function UserManagementPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {userStatsCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <div
               key={stat.name}
-              className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
+              className="rounded-md border border-gray-200 bg-white p-4 sm:p-6 shadow-sm"
             >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 min-w-0">
                   <Icon
-                    className="h-5 w-5"
+                    className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
                     style={{ color: color.primary.accent }}
                   />
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 truncate">
                     {stat.name}
                   </p>
                 </div>
                 {stat.badge && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium bg-yellow-100 text-yellow-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] sm:text-[11px] font-medium bg-yellow-100 text-yellow-800 flex-shrink-0">
                     {stat.badge}
                   </span>
                 )}
               </div>
-              <p className="mt-3 text-3xl font-bold text-gray-900">
+              <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold text-gray-900">
                 {stat.value}
               </p>
             </div>
@@ -934,19 +1087,30 @@ export default function UserManagementPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200">
+      <style>{`
+        @media (max-width: 640px) {
+          .user-management-tabs::-webkit-scrollbar {
+            display: none;
+          }
+          .user-management-tabs {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        }
+      `}</style>
+      <div className="user-management-tabs flex gap-1 border-b border-gray-200 overflow-x-auto">
         <button
           onClick={() => setActiveTab("users")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative ${
+          className={`px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-1.5 sm:gap-2 relative flex-shrink-0 ${
             activeTab === "users"
               ? "text-black"
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          <Users className="w-4 h-4" />
-          <span>Users</span>
+          <Users className="w-4 h-4 flex-shrink-0" />
+          <span className="whitespace-nowrap">Users</span>
           <span
-            className="px-2 py-0.5 rounded-full text-xs text-white"
+            className="px-2 py-0.5 rounded-full text-xs text-white flex-shrink-0"
             style={{
               backgroundColor:
                 activeTab === "users" ? color.primary.accent : color.text.muted,
@@ -963,15 +1127,15 @@ export default function UserManagementPage() {
         </button>
         <button
           onClick={() => setActiveTab("requests")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative ${
+          className={`px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-1.5 sm:gap-2 relative flex-shrink-0 ${
             activeTab === "requests"
               ? "text-black"
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          <span>Pending Requests</span>
+          <span className="whitespace-nowrap">Pending Requests</span>
           <span
-            className="px-2 py-0.5 rounded-full text-xs text-white"
+            className="px-2 py-0.5 rounded-full text-xs text-white flex-shrink-0"
             style={{
               backgroundColor:
                 activeTab === "requests"
@@ -990,14 +1154,14 @@ export default function UserManagementPage() {
         </button>
         <button
           onClick={() => setActiveTab("analytics")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 relative ${
+          className={`px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-1.5 sm:gap-2 relative flex-shrink-0 ${
             activeTab === "analytics"
               ? "text-black"
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          <BarChart3 className="w-4 h-4" />
-          <span>Analytics</span>
+          <BarChart3 className="w-4 h-4 flex-shrink-0" />
+          <span className="whitespace-nowrap">Analytics</span>
           {activeTab === "analytics" && (
             <div
               className="absolute bottom-0 left-0 right-0 h-0.5"
@@ -1009,7 +1173,7 @@ export default function UserManagementPage() {
 
       {/* Search and Filters - Only show on Users tab */}
       {activeTab === "users" && (
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
           <div className="flex-1 relative">
             <Search
               className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${tw.textMuted}`}
@@ -1028,7 +1192,7 @@ export default function UserManagementPage() {
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             <HeadlessSelect
               options={[
                 { value: "all", label: "All Departments" },
@@ -1040,7 +1204,7 @@ export default function UserManagementPage() {
               value={filterDepartment}
               onChange={(value) => setFilterDepartment(value as string)}
               placeholder="Select department"
-              className="min-w-[160px]"
+              className="w-full sm:min-w-[160px] sm:w-auto"
             />
 
             <HeadlessSelect
@@ -1054,7 +1218,7 @@ export default function UserManagementPage() {
               value={filterRole}
               onChange={(value) => setFilterRole(value as string)}
               placeholder="Select role"
-              className="min-w-[160px]"
+              className="w-full sm:min-w-[160px] sm:w-auto"
             />
 
             <HeadlessSelect
@@ -1068,7 +1232,7 @@ export default function UserManagementPage() {
                 setFilterStatus(value as "all" | "active" | "inactive")
               }
               placeholder="Select status"
-              className="min-w-[140px]"
+              className="w-full sm:min-w-[140px] sm:w-auto"
             />
           </div>
         </div>
@@ -1078,7 +1242,7 @@ export default function UserManagementPage() {
       <div
         className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
-        {isLoading ? (
+        {!rolesReady || isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <LoadingSpinner
               variant="modern"
@@ -1125,46 +1289,46 @@ export default function UserManagementPage() {
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
-              <div className="hidden lg:block overflow-x-auto">
+              {/* Table with horizontal scroll */}
+              <div className="overflow-x-auto">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead style={{ background: color.surface.tableHeader }}>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         User
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Department
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Role
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Status
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Created
                       </th>
                       <th
-                        className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-center text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Actions
@@ -1181,7 +1345,7 @@ export default function UserManagementPage() {
                       return (
                         <tr key={user.id} className="transition-colors">
                           <td
-                            className="px-6 py-4"
+                            className="px-4 sm:px-6 py-3 sm:py-4"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
@@ -1207,7 +1371,7 @@ export default function UserManagementPage() {
                                 {user.first_name} {user.last_name}
                               </button>
                               <div
-                                className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                                className={`text-sm ${tw.textMuted} truncate mt-1`}
                                 title={user.email_address || user.email}
                               >
                                 {user.email_address || user.email}
@@ -1215,37 +1379,37 @@ export default function UserManagementPage() {
                             </div>
                           </td>
                           <td
-                            className="px-6 py-4 hidden lg:table-cell"
+                            className="px-4 sm:px-6 py-3 sm:py-4"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
                             <span
-                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 whitespace-nowrap`}
                             >
                               {user.department || "N/A"}
                             </span>
                           </td>
                           <td
-                            className="px-6 py-4 hidden xl:table-cell"
+                            className="px-4 sm:px-6 py-3 sm:py-4"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
                             <span
-                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 whitespace-nowrap`}
                             >
                               {getUserRoleName(user)}
                             </span>
                           </td>
                           <td
-                            className="px-6 py-4"
+                            className="px-4 sm:px-6 py-3 sm:py-4"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
                             <span
-                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${
                                 userIsActive
                                   ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
                                   : `bg-[${statusColor}]/10 text-[${statusColor}]`
@@ -1255,7 +1419,7 @@ export default function UserManagementPage() {
                             </span>
                           </td>
                           <td
-                            className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm ${tw.textMuted} whitespace-nowrap`}
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
@@ -1270,7 +1434,7 @@ export default function UserManagementPage() {
                             )}
                           </td>
                           <td
-                            className="px-6 py-4 text-sm font-medium"
+                            className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
@@ -1359,8 +1523,8 @@ export default function UserManagementPage() {
                 </table>
               </div>
 
-              {/* Mobile Cards */}
-              <div className="lg:hidden">
+              {/* Mobile Cards - Hidden, using table with horizontal scroll instead */}
+              <div className="hidden">
                 {filteredUsers.map((user) => {
                   const normalizedStatus = normalizeStatus(user);
                   const userIsActive = normalizedStatus === "active";
@@ -1377,7 +1541,7 @@ export default function UserManagementPage() {
                           <button
                             type="button"
                             onClick={() => handleViewUser(user)}
-                            className="transition-colors"
+                            className="transition-colors truncate block max-w-full"
                             style={{
                               color: "rgb(17, 24, 39)", // gray-900
                             }}
@@ -1388,26 +1552,30 @@ export default function UserManagementPage() {
                             onMouseLeave={(e) => {
                               e.currentTarget.style.color = "rgb(17, 24, 39)"; // gray-900
                             }}
+                            title={`${user.first_name} ${user.last_name}`}
                           >
                             {user.first_name} {user.last_name}
                           </button>
                         </div>
-                        <div className={`text-sm ${tw.textSecondary} mb-2`}>
+                        <div
+                          className={`text-sm ${tw.textSecondary} mb-2 truncate`}
+                          title={user.email_address || user.email}
+                        >
                           {user.email_address || user.email}
                         </div>
-                        <div className="flex flex-wrap gap-2 mb-2">
+                        <div className="flex flex-wrap gap-2 mb-3">
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700`}
                           >
                             {user.department || "N/A"}
                           </span>
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700`}
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700`}
                           >
                             {getUserRoleName(user)}
                           </span>
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                               userIsActive
                                 ? `bg-[${color.status.success}]/10 text-[${color.status.success}]`
                                 : `bg-[${statusColor}]/10 text-[${statusColor}]`
@@ -1416,7 +1584,7 @@ export default function UserManagementPage() {
                             {statusLabel}
                           </span>
                         </div>
-                        <div className="flex items-center justify-end space-x-2">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleToggleStatus(user)}
                             disabled={loadingActions.toggling.has(user.id)}
@@ -1511,34 +1679,34 @@ export default function UserManagementPage() {
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
-              <div className="hidden lg:block overflow-x-auto">
+              {/* Table with horizontal scroll */}
+              <div className="overflow-x-auto">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[600px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead style={{ background: color.surface.tableHeader }}>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         User
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Requested Role
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Requested
                       </th>
                       <th
-                        className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-center text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Actions
@@ -1585,7 +1753,7 @@ export default function UserManagementPage() {
                       return (
                         <tr key={requestKey} className="transition-colors">
                           <td
-                            className="px-6 py-4"
+                            className="px-4 sm:px-6 py-3 sm:py-4"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
@@ -1598,7 +1766,7 @@ export default function UserManagementPage() {
                                 {fullName}
                               </div>
                               <div
-                                className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
+                                className={`text-sm ${tw.textMuted} truncate mt-1`}
                                 title={requestEmail}
                               >
                                 {requestEmail}
@@ -1606,19 +1774,19 @@ export default function UserManagementPage() {
                             </div>
                           </td>
                           <td
-                            className="px-6 py-4 hidden lg:table-cell"
+                            className="px-4 sm:px-6 py-3 sm:py-4"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
                             <span
-                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700`}
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 whitespace-nowrap`}
                             >
                               {requestRole}
                             </span>
                           </td>
                           <td
-                            className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm ${tw.textMuted} whitespace-nowrap`}
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
@@ -1626,7 +1794,7 @@ export default function UserManagementPage() {
                             {formattedDate}
                           </td>
                           <td
-                            className="px-6 py-4 text-sm font-medium"
+                            className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
@@ -1685,8 +1853,8 @@ export default function UserManagementPage() {
                 </table>
               </div>
 
-              {/* Mobile Cards */}
-              <div className="lg:hidden">
+              {/* Mobile Cards - Hidden, using table with horizontal scroll instead */}
+              <div className="hidden">
                 {filteredRequests.map((request, index) => {
                   const requestId = resolveAccountRequestId(request);
                   const requestKey =
@@ -1789,7 +1957,7 @@ export default function UserManagementPage() {
             </>
           )
         ) : activeTab === "analytics" ? (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {reportsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <LoadingSpinner
@@ -1803,9 +1971,9 @@ export default function UserManagementPage() {
                 </span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 {/* Users by Status */}
-                <div className="bg-whiterounded-md border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 min-w-0">
                   {Object.keys(statusCounts).length > 0 ? (
                     (() => {
                       const statusColors: Record<string, string> = {
@@ -1833,12 +2001,12 @@ export default function UserManagementPage() {
                       return (
                         <>
                           <h3
-                            className={`text-base font-semibold ${tw.textPrimary} mb-4`}
+                            className={`text-sm sm:text-base font-semibold ${tw.textPrimary} mb-3 sm:mb-4`}
                           >
                             Users by Status
                           </h3>
-                          <div className="h-56 w-full min-h-[224px] mb-4">
-                            <ResponsiveContainer width="100%" height={224}>
+                          <div className="h-56 sm:h-64 w-full mb-3 sm:mb-4">
+                            <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
                                 <Pie
                                   data={statusData}
@@ -1853,7 +2021,7 @@ export default function UserManagementPage() {
                                       ? `${(percent * 100).toFixed(0)}%`
                                       : "";
                                   }}
-                                  outerRadius={70}
+                                  outerRadius="70%"
                                   fill="#8884d8"
                                   dataKey="value"
                                 >
@@ -1923,7 +2091,7 @@ export default function UserManagementPage() {
                 </div>
 
                 {/* Users by Department */}
-                <div className="bg-whiterounded-md border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 min-w-0">
                   {Object.keys(departmentCounts).length > 0 ? (
                     (() => {
                       const departmentColors = [
@@ -1950,12 +2118,12 @@ export default function UserManagementPage() {
                       return (
                         <>
                           <h3
-                            className={`text-base font-semibold ${tw.textPrimary} mb-4`}
+                            className={`text-sm sm:text-base font-semibold ${tw.textPrimary} mb-3 sm:mb-4`}
                           >
                             Users by Department
                           </h3>
-                          <div className="h-56 w-full min-h-[224px] mb-4">
-                            <ResponsiveContainer width="100%" height={224}>
+                          <div className="h-56 sm:h-64 w-full mb-3 sm:mb-4">
+                            <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
                                 <Pie
                                   data={departmentData}
@@ -1970,7 +2138,7 @@ export default function UserManagementPage() {
                                       ? `${(percent * 100).toFixed(0)}%`
                                       : "";
                                   }}
-                                  outerRadius={70}
+                                  outerRadius="70%"
                                   fill="#8884d8"
                                   dataKey="value"
                                 >
@@ -2046,7 +2214,7 @@ export default function UserManagementPage() {
                 </div>
 
                 {/* Users by Role */}
-                <div className="bg-whiterounded-md border border-gray-200 p-5 min-w-0 flex-shrink-0">
+                <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 min-w-0">
                   {Object.keys(roleCounts).length > 0 ? (
                     (() => {
                       const roleColors = [
@@ -2072,12 +2240,12 @@ export default function UserManagementPage() {
                       return (
                         <>
                           <h3
-                            className={`text-base font-semibold ${tw.textPrimary} mb-4`}
+                            className={`text-sm sm:text-base font-semibold ${tw.textPrimary} mb-3 sm:mb-4`}
                           >
                             Users by Role
                           </h3>
-                          <div className="h-56 w-full min-h-[224px] mb-4">
-                            <ResponsiveContainer width="100%" height={224}>
+                          <div className="h-56 sm:h-64 w-full mb-3 sm:mb-4">
+                            <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
                                 <Pie
                                   data={roleData}
@@ -2092,7 +2260,7 @@ export default function UserManagementPage() {
                                       ? `${(percent * 100).toFixed(0)}%`
                                       : "";
                                   }}
-                                  outerRadius={70}
+                                  outerRadius="70%"
                                   fill="#8884d8"
                                   dataKey="value"
                                 >

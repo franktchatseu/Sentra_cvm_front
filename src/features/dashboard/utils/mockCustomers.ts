@@ -3,6 +3,7 @@ import type { CustomerRow } from "../types/ReportsAPI";
 export type CustomerWithContact = CustomerRow & {
   email: string;
   phone: string;
+  msisdn: string;
 };
 
 export const CUSTOMER_NAMES = [
@@ -48,13 +49,14 @@ export const CUSTOMER_CHANNELS: Array<CustomerRow["preferredChannel"]> = [
 ];
 
 export const CUSTOMER_LOCATIONS = [
-  "Nairobi, KE",
-  "Kampala, UG",
-  "Lagos, NG",
-  "Accra, GH",
-  "Dar es Salaam, TZ",
-  "Kigali, RW",
-  "Addis Ababa, ET",
+  "Nairobi CBD, KE",
+  "Westlands, Nairobi",
+  "Kilimani, Nairobi",
+  "Karen, Nairobi",
+  "Runda, Nairobi",
+  "Mombasa, KE",
+  "Nakuru, KE",
+  "Kisumu, KE",
 ];
 
 const DEVICE_TYPES = ["iOS", "Android", "Web"];
@@ -68,6 +70,7 @@ export const generateMockCustomers = (): CustomerWithContact[] => {
     const name = CUSTOMER_NAMES[index % CUSTOMER_NAMES.length];
     const email = `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`;
     const phone = `+2547${(1000000 + index * 37).toString().slice(-7)}`;
+    const msisdn = phone.replace("+", "");
 
     const segment = CUSTOMER_SEGMENTS[index % CUSTOMER_SEGMENTS.length];
     const segments =
@@ -119,6 +122,7 @@ export const generateMockCustomers = (): CustomerWithContact[] => {
       location,
       email,
       phone,
+      msisdn,
       deviceType,
     } as CustomerWithContact;
   });

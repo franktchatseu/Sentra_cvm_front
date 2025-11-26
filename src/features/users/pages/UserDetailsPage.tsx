@@ -14,7 +14,7 @@ import { userService } from "../services/userService";
 import {
   UserType,
   UserPermissionsResponse,
-  Permission,
+  // Permission,
   UserPermissionsSummaryResponse,
 } from "../types/user";
 import { useToast } from "../../../contexts/ToastContext";
@@ -265,7 +265,9 @@ export default function UserDetailsPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+            <h1
+              className={`${tw.mainHeading} ${tw.textPrimary} md:text-lg text-base`}
+            >
               {user.display_name || `${user.first_name} ${user.last_name}`}
             </h1>
             <p className={`${tw.textSecondary} text-sm mt-1`}>
@@ -685,7 +687,7 @@ export default function UserDetailsPage() {
                   {/* Permissions by Category */}
                   {Object.keys(permissionsByCategory).length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                      <h3 className="md:text-sm text-base font-semibold text-gray-900 mb-3">
                         Permissions by Category
                       </h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -823,7 +825,7 @@ export default function UserDetailsPage() {
                           </table>
                         </div>
                         {/* Mobile View */}
-                        <div className="lg:hidden space-y-2 p-4">
+                        <div className="lg:hidden space-y-2 ">
                           {permissionsList.map((perm) => (
                             <div
                               key={perm.id}

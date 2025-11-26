@@ -1,0 +1,1122 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+  AlertTriangle,
+  Archive,
+  Eye,
+  HeartPulse,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+  Server as ServerIcon,
+  Shield,
+} from "lucide-react";
+import { serverService } from "../services/serverService";
+import {
+  ServerCountByEnvironment,
+  ServerCountByProtocol,
+  ServerCountByRegion,
+  ServerHealthStats,
+  ServerType,
+} from "../types/server";
+import ServerStatsCards from "../components/ServerStatsCards";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
+import { color, tw } from "../../../shared/utils/utils";
+import { useNavigate } from "react-router-dom";
+
+const PAGE_SIZE = 15;
+const BASE_FETCH_LIMIT = 100;
+
+type ScopeFilter = "all" | "health-enabled" | "health-failing" | "health-due";
+
+export default function ServersPage() {
+  const { error: showError, success } = useToast();
+  const { confirm } = useConfirm();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [scope, setScope] = useState<ScopeFilter>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [environmentFilter, setEnvironmentFilter] = useState("all");
+  const [protocolFilter, setProtocolFilter] = useState("all");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoadingServers, setIsLoadingServers] = useState(true);
+  const [sourceServers, setSourceServers] = useState<ServerType[]>([]);
+  const [filteredServers, setFilteredServers] = useState<ServerType[]>([]);
+  const [visibleServers, setVisibleServers] = useState<ServerType[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [selectedServerIds, setSelectedServerIds] = useState<Set<number>>(
+    () => new Set()
+  );
+  const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
+  const [actionState, setActionState] = useState<{
+    id: number;
+    action: "activate" | "deactivate" | "health" | "deprecate";
+  } | null>(null);
+  const userId = user?.user_id;
+  const headerCheckboxRef = useRef<HTMLInputElement | null>(null);
+
+  const [healthStats, setHealthStats] = useState<ServerHealthStats | null>(
+    null
+  );
+  const [environmentCounts, setEnvironmentCounts] =
+    useState<ServerCountByEnvironment>([]);
+  const [protocolCounts, setProtocolCounts] = useState<ServerCountByProtocol>(
+    []
+  );
+  const [regionCounts, setRegionCounts] = useState<ServerCountByRegion>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [isClosingFilters, setIsClosingFilters] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim().toLowerCase());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const closeFilters = useCallback(() => {
+    setIsClosingFilters(true);
+    setTimeout(() => {
+      setShowFilters(false);
+      setIsClosingFilters(false);
+    }, 300);
+  }, []);
+  const loadStats = useCallback(async () => {
+    setIsLoadingStats(true);
+    try {
+      const [health, env, protocol, regions] = await Promise.all([
+        serverService.getHealthStats(),
+        serverService.getEnvironmentCounts(),
+        serverService.getProtocolCounts(),
+        serverService.getRegionDistribution(),
+      ]);
+      setHealthStats(health);
+      setEnvironmentCounts(Array.isArray(env) ? env : []);
+      setProtocolCounts(Array.isArray(protocol) ? protocol : []);
+      setRegionCounts(Array.isArray(regions) ? regions : []);
+    } catch (err) {
+      showError(
+        "Failed to load server analytics",
+        (err as Error).message || "Please try again later."
+      );
+    } finally {
+      setIsLoadingStats(false);
+    }
+  }, [showError]);
+
+  const loadServers = useCallback(async () => {
+    setIsLoadingServers(true);
+    try {
+      let dataset: ServerType[] = [];
+      const searchValue = debouncedSearchTerm.trim();
+      const usingBackendSearch = scope === "all" && Boolean(searchValue);
+      const listQuery = {
+        limit: BASE_FETCH_LIMIT,
+        offset: 0,
+      };
+
+      if (scope === "health-enabled") {
+        dataset = await serverService.listHealthCheckEnabled();
+      } else if (scope === "health-failing") {
+        dataset = await serverService.listHealthCheckFailing();
+      } else if (scope === "health-due") {
+        dataset = await serverService.listHealthCheckDue();
+      } else if (usingBackendSearch) {
+        dataset = await serverService.searchServers({
+          ...listQuery,
+          searchTerm: searchValue,
+        });
+      } else if (statusFilter === "deprecated") {
+        dataset = await serverService.getDeprecatedServers(listQuery);
+      } else if (statusFilter === "active") {
+        dataset = await serverService.getActiveServers(listQuery);
+      } else if (environmentFilter !== "all") {
+        dataset = await serverService.getServersByEnvironment(
+          environmentFilter,
+          listQuery
+        );
+      } else if (protocolFilter !== "all") {
+        dataset = await serverService.getServersByProtocol(
+          protocolFilter,
+          listQuery
+        );
+      } else if (regionFilter !== "all") {
+        dataset = await serverService.getServersByRegion(
+          regionFilter,
+          listQuery
+        );
+      } else {
+        const response = await serverService.listServers({
+          ...listQuery,
+          activeOnly: statusFilter === "inactive" ? false : undefined,
+        });
+        dataset = response.data || [];
+      }
+
+      setSourceServers(Array.isArray(dataset) ? dataset : []);
+    } catch (err) {
+      setSourceServers([]);
+      showError(
+        "Failed to load servers",
+        (err as Error).message || "Unable to load server registry."
+      );
+    } finally {
+      setIsLoadingServers(false);
+    }
+  }, [
+    scope,
+    showError,
+    debouncedSearchTerm,
+    environmentFilter,
+    protocolFilter,
+    regionFilter,
+    statusFilter,
+  ]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  useEffect(() => {
+    loadServers();
+  }, [loadServers]);
+
+  useEffect(() => {
+    setSelectedServerIds((prev) => {
+      if (prev.size === 0) {
+        return prev;
+      }
+      const next = new Set<number>();
+      sourceServers.forEach((server) => {
+        if (prev.has(server.id)) {
+          next.add(server.id);
+        }
+      });
+      return next;
+    });
+  }, [sourceServers]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    environmentFilter,
+    protocolFilter,
+    regionFilter,
+    statusFilter,
+    debouncedSearchTerm,
+    scope,
+    sourceServers,
+  ]);
+
+  useEffect(() => {
+    const usingBackendSearch = scope === "all" && Boolean(debouncedSearchTerm);
+
+    const filtered = sourceServers.filter((server) => {
+      if (
+        environmentFilter !== "all" &&
+        server.environment?.toLowerCase() !== environmentFilter.toLowerCase()
+      ) {
+        return false;
+      }
+
+      if (
+        protocolFilter !== "all" &&
+        server.protocol?.toLowerCase() !== protocolFilter.toLowerCase()
+      ) {
+        return false;
+      }
+
+      if (
+        regionFilter !== "all" &&
+        (server.region || "").toLowerCase() !== regionFilter.toLowerCase()
+      ) {
+        return false;
+      }
+
+      if (statusFilter === "active" && !server.is_active) {
+        return false;
+      }
+
+      if (statusFilter === "inactive" && server.is_active) {
+        return false;
+      }
+
+      if (statusFilter === "deprecated" && !server.is_deprecated) {
+        return false;
+      }
+
+      if (
+        debouncedSearchTerm &&
+        !usingBackendSearch &&
+        !`${server.name} ${server.code}`
+          .toLowerCase()
+          .includes(debouncedSearchTerm)
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    setFilteredServers(filtered);
+    setTotalCount(filtered.length);
+  }, [
+    sourceServers,
+    environmentFilter,
+    protocolFilter,
+    regionFilter,
+    statusFilter,
+    debouncedSearchTerm,
+  ]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+    setPage((prev) => Math.min(prev, totalPages));
+  }, [totalCount]);
+
+  useEffect(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    const slice = filteredServers.slice(start, start + PAGE_SIZE);
+    setVisibleServers(slice);
+  }, [filteredServers, page]);
+
+  const visibleIds = useMemo(
+    () => visibleServers.map((server) => server.id),
+    [visibleServers]
+  );
+
+  const allVisibleSelected =
+    visibleIds.length > 0 &&
+    visibleIds.every((id) => selectedServerIds.has(id));
+
+  const someVisibleSelected = visibleIds.some((id) =>
+    selectedServerIds.has(id)
+  );
+
+  const hasSelection = selectedServerIds.size > 0;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate =
+        someVisibleSelected && !allVisibleSelected;
+    }
+  }, [someVisibleSelected, allVisibleSelected]);
+
+  const environmentOptions = useMemo(() => {
+    const values = new Set(
+      environmentCounts
+        .map((env) => env.environment)
+        .filter((env): env is string => Boolean(env))
+    );
+    sourceServers.forEach((server) => {
+      if (server.environment) {
+        values.add(server.environment);
+      }
+    });
+    return ["all", ...Array.from(values)];
+  }, [environmentCounts, sourceServers]);
+
+  const protocolOptions = useMemo(() => {
+    const values = new Set(
+      protocolCounts
+        .map((protocol) => protocol.protocol)
+        .filter((protocol): protocol is string => Boolean(protocol))
+    );
+    sourceServers.forEach((server) => {
+      if (server.protocol) {
+        values.add(server.protocol);
+      }
+    });
+    return ["all", ...Array.from(values)];
+  }, [protocolCounts, sourceServers]);
+
+  const regionOptions = useMemo(() => {
+    const values = new Set(
+      regionCounts
+        .map((region) => region.region)
+        .filter((region): region is string => Boolean(region))
+    );
+    sourceServers.forEach((server) => {
+      if (server.region) {
+        values.add(server.region);
+      }
+    });
+    return ["all", ...Array.from(values)];
+  }, [regionCounts, sourceServers]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const handleRefresh = useCallback(() => {
+    loadStats();
+    loadServers();
+  }, [loadServers, loadStats]);
+
+  const handleEdit = (server: ServerType, event: React.MouseEvent) => {
+    event.stopPropagation();
+    navigate(`/dashboard/servers/${server.id}/edit`);
+  };
+
+  const renderHealthBadge = (server: ServerType) => {
+    if (!server.health_check_enabled) {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+          <Shield size={14} />
+          Disabled
+        </span>
+      );
+    }
+
+    if (server.last_health_check_status === "unhealthy") {
+      return (
+        <span
+          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
+          style={{
+            backgroundColor: "rgba(251,113,133,0.12)",
+            color: color.status.danger,
+          }}
+        >
+          <AlertTriangle size={14} style={{ color: color.status.danger }} />
+          Unhealthy
+        </span>
+      );
+    }
+
+    if (server.last_health_check_status === "healthy") {
+      return (
+        <span
+          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
+          style={{
+            backgroundColor: "rgba(16,185,129,0.12)",
+            color: color.status.success,
+          }}
+        >
+          <Shield size={14} style={{ color: color.status.success }} />
+          Healthy
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+        <Shield size={14} />
+        Unknown
+      </span>
+    );
+  };
+
+  const isEmptyState = !isLoadingServers && filteredServers.length === 0;
+
+  const toggleServerSelection = (id: number) => {
+    setSelectedServerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (visibleIds.length === 0) return;
+    setSelectedServerIds((prev) => {
+      const next = new Set(prev);
+      const everyVisibleSelected = visibleIds.every((id) => next.has(id));
+      if (everyVisibleSelected) {
+        visibleIds.forEach((id) => next.delete(id));
+      } else {
+        visibleIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkStatusChange = async (
+    action: "activate" | "deactivate"
+  ): Promise<void> => {
+    const ids = Array.from(selectedServerIds);
+    if (ids.length === 0) return;
+
+    const confirmed = await confirm({
+      title: `${action === "activate" ? "Activate" : "Deactivate"} Servers`,
+      message: `Apply the ${
+        action === "activate" ? "activation" : "deactivation"
+      } status to ${ids.length} selected server${ids.length === 1 ? "" : "s"}?`,
+      type: action === "activate" ? "success" : "warning",
+      confirmText: action === "activate" ? "Activate" : "Deactivate",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    setIsBulkActionLoading(true);
+    try {
+      const payload = {
+        serverIds: ids,
+        updatedBy: userId,
+      };
+      const response =
+        action === "activate"
+          ? await serverService.bulkActivateServers(payload)
+          : await serverService.bulkDeactivateServers(payload);
+      const updatedCount =
+        response?.activated ?? response?.deactivated ?? ids.length;
+      success(
+        `Servers ${action === "activate" ? "activated" : "deactivated"}`,
+        `${updatedCount} server${updatedCount === 1 ? "" : "s"} updated.`
+      );
+      setSelectedServerIds(new Set());
+      await loadServers();
+    } catch (err) {
+      showError(
+        `Failed to ${
+          action === "activate" ? "activate" : "deactivate"
+        } servers`,
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setIsBulkActionLoading(false);
+    }
+  };
+
+  const handleActivationToggle = async (
+    server: ServerType,
+    event?: React.MouseEvent
+  ) => {
+    event?.stopPropagation();
+    const action = server.is_active ? "deactivate" : "activate";
+    const confirmed = await confirm({
+      title: `${action === "activate" ? "Activate" : "Deactivate"} Server`,
+      message: `Are you sure you want to ${action} "${server.name}"?`,
+      type: action === "activate" ? "success" : "warning",
+      confirmText: action === "activate" ? "Activate" : "Deactivate",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
+
+    setActionState({ id: server.id, action });
+    try {
+      if (action === "activate") {
+        await serverService.activateServer(server.id);
+      } else {
+        await serverService.deactivateServer(server.id);
+      }
+      success(
+        `Server ${action === "activate" ? "activated" : "deactivated"}`,
+        `${server.name} is now ${
+          action === "activate" ? "active" : "inactive"
+        }.`
+      );
+      await loadServers();
+    } catch (err) {
+      showError(
+        `Failed to ${action} server`,
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setActionState(null);
+    }
+  };
+
+  const handleDeprecationToggle = async (
+    server: ServerType,
+    event?: React.MouseEvent
+  ) => {
+    event?.stopPropagation();
+    const nextAction = server.is_deprecated ? "undeprecate" : "deprecate";
+    const confirmed = await confirm({
+      title: `${nextAction === "deprecate" ? "Deprecate" : "Restore"} Server`,
+      message: `Are you sure you want to ${nextAction} "${server.name}"?`,
+      type: nextAction === "deprecate" ? "warning" : "info",
+      confirmText: nextAction === "deprecate" ? "Deprecate" : "Restore",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
+
+    setActionState({ id: server.id, action: "deprecate" });
+    try {
+      if (nextAction === "deprecate") {
+        await serverService.deprecateServer(server.id);
+      } else {
+        await serverService.undeprecateServer(server.id);
+      }
+      success(
+        `Server ${nextAction === "deprecate" ? "deprecated" : "restored"}`,
+        `${server.name} ${
+          nextAction === "deprecate"
+            ? "will no longer receive jobs"
+            : "is available again"
+        }.`
+      );
+      await loadServers();
+    } catch (err) {
+      showError(
+        `Failed to ${nextAction} server`,
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setActionState(null);
+    }
+  };
+
+  const handleHealthToggle = async (
+    server: ServerType,
+    event?: React.MouseEvent
+  ) => {
+    event?.stopPropagation();
+    const action = server.health_check_enabled ? "disable" : "enable";
+    const confirmed = await confirm({
+      title: `${action === "enable" ? "Enable" : "Disable"} Health Checks`,
+      message: `Are you sure you want to ${action} health monitoring for "${server.name}"?`,
+      type: action === "enable" ? "success" : "warning",
+      confirmText: action === "enable" ? "Enable" : "Disable",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
+
+    setActionState({ id: server.id, action: "health" });
+    try {
+      if (action === "enable") {
+        await serverService.enableHealthCheck(server.id, {
+          healthCheckUrl: server.health_check_url || undefined,
+        });
+      } else {
+        await serverService.disableHealthCheck(server.id);
+      }
+      success(
+        `Health checks ${action === "enable" ? "enabled" : "disabled"}`,
+        `${server.name} ${
+          action === "enable"
+            ? "will report uptime again"
+            : "will stop automated health polling"
+        }.`
+      );
+      await loadServers();
+    } catch (err) {
+      showError(
+        `Failed to ${action} health checks`,
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setActionState(null);
+    }
+  };
+
+  const isServerActionInFlight = (
+    serverId: number,
+    actions: Array<"activate" | "deactivate" | "health" | "deprecate">
+  ) => actionState?.id === serverId && actions.includes(actionState.action);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+            Servers Registry
+          </h1>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>
+            Track infrastructure endpoints, health posture, and status changes.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/dashboard/servers/new")}
+            className={`${tw.button} inline-flex items-center gap-2`}
+          >
+            <Plus size={16} />
+            Add Server
+          </button>
+        </div>
+      </div>
+
+      {hasSelection && (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-gray-200 bg-white/80 px-4 py-3 text-sm text-gray-700">
+          <span className="font-semibold">
+            {selectedServerIds.size} selected
+          </span>
+          <button
+            type="button"
+            onClick={() => handleBulkStatusChange("activate")}
+            disabled={isBulkActionLoading}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 font-medium text-green-600 hover:bg-green-50 disabled:opacity-60"
+          >
+            <Power size={14} />
+            Activate
+          </button>
+          <button
+            type="button"
+            onClick={() => handleBulkStatusChange("deactivate")}
+            disabled={isBulkActionLoading}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            <Power size={14} className="rotate-180" />
+            Deactivate
+          </button>
+          {isBulkActionLoading && (
+            <span className="text-xs text-gray-500">Updating…</span>
+          )}
+        </div>
+      )}
+
+      <ServerStatsCards
+        healthStats={healthStats}
+        environmentCounts={environmentCounts}
+        protocolCounts={protocolCounts}
+        regionCounts={regionCounts}
+        isLoading={isLoadingStats}
+      />
+
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="relative flex-1">
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              aria-hidden
+            />
+            <input
+              type="text"
+              placeholder="Search by name or code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm focus:border-gray-300 focus:outline-none focus:ring-0"
+            />
+          </div>
+          <HeadlessSelect
+            options={[
+              { value: "all", label: "All servers" },
+              { value: "health-enabled", label: "Health on" },
+              { value: "health-failing", label: "Failing" },
+              { value: "health-due", label: "Due" },
+            ]}
+            value={scope}
+            onChange={(value) => setScope((value as ScopeFilter) ?? "all")}
+            placeholder="Dataset"
+            className="md:w-60"
+          />
+          <button
+            onClick={() => setShowFilters(true)}
+            className="inline-flex items-center justify-center rounded-md bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          >
+            Filters
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-md border border-gray-200">
+        {isLoadingServers ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <LoadingSpinner variant="modern" size="lg" color="primary" />
+            <p className="mt-4 text-sm text-gray-500">Loading servers…</p>
+          </div>
+        ) : isEmptyState ? (
+          <div className="py-16 text-center bg-white">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+              <ServerIcon size={24} />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-gray-900">
+              No servers match the filters
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Adjust your filters or refresh the data.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table
+              className="w-full min-w-[860px] text-sm"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                  <th className="px-3 py-3 text-sm font-medium">
+                    <input
+                      ref={headerCheckboxRef}
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                      checked={allVisibleSelected}
+                      onChange={toggleSelectAllVisible}
+                      aria-label="Select visible servers"
+                    />
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                    Server
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                    Environment
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                    Endpoint
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                    Health
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                    Status
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-sm font-medium">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleServers.map((server) => {
+                  const activationLoading = isServerActionInFlight(server.id, [
+                    "activate",
+                    "deactivate",
+                  ]);
+                  const healthLoading = isServerActionInFlight(server.id, [
+                    "health",
+                  ]);
+                  const deprecateLoading = isServerActionInFlight(server.id, [
+                    "deprecate",
+                  ]);
+
+                  return (
+                    <tr key={server.id} className="transition-colors text-sm">
+                      <td
+                        className="px-3 py-3"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedServerIds.has(server.id)}
+                          onChange={(event) => {
+                            event.stopPropagation();
+                            toggleServerSelection(server.id);
+                          }}
+                          aria-label={`Select ${server.name}`}
+                          className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        />
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(`/dashboard/servers/${server.id}`)
+                          }
+                          className="font-semibold text-gray-900"
+                        >
+                          {server.name}
+                        </button>
+                        <p className="text-xs text-gray-500">{server.code}</p>
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-gray-900 text-sm"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="uppercase">
+                          {server.environment || "—"}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {server.region || "—"}
+                        </p>
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <p className="font-mono text-xs text-gray-700">
+                          {`${server.protocol}://${server.host}${
+                            server.port ? `:${server.port}` : ""
+                          }${server.base_path || ""}`.replace(/\/+$/, "")}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Timeout {server.timeout_seconds}s · Retries{" "}
+                          {server.max_retries}
+                        </p>
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        {renderHealthBadge(server)}
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="flex flex-wrap gap-2">
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                              server.is_active
+                                ? `${tw.statusSuccess10} ${tw.success}`
+                                : `${tw.statusDanger10} ${tw.danger}`
+                            }`}
+                          >
+                            {server.is_active ? "Active" : "Inactive"}
+                          </span>
+                          {server.is_deprecated && (
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${tw.statusWarning10} ${tw.warning}`}
+                            >
+                              Deprecated
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-right"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/dashboard/servers/${server.id}`)
+                            }
+                            className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 transition-colors hover:bg-gray-100"
+                            aria-label={`View ${server.name}`}
+                            title="View details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleEdit(server, e)}
+                            className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 transition-colors hover:bg-gray-100"
+                            aria-label={`Edit ${server.name}`}
+                            title="Edit server"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleHealthToggle(server, e)}
+                            className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
+                              server.health_check_enabled
+                                ? "text-green-600 hover:bg-green-50"
+                                : "text-gray-600 hover:bg-gray-100"
+                            } ${healthLoading ? "opacity-50" : ""}`}
+                            aria-label={
+                              server.health_check_enabled
+                                ? `Disable health checks for ${server.name}`
+                                : `Enable health checks for ${server.name}`
+                            }
+                            title={
+                              server.health_check_enabled
+                                ? "Disable health checks"
+                                : "Enable health checks"
+                            }
+                            disabled={healthLoading}
+                          >
+                            <HeartPulse size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleActivationToggle(server, e)}
+                            className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
+                              server.is_active
+                                ? "text-green-600 hover:bg-green-50"
+                                : "text-gray-600 hover:bg-gray-100"
+                            } ${activationLoading ? "opacity-50" : ""}`}
+                            aria-label={
+                              server.is_active
+                                ? `Deactivate ${server.name}`
+                                : `Activate ${server.name}`
+                            }
+                            title={server.is_active ? "Deactivate" : "Activate"}
+                            disabled={activationLoading}
+                          >
+                            <Power size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeprecationToggle(server, e)}
+                            className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
+                              server.is_deprecated
+                                ? "text-amber-600 hover:bg-amber-50"
+                                : "text-gray-600 hover:bg-gray-100"
+                            } ${deprecateLoading ? "opacity-50" : ""}`}
+                            aria-label={
+                              server.is_deprecated
+                                ? `Restore ${server.name}`
+                                : `Deprecate ${server.name}`
+                            }
+                            title={
+                              server.is_deprecated ? "Undeprecate" : "Deprecate"
+                            }
+                            disabled={deprecateLoading}
+                          >
+                            <Archive size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {!isLoadingServers && filteredServers.length > 0 && (
+        <div className="flex flex-col items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-6 py-4 text-sm text-gray-600 md:flex-row">
+          <p>
+            Showing {(page - 1) * PAGE_SIZE + 1}-
+            {Math.min(page * PAGE_SIZE, totalCount)} of {totalCount} servers
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={page === 1}
+              className="rounded-md border border-gray-200 px-3 py-1 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Prev
+            </button>
+            <span className="text-gray-500">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={page === totalPages}
+              className="rounded-md border border-gray-200 px-3 py-1 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(showFilters || isClosingFilters) &&
+        createPortal(
+          <div
+            className={`fixed inset-0 z-[9999] ${
+              isClosingFilters
+                ? "animate-out fade-out duration-300"
+                : "animate-in fade-in duration-300"
+            }`}
+          >
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={closeFilters}
+              role="presentation"
+            />
+            <div
+              className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transition-transform duration-300 ${
+                isClosingFilters ? "translate-x-full" : "translate-x-0"
+              }`}
+            >
+              <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                <button
+                  onClick={closeFilters}
+                  className="text-xl text-gray-400 hover:text-gray-600"
+                  aria-label="Close filters"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="h-[calc(100%-140px)] space-y-6 overflow-y-auto px-6 py-6">
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Status
+                  </p>
+                  <HeadlessSelect
+                    options={[
+                      { value: "all", label: "All statuses" },
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
+                      { value: "deprecated", label: "Deprecated" },
+                    ]}
+                    value={statusFilter}
+                    onChange={(value) => setStatusFilter(String(value))}
+                    placeholder="Status"
+                  />
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Environment
+                  </p>
+                  <HeadlessSelect
+                    options={environmentOptions.map((value) => ({
+                      value,
+                      label:
+                        value === "all"
+                          ? "All environments"
+                          : value.toString().toUpperCase(),
+                    }))}
+                    value={environmentFilter}
+                    onChange={(value) => setEnvironmentFilter(String(value))}
+                    placeholder="Environment"
+                    searchable
+                  />
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Protocol
+                  </p>
+                  <HeadlessSelect
+                    options={protocolOptions.map((value) => ({
+                      value,
+                      label:
+                        value === "all" ? "All protocols" : value.toString(),
+                    }))}
+                    value={protocolFilter}
+                    onChange={(value) => setProtocolFilter(String(value))}
+                    placeholder="Protocol"
+                    searchable
+                  />
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Region
+                  </p>
+                  <HeadlessSelect
+                    options={regionOptions.map((value) => ({
+                      value,
+                      label: value === "all" ? "All regions" : value.toString(),
+                    }))}
+                    value={regionFilter}
+                    onChange={(value) => setRegionFilter(String(value))}
+                    placeholder="Region"
+                    searchable
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
+                <button
+                  onClick={() => {
+                    setStatusFilter("all");
+                    setEnvironmentFilter("all");
+                    setProtocolFilter("all");
+                    setRegionFilter("all");
+                  }}
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Clear all
+                </button>
+                <button
+                  onClick={closeFilters}
+                  className="rounded-md bg-black px-5 py-2 text-sm font-semibold text-white hover:bg-black/80"
+                >
+                  Apply filters
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}

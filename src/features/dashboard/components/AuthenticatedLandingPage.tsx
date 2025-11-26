@@ -175,6 +175,7 @@ export default function AuthenticatedLandingPage() {
                 const navigableModules = [
                   "cm",
                   "analytics",
+                  "360",
                   "target",
                   "config",
                 ];
