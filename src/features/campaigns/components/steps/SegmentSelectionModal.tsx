@@ -65,7 +65,6 @@ export default function SegmentSelectionModal({
       setIsLoading(true);
       try {
         const response = await segmentService.getActiveSegments({
-          pageSize: 100,
           skipCache: true,
         });
         const backendSegments = response.data || [];

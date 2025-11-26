@@ -193,7 +193,11 @@ export default function CampaignDefinitionStep({
           pageSize: 100,
           skipCache: true,
         });
-        setPrograms(response.data || []);
+        // Filter out inactive programs
+        const activePrograms = (response.data || []).filter(
+          (program) => program.is_active === true
+        );
+        setPrograms(activePrograms);
       } catch (error) {
         console.error("Failed to fetch programs:", error);
         setPrograms([]);

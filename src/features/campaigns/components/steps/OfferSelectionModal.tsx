@@ -60,9 +60,11 @@ export default function OfferSelectionModal({
       setLoading(true);
       setError(null);
 
-      const response = await offerService.getActiveOffers({
-        limit: 100,
+      const response = await offerService.searchOffers({
+        limit: 100, // Get all offers for selection
         skipCache: true,
+        //  Re-enable lifecycleStatus filter when offers have proper lifecycle status
+        // status: 'active' // Only show active offers (currently commented out because offers are in 'draft' status)
       });
 
       // Convert Offer objects to CampaignOffer format
@@ -83,7 +85,7 @@ export default function OfferSelectionModal({
 
       setOffers(campaignOffers);
     } catch (err) {
-      console.error("Failed to load active offers:", err);
+      console.error("Failed to load offers:", err);
       setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
       setLoading(false);
