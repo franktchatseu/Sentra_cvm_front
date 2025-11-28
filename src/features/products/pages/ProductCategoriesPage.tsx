@@ -177,6 +177,7 @@ function ProductsModal({
       setError(null);
 
       // Force refresh if requested (e.g., after assign/remove operations)
+      // Always use skipCache: true to get fresh data (same approach as campaigns/offers/segments)
       const snapshot =
         forceRefresh || !allProducts.length
           ? await refreshAllProducts()
@@ -185,23 +186,19 @@ function ProductsModal({
       const categoryId = Number(category.id);
       const catalogTag = buildCatalogTag(category.id);
 
+      // Filter products by primary category OR tags (same approach as campaigns/offers/segments)
+      // This avoids using getProductsByTag which doesn't support skipCache
       const productsForCategory = snapshot.filter(
         (product: Product) => Number(product.category_id) === categoryId
       );
 
-      let taggedProducts: Product[] = [];
-      try {
-        // Note: getProductsByTag doesn't support skipCache (backend limitation)
-        // We force refresh allProducts instead to get fresh data
-        const taggedResponse = await productService.getProductsByTag({
-          tag: catalogTag,
-          limit: 100,
-        });
-        taggedProducts = taggedResponse.data || [];
-      } catch (tagErr) {
-        console.error("Failed to load catalog-tagged products:", tagErr);
-      }
+      // Filter products by catalog tag from the same snapshot
+      const taggedProducts = snapshot.filter(
+        (product: Product) =>
+          Array.isArray(product.tags) && product.tags.includes(catalogTag)
+      );
 
+      // Merge both lists (primary category + tagged products)
       const mergedProducts = new Map<number, Product>();
       [...productsForCategory, ...taggedProducts].forEach((product) => {
         if (product && typeof product.id === "number") {
@@ -544,14 +541,30 @@ export default function ProductCatalogsPage() {
 
   const loadAllProducts = async (skipCache = false) => {
     try {
-      const response = await productService.getAllProducts({
-        limit: 100,
-        skipCache: skipCache,
-      });
-      const products = response.data || [];
-      setAllProducts(products);
+      // Fetch all products with pagination (same approach as campaigns/offers/segments)
+      // This ensures we get all products including their tags for client-side filtering
+      const limit = 100;
+      let offset = 0;
+      const allProductsList: Product[] = [];
+      let hasMore = true;
 
-      return products;
+      while (hasMore) {
+        const response = await productService.getAllProducts({
+          limit: limit,
+          offset: offset,
+          skipCache: skipCache,
+        });
+
+        const products = response.data || [];
+        allProductsList.push(...products);
+
+        const total = response.pagination?.total || 0;
+        hasMore = allProductsList.length < total && products.length === limit;
+        offset += limit;
+      }
+
+      setAllProducts(allProductsList);
+      return allProductsList;
     } catch {
       // Failed to load products for assignment
       setAllProducts([]);
