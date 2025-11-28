@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -21,12 +21,22 @@ import {
 import { Segment } from "../types/segment";
 import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, button } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import SegmentModal from "../components/SegmentModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import {
+  customerSubscriptions,
+  searchCustomers as searchCustomersUtil,
+} from "../../dashboard/utils/customerDataService";
+import {
+  getSubscriptionDisplayName,
+  formatMsisdn,
+} from "../../dashboard/utils/customerSubscriptionHelpers";
+import type { CustomerSubscriptionRecord } from "../../dashboard/types/customerSubscription";
 
 // Mock data for testing
 const MOCK_SEGMENT: Segment = {
@@ -63,6 +73,7 @@ export default function SegmentDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { success, error: showError } = useToast();
+  const confirm = useConfirm();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -109,78 +120,21 @@ export default function SegmentDetailsPage() {
   const [debouncedMembersSearchTerm, setDebouncedMembersSearchTerm] =
     useState("");
 
-  // Mock customer data for testing
-  const MOCK_CUSTOMERS = [
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      phone: "+1234567890",
-      total_spent: 1250,
-      last_purchase: "2024-01-15",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      phone: "+1234567891",
-      total_spent: 890,
-      last_purchase: "2024-01-10",
-    },
-    {
-      id: "3",
-      name: "Bob Wilson",
-      email: "bob@example.com",
-      phone: "+1234567892",
-      total_spent: 2100,
-      last_purchase: "2024-01-12",
-    },
-    {
-      id: "4",
-      name: "Alice Johnson",
-      email: "alice@example.com",
-      phone: "+1234567893",
-      total_spent: 450,
-      last_purchase: "2024-01-08",
-    },
-    {
-      id: "5",
-      name: "Charlie Brown",
-      email: "charlie@example.com",
-      phone: "+1234567894",
-      total_spent: 3200,
-      last_purchase: "2024-01-14",
-    },
-    {
-      id: "6",
-      name: "Diana Prince",
-      email: "diana@example.com",
-      phone: "+1234567895",
-      total_spent: 1800,
-      last_purchase: "2024-01-11",
-    },
-    {
-      id: "7",
-      name: "Eve Adams",
-      email: "eve@example.com",
-      phone: "+1234567896",
-      total_spent: 750,
-      last_purchase: "2024-01-09",
-    },
-    {
-      id: "8",
-      name: "Frank Miller",
-      email: "frank@example.com",
-      phone: "+1234567897",
-      total_spent: 950,
-      last_purchase: "2024-01-13",
-    },
-  ];
-
   // Customer selection state
   const [showCustomerSelection, setShowCustomerSelection] = useState(false);
-  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+  const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+
+  // Filter customers based on search term
+  const filteredCustomersForSelection = useMemo(() => {
+    if (!customerSearchTerm.trim()) {
+      return customerSubscriptions.slice(0, 50); // Limit to 50 for performance
+    }
+    return searchCustomersUtil(customerSearchTerm, customerSubscriptions).slice(
+      0,
+      50
+    );
+  }, [customerSearchTerm]);
 
   const loadCategoryName = useCallback(async (categoryId: number | string) => {
     try {
@@ -1315,63 +1269,82 @@ export default function SegmentDetailsPage() {
 
               {/* Customer List */}
               <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-3">
-                  {MOCK_CUSTOMERS.filter(
-                    (customer) =>
-                      customer.name
-                        .toLowerCase()
-                        .includes(customerSearchTerm.toLowerCase()) ||
-                      customer.email
-                        .toLowerCase()
-                        .includes(customerSearchTerm.toLowerCase())
-                  ).map((customer) => (
-                    <div
-                      key={customer.id}
-                      className={`p-4 border rounded-md cursor-pointer transition-colors ${
-                        selectedCustomers.includes(customer.id)
-                          ? "border-gray-200 bg-gray-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                      onClick={() => {
-                        setSelectedCustomers((prev) =>
-                          prev.includes(customer.id)
-                            ? prev.filter((id) => id !== customer.id)
-                            : [...prev, customer.id]
-                        );
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedCustomers.includes(customer.id)}
-                            onChange={() => {}}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          />
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              {customer.name}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              {customer.email}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              ID: {customer.id} • Phone: {customer.phone}
-                            </p>
+                {filteredCustomersForSelection.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">
+                      {customerSearchTerm.trim()
+                        ? "No customers found matching your search"
+                        : "No customers available"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredCustomersForSelection.map((customer) => {
+                      const customerId = customer.customerId;
+                      const displayName = getSubscriptionDisplayName(
+                        customer,
+                        `Customer ${customerId}`
+                      );
+                      const isSelected = selectedCustomers.includes(customerId);
+
+                      return (
+                        <div
+                          key={`${customer.customerId}-${customer.subscriptionId}`}
+                          className={`p-4 border rounded-md cursor-pointer transition-colors ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() => {
+                            setSelectedCustomers((prev) =>
+                              isSelected
+                                ? prev.filter((id) => id !== customerId)
+                                : [...prev, customerId]
+                            );
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <div>
+                                <h3 className="font-medium text-gray-900">
+                                  {displayName}
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                  {customer.email || "No email"}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  Customer ID: {customerId} • Sub ID:{" "}
+                                  {customer.subscriptionId}
+                                  {customer.msisdn &&
+                                    ` • ${formatMsisdn(customer.msisdn)}`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              {customer.city && (
+                                <p className="text-xs text-gray-500">
+                                  {customer.city}
+                                </p>
+                              )}
+                              {customer.customerType && (
+                                <p className="text-xs text-gray-400">
+                                  {customer.customerType}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">
-                            <CurrencyFormatter amount={customer.total_spent} />
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Last: {customer.last_purchase}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Actions */}

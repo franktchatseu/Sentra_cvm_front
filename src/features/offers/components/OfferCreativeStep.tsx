@@ -25,6 +25,11 @@ import {
 import { offerCreativeService } from "../services/offerCreativeService";
 import { useConfigurationData } from "../../../shared/services/configurationDataService";
 import { TypeConfigurationItem } from "../../../shared/components/TypeConfigurationPage";
+import {
+  SMSButtonPhonePreview,
+  SMSSmartphonePreview,
+  EmailLaptopPreview,
+} from "./CreativePreviewComponents";
 
 interface LocalOfferCreative extends Omit<OfferCreative, "id" | "offer_id"> {
   id: string; // Use string for local temp ID
@@ -1003,13 +1008,17 @@ export default function OfferCreativeStep({
                       <div className="relative">
                         <HeadlessSelect
                           value={
-                            selectedTemplates[selectedCreativeData.id] || ""
+                            selectedTemplates[selectedCreativeData.id]
+                              ? selectedTemplates[
+                                  selectedCreativeData.id
+                                ]!.toString()
+                              : ""
                           }
                           onChange={(value) =>
                             handleTemplateSelect(value ? Number(value) : null)
                           }
                           options={[
-                            { value: "", label: "Start from scratch" },
+                            { value: "", label: "Select template" },
                             ...availableTemplates.map((template) => ({
                               value: template.id.toString(),
                               label: `${template.name}${
@@ -1143,15 +1152,9 @@ export default function OfferCreativeStep({
                   <div className="flex justify-end pt-4">
                     <button
                       onClick={handlePreview}
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-md transition-colors"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-md"
                       style={{
                         backgroundColor: color.primary.action,
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.opacity = "0.9";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.opacity = "1";
                       }}
                     >
                       <Eye className="w-4 h-4 mr-2" />
@@ -1187,7 +1190,7 @@ export default function OfferCreativeStep({
           setVariableOverrides("");
         }}
         title="Preview Creative"
-        size="xl"
+        size="2xl"
       >
         <div className="space-y-6">
           {/* Variable Overrides */}
@@ -1245,61 +1248,106 @@ export default function OfferCreativeStep({
               <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
             </div>
           ) : previewResult ? (
-            <div className="space-y-4">
-              {/* Rendered Title */}
-              {previewResult.rendered_title && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rendered Title
-                  </label>
-                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-                    <p className="text-gray-900">
-                      {previewResult.rendered_title}
-                    </p>
+            <div className="space-y-6">
+              {/* Device-Specific Previews */}
+              {selectedCreativeData?.channel === "SMS" ||
+              selectedCreativeData?.channel === "SMS Flash" ? (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                      Smartphone Preview
+                    </h3>
+                    <SMSSmartphonePreview
+                      message={
+                        previewResult.rendered_text_body ||
+                        previewResult.rendered_title ||
+                        ""
+                      }
+                      title={previewResult.rendered_title}
+                    />
                   </div>
-                </div>
-              )}
-
-              {/* Rendered Text Body */}
-              {previewResult.rendered_text_body && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rendered Text Body
-                  </label>
-                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-                    <p className="text-gray-900 whitespace-pre-wrap">
-                      {previewResult.rendered_text_body}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Rendered HTML Body */}
-              {previewResult.rendered_html_body && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rendered HTML Body
-                  </label>
-                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-                    <div
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{
-                        __html: previewResult.rendered_html_body,
-                      }}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                      Feature Phone Preview
+                    </h3>
+                    <SMSButtonPhonePreview
+                      message={
+                        previewResult.rendered_text_body ||
+                        previewResult.rendered_title ||
+                        ""
+                      }
+                      title={previewResult.rendered_title}
                     />
                   </div>
                 </div>
-              )}
+              ) : selectedCreativeData?.channel === "Email" ? (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                    Email Preview
+                  </h3>
+                  <EmailLaptopPreview
+                    title={previewResult.rendered_title}
+                    htmlBody={previewResult.rendered_html_body}
+                    textBody={previewResult.rendered_text_body}
+                  />
+                </div>
+              ) : (
+                // Fallback for other channels (Web, USSD, etc.)
+                <div className="space-y-4">
+                  {previewResult.rendered_title && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rendered Title
+                      </label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <p className="text-gray-900">
+                          {previewResult.rendered_title}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
-              {!previewResult.rendered_title &&
-                !previewResult.rendered_text_body &&
-                !previewResult.rendered_html_body && (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>
-                      No content to preview. Add title, text body, or HTML body.
-                    </p>
-                  </div>
-                )}
+                  {previewResult.rendered_text_body && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rendered Text Body
+                      </label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <p className="text-gray-900 whitespace-pre-wrap">
+                          {previewResult.rendered_text_body}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {previewResult.rendered_html_body && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rendered HTML Body
+                      </label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <div
+                          className="prose max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: previewResult.rendered_html_body,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {!previewResult.rendered_title &&
+                    !previewResult.rendered_text_body &&
+                    !previewResult.rendered_html_body && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>
+                          No content to preview. Add title, text body, or HTML
+                          body.
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">

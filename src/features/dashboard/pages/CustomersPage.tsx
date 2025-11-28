@@ -13,7 +13,6 @@ import {
   Eye,
   X,
 } from "lucide-react";
-import customerSubscriptionsData from "../data/customerSubscriptions.json";
 import type { CustomerSubscriptionRecord } from "../types/customerSubscription";
 import {
   convertSubscriptionToCustomerRow,
@@ -21,18 +20,15 @@ import {
   formatMsisdn,
   getSubscriptionDisplayName,
 } from "../utils/customerSubscriptionHelpers";
+import {
+  customerSubscriptions,
+  searchCustomers as searchCustomersUtil,
+} from "../utils/customerDataService";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import RegularModal from "../../../shared/components/ui/RegularModal";
 import { color, tw } from "../../../shared/utils/utils";
 
 const pageSize = 10;
-
-const customerSubscriptions: CustomerSubscriptionRecord[] = (
-  customerSubscriptionsData as CustomerSubscriptionRecord[]
-).map((record) => ({
-  ...record,
-  msisdn: record.msisdn ? String(record.msisdn) : undefined,
-}));
 
 export default function CustomersPage() {
   const navigate = useNavigate();
@@ -61,58 +57,10 @@ export default function CustomersPage() {
     setPage(1);
   }, [searchTerm]);
 
-  // Search function that can be reused
+  // Use shared search function
   const searchCustomers = useCallback(
     (term: string, customers: CustomerSubscriptionRecord[]) => {
-      if (!term.trim()) return customers;
-
-      const normalizedTerm = term.toLowerCase();
-      const numericTerm = term.replace(/\D/g, "");
-
-      return customers.filter((customer) => {
-        const customerName = `${customer.firstName ?? ""} ${
-          customer.lastName ?? ""
-        }`
-          .trim()
-          .toLowerCase();
-        const matchesName =
-          customerName.length > 0 && customerName.includes(normalizedTerm);
-        const matchesEmail = customer.email
-          ? customer.email.toLowerCase().includes(normalizedTerm)
-          : false;
-        const matchesCustomerType = customer.customerType
-          ? customer.customerType.toLowerCase().includes(normalizedTerm)
-          : false;
-        const matchesTariff = customer.tariff
-          ? customer.tariff.toLowerCase().includes(normalizedTerm)
-          : false;
-        const matchesCity = customer.city
-          ? customer.city.toLowerCase().includes(normalizedTerm)
-          : false;
-        const matchesCustomerId =
-          numericTerm.length > 0 &&
-          customer.customerId.toString().includes(numericTerm);
-        const matchesSubscriptionId =
-          numericTerm.length > 0 &&
-          customer.subscriptionId.toString().includes(numericTerm);
-
-        const msisdnDigits = customer.msisdn
-          ? customer.msisdn.toString().replace(/\D/g, "")
-          : "";
-        const matchesMsisdn =
-          numericTerm.length > 0 && msisdnDigits.includes(numericTerm);
-
-        return (
-          matchesName ||
-          matchesEmail ||
-          matchesCustomerType ||
-          matchesTariff ||
-          matchesCity ||
-          matchesCustomerId ||
-          matchesSubscriptionId ||
-          matchesMsisdn
-        );
-      });
+      return searchCustomersUtil(term, customers);
     },
     []
   );

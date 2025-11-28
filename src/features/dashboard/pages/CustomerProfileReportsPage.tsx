@@ -33,7 +33,6 @@ import type {
   CustomerProfileReportsResponse,
   CustomerRow,
 } from "../types/ReportsAPI";
-import customerSubscriptionsData from "../data/customerSubscriptions.json";
 import type { CustomerSubscriptionRecord } from "../types/customerSubscription";
 import {
   getSubscriptionDisplayName,
@@ -41,6 +40,7 @@ import {
   formatDateTime,
   convertSubscriptionToCustomerRow,
 } from "../utils/customerSubscriptionHelpers";
+import { customerSubscriptions } from "../utils/customerDataService";
 
 // Extract types from API response type
 type ValueMatrixPoint = CustomerProfileReportsResponse["valueMatrix"][number];
@@ -354,8 +354,7 @@ const generateCustomerRows = (): CustomerRow[] => {
 };
 
 const fallbackCustomerRows: CustomerRow[] = generateCustomerRows();
-const customerSubscriptions: CustomerSubscriptionRecord[] =
-  customerSubscriptionsData as CustomerSubscriptionRecord[];
+// Using shared customer data from customerDataService
 const activationTimestamps = customerSubscriptions
   .map((record) =>
     record.activationDate ? new Date(record.activationDate).getTime() : NaN

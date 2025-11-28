@@ -37,13 +37,13 @@ import {
   CustomerWithContact,
   generateMockCustomers,
 } from "../utils/mockCustomers";
-import customerSubscriptionsData from "../data/customerSubscriptions.json";
 import type { CustomerSubscriptionRecord } from "../types/customerSubscription";
 import {
   convertSubscriptionToCustomerRow,
   formatDateTime,
   formatMsisdn,
 } from "../utils/customerSubscriptionHelpers";
+import { customerSubscriptions } from "../utils/customerDataService";
 
 // Extract types from API response
 type CustomerSegment = CustomerSearchResultsResponse["segments"][number];
@@ -92,9 +92,7 @@ const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   );
 };
 
-// Generate realistic related data
-const customerSubscriptions =
-  customerSubscriptionsData as CustomerSubscriptionRecord[];
+// Using shared customer data from customerDataService
 const excelCustomerRows: CustomerRow[] = customerSubscriptions.map(
   convertSubscriptionToCustomerRow
 );

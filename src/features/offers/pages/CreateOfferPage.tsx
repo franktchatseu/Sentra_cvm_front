@@ -37,6 +37,11 @@ import { useAuth } from "../../../contexts/AuthContext";
 import ProgressStepper, {
   Step,
 } from "../../../shared/components/ui/ProgressStepper";
+import {
+  SMSButtonPhonePreview,
+  SMSSmartphonePreview,
+  EmailLaptopPreview,
+} from "../components/CreativePreviewComponents";
 
 // Import the types from offerCreative instead of defining locally
 import { OfferCreative } from "../types/offerCreative";
@@ -678,9 +683,11 @@ function OfferRewardStepWrapper({
 function ReviewStep({
   formData,
   creatives,
+  setCreatives,
   trackingSources,
   rewards,
   offerCategories,
+  validationErrors,
 }: Omit<
   StepProps,
   | "currentStep"
@@ -689,16 +696,108 @@ function ReviewStep({
   | "onPrev"
   | "onSubmit"
   | "setFormData"
-  | "setCreatives"
   | "setTrackingSources"
   | "setRewards"
   | "isLoading"
-  | "validationErrors"
   | "clearValidationErrors"
   | "categoriesLoading"
   | "onSaveDraft"
   | "onCancel"
 >) {
+  const [editingCreativeId, setEditingCreativeId] = useState<string | null>(
+    null
+  );
+  const [editingCreative, setEditingCreative] =
+    useState<LocalOfferCreative | null>(null);
+
+  // Helper to replace variables in text
+  const replaceVariables = (
+    text: string,
+    variables: Record<string, string | number | boolean> = {}
+  ): string => {
+    if (!text) return "";
+    let result = text;
+    Object.keys(variables).forEach((key) => {
+      const value = String(variables[key]);
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+      result = result.replace(regex, value);
+    });
+    return result;
+  };
+
+  // Helper to parse variables safely - tries to extract partial values even from invalid JSON
+  const parseVariables = (
+    vars: string | Record<string, string | number | boolean> | undefined
+  ): Record<string, string | number | boolean> => {
+    try {
+      if (typeof vars === "string") {
+        const trimmed = vars.trim();
+        if (!trimmed) return {};
+        return JSON.parse(trimmed);
+      } else if (vars) {
+        return vars;
+      }
+    } catch {
+      // If parsing fails, try to extract partial values from string
+      if (typeof vars === "string" && vars.trim()) {
+        const cleaned = vars.trim();
+        const pairs: Record<string, string> = {};
+
+        // Try to extract key-value pairs using regex
+        // Matches: "key": "value" or "key": value
+        const patterns = [
+          /"([^"]+)":\s*"([^"]*)"/g, // String values
+          /"([^"]+)":\s*(\d+\.?\d*)/g, // Number values
+          /"([^"]+)":\s*(true|false)/g, // Boolean values
+        ];
+
+        patterns.forEach((pattern) => {
+          let match;
+          while ((match = pattern.exec(cleaned)) !== null) {
+            const key = match[1];
+            let value: string | number | boolean = match[2];
+
+            // Convert to appropriate type
+            if (value === "true") value = true;
+            else if (value === "false") value = false;
+            else if (!isNaN(Number(value)) && value !== "") {
+              value = Number(value);
+            }
+
+            pairs[key] = value;
+          }
+        });
+
+        if (Object.keys(pairs).length > 0) {
+          return pairs;
+        }
+      }
+    }
+    return {};
+  };
+
+  const handleEditCreative = (creative: LocalOfferCreative) => {
+    setEditingCreativeId(creative.id);
+    setEditingCreative({ ...creative });
+  };
+
+  const handleSaveCreative = () => {
+    if (editingCreative && editingCreativeId) {
+      setCreatives(
+        creatives.map((c) => (c.id === editingCreativeId ? editingCreative : c))
+      );
+      setEditingCreativeId(null);
+      setEditingCreative(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCreativeId(null);
+    setEditingCreative(null);
+  };
+  const hasValidationErrors =
+    validationErrors && Object.keys(validationErrors).length > 0;
+
   return (
     <div className="space-y-6">
       <div className="mt-8 mb-8">
@@ -709,6 +808,48 @@ function ReviewStep({
           Review your offer details before creating
         </p>
       </div>
+
+      {/* Validation Error Display */}
+      {hasValidationErrors && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-red-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-red-800 mb-2">
+                Please fix the following errors before submitting:
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                {validationErrors.name && <li>{validationErrors.name}</li>}
+                {validationErrors.code && <li>{validationErrors.code}</li>}
+                {validationErrors.offer_type && (
+                  <li>{validationErrors.offer_type}</li>
+                )}
+                {validationErrors.category_id && (
+                  <li>{validationErrors.category_id}</li>
+                )}
+                {validationErrors.creatives && (
+                  <li>{validationErrors.creatives}</li>
+                )}
+                {validationErrors.tracking && (
+                  <li>{validationErrors.tracking}</li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* Offer Summary */}
@@ -768,31 +909,281 @@ function ReviewStep({
           {/* Offer Creative Summary */}
           <div className="space-y-4 mb-6">
             <div className="bg-white rounded-md border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Offer Creatives
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Creatives:</span>
-                  <span className="font-medium">{creatives.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Channels:</span>
-                  <span className="font-medium">
-                    {creatives.length > 0
-                      ? [...new Set(creatives.map((c) => c.channel))].join(", ")
-                      : "None configured"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Locales:</span>
-                  <span className="font-medium">
-                    {creatives.length > 0
-                      ? [...new Set(creatives.map((c) => c.locale))].join(", ")
-                      : "None configured"}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Offer Creatives
+                </h3>
+                <span className="text-sm text-gray-500">
+                  {creatives.length}{" "}
+                  {creatives.length === 1 ? "creative" : "creatives"}
+                </span>
               </div>
+              {creatives.length === 0 ? (
+                <p className="text-gray-500 text-sm">No creatives configured</p>
+              ) : (
+                <div className="space-y-6">
+                  {creatives.map((creative) => {
+                    const isEditing = editingCreativeId === creative.id;
+                    const displayCreative = isEditing
+                      ? editingCreative!
+                      : creative;
+
+                    // Parse variables - this will recompute on every render
+                    const variables = parseVariables(displayCreative.variables);
+
+                    // Compute rendered values - these update in real-time
+                    const renderedTitle = replaceVariables(
+                      displayCreative.title || "",
+                      variables
+                    );
+                    const renderedTextBody = replaceVariables(
+                      displayCreative.text_body || "",
+                      variables
+                    );
+                    const renderedHtmlBody = replaceVariables(
+                      displayCreative.html_body || "",
+                      variables
+                    );
+
+                    return (
+                      <div
+                        key={creative.id}
+                        className="border border-gray-200 rounded-lg p-4"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-900">
+                                {displayCreative.channel}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                ({displayCreative.locale})
+                              </span>
+                            </div>
+                          </div>
+                          {!isEditing ? (
+                            <button
+                              onClick={() => handleEditCreative(creative)}
+                              className="text-sm px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                            >
+                              Edit
+                            </button>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleSaveCreative}
+                                className="text-sm px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="text-sm px-3 py-1 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {isEditing ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Title
+                              </label>
+                              <input
+                                type="text"
+                                value={displayCreative.title || ""}
+                                onChange={(e) =>
+                                  setEditingCreative({
+                                    ...displayCreative,
+                                    title: e.target.value,
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Text Body
+                              </label>
+                              <textarea
+                                value={displayCreative.text_body || ""}
+                                onChange={(e) =>
+                                  setEditingCreative({
+                                    ...displayCreative,
+                                    text_body: e.target.value,
+                                  })
+                                }
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                              />
+                            </div>
+                            {(displayCreative.channel === "Email" ||
+                              displayCreative.channel === "Web") && (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  HTML Body
+                                </label>
+                                <textarea
+                                  value={displayCreative.html_body || ""}
+                                  onChange={(e) =>
+                                    setEditingCreative({
+                                      ...displayCreative,
+                                      html_body: e.target.value,
+                                    })
+                                  }
+                                  rows={4}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Variables (JSON)
+                              </label>
+                              <textarea
+                                value={
+                                  typeof displayCreative.variables === "string"
+                                    ? displayCreative.variables
+                                    : JSON.stringify(
+                                        displayCreative.variables || {},
+                                        null,
+                                        2
+                                      )
+                                }
+                                onChange={(e) => {
+                                  try {
+                                    const parsed = JSON.parse(e.target.value);
+                                    setEditingCreative({
+                                      ...displayCreative,
+                                      variables: parsed,
+                                    });
+                                  } catch {
+                                    // Invalid JSON - store as string temporarily
+                                    // User can keep typing to fix it
+                                    setEditingCreative({
+                                      ...displayCreative,
+                                      variables: e.target.value as any,
+                                    });
+                                  }
+                                }}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
+                                placeholder='{"variable": "value"}'
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                {(() => {
+                                  try {
+                                    const testValue =
+                                      typeof displayCreative.variables ===
+                                      "string"
+                                        ? displayCreative.variables
+                                        : JSON.stringify(
+                                            displayCreative.variables || {}
+                                          );
+                                    JSON.parse(testValue);
+                                    return (
+                                      <span className="text-green-600">
+                                        ✓ Valid JSON
+                                      </span>
+                                    );
+                                  } catch {
+                                    return (
+                                      <span className="text-red-600">
+                                        ⚠ Invalid JSON
+                                      </span>
+                                    );
+                                  }
+                                })()}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {renderedTitle && (
+                              <div>
+                                <span className="text-xs font-medium text-gray-500">
+                                  Title:
+                                </span>
+                                <p className="text-sm text-gray-900 mt-1">
+                                  {renderedTitle}
+                                </p>
+                              </div>
+                            )}
+                            {renderedTextBody && (
+                              <div>
+                                <span className="text-xs font-medium text-gray-500">
+                                  Text Body:
+                                </span>
+                                <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">
+                                  {renderedTextBody}
+                                </p>
+                              </div>
+                            )}
+                            {displayCreative.variables && (
+                              <div>
+                                <span className="text-xs font-medium text-gray-500">
+                                  Variables:
+                                </span>
+                                <pre className="text-xs text-gray-600 mt-1 bg-gray-50 p-2 rounded overflow-x-auto">
+                                  {JSON.stringify(variables, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Preview */}
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h4 className="text-sm font-medium text-gray-700 mb-3">
+                            Preview
+                          </h4>
+                          {(displayCreative.channel === "SMS" ||
+                            displayCreative.channel === "SMS Flash") && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div
+                                key={`smartphone-${creative.id}-${renderedTextBody}-${renderedTitle}`}
+                              >
+                                <p className="text-xs text-gray-500 mb-2">
+                                  Smartphone
+                                </p>
+                                <SMSSmartphonePreview
+                                  message={renderedTextBody || renderedTitle}
+                                  title={renderedTitle}
+                                />
+                              </div>
+                              <div
+                                key={`feature-${creative.id}-${renderedTextBody}-${renderedTitle}`}
+                              >
+                                <p className="text-xs text-gray-500 mb-2">
+                                  Feature Phone
+                                </p>
+                                <SMSButtonPhonePreview
+                                  message={renderedTextBody || renderedTitle}
+                                  title={renderedTitle}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {displayCreative.channel === "Email" && (
+                            <div
+                              key={`email-${creative.id}-${renderedHtmlBody}-${renderedTextBody}-${renderedTitle}`}
+                            >
+                              <EmailLaptopPreview
+                                title={renderedTitle}
+                                htmlBody={renderedHtmlBody}
+                                textBody={renderedTextBody}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1176,14 +1567,21 @@ export default function CreateOfferPage() {
       case 5: // Rewards step
         return true; // Rewards are optional; allow proceeding
       case 6: // Review step
-        return true; // Review step doesn't need validation
+        // Validate all required fields are filled
+        return (
+          formData.name.trim() !== "" &&
+          formData.code.trim() !== "" &&
+          formData.offer_type &&
+          formData.category_id !== undefined &&
+          trackingSources.length > 0
+        );
       default:
         return false;
     }
   }, [
     currentStep,
     formData,
-    // creatives,
+    creatives,
     trackingSources,
     rewards,
     // Removed validationErrors and clearValidationErrors to break circular dependency
@@ -1211,8 +1609,30 @@ export default function CreateOfferPage() {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
       setVisitedSteps((prev) => new Set(prev).add(nextStep));
+      // Clear validation errors when moving to next step
+      setValidationErrors({});
+    } else {
+      // Set validation errors based on current step
+      const errors: Record<string, string> = {};
+      if (currentStep === 6) {
+        if (!formData.name?.trim()) errors.name = "Offer name is required";
+        if (!formData.code?.trim()) errors.code = "Offer code is required";
+        if (!formData.offer_type) errors.offer_type = "Offer type is required";
+        if (!formData.category_id) errors.category_id = "Catalog is required";
+        if (trackingSources.length === 0) {
+          errors.tracking = "At least one tracking source is required";
+        }
+      }
+      setValidationErrors(errors);
     }
-  }, [currentStep, totalSteps, validateCurrentStep]);
+  }, [
+    currentStep,
+    totalSteps,
+    validateCurrentStep,
+    creatives,
+    formData,
+    trackingSources,
+  ]);
 
   const handlePrev = useCallback(() => {
     if (currentStep > 1) {

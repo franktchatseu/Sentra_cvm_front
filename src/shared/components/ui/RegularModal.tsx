@@ -8,7 +8,7 @@ interface RegularModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl" | "full";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "full";
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
 }
@@ -29,7 +29,8 @@ export default function RegularModal({
     md: "max-w-md",
     lg: "max-w-lg",
     xl: "max-w-xl",
-    full: "max-w-2xl",
+    "2xl": "max-w-4xl",
+    full: "max-w-7xl",
   };
 
   return createPortal(

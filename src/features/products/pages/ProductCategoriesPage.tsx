@@ -45,6 +45,11 @@ interface ProductsModalProps {
   onRefreshProductCounts: () => Promise<void> | void;
   allProducts: Product[];
   refreshAllProducts: () => Promise<Product[]>;
+  categories: ProductCategory[];
+  refreshCategoryProductCounts: (
+    categoriesOverride?: ProductCategory[],
+    productsSnapshotOverride?: Product[]
+  ) => Promise<CategoryCountMap>;
 }
 
 type CategoryCountMap = Record<
@@ -156,6 +161,8 @@ function ProductsModal({
   onRefreshProductCounts,
   allProducts,
   refreshAllProducts,
+  categories,
+  refreshCategoryProductCounts,
 }: ProductsModalProps) {
   const { removeFromCatalog, removingId } = useRemoveFromCatalog();
   const { success: showToast, error: showError } = useToast();
@@ -199,6 +206,10 @@ function ProductsModal({
       }
 
       const snapshot = allProductsList;
+
+      // Update parent's allProducts state with fresh data (skipCache: true)
+      // This ensures refreshCategoryProductCounts uses fresh data instead of stale cache
+      await refreshAllProducts();
 
       const categoryId = Number(category.id);
       const catalogTag = buildCatalogTag(category.id);
@@ -283,9 +294,14 @@ function ProductsModal({
       removingId={removingId}
       onRefresh={async () => {
         // Refresh the products list (always fetches fresh data)
-        await loadProducts();
-        // Refresh counts to update the category cards (same pattern as campaigns/offers/segments)
-        await Promise.resolve(onRefreshProductCounts());
+        const freshProducts = await loadProducts();
+        // Refresh counts using the fresh products snapshot to update category cards
+        // This ensures counts reflect the newly assigned products
+        if (freshProducts) {
+          await refreshCategoryProductCounts(categories, freshProducts);
+        } else {
+          await Promise.resolve(onRefreshProductCounts());
+        }
       }}
       renderStatus={(product) => (
         <span
@@ -435,11 +451,10 @@ export default function ProductCatalogsPage() {
     let finalCounts = baseCounts;
 
     if (targetCategories.length) {
-      // Use provided snapshot or existing allProducts (avoids heavy fetch during removal)
-      // Only fetch fresh if no snapshot provided and allProducts is empty
+      // Always fetch fresh products with skipCache: true (same as segments)
+      // Segments always fetch fresh, so we do the same
       const productsSnapshot =
-        productsSnapshotOverride ??
-        (allProducts.length > 0 ? allProducts : await loadAllProducts(true)); // Only fetch if empty
+        productsSnapshotOverride ?? (await loadAllProducts(true));
 
       finalCounts = mergeTagCountsFromSnapshot(
         baseCounts,
@@ -1382,6 +1397,8 @@ export default function ProductCatalogsPage() {
         }}
         allProducts={allProducts}
         refreshAllProducts={loadAllProducts}
+        categories={categories}
+        refreshCategoryProductCounts={refreshCategoryProductCounts}
       />
 
       {/* Advanced Filters Side Modal */}
