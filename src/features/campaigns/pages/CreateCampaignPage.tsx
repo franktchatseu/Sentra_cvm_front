@@ -69,6 +69,8 @@ interface StepProps {
   isLoading?: boolean;
   onSaveDraft?: () => void;
   onCancel?: () => void;
+  validationErrors?: { [key: string]: string };
+  clearValidationErrors?: () => void;
 }
 
 const steps: Step[] = [
@@ -107,7 +109,7 @@ const steps: Step[] = [
 export default function CreateCampaignPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -144,6 +146,11 @@ export default function CreateCampaignPage() {
     percentage: 5,
     type: "standard",
   });
+
+  // Validation errors state
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: string;
+  }>({});
 
   const loadCampaignData = useCallback(
     async (campaignId: string, isDuplicate: boolean = false) => {
@@ -292,7 +299,9 @@ export default function CreateCampaignPage() {
             }));
             setSegmentOfferMappings(mappings);
           }
-        } catch (mappingError) {}
+        } catch (mappingError) {
+          console.error("Failed to load segment-offer mappings:", mappingError);
+        }
       } catch {
         showToast("error", "Failed to load campaign data");
         navigate("/dashboard/campaigns");
@@ -315,41 +324,108 @@ export default function CreateCampaignPage() {
       setIsDuplicateMode(true);
       loadCampaignData(duplicateIdParam, true);
     }
-  }, [id, duplicateIdParam, loadCampaignData]);
 
-  // Validation function for each step
-  const validateCurrentStep = () => {
+    // Check if returning from offer creation - navigate to step 3
+    const returnFromOfferCreate = searchParams.get("returnFromOfferCreate");
+    const stepParam = searchParams.get("step");
+    if (returnFromOfferCreate === "true" || stepParam === "3") {
+      setCurrentStep(3);
+      // Clean up URL parameters
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("returnFromOfferCreate");
+      newParams.delete("step");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [id, duplicateIdParam, loadCampaignData, searchParams, setSearchParams]);
+
+  // Validation function for each step - returns validation errors
+  const validateCurrentStep = (): {
+    isValid: boolean;
+    errors: { [key: string]: string };
+  } => {
+    const errors: { [key: string]: string } = {};
+
     switch (currentStep) {
       case 1: // Definition step
-        return (
-          formData.name.trim() !== "" &&
-          formData.objective !== undefined &&
-          formData.category_id !== undefined &&
-          formData.budget_allocated !== undefined &&
-          formData.budget_allocated !== null &&
-          Number(formData.budget_allocated) > 0
-        );
-      case 2: // Audience step
-        return selectedSegments.length > 0;
-      case 3: // Offers step
-        // For multiple_target_group, verify all segments have at least one offer mapped
-        if (formData.campaign_type === "multiple_target_group") {
-          return (
-            selectedSegments.length > 0 &&
-            selectedSegments.every((segment) =>
-              segmentOfferMappings.some(
-                (mapping) => mapping.segment_id === segment.id
-              )
-            )
-          );
+        if (!formData.name.trim()) {
+          errors.name = "Campaign name is required";
         }
-        return selectedOffers.length > 0;
+        if (!formData.objective) {
+          errors.objective = "Primary objective is required";
+        }
+        if (!formData.category_id) {
+          errors.category_id = "Campaign catalog is required";
+        }
+        if (
+          !formData.budget_allocated ||
+          formData.budget_allocated === null ||
+          Number(formData.budget_allocated) <= 0
+        ) {
+          errors.budget_allocated = "Budget allocated must be greater than 0";
+        }
+        // Validate date range if both dates are provided
+        if (formData.start_date && formData.end_date) {
+          const startDate = new Date(formData.start_date);
+          const endDate = new Date(formData.end_date);
+          if (endDate < startDate) {
+            errors.end_date = "End date must be after start date";
+          }
+        }
+        return { isValid: Object.keys(errors).length === 0, errors };
+
+      case 2: // Audience step
+        if (selectedSegments.length === 0) {
+          errors.segments = "At least one segment must be selected";
+        }
+        // Validate campaign type specific requirements
+        if (
+          formData.campaign_type === "ab_test" &&
+          selectedSegments.length !== 2
+        ) {
+          errors.segments = "A/B Test campaigns require exactly 2 segments";
+        }
+        if (
+          (formData.campaign_type === "round_robin" ||
+            formData.campaign_type === "multiple_level") &&
+          selectedSegments.length !== 1
+        ) {
+          errors.segments = "This campaign type requires exactly 1 segment";
+        }
+        return { isValid: Object.keys(errors).length === 0, errors };
+
+      case 3: // Offers step
+        if (formData.campaign_type === "multiple_target_group") {
+          // For multiple_target_group, verify all segments have at least one offer mapped
+          if (selectedSegments.length === 0) {
+            errors.offers = "Segments must be configured first";
+          } else {
+            const segmentsWithoutOffers = selectedSegments.filter(
+              (segment) =>
+                !segmentOfferMappings.some(
+                  (mapping) => mapping.segment_id === segment.id
+                )
+            );
+            if (segmentsWithoutOffers.length > 0) {
+              errors.offers = `All segments must have at least one offer mapped. Missing offers for: ${segmentsWithoutOffers
+                .map((s) => s.name)
+                .join(", ")}`;
+            }
+          }
+        } else if (selectedOffers.length === 0) {
+          errors.offers = "At least one offer must be selected";
+        }
+        return { isValid: Object.keys(errors).length === 0, errors };
+
       case 4: // Scheduling step
-        return true; // Scheduling step has default values, no validation needed
+        // Scheduling step has default values, no validation needed
+        return { isValid: true, errors: {} };
+
       case 5: // Preview step
-        return true; // Preview step doesn't need validation
+        // Preview step doesn't need validation
+        return { isValid: true, errors: {} };
+
       default:
-        return false;
+        return { isValid: false, errors: {} };
     }
   };
 
@@ -361,7 +437,7 @@ export default function CreateCampaignPage() {
     if (targetStep > currentStep + 1) return false;
 
     // Can go to next step only if current step is valid
-    if (targetStep === currentStep + 1) return validateCurrentStep();
+    if (targetStep === currentStep + 1) return validateCurrentStep().isValid;
 
     // Can stay on current step
     if (targetStep === currentStep) return true;
@@ -370,8 +446,13 @@ export default function CreateCampaignPage() {
   };
 
   const handleNext = () => {
-    if (validateCurrentStep() && currentStep < steps.length) {
+    const validation = validateCurrentStep();
+    setValidationErrors(validation.errors);
+
+    if (validation.isValid && currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
+      // Clear errors when moving to next step
+      setValidationErrors({});
     }
   };
 
@@ -421,32 +502,10 @@ export default function CreateCampaignPage() {
         return;
       }
 
-      // Auto-assign a random dummy segment if no segments are selected
-      let finalSegments = formData.segments || [];
-      if (finalSegments.length === 0) {
-        const dummySegments = [
-          "High Value Customers",
-          "At Risk Customers",
-          "New Subscribers",
-          "Voice Heavy Users",
-          "Data Bundle Enthusiasts",
-          "Weekend Warriors",
-          "Business Customers",
-          "Dormant Users",
-        ];
-
-        const randomSegmentName =
-          dummySegments[Math.floor(Math.random() * dummySegments.length)];
-        finalSegments = [
-          {
-            id: "dummy-segment-" + Math.random().toString(36).substr(2, 9),
-            name: randomSegmentName,
-            description: `Auto-generated segment: ${randomSegmentName}`,
-            customer_count: Math.floor(Math.random() * 10000) + 1000,
-            criteria: {},
-            created_at: new Date().toISOString(),
-          },
-        ];
+      if (selectedSegments.length === 0) {
+        showToast("error", "Please add at least one segment before continuing");
+        setIsLoading(false);
+        return;
       }
 
       if (isEditMode && id) {
@@ -600,8 +659,12 @@ export default function CreateCampaignPage() {
         }
       }
 
+      // Clear campaign flow tracking when campaign is created/updated
+      sessionStorage.removeItem("campaignFlowCreatedOffers");
+
       navigate("/dashboard/campaigns");
     } catch (error) {
+      console.error("Failed to create/update campaign:", error);
       showToast(
         "error",
         `Failed to ${
@@ -618,6 +681,12 @@ export default function CreateCampaignPage() {
       setIsSavingDraft(true);
       if (!formData.name.trim()) {
         showToast("error", "Campaign name is required to save draft");
+        return;
+      }
+
+      if (selectedSegments.length === 0) {
+        showToast("error", "Please add at least one segment before saving");
+        setIsSavingDraft(false);
         return;
       }
 
@@ -745,6 +814,8 @@ export default function CreateCampaignPage() {
   };
 
   const handleCancel = () => {
+    // Clear campaign flow tracking when cancelling
+    sessionStorage.removeItem("campaignFlowCreatedOffers");
     navigate("/dashboard/campaigns");
   };
 
@@ -802,6 +873,8 @@ export default function CreateCampaignPage() {
     isLoading,
     onSaveDraft: handleSaveDraft,
     onCancel: handleCancel,
+    validationErrors,
+    clearValidationErrors: () => setValidationErrors({}),
   };
 
   const renderStep = () => {
@@ -835,7 +908,7 @@ export default function CreateCampaignPage() {
         className={`bg-white rounded-md border border-[${color.border.default}] p-4`}
       >
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between pb-3">
+          <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => navigate("/dashboard/campaigns")}
@@ -852,17 +925,17 @@ export default function CreateCampaignPage() {
               </h1>
             </div>
             {currentStep !== 5 && (
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:justify-end">
                 <button
                   onClick={handleCancel}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200"
+                  className="inline-flex w-full items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200 sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex w-full items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
                   style={{ backgroundColor: color.primary.action }}
                 >
                   {isSavingDraft ? (
@@ -892,19 +965,19 @@ export default function CreateCampaignPage() {
           <div className="py-4">{renderStep()}</div>
 
           {/* Sticky Bottom Navigation */}
-          <div className="sticky bottom-0 z-30 bg-white py-4">
-            <div className="flex justify-between items-center">
+          <div className="sticky bottom-0 z-30 bg-white py-3 border-t border-gray-100">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 onClick={handlePrev}
                 disabled={currentStep === 1}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 Previous
               </button>
               <button
                 onClick={currentStep === 5 ? handleSubmit : handleNext}
-                disabled={isLoading || !validateCurrentStep()}
-                className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading || !validateCurrentStep().isValid}
+                className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium rounded-md text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                 style={{ backgroundColor: color.primary.action }}
               >
                 {isLoading ? (

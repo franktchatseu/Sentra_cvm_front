@@ -21,8 +21,12 @@ export default function CreateProductPage() {
     price: 0,
     description: "",
     category_id: undefined,
-    currency: "USD",
+    currency: "KES",
     da_id: "",
+    scope: "segment",
+    unit: "data_mb",
+    unit_value: 1,
+    validity_hours: 24,
   });
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
 
@@ -77,7 +81,10 @@ export default function CreateProductPage() {
       setIsLoading(true);
       setError(null);
 
-      await productService.createProduct(formData);
+      // Remove scope, unit, unit_value from submission as backend doesn't support them
+      const { scope, unit, unit_value, validity_hours, ...submitData } =
+        formData;
+      await productService.createProduct(submitData);
       success(
         "Product Created",
         `"${formData.name}" has been created successfully.`

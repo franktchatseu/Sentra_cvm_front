@@ -13,7 +13,10 @@ import {
 import { color, tw } from "../utils/utils";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useToast } from "../../contexts/ToastContext";
-import { configurationDataService } from "../services/configurationDataService";
+import {
+  configurationDataService,
+  type ConfigurationType,
+} from "../services/configurationDataService";
 import LoadingSpinner from "./ui/LoadingSpinner";
 
 export interface ConfigurationItem {
@@ -32,14 +35,7 @@ export interface ConfigurationPageConfig {
   subtitle: string;
   entityName: string; // "objective", "department", etc.
   entityNamePlural: string; // "objectives", "departments", etc.
-  configType?:
-    | "lineOfBusiness"
-    | "departments"
-    | "campaignObjectives"
-    | "offerTypes"
-    | "campaignTypes"
-    | "segmentTypes"
-    | "productTypes";
+  configType?: ConfigurationType;
 
   // Navigation
   backPath: string;

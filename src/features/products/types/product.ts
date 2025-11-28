@@ -1,3 +1,26 @@
+export type ProductScope = "segment" | "open_market";
+
+export type ProductUnit =
+  | "data_mb"
+  | "sms_count"
+  | "airtime"
+  | "onnet_minutes"
+  | "offnet_minutes"
+  | "allnet_minutes"
+  | "utility"
+  | "points"
+  | "other";
+
+export type ProductOfferCategory =
+  | "recharge_offer"
+  | "combo"
+  | "data"
+  | "voice"
+  | "sms"
+  | "utility"
+  | "loyalty"
+  | "other";
+
 export interface Product {
   id: number;
   product_uuid: string;
@@ -8,9 +31,13 @@ export interface Product {
   category_id?: number;
   price: number;
   currency: string;
+  scope?: ProductScope;
+  unit?: ProductUnit;
+  unit_value?: number;
   cost?: number;
   validity_days?: number;
   validity_hours?: number;
+  offer_category?: ProductOfferCategory | string;
   requires_inventory: boolean;
   available_quantity?: number;
   is_active: boolean;
@@ -31,9 +58,13 @@ export interface CreateProductRequest {
   category_id?: number;
   price: number;
   currency?: string;
+  scope?: ProductScope;
+  unit?: ProductUnit;
+  unit_value?: number;
   cost?: number;
   validity_days?: number;
   validity_hours?: number;
+  offer_category?: ProductOfferCategory | string;
   requires_inventory?: boolean;
   available_quantity?: number;
   effective_from?: string;
@@ -50,9 +81,13 @@ export interface UpdateProductRequest {
   category_id?: number;
   price?: number;
   currency?: string;
+  scope?: ProductScope;
+  unit?: ProductUnit;
+  unit_value?: number;
   cost?: number;
   validity_days?: number;
   validity_hours?: number;
+  offer_category?: ProductOfferCategory | string;
   requires_inventory?: boolean;
   available_quantity?: number;
   effective_from?: string;

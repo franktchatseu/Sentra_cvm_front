@@ -26,6 +26,7 @@ import { Product, CategoryPerformance } from "../types/product";
 import { productCategoryService } from "../services/productCategoryService";
 import { productService } from "../services/productService";
 import { color, tw } from "../../../shared/utils/utils";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import {
   buildCatalogTag,
   parseCatalogTag,
@@ -1154,24 +1155,17 @@ export default function ProductCatalogsPage() {
                         <div>
                           <p className="text-xs text-gray-500">Total Value</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            $
-                            {performance.totalValue.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            <CurrencyFormatter
+                              amount={performance.totalValue}
+                            />
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Avg Price</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            $
-                            {performance.averagePrice.toLocaleString(
-                              undefined,
-                              {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }
-                            )}
+                            <CurrencyFormatter
+                              amount={performance.averagePrice}
+                            />
                           </p>
                         </div>
                       </div>
@@ -1216,14 +1210,9 @@ export default function ProductCatalogsPage() {
                               Total Value:{" "}
                             </span>
                             <span className="text-sm font-semibold text-gray-900">
-                              $
-                              {performance.totalValue.toLocaleString(
-                                undefined,
-                                {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                }
-                              )}
+                              <CurrencyFormatter
+                                amount={performance.totalValue}
+                              />
                             </span>
                           </div>
                           <div>
@@ -1231,14 +1220,9 @@ export default function ProductCatalogsPage() {
                               Avg Price:{" "}
                             </span>
                             <span className="text-sm font-semibold text-gray-900">
-                              $
-                              {performance.averagePrice.toLocaleString(
-                                undefined,
-                                {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                }
-                              )}
+                              <CurrencyFormatter
+                                amount={performance.averagePrice}
+                              />
                             </span>
                           </div>
                         </div>

@@ -21,6 +21,7 @@ import { programService } from "../services/programService";
 import { Program } from "../types/program";
 import ProgramModal from "../components/ProgramModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 
 export default function ProgramsPage() {
   const navigate = useNavigate();
@@ -352,17 +353,21 @@ export default function ProgramsPage() {
     },
     {
       name: "Total Budget",
-      value: statsLoading
-        ? "..."
-        : `$${(stats?.total_budget || 0).toLocaleString()}`,
+      value: statsLoading ? (
+        "..."
+      ) : (
+        <CurrencyFormatter amount={stats?.total_budget || 0} />
+      ),
       icon: DollarSign,
       color: color.tertiary.tag2,
     },
     {
       name: "Budget Spent",
-      value: statsLoading
-        ? "..."
-        : `$${(stats?.spent_budget || 0).toLocaleString()}`,
+      value: statsLoading ? (
+        "..."
+      ) : (
+        <CurrencyFormatter amount={stats?.spent_budget || 0} />
+      ),
       icon: TrendingUp,
       color: color.tertiary.tag3,
     },

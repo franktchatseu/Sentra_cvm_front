@@ -1,5 +1,10 @@
 import { Save } from "lucide-react";
-import { CreateProductRequest, UpdateProductRequest } from "../types/product";
+import {
+  CreateProductRequest,
+  UpdateProductRequest,
+  ProductScope,
+  ProductUnit,
+} from "../types/product";
 import MultiCategorySelector from "../../../shared/components/MultiCategorySelector";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
 import { tw, color } from "../../../shared/utils/utils";
@@ -38,6 +43,27 @@ export default function ProductForm({
   loadingText = "Saving...",
   onCancel,
 }: ProductFormProps) {
+  const scopeOptions: { label: string; value: ProductScope }[] = [
+    { label: "Segment", value: "segment" },
+    { label: "Open Market", value: "open_market" },
+  ];
+
+  const unitOptions: { label: string; value: ProductUnit }[] = [
+    { label: "Data (MB)", value: "data_mb" },
+    { label: "SMS Count", value: "sms_count" },
+    { label: "Airtime", value: "airtime" },
+    { label: "On-net Minutes", value: "onnet_minutes" },
+    { label: "Off-net Minutes", value: "offnet_minutes" },
+    { label: "All-net Minutes", value: "allnet_minutes" },
+    { label: "Utility", value: "utility" },
+    { label: "Points", value: "points" },
+    { label: "Others", value: "other" },
+  ];
+
+  const currentUnitLabel =
+    unitOptions.find((option) => option.value === formData.unit)?.label ||
+    "Value";
+
   return (
     <>
       {/* Form */}
@@ -111,89 +137,6 @@ export default function ProductForm({
               />
             </div>
 
-            {/* Price */}
-            <div>
-              <label
-                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
-              >
-                Price <span style={{ color: color.status.danger }}>*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.price || 0}
-                onChange={(e) =>
-                  onInputChange("price", parseFloat(e.target.value) || 0)
-                }
-                className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
-                style={{
-                  borderColor: color.border.default,
-                  outline: "none",
-                }}
-                placeholder="0.00"
-                onFocus={(e) => {
-                  e.target.style.borderColor = color.primary.accent;
-                  e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = color.border.default;
-                  e.target.style.boxShadow = "none";
-                }}
-              />
-            </div>
-
-            {/* DA ID */}
-            <div>
-              <label
-                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
-              >
-                DA ID <span style={{ color: color.status.danger }}>*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.da_id || ""}
-                onChange={(e) => onInputChange("da_id", e.target.value)}
-                className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
-                style={{
-                  borderColor: color.border.default,
-                  outline: "none",
-                }}
-                placeholder="Enter DA ID"
-                onFocus={(e) => {
-                  e.target.style.borderColor = color.primary.accent;
-                  e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = color.border.default;
-                  e.target.style.boxShadow = "none";
-                }}
-              />
-            </div>
-
-            {/* Category */}
-            <div>
-              <label
-                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
-              >
-                Catalog
-              </label>
-              <MultiCategorySelector
-                value={selectedCategoryIds}
-                onChange={onCategoryIdsChange}
-                placeholder="Select catalog(s)"
-                entityType="product"
-                allowCreate={true}
-                onCreateCategory={() => onShowCreateModal(true)}
-                refreshTrigger={refreshTrigger}
-                className="w-full"
-              />
-              {/* <p className="text-xs text-gray-500 mt-1">
-                You can select multiple catalogs. Only the first one will be
-                saved to the backend.
-              </p> */}
-            </div>
-
             {/* Description */}
             <div>
               <label
@@ -220,6 +163,179 @@ export default function ProductForm({
                   e.target.style.boxShadow = "none";
                 }}
               />
+            </div>
+
+            {/* Price & DA ID */}
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
+                  Price <span style={{ color: color.status.danger }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.price || 0}
+                  onChange={(e) =>
+                    onInputChange("price", parseFloat(e.target.value) || 0)
+                  }
+                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
+                  style={{
+                    borderColor: color.border.default,
+                    outline: "none",
+                  }}
+                  placeholder="0.00"
+                  onFocus={(e) => {
+                    e.target.style.borderColor = color.primary.accent;
+                    e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = color.border.default;
+                    e.target.style.boxShadow = "none";
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
+                  DA ID <span style={{ color: color.status.danger }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.da_id || ""}
+                  onChange={(e) => onInputChange("da_id", e.target.value)}
+                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
+                  style={{
+                    borderColor: color.border.default,
+                    outline: "none",
+                  }}
+                  placeholder="Enter DA ID"
+                  onFocus={(e) => {
+                    e.target.style.borderColor = color.primary.accent;
+                    e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = color.border.default;
+                    e.target.style.boxShadow = "none";
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
+                Catalog
+              </label>
+              <MultiCategorySelector
+                value={selectedCategoryIds}
+                onChange={onCategoryIdsChange}
+                placeholder="Select catalog(s)"
+                entityType="product"
+                allowCreate={true}
+                onCreateCategory={() => onShowCreateModal(true)}
+                refreshTrigger={refreshTrigger}
+                className="w-full"
+              />
+            </div>
+
+            {/* Scope & Unit (Not sent to backend - for future use) */}
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
+                  Scope
+                </label>
+                <select
+                  value={formData.scope || "segment"}
+                  onChange={(e) =>
+                    onInputChange("scope", e.target.value as ProductScope)
+                  }
+                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all bg-white"
+                  style={{ borderColor: color.border.default }}
+                >
+                  {scopeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
+                  Unit
+                </label>
+                <select
+                  value={formData.unit || "data_mb"}
+                  onChange={(e) =>
+                    onInputChange("unit", e.target.value as ProductUnit)
+                  }
+                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all bg-white"
+                  style={{ borderColor: color.border.default }}
+                >
+                  {unitOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Value & Validity (Not sent to backend - for future use) */}
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
+                  Value ({currentUnitLabel})
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.unit_value ?? ""}
+                  onChange={(e) =>
+                    onInputChange("unit_value", parseFloat(e.target.value) || 0)
+                  }
+                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
+                  style={{ borderColor: color.border.default }}
+                  placeholder="Enter unit value"
+                />
+              </div>
+
+              <div>
+                <label
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                >
+                  Validity (Hours)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={formData.validity_hours ?? ""}
+                  onChange={(e) =>
+                    onInputChange(
+                      "validity_hours",
+                      e.target.value ? parseInt(e.target.value, 10) : undefined
+                    )
+                  }
+                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
+                  style={{ borderColor: color.border.default }}
+                  placeholder="e.g., 72"
+                />
+              </div>
             </div>
           </div>
 

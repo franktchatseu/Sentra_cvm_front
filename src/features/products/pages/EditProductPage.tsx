@@ -47,7 +47,11 @@ export default function EditProductPage() {
     description: "",
     category_id: undefined,
     price: 0,
-    currency: "USD",
+    currency: "KES",
+    scope: "segment",
+    unit: "data_mb",
+    unit_value: 0,
+    validity_hours: undefined,
   });
 
   useEffect(() => {
@@ -101,7 +105,11 @@ export default function EditProductPage() {
         description: productData.description || "",
         category_id: productData.category_id,
         price: productData.price || 0,
-        currency: productData.currency || "USD",
+        currency: productData.currency || "KES",
+        scope: productData.scope || "segment",
+        unit: productData.unit || "data_mb",
+        unit_value: productData.unit_value ?? 0,
+        validity_hours: productData.validity_hours,
       });
 
       // Set selected category IDs for MultiCategorySelector
@@ -132,9 +140,16 @@ export default function EditProductPage() {
       setIsLoading(true);
       setError(null);
 
-      // Remove is_active from update payload as backend doesn't accept it
-      // Status is controlled via activate/deactivate endpoints, not through update
-      const { is_active, ...updateData } = formData;
+      // Remove is_active, scope, unit, unit_value, validity_hours from update payload
+      // Backend doesn't accept these fields
+      const {
+        is_active,
+        scope,
+        unit,
+        unit_value,
+        validity_hours,
+        ...updateData
+      } = formData;
 
       // Update product data
       await productService.updateProduct(Number(id), updateData);

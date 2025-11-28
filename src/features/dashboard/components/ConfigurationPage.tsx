@@ -44,6 +44,15 @@ export default function ConfigurationPage() {
         navigationPath: "/dashboard/campaign-communication-policy",
       },
       {
+        id: "communication-channels",
+        name: "Communication Channels",
+        description: "Manage SMS, Email, USSD and Push delivery channels",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/communication-channels",
+      },
+      {
         id: "campaign-objectives",
         name: "Campaign Objectives",
         description: "Define and manage your campaign objectives",
@@ -108,6 +117,35 @@ export default function ConfigurationPage() {
         status: "active",
         navigationPath: "/dashboard/offer-catalogs",
       },
+      {
+        id: "offer-tracking-sources",
+        name: "Offer Tracking Sources",
+        description:
+          "Manage tracking sources for measuring offer performance and analytics",
+        type: "offer",
+        category: "Offer Configuration",
+        status: "active",
+        navigationPath: "/dashboard/offer-tracking-sources",
+      },
+      {
+        id: "creative-templates",
+        name: "Creative Templates",
+        description:
+          "Manage reusable creative templates for SMS, Email, Push, and more",
+        type: "offer",
+        category: "Offer Configuration",
+        status: "active",
+        navigationPath: "/dashboard/creative-templates",
+      },
+      {
+        id: "reward-types",
+        name: "Reward Types",
+        description: "Define reusable reward fulfilment types",
+        type: "offer",
+        category: "Offer Configuration",
+        status: "active",
+        navigationPath: "/dashboard/reward-types",
+      },
       // Product-related configs
       {
         id: "product-types",
@@ -145,6 +183,16 @@ export default function ConfigurationPage() {
         category: "Segment Configuration",
         status: "active",
         navigationPath: "/dashboard/segment-types",
+      },
+      {
+        id: "segment-lists",
+        name: "Segment Lists",
+        description:
+          "Manage segment lists that feed campaigns, offers, and customer journeys",
+        type: "segment",
+        category: "Segment Configuration",
+        status: "active",
+        navigationPath: "/dashboard/segment-list",
       },
       // User-related configs
       {

@@ -26,6 +26,7 @@ import { color, tw, button } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import SegmentModal from "../components/SegmentModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 
 // Mock data for testing
 const MOCK_SEGMENT: Segment = {
@@ -1361,7 +1362,7 @@ export default function SegmentDetailsPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium text-gray-900">
-                            ${customer.total_spent.toLocaleString()}
+                            <CurrencyFormatter amount={customer.total_spent} />
                           </p>
                           <p className="text-xs text-gray-500">
                             Last: {customer.last_purchase}

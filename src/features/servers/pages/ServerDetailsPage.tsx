@@ -250,7 +250,7 @@ export default function ServerDetailsPage() {
         Back to servers
       </button>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -381,7 +381,7 @@ export default function ServerDetailsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
             <Activity size={20} style={{ color: color.status.info }} />
             <h2 className="text-base font-semibold text-gray-900">
@@ -415,7 +415,7 @@ export default function ServerDetailsPage() {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
             {server.health_check_enabled ? (
               <ShieldCheck size={20} style={{ color: color.status.success }} />
@@ -460,7 +460,7 @@ export default function ServerDetailsPage() {
       </div>
 
       {server.metadata && Object.keys(server.metadata).length > 0 && (
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900">Metadata</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {Object.entries(server.metadata).map(([key, value]) => (

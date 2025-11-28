@@ -6,6 +6,10 @@ import {
   Tag,
   Megaphone,
   Layers,
+  Share2,
+  MessageSquare,
+  Palette,
+  Gift,
 } from "lucide-react";
 import {
   ConfigurationPageConfig,
@@ -164,6 +168,209 @@ const hardcodedLineOfBusiness: ConfigurationItem[] = [
     description: "Digital transformation and cloud services",
     created_at: "2024-01-08T08:45:00Z",
     updated_at: "2024-01-15T12:00:00Z",
+  },
+];
+
+// Hardcoded tracking sources data (for offer performance measurement)
+const hardcodedTrackingSources: ConfigurationItem[] = [
+  {
+    id: 1,
+    name: "Recharge Tracking",
+    description:
+      "Track recharge-based activities and transactions for offer performance",
+    created_at: "2024-02-01T09:00:00Z",
+    updated_at: "2024-02-06T15:00:00Z",
+  },
+  {
+    id: 2,
+    name: "Usage Metric Tracking",
+    description:
+      "Track usage-based metrics like data consumption, call duration, and SMS volume",
+    created_at: "2024-02-02T11:15:00Z",
+    updated_at: "2024-02-06T15:00:00Z",
+  },
+  {
+    id: 3,
+    name: "Channel Performance",
+    description:
+      "Track offer performance across different delivery channels (SMS, Email, USSD)",
+    created_at: "2024-02-03T12:40:00Z",
+    updated_at: "2024-02-06T15:00:00Z",
+  },
+  {
+    id: 4,
+    name: "Customer Segment Tracking",
+    description:
+      "Track offer performance by customer segment and demographic attributes",
+    created_at: "2024-02-04T13:20:00Z",
+    updated_at: "2024-02-06T15:00:00Z",
+  },
+  {
+    id: 5,
+    name: "Product Type Tracking",
+    description: "Track offer performance by product type and category",
+    created_at: "2024-02-05T08:10:00Z",
+    updated_at: "2024-02-06T15:00:00Z",
+  },
+  {
+    id: 6,
+    name: "Custom Tracking Source",
+    description:
+      "Custom tracking parameters for specific business requirements",
+    created_at: "2024-02-06T10:30:00Z",
+    updated_at: "2024-02-06T15:00:00Z",
+  },
+];
+
+// Hardcoded creative templates data
+const hardcodedCreativeTemplates: TypeConfigurationItem[] = [
+  {
+    id: 1,
+    name: "SMS Transactional Template",
+    description:
+      "Two-line SMS with placeholders for amount, date, and short link",
+    isActive: true,
+    metadataValue: "SMS",
+    created_at: "2024-02-01T10:00:00Z",
+    updated_at: "2024-02-01T10:00:00Z",
+  },
+  {
+    id: 2,
+    name: "Email Promotional Template",
+    description:
+      "Rich HTML template with hero banner, CTA button, and footer content",
+    isActive: true,
+    metadataValue: "Email",
+    created_at: "2024-02-01T10:05:00Z",
+    updated_at: "2024-02-01T10:05:00Z",
+  },
+  {
+    id: 3,
+    name: "Push Notification Template",
+    description: "Short push notification with title and body placeholders",
+    isActive: true,
+    metadataValue: "Push",
+    created_at: "2024-02-01T10:10:00Z",
+    updated_at: "2024-02-01T10:10:00Z",
+  },
+  {
+    id: 4,
+    name: "In-App Banner Template",
+    description: "Responsive in-app banner with image, headline, and CTA",
+    isActive: true,
+    metadataValue: "InApp",
+    created_at: "2024-02-01T10:15:00Z",
+    updated_at: "2024-02-01T10:15:00Z",
+  },
+  {
+    id: 5,
+    name: "USSD Prompt Template",
+    description: "USSD prompt layout with menu options and short instruction",
+    isActive: false,
+    metadataValue: "USSD",
+    created_at: "2024-02-01T10:20:00Z",
+    updated_at: "2024-02-01T10:20:00Z",
+  },
+];
+
+// Hardcoded reward types data
+const hardcodedRewardTypes: TypeConfigurationItem[] = [
+  {
+    id: 1,
+    name: "Bundle Reward",
+    description: "Provision data, voice, or SMS bundles as rewards",
+    isActive: true,
+    metadataValue: "bundle",
+    created_at: "2024-02-01T11:00:00Z",
+    updated_at: "2024-02-01T11:00:00Z",
+  },
+  {
+    id: 2,
+    name: "Points Reward",
+    description: "Allocate loyalty or experience points",
+    isActive: true,
+    metadataValue: "points",
+    created_at: "2024-02-01T11:05:00Z",
+    updated_at: "2024-02-01T11:05:00Z",
+  },
+  {
+    id: 3,
+    name: "Discount Reward",
+    description: "Percentage or amount-based discounts on future purchases",
+    isActive: true,
+    metadataValue: "discount",
+    created_at: "2024-02-01T11:10:00Z",
+    updated_at: "2024-02-01T11:10:00Z",
+  },
+  {
+    id: 4,
+    name: "Cashback Reward",
+    description: "Cashback credited to customer wallet or account balance",
+    isActive: true,
+    metadataValue: "cashback",
+    created_at: "2024-02-01T11:15:00Z",
+    updated_at: "2024-02-01T11:15:00Z",
+  },
+  {
+    id: 5,
+    name: "Custom Fulfilment",
+    description: "Custom reward fulfilment with bespoke business logic",
+    isActive: false,
+    metadataValue: "custom",
+    created_at: "2024-02-01T11:20:00Z",
+    updated_at: "2024-02-01T11:20:00Z",
+  },
+];
+
+// Hardcoded communication channels data
+const hardcodedCommunicationChannels: TypeConfigurationItem[] = [
+  {
+    id: 1,
+    name: "SMS - Normal",
+    description: "Standard SMS delivery routed via telecom SMSC",
+    isActive: true,
+    created_at: "2024-02-01T10:00:00Z",
+    updated_at: "2024-02-01T10:00:00Z",
+  },
+  {
+    id: 2,
+    name: "SMS - Flash",
+    description: "Flash SMS (display only) used for urgent notifications",
+    isActive: true,
+    created_at: "2024-02-01T10:05:00Z",
+    updated_at: "2024-02-01T10:05:00Z",
+  },
+  {
+    id: 3,
+    name: "Email",
+    description: "Transactional and marketing email channel",
+    isActive: true,
+    created_at: "2024-02-01T10:10:00Z",
+    updated_at: "2024-02-01T10:10:00Z",
+  },
+  {
+    id: 4,
+    name: "USSD - Push",
+    description: "Push USSD messages triggered automatically",
+    isActive: false,
+    created_at: "2024-02-01T10:15:00Z",
+    updated_at: "2024-02-01T10:15:00Z",
+  },
+  {
+    id: 5,
+    name: "USSD - Interactive",
+    description: "Interactive USSD menu journeys",
+    isActive: true,
+    created_at: "2024-02-01T10:20:00Z",
+    updated_at: "2024-02-01T10:20:00Z",
+  },
+  {
+    id: 6,
+    name: "Push Notification",
+    description: "Mobile app push via FCM/APNS",
+    isActive: true,
+    created_at: "2024-02-01T10:25:00Z",
+    updated_at: "2024-02-01T10:25:00Z",
   },
 ];
 
@@ -347,6 +554,119 @@ export const lineOfBusinessConfig: ConfigurationPageConfig = {
   createSuccessMessage: "Business line created successfully",
   updateSuccessMessage: "Business line updated successfully",
   deleteErrorMessage: "Failed to delete business line",
+  saveErrorMessage: "Please try again later.",
+};
+
+// Tracking Sources Configuration (Offer)
+export const trackingSourcesConfig: ConfigurationPageConfig = {
+  title: "Offer Tracking Sources",
+  subtitle:
+    "Manage tracking sources for measuring offer performance and analytics",
+  entityName: "tracking source",
+  entityNamePlural: "tracking sources",
+  configType: "trackingSources",
+  backPath: "/dashboard/configuration",
+  icon: Share2,
+  searchPlaceholder: "Search tracking sources...",
+  initialData: hardcodedTrackingSources,
+  createButtonText: "Add Tracking Source",
+  modalTitle: {
+    create: "Create Tracking Source",
+    edit: "Edit Tracking Source",
+  },
+  nameLabel: "Tracking Source Name",
+  nameRequired: true,
+  descriptionLabel: "Description",
+  descriptionRequired: false,
+  nameMaxLength: 120,
+  descriptionMaxLength: 600,
+  deleteConfirmTitle: "Delete Tracking Source",
+  deleteConfirmMessage: (name: string) =>
+    `Are you sure you want to delete "${name}"?`,
+  deleteSuccessMessage: (name: string) =>
+    `"${name}" has been deleted successfully.`,
+  createSuccessMessage: "Tracking source created successfully",
+  updateSuccessMessage: "Tracking source updated successfully",
+  deleteErrorMessage: "Failed to delete tracking source",
+  saveErrorMessage: "Please try again later.",
+};
+
+// Creative Templates Configuration
+export const creativeTemplatesConfig: TypeConfigurationPageConfig = {
+  title: "Creative Templates",
+  subtitle:
+    "Manage reusable creative templates for SMS, Email, Push, and other channels",
+  entityName: "creative template",
+  entityNamePlural: "creative templates",
+  configType: "creativeTemplates",
+  backPath: "/dashboard/configuration",
+  icon: Palette,
+  searchPlaceholder: "Search creative templates...",
+  initialData: hardcodedCreativeTemplates,
+  createButtonText: "Create Creative Template",
+  modalTitle: {
+    create: "Create Creative Template",
+    edit: "Edit Creative Template",
+  },
+  nameLabel: "Template Name",
+  nameRequired: true,
+  descriptionLabel: "Description",
+  descriptionRequired: false,
+  nameMaxLength: 120,
+  descriptionMaxLength: 600,
+  metadataField: {
+    label: "Primary Channel",
+    type: "text",
+    placeholder: "e.g., SMS, Email, Push",
+  },
+  statusLabel: "Status",
+  deleteConfirmTitle: "Delete Creative Template",
+  deleteConfirmMessage: (name: string) =>
+    `Are you sure you want to delete "${name}"? This does not remove existing creatives.`,
+  deleteSuccessMessage: (name: string) =>
+    `"${name}" has been deleted successfully.`,
+  createSuccessMessage: "Creative template created successfully",
+  updateSuccessMessage: "Creative template updated successfully",
+  deleteErrorMessage: "Failed to delete creative template",
+  saveErrorMessage: "Please try again later.",
+};
+
+// Reward Types Configuration
+export const rewardTypesConfig: TypeConfigurationPageConfig = {
+  title: "Reward Types",
+  subtitle: "Define reusable reward fulfilment types for offer rewards",
+  entityName: "reward type",
+  entityNamePlural: "reward types",
+  configType: "rewardTypes",
+  backPath: "/dashboard/configuration",
+  icon: Gift,
+  searchPlaceholder: "Search reward types...",
+  initialData: hardcodedRewardTypes,
+  createButtonText: "Create Reward Type",
+  modalTitle: {
+    create: "Create Reward Type",
+    edit: "Edit Reward Type",
+  },
+  nameLabel: "Reward Type Name",
+  nameRequired: true,
+  descriptionLabel: "Description",
+  descriptionRequired: false,
+  nameMaxLength: 120,
+  descriptionMaxLength: 600,
+  metadataField: {
+    label: "Fulfilment Key",
+    type: "text",
+    placeholder: "e.g., bundle, points, discount",
+  },
+  statusLabel: "Status",
+  deleteConfirmTitle: "Delete Reward Type",
+  deleteConfirmMessage: (name: string) =>
+    `Are you sure you want to delete "${name}"?`,
+  deleteSuccessMessage: (name: string) =>
+    `"${name}" has been deleted successfully.`,
+  createSuccessMessage: "Reward type created successfully",
+  updateSuccessMessage: "Reward type updated successfully",
+  deleteErrorMessage: "Failed to delete reward type",
   saveErrorMessage: "Please try again later.",
 };
 
@@ -758,6 +1078,40 @@ export const productTypesConfig: TypeConfigurationPageConfig = {
   createSuccessMessage: "Product type created successfully",
   updateSuccessMessage: "Product type updated successfully",
   deleteErrorMessage: "Failed to delete product type",
+  saveErrorMessage: "Please try again later.",
+};
+
+// Communication Channels Configuration
+export const communicationChannelsConfig: TypeConfigurationPageConfig = {
+  title: "Communication Channels",
+  subtitle:
+    "Manage channels such as SMS, Email, USSD, Push and control their availability",
+  entityName: "communication channel",
+  entityNamePlural: "communication channels",
+  configType: "communicationChannels",
+  backPath: "/dashboard/configuration",
+  icon: MessageSquare,
+  searchPlaceholder: "Search channels...",
+  initialData: hardcodedCommunicationChannels,
+  createButtonText: "Create Channel",
+  modalTitle: {
+    create: "Create Communication Channel",
+    edit: "Edit Communication Channel",
+  },
+  nameLabel: "Channel Name",
+  nameRequired: true,
+  descriptionLabel: "Description",
+  descriptionRequired: false,
+  nameMaxLength: 120,
+  descriptionMaxLength: 600,
+  deleteConfirmTitle: "Delete Channel",
+  deleteConfirmMessage: (name: string) =>
+    `Are you sure you want to delete "${name}"?`,
+  deleteSuccessMessage: (name: string) =>
+    `"${name}" has been deleted successfully.`,
+  createSuccessMessage: "Communication channel created successfully",
+  updateSuccessMessage: "Communication channel updated successfully",
+  deleteErrorMessage: "Failed to delete communication channel",
   saveErrorMessage: "Please try again later.",
 };
 

@@ -157,6 +157,10 @@ export interface CampaignStatsSummary {
   total_budget_spent: number | string;
   avg_campaign_budget: number | string;
   with_control_groups: number | string;
+  overview?: Partial<Record<string, number | string>>;
+  status_breakdown?: Partial<Record<string, number | string>>;
+  approval_status_breakdown?: Partial<Record<string, number | string>>;
+  activity_status?: Partial<Record<string, number | string>>;
 }
 
 export interface CampaignBudgetUtilisation {
@@ -420,6 +424,8 @@ export interface CampaignSegment {
   criteria: SegmentCriteria;
   created_at: string;
   control_group_config?: SegmentControlGroupConfig;
+  include_exclude?: "include" | "exclude";
+  is_primary?: boolean;
   priority?: number;
 }
 
@@ -535,32 +541,7 @@ export interface ApprovalWorkflow {
   approved_at?: string;
 }
 
-export interface CreateCampaignRequest {
-  name: string; // Required field
-  description?: string;
-  objective?:
-    | "acquisition"
-    | "retention"
-    | "churn_prevention"
-    | "upsell_cross_sell"
-    | "reactivation";
-  category_id?: number;
-  program_id?: number;
-  start_date?: string;
-  end_date?: string;
-  tag?: string;
-  business?: string;
-  priority?: "low" | "medium" | "high" | "critical";
-  priority_rank?: number;
-  is_definitive?: boolean;
-  campaign_type?:
-    | "multiple_target_group"
-    | "champion_challenger"
-    | "ab_test"
-    | "round_robin"
-    | "multiple_level"; // frontend-only field
-  budget_allocated?: string | number; // Budget in currency format
-}
+export type { CreateCampaignRequest } from "./createCampaign";
 
 export interface CampaignOfferMapping {
   offer_id: string;

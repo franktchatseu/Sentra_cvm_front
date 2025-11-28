@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import { colors } from "../../../shared/utils/tokens";
 import { color, tw } from "../../../shared/utils/utils";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import type {
   CustomerRow,
   CustomerSearchResultsResponse,
@@ -1307,7 +1308,7 @@ export default function CustomerSearchResultsPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            ${offer.value.toFixed(2)}
+                            <CurrencyFormatter amount={offer.value} />
                           </td>
                           <td
                             className="px-6 py-4 text-sm text-gray-900"

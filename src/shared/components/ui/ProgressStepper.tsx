@@ -35,10 +35,10 @@ export default function ProgressStepper({
   return (
     <nav
       aria-label="Progress"
-      className="sticky top-16 z-40 bg-white py-6 border-b border-gray-200"
+      className="sticky top-16 z-40 bg-white border-b border-gray-200 py-4 sm:py-6 px-2 sm:px-0"
     >
       {/* Mobile - Simple dots */}
-      <div className="md:hidden flex items-center justify-center gap-2">
+      <div className="md:hidden flex items-center justify-center gap-2 flex-wrap">
         {steps.map((step) => {
           const status = getStepStatus(step.id);
           return (

@@ -1,17 +1,29 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ToastProvider } from './contexts/ToastContext';
-import { ConfirmProvider } from './contexts/ConfirmContext';
-import { color } from './shared/utils/utils';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
+import { ConfirmProvider } from "./contexts/ConfirmContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import { color } from "./shared/utils/utils";
 
 // Lazy load all pages for better performance
-const LoginPage = lazy(() => import('./features/auth/pages/LoginPage'));
-const RequestAccountPage = lazy(() => import('./features/auth/pages/RequestAccountPage'));
-const ResetPasswordPage = lazy(() => import('./features/auth/pages/ResetPasswordPage'));
-const LandingPage = lazy(() => import('./features/auth/pages/LandingPage'));
-const AuthenticatedLandingPage = lazy(() => import('./features/dashboard/components/AuthenticatedLandingPage'));
-const Dashboard = lazy(() => import('./features/dashboard/pages/Dashboard'));
+const LoginPage = lazy(() => import("./features/auth/pages/LoginPage"));
+const RequestAccountPage = lazy(
+  () => import("./features/auth/pages/RequestAccountPage")
+);
+const ResetPasswordPage = lazy(
+  () => import("./features/auth/pages/ResetPasswordPage")
+);
+const LandingPage = lazy(() => import("./features/auth/pages/LandingPage"));
+const AuthenticatedLandingPage = lazy(
+  () => import("./features/dashboard/components/AuthenticatedLandingPage")
+);
+const Dashboard = lazy(() => import("./features/dashboard/pages/Dashboard"));
 
 // Loading fallback component
 function PageLoader() {
@@ -36,12 +48,29 @@ function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/landingpage" /> : <LoginPage />} />
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? <Navigate to="/landingpage" /> : <LoginPage />
+          }
+        />
         <Route path="/request-account" element={<RequestAccountPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/landing" element={<LandingPage />} />
-        <Route path="/landingpage" element={isAuthenticated ? <AuthenticatedLandingPage /> : <Navigate to="/login" />} />
-        <Route path="/dashboard/*" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route
+          path="/landingpage"
+          element={
+            isAuthenticated ? (
+              <AuthenticatedLandingPage />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/dashboard/*"
+          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
+        />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Suspense>
@@ -50,17 +79,22 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <ConfirmProvider>
-          <Router>
-            <div className="min-h-screen" style={{ backgroundColor: color.primary.background }}>
-              <AppRoutes />
-            </div>
-          </Router>
-        </ConfirmProvider>
-      </ToastProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <ConfirmProvider>
+            <Router>
+              <div
+                className="min-h-screen"
+                style={{ backgroundColor: color.primary.background }}
+              >
+                <AppRoutes />
+              </div>
+            </Router>
+          </ConfirmProvider>
+        </ToastProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

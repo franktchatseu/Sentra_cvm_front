@@ -26,6 +26,7 @@ import { offerCategoryService } from "../services/offerCategoryService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { offerService } from "../services/offerService";
 import { buildApiUrl, API_CONFIG } from "../../../shared/services/api";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import {
   OfferCategoryType,
   CreateOfferCategoryRequest,
@@ -1385,14 +1386,9 @@ function OfferCategoriesPage() {
                         <div>
                           <p className="text-xs text-gray-500">Revenue</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            $
-                            {performance.totalRevenue.toLocaleString(
-                              undefined,
-                              {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }
-                            )}
+                            <CurrencyFormatter
+                              amount={performance.totalRevenue}
+                            />
                           </p>
                         </div>
                         <div>
@@ -1464,14 +1460,9 @@ function OfferCategoriesPage() {
                                 Revenue:{" "}
                               </span>
                               <span className="text-sm font-semibold text-gray-900">
-                                $
-                                {performance.totalRevenue.toLocaleString(
-                                  undefined,
-                                  {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  }
-                                )}
+                                <CurrencyFormatter
+                                  amount={performance.totalRevenue}
+                                />
                               </span>
                             </div>
                             <div>

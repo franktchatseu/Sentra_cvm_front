@@ -43,6 +43,8 @@ interface AudienceConfigurationStepProps {
   selectedSegments: CampaignSegment[];
   setSelectedSegments: (segments: CampaignSegment[]) => void;
   controlGroup: ControlGroup;
+  validationErrors?: { [key: string]: string };
+  clearValidationErrors?: () => void;
 }
 
 export default function AudienceConfigurationStep({
@@ -51,6 +53,8 @@ export default function AudienceConfigurationStep({
   selectedSegments,
   setSelectedSegments,
   controlGroup: _controlGroup, // eslint-disable-line @typescript-eslint/no-unused-vars
+  validationErrors = {},
+  clearValidationErrors,
 }: AudienceConfigurationStepProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCreateSegmentModal, setShowCreateSegmentModal] = useState(false);
@@ -138,6 +142,11 @@ export default function AudienceConfigurationStep({
   ]);
 
   const handleSegmentSelect = (segments: CampaignSegment[]) => {
+    // Clear validation errors when segments are selected
+    if (clearValidationErrors) {
+      clearValidationErrors();
+    }
+
     if (formData.campaign_type === "champion_challenger") {
       // For Champion-Challenger: first segment is champion (priority 1), rest are challengers
       const processedSegments = segments.map((seg, index) => {
@@ -553,7 +562,13 @@ export default function AudienceConfigurationStep({
         {/* Standard Display for Multiple Target Group */}
         {formData.campaign_type === "multiple_target_group" &&
           selectedSegments.length === 0 && (
-            <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
+            <div
+              className={`border-2 border-dashed rounded-md p-4 ${
+                validationErrors.segments
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300"
+              }`}
+            >
               <div className="flex items-center justify-center gap-3">
                 <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center">
                   <Users className="w-4 h-4 text-gray-400" />
@@ -569,6 +584,13 @@ export default function AudienceConfigurationStep({
               </div>
             </div>
           )}
+
+        {/* Validation Error Message */}
+        {validationErrors.segments && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{validationErrors.segments}</p>
+          </div>
+        )}
 
         {formData.campaign_type === "multiple_target_group" &&
           selectedSegments.length > 0 && (

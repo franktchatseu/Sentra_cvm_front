@@ -26,6 +26,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 
 interface ProductFilters {
   search?: string;
@@ -344,10 +345,8 @@ export default function ProductsPage() {
           <p className="mt-2 text-3xl font-bold text-gray-900">
             {statsLoading ? (
               <span className="text-gray-400">...</span>
-            ) : stats?.averagePrice ? (
-              `$${stats.averagePrice.toFixed(2)}`
             ) : (
-              "$0.00"
+              <CurrencyFormatter amount={stats?.averagePrice || 0} />
             )}
           </p>
         </div>

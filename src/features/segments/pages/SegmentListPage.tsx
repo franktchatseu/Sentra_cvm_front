@@ -296,7 +296,7 @@ export default function SegmentListPage() {
           {filteredLists.map((list) => (
             <div
               key={list.list_id}
-              className={`bg-white rounded-md border border-gray-200 p-6 hover:shadow-md transition-shadow ${
+              className={`bg-white rounded-md p-6 hover:shadow-md transition-shadow ${
                 viewMode === "list" ? "flex items-center justify-between" : ""
               }`}
             >
@@ -355,7 +355,7 @@ export default function SegmentListPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                  {/* <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                     <button
                       onClick={() => handleViewList(list)}
                       className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
@@ -377,7 +377,7 @@ export default function SegmentListPage() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  </div>
+                  </div> */}
                 </>
               ) : (
                 <>
@@ -421,7 +421,7 @@ export default function SegmentListPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleViewList(list)}
                       className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
@@ -443,7 +443,7 @@ export default function SegmentListPage() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  </div>
+                  </div> */}
                 </>
               )}
             </div>

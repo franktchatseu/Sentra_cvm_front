@@ -8,6 +8,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { productService } from "../services/productService";
 import { productCategoryService } from "../services/productCategoryService";
 import { color } from "../../../shared/utils/utils";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 
 interface ProductSelectorProps {
   selectedProducts: Product[];
@@ -384,12 +385,11 @@ export default function ProductSelector({
                               {/* Price */}
                               {product.price && (
                                 <div className="flex items-center space-x-1">
-                                  <span className="text-lg font-bold text-gray-900">
-                                    ${product.price}
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    {product.currency}
-                                  </span>
+                                  <CurrencyFormatter
+                                    amount={product.price}
+                                    currencyCode={product.currency}
+                                    className="text-lg font-bold text-gray-900"
+                                  />
                                 </div>
                               )}
                             </div>

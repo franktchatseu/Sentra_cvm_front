@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useToast } from "../../../contexts/ToastContext";
 import {
   Plus,
   Filter,
   Search,
-  Users,
   // Calendar,
   MoreHorizontal,
   Eye,
@@ -34,6 +33,16 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import ExecuteCampaignModal from "../components/ExecuteCampaignModal";
 import ApproveCampaignModal from "../components/ApproveCampaignModal";
 import RejectCampaignModal from "../components/RejectCampaignModal";
+import {
+  CampaignApprovalStatus,
+  CampaignCollection,
+  CampaignStatsSummary,
+  CampaignStatus,
+  CampaignSuperSearchQuery,
+  GetCampaignsResponse,
+} from "../types/campaign";
+
+type CampaignListResponse = CampaignCollection | GetCampaignsResponse;
 
 interface CampaignDisplay {
   id: number;
@@ -116,6 +125,13 @@ export default function CampaignsPage() {
   const [categories, setCategories] = useState<
     Array<{ id: number; name: string; description?: string }>
   >([]);
+  const categoryMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    categories.forEach((category) => {
+      map[category.id] = category.name;
+    });
+    return map;
+  }, [categories]);
   const [campaignStats, setCampaignStats] = useState<{
     total: number;
     active: number;
@@ -299,6 +315,7 @@ export default function CampaignsPage() {
         }>
       );
     } catch (error) {
+      console.error("Failed to load campaign catalogs:", error);
       showToast(
         "error",
         "Failed to load Campaigns catalogs. Please try again."
@@ -312,7 +329,7 @@ export default function CampaignsPage() {
     try {
       setIsLoading(true);
 
-      let response;
+      let response: CampaignListResponse;
       const LIMIT = 100; // Fetch reasonable batch size
       const currentIndex = (currentPage - 1) * pageSize;
       const chunkOffset = Math.floor(currentIndex / LIMIT) * LIMIT;
@@ -329,7 +346,7 @@ export default function CampaignsPage() {
 
       if (hasFilters) {
         // Use superSearchCampaigns when filters are applied
-        const searchParams: any = {
+        const searchParams: CampaignSuperSearchQuery = {
           limit: LIMIT,
           offset: chunkOffset,
           skipCache: true,
@@ -340,7 +357,7 @@ export default function CampaignsPage() {
         }
 
         if (selectedStatus && selectedStatus !== "all") {
-          searchParams.status = selectedStatus;
+          searchParams.status = selectedStatus as CampaignStatus;
         } else if (selectedStatus === "all") {
           // When "all" is selected, exclude archived campaigns from default view
           // Users can still see archived campaigns by selecting "Archived" filter
@@ -348,7 +365,8 @@ export default function CampaignsPage() {
         }
 
         if (filters.approvalStatus && filters.approvalStatus !== "all") {
-          searchParams.approvalStatus = filters.approvalStatus;
+          searchParams.approvalStatus =
+            filters.approvalStatus as CampaignApprovalStatus;
         }
 
         if (filters.categoryId && filters.categoryId !== "all") {
@@ -373,6 +391,14 @@ export default function CampaignsPage() {
         });
       }
 
+      if (!("data" in response) || !response.success) {
+        const errorMessage =
+          "error" in response && response.error
+            ? response.error
+            : "Failed to retrieve campaigns";
+        throw new Error(errorMessage);
+      }
+
       // Transform response data to display format
       const campaignsData: CampaignDisplay[] = response.data.map(
         (campaign) => ({
@@ -390,121 +416,13 @@ export default function CampaignsPage() {
         })
       );
 
-      // Helper function to generate consistent random values based on campaign ID
-      const seededRandom = (seed: number, min: number, max: number) => {
-        const x = Math.sin(seed) * 10000;
-        const random = x - Math.floor(x);
-        return Math.floor(random * (max - min + 1)) + min;
-      };
-
-      const seededRandomFloat = (seed: number, min: number, max: number) => {
-        const x = Math.sin(seed) * 10000;
-        const random = x - Math.floor(x);
-        return random * (max - min) + min;
-      };
-
-      // Add dummy performance data and dates for campaigns that don't have them
-      const campaignsWithDummyData = campaignsData.map((campaign) => {
-        // Ensure category_id is properly set from API response
-        if (
-          (campaign as CampaignDisplay & { category_id?: string }).category_id
-        ) {
-          campaign.category_id = parseInt(
-            (campaign as CampaignDisplay & { category_id: string }).category_id
-          );
-        }
-        // Add dummy performance data if not present
-        if (!campaign.performance) {
-          // Generate realistic dummy performance data based on campaign ID (consistent values)
-          const baseSent = seededRandom(campaign.id * 1, 1000, 11000);
-          const deliveryRate = seededRandomFloat(campaign.id * 2, 0.95, 0.99);
-          const openRate = seededRandomFloat(campaign.id * 3, 0.15, 0.4);
-          const conversionRate = seededRandomFloat(campaign.id * 4, 0.02, 0.1);
-
-          const delivered = Math.floor(baseSent * deliveryRate);
-          const opened = Math.floor(delivered * openRate);
-          const converted = Math.floor(delivered * conversionRate);
-          const revenue = converted * seededRandom(campaign.id * 5, 50, 250);
-
-          campaign.performance = {
-            sent: baseSent,
-            delivered: delivered,
-            opened: opened,
-            converted: converted,
-            revenue: Math.round(revenue),
-          };
-        }
-
-        // Add dummy dates if not present (store as ISO strings for consistency)
-        if (!campaign.startDate || !campaign.endDate) {
-          const now = new Date();
-          const daysAgo = seededRandom(campaign.id * 6, 1, 30);
-          const campaignDuration = seededRandom(campaign.id * 7, 1, 14);
-
-          const startDate = new Date(now);
-          startDate.setDate(startDate.getDate() - daysAgo);
-
-          const endDate = new Date(startDate);
-          endDate.setDate(endDate.getDate() + campaignDuration);
-
-          // Store as ISO strings for consistent parsing
-          campaign.startDate = startDate.toISOString();
-          campaign.endDate = endDate.toISOString();
-        }
-
-        // Add dummy segment if not present (consistent based on campaign ID)
-        if (!campaign.segment) {
-          const existingSegments = [
-            "High Value Customers",
-            "At Risk Customers",
-            "New Subscribers",
-            "Voice Heavy Users",
-            "Data Bundle Enthusiasts",
-            "Weekend Warriors",
-            "Business Customers",
-            "Dormant Users",
-          ];
-
-          // Use campaign ID to ensure consistent segment from existing segments
-          campaign.segment =
-            existingSegments[campaign.id % existingSegments.length];
-        }
-
-        // Add dummy campaign type and objective if not present (consistent based on campaign ID)
-        if (!campaign.type) {
-          const campaignTypes = [
-            "Multiple Target",
-            "Champion Challenger",
-            "A/B Test",
-            "Round Robin",
-            "Multiple Level",
-          ];
-          // Use campaign ID to ensure consistent type
-          campaign.type = campaignTypes[campaign.id % campaignTypes.length];
-        }
-
-        if (!campaign.objective) {
-          const objectives = [
-            "acquisition",
-            "retention",
-            "engagement",
-            "conversion",
-            "reactivation",
-          ];
-          // Use campaign ID to ensure consistent objective
-          campaign.objective = objectives[campaign.id % objectives.length];
-        }
-
-        return campaign;
-      });
-
-      setAllCampaignsUnfiltered(campaignsWithDummyData);
+      setAllCampaignsUnfiltered(campaignsData);
 
       // When status is "all", exclude archived campaigns from default view
       // Users can still see archived campaigns by selecting "Archived" filter
-      let campaignsToDisplay = campaignsWithDummyData;
+      let campaignsToDisplay = campaignsData;
       if (selectedStatus === "all") {
-        campaignsToDisplay = campaignsWithDummyData.filter(
+        campaignsToDisplay = campaignsData.filter(
           (c) => c.status !== "archived"
         );
       }
@@ -522,9 +440,10 @@ export default function CampaignsPage() {
       const total =
         selectedStatus === "all"
           ? campaignsToDisplay.length // Use filtered count when excluding archived
-          : response.pagination?.total || campaignsToDisplay.length; // Use backend total if available, otherwise filtered count
+          : response.pagination.total || campaignsToDisplay.length; // Use backend total if available, otherwise filtered count
       setTotalCampaigns(total);
     } catch (error) {
+      console.error("Failed to load campaigns list:", error);
       showToast(
         "error",
         "Failed to load campaigns. Please try again in a moment."
@@ -543,29 +462,27 @@ export default function CampaignsPage() {
       const response = await campaignService.getCampaignStats(true);
 
       if (response.success && response.data) {
-        const data = response.data;
-        // Parse the stats (they may come as strings or numbers)
+        const data = response.data as CampaignStatsSummary;
+        const overview = data.overview ?? {};
+        const statusBreakdown = data.status_breakdown ?? {};
+        const approvalBreakdown = data.approval_status_breakdown ?? {};
+        const activityStatus = data.activity_status ?? {};
+
         const total =
-          parseInt(String(data.total_campaigns)) ||
-          (typeof data.total_campaigns === "number" ? data.total_campaigns : 0);
+          Number(overview.total_campaigns) || Number(data.total_campaigns) || 0;
 
-        const activeNum = data.active_campaigns || data.currently_active;
         const active =
-          typeof activeNum === "number"
-            ? activeNum
-            : parseInt(String(activeNum || "0"), 10) || 0;
+          Number(statusBreakdown.active) ||
+          Number(activityStatus.is_active_flag_true) ||
+          Number(activityStatus.currently_running) ||
+          0;
 
-        const draftNum = data.in_draft;
-        const draft =
-          typeof draftNum === "number"
-            ? draftNum
-            : parseInt(String(draftNum || "0"), 10) || 0;
+        const draft = Number(statusBreakdown.draft) || 0;
 
-        const pendingApprovalNum = data.pending_approval;
         const pendingApproval =
-          typeof pendingApprovalNum === "number"
-            ? pendingApprovalNum
-            : parseInt(String(pendingApprovalNum || "0"), 10) || 0;
+          Number(statusBreakdown.pending_approval) ||
+          Number(approvalBreakdown.pending) ||
+          0;
 
         setCampaignStats({
           total: Number(total),
@@ -582,6 +499,7 @@ export default function CampaignsPage() {
         });
       }
     } catch (error) {
+      console.error("Failed to load campaign stats:", error);
       setCampaignStats({
         total: 0,
         active: 0,
@@ -593,10 +511,6 @@ export default function CampaignsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchCampaignStats();
-  }, [fetchCampaignStats]);
-
   // Fetch categories on component mount
   useEffect(() => {
     fetchCategories();
@@ -607,6 +521,10 @@ export default function CampaignsPage() {
     fetchCampaigns();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStatus, searchQuery, filters, currentPage, pageSize]);
+
+  useEffect(() => {
+    fetchCampaignStats();
+  }, [fetchCampaignStats]);
 
   // Close action menus when clicking outside
   useEffect(() => {
@@ -858,6 +776,7 @@ export default function CampaignsPage() {
       fetchCampaigns(); // Refresh campaigns list
       fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
+      console.error("Failed to archive campaign:", error);
       // Extract error message from backend response
       let errorMessage = "Failed to archive campaign";
 
@@ -902,6 +821,7 @@ export default function CampaignsPage() {
       fetchCampaigns(); // Refresh campaigns list
       fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
+      console.error("Failed to delete campaign:", error);
       // Extract error message from backend response
       let errorMessage = "Failed to delete campaign";
 
@@ -953,6 +873,7 @@ export default function CampaignsPage() {
       showToast("success", "Campaign paused successfully");
       fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
+      console.error("Failed to pause campaign:", error);
       showToast("error", "Failed to pause campaign");
     }
   };
@@ -980,6 +901,7 @@ export default function CampaignsPage() {
       showToast("success", "Campaign resumed successfully");
       fetchCampaignStats(); // Refresh stats cards
     } catch (error) {
+      console.error("Failed to resume campaign:", error);
       showToast("error", "Failed to resume campaign");
     }
   };
@@ -1040,7 +962,7 @@ export default function CampaignsPage() {
         </div>
         <button
           onClick={() => navigate("/dashboard/campaigns/create")}
-          className="inline-flex items-center px-4 py-2 font-semibold rounded-md shadow-sm text-sm whitespace-nowrap text-white"
+          className="inline-flex items-center px-4 py-2 font-semibold rounded-md shadow-sm text-sm whitespace-nowrap text-white self-start sm:self-auto"
           style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-5 w-5 mr-2" />
@@ -1125,7 +1047,7 @@ export default function CampaignsPage() {
             </p>
           </div>
         ) : filteredCampaigns.length > 0 ? (
-          <div className="hidden lg:block overflow-x-auto">
+          <div className="overflow-x-auto">
             <table
               className="w-full"
               style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
@@ -1133,37 +1055,37 @@ export default function CampaignsPage() {
               <thead style={{ background: color.surface.tableHeader }}>
                 <tr>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Campaign name
                   </th>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Objective
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Description
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
+                    style={{ color: color.surface.tableHeaderText }}
+                  >
+                    Category
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-sm font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Status
                   </th>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Segment
-                  </th>
-                  <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Performance
-                  </th>
-                  <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
-                    style={{ color: color.surface.tableHeaderText }}
-                  >
-                    Dates
-                  </th>
-                  <th
-                    className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-center text-sm font-medium uppercase tracking-wider"
                     style={{ color: color.surface.tableHeaderText }}
                   >
                     Actions
@@ -1177,21 +1099,11 @@ export default function CampaignsPage() {
                       className="px-6 py-4"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      <div>
-                        <div
-                          className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
-                          title={campaign.name}
-                        >
-                          {campaign.name}
-                        </div>
-                        {campaign.description && (
-                          <div
-                            className={`text-xs sm:text-sm ${tw.textMuted} truncate mt-1`}
-                            title={campaign.description}
-                          >
-                            {campaign.description}
-                          </div>
-                        )}
+                      <div
+                        className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                        title={campaign.name}
+                      >
+                        {campaign.name}
                       </div>
                     </td>
                     <td
@@ -1199,161 +1111,51 @@ export default function CampaignsPage() {
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span
-                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusBadge(
+                        className={`text-sm ${tw.textPrimary} block truncate max-w-[200px] sm:max-w-none`}
+                        title={campaign.objective || "Not specified"}
+                      >
+                        {campaign.objective || "Not specified"}
+                      </span>
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {campaign.description ? (
+                        <span
+                          className={`text-sm ${tw.textSecondary} truncate block`}
+                          title={campaign.description}
+                        >
+                          {campaign.description}
+                        </span>
+                      ) : (
+                        <span className={`text-sm ${tw.textMuted}`}>
+                          No description
+                        </span>
+                      )}
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <span className={`text-sm ${tw.textPrimary}`}>
+                        {campaign.category_id
+                          ? categoryMap[campaign.category_id] || "Uncategorized"
+                          : "Uncategorized"}
+                      </span>
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
                           campaign.status
                         )}`}
                       >
                         {campaign.status.charAt(0).toUpperCase() +
                           campaign.status.slice(1)}
                       </span>
-                    </td>
-                    <td
-                      className="px-6 py-4 hidden lg:table-cell"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Users
-                          className={`w-4 h-4 text-[${color.primary.accent}] flex-shrink-0`}
-                        />
-                        <span className={`text-sm ${tw.textPrimary} truncate`}>
-                          {campaign.segment}
-                        </span>
-                      </div>
-                    </td>
-                    <td
-                      className="px-6 py-4 hidden md:table-cell"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      {campaign.performance ? (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className={`${tw.textSecondary}`}>
-                              Conversion:
-                            </span>
-                            <span className={`font-medium ${tw.textPrimary}`}>
-                              {(
-                                (campaign.performance.converted /
-                                  campaign.performance.sent) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className={`${tw.textSecondary}`}>
-                              Revenue:
-                            </span>
-                            <span
-                              className={`font-medium text-[${color.primary.action}]`}
-                            >
-                              ${campaign.performance.revenue.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className={`text-sm ${tw.textMuted}`}>
-                          No data
-                        </span>
-                      )}
-                    </td>
-                    <td
-                      className="px-6 py-4 hidden lg:table-cell min-w-[160px] max-w-[200px]"
-                      style={{ backgroundColor: color.surface.tablebodybg }}
-                    >
-                      <div className={`text-xs sm:text-sm ${tw.textPrimary}`}>
-                        {campaign.startDate ? (
-                          (() => {
-                            let startDate: Date;
-                            let endDate: Date | null = null;
-                            try {
-                              startDate = new Date(campaign.startDate);
-                              if (campaign.endDate) {
-                                endDate = new Date(campaign.endDate);
-                              }
-                            } catch {
-                              return (
-                                <span className="text-gray-400 text-xs">
-                                  Invalid date
-                                </span>
-                              );
-                            }
-                            if (isNaN(startDate.getTime())) {
-                              return (
-                                <span className="text-gray-400 text-xs">
-                                  Not scheduled
-                                </span>
-                              );
-                            }
-                            const formatDateCompact = (date: Date) =>
-                              date.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              });
-                            const formatDateWithYear = (date: Date) =>
-                              date.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              });
-                            let startDateDisplay =
-                              formatDateWithYear(startDate);
-                            if (endDate && !isNaN(endDate.getTime())) {
-                              const sameMonth =
-                                startDate.getMonth() === endDate.getMonth();
-                              const sameYear =
-                                startDate.getFullYear() ===
-                                endDate.getFullYear();
-                              if (sameMonth && sameYear) {
-                                startDateDisplay = formatDateCompact(startDate);
-                              } else if (sameYear) {
-                                startDateDisplay = formatDateCompact(startDate);
-                              }
-                            }
-                            let endDateDisplay =
-                              endDate && !isNaN(endDate.getTime())
-                                ? formatDateWithYear(endDate)
-                                : null;
-                            if (endDate && !isNaN(endDate.getTime())) {
-                              const sameMonth =
-                                startDate.getMonth() === endDate.getMonth();
-                              const sameYear =
-                                startDate.getFullYear() ===
-                                endDate.getFullYear();
-                              if (sameMonth && sameYear) {
-                                endDateDisplay = `${endDate.getDate()}, ${endDate.getFullYear()}`;
-                              } else if (sameYear) {
-                                endDateDisplay = formatDateWithYear(endDate);
-                              }
-                            }
-                            return (
-                              <div className="space-y-0.5">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-500 text-xs whitespace-nowrap">
-                                    Start:
-                                  </span>
-                                  <span className="font-medium truncate">
-                                    {startDateDisplay}
-                                  </span>
-                                </div>
-                                {endDateDisplay && (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-gray-500 text-xs whitespace-nowrap">
-                                      End:
-                                    </span>
-                                    <span className="font-medium truncate">
-                                      {endDateDisplay}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()
-                        ) : (
-                          <span className="text-gray-400 text-xs">
-                            Not scheduled
-                          </span>
-                        )}
-                      </div>
                     </td>
                     <td
                       className="px-6 py-4"
@@ -1820,7 +1622,7 @@ export default function CampaignsPage() {
               onClick={() => setShowAdvancedFilters(false)}
             ></div>
             <div
-              className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl"
+              className="absolute right-0 top-0 h-full w-full sm:w-[28rem] lg:w-96 bg-white shadow-xl"
               style={{ zIndex: 1000000 }}
             >
               <div className="flex flex-col h-full">

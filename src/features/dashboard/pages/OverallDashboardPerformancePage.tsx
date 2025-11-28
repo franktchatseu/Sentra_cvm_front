@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -12,7 +12,19 @@ import {
   Line,
   ComposedChart,
 } from "recharts";
-import { Eye, MousePointerClick, Target, TrendingUp } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  Eye,
+  Inbox,
+  MailCheck,
+  MousePointerClick,
+  PackageCheck,
+  Percent,
+  Send,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
 import type {
   RangeOption,
@@ -23,8 +35,12 @@ import type {
 // Extract types from API response type
 type PerformanceSnapshot = OverallDashboardPerformanceResponse;
 type ChannelData = ChannelPerformance;
-type SMSDeliveryData =
-  OverallDashboardPerformanceResponse["smsDeliverySnapshot"];
+type SMSDeliveryPoint = {
+  date: string;
+  sent: number;
+  delivered: number;
+  converted: number;
+};
 
 // Local UI types
 type ChannelFilter = "All Channels" | "SMS" | "Email" | "Push" | "Social";
@@ -636,6 +652,29 @@ export default function OverallDashboardPerformancePage() {
   });
   const [channelFilter, setChannelFilter] =
     useState<ChannelFilter>("All Channels");
+  const [kpiChannel, setKpiChannel] = useState<"SMS" | "Email">("SMS");
+  const [isKpiTransitioning, setIsKpiTransitioning] = useState(false);
+  const kpiTransitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (kpiTransitionTimeoutRef.current) {
+        clearTimeout(kpiTransitionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleKpiChannelChange = (option: "SMS" | "Email") => {
+    if (option === kpiChannel) return;
+    if (kpiTransitionTimeoutRef.current) {
+      clearTimeout(kpiTransitionTimeoutRef.current);
+    }
+    setIsKpiTransitioning(true);
+    kpiTransitionTimeoutRef.current = setTimeout(() => {
+      setKpiChannel(option);
+      setIsKpiTransitioning(false);
+    }, 180);
+  };
   const [useDummyData, setUseDummyData] = useState(true);
 
   const handleRun = () => {
@@ -761,29 +800,51 @@ export default function OverallDashboardPerformancePage() {
     };
   }, [baseSnapshot, scaleFactor, useDummyData]);
 
-  const smsDeliverySnapshot = useMemo(() => {
+  const smsDeliveryData: SMSDeliveryPoint[] = useMemo(() => {
     if (!useDummyData) {
-      return {
-        ...baseSnapshot,
-        smsDelivery: baseSnapshot.smsDelivery.map((point) => ({
-          ...point,
-          sent: 0,
-          delivered: 0,
-          converted: 0,
-        })),
-      };
-    }
-    if (scaleFactor === 1) return baseSnapshot;
-    return {
-      ...baseSnapshot,
-      smsDelivery: baseSnapshot.smsDelivery.map((point) => ({
+      return baseSnapshot.smsDelivery.map((point) => ({
         ...point,
-        sent: Math.round(point.sent * scaleFactor),
-        delivered: Math.round(point.delivered * scaleFactor),
-        converted: Math.round(point.converted * scaleFactor),
-      })),
-    };
+        sent: 0,
+        delivered: 0,
+        converted: 0,
+      }));
+    }
+    if (scaleFactor === 1) return baseSnapshot.smsDelivery;
+    return baseSnapshot.smsDelivery.map((point) => ({
+      ...point,
+      sent: Math.round(point.sent * scaleFactor),
+      delivered: Math.round(point.delivered * scaleFactor),
+      converted: Math.round(point.converted * scaleFactor),
+    }));
   }, [baseSnapshot, scaleFactor, useDummyData]);
+
+  const smsSummary = useMemo(() => {
+    const totals = smsDeliveryData.reduce(
+      (acc, point) => {
+        const fulfilled = Math.round(point.delivered * 0.94);
+        acc.sent += point.sent;
+        acc.delivered += point.delivered;
+        acc.fulfilled += fulfilled;
+        acc.converted += point.converted;
+        return acc;
+      },
+      { sent: 0, delivered: 0, fulfilled: 0, converted: 0 }
+    );
+
+    const deliveryRate =
+      totals.sent > 0 ? (totals.delivered / totals.sent) * 100 : 0;
+    const conversionRate =
+      totals.fulfilled > 0 ? (totals.converted / totals.fulfilled) * 100 : 0;
+
+    return {
+      sent: totals.sent,
+      delivered: totals.delivered,
+      fulfilled: totals.fulfilled,
+      converted: totals.converted,
+      deliveryRate,
+      conversionRate,
+    };
+  }, [smsDeliveryData]);
 
   const timeSeriesSnapshot = useMemo(() => {
     if (!useDummyData) {
@@ -819,6 +880,114 @@ export default function OverallDashboardPerformancePage() {
       (channel) => channel.channel === channelFilter
     );
   }, [channelFilter, channelSnapshot]);
+
+  const emailChannelMetrics = useMemo(() => {
+    const emailChannel = channelSnapshot.channels.find(
+      (channel) => channel.channel === "Email"
+    );
+    if (emailChannel) {
+      return emailChannel;
+    }
+    return {
+      channel: "Email",
+      reach: 0,
+      clicks: 0,
+      opens: 0,
+      conversions: 0,
+      revenue: 0,
+      spend: 0,
+      ctr: 0,
+      openRate: 0,
+      cvr: 0,
+      cpc: 0,
+      cpl: 0,
+      cpa: 0,
+      roas: 0,
+      engagementRate: 0,
+    };
+  }, [channelSnapshot]);
+
+  const kpiCards = useMemo(() => {
+    if (kpiChannel === "SMS") {
+      return [
+        {
+          label: "SMS Sent",
+          value: formatNumber(smsSummary.sent),
+          subtext: "Total messages sent",
+          Icon: Send,
+        },
+        {
+          label: "Delivered",
+          value: formatNumber(smsSummary.delivered),
+          subtext: "Messages delivered",
+          Icon: Inbox,
+        },
+        {
+          label: "Delivery Rate",
+          value: `${smsSummary.deliveryRate.toFixed(1)}%`,
+          subtext: "Delivered vs sent",
+          Icon: Percent,
+        },
+        {
+          label: "Fulfilled",
+          value: formatNumber(smsSummary.fulfilled),
+          subtext: "Rewards fulfilled",
+          Icon: PackageCheck,
+        },
+        {
+          label: "Converted",
+          value: formatNumber(smsSummary.converted),
+          subtext: "Conversions attributed to SMS",
+          Icon: CheckCircle2,
+        },
+        {
+          label: "Conversion Rate",
+          value: `${smsSummary.conversionRate.toFixed(1)}%`,
+          subtext: "Converted vs fulfilled",
+          Icon: Activity,
+        },
+      ];
+    }
+
+    return [
+      {
+        label: "Reach",
+        value: formatNumber(emailChannelMetrics.reach),
+        subtext: "Email audience reached",
+        Icon: Eye,
+      },
+      {
+        label: "Clicks",
+        value: formatNumber(emailChannelMetrics.clicks),
+        subtext: "Clicked email links",
+        Icon: MousePointerClick,
+      },
+      {
+        label: "Click-Through Rate (CTR)",
+        value: `${emailChannelMetrics.ctr.toFixed(1)}%`,
+        subtext: "Clicks vs emails sent",
+        Icon: TrendingUp,
+      },
+      {
+        label: "Open Rate",
+        value: `${emailChannelMetrics.openRate.toFixed(1)}%`,
+        subtext: "Opens vs emails sent",
+        Icon: MailCheck,
+      },
+      {
+        label: "Conversions",
+        value: formatNumber(emailChannelMetrics.conversions),
+        subtext: "Completed actions from email",
+        Icon: Target,
+      },
+      {
+        label: "Conversion Rate (CVR)",
+        value: `${emailChannelMetrics.cvr.toFixed(1)}%`,
+        subtext: "Conversions vs clicks",
+        Icon: TrendingUp,
+      },
+    ];
+  }, [kpiChannel, emailChannelMetrics, smsSummary]);
 
   return (
     <div className="space-y-6">
@@ -948,101 +1117,56 @@ export default function OverallDashboardPerformancePage() {
         </div>
       </header>
 
-      {/* Performance Metrics */}
-      <section>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Eye
-                className="h-5 w-5"
-                style={{ color: colors.primary.accent }}
-              />
-              <p className="text-sm font-medium text-gray-600">Reach</p>
-            </div>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {formatNumber(kpiSnapshot.reach.reach)}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">Users reached</p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <MousePointerClick
-                className="h-5 w-5"
-                style={{ color: colors.primary.accent }}
-              />
-              <p className="text-sm font-medium text-gray-600">Clicks</p>
-            </div>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {formatNumber(kpiSnapshot.engagement.clicks)}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Total clicks on campaign links
+      {/* KPI Snapshot */}
+      <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Channel Performance Snapshot
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Focus on SMS metrics or switch to Email KPIs
             </p>
           </div>
-          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <TrendingUp
-                className="h-5 w-5"
-                style={{ color: colors.primary.accent }}
-              />
-              <p className="text-sm font-medium text-gray-600">
-                Click-Through Rate (CTR)
-              </p>
-            </div>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {kpiSnapshot.engagement.ctr.toFixed(1)}%
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Messages clicked vs sent
-            </p>
+          <div className="flex gap-2">
+            {(["SMS", "Email"] as const).map((option) => (
+              <button
+                key={option}
+                onClick={() => handleKpiChannelChange(option)}
+                className={`rounded-md border px-4 py-1.5 text-sm font-medium transition-colors ${
+                  kpiChannel === option
+                    ? "border-[#252829] bg-[#252829] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
           </div>
-          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <MousePointerClick
-                className="h-5 w-5"
-                style={{ color: colors.primary.accent }}
-              />
-              <p className="text-sm font-medium text-gray-600">Open Rate</p>
+        </div>
+        <div
+          className={`grid gap-4 md:grid-cols-2 lg:grid-cols-3 transform transition-all duration-300 ${
+            isKpiTransitioning
+              ? "opacity-0 translate-y-2"
+              : "opacity-100 translate-y-0"
+          }`}
+        >
+          {kpiCards.map(({ label, value, subtext, Icon }) => (
+            <div
+              key={label}
+              className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
+            >
+              <div className="flex items-center gap-2">
+                <Icon
+                  className="h-5 w-5"
+                  style={{ color: colors.primary.accent }}
+                />
+                <p className="text-sm font-medium text-gray-600">{label}</p>
+              </div>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+              <p className="mt-1 text-xs text-gray-500">{subtext}</p>
             </div>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {kpiSnapshot.engagement.openRate.toFixed(1)}%
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Messages opened vs sent
-            </p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Target
-                className="h-5 w-5"
-                style={{ color: colors.primary.accent }}
-              />
-              <p className="text-sm font-medium text-gray-600">Conversions</p>
-            </div>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {formatNumber(kpiSnapshot.conversion.conversions)}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Total completed actions
-            </p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2">
-              <TrendingUp
-                className="h-5 w-5"
-                style={{ color: colors.primary.accent }}
-              />
-              <p className="text-sm font-medium text-gray-600">
-                Conversion Rate (CVR)
-              </p>
-            </div>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {kpiSnapshot.conversion.cvr.toFixed(1)}%
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Clicks converted to actions
-            </p>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -1192,7 +1316,7 @@ export default function OverallDashboardPerformancePage() {
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={smsDeliverySnapshot.smsDelivery}
+              data={smsDeliveryData}
               margin={{ top: 20, right: 30, left: 24, bottom: 0 }}
               barCategoryGap="25%"
               barGap={8}

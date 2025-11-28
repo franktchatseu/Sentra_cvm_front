@@ -20,6 +20,7 @@ import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -394,12 +395,10 @@ export default function ProductDetailsPage() {
                   Price
                 </label>
                 <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                  {typeof product.price === "number"
-                    ? product.price.toFixed(2)
-                    : parseFloat(String(product.price || 0)).toFixed(2)}{" "}
-                  <span className="text-base font-normal text-gray-500">
-                    {product.currency || "USD"}
-                  </span>
+                  <CurrencyFormatter
+                    amount={product.price}
+                    currencyCode={product.currency}
+                  />
                 </p>
               </div>
               {product.cost && (
@@ -414,7 +413,7 @@ export default function ProductDetailsPage() {
                       ? product.cost.toFixed(2)
                       : parseFloat(String(product.cost || 0)).toFixed(2)}{" "}
                     <span className="text-base font-normal text-gray-500">
-                      {product.currency || "USD"}
+                      {product.currency || "KES"}
                     </span>
                   </p>
                 </div>

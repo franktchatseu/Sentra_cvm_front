@@ -17,10 +17,14 @@ import { communicationPolicyService } from "../../services/communicationPolicySe
 import CommunicationPolicyModal from "../CommunicationPolicyModal";
 import PolicyNameModal from "../PolicyNameModal";
 import { useToast } from "../../../../contexts/ToastContext";
+import { useTranslation } from "../../../../contexts/LanguageContext";
+import { getCurrencySymbol } from "../../../../shared/services/currencyService";
 
 interface CampaignDefinitionStepProps {
   formData: CreateCampaignRequest;
   setFormData: (data: CreateCampaignRequest) => void;
+  validationErrors?: { [key: string]: string };
+  clearValidationErrors?: () => void;
 }
 
 const objectiveOptions = [
@@ -70,7 +74,10 @@ interface CampaignCategory {
 export default function CampaignDefinitionStep({
   formData,
   setFormData,
+  validationErrors = {},
+  clearValidationErrors,
 }: CampaignDefinitionStepProps) {
+  const t = useTranslation();
   const { success: showToast, error: showError } = useToast();
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -348,26 +355,56 @@ export default function CampaignDefinitionStep({
             <input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                if (validationErrors.name && clearValidationErrors) {
+                  clearValidationErrors();
+                }
+              }}
+              className={`w-full px-3 py-2 border rounded-md focus:ring-1 text-sm ${
+                validationErrors.name
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300 focus:ring-[#588157] focus:border-[#588157]"
+              }`}
               placeholder="Enter campaign name"
               required
             />
+            {validationErrors.name && (
+              <p className="mt-1 text-sm text-red-600">
+                {validationErrors.name}
+              </p>
+            )}
           </div>
 
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Campaign Catalog *
             </label>
-            <MultiCategorySelector
-              value={selectedCategoryIds}
-              onChange={setSelectedCategoryIds}
-              placeholder="Select catalog(s)"
-              entityType="campaign"
-              className="w-full"
-            />
+            <div
+              className={
+                validationErrors.category_id
+                  ? "border border-red-300 rounded-md"
+                  : ""
+              }
+            >
+              <MultiCategorySelector
+                value={selectedCategoryIds}
+                onChange={(ids) => {
+                  setSelectedCategoryIds(ids);
+                  if (validationErrors.category_id && clearValidationErrors) {
+                    clearValidationErrors();
+                  }
+                }}
+                placeholder="Select catalog(s)"
+                entityType="campaign"
+                className="w-full"
+              />
+            </div>
+            {validationErrors.category_id && (
+              <p className="mt-1 text-sm text-red-600">
+                {validationErrors.category_id}
+              </p>
+            )}
           </div>
         </div>
 
@@ -746,7 +783,11 @@ export default function CampaignDefinitionStep({
                 onClick={() =>
                   setIsObjectiveDropdownOpen(!isObjectiveDropdownOpen)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] bg-white text-sm text-left flex items-center justify-between"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-1 bg-white text-sm text-left flex items-center justify-between ${
+                  validationErrors.objective
+                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300 focus:ring-[#588157] focus:border-[#588157]"
+                }`}
               >
                 <span
                   className={`text-sm ${
@@ -807,6 +848,12 @@ export default function CampaignDefinitionStep({
                             });
                             setIsObjectiveDropdownOpen(false);
                             setObjectiveSearchTerm("");
+                            if (
+                              validationErrors.objective &&
+                              clearValidationErrors
+                            ) {
+                              clearValidationErrors();
+                            }
                           }}
                           className="w-full text-left px-4 py-3 text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
                         >
@@ -827,6 +874,11 @@ export default function CampaignDefinitionStep({
                 </div>
               )}
             </div>
+            {validationErrors.objective && (
+              <p className="mt-1 text-sm text-red-600">
+                {validationErrors.objective}
+              </p>
+            )}
           </div>
 
           <div>
@@ -1072,11 +1124,11 @@ export default function CampaignDefinitionStep({
         {/* Budget Allocation */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Budget Allocated *
+            {t.campaigns.budgetAllocated} *
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-              $
+              {getCurrencySymbol()}
             </span>
             <input
               type="number"
@@ -1089,12 +1141,27 @@ export default function CampaignDefinitionStep({
                   ...formData,
                   budget_allocated: value ? parseFloat(value) : undefined,
                 });
+                if (
+                  validationErrors.budget_allocated &&
+                  clearValidationErrors
+                ) {
+                  clearValidationErrors();
+                }
               }}
-              className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm"
+              className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-1 text-sm ${
+                validationErrors.budget_allocated
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300 focus:ring-[#588157] focus:border-[#588157]"
+              }`}
               placeholder="0.00"
               required
             />
           </div>
+          {validationErrors.budget_allocated && (
+            <p className="mt-1 text-sm text-red-600">
+              {validationErrors.budget_allocated}
+            </p>
+          )}
         </div>
 
         {/* Campaign Schedule */}
@@ -1147,6 +1214,9 @@ export default function CampaignDefinitionStep({
                   ? new Date(e.target.value).toISOString()
                   : undefined;
                 setFormData({ ...formData, end_date: dateValue });
+                if (validationErrors.end_date && clearValidationErrors) {
+                  clearValidationErrors();
+                }
               }}
               onClick={(e) => {
                 // Trigger date picker on click
@@ -1156,16 +1226,26 @@ export default function CampaignDefinitionStep({
                 // Show picker when focused
                 (e.target as HTMLInputElement).showPicker?.();
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm cursor-pointer"
+              className={`w-full px-3 py-2 border rounded-md focus:ring-1 text-sm cursor-pointer ${
+                validationErrors.end_date
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300 focus:ring-[#588157] focus:border-[#588157]"
+              }`}
               min={
                 formData.start_date
                   ? new Date(formData.start_date).toISOString().slice(0, 16)
                   : undefined
               }
             />
-            <p className="text-xs text-gray-500 mt-1">
-              When should this campaign end?
-            </p>
+            {validationErrors.end_date ? (
+              <p className="mt-1 text-sm text-red-600">
+                {validationErrors.end_date}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">
+                When should this campaign end?
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -32,7 +32,7 @@ import {
   Mail,
   LogOut,
   User,
-   Server,
+  Server,
   Database,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
@@ -316,29 +316,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       ],
     },
 
-    // {
-    //   name: "Infrastructure",
-    //   href: "/dashboard/servers",
-    //   icon: Server,
-    //   type: "parent",
-    //   entity: "servers",
-    //   children: [
-    //     {
-    //       name: "Servers",
-    //       href: "/dashboard/servers",
-    //       icon: Server,
-    //       type: "single",
-    //       entity: "servers",
-    //     },
-    //     {
-    //       name: "Connection Profiles",
-    //       href: "/dashboard/connection-profiles",
-    //       icon: Database,
-    //       type: "single",
-    //       entity: "servers",
-    //     },
-    //   ],
-    // },
+    {
+      name: "Infrastructure",
+      href: "/dashboard/servers",
+      icon: Server,
+      type: "parent",
+      entity: "servers",
+      children: [
+        {
+          name: "Servers",
+          href: "/dashboard/servers",
+          icon: Server,
+          type: "single",
+          entity: "servers",
+        },
+        {
+          name: "Connection Profiles",
+          href: "/dashboard/connection-profiles",
+          icon: Database,
+          type: "single",
+          entity: "servers",
+        },
+      ],
+    },
 
     {
       name: "Reports & Analytics",
@@ -462,6 +462,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   const secondaryNavigation = [
+    {
+      name: "My Profile",
+      href: "/dashboard/profile",
+      icon: User,
+      type: "single",
+      entity: "users" as const,
+    },
     {
       name: "Settings",
       href: "/dashboard/settings",

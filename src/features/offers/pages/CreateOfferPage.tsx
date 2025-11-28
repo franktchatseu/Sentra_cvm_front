@@ -1017,7 +1017,7 @@ export default function CreateOfferPage() {
               product_code: "",
               name: `Product ${link.product_id}`,
               price: 0,
-              currency: "USD",
+              currency: "KES",
               requires_inventory: false,
               is_active: false,
               created_at: new Date(0).toISOString(),
@@ -1427,7 +1427,38 @@ export default function CreateOfferPage() {
       // Show success message
       showToast(`Offer ${isEditMode ? "updated" : "created"} successfully`);
 
-      navigate("/dashboard/offers");
+      // Check if we should return to campaign creation flow
+      const returnToCampaign = searchParams.get("returnToCampaign");
+      const returnUrl = searchParams.get("returnUrl");
+
+      if (returnToCampaign === "true" && returnUrl && !isEditMode) {
+        // Store the created offer ID in sessionStorage for campaign flow tracking
+        if (offerId) {
+          const campaignFlowOffersStr = sessionStorage.getItem(
+            "campaignFlowCreatedOffers"
+          );
+          const campaignFlowOfferIds: number[] = campaignFlowOffersStr
+            ? JSON.parse(campaignFlowOffersStr)
+            : [];
+          if (!campaignFlowOfferIds.includes(offerId)) {
+            campaignFlowOfferIds.push(offerId);
+            sessionStorage.setItem(
+              "campaignFlowCreatedOffers",
+              JSON.stringify(campaignFlowOfferIds)
+            );
+          }
+        }
+
+        // Navigate back to campaign creation at step 3
+        const decodedUrl = decodeURIComponent(returnUrl);
+        const url = new URL(decodedUrl);
+        // Ensure we're on step 3
+        url.searchParams.set("step", "3");
+        url.searchParams.set("returnFromOfferCreate", "true");
+        navigate(url.pathname + url.search);
+      } else {
+        navigate("/dashboard/offers");
+      }
     } catch (err: unknown) {
       // Create offer error
 

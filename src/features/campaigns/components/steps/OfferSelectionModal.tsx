@@ -1,11 +1,22 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Plus, Gift, Calendar } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  X,
+  Search,
+  Plus,
+  Gift,
+  Calendar,
+  CheckCircle,
+  Play,
+} from "lucide-react";
 import { CampaignOffer } from "../../types/campaign";
 import HeadlessSelect from "../../../../shared/components/ui/HeadlessSelect";
 import { color } from "../../../../shared/utils/utils";
 import { offerService } from "../../../offers/services/offerService";
-import { Offer } from "../../../offers/types/offer";
+import { Offer, OfferStatusEnum } from "../../../offers/types/offer";
+import { useAuth } from "../../../../contexts/AuthContext";
+import { useToast } from "../../../../contexts/ToastContext";
 
 interface OfferSelectionModalProps {
   isOpen: boolean;
@@ -32,13 +43,21 @@ export default function OfferSelectionModal({
   editingOffer,
   onCreateNew,
 }: OfferSelectionModalProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { success: showSuccess, error: showError } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [tempSelectedOffers, setTempSelectedOffers] =
     useState<CampaignOffer[]>(selectedOffers);
   const [offers, setOffers] = useState<CampaignOffer[]>([]);
+  const [offersWithStatus, setOffersWithStatus] = useState<Map<number, Offer>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatingOfferId, setUpdatingOfferId] = useState<number | null>(null);
 
   const filterOptions = [
     { value: "all", label: "All Offers" },
@@ -60,7 +79,15 @@ export default function OfferSelectionModal({
       setLoading(true);
       setError(null);
 
-      // Fetch both active and approved offers (both are valid for campaigns)
+      // Get offers created during this campaign flow session
+      const campaignFlowOffersStr = sessionStorage.getItem(
+        "campaignFlowCreatedOffers"
+      );
+      const campaignFlowOfferIds: number[] = campaignFlowOffersStr
+        ? JSON.parse(campaignFlowOffersStr)
+        : [];
+
+      // Fetch only active and approved offers (standard offers)
       const [activeResponse, approvedResponse] = await Promise.all([
         offerService.getActiveOffers({
           limit: 100,
@@ -72,17 +99,43 @@ export default function OfferSelectionModal({
         }),
       ]);
 
-      // Combine active and approved offers, removing duplicates by ID
       const activeOffers = activeResponse.data || [];
       const approvedOffers = approvedResponse.data || [];
 
-      // Create a map to avoid duplicates
+      // Create a map to store full Offer objects with status
       const offersMap = new Map<number, Offer>();
+
+      // Add active and approved offers
       [...activeOffers, ...approvedOffers].forEach((offer) => {
         if (offer.id) {
           offersMap.set(offer.id, offer);
         }
       });
+
+      // Fetch and add offers created during this campaign flow (even if draft/pending)
+      if (campaignFlowOfferIds.length > 0) {
+        try {
+          const campaignFlowOffersPromises = campaignFlowOfferIds.map(
+            (offerId) =>
+              offerService.getOfferById(offerId, true).catch(() => null)
+          );
+          const campaignFlowOffersResults = await Promise.all(
+            campaignFlowOffersPromises
+          );
+
+          campaignFlowOffersResults.forEach((response) => {
+            if (response?.data?.id) {
+              const offer = response.data;
+              offersMap.set(offer.id, offer);
+            }
+          });
+        } catch (err) {
+          console.error("Failed to load campaign flow offers:", err);
+        }
+      }
+
+      // Store full offer objects for status updates
+      setOffersWithStatus(offersMap);
 
       // Convert Offer objects to CampaignOffer format
       const uniqueOffers = Array.from(offersMap.values());
@@ -92,7 +145,7 @@ export default function OfferSelectionModal({
           name: offer.name,
           description: offer.description || "",
           offer_type: offer.category?.name || "General",
-          reward_type: "bundle" as const, // Default since Offer doesn't have reward_type
+          reward_type: "bundle" as const,
           reward_value: "Special Offer",
           validity_period: 30,
           terms_conditions: "See offer details",
@@ -143,6 +196,67 @@ export default function OfferSelectionModal({
 
   const handleConfirm = () => {
     onSelect(tempSelectedOffers);
+  };
+
+  const handleCreateNew = () => {
+    // Navigate to offer creation page with return URL pointing to step 3
+    const currentUrl = window.location.href;
+    // Extract base URL and ensure we return to step 3
+    const url = new URL(currentUrl);
+    url.searchParams.set("step", "3");
+    url.searchParams.set("returnFromOfferCreate", "true");
+    navigate(
+      `/dashboard/offers/create?returnToCampaign=true&returnUrl=${encodeURIComponent(
+        url.toString()
+      )}`
+    );
+  };
+
+  const handleSubmitForApproval = async (offerId: number) => {
+    if (!user?.user_id) return;
+
+    try {
+      setUpdatingOfferId(offerId);
+      await offerService.submitForApproval(offerId, {
+        updated_by: user.user_id,
+      });
+      showSuccess("Offer submitted for approval");
+      // Reload offers to reflect status change
+      await loadOffers();
+    } catch (err) {
+      console.error("Failed to submit offer for approval:", err);
+      showError("Failed to submit offer for approval");
+    } finally {
+      setUpdatingOfferId(null);
+    }
+  };
+
+  const handleActivate = async (offerId: number) => {
+    if (!user?.user_id) return;
+
+    try {
+      setUpdatingOfferId(offerId);
+      // First approve if pending, then activate
+      const offer = offersWithStatus.get(offerId);
+      if (offer?.status === OfferStatusEnum.PENDING_APPROVAL) {
+        await offerService.approveOffer(offerId, {
+          approved_by: user.user_id,
+        });
+      }
+      // Then activate
+      await offerService.updateOfferStatus(offerId, {
+        status: OfferStatusEnum.ACTIVE,
+        updated_by: user.user_id,
+      });
+      showSuccess("Offer activated successfully");
+      // Reload offers to reflect status change
+      await loadOffers();
+    } catch (err) {
+      console.error("Failed to activate offer:", err);
+      showError("Failed to activate offer");
+    } finally {
+      setUpdatingOfferId(null);
+    }
   };
 
   return createPortal(
@@ -202,7 +316,7 @@ export default function OfferSelectionModal({
               </div>
             </div>
             <button
-              onClick={onCreateNew}
+              onClick={handleCreateNew}
               className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap"
               style={{
                 backgroundColor: color.primary.action,
@@ -302,6 +416,12 @@ export default function OfferSelectionModal({
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                       Duration
                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody
@@ -312,6 +432,12 @@ export default function OfferSelectionModal({
                     const isSelected = tempSelectedOffers.some(
                       (o) => o.id === offer.id
                     );
+                    const fullOffer = offersWithStatus.get(Number(offer.id));
+                    const offerStatus = fullOffer?.status;
+                    const isDraft = offerStatus === OfferStatusEnum.DRAFT;
+                    const isPending =
+                      offerStatus === OfferStatusEnum.PENDING_APPROVAL;
+                    const isUpdating = updatingOfferId === Number(offer.id);
 
                     return (
                       <tr
@@ -362,6 +488,108 @@ export default function OfferSelectionModal({
                               {offer.validity_period}d
                             </span>
                           </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-block text-xs px-2 py-1 rounded-full ${
+                              offerStatus === OfferStatusEnum.ACTIVE
+                                ? "bg-green-100 text-green-700"
+                                : offerStatus === OfferStatusEnum.APPROVED
+                                ? "bg-blue-100 text-blue-700"
+                                : offerStatus ===
+                                  OfferStatusEnum.PENDING_APPROVAL
+                                ? "bg-yellow-100 text-yellow-700"
+                                : offerStatus === OfferStatusEnum.DRAFT
+                                ? "bg-gray-100 text-gray-700"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {offerStatus || "Unknown"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {(() => {
+                            // Only show action buttons for offers created during this campaign flow
+                            const campaignFlowOffersStr =
+                              sessionStorage.getItem(
+                                "campaignFlowCreatedOffers"
+                              );
+                            const campaignFlowOfferIds: number[] =
+                              campaignFlowOffersStr
+                                ? JSON.parse(campaignFlowOffersStr)
+                                : [];
+                            const isCampaignFlowOffer =
+                              campaignFlowOfferIds.includes(Number(offer.id));
+
+                            if (!isCampaignFlowOffer) {
+                              return (
+                                <span className="text-xs text-gray-400">-</span>
+                              );
+                            }
+
+                            if (isDraft) {
+                              return (
+                                <button
+                                  onClick={() =>
+                                    handleSubmitForApproval(Number(offer.id))
+                                  }
+                                  disabled={isUpdating}
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  style={{
+                                    backgroundColor: color.primary.action,
+                                  }}
+                                >
+                                  {isUpdating ? (
+                                    <>
+                                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                                      Submitting...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Submit for Approval
+                                    </>
+                                  )}
+                                </button>
+                              );
+                            }
+
+                            if (isPending) {
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() =>
+                                      handleActivate(Number(offer.id))
+                                    }
+                                    disabled={isUpdating}
+                                    className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                      backgroundColor: color.status.success,
+                                    }}
+                                  >
+                                    {isUpdating ? (
+                                      <>
+                                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                                        Activating...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Play className="w-3 h-3 mr-1" />
+                                        Activate
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <span className="text-xs text-gray-400">-</span>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );

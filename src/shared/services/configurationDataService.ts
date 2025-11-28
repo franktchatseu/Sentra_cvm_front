@@ -8,6 +8,10 @@ import {
   campaignTypesConfig,
   segmentTypesConfig,
   productTypesConfig,
+  trackingSourcesConfig,
+  creativeTemplatesConfig,
+  rewardTypesConfig,
+  communicationChannelsConfig,
 } from "../configs/configurationPageConfigs";
 
 // Type pour identifier les différents types de configuration
@@ -18,7 +22,11 @@ export type ConfigurationType =
   | "offerTypes"
   | "campaignTypes"
   | "segmentTypes"
-  | "productTypes";
+  | "productTypes"
+  | "trackingSources"
+  | "creativeTemplates"
+  | "rewardTypes"
+  | "communicationChannels";
 
 // Service singleton pour gérer les données de configuration
 class ConfigurationDataService {
@@ -37,6 +45,10 @@ class ConfigurationDataService {
     this.listeners.set("campaignTypes", new Set());
     this.listeners.set("segmentTypes", new Set());
     this.listeners.set("productTypes", new Set());
+    this.listeners.set("trackingSources", new Set());
+    this.listeners.set("creativeTemplates", new Set());
+    this.listeners.set("rewardTypes", new Set());
+    this.listeners.set("communicationChannels", new Set());
 
     // Charger les données depuis localStorage ou utiliser les données par défaut
     this.loadFromStorage();
@@ -76,6 +88,24 @@ class ConfigurationDataService {
           "productTypes",
           parsed.productTypes || [...productTypesConfig.initialData]
         );
+        this.data.set(
+          "trackingSources",
+          parsed.trackingSources || [...trackingSourcesConfig.initialData]
+        );
+        this.data.set(
+          "creativeTemplates",
+          parsed.creativeTemplates || [...creativeTemplatesConfig.initialData]
+        );
+        this.data.set(
+          "rewardTypes",
+          parsed.rewardTypes || [...rewardTypesConfig.initialData]
+        );
+        this.data.set(
+          "communicationChannels",
+          parsed.communicationChannels || [
+            ...communicationChannelsConfig.initialData,
+          ]
+        );
       } else {
         // Première fois, utiliser les données par défaut
         this.data.set("lineOfBusiness", [...lineOfBusinessConfig.initialData]);
@@ -87,6 +117,16 @@ class ConfigurationDataService {
         this.data.set("campaignTypes", [...campaignTypesConfig.initialData]);
         this.data.set("segmentTypes", [...segmentTypesConfig.initialData]);
         this.data.set("productTypes", [...productTypesConfig.initialData]);
+        this.data.set("trackingSources", [
+          ...trackingSourcesConfig.initialData,
+        ]);
+        this.data.set("creativeTemplates", [
+          ...creativeTemplatesConfig.initialData,
+        ]);
+        this.data.set("rewardTypes", [...rewardTypesConfig.initialData]);
+        this.data.set("communicationChannels", [
+          ...communicationChannelsConfig.initialData,
+        ]);
         this.saveToStorage();
       }
     } catch (error) {
@@ -101,6 +141,14 @@ class ConfigurationDataService {
       this.data.set("campaignTypes", [...campaignTypesConfig.initialData]);
       this.data.set("segmentTypes", [...segmentTypesConfig.initialData]);
       this.data.set("productTypes", [...productTypesConfig.initialData]);
+      this.data.set("trackingSources", [...trackingSourcesConfig.initialData]);
+      this.data.set("creativeTemplates", [
+        ...creativeTemplatesConfig.initialData,
+      ]);
+      this.data.set("rewardTypes", [...rewardTypesConfig.initialData]);
+      this.data.set("communicationChannels", [
+        ...communicationChannelsConfig.initialData,
+      ]);
     }
   }
 
@@ -115,6 +163,10 @@ class ConfigurationDataService {
         campaignTypes: this.data.get("campaignTypes") || [],
         segmentTypes: this.data.get("segmentTypes") || [],
         productTypes: this.data.get("productTypes") || [],
+        trackingSources: this.data.get("trackingSources") || [],
+        creativeTemplates: this.data.get("creativeTemplates") || [],
+        rewardTypes: this.data.get("rewardTypes") || [],
+        communicationChannels: this.data.get("communicationChannels") || [],
       };
       localStorage.setItem("configurationData", JSON.stringify(dataToSave));
     } catch (error) {
@@ -239,6 +291,18 @@ class ConfigurationDataService {
         break;
       case "productTypes":
         this.setData(type, [...productTypesConfig.initialData]);
+        break;
+      case "trackingSources":
+        this.setData(type, [...trackingSourcesConfig.initialData]);
+        break;
+      case "communicationChannels":
+        this.setData(type, [...communicationChannelsConfig.initialData]);
+        break;
+      case "creativeTemplates":
+        this.setData(type, [...creativeTemplatesConfig.initialData]);
+        break;
+      case "rewardTypes":
+        this.setData(type, [...rewardTypesConfig.initialData]);
         break;
     }
   }

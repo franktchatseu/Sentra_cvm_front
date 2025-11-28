@@ -393,7 +393,7 @@ export default function TypeConfigurationPage({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <button
             onClick={handleCreateItem}
             className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm text-white"
@@ -402,7 +402,7 @@ export default function TypeConfigurationPage({
             <Plus className="w-4 h-4" />
             {config.createButtonText}
           </button>
-        </div>
+        </div> */}
       </div>
 
       <div className="my-5">

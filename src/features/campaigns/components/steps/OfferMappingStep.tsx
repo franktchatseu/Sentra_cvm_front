@@ -8,7 +8,6 @@ import {
   ControlGroup,
 } from "../../types/campaign";
 import OfferSelectionModal from "./OfferSelectionModal";
-import CreateOfferModalWrapper from "./CreateOfferModalWrapper";
 import OfferFlowChart from "./OfferFlowChart";
 import ChampionChallengerOfferMapping from "../displays/ChampionChallengerOfferMapping";
 import ABTestOfferMapping from "../displays/ABTestOfferMapping";
@@ -34,6 +33,8 @@ interface OfferMappingStepProps {
   isLoading?: boolean;
   onSaveDraft?: () => void;
   onCancel?: () => void;
+  validationErrors?: { [key: string]: string };
+  clearValidationErrors?: () => void;
 }
 
 export default function OfferMappingStep({
@@ -54,9 +55,10 @@ export default function OfferMappingStep({
   isLoading: _isLoading,
   onSaveDraft: _onSaveDraft,
   onCancel: _onCancel,
+  validationErrors = {},
+  clearValidationErrors,
 }: OfferMappingStepProps) {
   const [showOfferModal, setShowOfferModal] = useState(false);
-  const [showCreateOfferModal, setShowCreateOfferModal] = useState(false);
   const [offerMappings, setOfferMappings] = useState<{
     [segmentId: string]: CampaignOffer[];
   }>({});
@@ -128,6 +130,11 @@ export default function OfferMappingStep({
   };
 
   const handleOfferSelect = (offers: CampaignOffer[]) => {
+    // Clear validation errors when offers are selected
+    if (clearValidationErrors) {
+      clearValidationErrors();
+    }
+
     if (isRoundRobinOrMultiLevel && selectedSegments.length > 0) {
       // For Round Robin/Multiple Level: add offers sequentially
       const segmentId = selectedSegments[0].id;
@@ -286,7 +293,13 @@ export default function OfferMappingStep({
       {!isRoundRobinOrMultiLevel &&
         formData.campaign_type !== "multiple_target_group" &&
         selectedSegments.length === 0 && (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-md p-12">
+          <div
+            className={`border-2 border-dashed rounded-md p-12 ${
+              validationErrors.offers
+                ? "border-red-300 bg-red-50"
+                : "border-gray-300 bg-gray-50"
+            }`}
+          >
             <div className="text-center text-gray-500">
               <Gift className="w-12 h-12 mx-auto mb-3 text-gray-400" />
               <p className="font-medium">No segments configured</p>
@@ -296,6 +309,13 @@ export default function OfferMappingStep({
             </div>
           </div>
         )}
+
+      {/* Validation Error Message */}
+      {validationErrors.offers && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{validationErrors.offers}</p>
+        </div>
+      )}
 
       {/* Offer Selection Modal */}
       {showOfferModal && (
@@ -310,21 +330,8 @@ export default function OfferMappingStep({
             editingSegmentId ? offerMappings[editingSegmentId] || [] : []
           }
           onCreateNew={() => {
+            // Navigation is handled inside OfferSelectionModal
             setShowOfferModal(false);
-            setShowCreateOfferModal(true);
-          }}
-        />
-      )}
-
-      {/* Create Offer Modal */}
-      {showCreateOfferModal && (
-        <CreateOfferModalWrapper
-          isOpen={showCreateOfferModal}
-          onClose={() => setShowCreateOfferModal(false)}
-          onOfferCreated={() => {
-            // Handle the newly created offer
-            setShowCreateOfferModal(false);
-            // Optionally refresh offers list or add to selected offers
           }}
         />
       )}

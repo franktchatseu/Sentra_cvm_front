@@ -28,6 +28,8 @@ import { campaignService } from "../services/campaignService";
 import { campaignSegmentOfferService } from "../services/campaignSegmentOfferService";
 import { offerService } from "../../offers/services/offerService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import { userService } from "../../users/services/userService";
 import {
   Campaign,
   CampaignSegmentDetail,
@@ -84,6 +86,15 @@ export default function CampaignDetailsPage() {
   const [budgetUtilisation, setBudgetUtilisation] =
     useState<CampaignBudgetUtilisation | null>(null);
   const [isLoadingBudgetUtil, setIsLoadingBudgetUtil] = useState(false);
+  const [createdByName, setCreatedByName] = useState<string>("");
+
+  const formatObjective = (objective?: string | null) => {
+    if (!objective) return "—";
+    return objective
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
 
   useEffect(() => {
     const fetchCampaignDetails = async () => {
@@ -118,40 +129,34 @@ export default function CampaignDetailsPage() {
           }
         }
 
-        // Generate performance data using same logic as CampaignsPage
-        // Helper function to generate consistent random values based on campaign ID
-        const seededRandom = (seed: number, min: number, max: number) => {
-          const x = Math.sin(seed) * 10000;
-          const random = x - Math.floor(x);
-          return Math.floor(random * (max - min + 1)) + min;
-        };
-
-        const seededRandomFloat = (seed: number, min: number, max: number) => {
-          const x = Math.sin(seed) * 10000;
-          const random = x - Math.floor(x);
-          return random * (max - min) + min;
-        };
-
-        // Generate performance data based on campaign ID (same logic as CampaignsPage)
-        const campaignId = parseInt(campaignData.id);
-        const baseSent = seededRandom(campaignId * 1, 1000, 11000);
-        const deliveryRate = seededRandomFloat(campaignId * 2, 0.95, 0.99);
-        const openRate = seededRandomFloat(campaignId * 3, 0.15, 0.4);
-        const conversionRate = seededRandomFloat(campaignId * 4, 0.02, 0.1);
-
-        const delivered = Math.floor(baseSent * deliveryRate);
-        const opened = Math.floor(delivered * openRate);
-        const converted = Math.floor(delivered * conversionRate);
-        const revenue = converted * seededRandom(campaignId * 5, 50, 250);
-
-        setPerformanceData({
-          sent: baseSent,
-          delivered: delivered,
-          opened: opened,
-          converted: converted,
-          revenue: Math.round(revenue),
-        });
+        setPerformanceData(null);
         setIsLoadingPerformance(false);
+
+        if (campaignData.created_by) {
+          try {
+            const creatorResponse = await userService.getUserById(
+              Number(campaignData.created_by),
+              true
+            );
+            const creator = creatorResponse?.data;
+            if (creator) {
+              const nameFromParts = `${creator.first_name || ""} ${
+                creator.last_name || ""
+              }`.trim();
+              const displayName =
+                creator.display_name ||
+                nameFromParts ||
+                creator.email_address ||
+                `User #${campaignData.created_by}`;
+              setCreatedByName(displayName);
+            }
+          } catch (error) {
+            console.error("Failed to fetch creator info:", error);
+            setCreatedByName(`User #${campaignData.created_by}`);
+          }
+        } else {
+          setCreatedByName("");
+        }
 
         // Fetch campaign segments, offers, and budget utilisation
         if (campaignData.id) {
@@ -789,7 +794,7 @@ export default function CampaignDetailsPage() {
                 <div className="animate-pulse h-8 w-24 bg-gray-200 rounded mt-1"></div>
               ) : (
                 <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                  ${performanceData?.revenue?.toLocaleString() || 0}
+                  <CurrencyFormatter amount={performanceData?.revenue || 0} />
                 </p>
               )}
             </div>
@@ -807,68 +812,54 @@ export default function CampaignDetailsPage() {
       </div>
 
       {/* Campaign Information and Budget Utilization - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
         {/* Campaign Information Card */}
         <div
           className={`bg-white rounded-md border border-[${color.border.default}] p-6 shadow-sm`}
         >
           {/* Campaign Header */}
-          <div className="mb-6 pb-6 border-b border-gray-200">
-            <h2 className={`text-2xl font-bold ${tw.textPrimary} mb-3`}>
-              {campaign.name}
-            </h2>
-            <p className={`${tw.textSecondary} mb-4 text-base leading-relaxed`}>
+          <div className="mb-3 pb-3 border-b border-gray-200">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <h2 className={`text-2xl font-bold ${tw.textPrimary}`}>
+                {campaign.name}
+              </h2>
+              <div className="flex items-center flex-wrap gap-2">
+                {(!campaign.approval_status ||
+                  campaign.approval_status?.toLowerCase() !==
+                    campaign.status?.toLowerCase()) && (
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
+                      campaign.status
+                    )}`}
+                  >
+                    {campaign.status?.charAt(0).toUpperCase() +
+                      campaign.status?.slice(1)}
+                  </span>
+                )}
+                {campaign.approval_status && (
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getApprovalBadge(
+                      campaign.approval_status
+                    )}`}
+                  >
+                    {campaign.approval_status === "approved" && (
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                    )}
+                    {campaign.approval_status === "rejected" && (
+                      <XCircle className="w-3 h-3 mr-1" />
+                    )}
+                    {campaign.approval_status === "pending" && (
+                      <Clock className="w-3 h-3 mr-1" />
+                    )}
+                    {campaign.approval_status?.charAt(0).toUpperCase() +
+                      campaign.approval_status?.slice(1)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <p className={`${tw.textSecondary} mb-2 text-base leading-relaxed`}>
               {campaign.description}
             </p>
-            <div className="flex items-center flex-wrap gap-2">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
-                  campaign.status
-                )}`}
-              >
-                {campaign.status?.charAt(0).toUpperCase() +
-                  campaign.status?.slice(1)}
-              </span>
-              {campaign.approval_status && (
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getApprovalBadge(
-                    campaign.approval_status
-                  )}`}
-                >
-                  {campaign.approval_status === "approved" && (
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                  )}
-                  {campaign.approval_status === "rejected" && (
-                    <XCircle className="w-3 h-3 mr-1" />
-                  )}
-                  {campaign.approval_status === "pending" && (
-                    <Clock className="w-3 h-3 mr-1" />
-                  )}
-                  {campaign.approval_status?.charAt(0).toUpperCase() +
-                    campaign.approval_status?.slice(1)}
-                </span>
-              )}
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.action}]/10 text-[${color.primary.action}]`}
-              >
-                <Tag className="w-4 h-4 mr-1" />
-                {categoryName}
-              </span>
-              {/* Display Tags */}
-              {campaign.tags && campaign.tags.length > 0 && (
-                <>
-                  {campaign.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
-                    >
-                      <Tag className="w-3 h-3 mr-1" />
-                      {tag.replace("catalog:", "")}
-                    </span>
-                  ))}
-                </>
-              )}
-            </div>
             {/* Rejection Reason Display */}
             {campaign.status === "rejected" && campaign.rejection_reason && (
               <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
@@ -889,7 +880,7 @@ export default function CampaignDetailsPage() {
 
           {/* Campaign Details Grid */}
           <div>
-            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-6`}>
+            <h3 className={`text-lg font-semibold ${tw.textPrimary} mb-4`}>
               Campaign Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -910,7 +901,7 @@ export default function CampaignDetailsPage() {
                   Objective
                 </label>
                 <p className={`text-base ${tw.textPrimary}`}>
-                  {campaign.objective?.replace("_", " ").toUpperCase()}
+                  {formatObjective(campaign.objective)}
                 </p>
               </div>
               <div>
@@ -953,6 +944,40 @@ export default function CampaignDetailsPage() {
                   <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                   {formatDate(campaign.created_at)}
                 </p>
+              </div>
+              <div>
+                <label
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
+                >
+                  Created By
+                </label>
+                <p className={`text-base ${tw.textPrimary}`}>
+                  {createdByName || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <label
+                  className={`text-sm font-medium ${tw.textMuted} block mb-2`}
+                >
+                  Tags
+                </label>
+                {campaign.tags && campaign.tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {campaign.tags.map((tag, index) => (
+                      <span
+                        key={`${tag}-${index}`}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[${color.primary.accent}]/10 text-[${color.primary.accent}]`}
+                      >
+                        <Tag className="w-3 h-3 mr-1" />
+                        {tag.replace("catalog:", "")}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={`text-base ${tw.textSecondary}`}>
+                    No tags added
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -997,14 +1022,9 @@ export default function CampaignDetailsPage() {
                     Remaining Budget
                   </span>
                   <span className={`text-sm font-semibold ${tw.textPrimary}`}>
-                    $
-                    {budgetUtilisation.remaining_budget.toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
+                    <CurrencyFormatter
+                      amount={budgetUtilisation.remaining_budget}
+                    />
                   </span>
                 </div>
                 {campaign.budget_allocated && campaign.budget_spent && (
@@ -1016,14 +1036,9 @@ export default function CampaignDetailsPage() {
                         Allocated
                       </span>
                       <span className={`text-sm font-medium ${tw.textPrimary}`}>
-                        $
-                        {parseFloat(campaign.budget_allocated).toLocaleString(
-                          undefined,
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }
-                        )}
+                        <CurrencyFormatter
+                          amount={parseFloat(campaign.budget_allocated)}
+                        />
                       </span>
                     </div>
                     <div>
@@ -1033,14 +1048,9 @@ export default function CampaignDetailsPage() {
                         Spent
                       </span>
                       <span className={`text-sm font-medium ${tw.textPrimary}`}>
-                        $
-                        {parseFloat(campaign.budget_spent).toLocaleString(
-                          undefined,
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }
-                        )}
+                        <CurrencyFormatter
+                          amount={parseFloat(campaign.budget_spent)}
+                        />
                       </span>
                     </div>
                   </div>
@@ -1074,7 +1084,7 @@ export default function CampaignDetailsPage() {
           </div>
         ) : (
           <div
-            className={`hidden lg:block overflow-x-auto rounded-md border border-[${color.border.default}]`}
+            className={`overflow-x-auto rounded-md border border-[${color.border.default}]`}
           >
             <table
               className="w-full"
@@ -1135,7 +1145,7 @@ export default function CampaignDetailsPage() {
                             }
                           )
                         }
-                        className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                        className={`font-semibold text-base ${tw.textPrimary} truncate`}
                         title={segment.segment_name}
                         style={{ color: color.primary.accent }}
                       >
@@ -1148,19 +1158,19 @@ export default function CampaignDetailsPage() {
                     >
                       {segment.segment_description ? (
                         <div
-                          className={`text-xs sm:text-sm ${tw.textMuted} truncate`}
+                          className={`text-sm ${tw.textMuted} truncate`}
                           title={segment.segment_description}
                         >
                           {segment.segment_description}
                         </div>
                       ) : (
-                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                        <span className={`text-sm ${tw.textMuted}`}>
                           No description
                         </span>
                       )}
                     </td>
                     <td
-                      className={`px-6 py-4 text-sm ${tw.textPrimary}`}
+                      className={`px-6 py-4 text-base ${tw.textPrimary}`}
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       {segment.segment_type}
@@ -1170,13 +1180,11 @@ export default function CampaignDetailsPage() {
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       {segment.is_primary ? (
-                        <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                           Primary
                         </span>
                       ) : (
-                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
-                          —
-                        </span>
+                        <span className={`text-sm ${tw.textMuted}`}>—</span>
                       )}
                     </td>
                     <td
@@ -1184,7 +1192,7 @@ export default function CampaignDetailsPage() {
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span
-                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                           segment.include_exclude === "include"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
@@ -1226,7 +1234,7 @@ export default function CampaignDetailsPage() {
           </div>
         ) : (
           <div
-            className={`hidden lg:block overflow-x-auto rounded-md border border-[${color.border.default}]`}
+            className={`overflow-x-auto rounded-md border border-[${color.border.default}]`}
           >
             <table
               className="w-full"
@@ -1284,7 +1292,7 @@ export default function CampaignDetailsPage() {
                             },
                           })
                         }
-                        className={`font-semibold text-sm sm:text-base ${tw.textPrimary} truncate`}
+                        className={`font-semibold text-base ${tw.textPrimary} truncate`}
                         title={offer.name}
                         style={{ color: color.primary.accent }}
                       >
@@ -1297,19 +1305,19 @@ export default function CampaignDetailsPage() {
                     >
                       {offer.description ? (
                         <div
-                          className={`text-xs sm:text-sm ${tw.textMuted} truncate`}
+                          className={`text-sm ${tw.textMuted} truncate`}
                           title={offer.description}
                         >
                           {offer.description}
                         </div>
                       ) : (
-                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
+                        <span className={`text-sm ${tw.textMuted}`}>
                           No description
                         </span>
                       )}
                     </td>
                     <td
-                      className={`px-6 py-4 text-sm ${tw.textPrimary} font-mono`}
+                      className={`px-6 py-4 text-base ${tw.textPrimary} font-mono`}
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       {offer.code || "—"}
@@ -1320,7 +1328,7 @@ export default function CampaignDetailsPage() {
                     >
                       {offer.status ? (
                         <span
-                          className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                             offer.status === "active"
                               ? "bg-green-100 text-green-800"
                               : offer.status === "draft"
@@ -1333,13 +1341,11 @@ export default function CampaignDetailsPage() {
                           {offer.status}
                         </span>
                       ) : (
-                        <span className={`text-xs sm:text-sm ${tw.textMuted}`}>
-                          —
-                        </span>
+                        <span className={`text-sm ${tw.textMuted}`}>—</span>
                       )}
                     </td>
                     <td
-                      className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
+                      className={`px-6 py-4 hidden md:table-cell text-base ${tw.textMuted}`}
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       {offer.offer_type || "—"}

@@ -29,9 +29,13 @@ import ProductCategoriesPage from "../../products/pages/ProductCategoriesPage";
 import ProductTypesPage from "../../products/pages/ProductTypesPage";
 import OfferTypesPage from "../../offers/pages/OfferTypesPage";
 import OfferCategoriesPage from "../../offers/pages/OfferCategoriesPage";
+import TrackingSourcesPage from "../../offers/pages/TrackingSourcesPage";
+import CreativeTemplatesPage from "../../offers/pages/CreativeTemplatesPage";
+import RewardTypesPage from "../../offers/pages/RewardTypesPage";
 // import CategoryDetailsPage from "../../offers/pages/CategoryDetailsPage";
 import UserManagementPage from "../components/UserManagementPage";
 import UserDetailsPage from "../../users/pages/UserDetailsPage";
+import UserProfilePage from "../../users/pages/UserProfilePage";
 import ConfigurationPage from "../components/ConfigurationPage";
 import ConfigurationDetailsPage from "../components/ConfigurationDetailsPage";
 import ControlGroupsPage from "../../products/pages/ControlGroupsPage";
@@ -56,6 +60,7 @@ import DeliverySMSReportsPage from "./DeliverySMSReportsPage";
 import DeliveryEmailReportsPage from "./DeliveryEmailReportsPage";
 import OfferReportsPage from "./OfferReportsPage";
 import SettingsPage from "../../settings/pages/SettingsPage";
+import CommunicationChannelsPage from "../../settings/pages/CommunicationChannelsPage";
 import ServersPage from "../../servers/pages/ServersPage";
 import ServerDetailsPage from "../../servers/pages/ServerDetailsPage";
 import ServerFormPage from "../../servers/pages/ServerFormPage";
@@ -141,6 +146,7 @@ export default function Dashboard() {
         {/* <Route path="/offer-catalogs/:id" element={<CategoryDetailsPage />} /> */}
         <Route path="/user-management" element={<UserManagementPage />} />
         <Route path="/user-management/:id" element={<UserDetailsPage />} />
+        <Route path="/profile" element={<UserProfilePage />} />
         <Route path="/segments" element={<SegmentManagementPage />} />
         <Route path="/segments/:id" element={<SegmentDetailsPage />} />
         <Route path="/segments/:id/edit" element={<EditSegmentPage />} />
@@ -154,13 +160,26 @@ export default function Dashboard() {
         <Route path="/segment-types" element={<SegmentTypesPage />} />
         <Route path="/control-groups" element={<ControlGroupsPage />} />
         <Route path="/quicklists" element={<QuickListsPage />} />
-        <Route path="/quicklists/create" element={<CreateManualBroadcastPage />} />
+        <Route
+          path="/quicklists/create"
+          element={<CreateManualBroadcastPage />}
+        />
         <Route path="/quicklists/:id" element={<QuickListDetailsPage />} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
         <Route
           path="/configuration/:id"
           element={<ConfigurationDetailsPage />}
+        />
+        <Route
+          path="/offer-tracking-sources"
+          element={<TrackingSourcesPage />}
+        />
+        <Route path="/creative-templates" element={<CreativeTemplatesPage />} />
+        <Route path="/reward-types" element={<RewardTypesPage />} />
+        <Route
+          path="/communication-channels"
+          element={<CommunicationChannelsPage />}
         />
         <Route path="/customer-identity" element={<CustomerIdentityPage />} />
         <Route

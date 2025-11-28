@@ -24,6 +24,7 @@ import { programService } from "../services/programService";
 import { Program } from "../types/program";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import ProgramModal from "../components/ProgramModal";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 
 interface Campaign {
   id: number;
@@ -326,14 +327,7 @@ export default function ProgramDetailsPage() {
     });
   };
 
-  const formatCurrency = (amount: number | string | null | undefined) => {
-    if (amount === null || amount === undefined) return "$0";
-    const num = typeof amount === "string" ? parseFloat(amount) : amount;
-    return `$${num.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
+  // formatCurrency is now handled by CurrencyFormatter component
 
   if (isLoading) {
     return (
@@ -443,9 +437,11 @@ export default function ProgramDetailsPage() {
             </div>
             <div className="space-y-1">
               <p className="text-3xl font-bold text-black">
-                {formatCurrency(
-                  budgetUtilization?.budget_total || program.budget_total
-                )}
+                <CurrencyFormatter
+                  amount={
+                    budgetUtilization?.budget_total || program.budget_total
+                  }
+                />
               </p>
               <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
                 Total Budget
@@ -463,9 +459,11 @@ export default function ProgramDetailsPage() {
             </div>
             <div className="space-y-1">
               <p className="text-3xl font-bold text-black">
-                {formatCurrency(
-                  budgetUtilization?.budget_spent || program.budget_spent
-                )}
+                <CurrencyFormatter
+                  amount={
+                    budgetUtilization?.budget_spent || program.budget_spent
+                  }
+                />
               </p>
               <p className={`${tw.cardSubHeading} ${tw.textSecondary}`}>
                 Budget Spent
@@ -636,8 +634,9 @@ export default function ProgramDetailsPage() {
                   {budgetUtilization.utilization_percentage.toFixed(1)}%
                 </span>
                 <span className={`text-sm ${tw.textSecondary}`}>
-                  {formatCurrency(budgetUtilization.budget_spent)} /{" "}
-                  {formatCurrency(budgetUtilization.budget_total)}
+                  <CurrencyFormatter amount={budgetUtilization.budget_spent} />{" "}
+                  /{" "}
+                  <CurrencyFormatter amount={budgetUtilization.budget_total} />
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -659,19 +658,21 @@ export default function ProgramDetailsPage() {
                   Total Budget
                 </p>
                 <p className={`text-lg font-semibold ${tw.textPrimary}`}>
-                  {formatCurrency(budgetUtilization.budget_total)}
+                  <CurrencyFormatter amount={budgetUtilization.budget_total} />
                 </p>
               </div>
               <div>
                 <p className={`text-sm ${tw.textSecondary} mb-1`}>Spent</p>
                 <p className={`text-lg font-semibold ${tw.textPrimary}`}>
-                  {formatCurrency(budgetUtilization.budget_spent)}
+                  <CurrencyFormatter amount={budgetUtilization.budget_spent} />
                 </p>
               </div>
               <div>
                 <p className={`text-sm ${tw.textSecondary} mb-1`}>Remaining</p>
                 <p className={`text-lg font-semibold ${tw.textPrimary}`}>
-                  {formatCurrency(budgetUtilization.budget_remaining)}
+                  <CurrencyFormatter
+                    amount={budgetUtilization.budget_remaining}
+                  />
                 </p>
               </div>
             </div>
@@ -774,13 +775,18 @@ export default function ProgramDetailsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className={`text-sm ${tw.textPrimary}`}>
-                        {campaign.budget_allocated
-                          ? formatCurrency(campaign.budget_allocated)
-                          : "-"}
+                        {campaign.budget_allocated ? (
+                          <CurrencyFormatter
+                            amount={campaign.budget_allocated}
+                          />
+                        ) : (
+                          "-"
+                        )}
                       </div>
                       {campaign.budget_spent && (
                         <div className={`text-xs ${tw.textMuted}`}>
-                          Spent: {formatCurrency(campaign.budget_spent)}
+                          Spent:{" "}
+                          <CurrencyFormatter amount={campaign.budget_spent} />
                         </div>
                       )}
                     </td>

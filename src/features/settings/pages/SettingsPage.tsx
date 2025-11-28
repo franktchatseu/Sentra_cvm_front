@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Save } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { setLanguageSettings } from "../../../shared/services/languageService";
 import { color, tw } from "../../../shared/utils/utils";
 import countries from "world-countries";
 import currencyCodes from "currency-codes";
@@ -138,25 +140,42 @@ interface SettingsType {
 
 export default function SettingsPage() {
   const { success: showToast } = useToast();
-  const [settings, setSettings] = useState<SettingsType>({
-    country: "United States",
-    country_code: "US",
-    language: "English",
-    timezone: "UTC",
-    date_format: "YYYY-MM-DD",
-    currency: "USD",
-    number_formatting: "1,234.56",
-  });
+  const { setLanguage, t } = useLanguage();
+
+  // Load settings from localStorage or use defaults (Kenya/KES)
+  const loadSettings = (): SettingsType => {
+    try {
+      const stored = localStorage.getItem("appSettings");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return {
+          country: parsed.country || "Kenya",
+          country_code: parsed.country_code || "KE",
+          language: parsed.language || "English",
+          timezone: parsed.timezone || "Africa/Nairobi",
+          date_format: parsed.date_format || "YYYY-MM-DD",
+          currency: parsed.currency || "KES",
+          number_formatting: parsed.number_formatting || "1,234.56",
+        };
+      }
+    } catch (error) {
+      console.error("Error loading settings:", error);
+    }
+    // Default to Kenya
+    return {
+      country: "Kenya",
+      country_code: "KE",
+      language: "English",
+      timezone: "Africa/Nairobi",
+      date_format: "YYYY-MM-DD",
+      currency: "KES",
+      number_formatting: "1,234.56",
+    };
+  };
+
+  const [settings, setSettings] = useState<SettingsType>(loadSettings());
   const [isSaving, setIsSaving] = useState(false);
-  const [originalSettings] = useState<SettingsType>({
-    country: "United States",
-    country_code: "US",
-    language: "English",
-    timezone: "UTC",
-    date_format: "YYYY-MM-DD",
-    currency: "USD",
-    number_formatting: "1,234.56",
-  });
+  const [originalSettings] = useState<SettingsType>(loadSettings());
 
   const handleCountryChange = (countryName: string) => {
     const selectedCountry = getCountryByName(countryName);
@@ -169,6 +188,9 @@ export default function SettingsPage() {
 
   const handleLanguageChange = (language: string) => {
     setSettings({ ...settings, language });
+    // Update language context immediately
+    setLanguageSettings(language);
+    setLanguage(language);
   };
 
   const handleTimezoneChange = (timezone: string) => {
@@ -192,9 +214,12 @@ export default function SettingsPage() {
       setIsSaving(true);
       // Simulate save delay
       await new Promise((resolve) => setTimeout(resolve, 500));
-      // In the future, this would save to localStorage or backend
+      // Save to localStorage
       localStorage.setItem("appSettings", JSON.stringify(settings));
-      showToast("Settings saved successfully");
+      // Update language if it changed
+      setLanguageSettings(settings.language);
+      setLanguage(settings.language);
+      showToast(t.messages.saved);
     } catch (err) {
       console.error("Failed to save settings:", err);
     } finally {
@@ -216,7 +241,9 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between pb-4 border-b border-gray-200">
         <div className="min-w-0">
-          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>Settings</h1>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+            {t.settings.title}
+          </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
             Manage your system preferences and regional settings
           </p>
@@ -228,7 +255,7 @@ export default function SettingsPage() {
             onClick={handleReset}
             className="px-5 py-2.5 text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 flex-shrink-0 whitespace-nowrap"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             onClick={handleSave}
@@ -249,12 +276,12 @@ export default function SettingsPage() {
             {isSaving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Saving...
+                {t.common.loading}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                {t.settings.saveChanges}
               </>
             )}
           </button>
@@ -267,7 +294,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 lg:p-8">
           <div className="mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Location
+              {t.settings.location}
             </h2>
             <p className="text-sm text-gray-500">
               Set your country and regional information
@@ -280,7 +307,7 @@ export default function SettingsPage() {
                 htmlFor="country"
                 className="block text-sm font-semibold text-gray-700 mb-2.5"
               >
-                Country
+                {t.settings.country}
               </label>
               <select
                 id="country"
@@ -307,7 +334,7 @@ export default function SettingsPage() {
                 htmlFor="country-code"
                 className="block text-sm font-semibold text-gray-700 mb-2.5"
               >
-                Country Code
+                {t.settings.countryCode}
               </label>
               <input
                 id="country-code"
@@ -340,7 +367,7 @@ export default function SettingsPage() {
                 htmlFor="language"
                 className="block text-sm font-semibold text-gray-700 mb-2.5"
               >
-                Language
+                {t.settings.language}
               </label>
               <select
                 id="language"
@@ -367,7 +394,7 @@ export default function SettingsPage() {
                 htmlFor="timezone"
                 className="block text-sm font-semibold text-gray-700 mb-2.5"
               >
-                Timezone
+                {t.settings.timezone}
               </label>
               <select
                 id="timezone"
@@ -395,7 +422,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 lg:p-8">
           <div className="mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Date Format
+              {t.settings.dateFormat}
             </h2>
             <p className="text-sm text-gray-500">
               Choose how dates are displayed throughout the system
@@ -448,7 +475,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-md border border-gray-200 p-5 sm:p-6 lg:p-8">
           <div className="mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Currency & Formatting
+              {t.settings.currency} & Formatting
             </h2>
             <p className="text-sm text-gray-500">
               Set currency and number display preferences
@@ -461,7 +488,7 @@ export default function SettingsPage() {
                 htmlFor="currency"
                 className="block text-sm font-semibold text-gray-700 mb-2.5"
               >
-                Currency
+                {t.settings.currency}
               </label>
               <select
                 id="currency"
@@ -488,7 +515,7 @@ export default function SettingsPage() {
                 htmlFor="number-format"
                 className="block text-sm font-semibold text-gray-700 mb-2.5"
               >
-                Number Formatting
+                {t.settings.numberFormatting}
               </label>
               <select
                 id="number-format"
