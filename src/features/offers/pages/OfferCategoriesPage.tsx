@@ -22,6 +22,7 @@ import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useRemoveFromCatalog } from "../../../shared/hooks/useRemoveFromCatalog";
 import { offerCategoryService } from "../services/offerCategoryService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { offerService } from "../services/offerService";
@@ -252,14 +253,11 @@ function OffersModal({
   onRefreshCategories,
   onRefreshCounts,
 }: OffersModalProps) {
-  const { confirm } = useConfirm();
+  const { removeFromCatalog, removingId } = useRemoveFromCatalog();
   const { success: showSuccess, error: showError } = useToast();
   const [offers, setOffers] = useState<BasicOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
-  const [removingOfferId, setRemovingOfferId] = useState<
-    number | string | null
-  >(null);
 
   useEffect(() => {
     if (isOpen && category) {
@@ -320,76 +318,18 @@ function OffersModal({
   const handleRemoveOffer = async (offerId: number | string) => {
     if (!category) return;
 
-    const confirmed = await confirm({
-      title: "Remove Offer",
-      message: `Are you sure you want to remove this offer from "${category.name}"?`,
-      type: "warning",
-      confirmText: "Remove",
-      cancelText: "Cancel",
+    await removeFromCatalog({
+      entityType: "offer",
+      entityId: offerId,
+      categoryId: category.id,
+      categoryName: category.name,
+      onRefresh: loadOffers,
+      onRefreshCounts: onRefreshCounts,
+      onRefreshCategories: onRefreshCategories,
+      getEntityById: async (id) => await offerService.getOfferById(id),
+      updateEntity: async (id, updates) =>
+        await offerService.updateOffer(id, updates as UpdateOfferRequest),
     });
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setRemovingOfferId(offerId);
-
-      const offerResponse = await offerService.getOfferById(Number(offerId));
-      const offerData = offerResponse.data as Offer | undefined;
-
-      if (!offerData) {
-        showError("Failed to load offer details", "Please try again later.");
-        return;
-      }
-
-      const primaryCategoryId = Number(offerData.category_id);
-      if (
-        Number.isFinite(primaryCategoryId) &&
-        primaryCategoryId === Number(category.id)
-      ) {
-        await confirm({
-          title: "Primary Category",
-          message:
-            "This catalog is the offer's primary category. Change the offer's primary category before removing it from this catalog.",
-          type: "info",
-          confirmText: "Got it",
-          cancelText: "Close",
-        });
-        return;
-      }
-
-      const catalogTag = buildCatalogTag(category.id);
-      const hasCatalogTag =
-        Array.isArray(offerData.tags) && offerData.tags.includes(catalogTag);
-
-      if (!hasCatalogTag) {
-        showError("Offer is not tagged to this catalog.");
-        return;
-      }
-
-      const updatedTags = (offerData.tags || []).filter(
-        (tag) => tag !== catalogTag
-      );
-
-      const updates: UpdateOfferRequest = {
-        tags: updatedTags,
-      };
-
-      await offerService.updateOffer(Number(offerId), updates);
-
-      await loadOffers();
-      await Promise.resolve(onRefreshCounts());
-      await Promise.resolve(onRefreshCategories());
-
-      showSuccess("Offer removed from catalog successfully");
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Please try again later.";
-      showError("Failed to remove offer", message);
-    } finally {
-      setRemovingOfferId(null);
-    }
   };
 
   // const handleCreateOffer = () => {
@@ -411,7 +351,7 @@ function OffersModal({
       assignRoute={`/dashboard/offer-catalogs/${category?.id}/assign`}
       viewRoute={(id) => `/dashboard/offers/${id}`}
       onRemove={handleRemoveOffer}
-      removingId={removingOfferId}
+      removingId={removingId}
       onRefresh={async () => {
         await loadOffers();
         await Promise.resolve(onRefreshCounts());
@@ -436,7 +376,7 @@ function OffersModal({
 
 function OfferCategoriesPage() {
   const navigate = useNavigate();
-  const { confirm } = useConfirm();
+  const { confirm, setConfirmLoading, closeConfirm } = useConfirm();
   const { success, error: showError } = useToast();
 
   const [offerCategories, setOfferCategories] = useState<

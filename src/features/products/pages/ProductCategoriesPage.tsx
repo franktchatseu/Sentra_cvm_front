@@ -32,7 +32,7 @@ import {
   parseCatalogTag,
 } from "../../../shared/utils/catalogTags";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useRemoveFromCatalog } from "../../../shared/hooks/useRemoveFromCatalog";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -157,14 +157,11 @@ function ProductsModal({
   allProducts,
   refreshAllProducts,
 }: ProductsModalProps) {
-  const { confirm } = useConfirm();
+  const { removeFromCatalog, removingId } = useRemoveFromCatalog();
   const { success: showToast, error: showError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [removingProductId, setRemovingProductId] = useState<
-    number | string | null
-  >(null);
 
   useEffect(() => {
     if (isOpen && category) {
@@ -172,16 +169,18 @@ function ProductsModal({
     }
   }, [isOpen, category]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadProducts = async () => {
+  const loadProducts = async (forceRefresh = false) => {
     if (!category) return;
 
     try {
       setLoading(true);
       setError(null);
 
-      const snapshot = allProducts.length
-        ? allProducts
-        : await refreshAllProducts();
+      // Force refresh if requested (e.g., after assign/remove operations)
+      const snapshot =
+        forceRefresh || !allProducts.length
+          ? await refreshAllProducts()
+          : allProducts;
 
       const categoryId = Number(category.id);
       const catalogTag = buildCatalogTag(category.id);
@@ -192,9 +191,11 @@ function ProductsModal({
 
       let taggedProducts: Product[] = [];
       try {
+        // Note: getProductsByTag doesn't support skipCache (backend limitation)
+        // We force refresh allProducts instead to get fresh data
         const taggedResponse = await productService.getProductsByTag({
           tag: catalogTag,
-          limit: 500,
+          limit: 100,
         });
         taggedProducts = taggedResponse.data || [];
       } catch (tagErr) {
@@ -227,63 +228,27 @@ function ProductsModal({
   const handleRemoveProduct = async (productId: number | string) => {
     if (!category) return;
 
-    try {
-      setRemovingProductId(productId);
-      const productResponse = await productService.getProductById(
-        Number(productId),
-        true
-      );
-      const productData = productResponse.data;
-
-      if (!productData) {
-        showError("Product details not found");
-        setRemovingProductId(null);
-        return;
-      }
-
-      const primaryCategoryId = Number(productData.category_id);
-      const catalogTag = buildCatalogTag(category.id);
-      const hasCatalogTag =
-        Array.isArray(productData.tags) &&
-        productData.tags.includes(catalogTag);
-
-      if (
-        !Number.isNaN(primaryCategoryId) &&
-        primaryCategoryId === Number(category.id)
-      ) {
-        await confirm({
-          title: "Primary Category",
-          message:
-            "This catalog is the product's primary category. Update the product to use a different primary category before removing it here.",
-          type: "info",
-          confirmText: "Got it",
-          cancelText: "Close",
-        });
-        setRemovingProductId(null);
-        return;
-      }
-
-      if (hasCatalogTag) {
-        await productService.removeProductTag(Number(productId), catalogTag);
-        showToast("Product removed from catalog");
+    await removeFromCatalog({
+      entityType: "product",
+      entityId: productId,
+      categoryId: category.id,
+      categoryName: category.name,
+      onRefresh: async () => {
+        // Force refresh all products to get latest data
         await refreshAllProducts();
-        // Refresh categories to update counts on cards
-        await onRefreshCategories();
-        await onRefreshProductCounts();
-        await loadProducts();
-      } else {
-        showError("Product is not tagged to this catalog");
-        setRemovingProductId(null);
-      }
-    } catch (err) {
-      showError(
-        err instanceof Error
-          ? err.message
-          : "Failed to remove product from catalog"
-      );
-    } finally {
-      setRemovingProductId(null);
-    }
+        // Force refresh the products list with skipCache
+        await loadProducts(true);
+      },
+      onRefreshCategories: onRefreshCategories,
+      onRefreshCounts: onRefreshProductCounts,
+      getEntityById: async (id) =>
+        await productService.getProductById(id, true),
+      updateEntity: async () => {
+        // Products use removeProductTag instead
+      },
+      removeEntityTag: async (id, tag) =>
+        await productService.removeProductTag(id, tag),
+    });
   };
 
   return (
@@ -299,9 +264,12 @@ function ProductsModal({
       assignRoute={`/dashboard/products/catalogs/${category?.id}/assign`}
       viewRoute={(id) => `/dashboard/products/${id}`}
       onRemove={handleRemoveProduct}
-      removingId={removingProductId}
+      removingId={removingId}
       onRefresh={async () => {
-        await loadProducts();
+        // Force refresh all products and reload the list
+        await refreshAllProducts();
+        await loadProducts(true);
+        // Refresh counts with fresh data
         await onRefreshProductCounts();
         await onRefreshCategories();
       }}
@@ -446,14 +414,17 @@ export default function ProductCatalogsPage() {
     categoriesOverride?: ProductCategory[],
     productsSnapshotOverride?: Product[]
   ) => {
+    // Force refresh counts with skipCache to get latest data
+    // loadCategoryProductCounts already uses skipCache: true
     const baseCounts = await loadCategoryProductCounts();
     const targetCategories = categoriesOverride ?? categories;
     let finalCounts = baseCounts;
 
     if (targetCategories.length) {
+      // Force refresh products with skipCache to get latest data
+      // This ensures we have fresh product data including tags
       const productsSnapshot =
-        productsSnapshotOverride ??
-        (allProducts.length > 0 ? allProducts : await loadAllProducts());
+        productsSnapshotOverride ?? (await loadAllProducts(true)); // Always refresh with skipCache
 
       finalCounts = mergeTagCountsFromSnapshot(
         baseCounts,
@@ -1371,6 +1342,8 @@ export default function ProductCatalogsPage() {
           await loadCategories(true); // skipCache = true
         }}
         onRefreshProductCounts={async () => {
+          // Force refresh all products first, then refresh counts
+          await loadAllProducts(true);
           await refreshCategoryProductCounts();
         }}
         allProducts={allProducts}

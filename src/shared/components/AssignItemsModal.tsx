@@ -278,7 +278,8 @@ function AssignItemsModal({
                   }),
                   productService.getProductsByTag({
                     tag: catalogTag,
-                    limit: 500,
+                    limit: 100,
+                    // Note: skipCache not supported by backend for this endpoint
                   }),
                 ]);
 

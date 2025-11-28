@@ -20,7 +20,7 @@ import {
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useRemoveFromCatalog } from "../../../shared/hooks/useRemoveFromCatalog";
 import { segmentService } from "../services/segmentService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import {
@@ -211,13 +211,10 @@ function SegmentsModal({
   category,
   onRefreshCategories,
 }: SegmentsModalProps) {
-  const { confirm } = useConfirm();
+  const { removeFromCatalog, removingId } = useRemoveFromCatalog();
   const { success: showToast, error: showError } = useToast();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [removingSegmentId, setRemovingSegmentId] = useState<
-    number | string | null
-  >(null);
 
   const loadCategorySegments = useCallback(async () => {
     setIsLoading(true);
@@ -301,86 +298,19 @@ function SegmentsModal({
   const handleRemoveSegment = async (segmentId: number | string) => {
     if (!category) return;
 
-    const confirmed = await confirm({
-      title: "Remove Segment",
-      message: `Are you sure you want to remove this segment from "${category.name}"?`,
-      type: "warning",
-      confirmText: "Remove",
-      cancelText: "Cancel",
+    await removeFromCatalog({
+      entityType: "segment",
+      entityId: segmentId,
+      categoryId: category.id,
+      categoryName: category.name,
+      onRefresh: loadCategorySegments,
+      onRefreshCategories: onRefreshCategories,
+      getEntityById: async (id) =>
+        await segmentService.getSegmentById(id, true),
+      updateEntity: async (id, updates) =>
+        await segmentService.updateSegment(id, updates),
+      buildCatalogTagFn: buildSegmentCatalogTag,
     });
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setRemovingSegmentId(segmentId);
-
-      const segmentResponse = await segmentService.getSegmentById(
-        Number(segmentId),
-        true
-      );
-      const segmentData = segmentResponse.data as Segment | undefined;
-
-      if (!segmentData) {
-        showError("Failed to load segment details", "Please try again later.");
-        setRemovingSegmentId(null);
-        return;
-      }
-
-      const primaryCategory =
-        typeof segmentData.category === "string"
-          ? parseInt(segmentData.category, 10)
-          : segmentData.category;
-
-      if (
-        typeof primaryCategory === "number" &&
-        !Number.isNaN(primaryCategory) &&
-        primaryCategory === Number(category.id)
-      ) {
-        await confirm({
-          title: "Primary Category",
-          message:
-            "This catalog is the segment's primary category. Update the segment's primary category before removing it from this catalog.",
-          type: "info",
-          confirmText: "Got it",
-          cancelText: "Close",
-        });
-        setRemovingSegmentId(null);
-        return;
-      }
-
-      const catalogTag = buildSegmentCatalogTag(category.id);
-      const hasCatalogTag =
-        Array.isArray(segmentData.tags) &&
-        segmentData.tags.includes(catalogTag);
-
-      if (!hasCatalogTag) {
-        showError("Segment is not tagged to this catalog.");
-        setRemovingSegmentId(null);
-        return;
-      }
-
-      const updatedTags = (segmentData.tags || []).filter(
-        (tag) => tag !== catalogTag
-      );
-
-      await segmentService.updateSegment(Number(segmentId), {
-        tags: updatedTags,
-      });
-
-      showToast("Segment removed from catalog successfully");
-      await loadCategorySegments();
-      // Refresh categories to update counts on cards
-      await onRefreshCategories();
-    } catch (err) {
-      showError(
-        "Failed to remove segment",
-        err instanceof Error ? err.message : "Please try again later."
-      );
-    } finally {
-      setRemovingSegmentId(null);
-    }
   };
 
   return (
@@ -395,7 +325,7 @@ function SegmentsModal({
       assignRoute={`/dashboard/segment-catalogs/${category?.id}/assign`}
       viewRoute={(id) => `/dashboard/segments/${id}`}
       onRemove={handleRemoveSegment}
-      removingId={removingSegmentId}
+      removingId={removingId}
       onRefresh={async () => {
         await loadCategorySegments();
         await onRefreshCategories();

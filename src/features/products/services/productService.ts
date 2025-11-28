@@ -676,11 +676,14 @@ class ProductService {
     tag: string;
     limit?: number;
     offset?: number;
+    skipCache?: boolean; // Note: Backend doesn't support skipCache for this endpoint
   }): Promise<PaginatedResponse<Product>> {
     const queryParams = new URLSearchParams();
     queryParams.append("tag", params.tag);
     if (params.limit) queryParams.append("limit", params.limit.toString());
     if (params.offset) queryParams.append("offset", params.offset.toString());
+    // Note: skipCache is not supported by backend for this endpoint
+    // Backend returns 400 if skipCache is included
 
     return this.request<PaginatedResponse<Product>>(
       `/tag/search?${queryParams}`

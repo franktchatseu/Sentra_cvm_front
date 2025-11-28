@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,7 +20,7 @@ import {
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
-import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useRemoveFromCatalog } from "../../../shared/hooks/useRemoveFromCatalog";
 import { campaignService } from "../services/campaignService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -189,7 +195,7 @@ function CategoryModal({
 export default function CampaignCategoriesPage() {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
-  const { confirm } = useConfirm();
+  const { removeFromCatalog, removingId } = useRemoveFromCatalog();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] =
     useState<CampaignCategory | null>(null);
@@ -239,9 +245,6 @@ export default function CampaignCategoriesPage() {
     }>
   >([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
-  const [removingCampaignId, setRemovingCampaignId] = useState<
-    number | string | null
-  >(null);
   // Note: allCampaigns state removed - not used here anymore
   // getAllCampaigns is only used in AssignItemsPage for campaigns
 
@@ -256,7 +259,7 @@ export default function CampaignCategoriesPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const loadStats = async (skipCache = false) => {
+  const loadStats = useCallback(async (skipCache = false) => {
     try {
       // Use backend endpoint for stats instead of calculating manually
       const statsResponse = await campaignService.getCampaignCategoryStats(
@@ -309,18 +312,7 @@ export default function CampaignCategoriesPage() {
             count: data.most_used_category.campaign_count,
           });
         } else {
-          // Fallback: find popular category from loaded categories
-          const sorted = [...campaignCategories].sort(
-            (a, b) => (b.campaign_count || 0) - (a.campaign_count || 0)
-          );
-          if (sorted.length > 0 && (sorted[0].campaign_count || 0) > 0) {
-            setPopularCategory({
-              name: sorted[0].name,
-              count: sorted[0].campaign_count || 0,
-            });
-          } else {
-            setPopularCategory(null);
-          }
+          setPopularCategory(null);
         }
       }
     } catch (err) {
@@ -329,7 +321,7 @@ export default function CampaignCategoriesPage() {
       setUnusedCount(0);
       setPopularCategory(null);
     }
-  };
+  }, []);
 
   // Helper function to count campaigns for a category (checking both category_id AND tags)
   // Same logic as segments - supports multi-catalog assignment via tags
@@ -358,119 +350,142 @@ export default function CampaignCategoriesPage() {
     }).length;
   };
 
-  const loadCategories = async (skipCache = false) => {
-    try {
-      setLoading(true);
+  const loadCategories = useCallback(
+    async (skipCache = false) => {
+      try {
+        setLoading(true);
 
-      // Use searchCampaignCategories endpoint when there's a search term,
-      // otherwise use getCampaignCategories
-      let response;
-      if (debouncedSearchTerm.trim()) {
-        response = await campaignService.searchCampaignCategories(
-          debouncedSearchTerm,
-          {
+        // Use searchCampaignCategories endpoint when there's a search term,
+        // otherwise use getCampaignCategories
+        let response;
+        if (debouncedSearchTerm.trim()) {
+          response = await campaignService.searchCampaignCategories(
+            debouncedSearchTerm,
+            {
+              skipCache: skipCache,
+            }
+          );
+        } else {
+          response = await campaignService.getCampaignCategories({
             skipCache: skipCache,
+          });
+        }
+
+        // Handle new response structure with success and data properties
+        const categoriesData =
+          response.success && response.data ? response.data : [];
+
+        // Fetch all campaigns once to calculate counts (checking both category_id AND tags)
+        // This ensures campaigns assigned via tags are counted correctly
+        let allCampaigns: BackendCampaignType[] = [];
+        let offset = 0;
+        const limit = 100;
+        let hasMore = true;
+
+        while (hasMore) {
+          const campaignsResponse = await campaignService.getCampaigns({
+            limit: limit,
+            offset: offset,
+            skipCache: skipCache,
+          });
+
+          const campaigns = (campaignsResponse.data ||
+            []) as BackendCampaignType[];
+          allCampaigns = [...allCampaigns, ...campaigns];
+
+          const total = campaignsResponse.pagination?.total || 0;
+          hasMore = allCampaigns.length < total && campaigns.length === limit;
+          offset += limit;
+        }
+
+        // Calculate count for each category by checking both category_id AND tags
+        // (same logic as offers/segments - supports multi-catalog assignment)
+        const categoriesWithCounts = (categoriesData as CampaignCategory[]).map(
+          (category: CampaignCategory) => {
+            const count = getCampaignCountForCategory(
+              category.id,
+              allCampaigns
+            );
+            return {
+              ...category,
+              campaign_count: count,
+            };
           }
         );
-      } else {
-        response = await campaignService.getCampaignCategories({
-          skipCache: skipCache,
-        });
+
+        setCampaignCategories(categoriesWithCounts);
+
+        // Load stats from backend endpoint (not from categories data)
+        await loadStats(skipCache);
+      } catch (err) {
+        console.error("Failed to load Campaigns catalogs:", err);
+        showError(
+          "Failed to load Campaigns catalogs",
+          "Please try again later."
+        );
+        setCampaignCategories([]);
+      } finally {
+        setLoading(false);
       }
-
-      // Handle new response structure with success and data properties
-      const categoriesData =
-        response.success && response.data ? response.data : [];
-
-      // Fetch all campaigns once to calculate counts (checking both category_id AND tags)
-      // This ensures campaigns assigned via tags are counted correctly
-      let allCampaigns: BackendCampaignType[] = [];
-      let offset = 0;
-      const limit = 100;
-      let hasMore = true;
-
-      while (hasMore) {
-        const campaignsResponse = await campaignService.getCampaigns({
-          limit: limit,
-          offset: offset,
-          skipCache: skipCache,
-        });
-
-        const campaigns = (campaignsResponse.data ||
-          []) as BackendCampaignType[];
-        allCampaigns = [...allCampaigns, ...campaigns];
-
-        const total = campaignsResponse.pagination?.total || 0;
-        hasMore = allCampaigns.length < total && campaigns.length === limit;
-        offset += limit;
-      }
-
-      // Calculate count for each category by checking both category_id AND tags
-      // (same logic as offers/segments - supports multi-catalog assignment)
-      const categoriesWithCounts = (categoriesData as CampaignCategory[]).map(
-        (category: CampaignCategory) => {
-          const count = getCampaignCountForCategory(category.id, allCampaigns);
-          return {
-            ...category,
-            campaign_count: count,
-          };
-        }
-      );
-
-      setCampaignCategories(categoriesWithCounts);
-
-      // Load stats from backend endpoint (not from categories data)
-      await loadStats(skipCache);
-    } catch (err) {
-      console.error("Failed to load Campaigns catalogs:", err);
-      showError("Failed to load Campaigns catalogs", "Please try again later.");
-      setCampaignCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [debouncedSearchTerm, showError, loadStats]
+  );
 
   useEffect(() => {
     loadCategories(true);
-  }, [debouncedSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadCategories]);
+
+  // Track visibility state with refs to avoid unnecessary reloads
+  const wasHiddenRef = useRef(false);
+  const lastHiddenTimeRef = useRef<number | null>(null);
 
   // Refresh when page becomes visible (e.g., when navigating back from assign page)
+  // Only reload if we're coming back from another page, not on every focus
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        loadCategories(true);
+      if (document.visibilityState === "hidden") {
+        wasHiddenRef.current = true;
+        lastHiddenTimeRef.current = Date.now();
+      } else if (
+        document.visibilityState === "visible" &&
+        wasHiddenRef.current
+      ) {
+        // Only reload if page was hidden for more than 1 second (user likely navigated away)
+        const timeHidden = lastHiddenTimeRef.current
+          ? Date.now() - lastHiddenTimeRef.current
+          : 0;
+        if (timeHidden > 1000) {
+          loadCategories(true);
+        }
+        wasHiddenRef.current = false;
+        lastHiddenTimeRef.current = null;
       }
     };
 
-    const handleFocus = () => {
-      loadCategories(true);
-    };
-
+    // Remove focus listener - it causes too many unnecessary reloads
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadCategories]);
 
-  const handleCreateCategory = () => {
+  const handleCreateCategory = useCallback(() => {
     setEditingCategory(undefined);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleEditCategory = (category: CampaignCategory) => {
+  const handleEditCategory = useCallback((category: CampaignCategory) => {
     setEditingCategory(category);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleDeleteCategory = (category: CampaignCategory) => {
+  const handleDeleteCategory = useCallback((category: CampaignCategory) => {
     setCategoryToDelete(category);
     setShowDeleteModal(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!categoryToDelete) return;
 
     setIsDeleting(true);
@@ -490,245 +505,201 @@ export default function CampaignCategoriesPage() {
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [categoryToDelete, loadCategories, showToast, showError]);
 
-  const handleCancelDelete = () => {
+  const handleCancelDelete = useCallback(() => {
     setShowDeleteModal(false);
     setCategoryToDelete(null);
-  };
+  }, []);
 
-  const handleCategorySaved = async (categoryData: {
-    name: string;
-    description?: string;
-  }) => {
-    try {
-      setIsSaving(true);
-      if (editingCategory) {
-        // Update existing category
-        await campaignService.updateCampaignCategory(
-          editingCategory.id,
-          categoryData
-        );
-        await loadCategories(true);
-        showToast("Category updated successfully");
-      } else {
-        // Create new category
-        await campaignService.createCampaignCategory(categoryData);
-        await loadCategories(true);
-        showToast("Category created successfully");
+  const handleCategorySaved = useCallback(
+    async (categoryData: { name: string; description?: string }) => {
+      try {
+        setIsSaving(true);
+        if (editingCategory) {
+          // Update existing category
+          await campaignService.updateCampaignCategory(
+            editingCategory.id,
+            categoryData
+          );
+          await loadCategories(true);
+          showToast("Category updated successfully");
+        } else {
+          // Create new category
+          await campaignService.createCampaignCategory(categoryData);
+          await loadCategories(true);
+          showToast("Category created successfully");
+        }
+        setIsModalOpen(false);
+        setEditingCategory(undefined);
+      } catch {
+        showError("Failed to save category", "Please try again later.");
+      } finally {
+        setIsSaving(false);
       }
-      setIsModalOpen(false);
-      setEditingCategory(undefined);
-    } catch {
-      showError("Failed to save category", "Please try again later.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleViewCampaigns = async (category: CampaignCategory) => {
-    try {
-      const categoryId = Number(category.id);
-      if (isNaN(categoryId)) {
-        showError("Invalid category", "Category ID must be a number");
-        return;
-      }
-
-      setSelectedCategory(category);
-      setIsCampaignsModalOpen(true);
-      setCampaignsLoading(true);
-
-      // Fetch all campaigns and filter by category_id OR tags (same logic as count)
-      // This ensures campaigns assigned via tags are shown correctly
-      let allCampaigns: BackendCampaignType[] = [];
-      let offset = 0;
-      const limit = 100;
-      let hasMore = true;
-
-      while (hasMore) {
-        const response = await campaignService.getCampaigns({
-          limit: limit,
-          offset: offset,
-          skipCache: true,
-        });
-
-        const campaigns = (response.data || []) as BackendCampaignType[];
-        allCampaigns = [...allCampaigns, ...campaigns];
-
-        const total = response.pagination?.total || 0;
-        hasMore = allCampaigns.length < total && campaigns.length === limit;
-        offset += limit;
-      }
-
-      // Filter campaigns by category_id OR tags (same logic as getCampaignCountForCategory)
-      // Same logic as segments - supports multi-catalog assignment via tags
-      const catalogTag = buildCatalogTag(categoryId);
-      const categoryCampaigns = allCampaigns.filter((campaign) => {
-        // Check if category_id matches (handle string/number conversion like segments)
-        const campaignCategoryId =
-          typeof campaign.category_id === "string"
-            ? parseInt(campaign.category_id, 10)
-            : campaign.category_id;
-        const matchesPrimary =
-          campaignCategoryId !== null &&
-          campaignCategoryId !== undefined &&
-          !isNaN(campaignCategoryId) &&
-          Number(campaignCategoryId) === categoryId;
-
-        // Check if tags include the catalog tag
-        const tags = Array.isArray(campaign.tags) ? campaign.tags : [];
-        const matchesTag = tags.includes(catalogTag);
-
-        return matchesPrimary || matchesTag;
-      });
-
-      const formattedCampaigns = categoryCampaigns.map((campaign) => ({
-        id: String(campaign.id),
-        name: campaign.name,
-        description: campaign.description || undefined,
-        status: campaign.status,
-        approval_status: campaign.approval_status,
-        start_date: campaign.start_date || undefined,
-        end_date: campaign.end_date || undefined,
-        category_id: campaign.category_id || undefined,
-        tags: campaign.tags || [],
-      }));
-
-      setCampaigns(formattedCampaigns);
-    } catch {
-      showError("Failed to load campaigns", "Please try again later.");
-      setCampaigns([]);
-    } finally {
-      setCampaignsLoading(false);
-    }
-  };
-
-  const handleRemoveCampaign = async (campaignId: number | string) => {
-    if (!selectedCategory) return;
-
-    const confirmed = await confirm({
-      title: "Remove Campaign",
-      message: `Are you sure you want to remove this campaign from "${selectedCategory.name}"?`,
-      type: "warning",
-      confirmText: "Remove",
-      cancelText: "Cancel",
-    });
-    if (!confirmed) return;
-
-    try {
-      setRemovingCampaignId(campaignId);
-
-      const campaignResponse = await campaignService.getCampaignById(
-        Number(campaignId),
-        true
-      );
-
-      if (!campaignResponse) {
-        showError("Failed to load campaign details", "Please try again later.");
-        setRemovingCampaignId(null);
-        return;
-      }
-
-      // Cast to BackendCampaignType to access tags property
-      const campaign = campaignResponse as unknown as BackendCampaignType;
-
-      const primaryCategoryId = Number(campaign.category_id);
-      if (
-        Number.isFinite(primaryCategoryId) &&
-        primaryCategoryId === Number(selectedCategory.id)
-      ) {
-        await confirm({
-          title: "Primary Category",
-          message:
-            "This catalog is the campaign's primary category. Change the campaign's primary category before removing it from this catalog.",
-          type: "info",
-          confirmText: "Got it",
-          cancelText: "Close",
-        });
-        setRemovingCampaignId(null);
-        return;
-      }
-
-      const catalogTag = buildCatalogTag(selectedCategory.id);
-      const hasCatalogTag =
-        Array.isArray(campaign.tags) && campaign.tags.includes(catalogTag);
-
-      if (!hasCatalogTag) {
-        showError("Campaign is not tagged to this catalog.");
-        setRemovingCampaignId(null);
-        return;
-      }
-
-      const updatedTags = (campaign.tags || []).filter(
-        (tag: string) => tag !== catalogTag
-      );
-
-      await campaignService.updateCampaign(Number(campaignId), {
-        tags: updatedTags,
-      });
-
-      showToast("Campaign removed from catalog successfully");
-      // Refresh the modal campaigns list
-      if (selectedCategory) {
-        await handleViewCampaigns(selectedCategory);
-      }
-      // Also refresh the categories list to update counts on cards
-      await loadCategories(true);
-    } catch (err) {
-      showError(
-        "Failed to remove campaign",
-        err instanceof Error ? err.message : "Please try again later."
-      );
-    } finally {
-      setRemovingCampaignId(null);
-    }
-  };
-
-  const filteredCampaignCategories = (campaignCategories || []).filter(
-    (category) =>
-      category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (category?.description &&
-        category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    },
+    [editingCategory, loadCategories, showToast, showError]
   );
 
-  const formatNumber = (value?: number | null) =>
-    typeof value === "number" ? value.toLocaleString() : "...";
+  const handleViewCampaigns = useCallback(
+    async (category: CampaignCategory) => {
+      try {
+        const categoryId = Number(category.id);
+        if (isNaN(categoryId)) {
+          showError("Invalid category", "Category ID must be a number");
+          return;
+        }
 
-  const catalogStatsCards = [
-    {
-      name: "Total Catalogs",
-      value: formatNumber(stats?.totalCategories),
-      icon: FolderOpen,
-      color: color.tertiary.tag1,
+        setSelectedCategory(category);
+        setIsCampaignsModalOpen(true);
+        setCampaignsLoading(true);
+
+        // Fetch all campaigns and filter by category_id OR tags (same logic as count)
+        // This ensures campaigns assigned via tags are shown correctly
+        let allCampaigns: BackendCampaignType[] = [];
+        let offset = 0;
+        const limit = 100;
+        let hasMore = true;
+
+        while (hasMore) {
+          const response = await campaignService.getCampaigns({
+            limit: limit,
+            offset: offset,
+            skipCache: true,
+          });
+
+          const campaigns = (response.data || []) as BackendCampaignType[];
+          allCampaigns = [...allCampaigns, ...campaigns];
+
+          const total = response.pagination?.total || 0;
+          hasMore = allCampaigns.length < total && campaigns.length === limit;
+          offset += limit;
+        }
+
+        // Filter campaigns by category_id OR tags (same logic as getCampaignCountForCategory)
+        // Same logic as segments - supports multi-catalog assignment via tags
+        const catalogTag = buildCatalogTag(categoryId);
+        const categoryCampaigns = allCampaigns.filter((campaign) => {
+          // Check if category_id matches (handle string/number conversion like segments)
+          const campaignCategoryId =
+            typeof campaign.category_id === "string"
+              ? parseInt(campaign.category_id, 10)
+              : campaign.category_id;
+          const matchesPrimary =
+            campaignCategoryId !== null &&
+            campaignCategoryId !== undefined &&
+            !isNaN(campaignCategoryId) &&
+            Number(campaignCategoryId) === categoryId;
+
+          // Check if tags include the catalog tag
+          const tags = Array.isArray(campaign.tags) ? campaign.tags : [];
+          const matchesTag = tags.includes(catalogTag);
+
+          return matchesPrimary || matchesTag;
+        });
+
+        const formattedCampaigns = categoryCampaigns.map((campaign) => ({
+          id: String(campaign.id),
+          name: campaign.name,
+          description: campaign.description || undefined,
+          status: campaign.status,
+          approval_status: campaign.approval_status,
+          start_date: campaign.start_date || undefined,
+          end_date: campaign.end_date || undefined,
+          category_id: campaign.category_id || undefined,
+          tags: campaign.tags || [],
+        }));
+
+        setCampaigns(formattedCampaigns);
+      } catch {
+        showError("Failed to load campaigns", "Please try again later.");
+        setCampaigns([]);
+      } finally {
+        setCampaignsLoading(false);
+      }
     },
-    {
-      name: "Active Catalogs",
-      value: formatNumber(stats?.activeCategories),
-      icon: CheckCircle,
-      color: color.tertiary.tag4,
+    [showError]
+  );
+
+  const handleRemoveCampaign = useCallback(
+    async (campaignId: number | string) => {
+      if (!selectedCategory) return;
+
+      await removeFromCatalog({
+        entityType: "campaign",
+        entityId: campaignId,
+        categoryId: selectedCategory.id,
+        categoryName: selectedCategory.name,
+        onRefresh: async () => {
+          if (selectedCategory) {
+            await handleViewCampaigns(selectedCategory);
+          }
+        },
+        onRefreshCategories: async () => {
+          await loadCategories(true);
+        },
+        getEntityById: async (id) =>
+          await campaignService.getCampaignById(id, true),
+        updateEntity: async (id, updates) =>
+          await campaignService.updateCampaign(id, updates),
+      });
     },
-    {
-      name: "Inactive Catalogs",
-      value: formatNumber(stats?.inactiveCategories),
-      icon: XCircle,
-      color: color.tertiary.tag3,
-    },
-    {
-      name: "Unused Categories",
-      value: formatNumber(unusedCount),
-      icon: Archive,
-      color: color.tertiary.tag2,
-    },
-    {
-      name: "Most Popular",
-      value: popularCategory?.name || "None",
-      icon: Star,
-      color: color.primary.accent,
-      description: `${formatNumber(popularCategory?.count ?? 0)} campaigns`,
-      title: popularCategory?.name || undefined,
-      valueClass: "text-xl",
-    },
-  ];
+    [selectedCategory, removeFromCatalog, handleViewCampaigns, loadCategories]
+  );
+
+  const filteredCampaignCategories = useMemo(() => {
+    return (campaignCategories || []).filter(
+      (category) =>
+        category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (category?.description &&
+          category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [campaignCategories, searchTerm]);
+
+  const formatNumber = useCallback(
+    (value?: number | null) =>
+      typeof value === "number" ? value.toLocaleString() : "...",
+    []
+  );
+
+  const catalogStatsCards = useMemo(
+    () => [
+      {
+        name: "Total Catalogs",
+        value: formatNumber(stats?.totalCategories),
+        icon: FolderOpen,
+        color: color.tertiary.tag1,
+      },
+      {
+        name: "Active Catalogs",
+        value: formatNumber(stats?.activeCategories),
+        icon: CheckCircle,
+        color: color.tertiary.tag4,
+      },
+      {
+        name: "Inactive Catalogs",
+        value: formatNumber(stats?.inactiveCategories),
+        icon: XCircle,
+        color: color.tertiary.tag3,
+      },
+      {
+        name: "Unused Categories",
+        value: formatNumber(unusedCount),
+        icon: Archive,
+        color: color.tertiary.tag2,
+      },
+      {
+        name: "Most Popular",
+        value: popularCategory?.name || "None",
+        icon: Star,
+        color: color.primary.accent,
+        description: `${formatNumber(popularCategory?.count ?? 0)} campaigns`,
+        title: popularCategory?.name || undefined,
+        valueClass: "text-xl",
+      },
+    ],
+    [stats, unusedCount, popularCategory, formatNumber]
+  );
 
   return (
     <div className="space-y-6">
@@ -1021,7 +992,7 @@ export default function CampaignCategoriesPage() {
         onRemove={async (id) => {
           await handleRemoveCampaign(id);
         }}
-        removingId={removingCampaignId}
+        removingId={removingId}
         onRefresh={async () => {
           if (selectedCategory) {
             await handleViewCampaigns(selectedCategory);
