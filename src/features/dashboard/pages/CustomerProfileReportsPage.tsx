@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
 import { color } from "../../../shared/utils/utils";
+import { formatCurrency } from "../../../shared/services/currencyService";
 import type {
   RangeOption,
   CustomerProfileReportsResponse,
@@ -176,12 +177,28 @@ const baseLifecycleData: LifecyclePoint[] = [
 ];
 
 const baseClvDistribution: ClvBucket[] = [
-  { range: "< $250", customers: 420_000, revenueShare: 12 },
-  { range: "$250 - $500", customers: 310_000, revenueShare: 18 },
-  { range: "$500 - $1k", customers: 220_000, revenueShare: 23 },
-  { range: "$1k - $2k", customers: 160_000, revenueShare: 25 },
-  { range: "$2k - $5k", customers: 110_000, revenueShare: 16 },
-  { range: ">$5k", customers: 64_000, revenueShare: 6 },
+  { range: `< ${formatCurrency(250)}`, customers: 420_000, revenueShare: 12 },
+  {
+    range: `${formatCurrency(250)} - ${formatCurrency(500)}`,
+    customers: 310_000,
+    revenueShare: 18,
+  },
+  {
+    range: `${formatCurrency(500)} - ${formatCurrency(1000)}`,
+    customers: 220_000,
+    revenueShare: 23,
+  },
+  {
+    range: `${formatCurrency(1000)} - ${formatCurrency(2000)}`,
+    customers: 160_000,
+    revenueShare: 25,
+  },
+  {
+    range: `${formatCurrency(2000)} - ${formatCurrency(5000)}`,
+    customers: 110_000,
+    revenueShare: 16,
+  },
+  { range: `>${formatCurrency(5000)}`, customers: 64_000, revenueShare: 6 },
 ];
 
 const baseCohortRetention: CohortPoint[] = [
@@ -1171,9 +1188,9 @@ export default function CustomerProfileReportsPage() {
                 },
                 {
                   label: "Avg Customer Lifetime Value",
-                  value: `$${Math.round(
-                    heroBase.avgClv * clvAdjust
-                  ).toLocaleString("en-US")}`,
+                  value: formatCurrency(
+                    Math.round(heroBase.avgClv * clvAdjust)
+                  ),
                   trend: "+3.1% vs last quarter",
                   trendDirection: "up",
                   description: "Mean realized + predicted CLV",
@@ -1181,9 +1198,9 @@ export default function CustomerProfileReportsPage() {
                 },
                 {
                   label: "Avg Transaction Value",
-                  value: `$${Math.round(
-                    heroBase.avgOrderValue * clvAdjust
-                  ).toLocaleString("en-US")}`,
+                  value: formatCurrency(
+                    Math.round(heroBase.avgOrderValue * clvAdjust)
+                  ),
                   trend: "+1.6% vs prior period",
                   trendDirection: "up",
                   description: "Mean transaction size",
@@ -1233,7 +1250,7 @@ export default function CustomerProfileReportsPage() {
                 },
                 {
                   label: "Avg Customer Lifetime Value",
-                  value: "$0",
+                  value: formatCurrency(0),
                   trend: "—",
                   trendDirection: "up",
                   description: "Mean realized + predicted CLV",
@@ -1241,7 +1258,7 @@ export default function CustomerProfileReportsPage() {
                 },
                 {
                   label: "Avg Transaction Value",
-                  value: "$0",
+                  value: formatCurrency(0),
                   trend: "—",
                   trendDirection: "up",
                   description: "Mean transaction size",

@@ -19,6 +19,7 @@ import {
   Users2,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import { formatCurrency } from "../../../shared/services/currencyService";
 import type {
   RangeOption,
   CampaignReportsResponse,
@@ -502,26 +503,26 @@ export default function CampaignReportsPage() {
         },
         {
           label: "Revenue Generated",
-          value: `$${summary.revenue.toLocaleString("en-US")}`,
-          subtext: `Avg $${Math.round(
-            summary.revenue / summary.conversions
-          ).toLocaleString("en-US")} per conversion`,
+          value: formatCurrency(summary.revenue),
+          subtext: `Avg ${formatCurrency(
+            Math.round(summary.revenue / summary.conversions)
+          )} per conversion`,
           icon: statIcons.outcome,
-          trend: { value: "+$84K", direction: "up" as const },
+          trend: { value: "+84K", direction: "up" as const },
         },
         {
           label: "ROI / ROMI",
           value: `${summary.roas.toFixed(1)}x`,
-          subtext: `Spend $${summary.campaignCost.toLocaleString("en-US")}`,
+          subtext: `Spend ${formatCurrency(summary.campaignCost)}`,
           icon: statIcons.growth,
           trend: { value: "+0.3x", direction: "up" as const },
         },
         {
           label: "Campaign Cost",
-          value: `$${summary.campaignCost.toLocaleString("en-US")}`,
-          subtext: `CAC $${summary.cac.toFixed(2)}`,
+          value: formatCurrency(summary.campaignCost),
+          subtext: `CAC ${formatCurrency(summary.cac)}`,
           icon: statIcons.outcome,
-          trend: { value: "+$12K", direction: "up" as const },
+          trend: { value: "+12K", direction: "up" as const },
         },
       ]
     : [
@@ -548,22 +549,22 @@ export default function CampaignReportsPage() {
         },
         {
           label: "Revenue Generated",
-          value: "$0",
-          subtext: "Avg $0 per conversion",
+          value: formatCurrency(0),
+          subtext: `Avg ${formatCurrency(0)} per conversion`,
           icon: statIcons.outcome,
           trend: { value: "—", direction: "up" as const },
         },
         {
           label: "ROI / ROMI",
           value: "0.0x",
-          subtext: "Spend $0",
+          subtext: `Spend ${formatCurrency(0)}`,
           icon: statIcons.growth,
           trend: { value: "—", direction: "up" as const },
         },
         {
           label: "Campaign Cost",
-          value: "$0",
-          subtext: "CAC $0.00",
+          value: formatCurrency(0),
+          subtext: `CAC ${formatCurrency(0)}`,
           icon: statIcons.outcome,
           trend: { value: "—", direction: "up" as const },
         },
@@ -1056,7 +1057,7 @@ export default function CampaignReportsPage() {
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  name="Revenue ($k)"
+                  name="Revenue"
                   stroke={
                     colors.reportCharts.campaignReports.revenueVsSpend.revenue
                   }
@@ -1066,7 +1067,7 @@ export default function CampaignReportsPage() {
                 <Line
                   type="monotone"
                   dataKey="spend"
-                  name="Spend ($k)"
+                  name="Spend"
                   stroke={
                     colors.reportCharts.campaignReports.revenueVsSpend.spend
                   }

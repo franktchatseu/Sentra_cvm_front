@@ -22,6 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import { formatCurrency as formatCurrencyAmount } from "../../../shared/services/currencyService";
 import type {
   RangeOption,
   OfferReportsResponse,
@@ -460,15 +461,7 @@ interface ChartTooltipProps {
   label?: string;
 }
 
-const formatCurrency = (value: number): string => {
-  if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  }
-  if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(0)}K`;
-  }
-  return `$${value}`;
-};
+// Using formatCurrencyAmount from currencyService instead
 
 const formatNumber = (value: number): string => {
   return value.toLocaleString("en-US");
@@ -596,24 +589,24 @@ export default function OfferReportsPage() {
         },
         {
           label: "Revenue Generated",
-          value: formatCurrency(summary.revenueGenerated),
+          value: formatCurrencyAmount(summary.revenueGenerated),
           subtext: "Total sales from promotions",
           icon: statIcons.revenue,
-          trend: { value: "+$156K", direction: "up" as const },
+          trend: { value: "+156K", direction: "up" as const },
         },
         {
           label: "Incremental Revenue",
-          value: formatCurrency(summary.incrementalRevenue),
+          value: formatCurrencyAmount(summary.incrementalRevenue),
           subtext: "New revenue created",
           icon: statIcons.sparkles,
-          trend: { value: "+$42K", direction: "up" as const },
+          trend: { value: "+42K", direction: "up" as const },
         },
         {
           label: "Total Cost",
-          value: formatCurrency(summary.totalCost),
+          value: formatCurrencyAmount(summary.totalCost),
           subtext: "Total discount cost",
           icon: statIcons.coins,
-          trend: { value: "+$18K", direction: "up" as const },
+          trend: { value: "+18K", direction: "up" as const },
         },
         {
           label: "ROI",
@@ -640,21 +633,21 @@ export default function OfferReportsPage() {
         },
         {
           label: "Revenue Generated",
-          value: "$0",
+          value: formatCurrencyAmount(0),
           subtext: "Total sales from promotions",
           icon: statIcons.revenue,
           trend: { value: "—", direction: "up" as const },
         },
         {
           label: "Incremental Revenue",
-          value: "$0",
+          value: formatCurrencyAmount(0),
           subtext: "New revenue created",
           icon: statIcons.sparkles,
           trend: { value: "—", direction: "up" as const },
         },
         {
           label: "Total Cost",
-          value: "$0",
+          value: formatCurrencyAmount(0),
           subtext: "Total discount cost",
           icon: statIcons.coins,
           trend: { value: "—", direction: "up" as const },

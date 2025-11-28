@@ -169,19 +169,36 @@ function ProductsModal({
     }
   }, [isOpen, category]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadProducts = async (forceRefresh = false) => {
+  const loadProducts = async (): Promise<Product[] | undefined> => {
     if (!category) return;
 
     try {
       setLoading(true);
       setError(null);
 
-      // Force refresh if requested (e.g., after assign/remove operations)
-      // Always use skipCache: true to get fresh data (same approach as campaigns/offers/segments)
-      const snapshot =
-        forceRefresh || !allProducts.length
-          ? await refreshAllProducts()
-          : allProducts;
+      // Always fetch fresh data with skipCache (same approach as segments/offers/campaigns)
+      // This ensures removed products disappear immediately
+      const limit = 100;
+      let offset = 0;
+      const allProductsList: Product[] = [];
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await productService.getAllProducts({
+          limit: limit,
+          offset: offset,
+          skipCache: true, // Always skip cache to get fresh data
+        });
+
+        const products = response.data || [];
+        allProductsList.push(...products);
+
+        const total = response.pagination?.total || 0;
+        hasMore = allProductsList.length < total && products.length === limit;
+        offset += limit;
+      }
+
+      const snapshot = allProductsList;
 
       const categoryId = Number(category.id);
       const catalogTag = buildCatalogTag(category.id);
@@ -206,11 +223,17 @@ function ProductsModal({
         }
       });
 
-      setProducts(Array.from(mergedProducts.values()));
+      // Set products state (single state update)
+      const filteredProducts = Array.from(mergedProducts.values());
+      setProducts(filteredProducts);
+
+      // Return snapshot for use in refreshCategoryProductCounts
+      return snapshot;
     } catch (err) {
       console.error("Failed to load products:", err);
       showError("Failed to load products", "Please try again later.");
       setError(""); // Clear error state
+      return undefined;
     } finally {
       setLoading(false);
     }
@@ -230,12 +253,8 @@ function ProductsModal({
       entityId: productId,
       categoryId: category.id,
       categoryName: category.name,
-      onRefresh: async () => {
-        // Force refresh all products to get latest data
-        await refreshAllProducts();
-        // Force refresh the products list with skipCache
-        await loadProducts(true);
-      },
+      // Simple function reference like segments/offers - modal stays open during refresh
+      onRefresh: loadProducts,
       onRefreshCategories: onRefreshCategories,
       onRefreshCounts: onRefreshProductCounts,
       getEntityById: async (id) =>
@@ -263,12 +282,10 @@ function ProductsModal({
       onRemove={handleRemoveProduct}
       removingId={removingId}
       onRefresh={async () => {
-        // Force refresh all products and reload the list
-        await refreshAllProducts();
-        await loadProducts(true);
-        // Refresh counts with fresh data
-        await onRefreshProductCounts();
-        await onRefreshCategories();
+        // Refresh the products list (always fetches fresh data)
+        await loadProducts();
+        // Refresh counts to update the category cards (same pattern as campaigns/offers/segments)
+        await Promise.resolve(onRefreshProductCounts());
       }}
       renderStatus={(product) => (
         <span
@@ -418,10 +435,11 @@ export default function ProductCatalogsPage() {
     let finalCounts = baseCounts;
 
     if (targetCategories.length) {
-      // Force refresh products with skipCache to get latest data
-      // This ensures we have fresh product data including tags
+      // Use provided snapshot or existing allProducts (avoids heavy fetch during removal)
+      // Only fetch fresh if no snapshot provided and allProducts is empty
       const productsSnapshot =
-        productsSnapshotOverride ?? (await loadAllProducts(true)); // Always refresh with skipCache
+        productsSnapshotOverride ??
+        (allProducts.length > 0 ? allProducts : await loadAllProducts(true)); // Only fetch if empty
 
       finalCounts = mergeTagCountsFromSnapshot(
         baseCounts,
@@ -1352,11 +1370,14 @@ export default function ProductCatalogsPage() {
         }}
         category={selectedCategory}
         onRefreshCategories={async () => {
-          await loadCategories(true); // skipCache = true
+          // Just refresh counts, don't reload all categories (avoids full page reload)
+          // This matches the pattern used by segments/offers/campaigns
+          await refreshCategoryProductCounts();
         }}
         onRefreshProductCounts={async () => {
-          // Force refresh all products first, then refresh counts
-          await loadAllProducts(true);
+          // Just refresh counts using existing allProducts (same pattern as offers)
+          // This avoids heavy fetch and parent state update during removal
+          // The counts will be updated in the background while modal stays open
           await refreshCategoryProductCounts();
         }}
         allProducts={allProducts}

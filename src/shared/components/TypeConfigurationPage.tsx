@@ -20,6 +20,11 @@ import type { ConfigurationItem } from "./GenericConfigurationPage";
 export interface TypeConfigurationItem extends ConfigurationItem {
   isActive?: boolean;
   metadataValue?: number | string;
+  // Template content fields (for Creative Templates)
+  title?: string;
+  text_body?: string;
+  html_body?: string;
+  variables?: Record<string, string | number | boolean>;
 }
 
 interface MetadataFieldConfig {
@@ -69,6 +74,11 @@ interface TypeConfigurationModalProps {
     description?: string;
     isActive: boolean;
     metadataValue?: number | string;
+    // Template content fields (for Creative Templates)
+    title?: string;
+    text_body?: string;
+    html_body?: string;
+    variables?: Record<string, string | number | boolean>;
   }) => Promise<void>;
   isSaving: boolean;
   config: TypeConfigurationPageConfig;
@@ -86,7 +96,14 @@ function TypeConfigurationModal({
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [metadataValue, setMetadataValue] = useState<string>("");
+  // Template content fields (for Creative Templates)
+  const [title, setTitle] = useState("");
+  const [textBody, setTextBody] = useState("");
+  const [htmlBody, setHtmlBody] = useState("");
+  const [variablesText, setVariablesText] = useState("");
   const [error, setError] = useState("");
+
+  const isCreativeTemplate = config.configType === "creativeTemplates";
 
   useEffect(() => {
     if (item) {
@@ -96,14 +113,28 @@ function TypeConfigurationModal({
       setMetadataValue(
         item.metadataValue !== undefined ? String(item.metadataValue) : ""
       );
+      if (isCreativeTemplate) {
+        setTitle(item.title || "");
+        setTextBody(item.text_body || "");
+        setHtmlBody(item.html_body || "");
+        setVariablesText(
+          item.variables ? JSON.stringify(item.variables, null, 2) : ""
+        );
+      }
     } else {
       setName("");
       setDescription("");
       setIsActive(true);
       setMetadataValue("");
+      if (isCreativeTemplate) {
+        setTitle("");
+        setTextBody("");
+        setHtmlBody("");
+        setVariablesText("");
+      }
     }
     setError("");
-  }, [item, isOpen]);
+  }, [item, isOpen, isCreativeTemplate]);
 
   if (!isOpen) return null;
 
@@ -135,7 +166,29 @@ function TypeConfigurationModal({
     }
 
     setError("");
-    const payload = {
+
+    // Validate variables JSON if provided
+    let parsedVariables: Record<string, string | number | boolean> | undefined;
+    if (isCreativeTemplate && variablesText.trim()) {
+      try {
+        const parsed = JSON.parse(variablesText);
+        if (
+          typeof parsed === "object" &&
+          parsed !== null &&
+          !Array.isArray(parsed)
+        ) {
+          parsedVariables = parsed;
+        } else {
+          setError("Variables must be a valid JSON object");
+          return;
+        }
+      } catch {
+        setError("Invalid JSON in variables field");
+        return;
+      }
+    }
+
+    const payload: any = {
       name: name.trim(),
       description: description.trim() || undefined,
       isActive,
@@ -146,6 +199,14 @@ function TypeConfigurationModal({
             : metadataValue
           : undefined,
     };
+
+    // Add template content fields for Creative Templates
+    if (isCreativeTemplate) {
+      payload.title = title.trim() || undefined;
+      payload.text_body = textBody.trim() || undefined;
+      payload.html_body = htmlBody.trim() || undefined;
+      payload.variables = parsedVariables;
+    }
 
     if (
       config.metadataField?.type === "number" &&
@@ -161,8 +222,18 @@ function TypeConfigurationModal({
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="rounded-md shadow-2xl w-full max-w-md bg-white">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div
+        className={`rounded-md shadow-2xl w-full bg-white ${
+          isCreativeTemplate
+            ? "max-w-4xl max-h-[90vh] flex flex-col"
+            : "max-w-md"
+        }`}
+      >
+        <div
+          className={`flex items-center justify-between p-6 border-b border-gray-200 ${
+            isCreativeTemplate ? "flex-shrink-0" : ""
+          }`}
+        >
           <h2 className="text-xl font-bold text-gray-900">
             {item ? config.modalTitle.edit : config.modalTitle.create}
           </h2>
@@ -175,7 +246,12 @@ function TypeConfigurationModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className={`p-6 space-y-4 ${
+            isCreativeTemplate ? "flex-1 overflow-y-auto" : ""
+          }`}
+        >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {config.nameLabel} {config.nameRequired && "*"}
@@ -221,13 +297,105 @@ function TypeConfigurationModal({
             </div>
           )}
 
+          {/* Template Content Fields (for Creative Templates only) */}
+          {isCreativeTemplate && (
+            <>
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                  Template Content
+                </h3>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title (optional, max 160 characters)
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter template title..."
+                  maxLength={160}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {title.length}/160 characters
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Text Body (optional)
+                </label>
+                <textarea
+                  value={textBody}
+                  onChange={(e) => setTextBody(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
+                  placeholder="Enter text content... Use {{variable_name}} for variables"
+                  rows={6}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  HTML Body (optional, for Email/Web channels)
+                </label>
+                <textarea
+                  value={htmlBody}
+                  onChange={(e) => setHtmlBody(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
+                  placeholder="Enter HTML content... Use {{variable_name}} for variables"
+                  rows={8}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Variables (JSON format, optional)
+                </label>
+                <textarea
+                  value={variablesText}
+                  onChange={(e) => setVariablesText(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
+                  placeholder='{"variable_name": "default_value"}'
+                  rows={4}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Define default variable values as JSON object. Use variables
+                  like {`{{variable_name}}`} in your content.
+                </p>
+                {variablesText.trim() &&
+                  (() => {
+                    try {
+                      JSON.parse(variablesText);
+                      return (
+                        <p className="text-xs text-green-600 mt-1">
+                          ✓ Valid JSON
+                        </p>
+                      );
+                    } catch {
+                      return (
+                        <p className="text-xs text-red-600 mt-1">
+                          ⚠ Invalid JSON
+                        </p>
+                      );
+                    }
+                  })()}
+              </div>
+            </>
+          )}
+
           {error && (
             <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
 
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
+          <div
+            className={`flex items-center justify-end space-x-3 pt-4 border-t border-gray-100 ${
+              isCreativeTemplate ? "flex-shrink-0" : ""
+            }`}
+          >
             <button
               type="button"
               onClick={onClose}
@@ -582,12 +750,14 @@ export default function TypeConfigurationPage({
                             e.currentTarget.style.backgroundColor =
                               "transparent";
                           }}
+                          title="Edit template"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteItem(item)}
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                          title="Delete template"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -615,3 +785,5 @@ export default function TypeConfigurationPage({
     </div>
   );
 }
+
+// View Modal Component for Creative Templates

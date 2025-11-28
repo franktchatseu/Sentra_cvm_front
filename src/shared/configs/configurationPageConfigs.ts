@@ -26,36 +26,36 @@ const hardcodedObjectives: ConfigurationItem[] = [
     id: 1,
     name: "New Customer Acquisition",
     description: "Attract and convert new customers to your service",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-20T14:45:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-20T14:45:00Z",
   },
   {
     id: 2,
     name: "Customer Retention",
     description: "Keep existing customers engaged and loyal",
-    created_at: "2024-01-10T09:15:00Z",
-    updated_at: "2024-01-18T16:20:00Z",
+    created_at: "2025-01-10T09:15:00Z",
+    updated_at: "2025-01-18T16:20:00Z",
   },
   {
     id: 3,
     name: "Churn Prevention",
     description: "Prevent at-risk customers from leaving",
-    created_at: "2024-01-12T11:00:00Z",
-    updated_at: "2024-01-19T13:30:00Z",
+    created_at: "2025-01-12T11:00:00Z",
+    updated_at: "2025-01-19T13:30:00Z",
   },
   {
     id: 4,
     name: "Upsell/Cross-sell",
     description: "Increase revenue from existing customers",
-    created_at: "2024-01-14T15:30:00Z",
-    updated_at: "2024-01-21T10:15:00Z",
+    created_at: "2025-01-14T15:30:00Z",
+    updated_at: "2025-01-21T10:15:00Z",
   },
   {
     id: 5,
     name: "Dormant Customer Reactivation",
     description: "Re-engage inactive or dormant customers",
-    created_at: "2024-01-08T08:45:00Z",
-    updated_at: "2024-01-15T12:00:00Z",
+    created_at: "2025-01-08T08:45:00Z",
+    updated_at: "2025-01-15T12:00:00Z",
   },
 ];
 
@@ -65,36 +65,36 @@ const hardcodedDepartments: ConfigurationItem[] = [
     id: 1,
     name: "Marketing",
     description: "Responsible for marketing campaigns and customer acquisition",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-20T14:45:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-20T14:45:00Z",
   },
   {
     id: 2,
     name: "Sales",
     description: "Handles sales operations and customer relationships",
-    created_at: "2024-01-10T09:15:00Z",
-    updated_at: "2024-01-18T16:20:00Z",
+    created_at: "2025-01-10T09:15:00Z",
+    updated_at: "2025-01-18T16:20:00Z",
   },
   {
     id: 3,
     name: "Customer Support",
     description: "Provides customer service and technical support",
-    created_at: "2024-01-12T11:00:00Z",
-    updated_at: "2024-01-19T13:30:00Z",
+    created_at: "2025-01-12T11:00:00Z",
+    updated_at: "2025-01-19T13:30:00Z",
   },
   {
     id: 4,
     name: "Product Management",
     description: "Manages product development and strategy",
-    created_at: "2024-01-14T15:30:00Z",
-    updated_at: "2024-01-21T10:15:00Z",
+    created_at: "2025-01-14T15:30:00Z",
+    updated_at: "2025-01-21T10:15:00Z",
   },
   {
     id: 5,
     name: "Finance",
     description: "Handles financial operations and budget management",
-    created_at: "2024-01-08T08:45:00Z",
-    updated_at: "2024-01-15T12:00:00Z",
+    created_at: "2025-01-08T08:45:00Z",
+    updated_at: "2025-01-15T12:00:00Z",
   },
 ];
 
@@ -104,29 +104,29 @@ const hardcodedTeamRoles: ConfigurationItem[] = [
     id: 1,
     name: "Campaign Manager",
     description: "Responsible for planning and executing marketing campaigns",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-20T14:45:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-20T14:45:00Z",
   },
   {
     id: 2,
     name: "Content Creator",
     description: "Creates and manages content for campaigns",
-    created_at: "2024-01-10T09:15:00Z",
-    updated_at: "2024-01-18T16:20:00Z",
+    created_at: "2025-01-10T09:15:00Z",
+    updated_at: "2025-01-18T16:20:00Z",
   },
   {
     id: 3,
     name: "Data Analyst",
     description: "Analyzes campaign performance and provides insights",
-    created_at: "2024-01-12T11:00:00Z",
-    updated_at: "2024-01-19T13:30:00Z",
+    created_at: "2025-01-12T11:00:00Z",
+    updated_at: "2025-01-19T13:30:00Z",
   },
   {
     id: 4,
     name: "Designer",
     description: "Creates visual assets and designs for campaigns",
-    created_at: "2024-01-14T15:30:00Z",
-    updated_at: "2024-01-21T10:15:00Z",
+    created_at: "2025-01-14T15:30:00Z",
+    updated_at: "2025-01-21T10:15:00Z",
   },
 ];
 
@@ -137,37 +137,37 @@ const hardcodedLineOfBusiness: ConfigurationItem[] = [
     name: "GSM",
     description:
       "Global System for Mobile Communications - Mobile network services",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-20T14:45:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-20T14:45:00Z",
   },
   {
     id: 2,
     name: "Internet",
     description:
       "Internet and broadband services for residential and business customers",
-    created_at: "2024-01-10T09:15:00Z",
-    updated_at: "2024-01-18T16:20:00Z",
+    created_at: "2025-01-10T09:15:00Z",
+    updated_at: "2025-01-18T16:20:00Z",
   },
   {
     id: 3,
     name: "Fixed Line",
     description: "Traditional landline telephone services",
-    created_at: "2024-01-12T11:00:00Z",
-    updated_at: "2024-01-19T13:30:00Z",
+    created_at: "2025-01-12T11:00:00Z",
+    updated_at: "2025-01-19T13:30:00Z",
   },
   {
     id: 4,
     name: "Enterprise Solutions",
     description: "Business telecommunications and IT solutions",
-    created_at: "2024-01-14T15:30:00Z",
-    updated_at: "2024-01-21T10:15:00Z",
+    created_at: "2025-01-14T15:30:00Z",
+    updated_at: "2025-01-21T10:15:00Z",
   },
   {
     id: 5,
     name: "Digital Services",
     description: "Digital transformation and cloud services",
-    created_at: "2024-01-08T08:45:00Z",
-    updated_at: "2024-01-15T12:00:00Z",
+    created_at: "2025-01-08T08:45:00Z",
+    updated_at: "2025-01-15T12:00:00Z",
   },
 ];
 
@@ -178,52 +178,53 @@ const hardcodedTrackingSources: ConfigurationItem[] = [
     name: "Recharge Tracking",
     description:
       "Track recharge-based activities and transactions for offer performance",
-    created_at: "2024-02-01T09:00:00Z",
-    updated_at: "2024-02-06T15:00:00Z",
+    created_at: "2025-02-01T09:00:00Z",
+    updated_at: "2025-02-06T15:00:00Z",
   },
   {
     id: 2,
     name: "Usage Metric Tracking",
     description:
       "Track usage-based metrics like data consumption, call duration, and SMS volume",
-    created_at: "2024-02-02T11:15:00Z",
-    updated_at: "2024-02-06T15:00:00Z",
+    created_at: "2025-02-02T11:15:00Z",
+    updated_at: "2025-02-06T15:00:00Z",
   },
   {
     id: 3,
     name: "Channel Performance",
     description:
       "Track offer performance across different delivery channels (SMS, Email, USSD)",
-    created_at: "2024-02-03T12:40:00Z",
-    updated_at: "2024-02-06T15:00:00Z",
+    created_at: "2025-02-03T12:40:00Z",
+    updated_at: "2025-02-06T15:00:00Z",
   },
   {
     id: 4,
     name: "Customer Segment Tracking",
     description:
       "Track offer performance by customer segment and demographic attributes",
-    created_at: "2024-02-04T13:20:00Z",
-    updated_at: "2024-02-06T15:00:00Z",
+    created_at: "2025-02-04T13:20:00Z",
+    updated_at: "2025-02-06T15:00:00Z",
   },
   {
     id: 5,
     name: "Product Type Tracking",
     description: "Track offer performance by product type and category",
-    created_at: "2024-02-05T08:10:00Z",
-    updated_at: "2024-02-06T15:00:00Z",
+    created_at: "2025-02-05T08:10:00Z",
+    updated_at: "2025-02-06T15:00:00Z",
   },
   {
     id: 6,
     name: "Custom Tracking Source",
     description:
       "Custom tracking parameters for specific business requirements",
-    created_at: "2024-02-06T10:30:00Z",
-    updated_at: "2024-02-06T15:00:00Z",
+    created_at: "2025-02-06T10:30:00Z",
+    updated_at: "2025-02-06T15:00:00Z",
   },
 ];
 
 // Hardcoded creative templates data
 const hardcodedCreativeTemplates: TypeConfigurationItem[] = [
+  // SMS Templates (5)
   {
     id: 1,
     name: "SMS Transactional Template",
@@ -231,45 +232,461 @@ const hardcodedCreativeTemplates: TypeConfigurationItem[] = [
       "Two-line SMS with placeholders for amount, date, and short link",
     isActive: true,
     metadataValue: "SMS",
-    created_at: "2024-02-01T10:00:00Z",
-    updated_at: "2024-02-01T10:00:00Z",
+    title: "Transaction Alert",
+    text_body:
+      "Your transaction of {{amount}} on {{date}} was successful. Reference: {{reference}}. View details: {{link}}",
+    variables: {
+      amount: "KES 100",
+      date: "2024-01-15",
+      reference: "TXN123456",
+      link: "https://example.com/txn",
+    },
+    created_at: "2025-02-01T10:00:00Z",
+    updated_at: "2025-02-01T10:00:00Z",
   },
   {
     id: 2,
+    name: "SMS Promotional Template",
+    description: "Promotional SMS with offer details and call-to-action",
+    isActive: true,
+    metadataValue: "SMS",
+    text_body:
+      "Hi {{customer_name}}! 🎉 Special offer: Get {{discount}}% OFF on {{product_name}}. Use code: {{promo_code}}. Valid until {{expiry_date}}. Reply STOP to unsubscribe.",
+    variables: {
+      customer_name: "John",
+      discount: "50",
+      product_name: "Data Bundle",
+      promo_code: "SAVE50",
+      expiry_date: "2024-12-31",
+    },
+    created_at: "2025-02-01T10:01:00Z",
+    updated_at: "2025-02-01T10:01:00Z",
+  },
+  {
+    id: 3,
+    name: "SMS Alert Template",
+    description: "Alert notification with important information",
+    isActive: true,
+    metadataValue: "SMS",
+    text_body:
+      "ALERT: {{alert_type}} - {{message}}. Action required by {{deadline}}. Contact: {{support_number}}",
+    variables: {
+      alert_type: "Account Update",
+      message: "Your account balance is low",
+      deadline: "2024-12-31",
+      support_number: "+256700000000",
+    },
+    created_at: "2025-02-01T10:02:00Z",
+    updated_at: "2025-02-01T10:02:00Z",
+  },
+  {
+    id: 4,
+    name: "SMS Welcome Template",
+    description: "Welcome message for new customers",
+    isActive: true,
+    metadataValue: "SMS",
+    text_body:
+      "Welcome {{customer_name}}! Thank you for joining {{company_name}}. Your account is now active. Get started: {{welcome_link}}",
+    variables: {
+      customer_name: "John",
+      company_name: "Sentra",
+      welcome_link: "https://example.com/welcome",
+    },
+    created_at: "2025-02-01T10:03:00Z",
+    updated_at: "2025-02-01T10:03:00Z",
+  },
+  {
+    id: 5,
+    name: "SMS Reminder Template",
+    description: "Reminder message with deadline and action items",
+    isActive: true,
+    metadataValue: "SMS",
+    text_body:
+      "Reminder: {{reminder_message}}. Due: {{due_date}}. Take action: {{action_link}}",
+    variables: {
+      reminder_message: "Your subscription expires soon",
+      due_date: "2024-12-31",
+      action_link: "https://example.com/renew",
+    },
+    created_at: "2025-02-01T10:04:00Z",
+    updated_at: "2025-02-01T10:04:00Z",
+  },
+  // Email Templates (5)
+  {
+    id: 6,
     name: "Email Promotional Template",
     description:
       "Rich HTML template with hero banner, CTA button, and footer content",
     isActive: true,
     metadataValue: "Email",
-    created_at: "2024-02-01T10:05:00Z",
-    updated_at: "2024-02-01T10:05:00Z",
+    title: "Special Offer for You!",
+    text_body: "Don't miss out on our exclusive offer!",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
+        <h1 style="margin: 0; font-size: 28px;">{{title}}</h1>
+      </div>
+      <div style="padding: 30px; background: #f9fafb;">
+        <p style="font-size: 16px; line-height: 1.6; color: #374151;">{{message}}</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{cta_link}}" style="display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">{{cta_text}}</a>
+        </div>
+      </div>
+      <div style="padding: 20px; background: #ffffff; text-align: center; font-size: 12px; color: #6b7280;">
+        <p>{{footer_text}}</p>
+      </div>
+    </div>`,
+    variables: {
+      title: "Special Offer for You!",
+      message:
+        "Get {{discount}}% off on your next purchase. Limited time only!",
+      cta_text: "Claim Offer",
+      cta_link: "https://example.com/offer",
+      footer_text: "This is an automated message. Please do not reply.",
+      discount: "25",
+    },
+    created_at: "2025-02-01T10:05:00Z",
+    updated_at: "2025-02-01T10:05:00Z",
   },
   {
-    id: 3,
+    id: 7,
+    name: "Email Newsletter Template",
+    description: "Newsletter format with multiple sections and images",
+    isActive: true,
+    metadataValue: "Email",
+    title: "{{newsletter_title}}",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #1f2937; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">{{newsletter_title}}</h1>
+      </div>
+      <div style="padding: 30px; background: #ffffff;">
+        <h2 style="color: #111827;">{{section1_title}}</h2>
+        <p style="color: #374151; line-height: 1.6;">{{section1_content}}</p>
+        <h2 style="color: #111827; margin-top: 30px;">{{section2_title}}</h2>
+        <p style="color: #374151; line-height: 1.6;">{{section2_content}}</p>
+      </div>
+      <div style="padding: 20px; background: #f9fafb; text-align: center; font-size: 12px; color: #6b7280;">
+        <p>{{unsubscribe_link}}</p>
+      </div>
+    </div>`,
+    variables: {
+      newsletter_title: "Monthly Newsletter",
+      section1_title: "Latest Updates",
+      section1_content: "Check out our latest features and improvements.",
+      section2_title: "Featured Offers",
+      section2_content: "Don't miss these exclusive deals!",
+      unsubscribe_link: "Unsubscribe",
+    },
+    created_at: "2025-02-01T10:06:00Z",
+    updated_at: "2025-02-01T10:06:00Z",
+  },
+  {
+    id: 8,
+    name: "Email Transactional Template",
+    description:
+      "Clean transactional email with receipt or confirmation details",
+    isActive: true,
+    metadataValue: "Email",
+    title: "{{transaction_type}} Confirmation",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #111827;">{{transaction_type}} Confirmation</h2>
+      <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Transaction ID:</strong> {{transaction_id}}</p>
+        <p><strong>Amount:</strong> {{amount}}</p>
+        <p><strong>Date:</strong> {{transaction_date}}</p>
+        <p><strong>Status:</strong> {{status}}</p>
+      </div>
+      <p style="color: #6b7280; font-size: 12px;">{{footer_note}}</p>
+    </div>`,
+    variables: {
+      transaction_type: "Payment",
+      transaction_id: "TXN123456",
+      amount: "KES 1,000",
+      transaction_date: "2024-01-15",
+      status: "Completed",
+      footer_note: "This is an automated confirmation email.",
+    },
+    created_at: "2025-02-01T10:07:00Z",
+    updated_at: "2025-02-01T10:07:00Z",
+  },
+  {
+    id: 9,
+    name: "Email Welcome Template",
+    description: "Welcome email with onboarding information",
+    isActive: true,
+    metadataValue: "Email",
+    title: "Welcome to {{company_name}}!",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #10b981; padding: 30px; text-align: center; color: white;">
+        <h1 style="margin: 0;">Welcome, {{customer_name}}!</h1>
+      </div>
+      <div style="padding: 30px; background: #ffffff;">
+        <p style="font-size: 16px; line-height: 1.6; color: #374151;">{{welcome_message}}</p>
+        <div style="margin: 30px 0;">
+          <h3 style="color: #111827;">Getting Started:</h3>
+          <ul style="color: #374151; line-height: 1.8;">
+            <li>{{step1}}</li>
+            <li>{{step2}}</li>
+            <li>{{step3}}</li>
+          </ul>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{get_started_link}}" style="display: inline-block; padding: 12px 30px; background: #10b981; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Get Started</a>
+        </div>
+      </div>
+    </div>`,
+    variables: {
+      company_name: "Sentra",
+      customer_name: "John",
+      welcome_message:
+        "Thank you for joining us! We're excited to have you on board.",
+      step1: "Complete your profile",
+      step2: "Explore our services",
+      step3: "Start using our platform",
+      get_started_link: "https://example.com/get-started",
+    },
+    created_at: "2025-02-01T10:08:00Z",
+    updated_at: "2025-02-01T10:08:00Z",
+  },
+  {
+    id: 10,
+    name: "Email Invitation Template",
+    description: "Invitation email with event details and RSVP",
+    isActive: true,
+    metadataValue: "Email",
+    title: "You're Invited: {{event_name}}",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #8b5cf6; padding: 30px; text-align: center; color: white;">
+        <h1 style="margin: 0;">You're Invited!</h1>
+      </div>
+      <div style="padding: 30px; background: #ffffff;">
+        <h2 style="color: #111827;">{{event_name}}</h2>
+        <p style="color: #374151; line-height: 1.6;"><strong>Date:</strong> {{event_date}}</p>
+        <p style="color: #374151; line-height: 1.6;"><strong>Time:</strong> {{event_time}}</p>
+        <p style="color: #374151; line-height: 1.6;"><strong>Location:</strong> {{event_location}}</p>
+        <p style="color: #374151; line-height: 1.6; margin-top: 20px;">{{event_description}}</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{rsvp_link}}" style="display: inline-block; padding: 12px 30px; background: #8b5cf6; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">RSVP Now</a>
+        </div>
+      </div>
+    </div>`,
+    variables: {
+      event_name: "Product Launch Event",
+      event_date: "2024-12-15",
+      event_time: "2:00 PM",
+      event_location: "Virtual Event",
+      event_description: "Join us for an exciting product launch!",
+      rsvp_link: "https://example.com/rsvp",
+    },
+    created_at: "2025-02-01T10:09:00Z",
+    updated_at: "2025-02-01T10:09:00Z",
+  },
+  // Push Notification Templates (2)
+  {
+    id: 11,
     name: "Push Notification Template",
     description: "Short push notification with title and body placeholders",
     isActive: true,
     metadataValue: "Push",
-    created_at: "2024-02-01T10:10:00Z",
-    updated_at: "2024-02-01T10:10:00Z",
+    title: "{{notification_title}}",
+    text_body: "{{notification_body}}",
+    variables: {
+      notification_title: "New Offer Available",
+      notification_body: "Check out our latest promotion! Tap to view details.",
+    },
+    created_at: "2025-02-01T10:10:00Z",
+    updated_at: "2025-02-01T10:10:00Z",
   },
   {
-    id: 4,
+    id: 12,
+    name: "Push Alert Template",
+    description: "Alert-style push notification for urgent updates",
+    isActive: true,
+    metadataValue: "Push",
+    title: "⚠️ {{alert_title}}",
+    text_body: "{{alert_message}}. Action required.",
+    variables: {
+      alert_title: "Important Update",
+      alert_message: "Your account needs attention",
+    },
+    created_at: "2025-02-01T10:11:00Z",
+    updated_at: "2025-02-01T10:11:00Z",
+  },
+  // In-App Templates (2)
+  {
+    id: 13,
     name: "In-App Banner Template",
     description: "Responsive in-app banner with image, headline, and CTA",
     isActive: true,
     metadataValue: "InApp",
-    created_at: "2024-02-01T10:15:00Z",
-    updated_at: "2024-02-01T10:15:00Z",
+    title: "{{banner_title}}",
+    text_body: "{{banner_description}}",
+    variables: {
+      banner_title: "Limited Time Offer",
+      banner_description:
+        "Get {{discount}}% off on selected items. Offer ends {{end_date}}.",
+      discount: "30",
+      end_date: "2024-12-31",
+    },
+    created_at: "2025-02-01T10:15:00Z",
+    updated_at: "2025-02-01T10:15:00Z",
   },
   {
-    id: 5,
+    id: 14,
+    name: "In-App Modal Template",
+    description: "Modal popup with offer details and action buttons",
+    isActive: true,
+    metadataValue: "InApp",
+    title: "{{modal_title}}",
+    text_body: "{{modal_content}}",
+    variables: {
+      modal_title: "Special Offer",
+      modal_content: "You have a special offer waiting! Tap to claim.",
+    },
+    created_at: "2025-02-01T10:16:00Z",
+    updated_at: "2025-02-01T10:16:00Z",
+  },
+  // Web Templates (2)
+  {
+    id: 15,
+    name: "Web Banner Template",
+    description: "Web page banner with promotional content",
+    isActive: true,
+    metadataValue: "Web",
+    title: "{{banner_title}}",
+    html_body: `<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white;">
+      <h2 style="margin: 0;">{{banner_title}}</h2>
+      <p style="margin: 10px 0 0 0;">{{banner_subtitle}}</p>
+    </div>`,
+    variables: {
+      banner_title: "Special Promotion",
+      banner_subtitle: "Limited time offer - Act now!",
+    },
+    created_at: "2025-02-01T10:17:00Z",
+    updated_at: "2025-02-01T10:17:00Z",
+  },
+  {
+    id: 16,
+    name: "Web Popup Template",
+    description: "Website popup with offer and close option",
+    isActive: true,
+    metadataValue: "Web",
+    title: "{{popup_title}}",
+    html_body: `<div style="padding: 30px; text-align: center;">
+      <h2 style="color: #111827;">{{popup_title}}</h2>
+      <p style="color: #374151;">{{popup_message}}</p>
+      <button style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">{{cta_button}}</button>
+    </div>`,
+    variables: {
+      popup_title: "Exclusive Offer",
+      popup_message: "Get 20% off your first purchase!",
+      cta_button: "Claim Now",
+    },
+    created_at: "2025-02-01T10:18:00Z",
+    updated_at: "2025-02-01T10:18:00Z",
+  },
+  // USSD Templates (2)
+  {
+    id: 17,
     name: "USSD Prompt Template",
     description: "USSD prompt layout with menu options and short instruction",
-    isActive: false,
+    isActive: true,
     metadataValue: "USSD",
-    created_at: "2024-02-01T10:20:00Z",
-    updated_at: "2024-02-01T10:20:00Z",
+    text_body:
+      "{{ussd_prompt}}\n1. {{option1}}\n2. {{option2}}\n3. {{option3}}",
+    variables: {
+      ussd_prompt: "Welcome! Select an option:",
+      option1: "Check Balance",
+      option2: "Buy Data",
+      option3: "View Offers",
+    },
+    created_at: "2025-02-01T10:20:00Z",
+    updated_at: "2025-02-01T10:20:00Z",
+  },
+  {
+    id: 18,
+    name: "USSD Confirmation Template",
+    description: "USSD confirmation message with transaction details",
+    isActive: true,
+    metadataValue: "USSD",
+    text_body:
+      "CONFIRMED: {{transaction_type}}\nAmount: {{amount}}\nRef: {{reference}}\nDate: {{date}}",
+    variables: {
+      transaction_type: "Payment",
+      amount: "KES 100",
+      reference: "TXN123456",
+      date: "2024-01-15",
+    },
+    created_at: "2025-02-01T10:21:00Z",
+    updated_at: "2025-02-01T10:21:00Z",
+  },
+  // WhatsApp Templates (2)
+  {
+    id: 19,
+    name: "WhatsApp Text Template",
+    description: "Simple WhatsApp text message with formatting",
+    isActive: true,
+    metadataValue: "WhatsApp",
+    text_body: "👋 Hi {{customer_name}}!\n\n{{message}}\n\n{{footer_text}}",
+    variables: {
+      customer_name: "John",
+      message: "Thank you for your interest in our services!",
+      footer_text: "Reply HELP for support.",
+    },
+    created_at: "2025-02-01T10:22:00Z",
+    updated_at: "2025-02-01T10:22:00Z",
+  },
+  {
+    id: 20,
+    name: "WhatsApp Interactive Template",
+    description: "WhatsApp message with buttons and quick replies",
+    isActive: true,
+    metadataValue: "WhatsApp",
+    text_body:
+      "{{message}}\n\n*Options:*\n1️⃣ {{option1}}\n2️⃣ {{option2}}\n3️⃣ {{option3}}",
+    variables: {
+      message: "How can we help you today?",
+      option1: "View Offers",
+      option2: "Check Balance",
+      option3: "Contact Support",
+    },
+    created_at: "2025-02-01T10:23:00Z",
+    updated_at: "2025-02-01T10:23:00Z",
+  },
+  // IVR Templates (2)
+  {
+    id: 21,
+    name: "IVR Welcome Template",
+    description: "IVR welcome message with menu options",
+    isActive: true,
+    metadataValue: "IVR",
+    text_body:
+      "Welcome to {{company_name}}. {{welcome_message}} Press 1 for {{option1}}, Press 2 for {{option2}}, Press 3 for {{option3}}.",
+    variables: {
+      company_name: "Sentra",
+      welcome_message: "Thank you for calling.",
+      option1: "Account Information",
+      option2: "Support",
+      option3: "Offers",
+    },
+    created_at: "2025-02-01T10:24:00Z",
+    updated_at: "2025-02-01T10:24:00Z",
+  },
+  {
+    id: 22,
+    name: "IVR Confirmation Template",
+    description: "IVR confirmation message with transaction summary",
+    isActive: true,
+    metadataValue: "IVR",
+    text_body:
+      "Your {{transaction_type}} has been confirmed. Amount: {{amount}}. Reference: {{reference}}. Thank you for using {{company_name}}.",
+    variables: {
+      transaction_type: "payment",
+      amount: "KES 1,000",
+      reference: "TXN123456",
+      company_name: "Sentra",
+    },
+    created_at: "2025-02-01T10:25:00Z",
+    updated_at: "2025-02-01T10:25:00Z",
   },
 ];
 
@@ -281,8 +698,8 @@ const hardcodedRewardTypes: TypeConfigurationItem[] = [
     description: "Provision data, voice, or SMS bundles as rewards",
     isActive: true,
     metadataValue: "bundle",
-    created_at: "2024-02-01T11:00:00Z",
-    updated_at: "2024-02-01T11:00:00Z",
+    created_at: "2025-02-01T11:00:00Z",
+    updated_at: "2025-02-01T11:00:00Z",
   },
   {
     id: 2,
@@ -290,8 +707,8 @@ const hardcodedRewardTypes: TypeConfigurationItem[] = [
     description: "Allocate loyalty or experience points",
     isActive: true,
     metadataValue: "points",
-    created_at: "2024-02-01T11:05:00Z",
-    updated_at: "2024-02-01T11:05:00Z",
+    created_at: "2025-02-01T11:05:00Z",
+    updated_at: "2025-02-01T11:05:00Z",
   },
   {
     id: 3,
@@ -299,8 +716,8 @@ const hardcodedRewardTypes: TypeConfigurationItem[] = [
     description: "Percentage or amount-based discounts on future purchases",
     isActive: true,
     metadataValue: "discount",
-    created_at: "2024-02-01T11:10:00Z",
-    updated_at: "2024-02-01T11:10:00Z",
+    created_at: "2025-02-01T11:10:00Z",
+    updated_at: "2025-02-01T11:10:00Z",
   },
   {
     id: 4,
@@ -308,8 +725,8 @@ const hardcodedRewardTypes: TypeConfigurationItem[] = [
     description: "Cashback credited to customer wallet or account balance",
     isActive: true,
     metadataValue: "cashback",
-    created_at: "2024-02-01T11:15:00Z",
-    updated_at: "2024-02-01T11:15:00Z",
+    created_at: "2025-02-01T11:15:00Z",
+    updated_at: "2025-02-01T11:15:00Z",
   },
   {
     id: 5,
@@ -317,8 +734,8 @@ const hardcodedRewardTypes: TypeConfigurationItem[] = [
     description: "Custom reward fulfilment with bespoke business logic",
     isActive: false,
     metadataValue: "custom",
-    created_at: "2024-02-01T11:20:00Z",
-    updated_at: "2024-02-01T11:20:00Z",
+    created_at: "2025-02-01T11:20:00Z",
+    updated_at: "2025-02-01T11:20:00Z",
   },
 ];
 
@@ -329,48 +746,48 @@ const hardcodedCommunicationChannels: TypeConfigurationItem[] = [
     name: "SMS - Normal",
     description: "Standard SMS delivery routed via telecom SMSC",
     isActive: true,
-    created_at: "2024-02-01T10:00:00Z",
-    updated_at: "2024-02-01T10:00:00Z",
+    created_at: "2025-02-01T10:00:00Z",
+    updated_at: "2025-02-01T10:00:00Z",
   },
   {
     id: 2,
     name: "SMS - Flash",
     description: "Flash SMS (display only) used for urgent notifications",
     isActive: true,
-    created_at: "2024-02-01T10:05:00Z",
-    updated_at: "2024-02-01T10:05:00Z",
+    created_at: "2025-02-01T10:05:00Z",
+    updated_at: "2025-02-01T10:05:00Z",
   },
   {
     id: 3,
     name: "Email",
     description: "Transactional and marketing email channel",
     isActive: true,
-    created_at: "2024-02-01T10:10:00Z",
-    updated_at: "2024-02-01T10:10:00Z",
+    created_at: "2025-02-01T10:10:00Z",
+    updated_at: "2025-02-01T10:10:00Z",
   },
   {
     id: 4,
     name: "USSD - Push",
     description: "Push USSD messages triggered automatically",
     isActive: false,
-    created_at: "2024-02-01T10:15:00Z",
-    updated_at: "2024-02-01T10:15:00Z",
+    created_at: "2025-02-01T10:15:00Z",
+    updated_at: "2025-02-01T10:15:00Z",
   },
   {
     id: 5,
     name: "USSD - Interactive",
     description: "Interactive USSD menu journeys",
     isActive: true,
-    created_at: "2024-02-01T10:20:00Z",
-    updated_at: "2024-02-01T10:20:00Z",
+    created_at: "2025-02-01T10:20:00Z",
+    updated_at: "2025-02-01T10:20:00Z",
   },
   {
     id: 6,
     name: "Push Notification",
     description: "Mobile app push via FCM/APNS",
     isActive: true,
-    created_at: "2024-02-01T10:25:00Z",
-    updated_at: "2024-02-01T10:25:00Z",
+    created_at: "2025-02-01T10:25:00Z",
+    updated_at: "2025-02-01T10:25:00Z",
   },
 ];
 
@@ -676,64 +1093,64 @@ const hardcodedOfferTypes: TypeConfigurationItem[] = [
     id: 1,
     name: "Data",
     description: "Data bundle offers and packages",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T10:30:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-15T10:30:00Z",
     isActive: true,
   },
   {
     id: 2,
     name: "Voice",
     description: "Voice call offers and packages",
-    created_at: "2024-01-16T09:15:00Z",
-    updated_at: "2024-01-16T09:15:00Z",
+    created_at: "2025-01-16T09:15:00Z",
+    updated_at: "2025-01-16T09:15:00Z",
     isActive: true,
   },
   {
     id: 3,
     name: "SMS",
     description: "SMS text message offers and packages",
-    created_at: "2024-01-17T11:00:00Z",
-    updated_at: "2024-01-17T11:00:00Z",
+    created_at: "2025-01-17T11:00:00Z",
+    updated_at: "2025-01-17T11:00:00Z",
     isActive: true,
   },
   {
     id: 4,
     name: "Combo",
     description: "Combined data, voice, and SMS packages",
-    created_at: "2024-01-18T15:30:00Z",
-    updated_at: "2024-01-18T15:30:00Z",
+    created_at: "2025-01-18T15:30:00Z",
+    updated_at: "2025-01-18T15:30:00Z",
     isActive: true,
   },
   {
     id: 5,
     name: "Voucher",
     description: "Voucher-based offers and discounts",
-    created_at: "2024-01-19T08:45:00Z",
-    updated_at: "2024-01-19T08:45:00Z",
+    created_at: "2025-01-19T08:45:00Z",
+    updated_at: "2025-01-19T08:45:00Z",
     isActive: true,
   },
   {
     id: 6,
     name: "Loyalty",
     description: "Loyalty program offers and rewards",
-    created_at: "2024-01-20T14:20:00Z",
-    updated_at: "2024-01-20T14:20:00Z",
+    created_at: "2025-01-20T14:20:00Z",
+    updated_at: "2025-01-20T14:20:00Z",
     isActive: true,
   },
   {
     id: 7,
     name: "Bundle",
     description: "Product or service bundle packages",
-    created_at: "2024-01-21T10:15:00Z",
-    updated_at: "2024-01-21T10:15:00Z",
+    created_at: "2025-01-21T10:15:00Z",
+    updated_at: "2025-01-21T10:15:00Z",
     isActive: true,
   },
   {
     id: 8,
     name: "Bonus",
     description: "Bonus value and extra benefits",
-    created_at: "2024-01-22T12:00:00Z",
-    updated_at: "2024-01-22T12:00:00Z",
+    created_at: "2025-01-22T12:00:00Z",
+    updated_at: "2025-01-22T12:00:00Z",
     isActive: true,
   },
 ];
@@ -745,40 +1162,40 @@ const hardcodedCampaignTypes: TypeConfigurationItem[] = [
     name: "Multiple Target Group",
     description:
       "Target multiple segments with different offers for each segment",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T10:30:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-15T10:30:00Z",
     isActive: true,
   },
   {
     id: 2,
     name: "Champion-Challenger",
     description: "Test challenger strategies against a champion segment",
-    created_at: "2024-01-16T09:15:00Z",
-    updated_at: "2024-01-16T09:15:00Z",
+    created_at: "2025-01-16T09:15:00Z",
+    updated_at: "2025-01-16T09:15:00Z",
     isActive: true,
   },
   {
     id: 3,
     name: "A/B Test",
     description: "Compare two variants (A and B) with equal distribution",
-    created_at: "2024-01-17T11:00:00Z",
-    updated_at: "2024-01-17T11:00:00Z",
+    created_at: "2025-01-17T11:00:00Z",
+    updated_at: "2025-01-17T11:00:00Z",
     isActive: true,
   },
   {
     id: 4,
     name: "Round Robin",
     description: "Sequential offer rotation based on time intervals",
-    created_at: "2024-01-18T15:30:00Z",
-    updated_at: "2024-01-18T15:30:00Z",
+    created_at: "2025-01-18T15:30:00Z",
+    updated_at: "2025-01-18T15:30:00Z",
     isActive: true,
   },
   {
     id: 5,
     name: "Multiple Level",
     description: "Conditional offer mapping with behavioral triggers",
-    created_at: "2024-01-19T08:45:00Z",
-    updated_at: "2024-01-19T08:45:00Z",
+    created_at: "2025-01-19T08:45:00Z",
+    updated_at: "2025-01-19T08:45:00Z",
     isActive: true,
   },
 ];
@@ -790,8 +1207,8 @@ const hardcodedSegmentTypes: TypeConfigurationItem[] = [
     name: "Static",
     description:
       "Manually curated member lists that remain fixed until explicitly updated",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T10:30:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-15T10:30:00Z",
     isActive: true,
   },
   {
@@ -799,8 +1216,8 @@ const hardcodedSegmentTypes: TypeConfigurationItem[] = [
     name: "Dynamic",
     description:
       "Rule-driven segments that recalculate membership based on the latest customer data",
-    created_at: "2024-01-16T09:15:00Z",
-    updated_at: "2024-01-16T09:15:00Z",
+    created_at: "2025-01-16T09:15:00Z",
+    updated_at: "2025-01-16T09:15:00Z",
     isActive: true,
   },
   {
@@ -808,8 +1225,8 @@ const hardcodedSegmentTypes: TypeConfigurationItem[] = [
     name: "Predictive",
     description:
       "Model-led segments produced by machine learning scoring or propensity models",
-    created_at: "2024-01-17T11:00:00Z",
-    updated_at: "2024-01-17T11:00:00Z",
+    created_at: "2025-01-17T11:00:00Z",
+    updated_at: "2025-01-17T11:00:00Z",
     isActive: true,
   },
   {
@@ -817,8 +1234,8 @@ const hardcodedSegmentTypes: TypeConfigurationItem[] = [
     name: "Behavioral",
     description:
       "Segments based on customer activity signals like recency, frequency, or channel engagement",
-    created_at: "2024-01-18T15:30:00Z",
-    updated_at: "2024-01-18T15:30:00Z",
+    created_at: "2025-01-18T15:30:00Z",
+    updated_at: "2025-01-18T15:30:00Z",
     isActive: true,
   },
   {
@@ -826,8 +1243,8 @@ const hardcodedSegmentTypes: TypeConfigurationItem[] = [
     name: "Demographic",
     description:
       "Grouping built around demographic attributes such as age, region, or income band",
-    created_at: "2024-01-19T08:45:00Z",
-    updated_at: "2024-01-19T08:45:00Z",
+    created_at: "2025-01-19T08:45:00Z",
+    updated_at: "2025-01-19T08:45:00Z",
     isActive: true,
   },
   {
@@ -835,8 +1252,8 @@ const hardcodedSegmentTypes: TypeConfigurationItem[] = [
     name: "Geographic",
     description:
       "Location-based segmentation using country, region, or site-level metadata",
-    created_at: "2024-01-20T14:20:00Z",
-    updated_at: "2024-01-20T14:20:00Z",
+    created_at: "2025-01-20T14:20:00Z",
+    updated_at: "2025-01-20T14:20:00Z",
     isActive: true,
   },
   {
@@ -844,8 +1261,8 @@ const hardcodedSegmentTypes: TypeConfigurationItem[] = [
     name: "Transactional",
     description:
       "Built using spend, frequency, or specific purchase patterns from billing and POS systems",
-    created_at: "2024-01-21T10:15:00Z",
-    updated_at: "2024-01-21T10:15:00Z",
+    created_at: "2025-01-21T10:15:00Z",
+    updated_at: "2025-01-21T10:15:00Z",
     isActive: true,
   },
 ];
@@ -857,8 +1274,8 @@ const hardcodedProductTypes: TypeConfigurationItem[] = [
     name: "Data Products",
     description:
       "Mobile data bundles, internet packages, and data-related services",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T10:30:00Z",
+    created_at: "2025-01-15T10:30:00Z",
+    updated_at: "2025-01-15T10:30:00Z",
     isActive: true,
     metadataValue: 25,
   },
@@ -866,8 +1283,8 @@ const hardcodedProductTypes: TypeConfigurationItem[] = [
     id: 2,
     name: "Voice Products",
     description: "Call minutes, voice packages, and communication services",
-    created_at: "2024-01-16T09:15:00Z",
-    updated_at: "2024-01-16T09:15:00Z",
+    created_at: "2025-01-16T09:15:00Z",
+    updated_at: "2025-01-16T09:15:00Z",
     isActive: true,
     metadataValue: 18,
   },
@@ -875,8 +1292,8 @@ const hardcodedProductTypes: TypeConfigurationItem[] = [
     id: 3,
     name: "SMS Products",
     description: "Text messaging packages and SMS-based services",
-    created_at: "2024-01-17T11:00:00Z",
-    updated_at: "2024-01-17T11:00:00Z",
+    created_at: "2025-01-17T11:00:00Z",
+    updated_at: "2025-01-17T11:00:00Z",
     isActive: true,
     metadataValue: 12,
   },
@@ -885,8 +1302,8 @@ const hardcodedProductTypes: TypeConfigurationItem[] = [
     name: "Value Added Services",
     description:
       "Additional services like music streaming, gaming, and content",
-    created_at: "2024-01-18T15:30:00Z",
-    updated_at: "2024-01-18T15:30:00Z",
+    created_at: "2025-01-18T15:30:00Z",
+    updated_at: "2025-01-18T15:30:00Z",
     isActive: true,
     metadataValue: 8,
   },
@@ -894,8 +1311,8 @@ const hardcodedProductTypes: TypeConfigurationItem[] = [
     id: 5,
     name: "Device Products",
     description: "Mobile devices, accessories, and hardware products",
-    created_at: "2024-01-19T08:45:00Z",
-    updated_at: "2024-01-19T08:45:00Z",
+    created_at: "2025-01-19T08:45:00Z",
+    updated_at: "2025-01-19T08:45:00Z",
     isActive: false,
     metadataValue: 5,
   },

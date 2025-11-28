@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Trash2,
@@ -10,6 +10,7 @@ import {
   Phone,
   PhoneCall,
   Eye,
+  FileText,
 } from "lucide-react";
 import { color } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
@@ -22,6 +23,8 @@ import {
   RenderCreativeResponse,
 } from "../types/offerCreative";
 import { offerCreativeService } from "../services/offerCreativeService";
+import { useConfigurationData } from "../../../shared/services/configurationDataService";
+import { TypeConfigurationItem } from "../../../shared/components/TypeConfigurationPage";
 
 interface LocalOfferCreative extends Omit<OfferCreative, "id" | "offer_id"> {
   id: string; // Use string for local temp ID
@@ -96,11 +99,353 @@ const LOCALE_OPTIONS = COMMON_LOCALES.map((locale) => ({
   label: getLocaleLabel(locale),
 }));
 
+// Template content mapping - provides actual template content for each template
+interface TemplateContent {
+  title?: string;
+  text_body?: string;
+  html_body?: string;
+  variables?: Record<string, string | number | boolean>;
+}
+
+const TEMPLATE_CONTENT_MAP: Record<number, TemplateContent> = {
+  // SMS Templates (5)
+  1: {
+    // SMS Transactional Template
+    title: "Transaction Alert",
+    text_body:
+      "Your transaction of {{amount}} on {{date}} was successful. Reference: {{reference}}. View details: {{link}}",
+    variables: {
+      amount: "KES 100",
+      date: "2024-01-15",
+      reference: "TXN123456",
+      link: "https://example.com/txn",
+    },
+  },
+  2: {
+    // SMS Promotional Template
+    text_body:
+      "Hi {{customer_name}}! 🎉 Special offer: Get {{discount}}% OFF on {{product_name}}. Use code: {{promo_code}}. Valid until {{expiry_date}}. Reply STOP to unsubscribe.",
+    variables: {
+      customer_name: "John",
+      discount: "50",
+      product_name: "Data Bundle",
+      promo_code: "SAVE50",
+      expiry_date: "2024-12-31",
+    },
+  },
+  3: {
+    // SMS Alert Template
+    text_body:
+      "ALERT: {{alert_type}} - {{message}}. Action required by {{deadline}}. Contact: {{support_number}}",
+    variables: {
+      alert_type: "Account Update",
+      message: "Your account balance is low",
+      deadline: "2024-12-31",
+      support_number: "+256700000000",
+    },
+  },
+  4: {
+    // SMS Welcome Template
+    text_body:
+      "Welcome {{customer_name}}! Thank you for joining {{company_name}}. Your account is now active. Get started: {{welcome_link}}",
+    variables: {
+      customer_name: "John",
+      company_name: "Sentra",
+      welcome_link: "https://example.com/welcome",
+    },
+  },
+  5: {
+    // SMS Reminder Template
+    text_body:
+      "Reminder: {{reminder_message}}. Due: {{due_date}}. Take action: {{action_link}}",
+    variables: {
+      reminder_message: "Your subscription expires soon",
+      due_date: "2024-12-31",
+      action_link: "https://example.com/renew",
+    },
+  },
+  // Email Templates (5)
+  6: {
+    // Email Promotional Template
+    title: "Special Offer for You!",
+    text_body: "Don't miss out on our exclusive offer!",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
+        <h1 style="margin: 0; font-size: 28px;">{{title}}</h1>
+      </div>
+      <div style="padding: 30px; background: #f9fafb;">
+        <p style="font-size: 16px; line-height: 1.6; color: #374151;">{{message}}</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{cta_link}}" style="display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">{{cta_text}}</a>
+        </div>
+      </div>
+      <div style="padding: 20px; background: #ffffff; text-align: center; font-size: 12px; color: #6b7280;">
+        <p>{{footer_text}}</p>
+      </div>
+    </div>`,
+    variables: {
+      title: "Special Offer for You!",
+      message:
+        "Get {{discount}}% off on your next purchase. Limited time only!",
+      cta_text: "Claim Offer",
+      cta_link: "https://example.com/offer",
+      footer_text: "This is an automated message. Please do not reply.",
+      discount: "25",
+    },
+  },
+  7: {
+    // Email Newsletter Template
+    title: "{{newsletter_title}}",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #1f2937; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">{{newsletter_title}}</h1>
+      </div>
+      <div style="padding: 30px; background: #ffffff;">
+        <h2 style="color: #111827;">{{section1_title}}</h2>
+        <p style="color: #374151; line-height: 1.6;">{{section1_content}}</p>
+        <h2 style="color: #111827; margin-top: 30px;">{{section2_title}}</h2>
+        <p style="color: #374151; line-height: 1.6;">{{section2_content}}</p>
+      </div>
+      <div style="padding: 20px; background: #f9fafb; text-align: center; font-size: 12px; color: #6b7280;">
+        <p>{{unsubscribe_link}}</p>
+      </div>
+    </div>`,
+    variables: {
+      newsletter_title: "Monthly Newsletter",
+      section1_title: "Latest Updates",
+      section1_content: "Check out our latest features and improvements.",
+      section2_title: "Featured Offers",
+      section2_content: "Don't miss these exclusive deals!",
+      unsubscribe_link: "Unsubscribe",
+    },
+  },
+  8: {
+    // Email Transactional Template
+    title: "{{transaction_type}} Confirmation",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #111827;">{{transaction_type}} Confirmation</h2>
+      <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Transaction ID:</strong> {{transaction_id}}</p>
+        <p><strong>Amount:</strong> {{amount}}</p>
+        <p><strong>Date:</strong> {{transaction_date}}</p>
+        <p><strong>Status:</strong> {{status}}</p>
+      </div>
+      <p style="color: #6b7280; font-size: 12px;">{{footer_note}}</p>
+    </div>`,
+    variables: {
+      transaction_type: "Payment",
+      transaction_id: "TXN123456",
+      amount: "KES 1,000",
+      transaction_date: "2024-01-15",
+      status: "Completed",
+      footer_note: "This is an automated confirmation email.",
+    },
+  },
+  9: {
+    // Email Welcome Template
+    title: "Welcome to {{company_name}}!",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #10b981; padding: 30px; text-align: center; color: white;">
+        <h1 style="margin: 0;">Welcome, {{customer_name}}!</h1>
+      </div>
+      <div style="padding: 30px; background: #ffffff;">
+        <p style="font-size: 16px; line-height: 1.6; color: #374151;">{{welcome_message}}</p>
+        <div style="margin: 30px 0;">
+          <h3 style="color: #111827;">Getting Started:</h3>
+          <ul style="color: #374151; line-height: 1.8;">
+            <li>{{step1}}</li>
+            <li>{{step2}}</li>
+            <li>{{step3}}</li>
+          </ul>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{get_started_link}}" style="display: inline-block; padding: 12px 30px; background: #10b981; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Get Started</a>
+        </div>
+      </div>
+    </div>`,
+    variables: {
+      company_name: "Sentra",
+      customer_name: "John",
+      welcome_message:
+        "Thank you for joining us! We're excited to have you on board.",
+      step1: "Complete your profile",
+      step2: "Explore our services",
+      step3: "Start using our platform",
+      get_started_link: "https://example.com/get-started",
+    },
+  },
+  10: {
+    // Email Invitation Template
+    title: "You're Invited: {{event_name}}",
+    html_body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #8b5cf6; padding: 30px; text-align: center; color: white;">
+        <h1 style="margin: 0;">You're Invited!</h1>
+      </div>
+      <div style="padding: 30px; background: #ffffff;">
+        <h2 style="color: #111827;">{{event_name}}</h2>
+        <p style="color: #374151; line-height: 1.6;"><strong>Date:</strong> {{event_date}}</p>
+        <p style="color: #374151; line-height: 1.6;"><strong>Time:</strong> {{event_time}}</p>
+        <p style="color: #374151; line-height: 1.6;"><strong>Location:</strong> {{event_location}}</p>
+        <p style="color: #374151; line-height: 1.6; margin-top: 20px;">{{event_description}}</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{rsvp_link}}" style="display: inline-block; padding: 12px 30px; background: #8b5cf6; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">RSVP Now</a>
+        </div>
+      </div>
+    </div>`,
+    variables: {
+      event_name: "Product Launch Event",
+      event_date: "2024-12-15",
+      event_time: "2:00 PM",
+      event_location: "Virtual Event",
+      event_description: "Join us for an exciting product launch!",
+      rsvp_link: "https://example.com/rsvp",
+    },
+  },
+  // Push Notification Templates (2)
+  11: {
+    // Push Notification Template
+    title: "{{notification_title}}",
+    text_body: "{{notification_body}}",
+    variables: {
+      notification_title: "New Offer Available",
+      notification_body: "Check out our latest promotion! Tap to view details.",
+    },
+  },
+  12: {
+    // Push Alert Template
+    title: "⚠️ {{alert_title}}",
+    text_body: "{{alert_message}}. Action required.",
+    variables: {
+      alert_title: "Important Update",
+      alert_message: "Your account needs attention",
+    },
+  },
+  // In-App Templates (2)
+  13: {
+    // In-App Banner Template
+    title: "{{banner_title}}",
+    text_body: "{{banner_description}}",
+    variables: {
+      banner_title: "Limited Time Offer",
+      banner_description:
+        "Get {{discount}}% off on selected items. Offer ends {{end_date}}.",
+      discount: "30",
+      end_date: "2024-12-31",
+    },
+  },
+  14: {
+    // In-App Modal Template
+    title: "{{modal_title}}",
+    text_body: "{{modal_content}}",
+    variables: {
+      modal_title: "Special Offer",
+      modal_content: "You have a special offer waiting! Tap to claim.",
+    },
+  },
+  // Web Templates (2)
+  15: {
+    // Web Banner Template
+    title: "{{banner_title}}",
+    html_body: `<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white;">
+      <h2 style="margin: 0;">{{banner_title}}</h2>
+      <p style="margin: 10px 0 0 0;">{{banner_subtitle}}</p>
+    </div>`,
+    variables: {
+      banner_title: "Special Promotion",
+      banner_subtitle: "Limited time offer - Act now!",
+    },
+  },
+  16: {
+    // Web Popup Template
+    title: "{{popup_title}}",
+    html_body: `<div style="padding: 30px; text-align: center;">
+      <h2 style="color: #111827;">{{popup_title}}</h2>
+      <p style="color: #374151;">{{popup_message}}</p>
+      <button style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">{{cta_button}}</button>
+    </div>`,
+    variables: {
+      popup_title: "Exclusive Offer",
+      popup_message: "Get 20% off your first purchase!",
+      cta_button: "Claim Now",
+    },
+  },
+  // USSD Templates (2)
+  17: {
+    // USSD Prompt Template
+    text_body:
+      "{{ussd_prompt}}\n1. {{option1}}\n2. {{option2}}\n3. {{option3}}",
+    variables: {
+      ussd_prompt: "Welcome! Select an option:",
+      option1: "Check Balance",
+      option2: "Buy Data",
+      option3: "View Offers",
+    },
+  },
+  18: {
+    // USSD Confirmation Template
+    text_body:
+      "CONFIRMED: {{transaction_type}}\nAmount: {{amount}}\nRef: {{reference}}\nDate: {{date}}",
+    variables: {
+      transaction_type: "Payment",
+      amount: "KES 100",
+      reference: "TXN123456",
+      date: "2024-01-15",
+    },
+  },
+  // WhatsApp Templates (2)
+  19: {
+    // WhatsApp Text Template
+    text_body: "👋 Hi {{customer_name}}!\n\n{{message}}\n\n{{footer_text}}",
+    variables: {
+      customer_name: "John",
+      message: "Thank you for your interest in our services!",
+      footer_text: "Reply HELP for support.",
+    },
+  },
+  20: {
+    // WhatsApp Interactive Template
+    text_body:
+      "{{message}}\n\n*Options:*\n1️⃣ {{option1}}\n2️⃣ {{option2}}\n3️⃣ {{option3}}",
+    variables: {
+      message: "How can we help you today?",
+      option1: "View Offers",
+      option2: "Check Balance",
+      option3: "Contact Support",
+    },
+  },
+  // IVR Templates (2)
+  21: {
+    // IVR Welcome Template
+    text_body:
+      "Welcome to {{company_name}}. {{welcome_message}} Press 1 for {{option1}}, Press 2 for {{option2}}, Press 3 for {{option3}}.",
+    variables: {
+      company_name: "Sentra",
+      welcome_message: "Thank you for calling.",
+      option1: "Account Information",
+      option2: "Support",
+      option3: "Offers",
+    },
+  },
+  22: {
+    // IVR Confirmation Template
+    text_body:
+      "Your {{transaction_type}} has been confirmed. Amount: {{amount}}. Reference: {{reference}}. Thank you for using {{company_name}}.",
+    variables: {
+      transaction_type: "payment",
+      amount: "KES 1,000",
+      reference: "TXN123456",
+      company_name: "Sentra",
+    },
+  },
+};
+
 export default function OfferCreativeStep({
   creatives,
   onCreativesChange,
   validationError,
 }: OfferCreativeStepProps) {
+  // Load creative templates from configuration
+  const { data: templates } = useConfigurationData("creativeTemplates");
   // Initialize selectedCreative from creatives if available, otherwise null
   const [selectedCreative, setSelectedCreative] = useState<string | null>(
     () => {
@@ -111,6 +456,19 @@ export default function OfferCreativeStep({
   const [variablesText, setVariablesText] = useState<Record<string, string>>(
     {}
   );
+  // Track selected template for each creative
+  const [selectedTemplates, setSelectedTemplates] = useState<
+    Record<string, number | null>
+  >(() => {
+    // Initialize from existing creatives that have template_type_id
+    const initial: Record<string, number | null> = {};
+    creatives.forEach((creative) => {
+      if (creative.template_type_id) {
+        initial[creative.id] = creative.template_type_id;
+      }
+    });
+    return initial;
+  });
 
   // Preview modal state
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -139,11 +497,25 @@ export default function OfferCreativeStep({
     setSelectedCreative(newCreative.id);
     // Initialize empty variables text for new creative
     setVariablesText((prev) => ({ ...prev, [newCreative.id]: "" }));
+    // Initialize empty template selection for new creative
+    setSelectedTemplates((prev) => ({ ...prev, [newCreative.id]: null }));
   };
 
   const removeCreative = (id: string) => {
     const updatedCreatives = creatives.filter((c) => c.id !== id);
     onCreativesChange(updatedCreatives);
+
+    // Clean up template selection and variables text
+    setSelectedTemplates((prev) => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
+    setVariablesText((prev) => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
 
     // Update selection if we removed the currently selected creative
     if (selectedCreative === id) {
@@ -163,6 +535,79 @@ export default function OfferCreativeStep({
   const selectedCreativeData = creatives.find((c) => c.id === selectedCreative);
   const getChannelConfig = (channel: CreativeChannel) =>
     CHANNELS.find((c) => c.value === channel);
+
+  // Filter templates by channel (metadataValue matches channel)
+  const getTemplatesForChannel = (channel: CreativeChannel) => {
+    return (templates as TypeConfigurationItem[]).filter(
+      (template) =>
+        template.isActive &&
+        template.metadataValue?.toLowerCase() === channel.toLowerCase()
+    );
+  };
+
+  // Get available templates for current creative's channel
+  const availableTemplates = useMemo(() => {
+    if (!selectedCreativeData) return [];
+    return getTemplatesForChannel(selectedCreativeData.channel);
+  }, [selectedCreativeData?.channel, templates]);
+
+  // Handle template selection
+  const handleTemplateSelect = (templateId: number | null) => {
+    if (!selectedCreativeData || !templateId) return;
+
+    const template = templates.find((t) => t.id === templateId) as
+      | TypeConfigurationItem
+      | undefined;
+    if (!template) return;
+
+    // Update selected template
+    setSelectedTemplates((prev) => ({
+      ...prev,
+      [selectedCreativeData.id]: templateId,
+    }));
+
+    // Populate creative fields with template content (from config)
+    const updates: Partial<LocalOfferCreative> = {
+      // Set channel if template has a specific channel
+      channel:
+        (template.metadataValue as CreativeChannel) ||
+        selectedCreativeData.channel,
+    };
+
+    // Populate title, text_body, html_body if template has them
+    if (template.title) {
+      updates.title = template.title;
+    }
+    if (template.text_body) {
+      updates.text_body = template.text_body;
+    }
+    if (template.html_body) {
+      updates.html_body = template.html_body;
+    }
+    if (template.variables) {
+      updates.variables = template.variables;
+      // Update variables text for display
+      setVariablesText((prev) => ({
+        ...prev,
+        [selectedCreativeData.id]: JSON.stringify(template.variables, null, 2),
+      }));
+    }
+
+    updateCreative(selectedCreativeData.id, updates);
+  };
+
+  // Clear template selection
+  const handleClearTemplate = () => {
+    if (!selectedCreativeData) return;
+    setSelectedTemplates((prev) => ({
+      ...prev,
+      [selectedCreativeData.id]: null,
+    }));
+    // Clear template_type_id but keep the content (user can still edit)
+    updateCreative(selectedCreativeData.id, {
+      template_type_id: undefined,
+    });
+  };
 
   // Get variables text for current creative (with fallback)
   const getVariablesText = (creativeId: string): string => {
@@ -503,11 +948,17 @@ export default function OfferCreativeStep({
                       </label>
                       <HeadlessSelect
                         value={selectedCreativeData.channel}
-                        onChange={(value) =>
+                        onChange={(value) => {
+                          const newChannel = value as CreativeChannel;
                           updateCreative(selectedCreativeData.id, {
-                            channel: value as CreativeChannel,
-                          })
-                        }
+                            channel: newChannel,
+                          });
+                          // Clear template selection when channel changes
+                          setSelectedTemplates((prev) => ({
+                            ...prev,
+                            [selectedCreativeData.id]: null,
+                          }));
+                        }}
                         options={CHANNELS.map((channel) => ({
                           value: channel.value,
                           label: channel.label,
@@ -532,6 +983,56 @@ export default function OfferCreativeStep({
                       />
                     </div>
                   </div>
+
+                  {/* Template Selector */}
+                  {availableTemplates.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Creative Template (Optional)
+                        </label>
+                        {selectedTemplates[selectedCreativeData.id] && (
+                          <button
+                            onClick={handleClearTemplate}
+                            className="text-xs text-gray-500 hover:text-gray-700 underline"
+                          >
+                            Clear Template
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <HeadlessSelect
+                          value={
+                            selectedTemplates[selectedCreativeData.id] || ""
+                          }
+                          onChange={(value) =>
+                            handleTemplateSelect(value ? Number(value) : null)
+                          }
+                          options={[
+                            { value: "", label: "Start from scratch" },
+                            ...availableTemplates.map((template) => ({
+                              value: template.id.toString(),
+                              label: `${template.name}${
+                                template.description
+                                  ? ` - ${template.description}`
+                                  : ""
+                              }`,
+                            })),
+                          ]}
+                          placeholder="Select a template to start with..."
+                        />
+                        {selectedTemplates[selectedCreativeData.id] && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                            <FileText className="w-3 h-3" />
+                            <span>
+                              Template selected. You can customize the fields
+                              below.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Title */}
                   <div>

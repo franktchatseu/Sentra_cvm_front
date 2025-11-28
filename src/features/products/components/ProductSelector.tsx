@@ -126,6 +126,14 @@ export default function ProductSelector({
     );
   };
 
+  const getCategoryName = (categoryId?: number): string => {
+    if (!categoryId) return "-";
+    const category = categories.find(
+      (cat) => cat.value === categoryId.toString()
+    );
+    return category?.label || "-";
+  };
+
   return (
     <div className="space-y-4">
       {selectedProducts.length > 0 ? (
@@ -175,7 +183,7 @@ export default function ProductSelector({
                         className="text-xs px-2 py-1 text-white rounded-full"
                         style={{ backgroundColor: color.primary.action }}
                       >
-                        {product.category}
+                        {getCategoryName(product.category_id)}
                       </span>
                     </div>
                   </div>
@@ -241,208 +249,253 @@ export default function ProductSelector({
       {/* Product Selection Modal */}
       {isModalOpen &&
         createPortal(
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white rounded-md w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
-              {/* Modal Header */}
-              <div className="p-6 border-b border-gray-200 bg-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Select Products
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Choose products to include in your offer
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors duration-200"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+          <div
+            className="fixed bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+            style={{
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100vw",
+              height: "100vh",
+            }}
+          >
+            <div className="bg-white rounded-md shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Select Products
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Choose products to include in your offer
+                  </p>
                 </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
               {/* Search and Filters */}
-              <div className="p-6 border-b border-gray-200 bg-gray-50">
-                <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
+              <div className="px-6 pt-4 space-y-4 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search products by name, description, or SKU..."
+                      placeholder="Search products..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
                     />
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <HeadlessSelect
-                      options={categories}
-                      value={selectedCategory}
-                      onChange={(value) => setSelectedCategory(String(value))}
-                      placeholder="All Catalogs"
-                      className="min-w-[200px] border border-gray-200 rounded-md"
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm("")}
-                        className="px-2 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md transition-colors duration-200"
-                      >
-                        Clear
-                      </button>
-                    )}
+                  <div className="w-48">
+                    <div className="[&_button]:py-2 [&_li]:py-1.5">
+                      <HeadlessSelect
+                        options={categories}
+                        value={selectedCategory}
+                        onChange={(value: string | number) =>
+                          setSelectedCategory(String(value))
+                        }
+                        placeholder="Filter by catalog"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* Selection Summary */}
+              {selectedProducts.length > 0 && (
+                <div className="px-6 flex-shrink-0 my-3">
+                  <div
+                    className="rounded-md p-4 border text-sm"
+                    style={{
+                      backgroundColor: `${color.primary.accent}15`,
+                      borderColor: `${color.primary.accent}40`,
+                      color: color.primary.accent,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>
+                        {selectedProducts.length} product
+                        {selectedProducts.length !== 1 ? "s" : ""} selected
+                      </span>
+                      <button
+                        onClick={() => onProductsChange([])}
+                        className="font-medium hover:opacity-80 transition-opacity"
+                        style={{ color: color.primary.accent }}
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Products List */}
-              <div className="p-6 max-h-96 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto p-6">
                 {loading ? (
-                  <div className="flex items-center justify-center h-32">
-                    <LoadingSpinner
-                      size="lg"
-                      variant="default"
-                      color="primary"
-                    />
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading products...</p>
+                    </div>
                   </div>
                 ) : products.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Package className="w-8 h-8 text-gray-400" />
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 mb-2">No products found</p>
+                      <p className="text-sm text-gray-500">
+                        {searchTerm
+                          ? "Try adjusting your search terms."
+                          : "No products available at the moment."}
+                      </p>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      No Products Found
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      Try adjusting your search or filter criteria
-                    </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {products.map((product) => {
-                      const isSelected = selectedProducts.some(
-                        (p) => p.id === product.id
-                      );
-                      return (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductToggle(product)}
-                          className={`relative p-4 border rounded-md cursor-pointer transition-all duration-200 ${
-                            isSelected ? "" : "border-gray-200"
-                          }`}
-                          style={
-                            isSelected
-                              ? {
-                                  borderColor: color.primary.accent,
-                                  borderWidth: "2px",
-                                }
-                              : {}
-                          }
-                        >
-                          {/* Selection Indicator */}
-                          {isSelected && (
-                            <div
-                              className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200"
-                              style={{ backgroundColor: color.primary.accent }}
+                  <div
+                    className="border rounded-md overflow-hidden"
+                    style={{ borderColor: color.border.default }}
+                  >
+                    <table
+                      className="min-w-full divide-y"
+                      style={{ borderColor: color.border.default }}
+                    >
+                      <thead style={{ backgroundColor: color.surface.cards }}>
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                            Select
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Product
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                            Category
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                            Code
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                            Price
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody
+                        className="bg-white divide-y"
+                        style={{ borderColor: color.border.default }}
+                      >
+                        {products.map((product) => {
+                          const isSelected = selectedProducts.some(
+                            (p) => p.id === product.id
+                          );
+                          return (
+                            <tr
+                              key={product.id}
+                              onClick={() => handleProductToggle(product)}
+                              className="cursor-pointer transition-colors hover:bg-gray-50"
                             >
-                              <Check className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-
-                          <div className="flex items-start space-x-4 pr-8">
-                            {/* Product Icon */}
-                            <div className="w-14 h-14 rounded-md flex items-center justify-center flex-shrink-0">
-                              {getCategoryIcon()}
-                            </div>
-
-                            {/* Product Details */}
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-semibold text-gray-900 mb-1 line-clamp-1">
-                                {product.name}
-                              </h5>
-                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                                {product.description}
-                              </p>
-
-                              {/* Product Meta */}
-                              <div className="flex items-center space-x-2 mb-2">
-                                <span
-                                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                                  style={{
-                                    backgroundColor: color.primary.action,
-                                  }}
-                                >
-                                  {product.category}
+                              <td className="px-4 py-3">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleProductToggle(product)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 border-gray-400 rounded"
+                                  style={{ accentColor: "#111827" }}
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium text-gray-900 truncate">
+                                    {product.name}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate">
+                                    {product.description || "No description"}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-sm text-gray-600">
+                                  {getCategoryName(product.category_id)}
                                 </span>
-                                {product.sku && (
-                                  <span className="text-xs text-gray-500 font-mono">
-                                    SKU: {product.sku}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Price */}
-                              {product.price && (
-                                <div className="flex items-center space-x-1">
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-sm font-mono text-gray-600">
+                                  {product.product_code}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                {product.price ? (
                                   <CurrencyFormatter
                                     amount={product.price}
-                                    currencyCode={product.currency}
-                                    className="text-lg font-bold text-gray-900"
+                                    currencyCode={product.currency || "USD"}
+                                    className="text-sm font-medium text-gray-900"
                                   />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                                ) : (
+                                  <span className="text-sm text-gray-400">
+                                    -
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`inline-block text-xs px-2 py-1 rounded-full ${
+                                    product.is_active
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-gray-100 text-gray-700"
+                                  }`}
+                                >
+                                  {product.is_active ? "Active" : "Inactive"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
 
-              {/* Modal Footer */}
-              <div className="p-6 border-t border-gray-200 bg-white">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-600">
-                      {selectedProducts.length} product
-                      {selectedProducts.length !== 1 ? "s" : ""} selected
-                    </span>
-                    {selectedProducts.length > 0 && (
-                      <button
-                        onClick={() => {
-                          onProductsChange([]);
-                        }}
-                        className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
-                      >
-                        Clear all
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200 text-sm font-medium"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-6 py-2 text-white rounded-md transition-colors duration-200 text-sm font-medium"
-                      style={{ backgroundColor: color.primary.action }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          color.primary.hover;
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          color.primary.action;
-                      }}
-                    >
-                      {selectedProducts.length > 0 ? "Add Products" : "Done"}
-                    </button>
-                  </div>
+              {/* Footer */}
+              <div className="flex items-center justify-between p-6 border-t border-gray-200 flex-shrink-0">
+                <div className="text-sm text-gray-500">
+                  {selectedProducts.length} of {products.length} products
+                  selected
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    disabled={selectedProducts.length === 0}
+                    className={`px-5 py-2 rounded-md text-sm font-medium ${
+                      selectedProducts.length === 0 ? "cursor-not-allowed" : ""
+                    }`}
+                    style={{
+                      backgroundColor:
+                        selectedProducts.length > 0
+                          ? color.primary.action
+                          : color.interactive.disabled,
+                      color:
+                        selectedProducts.length === 0
+                          ? color.text.muted
+                          : "white",
+                    }}
+                  >
+                    Confirm Selection
+                  </button>
                 </div>
               </div>
             </div>

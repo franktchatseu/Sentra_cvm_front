@@ -26,6 +26,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import { formatCurrency as formatCurrencyAmount } from "../../../shared/services/currencyService";
 import type {
   RangeOption,
   OverallDashboardPerformanceResponse,
@@ -594,12 +595,7 @@ const formatNumber = (value: number) => {
   return value.toLocaleString("en-US");
 };
 
-const formatCurrency = (value: number) => {
-  if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(2)}`;
-};
+// Using formatCurrencyAmount from currencyService instead
 
 // Chart colors now use standardized colors from tokens.reportCharts
 
@@ -1422,7 +1418,7 @@ export default function OverallDashboardPerformancePage() {
                   offset: 10,
                 }}
                 width={80}
-                tickFormatter={(value) => formatCurrency(value)}
+                tickFormatter={(value) => formatCurrencyAmount(value)}
               />
               <Tooltip
                 content={<CustomTooltip />}
