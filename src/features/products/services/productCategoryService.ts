@@ -10,6 +10,7 @@ import {
   CategoryTree,
   MoveSubtreeRequest,
 } from "../types/productCategory";
+import { Product } from "../types/product";
 
 class ProductCategoryService {
   private baseUrl = buildApiUrl("/product-categories");
@@ -375,7 +376,7 @@ class ProductCategoryService {
       active_only?: boolean;
       skipCache?: boolean;
     } = {}
-  ): Promise<PaginatedResponse<any>> {
+  ): Promise<PaginatedResponse<Product>> {
     const queryParams = new URLSearchParams();
     if (params.limit) queryParams.append("limit", params.limit.toString());
     if (params.offset) queryParams.append("offset", params.offset.toString());
@@ -384,7 +385,7 @@ class ProductCategoryService {
     if (params.skipCache) queryParams.append("skipCache", "true");
 
     const query = queryParams.toString();
-    return this.request<PaginatedResponse<any>>(
+    return this.request<PaginatedResponse<Product>>(
       `/${id}/products${query ? "?" + query : ""}`
     );
   }

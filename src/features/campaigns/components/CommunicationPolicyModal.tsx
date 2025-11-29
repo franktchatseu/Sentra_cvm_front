@@ -364,7 +364,7 @@ export default function CommunicationPolicyModal({
                       const newCategories = [...dndConfig.categories];
                       newCategories[index] = {
                         ...category,
-                        type: e.target.value as any,
+                        type: e.target.value as DNDCategory["type"],
                       };
                       updateConfig("dnd", (prev) => ({
                         ...prev,

@@ -53,7 +53,7 @@ class OfferService {
 
     // Parse response
     const contentType = response.headers.get("content-type");
-    let responseData: any;
+    let responseData: Record<string, unknown>;
 
     try {
       if (contentType && contentType.includes("application/json")) {

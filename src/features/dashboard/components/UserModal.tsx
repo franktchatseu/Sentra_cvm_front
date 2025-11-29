@@ -233,10 +233,8 @@ export default function UserModal({
         }
         console.log("✅ Password hashed successfully");
 
-        // Get hashed password from response (API returns hashedPassword, not data.hash)
-        const hashedPassword =
-          (hashResponse as any).hashedPassword ||
-          (hashResponse as any).data?.hash;
+        // Get hashed password from response (API returns data.hash)
+        const hashedPassword = hashResponse.data?.hash;
 
         if (!hashedPassword) {
           console.error("❌ No hashed password in response:", hashResponse);

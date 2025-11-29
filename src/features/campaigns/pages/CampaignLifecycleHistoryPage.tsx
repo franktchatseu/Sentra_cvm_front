@@ -1,25 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ArrowLeft, History, User, FileText, AlertCircle } from "lucide-react";
-import { color, tw } from "../../../shared/utils/utils";
+import { ArrowLeft, AlertCircle } from "lucide-react";
+import { tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-
-interface LifecycleHistoryEntry {
-  id: number;
-  campaign_id: number;
-  previous_status: string;
-  new_status: string;
-  comments?: string;
-  changed_by: string;
-  created_at: string;
-}
 
 export default function CampaignLifecycleHistoryPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [history, setHistory] = useState<LifecycleHistoryEntry[]>([]);
-  const [campaignName, setCampaignName] = useState("");
 
   useEffect(() => {
     // TODO: Implement when backend endpoint is available

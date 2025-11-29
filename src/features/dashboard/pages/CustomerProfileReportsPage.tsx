@@ -664,9 +664,9 @@ export default function CustomerProfileReportsPage() {
         }
       );
     } catch (err) {
-      setCustomerError(
-        err instanceof Error ? err.message : "Failed to search customer"
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to search customer";
+      setCustomerError(errorMessage);
     } finally {
       setIsSearchingCustomer(false);
     }

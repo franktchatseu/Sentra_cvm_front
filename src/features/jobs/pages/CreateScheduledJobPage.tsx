@@ -8,7 +8,6 @@ import { jobTypeService } from "../services/jobTypeService";
 import {
   CreateScheduledJobPayload,
   UpdateScheduledJobPayload,
-  ScheduledJob,
   ScheduleType,
   JobStatus,
 } from "../types/scheduledJob";
@@ -220,6 +219,9 @@ export default function CreateScheduledJobPage() {
         metadata?: Record<string, unknown>;
         created_by?: number;
       };
+      // Explicitly mark as unused to avoid lint errors
+      void processing_mode;
+      void metadata;
 
       const jobDisplayName =
         (formData.name && formData.name.trim()) || "Scheduled job";

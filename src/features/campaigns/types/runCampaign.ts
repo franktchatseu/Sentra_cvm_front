@@ -1,11 +1,11 @@
-export type CampaignChannel = 
-  | 'NORMAL_SMS' 
-  | 'FLASH_SMS' 
-  | 'USSD' 
-  | 'EMAIL' 
-  | 'PUSH' 
-  | 'WHATSAPP' 
-  | 'INAPP';
+export type CampaignChannel =
+  | "NORMAL_SMS"
+  | "FLASH_SMS"
+  | "USSD"
+  | "EMAIL"
+  | "PUSH"
+  | "WHATSAPP"
+  | "INAPP";
 
 export interface RunCampaignRequest {
   campaignId: number; // required, positive integer
@@ -30,6 +30,6 @@ export interface RunCampaignResponse {
   details?: {
     totalRecipients: number;
     estimatedCost: number;
-    validationResults?: any;
+    validationResults?: Record<string, unknown>;
   };
 }

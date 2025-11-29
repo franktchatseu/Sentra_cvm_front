@@ -49,7 +49,7 @@ export interface BackendCampaignType {
   updated_by: number | null;
   deleted_at: string | null;
   deleted_by: number | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   tags: string[];
   attribution_model_id: number | null;
   suppression_list_ids: number[] | null;

@@ -69,7 +69,7 @@ export default function ProgramsPage() {
       setStatsLoading(true);
       const response = await programService.getProgramStats(true);
       if (response && typeof response === "object" && "data" in response) {
-        const data = (response as any).data;
+        const data = (response as { data: Record<string, unknown> }).data;
         // Parse string values from API response
         const total = parseInt(String(data.total_programs || 0), 10) || 0;
         const active = parseInt(String(data.active_programs || 0), 10) || 0;
@@ -211,7 +211,10 @@ export default function ProgramsPage() {
     }, 300);
   };
 
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (
+    key: keyof typeof filters,
+    value: boolean | "all" | string | number | undefined
+  ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 

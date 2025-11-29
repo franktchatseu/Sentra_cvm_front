@@ -221,7 +221,7 @@ export default function CreateQuickListModal({
     }
 
     // Create worksheet data - start with header row
-    const worksheetData: any[][] = [columns];
+    const worksheetData: string[][] = [columns];
 
     // Find the appropriate column index for email and phone
     const emailColumnIndex = columns.findIndex((col) =>

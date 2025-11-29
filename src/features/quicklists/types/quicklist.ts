@@ -65,7 +65,7 @@ export interface UploadTypeConfig {
   id: number;
   upload_type: string;
   description: string | null;
-  expected_columns: string[] | Record<string, any>;
+  expected_columns: string[] | Record<string, unknown>;
   allow_extra_columns: boolean;
   require_all_columns: boolean;
   max_file_size_mb: number;
@@ -82,7 +82,7 @@ export type UploadType = UploadTypeConfig;
 export interface UploadTypeSchema {
   upload_type: string;
   description: string | null;
-  expected_columns: string[] | Record<string, any>;
+  expected_columns: string[] | Record<string, unknown>;
   validation_rules: {
     allow_extra_columns: boolean;
     require_all_columns: boolean;
@@ -127,7 +127,7 @@ export interface QuickListImportLog {
   id: number;
   quicklist_id: number;
   row_number: number;
-  row_data: Record<string, any>;
+  row_data: Record<string, unknown>;
   import_status: ImportStatus;
   error_message: string | null;
   created_at: string;
@@ -197,7 +197,7 @@ export interface QuickListDetailResponse {
 
 export interface QuickListDataResponse {
   success: true;
-  data: Record<string, any>[];
+  data: Record<string, unknown>[];
   pagination: PaginationMeta;
   source: CacheSource;
   message?: string;
@@ -258,7 +258,7 @@ export interface CreateQuickListResponse {
     errors: Array<{
       row_number: number;
       error: string;
-      row_data: Record<string, any>;
+      row_data: Record<string, unknown>;
     }>;
   };
   message?: string;

@@ -11,7 +11,6 @@ interface CreateOfferModalWrapperProps {
 export default function CreateOfferModalWrapper({
   isOpen,
   onClose,
-  onOfferCreated,
 }: CreateOfferModalWrapperProps) {
   if (!isOpen) return null;
 

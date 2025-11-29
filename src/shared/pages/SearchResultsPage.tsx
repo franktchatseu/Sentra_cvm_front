@@ -525,17 +525,19 @@ export default function SearchResultsPage() {
         const catalogs = Array.isArray(offerCatalogsRes.value.data)
           ? offerCatalogsRes.value.data
           : offerCatalogsRes.value.data.categories || [];
-        searchResults["offer-catalogs"] = catalogs.map((catalog: any) => ({
-          id: catalog.id,
-          type: "offer-catalog" as const,
-          name: catalog.name || "Unnamed Catalog",
-          description: catalog.description || undefined,
-          url: `/dashboard/offer-catalogs`,
-          metadata: {
-            is_active: catalog.is_active,
-            offer_count: catalog.offer_count,
-          },
-        }));
+        searchResults["offer-catalogs"] = catalogs.map(
+          (catalog: Record<string, unknown>) => ({
+            id: catalog.id,
+            type: "offer-catalog" as const,
+            name: catalog.name || "Unnamed Catalog",
+            description: catalog.description || undefined,
+            url: `/dashboard/offer-catalogs`,
+            metadata: {
+              is_active: catalog.is_active,
+              offer_count: catalog.offer_count,
+            },
+          })
+        );
       }
 
       // Process product catalogs
@@ -547,7 +549,7 @@ export default function SearchResultsPage() {
           ? productCatalogsRes.value.data
           : [];
         searchResults["product-catalogs"] = catalogs
-          .filter((catalog: any) => {
+          .filter((catalog: Record<string, unknown>) => {
             const nameMatch = catalog.name
               ?.toLowerCase()
               .includes(searchQueryLower);
@@ -556,7 +558,7 @@ export default function SearchResultsPage() {
               .includes(searchQueryLower);
             return nameMatch || descMatch;
           })
-          .map((catalog: any) => ({
+          .map((catalog: Record<string, unknown>) => ({
             id: catalog.id,
             type: "product-catalog" as const,
             name: catalog.name || "Unnamed Catalog",
@@ -578,16 +580,18 @@ export default function SearchResultsPage() {
         const catalogs = Array.isArray(segmentCatalogsRes.value.data)
           ? segmentCatalogsRes.value.data
           : [];
-        searchResults["segment-catalogs"] = catalogs.map((catalog: any) => ({
-          id: catalog.id,
-          type: "segment-catalog" as const,
-          name: catalog.name || "Unnamed Catalog",
-          description: catalog.description || undefined,
-          url: `/dashboard/segment-catalogs`,
-          metadata: {
-            segment_count: catalog.segment_count,
-          },
-        }));
+        searchResults["segment-catalogs"] = catalogs.map(
+          (catalog: Record<string, unknown>) => ({
+            id: catalog.id,
+            type: "segment-catalog" as const,
+            name: catalog.name || "Unnamed Catalog",
+            description: catalog.description || undefined,
+            url: `/dashboard/segment-catalogs`,
+            metadata: {
+              segment_count: catalog.segment_count,
+            },
+          })
+        );
       }
 
       // Process campaign catalogs
@@ -599,16 +603,18 @@ export default function SearchResultsPage() {
         const catalogs = Array.isArray(campaignCatalogsRes.value.data)
           ? campaignCatalogsRes.value.data
           : [];
-        searchResults["campaign-catalogs"] = catalogs.map((catalog: any) => ({
-          id: catalog.id,
-          type: "campaign-catalog" as const,
-          name: catalog.name || "Unnamed Catalog",
-          description: catalog.description || undefined,
-          url: `/dashboard/campaign-catalogs`,
-          metadata: {
-            campaign_count: catalog.campaign_count,
-          },
-        }));
+        searchResults["campaign-catalogs"] = catalogs.map(
+          (catalog: Record<string, unknown>) => ({
+            id: catalog.id,
+            type: "campaign-catalog" as const,
+            name: catalog.name || "Unnamed Catalog",
+            description: catalog.description || undefined,
+            url: `/dashboard/campaign-catalogs`,
+            metadata: {
+              campaign_count: catalog.campaign_count,
+            },
+          })
+        );
       }
 
       // Process quicklists
@@ -621,7 +627,7 @@ export default function SearchResultsPage() {
           ? quicklistsRes.value.data
           : [];
         searchResults.quicklists = quicklists
-          .filter((quicklist: any) => {
+          .filter((quicklist: Record<string, unknown>) => {
             const nameMatch = quicklist.name
               ?.toLowerCase()
               .includes(searchQueryLower);
@@ -633,7 +639,7 @@ export default function SearchResultsPage() {
               .includes(searchQueryLower);
             return nameMatch || descMatch || typeMatch;
           })
-          .map((quicklist: any) => ({
+          .map((quicklist: Record<string, unknown>) => ({
             id: quicklist.id,
             type: "quicklist" as const,
             name: quicklist.name || "Unnamed Quicklist",

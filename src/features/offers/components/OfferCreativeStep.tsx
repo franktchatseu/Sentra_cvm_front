@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Trash2,
@@ -112,7 +112,9 @@ interface TemplateContent {
   variables?: Record<string, string | number | boolean>;
 }
 
-const TEMPLATE_CONTENT_MAP: Record<number, TemplateContent> = {
+// TEMPLATE_CONTENT_MAP is defined but not currently used - kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _TEMPLATE_CONTENT_MAP: Record<number, TemplateContent> = {
   // SMS Templates (5)
   1: {
     // SMS Transactional Template

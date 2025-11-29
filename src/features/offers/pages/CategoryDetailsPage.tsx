@@ -16,6 +16,7 @@ import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal
 import { useToast } from "../../../contexts/ToastContext";
 import { offerCategoryService } from "../services/offerCategoryService";
 import { OfferCategoryType } from "../types/offerCategory";
+import { Offer } from "../types/offer";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 
@@ -31,7 +32,7 @@ export default function CategoryDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [offerCount, setOfferCount] = useState<number>(0);
   const [activeOfferCount, setActiveOfferCount] = useState<number>(0);
-  const [offers, setOffers] = useState<any[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] =
@@ -41,8 +42,8 @@ export default function CategoryDetailsPage() {
     description: "",
   });
   const [analytics, setAnalytics] = useState<{
-    usageTrends: any;
-    performanceByType: any;
+    usageTrends: Record<string, unknown> | null;
+    performanceByType: Record<string, unknown> | null;
   }>({
     usageTrends: null,
     performanceByType: null,

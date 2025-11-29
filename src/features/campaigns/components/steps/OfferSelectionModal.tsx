@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   X,
   Search,
@@ -41,10 +41,8 @@ export default function OfferSelectionModal({
   onSelect,
   selectedOffers,
   editingOffer,
-  onCreateNew,
 }: OfferSelectionModalProps) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { success: showSuccess, error: showError } = useToast();
   const [searchTerm, setSearchTerm] = useState("");

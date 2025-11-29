@@ -120,9 +120,12 @@ export default function MessageEditor({
                       className="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover-variable-btn"
                       style={
                         {
-                          ["--hover-bg" as any]: `${color.primary.accent}15`,
-                          ["--hover-color" as any]: color.primary.accent,
-                        } as React.CSSProperties
+                          "--hover-bg": `${color.primary.accent}15`,
+                          "--hover-color": color.primary.accent,
+                        } as React.CSSProperties & {
+                          "--hover-bg"?: string;
+                          "--hover-color"?: string;
+                        }
                       }
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = `${color.primary.accent}15`;

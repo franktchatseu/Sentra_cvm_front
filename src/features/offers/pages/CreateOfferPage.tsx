@@ -17,7 +17,12 @@ import {
   BarChart,
   Eye,
 } from "lucide-react";
-import { CreateOfferRequest, Offer, OfferTypeEnum } from "../types/offer";
+import {
+  CreateOfferRequest,
+  Offer,
+  OfferTypeEnum,
+  OfferProductLink,
+} from "../types/offer";
 import { Product } from "../../products/types/product";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
@@ -1389,47 +1394,48 @@ export default function CreateOfferPage() {
 
       // Fetch full product details for each product_id
       if (Array.isArray(products) && products.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const productDetailsPromises = products.map(async (link: any) => {
-          try {
-            const productResponse = await productService.getProductById(
-              link.product_id
-            );
-            const productData = productResponse.data || productResponse;
-            return {
-              ...productData,
-              is_primary: link.is_primary,
-              link_id: link.id || link.link_id,
-            } as LinkedProduct;
-          } catch {
-            const fallbackProduct: LinkedProduct = {
-              id: Number(link.product_id),
-              product_uuid: "", // fallback values when details are unavailable
-              product_code: "",
-              name: `Product ${link.product_id}`,
-              price: 0,
-              currency: "KES",
-              requires_inventory: false,
-              is_active: false,
-              created_at: new Date(0).toISOString(),
-              updated_at: new Date(0).toISOString(),
-              description: undefined,
-              category_id: undefined,
-              da_id: undefined,
-              validity_days: undefined,
-              validity_hours: undefined,
-              available_quantity: undefined,
-              effective_from: undefined,
-              effective_to: undefined,
-              created_by: undefined,
-              updated_by: undefined,
-              metadata: undefined,
-              is_primary: link.is_primary,
-              link_id: link.id || link.link_id,
-            };
-            return fallbackProduct;
+        const productDetailsPromises = products.map(
+          async (link: OfferProductLink) => {
+            try {
+              const productResponse = await productService.getProductById(
+                link.product_id
+              );
+              const productData = productResponse.data || productResponse;
+              return {
+                ...productData,
+                is_primary: link.is_primary,
+                link_id: link.id || link.link_id,
+              } as LinkedProduct;
+            } catch {
+              const fallbackProduct: LinkedProduct = {
+                id: Number(link.product_id),
+                product_uuid: "", // fallback values when details are unavailable
+                product_code: "",
+                name: `Product ${link.product_id}`,
+                price: 0,
+                currency: "KES",
+                requires_inventory: false,
+                is_active: false,
+                created_at: new Date(0).toISOString(),
+                updated_at: new Date(0).toISOString(),
+                description: undefined,
+                category_id: undefined,
+                da_id: undefined,
+                validity_days: undefined,
+                validity_hours: undefined,
+                available_quantity: undefined,
+                effective_from: undefined,
+                effective_to: undefined,
+                created_by: undefined,
+                updated_by: undefined,
+                metadata: undefined,
+                is_primary: link.is_primary,
+                link_id: link.id || link.link_id,
+              };
+              return fallbackProduct;
+            }
           }
-        });
+        );
 
         const fullProducts = await Promise.all(productDetailsPromises);
         setSelectedProducts(fullProducts);
@@ -1441,9 +1447,12 @@ export default function CreateOfferPage() {
       }
 
       // Load existing creatives and prefill the creatives state
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const creativesResponse = creativesData as any;
-      const creativesList = creativesResponse?.data || [];
+      const creativesResponse = creativesData as
+        | { data?: OfferCreative[] }
+        | OfferCreative[];
+      const creativesList = Array.isArray(creativesResponse)
+        ? creativesResponse
+        : creativesResponse?.data || [];
 
       if (Array.isArray(creativesList) && creativesList.length > 0) {
         const mappedCreatives: LocalOfferCreative[] = creativesList.map(

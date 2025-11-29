@@ -12,7 +12,7 @@ export interface CatalogItem {
   name: string;
   description?: string;
   status?: string;
-  [key: string]: any; // Allow additional properties
+  [key: string]: unknown; // Allow additional properties
 }
 
 interface CatalogItemsModalProps<T extends CatalogItem> {
@@ -101,14 +101,15 @@ export default function CatalogItemsModal<T extends CatalogItem>({
 
   // Get status from item based on entity type
   const getItemStatus = (item: T): string => {
+    const itemRecord = item as Record<string, unknown>;
     if (entityNamePlural === "campaigns") {
-      return (item as any).status || "";
+      return (itemRecord.status as string) || "";
     } else if (entityNamePlural === "offers") {
-      return (item as any).status || "";
+      return (itemRecord.status as string) || "";
     } else if (entityNamePlural === "products") {
-      return (item as any).is_active ? "active" : "inactive";
+      return (itemRecord.is_active as boolean) ? "active" : "inactive";
     } else if (entityNamePlural === "segments") {
-      return (item as any).is_active ? "active" : "inactive";
+      return (itemRecord.is_active as boolean) ? "active" : "inactive";
     }
     return "";
   };

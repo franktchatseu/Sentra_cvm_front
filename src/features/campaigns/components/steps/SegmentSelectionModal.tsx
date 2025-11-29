@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { X, Search, Plus, Users } from "lucide-react";
 import { CampaignSegment } from "../../types/campaign";
 import HeadlessSelect from "../../../../shared/components/ui/HeadlessSelect";
-import { color, tw } from "../../../../shared/utils/utils";
+import { color } from "../../../../shared/utils/utils";
 import { segmentService } from "../../../segments/services/segmentService";
 import { Segment } from "../../../segments/types/segment";
 import LoadingSpinner from "../../../../shared/components/ui/LoadingSpinner";

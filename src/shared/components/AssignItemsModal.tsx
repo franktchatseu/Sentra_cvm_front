@@ -146,7 +146,7 @@ function AssignItemsModal({
             );
             setCatalogName(catalog.data?.name || "");
             break;
-          case "campaigns":
+          case "campaigns": {
             const campaignCatalog =
               await campaignService.getCampaignCategoryById(
                 Number(catalogId),
@@ -157,6 +157,7 @@ function AssignItemsModal({
                 ""
             );
             break;
+          }
         }
       } catch {
         // Failed to load catalog name
@@ -211,7 +212,7 @@ function AssignItemsModal({
               itemsData = [];
             }
             break;
-          case "campaigns":
+          case "campaigns": {
             let allCampaigns: BackendCampaignType[] = [];
             let offset = 0;
             const limit = 100;
@@ -236,6 +237,7 @@ function AssignItemsModal({
 
             itemsData = allCampaigns;
             break;
+          }
         }
 
         setItems(itemsData);
@@ -324,7 +326,7 @@ function AssignItemsModal({
                 assigned = Array.from(assignedSet);
                 break;
               }
-              case "segments":
+              case "segments": {
                 try {
                   const segmentsResponse =
                     await segmentService.getSegmentsByCategory(
@@ -388,6 +390,7 @@ function AssignItemsModal({
                   }
                 }
                 break;
+              }
               case "campaigns": {
                 try {
                   const campaignsResponse =
@@ -709,9 +712,9 @@ function AssignItemsModal({
             err instanceof Error
               ? err.message
               : typeof err === "object" && err !== null && "error" in err
-              ? String((err as any).error)
+              ? String((err as { error: unknown }).error)
               : typeof err === "object" && err !== null && "message" in err
-              ? String((err as any).message)
+              ? String((err as { message: unknown }).message)
               : `Failed to assign ${typeInfo.singular}`;
 
           if (failed === 1) {

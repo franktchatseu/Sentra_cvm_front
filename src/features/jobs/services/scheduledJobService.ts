@@ -2,7 +2,6 @@ import { buildApiUrl, getAuthHeaders } from "../../../shared/services/api";
 import {
   CreateScheduledJobPayload,
   ExecutionStatsPayload,
-  FailureCountPayload,
   LastRunPayload,
   NextRunPayload,
   NotificationRecipientsPayload,
@@ -573,9 +572,9 @@ class ScheduledJobService {
       "data" in response &&
       "success" in response
     ) {
-      return (response as { success: boolean; data: any }).data;
+      return (response as { success: boolean; data: ScheduledJob }).data;
     }
-    return response as any;
+    return response as ScheduledJob;
   }
 }
 

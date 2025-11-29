@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Database, Server, Activity } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { connectionProfileService } from "../services/connectionProfileService";
 import {
   ConnectionProfileType,

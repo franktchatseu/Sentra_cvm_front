@@ -328,7 +328,7 @@ export default function SegmentConditionsBuilder({
               updateCondition(groupId, condition.id, {
                 field: value as string,
                 field_id: backendField?.id,
-                operator: mappedOperator as any,
+                operator: mappedOperator as SegmentCondition["operator"],
                 operator_id: firstOperator?.id,
                 type: fieldType,
                 value: fieldType === "number" ? 0 : "",
@@ -378,7 +378,7 @@ export default function SegmentConditionsBuilder({
             onChange={(value) => {
               const [operator, operatorId] = (value as string).split("|");
               updateCondition(groupId, condition.id, {
-                operator: operator as any,
+                operator: operator as SegmentCondition["operator"],
                 operator_id: operatorId ? parseInt(operatorId) : undefined,
               });
             }}
@@ -898,14 +898,10 @@ export default function SegmentConditionsBuilder({
           setCurrentEditingCondition(null);
         }}
         onSubmit={async (request) => {
-          try {
-            await quicklistService.createQuickList(request);
-            setIsCreateQuickListModalOpen(false);
-            setCurrentEditingCondition(null);
-            // Optionally refresh the quicklist picker or show success message
-          } catch (err) {
-            throw err; // Let CreateQuickListModal handle the error
-          }
+          await quicklistService.createQuickList(request);
+          setIsCreateQuickListModalOpen(false);
+          setCurrentEditingCondition(null);
+          // Optionally refresh the quicklist picker or show success message
         }}
         uploadTypes={uploadTypes}
       />

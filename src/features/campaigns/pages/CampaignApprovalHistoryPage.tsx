@@ -1,33 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import {
-  ArrowLeft,
-  CheckCircle,
-  XCircle,
-  Clock,
-  User,
-  AlertCircle,
-} from "lucide-react";
-import { color, tw } from "../../../shared/utils/utils";
+import { ArrowLeft, AlertCircle } from "lucide-react";
+import { tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-
-interface ApprovalHistoryEntry {
-  id: number;
-  campaign_id: number;
-  previous_status: string | null;
-  new_status: string;
-  comments: string | null;
-  approved_by: string | null;
-  created_at: string;
-  created_by: string;
-}
 
 export default function CampaignApprovalHistoryPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [history, setHistory] = useState<ApprovalHistoryEntry[]>([]);
-  const [campaignName, setCampaignName] = useState("");
 
   useEffect(() => {
     // TODO: Implement when backend endpoint is available

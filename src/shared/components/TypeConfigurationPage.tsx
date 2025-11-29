@@ -188,7 +188,16 @@ function TypeConfigurationModal({
       }
     }
 
-    const payload: any = {
+    const payload: {
+      name: string;
+      description?: string;
+      isActive: boolean;
+      metadataValue?: number | string;
+      title?: string;
+      text_body?: string;
+      html_body?: string;
+      variables?: Record<string, string | number | boolean>;
+    } = {
       name: name.trim(),
       description: description.trim() || undefined,
       isActive,

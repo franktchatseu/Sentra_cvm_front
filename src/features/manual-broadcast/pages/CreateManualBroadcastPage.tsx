@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, MessageSquare, Send, Calendar } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
-import ProgressStepper, { Step } from "../../../shared/components/ui/ProgressStepper";
+import ProgressStepper, {
+  Step,
+} from "../../../shared/components/ui/ProgressStepper";
 import TargetAudienceStep from "../components/TargetAudienceStep";
 import DefineCommunicationStep from "../components/DefineCommunicationStep";
 import TestBroadcastStep from "../components/TestBroadcastStep";
@@ -26,7 +28,7 @@ export interface ManualBroadcastData {
 
   // Step 3: Test
   testContacts?: string[];
-  testResults?: any;
+  testResults?: Record<string, unknown>;
 
   // Step 4: Schedule
   scheduleType?: "now" | "later";

@@ -20,7 +20,7 @@ import {
   Save,
   AlertCircle,
 } from "lucide-react";
-import { color, tw } from "../../../shared/utils/utils";
+import { color } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import TagInput from "../../../shared/components/ui/TagInput";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -196,7 +196,10 @@ const rankOptions: RankOption[] = [
 ];
 
 // Icon component mapping
-const iconComponents: Record<ObjectiveIcon, any> = {
+const iconComponents: Record<
+  ObjectiveIcon,
+  React.ComponentType<{ className?: string }>
+> = {
   target: Target,
   users: Users,
   "trending-up": TrendingUp,
@@ -297,48 +300,13 @@ export default function ObjectiveModal({
 
   const handleInputChange = (
     field: keyof CreateObjectiveRequest,
-    value: any
+    value: string | number | string[]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
-  };
-
-  const getIconComponent = (iconName: ObjectiveIcon) => {
-    const IconComponent = iconComponents[iconName];
-    return IconComponent ? (
-      <IconComponent className="w-5 h-5" />
-    ) : (
-      <Target className="w-5 h-5" />
-    );
-  };
-
-  const getSelectedIconOption = (icon: ObjectiveIcon) => {
-    return (
-      iconOptions.find((option) => option.value === icon) || iconOptions[0]
-    );
-  };
-
-  const getSelectedPriorityOption = (priority: string) => {
-    return (
-      priorityOptions.find((option) => option.value === priority) ||
-      priorityOptions[1]
-    );
-  };
-
-  const getSelectedStatusOption = (status: string) => {
-    return (
-      statusOptions.find((option) => option.value === status) ||
-      statusOptions[0]
-    );
-  };
-
-  const getSelectedRankOption = (rank: number) => {
-    return (
-      rankOptions.find((option) => option.value === rank) || rankOptions[2]
-    );
   };
 
   if (!isOpen) return null;

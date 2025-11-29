@@ -955,9 +955,12 @@ export default function QuickListDetailsPage() {
                               }`}
                               style={{ backgroundColor: tableBodyBackground }}
                             >
-                              {(row as any)[column] !== undefined &&
-                              (row as any)[column] !== null
-                                ? String((row as any)[column])
+                              {(row as Record<string, unknown>)[column] !==
+                                undefined &&
+                              (row as Record<string, unknown>)[column] !== null
+                                ? String(
+                                    (row as Record<string, unknown>)[column]
+                                  )
                                 : "-"}
                             </td>
                           ))}

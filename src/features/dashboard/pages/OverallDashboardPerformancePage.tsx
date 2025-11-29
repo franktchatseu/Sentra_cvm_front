@@ -30,12 +30,10 @@ import { formatCurrency as formatCurrencyAmount } from "../../../shared/services
 import type {
   RangeOption,
   OverallDashboardPerformanceResponse,
-  ChannelPerformance,
 } from "../types/ReportsAPI";
 
 // Extract types from API response type
 type PerformanceSnapshot = OverallDashboardPerformanceResponse;
-type ChannelData = ChannelPerformance;
 type SMSDeliveryPoint = {
   date: string;
   sent: number;
@@ -701,7 +699,9 @@ export default function OverallDashboardPerformancePage() {
 
   // Scale snapshot data based on actual date range
   const baseSnapshot = mockPerformanceSnapshots[activeRangeKey];
-  const kpiSnapshot = useMemo(() => {
+  // kpiSnapshot is computed but not currently used - kept for future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _kpiSnapshot = useMemo(() => {
     if (!useDummyData) {
       return {
         reach: { reach: 0 },

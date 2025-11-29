@@ -675,9 +675,9 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
             err instanceof Error
               ? err.message
               : typeof err === "object" && err !== null && "error" in err
-              ? String((err as any).error)
+              ? String((err as { error: unknown }).error)
               : typeof err === "object" && err !== null && "message" in err
-              ? String((err as any).message)
+              ? String((err as { message: unknown }).message)
               : `Failed to assign ${typeInfo.singular}`;
 
           // Show specific error for the first failed item

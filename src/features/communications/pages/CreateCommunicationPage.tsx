@@ -29,12 +29,13 @@ export default function CreateCommunicationPage() {
     useState<CommunicationChannel>("EMAIL");
   const [messageTitle, setMessageTitle] = useState("");
   const [messageBody, setMessageBody] = useState("");
-  const [sampleData, setSampleData] = useState<Record<string, any>>({});
+  const [sampleData, setSampleData] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     if (quicklistId) {
       loadQuickListAndData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quicklistId]);
 
   const loadQuickListAndData = async () => {
@@ -56,8 +57,12 @@ export default function CreateCommunicationPage() {
       if (dataResponse.data && dataResponse.data.length > 0) {
         const firstRow = dataResponse.data[0];
         // Remove metadata fields
-        const { id, quicklist_id, created_at, ...cleanData } = firstRow as any;
-        setSampleData(cleanData);
+        if (firstRow && typeof firstRow === "object") {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id, quicklist_id, created_at, ...cleanData } =
+            firstRow as Record<string, unknown>;
+          setSampleData(cleanData as Record<string, unknown>);
+        }
       }
     } catch (error) {
       console.error("Failed to load quicklist:", error);

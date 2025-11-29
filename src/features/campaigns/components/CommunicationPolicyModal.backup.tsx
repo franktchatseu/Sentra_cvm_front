@@ -10,7 +10,7 @@ import {
   BellOff,
   Star,
 } from "lucide-react";
-import { color, tw, components, helpers } from "../../../shared/utils/utils";
+import { color, tw, components } from "../../../shared/utils/utils";
 import {
   CommunicationPolicyConfiguration,
   CreateCommunicationPolicyRequest,
@@ -21,7 +21,6 @@ import {
   DNDConfig,
   VIPListConfig,
   DNDCategory,
-  VIPList,
   DND_CATEGORIES,
   DAYS_OF_WEEK,
 } from "../types/communicationPolicyConfig";

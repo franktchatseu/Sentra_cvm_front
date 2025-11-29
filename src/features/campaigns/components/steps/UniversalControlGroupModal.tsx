@@ -72,10 +72,6 @@ export default function UniversalControlGroupModal({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingGroup, setEditingGroup] =
     useState<UniversalControlGroup | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [controlGroupToDelete, setControlGroupToDelete] = useState<
-    string | null
-  >(null);
 
   if (!isOpen) return null;
 
@@ -93,22 +89,8 @@ export default function UniversalControlGroupModal({
   };
 
   const handleDelete = (id: string) => {
-    setControlGroupToDelete(id);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!controlGroupToDelete) return;
-    setControlGroups((prev) =>
-      prev.filter((group) => group.id !== controlGroupToDelete)
-    );
-    setShowDeleteModal(false);
-    setControlGroupToDelete(null);
-  };
-
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setControlGroupToDelete(null);
+    // TODO: Implement delete confirmation modal
+    setControlGroups((prev) => prev.filter((group) => group.id !== id));
   };
 
   return createPortal(

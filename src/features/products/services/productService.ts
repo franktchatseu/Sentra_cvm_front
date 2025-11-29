@@ -101,7 +101,7 @@ class ProductService {
 
     // Parse response first
     const contentType = response.headers.get("content-type");
-    let responseData: any;
+    let responseData: Record<string, unknown>;
 
     try {
       if (contentType && contentType.includes("application/json")) {

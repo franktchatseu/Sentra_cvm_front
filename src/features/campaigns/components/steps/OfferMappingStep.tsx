@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Gift, Target, Users, X } from "lucide-react";
+import { Gift } from "lucide-react";
 import {
   CreateCampaignRequest,
   CampaignSegment,
@@ -12,7 +12,6 @@ import OfferFlowChart from "./OfferFlowChart";
 import ChampionChallengerOfferMapping from "../displays/ChampionChallengerOfferMapping";
 import ABTestOfferMapping from "../displays/ABTestOfferMapping";
 import MultipleTargetOfferMapping from "./MultipleTargetOfferMapping";
-import { color } from "../../../../shared/utils/utils";
 import { SegmentOfferMapping } from "../../pages/CreateCampaignPage";
 
 interface OfferMappingStepProps {
@@ -38,23 +37,12 @@ interface OfferMappingStepProps {
 }
 
 export default function OfferMappingStep({
-  currentStep: _currentStep,
-  totalSteps: _totalSteps,
-  onNext,
-  onPrev,
-  onSubmit: _onSubmit,
   formData,
-  setFormData,
   selectedSegments,
   selectedOffers,
   setSelectedOffers,
   segmentOfferMappings = [],
   setSegmentOfferMappings,
-  controlGroup: _controlGroup,
-  setControlGroup: _setControlGroup,
-  isLoading: _isLoading,
-  onSaveDraft: _onSaveDraft,
-  onCancel: _onCancel,
   validationErrors = {},
   clearValidationErrors,
 }: OfferMappingStepProps) {
@@ -83,50 +71,6 @@ export default function OfferMappingStep({
       });
     });
     setSelectedOffers(Array.from(uniqueOffers.values()));
-  };
-
-  const handleNext = () => {
-    if (isRoundRobinOrMultiLevel) {
-      // For Round Robin and Multiple Level, use sequential mappings
-      if (selectedSegments.length > 0 && sequentialMappings.length > 0) {
-        const offerMappingsList = sequentialMappings.map((mapping) => ({
-          offer_id: mapping.offer_id,
-          segment_ids: [mapping.segment_id],
-          priority: mapping.sequence_order,
-        }));
-        setFormData({
-          ...formData,
-          offers: offerMappingsList,
-        });
-        onNext();
-      }
-    } else {
-      // For other types, use standard mappings
-      if (
-        selectedSegments.length > 0 &&
-        Object.keys(offerMappings).length > 0
-      ) {
-        const offerMappingsList: {
-          offer_id: string;
-          segment_ids: string[];
-          priority: number;
-        }[] = [];
-        Object.entries(offerMappings).forEach(([segmentId, offers]) => {
-          offers.forEach((offer) => {
-            offerMappingsList.push({
-              offer_id: offer.id,
-              segment_ids: [segmentId],
-              priority: 1,
-            });
-          });
-        });
-        setFormData({
-          ...formData,
-          offers: offerMappingsList,
-        });
-        onNext();
-      }
-    }
   };
 
   const handleOfferSelect = (offers: CampaignOffer[]) => {
@@ -209,11 +153,6 @@ export default function OfferMappingStep({
       (offer) => offer.id
     );
   });
-
-  const isFormValid = isRoundRobinOrMultiLevel
-    ? selectedSegments.length > 0 && sequentialMappings.length > 0
-    : selectedSegments.length > 0 &&
-      selectedSegments.every((segment) => offerMappings[segment.id]?.length);
 
   return (
     <div className="space-y-8">

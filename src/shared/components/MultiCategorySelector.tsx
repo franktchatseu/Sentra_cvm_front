@@ -210,7 +210,10 @@ export default function MultiCategorySelector({
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            handleRemove(cat.id, e as any);
+                            handleRemove(
+                              cat.id,
+                              e as React.KeyboardEvent<HTMLSpanElement>
+                            );
                           }
                         }}
                         aria-label={`Remove ${cat.name}`}

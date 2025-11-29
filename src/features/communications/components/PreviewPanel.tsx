@@ -6,7 +6,7 @@ interface PreviewPanelProps {
   channel: CommunicationChannel;
   title?: string;
   body: string;
-  sampleData?: Record<string, any>;
+  sampleData?: Record<string, unknown>;
 }
 
 export default function PreviewPanel({

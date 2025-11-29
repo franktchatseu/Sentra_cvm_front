@@ -41,7 +41,9 @@ export default function TargetAudienceStep({
   const loadUploadTypes = async () => {
     try {
       setLoading(true);
-      const response = await quicklistService.getUploadTypes({ activeOnly: true });
+      const response = await quicklistService.getUploadTypes({
+        activeOnly: true,
+      });
       if (response.success) {
         const types = response.data || [];
         setUploadTypes(types);
@@ -73,7 +75,9 @@ export default function TargetAudienceStep({
       }
 
       // Validate file size
-      const selectedUploadType = uploadTypes.find((t) => t.upload_type === uploadType);
+      const selectedUploadType = uploadTypes.find(
+        (t) => t.upload_type === uploadType
+      );
       if (!selectedUploadType) {
         setError("Please select an upload type first");
         setFile(null);
@@ -150,14 +154,15 @@ export default function TargetAudienceStep({
       throw new Error("No expected columns defined for this upload type");
     }
 
-    const worksheetData: any[][] = [columns];
+    const worksheetData: string[][] = [columns];
 
     const emailColumnIndex = columns.findIndex((col) =>
       col.toLowerCase().includes("email")
     );
     const phoneColumnIndex = columns.findIndex(
       (col) =>
-        col.toLowerCase().includes("phone") || col.toLowerCase().includes("mobile")
+        col.toLowerCase().includes("phone") ||
+        col.toLowerCase().includes("mobile")
     );
 
     manualInputValidation.valid.forEach((contact) => {
@@ -226,7 +231,8 @@ export default function TargetAudienceStep({
       setError("");
 
       // Create file from manual input if in manual mode
-      const fileToUpload = inputMode === "manual" ? createFileFromManualInput() : file!;
+      const fileToUpload =
+        inputMode === "manual" ? createFileFromManualInput() : file!;
 
       // Upload quicklist
       const response = await quicklistService.createQuickList({
@@ -257,7 +263,8 @@ export default function TargetAudienceStep({
       onNext();
     } catch (err) {
       console.error("Failed to create audience:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to create audience";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create audience";
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -317,7 +324,10 @@ export default function TargetAudienceStep({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-md shadow-sm border p-8" style={{ borderColor: color.border.default }}>
+      <div
+        className="bg-white rounded-md shadow-sm border p-8"
+        style={{ borderColor: color.border.default }}
+      >
         <div className="text-center py-12">
           <p className={tw.textMuted}>Loading...</p>
         </div>
@@ -326,11 +336,20 @@ export default function TargetAudienceStep({
   }
 
   return (
-    <div className="bg-white rounded-md shadow-sm border" style={{ borderColor: color.border.default }}>
-      <div className="p-6 border-b" style={{ borderColor: color.border.default }}>
-        <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>Target Audience</h2>
+    <div
+      className="bg-white rounded-md shadow-sm border"
+      style={{ borderColor: color.border.default }}
+    >
+      <div
+        className="p-6 border-b"
+        style={{ borderColor: color.border.default }}
+      >
+        <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>
+          Target Audience
+        </h2>
         <p className={`text-sm ${tw.textSecondary} mt-1`}>
-          Define who will receive your broadcast by uploading a file or entering contacts manually
+          Define who will receive your broadcast by uploading a file or entering
+          contacts manually
         </p>
       </div>
 
@@ -386,8 +405,11 @@ export default function TargetAudienceStep({
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
               style={{
                 borderColor:
-                  inputMode === "file" ? color.primary.action : color.border.default,
-                backgroundColor: inputMode === "file" ? color.primary.action : "white",
+                  inputMode === "file"
+                    ? color.primary.action
+                    : color.border.default,
+                backgroundColor:
+                  inputMode === "file" ? color.primary.action : "white",
                 color: inputMode === "file" ? "white" : color.text.primary,
                 opacity: isSubmitting ? 0.5 : 1,
                 cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -403,8 +425,11 @@ export default function TargetAudienceStep({
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
               style={{
                 borderColor:
-                  inputMode === "manual" ? color.primary.action : color.border.default,
-                backgroundColor: inputMode === "manual" ? color.primary.action : "white",
+                  inputMode === "manual"
+                    ? color.primary.action
+                    : color.border.default,
+                backgroundColor:
+                  inputMode === "manual" ? color.primary.action : "white",
                 color: inputMode === "manual" ? "white" : color.text.primary,
                 opacity: isSubmitting ? 0.5 : 1,
                 cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -462,7 +487,9 @@ export default function TargetAudienceStep({
                       style={{ color: color.status.success }}
                     />
                     <div>
-                      <p className={`text-sm font-medium ${tw.textPrimary}`}>{file.name}</p>
+                      <p className={`text-sm font-medium ${tw.textPrimary}`}>
+                        {file.name}
+                      </p>
                       <p className={`text-xs ${tw.textSecondary} mt-1`}>
                         {formatFileSize(file.size)}
                       </p>
@@ -529,7 +556,9 @@ export default function TargetAudienceStep({
         {/* Manual Entry */}
         {inputMode === "manual" && (
           <div>
-            <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+            <label
+              className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+            >
               Enter Contacts Manually *
             </label>
             <textarea
@@ -553,7 +582,10 @@ export default function TargetAudienceStep({
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: color.status.success }}
                   ></div>
-                  <span className="font-medium" style={{ color: color.status.success }}>
+                  <span
+                    className="font-medium"
+                    style={{ color: color.status.success }}
+                  >
                     {manualInputValidation.validCount} valid contact
                     {manualInputValidation.validCount !== 1 ? "s" : ""}
                   </span>
@@ -564,7 +596,10 @@ export default function TargetAudienceStep({
                       className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: color.status.danger }}
                     ></div>
-                    <span className="font-medium" style={{ color: color.status.danger }}>
+                    <span
+                      className="font-medium"
+                      style={{ color: color.status.danger }}
+                    >
                       {manualInputValidation.invalidCount} invalid
                     </span>
                   </div>
@@ -578,7 +613,6 @@ export default function TargetAudienceStep({
             </p>
           </div>
         )}
-
 
         {/* Error Message */}
         {error && (

@@ -281,9 +281,12 @@ export default function QuickListDetailsModal({
                               key={column}
                               className="px-4 py-3 text-gray-600"
                             >
-                              {(row as any)[column] !== undefined &&
-                              (row as any)[column] !== null
-                                ? String((row as any)[column])
+                              {(row as Record<string, unknown>)[column] !==
+                                undefined &&
+                              (row as Record<string, unknown>)[column] !== null
+                                ? String(
+                                    (row as Record<string, unknown>)[column]
+                                  )
                                 : "-"}
                             </td>
                           ))}

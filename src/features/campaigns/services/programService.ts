@@ -1,6 +1,5 @@
 import { API_CONFIG, getAuthHeaders } from "../../../shared/services/api";
 import {
-  Program,
   CreateProgramRequest,
   UpdateProgramRequest,
   ProgramResponse,

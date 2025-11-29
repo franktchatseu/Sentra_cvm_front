@@ -12,10 +12,16 @@ import {
 } from "../types/communicationPolicyConfig";
 import { color, tw, components } from "../../../shared/utils/utils";
 
+type PolicyConfig =
+  | TimeWindowConfig
+  | MaximumCommunicationConfig
+  | DNDConfig
+  | VIPListConfig;
+
 interface PolicyCustomizationPanelProps {
   policy: CommunicationPolicyConfiguration;
-  config: any;
-  onConfigChange: (newConfig: any) => void;
+  config: PolicyConfig;
+  onConfigChange: (newConfig: PolicyConfig) => void;
 }
 
 export default function PolicyCustomizationPanel({
@@ -211,7 +217,7 @@ export default function PolicyCustomizationPanel({
                       const newCategories = [...dndConfig.categories];
                       newCategories[index] = {
                         ...category,
-                        type: e.target.value as any,
+                        type: e.target.value as DNDCategory["type"],
                       };
                       onConfigChange({
                         ...dndConfig,

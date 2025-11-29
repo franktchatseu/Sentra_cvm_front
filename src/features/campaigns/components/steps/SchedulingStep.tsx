@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Calendar, AlertCircle } from "lucide-react";
 import { CampaignScheduling } from "../../types/campaign";
-import { tw, color } from "../../../../shared/utils/utils";
+import { color } from "../../../../shared/utils/utils";
+import { CreateCampaignRequest } from "../../types/campaign";
 
 interface SchedulingStepProps {
-  formData: any; // Use any to accept both CreateCampaignRequest and CampaignFormData
-  setFormData: (data: any) => void;
+  formData: CreateCampaignRequest;
+  setFormData: (data: CreateCampaignRequest) => void;
 }
 
 const daysOfWeek = [
@@ -60,6 +61,7 @@ export default function SchedulingStep({
       };
       setFormData({ ...formData, scheduling: defaultScheduling });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateScheduling = (updates: Partial<CampaignScheduling>) => {

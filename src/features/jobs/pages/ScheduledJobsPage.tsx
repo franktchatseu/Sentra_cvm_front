@@ -26,7 +26,6 @@ import type {
   ScheduledJob,
   ScheduledJobSearchParams,
 } from "../types/scheduledJob";
-import { JobType } from "../types/job";
 // import { useAuth } from "../../../contexts/AuthContext";
 
 const STATUS_OPTIONS = [
@@ -37,7 +36,9 @@ const STATUS_OPTIONS = [
   { label: "Archived", value: "archived" },
 ];
 
-const formatDateTime = (value?: string | null) => {
+// formatDateTime and getStatusColors are defined but not currently used - kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _formatDateTime = (value?: string | null) => {
   if (!value) return "—";
   try {
     return new Date(value).toLocaleString();
@@ -46,7 +47,8 @@ const formatDateTime = (value?: string | null) => {
   }
 };
 
-const getStatusColors = (status: string) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _getStatusColors = (status: string) => {
   switch (status.toLowerCase()) {
     case "active":
       return "bg-green-50 text-green-700";
@@ -85,7 +87,6 @@ export default function ScheduledJobsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingJob, setDeletingJob] = useState<ScheduledJob | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [jobTypes, setJobTypes] = useState<JobType[]>([]);
   const [jobTypeMap, setJobTypeMap] = useState<Record<number, string>>({});
   // Bulk selection and batch operations - commented out for now
   // const [selectedJobs, setSelectedJobs] = useState<Set<number>>(new Set());
@@ -266,7 +267,6 @@ export default function ScheduledJobsPage() {
           limit: 100,
           skipCache: true,
         });
-        setJobTypes(response.data || []);
         // Create a map of job_type_id -> job_type_name
         const map: Record<number, string> = {};
         (response.data || []).forEach((jobType) => {

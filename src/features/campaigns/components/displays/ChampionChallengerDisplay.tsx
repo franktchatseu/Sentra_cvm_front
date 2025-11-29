@@ -14,15 +14,10 @@ interface ChampionChallengerDisplayProps {
 export default function ChampionChallengerDisplay({
   champion,
   challengers,
-  onAddChampion,
   onAddChallenger,
   onRemoveSegment,
   onConfigureControlGroup,
 }: ChampionChallengerDisplayProps) {
-  const totalAudience =
-    (champion?.customer_count || 0) +
-    challengers.reduce((sum, c) => sum + c.customer_count, 0);
-
   return (
     <div className="space-y-6">
       {/* Champion Section */}

@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import StepFlowLayout from "../../../../shared/components/ui/StepFlowLayout";
+import { CreateOfferRequest } from "../../../types/offer";
 
 interface OfferDefinitionStepProps {
   currentStep: number;
   totalSteps: number;
   onNext: () => void;
   onPrev: () => void;
-  formData: any; // Replace with proper Offer type
-  setFormData: (data: any) => void;
+  formData: CreateOfferRequest & { type?: string };
+  setFormData: (data: CreateOfferRequest & { type?: string }) => void;
   onSaveDraft?: () => void;
   onCancel?: () => void;
 }

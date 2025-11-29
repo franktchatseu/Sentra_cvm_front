@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Search, Settings, Plus, X, Signal } from "lucide-react";
+import { ChevronDown, Search, Settings, Plus, X } from "lucide-react";
 import MultiCategorySelector from "../../../../shared/components/MultiCategorySelector";
 import { CreateCampaignRequest } from "../../types/campaign";
-import { campaignService } from "../../services/campaignService";
 import { programService } from "../../services/programService";
 import { Program } from "../../types/program";
 import { useClickOutside } from "../../../../shared/hooks/useClickOutside";
@@ -65,12 +64,6 @@ const objectiveOptions = [
   },
 ];
 
-interface CampaignCategory {
-  id: number;
-  name: string;
-  description: string;
-}
-
 export default function CampaignDefinitionStep({
   formData,
   setFormData,
@@ -79,8 +72,6 @@ export default function CampaignDefinitionStep({
 }: CampaignDefinitionStepProps) {
   const t = useTranslation();
   const { success: showToast, error: showError } = useToast();
-  const [categorySearchTerm, setCategorySearchTerm] = useState("");
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [programSearchTerm, setProgramSearchTerm] = useState("");
   const [isProgramDropdownOpen, setIsProgramDropdownOpen] = useState(false);
   const [objectiveSearchTerm, setObjectiveSearchTerm] = useState("");
@@ -91,9 +82,7 @@ export default function CampaignDefinitionStep({
   const [departmentSearchTerm, setDepartmentSearchTerm] = useState("");
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] =
     useState(false);
-  const [categories, setCategories] = useState<CampaignCategory[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
   const [lineOfBusinessData, setLineOfBusinessData] = useState(
     lineOfBusinessConfig.initialData
@@ -114,18 +103,19 @@ export default function CampaignDefinitionStep({
   const [policyToCustomize, setPolicyToCustomize] =
     useState<CommunicationPolicyConfiguration | null>(null);
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
-  const [pendingPolicyData, setPendingPolicyData] = useState<any>(null);
+  const [pendingPolicyData, setPendingPolicyData] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
 
-  const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const programDropdownRef = useRef<HTMLDivElement>(null);
   const objectiveDropdownRef = useRef<HTMLDivElement>(null);
   const lineOfBusinessDropdownRef = useRef<HTMLDivElement>(null);
   const departmentDropdownRef = useRef<HTMLDivElement>(null);
   const policyDropdownRef = useRef<HTMLDivElement>(null);
 
-  useClickOutside(categoryDropdownRef, () => setIsCategoryDropdownOpen(false));
   useClickOutside(programDropdownRef, () => setIsProgramDropdownOpen(false));
   useClickOutside(objectiveDropdownRef, () =>
     setIsObjectiveDropdownOpen(false)
@@ -137,26 +127,6 @@ export default function CampaignDefinitionStep({
     setIsDepartmentDropdownOpen(false)
   );
   useClickOutside(policyDropdownRef, () => setIsPolicyDropdownOpen(false));
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoadingCategories(true);
-        const response = await campaignService.getCampaignCategories();
-        const categories = Array.isArray(response)
-          ? response
-          : (response as { data: CampaignCategory[] }).data || [];
-        setCategories(categories as CampaignCategory[]);
-      } catch (error) {
-        console.error("Failed to fetch Campaigns catalogs:", error);
-        setCategories([]);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   // Track if update is from user action to prevent infinite loops
   const isUserUpdateRef = useRef(false);
@@ -177,6 +147,7 @@ export default function CampaignDefinitionStep({
     } else if (!formData.category_id && selectedCategoryIds.length > 0) {
       setSelectedCategoryIds([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.category_id]);
 
   // Update formData.category_id when selectedCategoryIds changes (use first one)
@@ -190,6 +161,7 @@ export default function CampaignDefinitionStep({
         category_id: firstCategoryId, // Send only first to backend
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategoryIds]);
 
   useEffect(() => {
@@ -261,7 +233,9 @@ export default function CampaignDefinitionStep({
   };
 
   // Handle saving customized policy
-  const handleSaveCustomizedPolicy = async (policyData: any) => {
+  const handleSaveCustomizedPolicy = async (
+    policyData: Record<string, unknown>
+  ) => {
     // Store the policy data and open name modal
     // First close the customization modal
     setIsCustomizationModalOpen(false);

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -22,7 +21,6 @@ interface Job {
 }
 
 export default function AllJobsPage() {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading] = useState(false);
   const [jobs] = useState<Job[]>([]);
@@ -217,4 +215,3 @@ export default function AllJobsPage() {
     </div>
   );
 }
-

@@ -16,6 +16,6 @@ export interface CampaignCategory {
   updated_at: string;
 }
 
-export interface CreateCampaignCategoryResponse extends CampaignCategory {}
+export type CreateCampaignCategoryResponse = CampaignCategory;
 
-export interface UpdateCampaignCategoryResponse extends CampaignCategory {}
+export type UpdateCampaignCategoryResponse = CampaignCategory;
