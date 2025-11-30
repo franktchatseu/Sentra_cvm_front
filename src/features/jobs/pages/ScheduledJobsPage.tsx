@@ -13,7 +13,6 @@ import {
   Play,
   Pause,
   Archive,
-  Power,
   X,
   CheckSquare,
   Square,
@@ -140,7 +139,7 @@ export default function ScheduledJobsPage() {
               jobCodeFilter.trim()
             );
             response = { data: [job], pagination: { total: 1 } };
-          } catch (err) {
+          } catch {
             // If job not found, return empty
             response = { data: [], pagination: { total: 0 } };
           }
@@ -226,6 +225,8 @@ export default function ScheduledJobsPage() {
       tagFilter,
       scheduleTypeFilter,
       connectionProfileFilter,
+      jobCodeFilter,
+      activeJobsFilter,
       showError,
     ]
   );

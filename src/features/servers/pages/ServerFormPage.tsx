@@ -13,6 +13,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 type ServerFormPageProps = {
   mode: "create" | "edit";
@@ -267,27 +268,27 @@ export default function ServerFormPage({ mode }: ServerFormPageProps) {
               <label className="text-sm font-medium text-gray-700">
                 Protocol<span className="text-red-500">*</span>
               </label>
-              <select
-                name="protocol"
+              <HeadlessSelect
+                options={[
+                  { value: "http", label: "HTTP" },
+                  { value: "https", label: "HTTPS" },
+                  { value: "ftp", label: "FTP" },
+                  { value: "ftps", label: "FTPS" },
+                  { value: "sftp", label: "SFTP" },
+                  { value: "tcp", label: "TCP" },
+                  { value: "smtp", label: "SMTP" },
+                  { value: "smtps", label: "SMTPS" },
+                ]}
                 value={form.protocol}
-                onChange={handleChange}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-              >
-                {[
-                  "http",
-                  "https",
-                  "ftp",
-                  "ftps",
-                  "sftp",
-                  "tcp",
-                  "smtp",
-                  "smtps",
-                ].map((protocol) => (
-                  <option key={protocol} value={protocol}>
-                    {protocol.toUpperCase()}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    protocol: value as ServerProtocol,
+                  }))
+                }
+                placeholder="Select protocol"
+                className="mt-1"
+              />
             </div>
 
             <div>
@@ -310,18 +311,23 @@ export default function ServerFormPage({ mode }: ServerFormPageProps) {
               <label className="text-sm font-medium text-gray-700">
                 Environment
               </label>
-              <select
-                name="environment"
+              <HeadlessSelect
+                options={[
+                  { value: "dev", label: "DEV" },
+                  { value: "qa", label: "QA" },
+                  { value: "uat", label: "UAT" },
+                  { value: "prod", label: "PROD" },
+                ]}
                 value={form.environment}
-                onChange={handleChange}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-              >
-                {["dev", "qa", "uat", "prod"].map((env) => (
-                  <option key={env} value={env}>
-                    {env.toUpperCase()}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    environment: value as ServerEnvironment,
+                  }))
+                }
+                placeholder="Select environment"
+                className="mt-1"
+              />
             </div>
 
             <div>

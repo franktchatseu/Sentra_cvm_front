@@ -90,7 +90,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
     breached?: number;
     breach_rate_percent?: number;
   } | null>(null);
-  const [, setFailureAnalysis] = useState<GenericRecord[] | null>(null);
   const [mostFailed, setMostFailed] = useState<Array<GenericRecord>>([]);
   const [longestRunning, setLongestRunning] = useState<Array<GenericRecord>>(
     []
@@ -118,7 +117,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
       const [
         execStats,
         sla,
-        failures,
         failed,
         running,
         resources,
@@ -129,7 +127,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
       ] = await Promise.all([
         scheduledJobService.getExecutionStatistics(true).catch(() => null),
         scheduledJobService.getSlaCompliance(true).catch(() => null),
-        scheduledJobService.getFailureAnalysis(true).catch(() => null),
         scheduledJobService.getMostFailed(10, true).catch(() => []),
         scheduledJobService.getLongestRunning(10, true).catch(() => []),
         scheduledJobService.getResourceUtilization(true).catch(() => null),
@@ -139,14 +136,12 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
         scheduledJobService.getCountByOwner(true).catch(() => []),
       ]);
 
-      // Normalize execution stats - handle wrapped response
       const execStatsData =
         execStats && typeof execStats === "object" && "data" in execStats
           ? execStats.data
           : execStats;
-      setExecutionStats(execStatsData);
+      setExecutionStats(execStatsData as Record<string, unknown> | null);
 
-      // Normalize SLA compliance - it returns an array, calculate totals
       let slaData = null;
       if (sla && typeof sla === "object") {
         if (Array.isArray(sla)) {
@@ -193,66 +188,52 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
       }
       setSlaCompliance(slaData);
 
-      // Normalize failure analysis - handle wrapped response
-      const failuresData =
-        failures && typeof failures === "object" && "data" in failures
-          ? failures.data
-          : Array.isArray(failures)
-          ? failures
-          : null;
-      setFailureAnalysis(failuresData);
-
-      // Normalize most failed - handle wrapped response
-      const failedData =
+      const failedData: Array<GenericRecord> =
         failed && typeof failed === "object" && "data" in failed
-          ? failed.data
+          ? (failed.data as Array<GenericRecord>)
           : Array.isArray(failed)
-          ? failed
+          ? (failed as Array<GenericRecord>)
           : [];
       setMostFailed(failedData);
 
-      // Normalize longest running - handle wrapped response
-      const runningData =
+      const runningData: Array<GenericRecord> =
         running && typeof running === "object" && "data" in running
-          ? running.data
+          ? (running.data as Array<GenericRecord>)
           : Array.isArray(running)
-          ? running
+          ? (running as Array<GenericRecord>)
           : [];
       setLongestRunning(runningData);
 
-      // Normalize resource utilization - handle wrapped response
-      const resourcesData =
+      const resourcesData: Record<string, number> | null =
         resources && typeof resources === "object" && "data" in resources
-          ? resources.data
-          : resources;
+          ? (resources.data as Record<string, number>)
+          : resources && typeof resources === "object"
+          ? (resources as Record<string, number>)
+          : null;
       setResourceUtilization(resourcesData);
 
-      // Normalize high failure rate - handle wrapped response
-      const failureRateData =
+      const failureRateData: Array<GenericRecord> =
         failureRate && typeof failureRate === "object" && "data" in failureRate
-          ? failureRate.data
+          ? (failureRate.data as Array<GenericRecord>)
           : Array.isArray(failureRate)
-          ? failureRate
+          ? (failureRate as Array<GenericRecord>)
           : [];
       setHighFailureRate(failureRateData);
 
-      // Normalize status counts - handle wrapped response and field names
-      const statusData =
+      const statusData: Array<{ status: string; count: number | string }> =
         status && typeof status === "object" && "data" in status
-          ? status.data
+          ? (status.data as Array<{ status: string; count: number | string }>)
           : Array.isArray(status)
-          ? status
+          ? (status as Array<{ status: string; count: number | string }>)
           : [];
       setStatusCounts(statusData);
 
-      // Normalize type counts - handle wrapped response and field name (job_type vs label)
-      const typesData =
+      const typesData: Array<GenericRecord> =
         types && typeof types === "object" && "data" in types
-          ? types.data
+          ? (types.data as Array<GenericRecord>)
           : Array.isArray(types)
-          ? types
+          ? (types as Array<GenericRecord>)
           : [];
-      // Map job_type to label for consistency
       const normalizedTypes = typesData.map((item: GenericRecord) => ({
         label: (item.job_type as string) || (item.label as string) || "Unknown",
         count:
@@ -264,14 +245,12 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
       }));
       setTypeCounts(normalizedTypes);
 
-      // Normalize owner counts - handle wrapped response and field name (owner vs label)
-      const ownersData =
+      const ownersData: Array<GenericRecord> =
         owners && typeof owners === "object" && "data" in owners
-          ? owners.data
+          ? (owners.data as Array<GenericRecord>)
           : Array.isArray(owners)
-          ? owners
+          ? (owners as Array<GenericRecord>)
           : [];
-      // Map owner to label for consistency, handle null
       const normalizedOwners = ownersData.map((item: GenericRecord) => ({
         label:
           item.owner !== null && item.owner !== undefined
@@ -299,7 +278,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center space-x-4">
         <button
           onClick={() => navigate("/dashboard/scheduled-jobs")}
@@ -324,7 +302,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* SLA Compliance Metrics */}
           {slaCompliance && (
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
@@ -374,9 +351,7 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
             </div>
           )}
 
-          {/* Tables Section */}
           <div className="space-y-6">
-            {/* Most Failed Jobs */}
             {mostFailed.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -426,23 +401,27 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                     <tbody>
                       {mostFailed.map((job: GenericRecord, index: number) => (
                         <tr
-                          key={job.id || index}
+                          key={(job.id as string | number) || index}
                           className="hover:bg-gray-50 transition-colors"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                           }}
                         >
                           <td className="px-6 py-4 text-sm text-gray-900">
-                            {job.name || job.job_name || "Unknown"}
+                            {(job.name as string) ||
+                              (job.job_name as string) ||
+                              "Unknown"}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
-                            {job.failures || job.total_failures || 0}
+                            {(job.failures as number) ||
+                              (job.total_failures as number) ||
+                              0}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
                             {job.failure_rate
-                              ? `${job.failure_rate}%`
+                              ? `${String(job.failure_rate)}%`
                               : job.failure_rate_percent
-                              ? `${job.failure_rate_percent}%`
+                              ? `${String(job.failure_rate_percent)}%`
                               : "N/A"}
                           </td>
                         </tr>
@@ -453,7 +432,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
               </div>
             )}
 
-            {/* Longest Running Jobs */}
             {longestRunning.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -504,27 +482,33 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                       {longestRunning.map(
                         (job: GenericRecord, index: number) => (
                           <tr
-                            key={job.id || index}
+                            key={(job.id as string | number) || index}
                             className="hover:bg-gray-50 transition-colors"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
                             <td className="px-6 py-4 text-sm text-gray-900">
-                              {job.name || job.job_name || "Unknown"}
+                              {(job.name as string) ||
+                                (job.job_name as string) ||
+                                "Unknown"}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600">
                               {job.avg_duration_seconds
                                 ? `${parseFloat(
-                                    job.avg_duration_seconds
+                                    String(job.avg_duration_seconds)
                                   ).toFixed(2)}s`
                                 : job.max_duration_seconds
-                                ? `${job.max_duration_seconds}s`
-                                : job.duration || job.avg_duration || "N/A"}
+                                ? `${String(job.max_duration_seconds)}s`
+                                : (job.duration as string) ||
+                                  (job.avg_duration as string) ||
+                                  "N/A"}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600">
                               {job.last_run_at
-                                ? new Date(job.last_run_at).toLocaleString()
+                                ? new Date(
+                                    String(job.last_run_at)
+                                  ).toLocaleString()
                                 : "Never"}
                             </td>
                           </tr>
@@ -536,7 +520,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
               </div>
             )}
 
-            {/* High Failure Rate Jobs */}
             {highFailureRate.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -587,24 +570,28 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                       {highFailureRate.map(
                         (job: GenericRecord, index: number) => (
                           <tr
-                            key={job.id || index}
+                            key={(job.id as string | number) || index}
                             className="hover:bg-gray-50 transition-colors"
                             style={{
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
                             <td className="px-6 py-4 text-sm text-gray-900">
-                              {job.name || job.job_name || "Unknown"}
+                              {(job.name as string) ||
+                                (job.job_name as string) ||
+                                "Unknown"}
                             </td>
                             <td className="px-6 py-4 text-sm text-red-600 font-medium">
                               {job.failure_rate
-                                ? `${job.failure_rate}%`
+                                ? `${String(job.failure_rate)}%`
                                 : job.failure_rate_percent
-                                ? `${job.failure_rate_percent}%`
+                                ? `${String(job.failure_rate_percent)}%`
                                 : "N/A"}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600">
-                              {job.failures || job.total_failures || 0}
+                              {(job.failures as number) ||
+                                (job.total_failures as number) ||
+                                0}
                             </td>
                           </tr>
                         )
@@ -616,10 +603,8 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
             )}
           </div>
 
-          {/* Charts Section */}
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Status Distribution Pie Chart */}
               {statusCounts.length > 0 && (
                 <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -632,9 +617,9 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                           data={statusCounts.map((item) => {
                             const status =
                               "status" in item
-                                ? item.status
+                                ? String(item.status)
                                 : "label" in item
-                                ? item.label
+                                ? String((item as { label?: string }).label)
                                 : "Unknown";
                             const count =
                               typeof item.count === "string"
@@ -650,8 +635,10 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) =>
-                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          label={(props: { name?: string; percent?: number }) =>
+                            `${props.name || ""}: ${(
+                              (props.percent || 0) * 100
+                            ).toFixed(0)}%`
                           }
                           outerRadius={80}
                           fill="#8884d8"
@@ -659,7 +646,7 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                           isAnimationActive={true}
                           animationDuration={300}
                         >
-                          {statusCounts.map((entry, index) => {
+                          {statusCounts.map((_entry, index) => {
                             const pieColors =
                               color.charts.scheduledJobs.pieColors;
                             return (
@@ -691,7 +678,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                 </div>
               )}
 
-              {/* Job Type Distribution Bar Chart */}
               {typeCounts.length > 0 && (
                 <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -741,7 +727,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
               )}
             </div>
 
-            {/* Owner Distribution Bar Chart */}
             {ownerCounts.length > 0 && (
               <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -790,10 +775,8 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
               </div>
             )}
 
-            {/* Execution Statistics */}
             {executionStats && Object.keys(executionStats).length > 0 && (
               <div className="space-y-6">
-                {/* Execution Counts Bar Chart */}
                 <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Execution Counts
@@ -850,7 +833,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
                   </div>
                 </div>
 
-                {/* Performance Metrics Bar Chart */}
                 <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Performance Metrics
@@ -909,7 +891,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
               </div>
             )}
 
-            {/* Resource Utilization Bar Chart */}
             {resourceUtilization &&
               Object.keys(resourceUtilization).length > 0 && (
                 <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">

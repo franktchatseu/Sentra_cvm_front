@@ -4,9 +4,9 @@ import {
   AlertTriangle,
   Archive,
   CheckSquare,
+  Edit,
   Eye,
   HeartPulse,
-  Pencil,
   Plus,
   Power,
   Search,
@@ -945,17 +945,19 @@ export default function ServersPage() {
                       >
                         <div className="flex flex-wrap gap-2">
                           <span
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                              server.is_active
-                                ? `${tw.statusSuccess10} ${tw.success}`
-                                : `${tw.statusDanger10} ${tw.danger}`
-                            }`}
+                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium text-white"
+                            style={{
+                              backgroundColor: color.primary.accent,
+                            }}
                           >
                             {server.is_active ? "Active" : "Inactive"}
                           </span>
                           {server.is_deprecated && (
                             <span
-                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${tw.statusWarning10} ${tw.warning}`}
+                              className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium text-white"
+                              style={{
+                                backgroundColor: color.primary.accent,
+                              }}
                             >
                               Deprecated
                             </span>
@@ -989,7 +991,7 @@ export default function ServersPage() {
                             aria-label={`Edit ${server.name}`}
                             title="Edit server"
                           >
-                            <Pencil size={16} />
+                            <Edit size={16} />
                           </button>
                           <button
                             type="button"

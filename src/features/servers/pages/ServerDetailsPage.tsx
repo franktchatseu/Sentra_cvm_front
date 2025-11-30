@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ShieldCheck,
   AlertTriangle,
   Activity,
-  Globe,
-  Server as ServerIcon,
   Pencil,
   HeartPulse,
   Power,
@@ -14,6 +12,7 @@ import {
   Zap,
   RotateCcw,
   Upload,
+  MoreVertical,
 } from "lucide-react";
 import { serverService } from "../services/serverService";
 import { ServerType } from "../types/server";
@@ -30,10 +29,10 @@ const InfoRow = ({
   value: string | number | null | undefined;
 }) => (
   <div className="flex flex-col gap-1">
-    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+    <span className="text-xs font-semibold uppercase tracking-wide text-black">
       {label}
     </span>
-    <span className={`text-sm ${tw.textPrimary}`}>
+    <span className="text-sm text-black">
       {value === undefined || value === null || value === "" ? "—" : value}
     </span>
   </div>
@@ -62,6 +61,8 @@ export default function ServerDetailsPage() {
     "healthy" | "unhealthy"
   >("healthy");
   const [healthResultDetails, setHealthResultDetails] = useState("");
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const loadServer = useCallback(async () => {
     if (!id) {
@@ -88,6 +89,26 @@ export default function ServerDetailsPage() {
   useEffect(() => {
     loadServer();
   }, [loadServer]);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowMoreMenu(false);
+      }
+    };
+
+    if (showMoreMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMoreMenu]);
 
   const endpoint = useMemo(() => {
     if (!server) return "";
@@ -333,7 +354,7 @@ export default function ServerDetailsPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center">
         <LoadingSpinner variant="modern" size="lg" color="primary" />
-        <p className="mt-3 text-sm text-gray-500">Loading server details…</p>
+        <p className="mt-3 text-sm text-black">Loading server details…</p>
       </div>
     );
   }
@@ -344,15 +365,15 @@ export default function ServerDetailsPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
           <AlertTriangle size={20} />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-black">
           Unable to load server
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-black">
           {errorMessage || "This server could not be found."}
         </p>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 inline-flex items-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="mt-4 inline-flex items-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-black hover:bg-gray-50"
         >
           <ArrowLeft size={16} />
           Go back
@@ -363,155 +384,186 @@ export default function ServerDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <button
-        onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft size={16} />
-        Back to servers
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-black"
+        >
+          <ArrowLeft size={16} />
+          Back to servers
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleActivationToggle}
+            disabled={isActivationLoading}
+            className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+              server.is_active
+                ? "border-red-200 text-red-600 hover:bg-red-50"
+                : "border-green-200 text-green-600 hover:bg-green-50"
+            } ${isActivationLoading ? "opacity-60" : ""}`}
+            title={server.is_active ? "Deactivate server" : "Activate server"}
+          >
+            <Power size={16} />
+            {server.is_active ? "Deactivate" : "Activate"}
+          </button>
+          <button
+            onClick={handleEdit}
+            className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white transition-colors"
+            style={{ backgroundColor: color.primary.action }}
+            title="Edit server"
+          >
+            <Pencil size={16} />
+            Edit
+          </button>
+          {/* More Menu */}
+          <div className="relative" ref={moreMenuRef}>
+            <button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="inline-flex items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-black hover:bg-gray-50 transition-colors"
+              title="More actions"
+            >
+              <MoreVertical size={16} />
+            </button>
+            {showMoreMenu && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
+                <button
+                  onClick={() => {
+                    handleHealthToggle();
+                    setShowMoreMenu(false);
+                  }}
+                  disabled={isHealthLoading}
+                  className={`w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2 ${
+                    isHealthLoading ? "opacity-60" : ""
+                  }`}
+                >
+                  <HeartPulse size={16} />
+                  {server.health_check_enabled
+                    ? "Disable Health Checks"
+                    : "Enable Health Checks"}
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeprecationToggle();
+                    setShowMoreMenu(false);
+                  }}
+                  disabled={isDeprecationLoading}
+                  className={`w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2 ${
+                    isDeprecationLoading ? "opacity-60" : ""
+                  }`}
+                >
+                  <Archive size={16} />
+                  {server.is_deprecated ? "Restore Server" : "Deprecate Server"}
+                </button>
+                <button
+                  onClick={() => {
+                    handleCircuitBreakerToggle();
+                    setShowMoreMenu(false);
+                  }}
+                  disabled={isCircuitBreakerLoading}
+                  className={`w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2 ${
+                    isCircuitBreakerLoading ? "opacity-60" : ""
+                  }`}
+                >
+                  <Zap size={16} />
+                  {server.circuit_breaker_enabled
+                    ? "Disable Circuit Breaker"
+                    : "Enable Circuit Breaker"}
+                </button>
+                {server.health_check_enabled && (
+                  <>
+                    <div className="border-t border-gray-200 my-1" />
+                    <button
+                      onClick={() => {
+                        handleResetHealthCheck();
+                        setShowMoreMenu(false);
+                      }}
+                      disabled={isResetHealthLoading}
+                      className={`w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2 ${
+                        isResetHealthLoading ? "opacity-60" : ""
+                      }`}
+                    >
+                      <RotateCcw size={16} />
+                      Reset Health Check
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPushHealthModal(true);
+                        setShowMoreMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Upload size={16} />
+                      Push Health Result
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black">
               Server
             </p>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {server.name}
-            </h1>
-            <p className="text-sm text-gray-500">Code: {server.code}</p>
+            <h1 className="text-2xl font-semibold text-black">{server.name}</h1>
+            <p className="text-sm text-black">Code: {server.code}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white"
+              style={{
+                backgroundColor: color.primary.accent,
+              }}
+            >
+              {server.is_active ? "Active" : "Inactive"}
+            </span>
+            {server.is_deprecated && (
               <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                  server.is_active
-                    ? `${tw.statusSuccess10} ${tw.success}`
-                    : `${tw.statusDanger10} ${tw.danger}`
-                }`}
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white"
+                style={{
+                  backgroundColor: color.primary.accent,
+                }}
               >
-                {server.is_active ? "Active" : "Inactive"}
+                Deprecated
               </span>
-              {server.is_deprecated && (
-                <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${tw.statusWarning10} ${tw.warning}`}
-                >
-                  Deprecated
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 border-l border-gray-200 pl-3">
-              <button
-                onClick={handleHealthToggle}
-                disabled={isHealthLoading}
-                className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                  server.health_check_enabled
-                    ? "border-green-200 text-green-700 hover:bg-green-50"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                } ${isHealthLoading ? "opacity-60" : ""}`}
-                title={
-                  server.health_check_enabled
-                    ? "Disable health checks"
-                    : "Enable health checks"
-                }
-              >
-                <HeartPulse size={16} />
-                {server.health_check_enabled ? "Health On" : "Health Off"}
-              </button>
-              <button
-                onClick={handleActivationToggle}
-                disabled={isActivationLoading}
-                className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                  server.is_active
-                    ? "border-red-200 text-red-600 hover:bg-red-50"
-                    : "border-green-200 text-green-600 hover:bg-green-50"
-                } ${isActivationLoading ? "opacity-60" : ""}`}
-                title={
-                  server.is_active ? "Deactivate server" : "Activate server"
-                }
-              >
-                <Power size={16} />
-                {server.is_active ? "Deactivate" : "Activate"}
-              </button>
-              <button
-                onClick={handleDeprecationToggle}
-                disabled={isDeprecationLoading}
-                className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                  server.is_deprecated
-                    ? "border-amber-200 text-amber-600 hover:bg-amber-50"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                } ${isDeprecationLoading ? "opacity-60" : ""}`}
-                title={
-                  server.is_deprecated
-                    ? "Undeprecate server"
-                    : "Deprecate server"
-                }
-              >
-                <Archive size={16} />
-                {server.is_deprecated ? "Restore" : "Deprecate"}
-              </button>
-              <button
-                onClick={handleCircuitBreakerToggle}
-                disabled={isCircuitBreakerLoading}
-                className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                  server.circuit_breaker_enabled
-                    ? "border-orange-200 text-orange-700 hover:bg-orange-50"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                } ${isCircuitBreakerLoading ? "opacity-60" : ""}`}
-                title={
-                  server.circuit_breaker_enabled
-                    ? "Disable circuit breaker"
-                    : "Enable circuit breaker"
-                }
-              >
-                <Zap size={16} />
-                {server.circuit_breaker_enabled ? "Circuit On" : "Circuit Off"}
-              </button>
-              <button
-                onClick={handleEdit}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                title="Edit server"
-              >
-                <Pencil size={16} />
-                Edit
-              </button>
-            </div>
+            )}
           </div>
         </div>
 
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black">
               Environment
             </p>
-            <div className="mt-2 flex items-center gap-2 text-gray-900">
-              <Globe size={18} />
+            <div className="mt-2 text-black">
               <span className="font-semibold uppercase">
                 {server.environment}
               </span>
             </div>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-black">
               Region: {server.region || "—"}
             </p>
           </div>
           <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black">
               Protocol
             </p>
-            <div className="mt-2 flex items-center gap-2 text-gray-900">
-              <ServerIcon size={18} />
+            <div className="mt-2 text-black">
               <span className="font-semibold uppercase">{server.protocol}</span>
             </div>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-black">
               TLS: {server.tls_enabled ? "Enabled" : "Disabled"}
             </p>
           </div>
           <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black">
               Endpoint
             </p>
-            <p className="mt-2 font-mono text-xs text-gray-900 break-all">
+            <p className="mt-2 font-mono text-xs text-black break-all">
               {endpoint}
             </p>
           </div>
@@ -522,7 +574,7 @@ export default function ServerDetailsPage() {
         <section className="space-y-4 rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
             <Activity size={20} style={{ color: color.status.info }} />
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-black">
               Connection & Limits
             </h2>
           </div>
@@ -563,7 +615,7 @@ export default function ServerDetailsPage() {
                 style={{ color: color.status.warning }}
               />
             )}
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-black">
               Health Monitoring
             </h2>
           </div>
@@ -594,29 +646,6 @@ export default function ServerDetailsPage() {
               value={server.consecutive_health_failures?.toString()}
             />
           </div>
-          {server.health_check_enabled && (
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
-              <button
-                onClick={handleResetHealthCheck}
-                disabled={isResetHealthLoading}
-                className={`inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors ${
-                  isResetHealthLoading ? "opacity-60" : ""
-                }`}
-                title="Reset health check state"
-              >
-                <RotateCcw size={16} />
-                Reset Health Check
-              </button>
-              <button
-                onClick={() => setShowPushHealthModal(true)}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                title="Manually push health check result"
-              >
-                <Upload size={16} />
-                Push Health Result
-              </button>
-            </div>
-          )}
         </section>
       </div>
 
@@ -624,15 +653,15 @@ export default function ServerDetailsPage() {
       {showPushHealthModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-black">
               Push Health Check Result
             </h3>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-black">
               Manually record a health check result for {server.name}
             </p>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-black">
                   Status
                 </label>
                 <select
@@ -649,7 +678,7 @@ export default function ServerDetailsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-black">
                   Details (optional)
                 </label>
                 <textarea
@@ -667,7 +696,7 @@ export default function ServerDetailsPage() {
                   setShowPushHealthModal(false);
                   setHealthResultDetails("");
                 }}
-                className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-black hover:bg-gray-50"
               >
                 Cancel
               </button>
@@ -685,17 +714,17 @@ export default function ServerDetailsPage() {
 
       {server.metadata && Object.keys(server.metadata).length > 0 && (
         <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-gray-900">Metadata</h2>
+          <h2 className="text-base font-semibold text-black">Metadata</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {Object.entries(server.metadata).map(([key, value]) => (
               <div
                 key={key}
                 className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm"
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-black">
                   {key}
                 </p>
-                <p className="mt-1 text-gray-900">
+                <p className="mt-1 text-black">
                   {typeof value === "object"
                     ? JSON.stringify(value, null, 2)
                     : String(value)}
