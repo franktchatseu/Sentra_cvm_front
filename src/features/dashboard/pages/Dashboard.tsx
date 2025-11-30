@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import DashboardHome from "../components/DashboardHome";
 import CampaignsPage from "../../campaigns/pages/CampaignsPage";
+import CampaignsAnalyticsPage from "../../campaigns/pages/CampaignsAnalyticsPage";
 import CampaignDetailsPage from "../../campaigns/pages/CampaignDetailsPage";
 import CreateCampaignPage from "../../campaigns/pages/CreateCampaignPage";
 import CampaignCategoriesPage from "../../campaigns/pages/CampaignCategoriesPage";
@@ -80,6 +81,10 @@ export default function Dashboard() {
       <Routes>
         <Route path="/" element={<DashboardHome />} />
         <Route path="/campaigns" element={<CampaignsPage />} />
+        <Route
+          path="/campaigns/analytics"
+          element={<CampaignsAnalyticsPage />}
+        />
         <Route path="/campaigns/:id" element={<CampaignDetailsPage />} />
         <Route path="/campaigns/:id/edit" element={<CreateCampaignPage />} />
         <Route path="/campaigns/create" element={<CreateCampaignPage />} />

@@ -37,33 +37,56 @@ class DashboardService {
           ? parseInt(totalSegmentsRaw, 10) || 0
           : (totalSegmentsRaw as number) || 0;
 
-      // Temporarily skip campaigns due to API error
+      // Fetch campaign stats
       let activeCampaigns = 0;
       let conversionRate = 0;
 
       try {
-        const [allCampaignsResponse, activeCampaignsResponse] =
-          await Promise.all([
-            campaignService.getAllCampaigns(),
-            campaignService.getAllCampaigns({ status: "active" }),
-          ]);
+        const campaignStatsResponse = await campaignService.getCampaignStats(
+          true
+        );
 
-        activeCampaigns = activeCampaignsResponse.meta?.total || 0;
+        if (campaignStatsResponse.success && campaignStatsResponse.data) {
+          const stats = campaignStatsResponse.data as any;
+          const overview = stats.overview ?? {};
+          const activityStatus = stats.activity_status ?? {};
+          const statusBreakdown = stats.status_breakdown ?? {};
 
-        // Calculate conversion rate from all campaigns
-        const totalCampaigns = allCampaignsResponse.meta?.total || 0;
-        const campaigns = allCampaignsResponse.data || [];
+          // Parse active campaigns (check multiple possible locations)
+          const activeCampaignsRaw =
+            activityStatus.is_active_flag_true ||
+            activityStatus.currently_running ||
+            statusBreakdown.active ||
+            stats.active_campaigns ||
+            stats.currently_active ||
+            0;
+          activeCampaigns =
+            typeof activeCampaignsRaw === "string"
+              ? parseInt(activeCampaignsRaw, 10) || 0
+              : (activeCampaignsRaw as number) || 0;
 
-        // Count successful campaigns
-        const successfulCampaigns = (campaigns as Campaign[]).filter(
-          (campaign) => campaign.status === "completed"
-        ).length;
+          // Calculate conversion rate from completed vs total
+          // Check overview first (like CampaignsPage does), then direct
+          const totalCampaignsRaw =
+            overview.total_campaigns || stats.total_campaigns || 0;
+          const totalCampaigns =
+            typeof totalCampaignsRaw === "string"
+              ? parseInt(totalCampaignsRaw, 10) || 0
+              : (totalCampaignsRaw as number) || 0;
 
-        conversionRate =
-          totalCampaigns > 0
-            ? Math.round((successfulCampaigns / totalCampaigns) * 100)
-            : 0;
-      } catch {
+          const completedCampaignsRaw = stats.completed || 0;
+          const completedCampaigns =
+            typeof completedCampaignsRaw === "string"
+              ? parseInt(completedCampaignsRaw, 10) || 0
+              : (completedCampaignsRaw as number) || 0;
+
+          conversionRate =
+            totalCampaigns > 0
+              ? Math.round((completedCampaigns / totalCampaigns) * 100)
+              : 0;
+        }
+      } catch (error) {
+        console.error("Error fetching campaign stats:", error);
         // Continue with offers and segments stats
       }
 

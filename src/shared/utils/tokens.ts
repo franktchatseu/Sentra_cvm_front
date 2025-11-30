@@ -75,6 +75,21 @@ export const colors = {
       paused: "#F7B430", // Yellow 500
       completed: "#66E8FA", // Brand 400
       draft: "#6B7280", // Gray
+      // Primary colors for charts
+      primary: "#C38BFB", // Purple for main bars
+      secondary: "#FC9C9C", // Coral for secondary elements
+      accent: "#4FDFF3", // Cyan for accent elements
+      // Pie chart colors for distribution charts
+      pieColors: [
+        "#C38BFB", // Purple (primary)
+        "#FC9C9C", // Coral (pending)
+        "#F7B430", // Yellow (paused)
+        "#66E8FA", // Cyan (completed)
+        "#6B7280", // Gray (draft)
+        "#8b5cf6", // Purple accent
+        "#4FDFF3", // Cyan
+        "#94DF5A", // Green (fallback)
+      ],
     },
     products: {
       // Color palette for product categories (rotating colors)
@@ -247,6 +262,7 @@ export const colors = {
     active: "#E5E7EB", // Active states
     focus: "#4FDFF3", // Focus states
     disabled: "#D1D5DB", // Disabled states
+    link: "#2563EB", // Link color (blue-600)
   },
 
   // Border defines colors for different border types and emphasis

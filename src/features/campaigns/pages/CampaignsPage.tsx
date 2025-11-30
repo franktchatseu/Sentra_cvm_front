@@ -23,6 +23,7 @@ import {
   AlertCircle,
   History,
   Copy,
+  BarChart3,
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -960,14 +961,28 @@ export default function CampaignsPage() {
             Manage and monitor your customer engagement campaigns
           </p>
         </div>
-        <button
-          onClick={() => navigate("/dashboard/campaigns/create")}
-          className="inline-flex items-center px-4 py-2 font-semibold rounded-md shadow-sm text-sm whitespace-nowrap text-white self-start sm:self-auto"
-          style={{ backgroundColor: color.primary.action }}
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Create Campaign
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/dashboard/campaigns/analytics")}
+            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+            style={{
+              backgroundColor: "transparent",
+              color: color.primary.action,
+              border: `1px solid ${color.primary.action}`,
+            }}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </button>
+          <button
+            onClick={() => navigate("/dashboard/campaigns/create")}
+            className="inline-flex items-center px-4 py-2 font-semibold rounded-md shadow-sm text-sm whitespace-nowrap text-white self-start sm:self-auto"
+            style={{ backgroundColor: color.primary.action }}
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Create Campaign
+          </button>
+        </div>
       </div>
 
       {/* Campaign Stats Cards */}

@@ -71,6 +71,7 @@ export const tw = {
   active: `active:bg-[${colors.interactive.active}]`,
   focus: `focus:ring-[${colors.interactive.focus}]`,
   disabled: `disabled:bg-[${colors.interactive.disabled}]`,
+  link: `text-[${colors.interactive.link}]`,
 
   borderDefault: `border-[${colors.border.default}]`,
   borderAccent: `border-[${colors.border.accent}]`,

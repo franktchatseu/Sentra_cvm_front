@@ -217,6 +217,27 @@ export default function DashboardHome() {
     }>
   >([]);
 
+  // State for top performing campaigns
+  const [topCampaigns, setTopCampaigns] = useState<
+    Array<{
+      id: number;
+      name: string;
+      conversionRate?: string;
+      status: string;
+      participants?: number;
+      budget?: number;
+    }>
+  >([]);
+  const [topCampaignsLoading, setTopCampaignsLoading] = useState(true);
+  const [topPerformersFilter, setTopPerformersFilter] = useState<
+    "participants" | "spend"
+  >("participants");
+  const [topPerformersData, setTopPerformersData] = useState<{
+    by_participants: any[];
+    by_spend: any[];
+    campaignsMap: Map<number, any>;
+  } | null>(null);
+
   // State for top performing offers
   // const [topOffers, setTopOffers] = useState<
   //   Array<{
@@ -441,9 +462,19 @@ export default function DashboardHome() {
               }
               return 0;
             };
-            const total = parseMetric(statsData.total_campaigns);
+            // Check overview first (like CampaignsPage does), then direct
+            const overview = statsData.overview ?? {};
+            const activityStatus = statsData.activity_status ?? {};
+            const statusBreakdown = statsData.status_breakdown ?? {};
+            const total = parseMetric(
+              overview.total_campaigns || statsData.total_campaigns
+            );
             const active = parseMetric(
-              statsData.active_campaigns ?? statsData.currently_active
+              activityStatus.is_active_flag_true ||
+                activityStatus.currently_running ||
+                statusBreakdown.active ||
+                statsData.active_campaigns ||
+                statsData.currently_active
             );
             const completed = parseMetric(statsData.completed);
 
@@ -1179,33 +1210,102 @@ export default function DashboardHome() {
     ];
   }, [campaignsStats, campaignStatusDistribution, formatStatusLabel]);
 
-  // CVM-relevant metrics: Top Performing Campaigns
-  const topCampaigns = [
-    {
-      id: 1,
-      name: "Q2 Customer Acquisition",
-      conversionRate: "12.5%",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Premium Member Retention",
-      conversionRate: "9.8%",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Spring Promotion Campaign",
-      conversionRate: "8.2%",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "New Product Launch",
-      conversionRate: "6.5%",
-      status: "Active",
-    },
-  ];
+  // Fetch Top Performing Campaigns data from stats endpoint (only once on mount)
+  useEffect(() => {
+    const fetchTopPerformersData = async () => {
+      setTopCampaignsLoading(true);
+      try {
+        // Fetch campaign stats which includes top_performers
+        const statsResponse = await campaignService.getCampaignStats(true);
+
+        if (statsResponse.success && statsResponse.data) {
+          const statsData = statsResponse.data as any;
+          const topPerformers = statsData.top_performers || {};
+
+          // Fetch all campaigns once to get status information
+          const allCampaignsResponse = await campaignService
+            .getAllCampaigns({ limit: 100 })
+            .catch(() => null);
+
+          // Create a map of campaign ID to campaign data for quick lookup
+          const campaignsMap = new Map();
+          if (allCampaignsResponse?.data) {
+            (allCampaignsResponse.data as any[]).forEach((camp: any) => {
+              campaignsMap.set(camp.id, camp);
+            });
+          }
+
+          // Store the data so we can filter without refetching
+          setTopPerformersData({
+            by_participants: topPerformers.by_participants || [],
+            by_spend: topPerformers.by_spend || [],
+            campaignsMap: campaignsMap,
+          });
+        } else {
+          setTopPerformersData(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch top campaigns:", error);
+        setTopPerformersData(null);
+      } finally {
+        setTopCampaignsLoading(false);
+      }
+    };
+
+    fetchTopPerformersData();
+  }, [formatStatusLabel]);
+
+  // Update displayed campaigns when filter changes (no refetch, just filter existing data)
+  useEffect(() => {
+    if (!topPerformersData) {
+      setTopCampaigns([]);
+      return;
+    }
+
+    // Get campaigns based on selected filter from cached data
+    const performersData =
+      topPerformersFilter === "participants"
+        ? topPerformersData.by_participants
+        : topPerformersData.by_spend;
+
+    if (performersData.length === 0) {
+      setTopCampaigns([]);
+      return;
+    }
+
+    // Process top performers - use data directly from API response
+    const topCampaignsData = performersData
+      .slice(0, 4)
+      .map((performer: any) => {
+        const campaign =
+          topPerformersData.campaignsMap.get(performer.id) || performer;
+        // Get status from campaign data - should always have it from the map
+        const status = campaign.status || performer.status;
+
+        // Only use conversion rate if it exists in the API response
+        let conversionRate: string | undefined = undefined;
+        if (performer.conversion_rate != null) {
+          const rate =
+            typeof performer.conversion_rate === "string"
+              ? parseFloat(performer.conversion_rate)
+              : performer.conversion_rate;
+          if (!isNaN(rate) && rate > 0) {
+            conversionRate = `${rate.toFixed(1)}%`;
+          }
+        }
+
+        return {
+          id: performer.id,
+          name: performer.name || performer.code || "Unnamed Campaign",
+          conversionRate: conversionRate,
+          status: status ? formatStatusLabel(status) : "Draft",
+          participants: performer.current_participants || 0,
+          budget: performer.budget_allocated || performer.budget_spent || 0,
+        };
+      });
+
+    setTopCampaigns(topCampaignsData);
+  }, [topPerformersFilter, topPerformersData, formatStatusLabel]);
 
   // Dummy data for top performing offers
   const topOffers = [
@@ -2017,58 +2117,116 @@ export default function DashboardHome() {
         {/* Top Performing Campaigns */}
         <div className="bg-white rounded-md border border-gray-200 overflow-hidden self-start">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className={tw.cardHeading}>Top Performing Campaigns</h2>
-            <p className={`${tw.cardSubHeading} text-black mt-1`}>
-              Campaigns by conversion rate
+            <div className="flex items-center justify-between mb-1">
+              <h2 className={tw.cardHeading}>Top Performing Campaigns</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTopPerformersFilter("participants")}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    topPerformersFilter === "participants"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Participants
+                </button>
+                <button
+                  onClick={() => setTopPerformersFilter("spend")}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    topPerformersFilter === "spend"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Spend
+                </button>
+              </div>
+            </div>
+            <p className={`${tw.cardSubHeading} text-black`}>
+              {topPerformersFilter === "participants"
+                ? "Campaigns by participants"
+                : "Campaigns by spend"}
             </p>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              {topCampaigns.map((campaign, index) => (
-                <div
-                  key={campaign.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
-                  style={{ backgroundColor: color.surface.background }}
-                  onClick={() =>
-                    navigate(`/dashboard/campaigns/${campaign.id}`)
-                  }
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-                      style={{
-                        backgroundColor: color.primary.accent,
-                        color: "#FFFFFF",
-                      }}
-                    >
-                      {index + 1}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-base text-black truncate">
-                        {campaign.name}
-                      </p>
-                      <p className="text-sm text-black">
-                        Conversion: {campaign.conversionRate}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
-                        campaign.status.toLowerCase() === "active"
-                          ? "text-black bg-transparent border-0 font-normal"
-                          : `font-bold border ${getStatusColor(
-                              campaign.status
-                            )}`
-                      }`}
-                    >
-                      {campaign.status}
-                    </span>
-                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
-                  </div>
+            {topCampaignsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+                <span className="ml-3 text-sm text-gray-500">
+                  Loading top campaigns...
+                </span>
+              </div>
+            ) : topCampaigns.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <p className="text-sm text-gray-500 mb-2">
+                    No campaign performance data available yet.
+                  </p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {topCampaigns.map((campaign, index) => (
+                  <div
+                    key={campaign.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
+                    style={{ backgroundColor: color.surface.background }}
+                    onClick={() =>
+                      navigate(`/dashboard/campaigns/${campaign.id}`)
+                    }
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                        style={{
+                          backgroundColor: color.primary.accent,
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-base text-black truncate">
+                          {campaign.name}
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-sm text-black">
+                          {campaign.conversionRate && (
+                            <span>Conversion: {campaign.conversionRate}</span>
+                          )}
+                          {topPerformersFilter === "participants" &&
+                            campaign.participants !== undefined && (
+                              <span>
+                                Participants:{" "}
+                                {campaign.participants.toLocaleString()}
+                              </span>
+                            )}
+                          {topPerformersFilter === "spend" &&
+                            campaign.budget !== undefined && (
+                              <span>
+                                Budget: ${campaign.budget.toLocaleString()}
+                              </span>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
+                          campaign.status.toLowerCase() === "active"
+                            ? "text-black bg-transparent border-0 font-normal"
+                            : `font-bold border ${getStatusColor(
+                                campaign.status
+                              )}`
+                        }`}
+                      >
+                        {campaign.status}
+                      </span>
+                      <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

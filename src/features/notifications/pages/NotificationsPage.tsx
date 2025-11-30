@@ -478,8 +478,7 @@ export default function NotificationsPage() {
                                 </span>
                                 {notification.actionUrl && (
                                   <span
-                                    style={{ color: color.primary.accent }}
-                                    className="flex items-center gap-1 text-sm"
+                                    className={`flex items-center gap-1 text-sm ${tw.link}`}
                                   >
                                     <ExternalLink className="h-3 w-3" />
                                     {notification.actionLabel || "View details"}

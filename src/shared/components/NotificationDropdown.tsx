@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, X, Trash2, ExternalLink, Filter, Settings } from "lucide-react";
+import {
+  Bell,
+  X,
+  Trash2,
+  ExternalLink,
+  Filter,
+  Settings,
+  CheckCheck,
+} from "lucide-react";
 import { useNotifications } from "../../contexts/NotificationContext";
 import {
   Notification,
@@ -149,7 +157,9 @@ export default function NotificationDropdown({
                   }}
                   className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                   title="Mark all as read"
-                ></button>
+                >
+                  <CheckCheck className="h-4 w-4" />
+                </button>
               )}
               <button
                 onClick={() => {
@@ -270,14 +280,8 @@ export default function NotificationDropdown({
                           </div>
                           {notification.actionUrl && (
                             <div className="mt-2 flex items-center gap-2">
-                              <ExternalLink
-                                style={{ color: color.primary.accent }}
-                                className="h-3 w-3"
-                              />
-                              <span
-                                style={{ color: color.primary.accent }}
-                                className="text-sm"
-                              >
+                              <ExternalLink className={`h-3 w-3 ${tw.link}`} />
+                              <span className={`text-sm ${tw.link}`}>
                                 {notification.actionLabel || "View details"}
                               </span>
                             </div>
