@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import { color } from "./shared/utils/utils";
 
 // Lazy load all pages for better performance
@@ -83,14 +84,16 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <ConfirmProvider>
-            <Router>
-              <div
-                className="min-h-screen"
-                style={{ backgroundColor: color.primary.background }}
-              >
-                <AppRoutes />
-              </div>
-            </Router>
+            <NotificationProvider>
+              <Router>
+                <div
+                  className="min-h-screen"
+                  style={{ backgroundColor: color.primary.background }}
+                >
+                  <AppRoutes />
+                </div>
+              </Router>
+            </NotificationProvider>
           </ConfirmProvider>
         </ToastProvider>
       </AuthProvider>

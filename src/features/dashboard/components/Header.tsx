@@ -1,4 +1,4 @@
-import { Bell, User, LogOut, Menu } from "lucide-react";
+import { User, LogOut, Menu } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -10,6 +10,7 @@ import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
 import { UserType as FullUserType } from "../../users/types/user";
 import GlobalSearch from "../../../shared/components/GlobalSearch";
+import NotificationDropdown from "../../../shared/components/NotificationDropdown";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -92,16 +93,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-x-2">
-          <button
-            type="button"
-            className="relative p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-600 text-white rounded-full text-xs flex items-center justify-center font-medium">
-              3
-            </span>
-          </button>
+        <div className="flex items-center gap-x-4">
+          <NotificationDropdown />
 
           <div className="hidden md:flex items-center gap-x-3">
             <div className="flex items-center gap-x-3">

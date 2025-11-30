@@ -5,14 +5,15 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   `${window.location.protocol}//${window.location.host}/api/database-service`;
 
-  const isProduction =
+const isProduction =
   window.location.hostname !== "localhost" &&
   window.location.hostname !== "127.0.0.1";
-  
+
 export const API_CONFIG = {
-// Use proxy in production, direct API in development
+  // Use proxy in production, direct API in development
   // BASE_URL is now configurable via VITE_API_BASE_URL environment variable
-  BASE_URL: isProduction ? "/api/proxy" : API_BASE_URL,  ENDPOINTS: {
+  BASE_URL: isProduction ? "/api/proxy" : API_BASE_URL,
+  ENDPOINTS: {
     OFFERS: "/offers",
     PRODUCTS: "/products",
     CATEGORIES: "/categories",
@@ -21,6 +22,7 @@ export const API_CONFIG = {
     SEGMENTS: "/segments",
     OFFER_PRODUCTS: "/offer-products",
     OFFER_CREATIVES: "/offer-creatives",
+    NOTIFICATIONS: "/notifications",
   },
   TIMEOUT: 30000, // 30 seconds
   RETRY_ATTEMPTS: 3,
