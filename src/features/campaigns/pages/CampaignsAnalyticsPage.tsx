@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   CheckCircle,
   Target,
-  ArrowRight,
 } from "lucide-react";
 import {
   PieChart,
@@ -116,20 +115,6 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
   const [timelineBreakdown, setTimelineBreakdown] = useState<
     Array<{ name: string; count: number }>
   >([]);
-  const [topCampaigns, setTopCampaigns] = useState<
-    Array<{
-      id: number;
-      name: string;
-      conversionRate?: string;
-      status: string;
-      participants?: number;
-      budget?: number;
-    }>
-  >([]);
-  const [topCampaignsLoading, setTopCampaignsLoading] = useState(true);
-  const [topPerformersFilter, setTopPerformersFilter] = useState<
-    "participants" | "spend"
-  >("participants");
   const [topPerformersData, setTopPerformersData] = useState<{
     by_participants: any[];
     by_spend: any[];
@@ -376,19 +361,9 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
     loadAnalytics();
   }, [loadAnalytics]);
 
-  // Helper to format status labels
-  const formatStatusLabel = useCallback((status: string): string => {
-    if (!status) return "Draft";
-    return status
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  }, []);
-
   // Process Top Performing Campaigns data from the stats response
   useEffect(() => {
     const processTopPerformersData = async () => {
-      setTopCampaignsLoading(true);
       try {
         const statsResponse = await campaignService.getCampaignStats(true);
 
@@ -407,62 +382,11 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
       } catch (error) {
         console.error("Failed to fetch top campaigns:", error);
         setTopPerformersData(null);
-      } finally {
-        setTopCampaignsLoading(false);
       }
     };
 
     processTopPerformersData();
   }, []);
-
-  // Update displayed campaigns when filter changes
-  useEffect(() => {
-    if (!topPerformersData) {
-      setTopCampaigns([]);
-      return;
-    }
-
-    // Get campaigns based on selected filter from cached data
-    const performersData =
-      topPerformersFilter === "participants"
-        ? topPerformersData.by_participants
-        : topPerformersData.by_spend;
-
-    if (performersData.length === 0) {
-      setTopCampaigns([]);
-      return;
-    }
-
-    // Process top performers - use data directly from API response
-    const topCampaignsData = performersData
-      .slice(0, 5)
-      .map((performer: any) => {
-        // Only use conversion rate if it exists in the API response
-        let conversionRate: string | undefined = undefined;
-        if (performer.conversion_rate != null) {
-          const rate =
-            typeof performer.conversion_rate === "string"
-              ? parseFloat(performer.conversion_rate)
-              : performer.conversion_rate;
-          if (!isNaN(rate) && rate > 0) {
-            conversionRate = `${rate.toFixed(1)}%`;
-          }
-        }
-
-        return {
-          id: performer.id,
-          name: performer.name || performer.code || "Unnamed Campaign",
-          conversionRate: conversionRate,
-          status: performer.status
-            ? formatStatusLabel(performer.status)
-            : "N/A",
-          participants: performer.current_participants || 0,
-          budget: performer.budget_allocated || performer.budget_spent || 0,
-        };
-      });
-
-    setTopCampaigns(topCampaignsData);
-  }, [topPerformersFilter, topPerformersData, formatStatusLabel]);
 
   const parseValue = (value: number | string | undefined | null): number => {
     if (value == null) return 0;
@@ -523,19 +447,6 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
     color.charts.campaigns.secondary || color.charts.campaigns.pending;
   const chartAccent =
     color.charts.campaigns.accent || color.charts.campaigns.completed;
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "paused":
-        return "bg-orange-100 text-orange-700 border-orange-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -1140,122 +1051,144 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
           )}
 
           {/* Top Performing Campaigns */}
-          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-1">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Top Performing Campaigns
-                </h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setTopPerformersFilter("participants")}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                      topPerformersFilter === "participants"
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    Participants
-                  </button>
-                  <button
-                    onClick={() => setTopPerformersFilter("spend")}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                      topPerformersFilter === "spend"
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    Spend
-                  </button>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                {topPerformersFilter === "participants"
-                  ? "Campaigns by participants"
-                  : "Campaigns by spend"}
-              </p>
-            </div>
-            <div className="p-6">
-              {topCampaignsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <LoadingSpinner />
-                  <span className="ml-3 text-sm text-gray-500">
-                    Loading top campaigns...
-                  </span>
-                </div>
-              ) : topCampaigns.length === 0 ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-2">
-                      No campaign performance data available yet.
-                    </p>
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+            {topPerformersData?.by_participants &&
+              topPerformersData.by_participants.length > 0 && (
+                <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Top Campaigns by Participants
+                  </h3>
+                  <div className="h-96 w-full min-h-[384px]">
+                    <ResponsiveContainer width="100%" height={384}>
+                      <BarChart
+                        data={topPerformersData.by_participants
+                          .slice(0, 5)
+                          .map((campaign: any) => ({
+                            name:
+                              campaign.name?.length > 20
+                                ? campaign.name.substring(0, 20) + "..."
+                                : campaign.name || campaign.code || "Unknown",
+                            participants: campaign.current_participants || 0,
+                            fullName:
+                              campaign.name || campaign.code || "Unknown",
+                            id: campaign.id,
+                          }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="name"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 11 }}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => value.toLocaleString()}
+                        />
+                        <Tooltip
+                          content={(props: any) => {
+                            if (!props.active || !props.payload?.length) {
+                              return null;
+                            }
+                            const data = props.payload[0].payload;
+                            return (
+                              <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+                                <p className="mb-2 text-sm font-semibold text-gray-900">
+                                  {data.fullName}
+                                </p>
+                                <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
+                                  <span>Participants:</span>
+                                  <span className="font-semibold text-gray-900">
+                                    {data.participants.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }}
+                          cursor={{ fill: "transparent" }}
+                        />
+                        <Bar
+                          dataKey="participants"
+                          fill={chartPrimary}
+                          radius={[4, 4, 0, 0]}
+                          name="Participants"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {topCampaigns.map((campaign, index) => (
-                    <div
-                      key={campaign.id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all group"
-                      style={{ backgroundColor: color.surface.background }}
-                      onClick={() =>
-                        navigate(`/dashboard/campaigns/${campaign.id}`)
-                      }
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-                          style={{
-                            backgroundColor: color.primary.accent,
-                            color: "#FFFFFF",
+              )}
+
+            {topPerformersData?.by_spend &&
+              topPerformersData.by_spend.length > 0 && (
+                <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Top Campaigns by Spend
+                  </h3>
+                  <div className="h-96 w-full min-h-[384px]">
+                    <ResponsiveContainer width="100%" height={384}>
+                      <BarChart
+                        data={topPerformersData.by_spend
+                          .slice(0, 5)
+                          .map((campaign: any) => ({
+                            name:
+                              campaign.name?.length > 20
+                                ? campaign.name.substring(0, 20) + "..."
+                                : campaign.name || campaign.code || "Unknown",
+                            budget: campaign.budget_allocated || 0,
+                            fullName:
+                              campaign.name || campaign.code || "Unknown",
+                            id: campaign.id,
+                          }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="name"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 11 }}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => value.toLocaleString()}
+                        />
+                        <Tooltip
+                          content={(props: any) => {
+                            if (!props.active || !props.payload?.length) {
+                              return null;
+                            }
+                            const data = props.payload[0].payload;
+                            return (
+                              <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+                                <p className="mb-2 text-sm font-semibold text-gray-900">
+                                  {data.fullName}
+                                </p>
+                                <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
+                                  <span>Budget:</span>
+                                  <span className="font-semibold text-gray-900">
+                                    <CurrencyFormatter amount={data.budget} />
+                                  </span>
+                                </div>
+                              </div>
+                            );
                           }}
-                        >
-                          {index + 1}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-base text-black truncate">
-                            {campaign.name}
-                          </p>
-                          <div className="flex flex-wrap gap-2 text-sm text-black">
-                            {campaign.conversionRate && (
-                              <span>Conversion: {campaign.conversionRate}</span>
-                            )}
-                            {topPerformersFilter === "participants" &&
-                              campaign.participants !== undefined && (
-                                <span>
-                                  Participants:{" "}
-                                  {campaign.participants.toLocaleString()}
-                                </span>
-                              )}
-                            {topPerformersFilter === "spend" &&
-                              campaign.budget !== undefined && (
-                                <span>
-                                  Budget:{" "}
-                                  <CurrencyFormatter amount={campaign.budget} />
-                                </span>
-                              )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
-                            campaign.status.toLowerCase() === "active"
-                              ? "text-black bg-transparent border-0 font-normal"
-                              : `font-bold border ${getStatusColor(
-                                  campaign.status
-                                )}`
-                          }`}
-                        >
-                          {campaign.status}
-                        </span>
-                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
-                      </div>
-                    </div>
-                  ))}
+                          cursor={{ fill: "transparent" }}
+                        />
+                        <Bar
+                          dataKey="budget"
+                          fill={chartSecondary}
+                          radius={[4, 4, 0, 0]}
+                          name="Budget"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               )}
-            </div>
           </div>
         </div>
       )}

@@ -5,16 +5,11 @@ import {
   X,
   Trash2,
   ExternalLink,
-  Filter,
   Settings,
   CheckCheck,
 } from "lucide-react";
 import { useNotifications } from "../../contexts/NotificationContext";
-import {
-  Notification,
-  NotificationType,
-} from "../../features/notifications/types/notification";
-import { NOTIFICATION_TYPE_METADATA } from "../../features/notifications/types/notification";
+import { Notification } from "../../features/notifications/types/notification";
 import { color, tw } from "../utils/utils";
 
 interface NotificationDropdownProps {
@@ -120,7 +115,7 @@ export default function NotificationDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2.5 text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+        className="relative p-2.5 text-white/90 hover:text-white rounded-md transition-colors"
         title="Notifications"
       >
         <Bell className="h-5 w-5" />
@@ -241,9 +236,6 @@ export default function NotificationDropdown({
             ) : (
               <div className="divide-y divide-gray-100">
                 {displayNotifications.map((notification) => {
-                  const metadata =
-                    NOTIFICATION_TYPE_METADATA[notification.type] ||
-                    NOTIFICATION_TYPE_METADATA.general;
                   return (
                     <div
                       key={notification.id}
