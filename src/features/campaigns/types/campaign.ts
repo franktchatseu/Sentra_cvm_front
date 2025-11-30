@@ -144,23 +144,149 @@ export type ApiResponse<T> = CacheableResponse<T> | ErrorResponse;
 
 export type PaginatedApiResponse<T> = PaginatedResponse<T> | ErrorResponse;
 
+// Campaign Stats Types - Based on backend response structure
+export interface CampaignOverview {
+  total_campaigns: number;
+  non_deleted_campaigns: number;
+  deleted_campaigns: number;
+}
+
+export interface CampaignStatusBreakdown {
+  draft: number;
+  pending_approval: number;
+  approved: number;
+  active: number;
+  paused: number;
+  completed: number;
+  cancelled: number;
+  archived?: number;
+  rejected?: number;
+}
+
+export interface ApprovalStatusBreakdown {
+  pending: number;
+  approved: number;
+  rejected: number;
+  cancelled: number;
+}
+
+export interface ActivityStatus {
+  is_active_flag_true: number;
+  is_active_flag_false: number;
+  currently_running: number;
+  scheduled_future: number;
+  in_date_range: number;
+  no_start_date: number;
+  past_end_date: number;
+}
+
+export interface BudgetDistribution {
+  under_10k: number;
+  from_10k_to_50k: number;
+  from_50k_to_100k: number;
+  over_100k: number;
+}
+
+export interface BudgetMetrics {
+  total_allocated: number;
+  total_spent: number;
+  total_remaining: number;
+  average_allocated: number;
+  average_spent: number;
+  overall_utilization_percentage: number;
+}
+
+export interface ControlGroups {
+  campaigns_with_control_groups: number;
+  campaigns_without_control_groups: number;
+  average_percentage: number;
+}
+
+export interface Organization {
+  unique_categories_used: number;
+  unique_programs_used: number;
+  campaigns_without_category: number;
+  campaigns_without_manager: number;
+  campaigns_without_program: number;
+  unique_managers: number;
+}
+
+export interface ParticipantMetrics {
+  total_participants: number;
+  total_max_participants: number;
+  average_per_campaign: number;
+}
+
+export interface RecentActivity {
+  created_last_7_days: number;
+  created_last_30_days: number;
+  updated_last_7_days: number;
+  updated_last_30_days: number;
+}
+
+export interface Targets {
+  campaigns_with_target_reach: number;
+  campaigns_with_target_conversion: number;
+  campaigns_with_target_revenue: number;
+  total_target_reach?: number;
+  total_target_revenue?: number;
+}
+
+export interface Timeline {
+  starting_next_7_days: number;
+  starting_next_30_days: number;
+  ending_next_7_days: number;
+  ending_next_30_days: number;
+}
+
+export interface TopPerformerCampaign {
+  id: number;
+  name: string;
+  code: string;
+  current_participants?: number;
+  max_participants?: number;
+  participation_rate?: number;
+  budget_allocated?: number;
+  budget_spent?: number;
+  utilization_percentage?: number | null;
+  conversion_rate?: number | string;
+  status?: string;
+}
+
+export interface TopPerformers {
+  by_participants: TopPerformerCampaign[];
+  by_spend: TopPerformerCampaign[];
+}
+
 export interface CampaignStatsSummary {
-  total_campaigns: number | string;
-  active_campaigns: number | string;
-  currently_active: number | string;
-  in_draft: number | string;
-  pending_approval: number | string;
-  completed: number | string;
-  archived: number | string;
-  rejected: number | string;
-  total_budget_allocated: number | string;
-  total_budget_spent: number | string;
-  avg_campaign_budget: number | string;
-  with_control_groups: number | string;
-  overview?: Partial<Record<string, number | string>>;
-  status_breakdown?: Partial<Record<string, number | string>>;
-  approval_status_breakdown?: Partial<Record<string, number | string>>;
-  activity_status?: Partial<Record<string, number | string>>;
+  overview?: CampaignOverview;
+  status_breakdown?: CampaignStatusBreakdown;
+  approval_status_breakdown?: ApprovalStatusBreakdown;
+  activity_status?: ActivityStatus;
+  budget_distribution?: BudgetDistribution;
+  budget_metrics?: BudgetMetrics;
+  control_groups?: ControlGroups;
+  organization?: Organization;
+  participant_metrics?: ParticipantMetrics;
+  recent_activity?: RecentActivity;
+  targets?: Targets;
+  timeline?: Timeline;
+  top_performers?: TopPerformers;
+  generated_at?: string;
+  source?: string;
+  // Legacy fields for backward compatibility
+  total_campaigns?: number | string;
+  active_campaigns?: number | string;
+  currently_active?: number | string;
+  in_draft?: number | string;
+  pending_approval?: number | string;
+  completed?: number | string;
+  archived?: number | string;
+  rejected?: number | string;
+  total_budget_allocated?: number | string;
+  total_budget_spent?: number | string;
+  avg_campaign_budget?: number | string;
+  with_control_groups?: number | string;
 }
 
 export interface CampaignBudgetUtilisation {

@@ -26,7 +26,11 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import { getCurrencySymbol } from "../../../shared/services/currencyService";
 import { color, tw } from "../../../shared/utils/utils";
-import { CampaignStatsSummary } from "../types/campaign";
+import {
+  CampaignStatsSummary,
+  TopPerformers,
+  TopPerformerCampaign,
+} from "../types/campaign";
 
 type ChartTooltipEntry = {
   color?: string;
@@ -38,6 +42,19 @@ type ChartTooltipProps = {
   active?: boolean;
   label?: string;
   payload?: ChartTooltipEntry[];
+};
+
+type TopPerformerTooltipProps = {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      fullName: string;
+      participants?: number;
+      budget?: number;
+      id: number;
+    };
+  }>;
+  label?: string | number;
 };
 
 const CustomTooltip: React.FC<ChartTooltipProps> = ({
@@ -115,10 +132,8 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
   const [timelineBreakdown, setTimelineBreakdown] = useState<
     Array<{ name: string; count: number }>
   >([]);
-  const [topPerformersData, setTopPerformersData] = useState<{
-    by_participants: any[];
-    by_spend: any[];
-  } | null>(null);
+  const [topPerformersData, setTopPerformersData] =
+    useState<TopPerformers | null>(null);
 
   const loadAnalytics = useCallback(async () => {
     setIsLoading(true);
@@ -127,8 +142,8 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
 
       if (statsResponse.success && statsResponse.data) {
         // Use the data as-is from API response
-        const data = statsResponse.data as any;
-        setStats(data as CampaignStatsSummary);
+        const data = statsResponse.data as CampaignStatsSummary;
+        setStats(data);
 
         // Process status breakdown
         if (data.status_breakdown) {
@@ -368,8 +383,11 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
         const statsResponse = await campaignService.getCampaignStats(true);
 
         if (statsResponse.success && statsResponse.data) {
-          const statsData = statsResponse.data as any;
-          const topPerformers = statsData.top_performers || {};
+          const statsData = statsResponse.data as CampaignStatsSummary;
+          const topPerformers = statsData.top_performers || {
+            by_participants: [],
+            by_spend: [],
+          };
 
           // Store the data directly from API - no need to fetch campaigns separately
           setTopPerformersData({
@@ -400,41 +418,40 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
     return 0;
   };
 
-  // Helper to safely get nested value from stats
-  const getNestedValue = (stats: any, ...path: string[]): number => {
-    if (!stats) return 0;
-    let current = stats;
-    for (const key of path) {
-      if (current == null || typeof current !== "object") return 0;
-      current = current[key];
-    }
-    return parseValue(current);
-  };
-
   // Helper to get total campaigns from stats (checks overview first, then direct)
   const getTotalCampaigns = (stats: CampaignStatsSummary | null): number => {
     if (!stats) return 0;
-    const statsAny = stats as any;
     // API structure: data.overview.total_campaigns = 5
-    return (
-      getNestedValue(statsAny, "overview", "total_campaigns") ||
-      parseValue(statsAny.total_campaigns) ||
-      0
-    );
+    if (stats.overview?.total_campaigns) {
+      return typeof stats.overview.total_campaigns === "number"
+        ? stats.overview.total_campaigns
+        : parseValue(stats.overview.total_campaigns);
+    }
+    return parseValue(stats.total_campaigns) || 0;
   };
 
   // Helper to get active campaigns from stats
   const getActiveCampaigns = (stats: CampaignStatsSummary | null): number => {
     if (!stats) return 0;
-    const statsAny = stats as any;
-
     // API structure: data.activity_status.is_active_flag_true = 5
+    if (stats.activity_status?.is_active_flag_true) {
+      return typeof stats.activity_status.is_active_flag_true === "number"
+        ? stats.activity_status.is_active_flag_true
+        : parseValue(stats.activity_status.is_active_flag_true);
+    }
+    if (stats.activity_status?.currently_running) {
+      return typeof stats.activity_status.currently_running === "number"
+        ? stats.activity_status.currently_running
+        : parseValue(stats.activity_status.currently_running);
+    }
+    if (stats.status_breakdown?.active) {
+      return typeof stats.status_breakdown.active === "number"
+        ? stats.status_breakdown.active
+        : parseValue(stats.status_breakdown.active);
+    }
     return (
-      getNestedValue(statsAny, "activity_status", "is_active_flag_true") ||
-      getNestedValue(statsAny, "activity_status", "currently_running") ||
-      getNestedValue(statsAny, "status_breakdown", "active") ||
-      parseValue(statsAny.active_campaigns) ||
-      parseValue(statsAny.currently_active) ||
+      parseValue(stats.active_campaigns) ||
+      parseValue(stats.currently_active) ||
       0
     );
   };
@@ -518,11 +535,9 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
                 <p className="mt-2 text-3xl font-bold text-gray-900">
                   <CurrencyFormatter
                     amount={
-                      getNestedValue(
-                        stats as any,
-                        "budget_metrics",
-                        "total_allocated"
-                      ) || parseValue((stats as any).total_budget_allocated)
+                      stats.budget_metrics?.total_allocated ||
+                      parseValue(stats.total_budget_allocated) ||
+                      0
                     }
                   />
                 </p>
@@ -540,11 +555,9 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
                 <p className="mt-2 text-3xl font-bold text-gray-900">
                   <CurrencyFormatter
                     amount={
-                      getNestedValue(
-                        stats as any,
-                        "budget_metrics",
-                        "total_spent"
-                      ) || parseValue((stats as any).total_budget_spent)
+                      stats.budget_metrics?.total_spent ||
+                      parseValue(stats.total_budget_spent) ||
+                      0
                     }
                   />
                 </p>
@@ -558,11 +571,7 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
               <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                 <p className="text-sm font-medium text-gray-600">In Draft</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">
-                  {getNestedValue(
-                    stats as any,
-                    "status_breakdown",
-                    "draft"
-                  ).toLocaleString()}
+                  {(stats.status_breakdown?.draft || 0).toLocaleString()}
                 </p>
               </div>
               <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
@@ -570,21 +579,15 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
                   Pending Approval
                 </p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">
-                  {getNestedValue(
-                    stats as any,
-                    "status_breakdown",
-                    "pending_approval"
+                  {(
+                    stats.status_breakdown?.pending_approval || 0
                   ).toLocaleString()}
                 </p>
               </div>
               <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                 <p className="text-sm font-medium text-gray-600">Completed</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">
-                  {getNestedValue(
-                    stats as any,
-                    "status_breakdown",
-                    "completed"
-                  ).toLocaleString()}
+                  {(stats.status_breakdown?.completed || 0).toLocaleString()}
                 </p>
               </div>
               <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
@@ -593,11 +596,7 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
                 </p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">
                   <CurrencyFormatter
-                    amount={getNestedValue(
-                      stats as any,
-                      "budget_metrics",
-                      "average_allocated"
-                    )}
+                    amount={stats.budget_metrics?.average_allocated || 0}
                   />
                 </p>
               </div>
@@ -1051,145 +1050,151 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
           )}
 
           {/* Top Performing Campaigns */}
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            {topPerformersData?.by_participants &&
-              topPerformersData.by_participants.length > 0 && (
-                <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Top Campaigns by Participants
-                  </h3>
-                  <div className="h-96 w-full min-h-[384px]">
-                    <ResponsiveContainer width="100%" height={384}>
-                      <BarChart
-                        data={topPerformersData.by_participants
-                          .slice(0, 5)
-                          .map((campaign: any) => ({
-                            name:
-                              campaign.name?.length > 20
-                                ? campaign.name.substring(0, 20) + "..."
-                                : campaign.name || campaign.code || "Unknown",
-                            participants: campaign.current_participants || 0,
-                            fullName:
-                              campaign.name || campaign.code || "Unknown",
-                            id: campaign.id,
-                          }))}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="name"
-                          angle={-45}
-                          textAnchor="end"
-                          height={100}
-                          tick={{ fontSize: 11 }}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 12 }}
-                          tickFormatter={(value) => value.toLocaleString()}
-                        />
-                        <Tooltip
-                          content={(props: any) => {
-                            if (!props.active || !props.payload?.length) {
-                              return null;
-                            }
-                            const data = props.payload[0].payload;
-                            return (
-                              <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
-                                <p className="mb-2 text-sm font-semibold text-gray-900">
-                                  {data.fullName}
-                                </p>
-                                <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
-                                  <span>Participants:</span>
-                                  <span className="font-semibold text-gray-900">
-                                    {data.participants.toLocaleString()}
-                                  </span>
+          {topPerformersData && (
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+              {topPerformersData.by_participants &&
+                topPerformersData.by_participants.length > 0 && (
+                  <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Top Campaigns by Participants
+                    </h3>
+                    <div className="h-96 w-full min-h-[384px]">
+                      <ResponsiveContainer width="100%" height={384}>
+                        <BarChart
+                          data={topPerformersData.by_participants
+                            .slice(0, 5)
+                            .map((campaign: TopPerformerCampaign) => ({
+                              name:
+                                campaign.name?.length > 20
+                                  ? campaign.name.substring(0, 20) + "..."
+                                  : campaign.name || campaign.code || "Unknown",
+                              participants: campaign.current_participants || 0,
+                              fullName:
+                                campaign.name || campaign.code || "Unknown",
+                              id: campaign.id,
+                            }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="name"
+                            angle={-45}
+                            textAnchor="end"
+                            height={100}
+                            tick={{ fontSize: 11 }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 12 }}
+                            tickFormatter={(value) => value.toLocaleString()}
+                          />
+                          <Tooltip
+                            content={(props: TopPerformerTooltipProps) => {
+                              if (!props.active || !props.payload?.length) {
+                                return null;
+                              }
+                              const data = props.payload[0].payload;
+                              return (
+                                <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+                                  <p className="mb-2 text-sm font-semibold text-gray-900">
+                                    {data.fullName}
+                                  </p>
+                                  <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
+                                    <span>Participants:</span>
+                                    <span className="font-semibold text-gray-900">
+                                      {(
+                                        data.participants || 0
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          }}
-                          cursor={{ fill: "transparent" }}
-                        />
-                        <Bar
-                          dataKey="participants"
-                          fill={chartPrimary}
-                          radius={[4, 4, 0, 0]}
-                          name="Participants"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
+                              );
+                            }}
+                            cursor={{ fill: "transparent" }}
+                          />
+                          <Bar
+                            dataKey="participants"
+                            fill={chartPrimary}
+                            radius={[4, 4, 0, 0]}
+                            name="Participants"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-            {topPerformersData?.by_spend &&
-              topPerformersData.by_spend.length > 0 && (
-                <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Top Campaigns by Spend
-                  </h3>
-                  <div className="h-96 w-full min-h-[384px]">
-                    <ResponsiveContainer width="100%" height={384}>
-                      <BarChart
-                        data={topPerformersData.by_spend
-                          .slice(0, 5)
-                          .map((campaign: any) => ({
-                            name:
-                              campaign.name?.length > 20
-                                ? campaign.name.substring(0, 20) + "..."
-                                : campaign.name || campaign.code || "Unknown",
-                            budget: campaign.budget_allocated || 0,
-                            fullName:
-                              campaign.name || campaign.code || "Unknown",
-                            id: campaign.id,
-                          }))}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="name"
-                          angle={-45}
-                          textAnchor="end"
-                          height={100}
-                          tick={{ fontSize: 11 }}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 12 }}
-                          tickFormatter={(value) => value.toLocaleString()}
-                        />
-                        <Tooltip
-                          content={(props: any) => {
-                            if (!props.active || !props.payload?.length) {
-                              return null;
-                            }
-                            const data = props.payload[0].payload;
-                            return (
-                              <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
-                                <p className="mb-2 text-sm font-semibold text-gray-900">
-                                  {data.fullName}
-                                </p>
-                                <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
-                                  <span>Budget:</span>
-                                  <span className="font-semibold text-gray-900">
-                                    <CurrencyFormatter amount={data.budget} />
-                                  </span>
+              {topPerformersData.by_spend &&
+                topPerformersData.by_spend.length > 0 && (
+                  <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Top Campaigns by Spend
+                    </h3>
+                    <div className="h-96 w-full min-h-[384px]">
+                      <ResponsiveContainer width="100%" height={384}>
+                        <BarChart
+                          data={topPerformersData.by_spend
+                            .slice(0, 5)
+                            .map((campaign: TopPerformerCampaign) => ({
+                              name:
+                                campaign.name?.length > 20
+                                  ? campaign.name.substring(0, 20) + "..."
+                                  : campaign.name || campaign.code || "Unknown",
+                              budget: campaign.budget_allocated || 0,
+                              fullName:
+                                campaign.name || campaign.code || "Unknown",
+                              id: campaign.id,
+                            }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="name"
+                            angle={-45}
+                            textAnchor="end"
+                            height={100}
+                            tick={{ fontSize: 11 }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 12 }}
+                            tickFormatter={(value) => value.toLocaleString()}
+                          />
+                          <Tooltip
+                            content={(props: TopPerformerTooltipProps) => {
+                              if (!props.active || !props.payload?.length) {
+                                return null;
+                              }
+                              const data = props.payload[0].payload;
+                              return (
+                                <div className="rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+                                  <p className="mb-2 text-sm font-semibold text-gray-900">
+                                    {data.fullName}
+                                  </p>
+                                  <div className="flex items-center justify-between gap-4 text-sm text-gray-600">
+                                    <span>Budget:</span>
+                                    <span className="font-semibold text-gray-900">
+                                      <CurrencyFormatter
+                                        amount={data.budget || 0}
+                                      />
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          }}
-                          cursor={{ fill: "transparent" }}
-                        />
-                        <Bar
-                          dataKey="budget"
-                          fill={chartSecondary}
-                          radius={[4, 4, 0, 0]}
-                          name="Budget"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
+                              );
+                            }}
+                            cursor={{ fill: "transparent" }}
+                          />
+                          <Bar
+                            dataKey="budget"
+                            fill={chartSecondary}
+                            radius={[4, 4, 0, 0]}
+                            name="Budget"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                </div>
-              )}
-          </div>
+                )}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -480,10 +480,10 @@ export default function CampaignsPage() {
 
         const draft = Number(statusBreakdown.draft) || 0;
 
-        const pendingApproval =
-          Number(statusBreakdown.pending_approval) ||
-          Number(approvalBreakdown.pending) ||
-          0;
+        // Only use status_breakdown.pending_approval (campaigns with status="pending_approval")
+        // Don't use approval_status_breakdown.pending as it counts approval_status="pending"
+        // which may not match the actual campaign status displayed
+        const pendingApproval = Number(statusBreakdown.pending_approval) || 0;
 
         setCampaignStats({
           total: Number(total),
