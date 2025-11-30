@@ -475,9 +475,14 @@ export default function ScheduledJobsPage() {
           </button>
           <button
             onClick={() => {
-              setIsSelectionMode(!isSelectionMode);
-              if (isSelectionMode) {
-                setSelectedJobs(new Set()); // Clear selection when exiting mode
+              if (!isSelectionMode) {
+                // Entering selection mode - select all visible jobs
+                setIsSelectionMode(true);
+                setSelectedJobs(new Set(filteredJobs.map((job) => job.id)));
+              } else {
+                // Exiting selection mode - clear selection
+                setIsSelectionMode(false);
+                setSelectedJobs(new Set());
               }
             }}
             className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"

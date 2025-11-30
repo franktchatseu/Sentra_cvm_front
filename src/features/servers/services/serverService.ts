@@ -241,6 +241,9 @@ class ServerService {
   ): Promise<BulkServerStatusResponse> {
     return this.request<BulkServerStatusResponse>("/bulk/activate", {
       method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
     });
   }
@@ -250,6 +253,9 @@ class ServerService {
   ): Promise<BulkServerStatusResponse> {
     return this.request<BulkServerStatusResponse>("/bulk/deactivate", {
       method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
     });
   }
@@ -484,30 +490,54 @@ class ServerService {
 
   // ==================== Status Operations ====================
 
-  async activateServer(id: number): Promise<ServerType> {
+  async activateServer(id: number, userId: number): Promise<ServerType> {
     const response = await this.request<unknown>(`/${id}/activate`, {
       method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
     });
     return this.unwrapServer(response);
   }
 
-  async deactivateServer(id: number): Promise<ServerType> {
+  async deactivateServer(id: number, userId: number): Promise<ServerType> {
     const response = await this.request<unknown>(`/${id}/deactivate`, {
       method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
     });
     return this.unwrapServer(response);
   }
 
-  async deprecateServer(id: number): Promise<ServerType> {
+  async deprecateServer(id: number, userId: number): Promise<ServerType> {
+    if (!userId) {
+      throw new Error("user_id is required for deprecate operation");
+    }
+    const payload = { user_id: userId };
     const response = await this.request<unknown>(`/${id}/deprecate`, {
       method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
     return this.unwrapServer(response);
   }
 
-  async undeprecateServer(id: number): Promise<ServerType> {
+  async undeprecateServer(id: number, userId: number): Promise<ServerType> {
+    if (!userId) {
+      throw new Error("user_id is required for undeprecate operation");
+    }
+    const payload = { user_id: userId };
     const response = await this.request<unknown>(`/${id}/undeprecate`, {
       method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
     return this.unwrapServer(response);
   }

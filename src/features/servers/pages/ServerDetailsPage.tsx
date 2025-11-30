@@ -7,6 +7,7 @@ import {
   Activity,
   Pencil,
   HeartPulse,
+  Loader2,
   Power,
   Archive,
   Zap,
@@ -19,6 +20,7 @@ import { ServerType } from "../types/server";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { color, tw } from "../../../shared/utils/utils";
 
 const InfoRow = ({
@@ -43,6 +45,7 @@ export default function ServerDetailsPage() {
   const navigate = useNavigate();
   const { error: showError, success } = useToast();
   const { confirm } = useConfirm();
+  const { user } = useAuth();
 
   const [server, setServer] = useState<ServerType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -133,10 +136,14 @@ export default function ServerDetailsPage() {
 
     setActionState(action);
     try {
+      if (!user?.user_id) {
+        showError("Error", "User ID is required");
+        return;
+      }
       if (action === "activate") {
-        await serverService.activateServer(server.id);
+        await serverService.activateServer(server.id, user.user_id);
       } else {
-        await serverService.deactivateServer(server.id);
+        await serverService.deactivateServer(server.id, user.user_id);
       }
       success(
         `Server ${action === "activate" ? "activated" : "deactivated"}`,
@@ -171,10 +178,14 @@ export default function ServerDetailsPage() {
 
     setActionState("deprecate");
     try {
+      if (!user?.user_id) {
+        showError("Error", "User ID is required");
+        return;
+      }
       if (nextAction === "deprecate") {
-        await serverService.deprecateServer(server.id);
+        await serverService.deprecateServer(server.id, user.user_id);
       } else {
-        await serverService.undeprecateServer(server.id);
+        await serverService.undeprecateServer(server.id, user.user_id);
       }
       success(
         `Server ${nextAction === "deprecate" ? "deprecated" : "restored"}`,
@@ -403,7 +414,11 @@ export default function ServerDetailsPage() {
             } ${isActivationLoading ? "opacity-60" : ""}`}
             title={server.is_active ? "Deactivate server" : "Activate server"}
           >
-            <Power size={16} />
+            {isActivationLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Power size={16} />
+            )}
             {server.is_active ? "Deactivate" : "Activate"}
           </button>
           <button
@@ -419,10 +434,11 @@ export default function ServerDetailsPage() {
           <div className="relative" ref={moreMenuRef}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="inline-flex items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-black hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-black hover:bg-gray-50 transition-colors"
               title="More actions"
             >
               <MoreVertical size={16} />
+              <span>More</span>
             </button>
             {showMoreMenu && (
               <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
@@ -436,7 +452,11 @@ export default function ServerDetailsPage() {
                     isHealthLoading ? "opacity-60" : ""
                   }`}
                 >
-                  <HeartPulse size={16} />
+                  {isHealthLoading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <HeartPulse size={16} />
+                  )}
                   {server.health_check_enabled
                     ? "Disable Health Checks"
                     : "Enable Health Checks"}
@@ -451,7 +471,11 @@ export default function ServerDetailsPage() {
                     isDeprecationLoading ? "opacity-60" : ""
                   }`}
                 >
-                  <Archive size={16} />
+                  {isDeprecationLoading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Archive size={16} />
+                  )}
                   {server.is_deprecated ? "Restore Server" : "Deprecate Server"}
                 </button>
                 <button
@@ -464,7 +488,11 @@ export default function ServerDetailsPage() {
                     isCircuitBreakerLoading ? "opacity-60" : ""
                   }`}
                 >
-                  <Zap size={16} />
+                  {isCircuitBreakerLoading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Zap size={16} />
+                  )}
                   {server.circuit_breaker_enabled
                     ? "Disable Circuit Breaker"
                     : "Enable Circuit Breaker"}
@@ -482,7 +510,11 @@ export default function ServerDetailsPage() {
                         isResetHealthLoading ? "opacity-60" : ""
                       }`}
                     >
-                      <RotateCcw size={16} />
+                      {isResetHealthLoading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <RotateCcw size={16} />
+                      )}
                       Reset Health Check
                     </button>
                     <button

@@ -7,6 +7,7 @@ import {
   Edit,
   Eye,
   HeartPulse,
+  Loader2,
   Plus,
   Power,
   Search,
@@ -415,13 +416,12 @@ export default function ServersPage() {
     if (server.last_health_check_status === "unhealthy") {
       return (
         <span
-          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
+          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-black"
           style={{
             backgroundColor: "rgba(251,113,133,0.12)",
-            color: color.status.danger,
           }}
         >
-          <AlertTriangle size={14} style={{ color: color.status.danger }} />
+          <AlertTriangle size={14} className="text-black" />
           Unhealthy
         </span>
       );
@@ -430,13 +430,12 @@ export default function ServersPage() {
     if (server.last_health_check_status === "healthy") {
       return (
         <span
-          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
+          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-black"
           style={{
             backgroundColor: "rgba(16,185,129,0.12)",
-            color: color.status.success,
           }}
         >
-          <Shield size={14} style={{ color: color.status.success }} />
+          <Shield size={14} className="text-black" />
           Healthy
         </span>
       );
@@ -497,11 +496,16 @@ export default function ServersPage() {
 
     if (!confirmed) return;
 
+    if (!userId) {
+      showError("Error", "User ID is required");
+      return;
+    }
+
     setIsBulkActionLoading(true);
     try {
       const payload = {
         serverIds: ids,
-        updatedBy: userId,
+        user_id: userId,
       };
       const response =
         action === "activate"
@@ -544,10 +548,14 @@ export default function ServersPage() {
 
     setActionState({ id: server.id, action });
     try {
+      if (!userId) {
+        showError("Error", "User ID is required");
+        return;
+      }
       if (action === "activate") {
-        await serverService.activateServer(server.id);
+        await serverService.activateServer(server.id, userId);
       } else {
-        await serverService.deactivateServer(server.id);
+        await serverService.deactivateServer(server.id, userId);
       }
       success(
         `Server ${action === "activate" ? "activated" : "deactivated"}`,
@@ -583,10 +591,18 @@ export default function ServersPage() {
 
     setActionState({ id: server.id, action: "deprecate" });
     try {
+      if (!userId || userId === undefined || userId === null) {
+        showError(
+          "Error",
+          "User ID is required. Please ensure you are logged in."
+        );
+        setActionState(null);
+        return;
+      }
       if (nextAction === "deprecate") {
-        await serverService.deprecateServer(server.id);
+        await serverService.deprecateServer(server.id, userId);
       } else {
-        await serverService.undeprecateServer(server.id);
+        await serverService.undeprecateServer(server.id, userId);
       }
       success(
         `Server ${nextAction === "deprecate" ? "deprecated" : "restored"}`,
@@ -640,6 +656,7 @@ export default function ServersPage() {
         }.`
       );
       await loadServers();
+      await loadStats(); // Refetch health stats to update the stat card
     } catch (err) {
       showError(
         `Failed to ${action} health checks`,
@@ -656,7 +673,7 @@ export default function ServersPage() {
   ) => actionState?.id === serverId && actions.includes(actionState.action);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-auto">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
@@ -669,9 +686,14 @@ export default function ServersPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
-              setIsSelectionMode(!isSelectionMode);
-              if (isSelectionMode) {
-                setSelectedServerIds(new Set()); // Clear selection when exiting mode
+              if (!isSelectionMode) {
+                // Entering selection mode - select all visible servers
+                setIsSelectionMode(true);
+                setSelectedServerIds(new Set(visibleIds));
+              } else {
+                // Exiting selection mode - clear selection
+                setIsSelectionMode(false);
+                setSelectedServerIds(new Set());
               }
             }}
             className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
@@ -695,42 +717,6 @@ export default function ServersPage() {
           </button>
         </div>
       </div>
-
-      {/* Batch Actions Toolbar */}
-      {isSelectionMode && selectedServerIds.size > 0 && (
-        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">
-              {selectedServerIds.size} server(s) selected
-            </span>
-            <button
-              onClick={() => setSelectedServerIds(new Set())}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleBulkStatusChange("activate")}
-              disabled={isBulkActionLoading}
-              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: color.primary.action }}
-            >
-              <Power size={14} />
-              Activate
-            </button>
-            <button
-              onClick={() => handleBulkStatusChange("deactivate")}
-              disabled={isBulkActionLoading}
-              className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-            >
-              <Power size={14} className="rotate-180" />
-              Deactivate
-            </button>
-          </div>
-        </div>
-      )}
 
       <ServerStatsCards
         healthStats={healthStats}
@@ -776,6 +762,42 @@ export default function ServersPage() {
         </div>
       </div>
 
+      {/* Batch Actions Toolbar */}
+      {isSelectionMode && selectedServerIds.size > 0 && (
+        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">
+              {selectedServerIds.size} server(s) selected
+            </span>
+            <button
+              onClick={() => setSelectedServerIds(new Set())}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleBulkStatusChange("activate")}
+              disabled={isBulkActionLoading}
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              <Power size={14} />
+              Activate
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange("deactivate")}
+              disabled={isBulkActionLoading}
+              className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              <Power size={14} className="rotate-180" />
+              Deactivate
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-md border border-gray-200">
         {isLoadingServers ? (
           <div className="flex flex-col items-center justify-center py-20">
@@ -797,7 +819,7 @@ export default function ServersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table
-              className="w-full min-w-[860px] text-sm"
+              className="w-full min-w-[900px] text-sm"
               style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
             >
               <thead style={{ background: color.surface.tableHeader }}>
@@ -828,6 +850,9 @@ export default function ServersPage() {
                     }}
                   >
                     Server
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                    Code
                   </th>
                   <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
                     Environment
@@ -888,7 +913,7 @@ export default function ServersPage() {
                         </td>
                       )}
                       <td
-                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm whitespace-nowrap"
                         style={{
                           backgroundColor: color.surface.tablebodybg,
                           ...(!isSelectionMode && {
@@ -902,33 +927,40 @@ export default function ServersPage() {
                           onClick={() =>
                             navigate(`/dashboard/servers/${server.id}`)
                           }
-                          className="font-semibold text-black"
+                          className="font-semibold text-black whitespace-nowrap"
                         >
                           {server.name}
                         </button>
-                        <p className="text-xs text-black">{server.code}</p>
                       </td>
                       <td
-                        className="px-4 sm:px-6 py-3 sm:py-4 text-black text-sm"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-black whitespace-nowrap"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <div className="uppercase">
+                        <p className="text-sm text-black whitespace-nowrap">
+                          {server.code || "—"}
+                        </p>
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-black text-sm whitespace-nowrap"
+                        style={{ backgroundColor: color.surface.tablebodybg }}
+                      >
+                        <div className="uppercase whitespace-nowrap">
                           {server.environment || "—"}
                         </div>
-                        <p className="text-xs text-black">
+                        <p className="text-xs text-black whitespace-nowrap">
                           {server.region || "—"}
                         </p>
                       </td>
                       <td
-                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-black"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-black whitespace-nowrap"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <p className="font-mono text-xs text-black">
+                        <p className="font-mono text-xs text-black whitespace-nowrap">
                           {`${server.protocol}://${server.host}${
                             server.port ? `:${server.port}` : ""
                           }${server.base_path || ""}`.replace(/\/+$/, "")}
                         </p>
-                        <p className="text-xs text-black">
+                        <p className="text-xs text-black whitespace-nowrap">
                           Timeout {server.timeout_seconds}s · Retries{" "}
                           {server.max_retries}
                         </p>
@@ -940,7 +972,7 @@ export default function ServersPage() {
                         {renderHealthBadge(server)}
                       </td>
                       <td
-                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm whitespace-nowrap"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
                         <div className="flex flex-wrap gap-2">
@@ -996,7 +1028,7 @@ export default function ServersPage() {
                           <button
                             type="button"
                             onClick={(e) => handleHealthToggle(server, e)}
-                            className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
+                            className={`relative inline-flex items-center justify-center rounded-md p-2 transition-colors ${
                               server.health_check_enabled
                                 ? "text-green-600 hover:bg-green-50"
                                 : "text-black hover:bg-gray-100"
@@ -1013,15 +1045,19 @@ export default function ServersPage() {
                             }
                             disabled={healthLoading}
                           >
-                            <HeartPulse size={16} />
+                            {healthLoading ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <HeartPulse size={16} />
+                            )}
                           </button>
                           <button
                             type="button"
                             onClick={(e) => handleActivationToggle(server, e)}
-                            className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
+                            className={`relative inline-flex items-center justify-center rounded-md p-2 transition-colors ${
                               server.is_active
-                                ? "text-green-600 hover:bg-green-50"
-                                : "text-black hover:bg-gray-100"
+                                ? "text-red-600 hover:bg-red-50"
+                                : "text-green-600 hover:bg-green-50"
                             } ${activationLoading ? "opacity-50" : ""}`}
                             aria-label={
                               server.is_active
@@ -1031,15 +1067,19 @@ export default function ServersPage() {
                             title={server.is_active ? "Deactivate" : "Activate"}
                             disabled={activationLoading}
                           >
-                            <Power size={16} />
+                            {activationLoading ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Power size={16} />
+                            )}
                           </button>
                           <button
                             type="button"
                             onClick={(e) => handleDeprecationToggle(server, e)}
-                            className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
+                            className={`relative inline-flex items-center justify-center rounded-md p-2 transition-colors ${
                               server.is_deprecated
-                                ? "text-amber-600 hover:bg-amber-50"
-                                : "text-black hover:bg-gray-100"
+                                ? "text-purple-600 hover:bg-purple-50"
+                                : "text-purple-600 hover:bg-purple-50"
                             } ${deprecateLoading ? "opacity-50" : ""}`}
                             aria-label={
                               server.is_deprecated
@@ -1051,7 +1091,11 @@ export default function ServersPage() {
                             }
                             disabled={deprecateLoading}
                           >
-                            <Archive size={16} />
+                            {deprecateLoading ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Archive size={16} />
+                            )}
                           </button>
                         </div>
                       </td>

@@ -35,126 +35,98 @@ export default function ServerStatsCards({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Total Servers</p>
-            <p className="mt-2 text-3xl font-semibold text-gray-900">
-              {isLoading ? "—" : totalServers.toLocaleString()}
-            </p>
-          </div>
-          <div
-            className="rounded-full p-3"
-            style={{ backgroundColor: `${color.primary.accent}22` }}
-          >
-            <Layers
-              size={22}
-              style={{ color: color.primary.accent }}
-              aria-hidden
-            />
-          </div>
+      <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Layers
+            className="h-5 w-5"
+            style={{ color: color.primary.accent }}
+            aria-hidden
+          />
+          <p className="text-sm font-medium text-black">Total Servers</p>
         </div>
-        <p className="mt-3 text-sm text-gray-500">
+        <p className="mt-2 text-3xl font-bold text-black">
+          {isLoading ? "..." : totalServers.toLocaleString()}
+        </p>
+        <p className="mt-3 text-sm text-black">
           {environmentCounts.length} environments tracked
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Health Coverage</p>
-            <p className="mt-2 text-3xl font-semibold text-gray-900">
-              {isLoading
-                ? "—"
-                : `${healthEnabled.toLocaleString()}/${totalServers.toLocaleString()}`}
-            </p>
-          </div>
-          <div
-            className="rounded-full p-3"
-            style={{ backgroundColor: `${color.status.info}15` }}
-          >
-            <ShieldCheck
-              size={22}
-              style={{ color: color.status.info }}
-              aria-hidden
-            />
-          </div>
+      <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2">
+          <ShieldCheck
+            className="h-5 w-5"
+            style={{ color: color.primary.accent }}
+            aria-hidden
+          />
+          <p className="text-sm font-medium text-black">Health Coverage</p>
         </div>
+        <p className="mt-2 text-3xl font-bold text-black">
+          {isLoading
+            ? "..."
+            : `${healthEnabled.toLocaleString()}/${totalServers.toLocaleString()}`}
+        </p>
         <div className="mt-3 flex items-center gap-4 text-sm">
-          <span className={`${tw.textSecondary}`}>
+          <span className="text-black">
             Healthy{" "}
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-black">
               {healthy.toLocaleString()}
             </span>
           </span>
-          <span className="text-gray-400">•</span>
-          <span className={`${tw.textSecondary}`}>
+          <span className="text-black">•</span>
+          <span className="text-black">
             Unhealthy{" "}
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-black">
               {unhealthy.toLocaleString()}
             </span>
           </span>
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Protocol Mix</p>
-            <p className="mt-2 text-3xl font-semibold text-gray-900">
-              {protocolCounts.length}
-            </p>
-          </div>
-          <div
-            className="rounded-full p-3"
-            style={{ backgroundColor: `${color.status.success}15` }}
-          >
-            <Signal
-              size={22}
-              style={{ color: color.status.success }}
-              aria-hidden
-            />
-          </div>
+      <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Signal
+            className="h-5 w-5"
+            style={{ color: color.primary.accent }}
+            aria-hidden
+          />
+          <p className="text-sm font-medium text-black">Protocol Mix</p>
         </div>
+        <p className="mt-2 text-3xl font-bold text-black">
+          {isLoading ? "..." : protocolCounts.length}
+        </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
           {protocolCounts.slice(0, 4).map((protocol) => (
             <div
               key={protocol.protocol}
               className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2"
             >
-              <span className="font-medium text-gray-600 uppercase">
+              <span className="font-medium text-black uppercase">
                 {protocol.protocol}
               </span>
-              <span className="text-gray-900">
+              <span className="text-black">
                 {formatPercent(protocol.count, totalServers)}
               </span>
             </div>
           ))}
           {protocolCounts.length === 0 && (
-            <p className="col-span-2 text-gray-400">No protocol data</p>
+            <p className="col-span-2 text-black">No protocol data</p>
           )}
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Region Coverage</p>
-            <p className="mt-2 text-3xl font-semibold text-gray-900">
-              {regionsCovered}
-            </p>
-          </div>
-          <div
-            className="rounded-full p-3"
-            style={{ backgroundColor: `${color.status.warning}15` }}
-          >
-            <Globe
-              size={22}
-              style={{ color: color.status.warning }}
-              aria-hidden
-            />
-          </div>
+      <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Globe
+            className="h-5 w-5"
+            style={{ color: color.primary.accent }}
+            aria-hidden
+          />
+          <p className="text-sm font-medium text-black">Region Coverage</p>
         </div>
+        <p className="mt-2 text-3xl font-bold text-black">
+          {isLoading ? "..." : regionsCovered}
+        </p>
         <div className="mt-3 space-y-2 text-sm">
           {environmentCounts.slice(0, 3).map((env) => (
             <div
@@ -167,21 +139,20 @@ export default function ServerStatsCards({
                   style={{ color: color.primary.accent }}
                   aria-hidden
                 />
-                <span className="font-medium capitalize">
+                <span className="font-medium capitalize text-black">
                   {env.environment || "unknown"}
                 </span>
               </div>
-              <span className="text-gray-900">
+              <span className="text-black">
                 {formatPercent(env.count, totalServers)}
               </span>
             </div>
           ))}
           {environmentCounts.length === 0 && (
-            <p className="text-gray-400">No environment data</p>
+            <p className="text-black">No environment data</p>
           )}
         </div>
       </div>
     </div>
   );
 }
-

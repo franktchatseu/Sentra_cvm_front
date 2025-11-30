@@ -102,7 +102,7 @@ export interface ServerFilterQuery extends ServerListQuery {
 
 export interface BulkServerStatusRequest {
   serverIds: number[];
-  updatedBy?: number;
+  user_id: number;
 }
 
 export interface BulkServerStatusResponse {
