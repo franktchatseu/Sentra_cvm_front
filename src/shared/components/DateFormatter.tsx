@@ -39,3 +39,4 @@ export default function DateFormatter({
 
   return <span className={className}>{formatted}</span>;
 }
+

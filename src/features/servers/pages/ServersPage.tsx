@@ -514,11 +514,16 @@ export default function ServersPage() {
       const updatedCount =
         response?.activated ?? response?.deactivated ?? ids.length;
       success(
-        `Servers ${action === "activate" ? "activated" : "deactivated"}`,
-        `${updatedCount} server${updatedCount === 1 ? "" : "s"} updated.`
+        `${updatedCount} server${updatedCount === 1 ? "" : "s"} ${
+          action === "activate" ? "activated" : "deactivated"
+        }`,
+        `Successfully ${
+          action === "activate" ? "activated" : "deactivated"
+        } ${updatedCount} server${updatedCount === 1 ? "" : "s"}.`
       );
       setSelectedServerIds(new Set());
       await loadServers();
+      await loadStats();
     } catch (err) {
       showError(
         `Failed to ${

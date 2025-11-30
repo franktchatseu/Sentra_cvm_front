@@ -491,24 +491,30 @@ class ServerService {
   // ==================== Status Operations ====================
 
   async activateServer(id: number, userId: number): Promise<ServerType> {
-    const response = await this.request<unknown>(`/${id}/activate`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ user_id: userId }),
-    });
+    if (!userId) {
+      throw new Error("user_id is required for activate operation");
+    }
+    const queryString = this.buildQueryParams({ user_id: userId });
+    const response = await this.request<unknown>(
+      `/${id}/activate${queryString}`,
+      {
+        method: "PATCH",
+      }
+    );
     return this.unwrapServer(response);
   }
 
   async deactivateServer(id: number, userId: number): Promise<ServerType> {
-    const response = await this.request<unknown>(`/${id}/deactivate`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ user_id: userId }),
-    });
+    if (!userId) {
+      throw new Error("user_id is required for deactivate operation");
+    }
+    const queryString = this.buildQueryParams({ user_id: userId });
+    const response = await this.request<unknown>(
+      `/${id}/deactivate${queryString}`,
+      {
+        method: "PATCH",
+      }
+    );
     return this.unwrapServer(response);
   }
 
@@ -516,14 +522,13 @@ class ServerService {
     if (!userId) {
       throw new Error("user_id is required for deprecate operation");
     }
-    const payload = { user_id: userId };
-    const response = await this.request<unknown>(`/${id}/deprecate`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const queryString = this.buildQueryParams({ user_id: userId });
+    const response = await this.request<unknown>(
+      `/${id}/deprecate${queryString}`,
+      {
+        method: "PATCH",
+      }
+    );
     return this.unwrapServer(response);
   }
 
@@ -531,14 +536,13 @@ class ServerService {
     if (!userId) {
       throw new Error("user_id is required for undeprecate operation");
     }
-    const payload = { user_id: userId };
-    const response = await this.request<unknown>(`/${id}/undeprecate`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const queryString = this.buildQueryParams({ user_id: userId });
+    const response = await this.request<unknown>(
+      `/${id}/undeprecate${queryString}`,
+      {
+        method: "PATCH",
+      }
+    );
     return this.unwrapServer(response);
   }
 }

@@ -65,6 +65,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setToken(response.session.token);
     setIsAuthenticated(true);
 
+    // Fetch user role from permissions endpoint
+    let userRole: "admin" | "user" = "user"; // Default role
+    try {
+      const permissionsResponse = await authService.getPermissions();
+      if (
+        permissionsResponse.success &&
+        permissionsResponse.roles &&
+        permissionsResponse.roles.length > 0
+      ) {
+        // Use the first role, or check if 'admin' is in the roles array
+        userRole = permissionsResponse.roles.includes("admin")
+          ? "admin"
+          : "user";
+      }
+    } catch (error) {
+      console.warn(
+        "Failed to fetch user permissions, using default role:",
+        error
+      );
+    }
+
     // Use user data from response if available, otherwise create basic user
     if (response.user) {
       const user: User = {
@@ -73,7 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         last_name: response.user.last_name,
         private_email_address: response.user.email,
         email: response.user.email,
-        role: "user", // Default role, should come from backend
+        role: userRole,
         is_activated: true,
         is_deleted: false,
         force_password_reset: false,
@@ -90,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         last_name: "",
         private_email_address: email,
         email,
-        role: "user",
+        role: userRole,
         is_activated: true,
         is_deleted: false,
         force_password_reset: false,

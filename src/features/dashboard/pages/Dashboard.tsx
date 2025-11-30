@@ -66,6 +66,7 @@ import ServerFormPage from "../../servers/pages/ServerFormPage";
 import ConnectionProfilesPage from "../../connection-profiles/pages/ConnectionProfilesPage";
 import ConnectionProfileDetailsPage from "../../connection-profiles/pages/ConnectionProfileDetailsPage";
 import ConnectionProfileFormPage from "../../connection-profiles/pages/ConnectionProfileFormPage";
+import ConnectionProfilesAnalyticsPage from "../../connection-profiles/pages/ConnectionProfilesAnalyticsPage";
 import JobTypesPage from "../../jobs/pages/JobTypesPage";
 import ScheduledJobsPage from "../../jobs/pages/ScheduledJobsPage";
 import ScheduledJobDetailsPage from "../../jobs/pages/ScheduledJobDetailsPage";
@@ -225,6 +226,10 @@ export default function Dashboard() {
         <Route
           path="/connection-profiles/:id/edit"
           element={<ConnectionProfileFormPage mode="edit" />}
+        />
+        <Route
+          path="/connection-profiles/analytics"
+          element={<ConnectionProfilesAnalyticsPage />}
         />
         <Route
           path="/connection-profiles/:id"

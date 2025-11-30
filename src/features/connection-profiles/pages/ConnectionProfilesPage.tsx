@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Activity,
   AlertTriangle,
+  BarChart3,
   CheckCircle,
   Database,
   Edit,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import { connectionProfileService } from "../services/connectionProfileService";
 import {
@@ -65,8 +67,6 @@ export default function ConnectionProfilesPage() {
   >([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [insightsLoading, setInsightsLoading] = useState(true);
-
   const [connectionTypeStats, setConnectionTypeStats] = useState<
     ConnectionProfileTypeStatsItem[]
   >([]);
@@ -79,12 +79,6 @@ export default function ConnectionProfilesPage() {
     withPii: 0,
     healthEnabled: 0,
   });
-  const [mostUsedProfiles, setMostUsedProfiles] = useState<
-    ConnectionProfileType[]
-  >([]);
-  const [expiredProfiles, setExpiredProfiles] = useState<
-    ConnectionProfileType[]
-  >([]);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [closingFiltersPanel, setClosingFiltersPanel] = useState(false);
 
@@ -260,7 +254,6 @@ export default function ConnectionProfilesPage() {
 
   useEffect(() => {
     loadStats();
-    loadInsights();
   }, []);
 
   useEffect(() => {
@@ -382,26 +375,6 @@ export default function ConnectionProfilesPage() {
     }
   };
 
-  const loadInsights = async () => {
-    try {
-      setInsightsLoading(true);
-      const [mostUsed, expired] = await Promise.all([
-        connectionProfileService.getMostUsedProfiles(true),
-        connectionProfileService.getExpiredProfiles(true),
-      ]);
-      setMostUsedProfiles((mostUsed || []).slice(0, 5));
-      setExpiredProfiles((expired || []).slice(0, 5));
-    } catch (err) {
-      console.error("Failed to load connection profile insights", err);
-      showError(
-        "Failed to load connection profile insights",
-        err instanceof Error ? err.message : "Please try again later."
-      );
-    } finally {
-      setInsightsLoading(false);
-    }
-  };
-
   const handleCreate = () => {
     navigate("/dashboard/connection-profiles/new");
   };
@@ -454,7 +427,6 @@ export default function ConnectionProfilesPage() {
       showSuccess("Selected profiles activated");
       await reloadProfiles();
       await loadStats();
-      await loadInsights();
     } catch (err) {
       showError(
         "Failed to activate selected profiles",
@@ -474,7 +446,6 @@ export default function ConnectionProfilesPage() {
       showSuccess("Expired profiles queued for deactivation");
       await reloadProfiles();
       await loadStats();
-      await loadInsights();
     } catch (err) {
       showError(
         "Failed to auto-deactivate expired profiles",
@@ -484,10 +455,6 @@ export default function ConnectionProfilesPage() {
       setBulkActionType(null);
       setBulkActionLoading(false);
     }
-  };
-
-  const handleRefreshInsights = () => {
-    loadInsights();
   };
 
   const formatNumber = (value?: number | null) =>
@@ -513,53 +480,6 @@ export default function ConnectionProfilesPage() {
     const combined = Array.from(new Set([...fromStats, ...fromProfiles]));
     return combined.length ? combined : ENVIRONMENT_FALLBACKS;
   }, [environmentStats, profiles]);
-
-  const advancedFilterChips: Array<{ label: string; onClear: () => void }> = [];
-
-  if (filters.connectionType !== "all") {
-    advancedFilterChips.push({
-      label: `Type: ${filters.connectionType}`,
-      onClear: () => setFilters((prev) => ({ ...prev, connectionType: "all" })),
-    });
-  }
-
-  if (filters.environment !== "all") {
-    advancedFilterChips.push({
-      label: `Environment: ${filters.environment}`,
-      onClear: () => setFilters((prev) => ({ ...prev, environment: "all" })),
-    });
-  }
-
-  if (filters.classification !== "all") {
-    advancedFilterChips.push({
-      label: `Classification: ${filters.classification}`,
-      onClear: () => setFilters((prev) => ({ ...prev, classification: "all" })),
-    });
-  }
-
-  if (filters.pii !== "all") {
-    advancedFilterChips.push({
-      label: filters.pii === "with" ? "Contains PII" : "No PII",
-      onClear: () => setFilters((prev) => ({ ...prev, pii: "all" })),
-    });
-  }
-
-  if (filters.health !== "all") {
-    advancedFilterChips.push({
-      label:
-        filters.health === "enabled" ? "Health Enabled" : "Health Disabled",
-      onClear: () => setFilters((prev) => ({ ...prev, health: "all" })),
-    });
-  }
-
-  if (serverFilter.trim()) {
-    advancedFilterChips.push({
-      label: `Server: ${serverFilter.trim()}`,
-      onClear: () => setServerFilter(""),
-    });
-  }
-
-  const hasAdvancedFilters = advancedFilterChips.length > 0;
 
   const getConnectionTypeIcon = (type: string) => {
     switch (type) {
@@ -625,24 +545,16 @@ export default function ConnectionProfilesPage() {
       color: color.tertiary.tag4,
     },
     {
-      name: "Expired Profiles",
-      value: formatNumber(
-        expiredProfiles.length || statsSummary.total - statsSummary.active
-      ),
-      icon: AlertTriangle,
+      name: "With PII",
+      value: formatNumber(statsSummary.withPii),
+      icon: Shield,
       color: color.tertiary.tag3,
     },
     {
-      name: "Most Used Profiles",
-      value: formatNumber(mostUsedProfiles.length),
-      icon: Star,
+      name: "Health Enabled",
+      value: formatNumber(statsSummary.healthEnabled),
+      icon: Activity,
       color: color.primary.accent,
-    },
-    {
-      name: "Environments Covered",
-      value: formatNumber(environmentOptions.length),
-      icon: Globe,
-      color: color.tertiary.tag3,
     },
   ];
 
@@ -843,19 +755,35 @@ export default function ConnectionProfilesPage() {
               controls for every integration endpoint
             </p>
           </div>
-          <button
-            onClick={handleCreate}
-            className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
-            style={{ backgroundColor: color.primary.action }}
-          >
-            <Plus className="w-4 h-4" />
-            Create Connection Profile
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() =>
+                navigate("/dashboard/connection-profiles/analytics")
+              }
+              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+              style={{
+                backgroundColor: "transparent",
+                color: color.primary.action,
+                border: `1px solid ${color.primary.action}`,
+              }}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </button>
+            <button
+              onClick={handleCreate}
+              className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              <Plus className="w-4 h-4" />
+              Create Connection Profile
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {(loadingStats ? Array(5).fill(null) : statsCards).map(
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {(loadingStats ? Array(4).fill(null) : statsCards).map(
             (card, index) => {
               if (loadingStats) {
                 return (
@@ -936,123 +864,9 @@ export default function ConnectionProfilesPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div
-            className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Most Used Profiles
-                </p>
-                <p className="text-xs text-gray-500">
-                  Top 5 profiles by recent usage
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleRefreshInsights}
-                className="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${
-                    insightsLoading ? "animate-spin text-gray-400" : ""
-                  }`}
-                />
-              </button>
-            </div>
-            {insightsLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <LoadingSpinner variant="modern" size="lg" color="primary" />
-              </div>
-            ) : mostUsedProfiles.length === 0 ? (
-              <p className="text-sm text-gray-500">No usage data available.</p>
-            ) : (
-              <ul className="space-y-3">
-                {mostUsedProfiles.map((profile) => (
-                  <li
-                    key={`most-used-${profile.id}`}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {profile.profile_name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Last used:{" "}
-                        {profile.last_used_at
-                          ? new Date(profile.last_used_at).toLocaleString()
-                          : "Unknown"}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleView(profile.id)}
-                      className="text-xs text-gray-700 hover:underline"
-                    >
-                      View
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div
-            className="rounded-md border border-gray-200 bg-white p-5 shadow-sm"
-            style={{ backgroundColor: color.surface.cards }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Expired Profiles
-                </p>
-                <p className="text-xs text-gray-500">
-                  Profiles past their validity date
-                </p>
-              </div>
-            </div>
-            {insightsLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <LoadingSpinner variant="modern" size="lg" color="primary" />
-              </div>
-            ) : expiredProfiles.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No expired profiles found.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {expiredProfiles.map((profile) => (
-                  <li
-                    key={`expired-${profile.id}`}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {profile.profile_name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Expired on:{" "}
-                        {profile.valid_to
-                          ? new Date(profile.valid_to).toLocaleDateString()
-                          : "Unknown"}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleEdit(profile.id)}
-                      className="text-xs text-gray-700 hover:underline"
-                    >
-                      Update
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
         {/* Search & Filters */}
         <div className="space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -1063,11 +877,27 @@ export default function ConnectionProfilesPage() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none"
               />
             </div>
+            <HeadlessSelect
+              options={[
+                { value: "all", label: "All Status" },
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+                { value: "expired", label: "Expired" },
+              ]}
+              value={filters.status}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  status: (value || "all") as StatusFilter,
+                }))
+              }
+              className="whitespace-nowrap"
+            />
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={openFiltersPanel}
-                className="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
               >
                 <Filter className="w-4 h-4" />
                 Filters
@@ -1096,42 +926,6 @@ export default function ConnectionProfilesPage() {
               </button>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              value={filters.status}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  status: e.target.value as StatusFilter,
-                }))
-              }
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-            >
-              <option value="all">Any Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="expired">Expired</option>
-            </select>
-          </div>
-          {hasAdvancedFilters && (
-            <div className="flex flex-wrap gap-2">
-              {advancedFilterChips.map((chip, index) => (
-                <span
-                  key={`${chip.label}-${index}`}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border border-gray-200 bg-gray-50 text-gray-700"
-                >
-                  {chip.label}
-                  <button
-                    type="button"
-                    onClick={chip.onClear}
-                    className="text-gray-500 hover:text-gray-800"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Profiles */}
@@ -1187,87 +981,84 @@ export default function ConnectionProfilesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Status
                   </label>
-                  <select
+                  <HeadlessSelect
+                    options={[
+                      { value: "all", label: "All Status" },
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
+                      { value: "expired", label: "Expired" },
+                    ]}
                     value={filters.status}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setFilters((prev) => ({
                         ...prev,
-                        status: e.target.value as StatusFilter,
+                        status: (value || "all") as StatusFilter,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-                  >
-                    <option value="all">Any Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="expired">Expired</option>
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Connection Type
                   </label>
-                  <select
+                  <HeadlessSelect
+                    options={[
+                      { value: "all", label: "All Connection Types" },
+                      ...connectionTypeOptions.map((type) => ({
+                        value: type,
+                        label: type,
+                      })),
+                    ]}
                     value={filters.connectionType}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setFilters((prev) => ({
                         ...prev,
-                        connectionType: e.target.value,
+                        connectionType: value || "all",
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-                  >
-                    <option value="all">All Connection Types</option>
-                    {connectionTypeOptions.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Environment
                   </label>
-                  <select
+                  <HeadlessSelect
+                    options={[
+                      { value: "all", label: "All Environments" },
+                      ...environmentOptions.map((env) => ({
+                        value: env,
+                        label: env,
+                      })),
+                    ]}
                     value={filters.environment}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setFilters((prev) => ({
                         ...prev,
-                        environment: e.target.value,
+                        environment: value || "all",
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-                  >
-                    <option value="all">All Environments</option>
-                    {environmentOptions.map((env) => (
-                      <option key={env} value={env}>
-                        {env}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Data Classification
                   </label>
-                  <select
+                  <HeadlessSelect
+                    options={[
+                      { value: "all", label: "All Classifications" },
+                      ...CLASSIFICATION_OPTIONS.map((classification) => ({
+                        value: classification,
+                        label: classification,
+                      })),
+                    ]}
                     value={filters.classification}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setFilters((prev) => ({
                         ...prev,
-                        classification: e.target.value,
+                        classification: value || "all",
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-                  >
-                    <option value="all">All Classifications</option>
-                    {CLASSIFICATION_OPTIONS.map((classification) => (
-                      <option key={classification} value={classification}>
-                        {classification}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1287,39 +1078,39 @@ export default function ConnectionProfilesPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       PII
                     </label>
-                    <select
+                    <HeadlessSelect
+                      options={[
+                        { value: "all", label: "Any" },
+                        { value: "with", label: "Contains PII" },
+                        { value: "without", label: "No PII" },
+                      ]}
                       value={filters.pii}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         setFilters((prev) => ({
                           ...prev,
-                          pii: e.target.value as PiiFilter,
+                          pii: (value || "all") as PiiFilter,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-                    >
-                      <option value="all">Any</option>
-                      <option value="with">Contains PII</option>
-                      <option value="without">No PII</option>
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Health Checks
                     </label>
-                    <select
+                    <HeadlessSelect
+                      options={[
+                        { value: "all", label: "Any" },
+                        { value: "enabled", label: "Enabled" },
+                        { value: "disabled", label: "Disabled" },
+                      ]}
                       value={filters.health}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         setFilters((prev) => ({
                           ...prev,
-                          health: e.target.value as HealthFilter,
+                          health: (value || "all") as HealthFilter,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none text-sm"
-                    >
-                      <option value="all">Any</option>
-                      <option value="enabled">Enabled</option>
-                      <option value="disabled">Disabled</option>
-                    </select>
+                    />
                   </div>
                 </div>
               </div>

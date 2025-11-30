@@ -8,6 +8,7 @@ import {
   UpdateConnectionProfilePayload,
 } from "../types/connectionProfile";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
 
@@ -223,10 +224,7 @@ export default function ConnectionProfileFormPage({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div
-          className="rounded-md border border-gray-200 p-6"
-          style={{ backgroundColor: color.surface.cards }}
-        >
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className={`${tw.cardHeading} text-gray-900 mb-4`}>
             Basic Information
           </h2>
@@ -241,7 +239,7 @@ export default function ConnectionProfileFormPage({
                 onChange={(e) =>
                   setFormData({ ...formData, profile_name: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
               />
             </div>
@@ -255,7 +253,7 @@ export default function ConnectionProfileFormPage({
                 onChange={(e) =>
                   setFormData({ ...formData, profile_code: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
               />
             </div>
@@ -263,71 +261,68 @@ export default function ConnectionProfileFormPage({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Connection Type *
               </label>
-              <select
+              <HeadlessSelect
+                options={[
+                  { value: "database", label: "Database" },
+                  { value: "api", label: "API" },
+                  { value: "sftp", label: "SFTP" },
+                  { value: "ftp", label: "FTP" },
+                  { value: "s3", label: "S3" },
+                  { value: "azure_blob", label: "Azure Blob" },
+                  { value: "kafka", label: "Kafka" },
+                  { value: "webhook", label: "Webhook" },
+                ]}
                 value={formData.connection_type}
-                onChange={(e) =>
+                onChange={(value) =>
                   setFormData({
                     ...formData,
-                    connection_type: e.target.value as any,
+                    connection_type: (value || "database") as any,
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                required
-              >
-                <option value="database">Database</option>
-                <option value="api">API</option>
-                <option value="sftp">SFTP</option>
-                <option value="ftp">FTP</option>
-                <option value="s3">S3</option>
-                <option value="azure_blob">Azure Blob</option>
-                <option value="kafka">Kafka</option>
-                <option value="webhook">Webhook</option>
-              </select>
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Environment *
               </label>
-              <select
+              <HeadlessSelect
+                options={[
+                  { value: "development", label: "Development" },
+                  { value: "staging", label: "Staging" },
+                  { value: "production", label: "Production" },
+                  { value: "uat", label: "UAT" },
+                ]}
                 value={formData.environment}
-                onChange={(e) =>
+                onChange={(value) =>
                   setFormData({
                     ...formData,
-                    environment: e.target.value as any,
+                    environment: (value || "development") as any,
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                required
-              >
-                <option value="development">Development</option>
-                <option value="staging">Staging</option>
-                <option value="production">Production</option>
-                <option value="uat">UAT</option>
-              </select>
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Load Strategy *
               </label>
-              <select
+              <HeadlessSelect
+                options={[
+                  { value: "full", label: "Full" },
+                  { value: "incremental", label: "Incremental" },
+                  { value: "delta", label: "Delta" },
+                  { value: "cdc", label: "CDC" },
+                  { value: "merge", label: "Merge" },
+                  { value: "append", label: "Append" },
+                  { value: "upsert", label: "Upsert" },
+                ]}
                 value={formData.load_strategy}
-                onChange={(e) =>
+                onChange={(value) =>
                   setFormData({
                     ...formData,
-                    load_strategy: e.target.value as any,
+                    load_strategy: (value || "full") as any,
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                required
-              >
-                <option value="full">Full</option>
-                <option value="incremental">Incremental</option>
-                <option value="delta">Delta</option>
-                <option value="cdc">CDC</option>
-                <option value="merge">Merge</option>
-                <option value="append">Append</option>
-                <option value="upsert">Upsert</option>
-              </select>
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -344,16 +339,13 @@ export default function ConnectionProfileFormPage({
                       : undefined,
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
               />
             </div>
           </div>
         </div>
 
-        <div
-          className="rounded-md border border-gray-200 p-6"
-          style={{ backgroundColor: color.surface.cards }}
-        >
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className={`${tw.cardHeading} text-gray-900 mb-4`}>
             Performance Settings
           </h2>
@@ -371,7 +363,7 @@ export default function ConnectionProfileFormPage({
                     batch_size: Number(e.target.value),
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
                 min={1}
               />
@@ -389,7 +381,7 @@ export default function ConnectionProfileFormPage({
                     parallel_threads: Number(e.target.value),
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
                 min={1}
                 max={32}
@@ -408,7 +400,7 @@ export default function ConnectionProfileFormPage({
                     min_pool_size: Number(e.target.value),
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
                 min={1}
               />
@@ -426,7 +418,7 @@ export default function ConnectionProfileFormPage({
                     max_pool_size: Number(e.target.value),
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
                 min={formData.min_pool_size}
               />
@@ -444,7 +436,7 @@ export default function ConnectionProfileFormPage({
                     connection_timeout_seconds: Number(e.target.value),
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
                 min={1}
               />
@@ -462,7 +454,7 @@ export default function ConnectionProfileFormPage({
                     idle_timeout_seconds: Number(e.target.value),
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
                 min={1}
               />
@@ -470,10 +462,7 @@ export default function ConnectionProfileFormPage({
           </div>
         </div>
 
-        <div
-          className="rounded-md border border-gray-200 p-6"
-          style={{ backgroundColor: color.surface.cards }}
-        >
+        <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className={`${tw.cardHeading} text-gray-900 mb-4`}>
             Data Governance
           </h2>
@@ -482,22 +471,21 @@ export default function ConnectionProfileFormPage({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Data Classification *
               </label>
-              <select
+              <HeadlessSelect
+                options={[
+                  { value: "public", label: "Public" },
+                  { value: "internal", label: "Internal" },
+                  { value: "confidential", label: "Confidential" },
+                  { value: "restricted", label: "Restricted" },
+                ]}
                 value={formData.data_classification}
-                onChange={(e) =>
+                onChange={(value) =>
                   setFormData({
                     ...formData,
-                    data_classification: e.target.value as any,
+                    data_classification: (value || "internal") as any,
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                required
-              >
-                <option value="public">Public</option>
-                <option value="internal">Internal</option>
-                <option value="confidential">Confidential</option>
-                <option value="restricted">Restricted</option>
-              </select>
+              />
             </div>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2">
@@ -543,7 +531,7 @@ export default function ConnectionProfileFormPage({
                 onChange={(e) =>
                   setFormData({ ...formData, valid_from: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
                 required
               />
             </div>
@@ -560,7 +548,7 @@ export default function ConnectionProfileFormPage({
                     valid_to: e.target.value || null,
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
               />
             </div>
           </div>

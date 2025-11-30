@@ -18,6 +18,7 @@ import {
 import { serverService } from "../services/serverService";
 import { ServerType } from "../types/server";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -693,21 +694,19 @@ export default function ServerDetailsPage() {
             </p>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-black">
+                <label className="block text-sm font-medium text-black mb-2">
                   Status
                 </label>
-                <select
+                <HeadlessSelect
+                  options={[
+                    { value: "healthy", label: "Healthy" },
+                    { value: "unhealthy", label: "Unhealthy" },
+                  ]}
                   value={healthResultStatus}
-                  onChange={(e) =>
-                    setHealthResultStatus(
-                      e.target.value as "healthy" | "unhealthy"
-                    )
+                  onChange={(value) =>
+                    setHealthResultStatus(value as "healthy" | "unhealthy")
                   }
-                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-                >
-                  <option value="healthy">Healthy</option>
-                  <option value="unhealthy">Unhealthy</option>
-                </select>
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-black">
@@ -735,7 +734,7 @@ export default function ServerDetailsPage() {
               <button
                 onClick={handlePushHealthCheckResult}
                 disabled={isResetHealthLoading}
-                className="rounded-md bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:opacity-50"
+                className="rounded-md bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {isResetHealthLoading ? "Pushing..." : "Push Result"}
               </button>

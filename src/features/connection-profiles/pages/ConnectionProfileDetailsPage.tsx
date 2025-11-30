@@ -18,6 +18,7 @@ import {
 import { connectionProfileService } from "../services/connectionProfileService";
 import { ConnectionProfileType } from "../types/connectionProfile";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -613,16 +614,16 @@ export default function ConnectionProfileDetailsPage() {
           <p className="text-sm text-gray-600">
             Record the latest health check result.
           </p>
-          <select
+          <HeadlessSelect
+            options={[
+              { value: "healthy", label: "Healthy" },
+              { value: "unhealthy", label: "Unhealthy" },
+            ]}
             value={healthStatus}
-            onChange={(e) =>
-              setHealthStatus(e.target.value as "healthy" | "unhealthy")
+            onChange={(value) =>
+              setHealthStatus((value || "healthy") as "healthy" | "unhealthy")
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-          >
-            <option value="healthy">Healthy</option>
-            <option value="unhealthy">Unhealthy</option>
-          </select>
+          />
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
