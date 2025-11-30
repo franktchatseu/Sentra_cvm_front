@@ -1628,9 +1628,7 @@ export default function CreateOfferPage() {
         if (!formData.code?.trim()) errors.code = "Offer code is required";
         if (!formData.offer_type) errors.offer_type = "Offer type is required";
         if (!formData.category_id) errors.category_id = "Catalog is required";
-        if (trackingSources.length === 0) {
-          errors.tracking = "At least one tracking source is required";
-        }
+        // Tracking sources are optional
       }
       setValidationErrors(errors);
     }

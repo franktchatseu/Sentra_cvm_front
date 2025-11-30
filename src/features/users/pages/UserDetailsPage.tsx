@@ -23,6 +23,7 @@ import { color, tw } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -471,21 +472,25 @@ export default function UserDetailsPage() {
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">Created</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {new Date(user.created_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        <DateFormatter
+                          date={user.created_at}
+                          useLocale
+                          year="numeric"
+                          month="short"
+                          day="numeric"
+                        />
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 ">
                       <span className="text-sm text-gray-600">Updated</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {new Date(user.updated_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        <DateFormatter
+                          date={user.updated_at}
+                          useLocale
+                          year="numeric"
+                          month="short"
+                          day="numeric"
+                        />
                       </span>
                     </div>
                     {user.last_login && (
@@ -494,14 +499,13 @@ export default function UserDetailsPage() {
                           Last Login
                         </span>
                         <span className="text-sm font-medium text-gray-900">
-                          {new Date(user.last_login).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
+                          <DateFormatter
+                            date={user.last_login}
+                            useLocale
+                            year="numeric"
+                            month="short"
+                            day="numeric"
+                          />
                         </span>
                       </div>
                     )}
@@ -509,6 +513,45 @@ export default function UserDetailsPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permissions Section */}
+      {activeSection === "permissions" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-md border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Permissions
+            </h3>
+            {permissions ? (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Direct Permissions
+                  </h4>
+                  <div className="space-y-2">
+                    {permissions.direct_permissions &&
+                    permissions.direct_permissions.length > 0 ? (
+                      permissions.direct_permissions.map((perm, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                        >
+                          <span className="text-sm text-gray-700">{perm}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        No direct permissions assigned
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Loading permissions...</p>
+            )}
           </div>
         </div>
       )}

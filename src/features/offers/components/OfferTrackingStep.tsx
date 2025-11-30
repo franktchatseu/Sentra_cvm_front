@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Trash2, BarChart3, Settings, Edit, X } from "lucide-react";
 import { color } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 interface TrackingRule {
   id: string;
@@ -173,16 +174,8 @@ export default function OfferTrackingStep({
           </p>
           <button
             onClick={addTrackingSource}
-            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors font-medium"
+            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md font-medium"
             style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.hover;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Tracking Source
@@ -199,16 +192,8 @@ export default function OfferTrackingStep({
                 </h3>
                 <button
                   onClick={addTrackingSource}
-                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors font-medium"
+                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md font-medium"
                   style={{ backgroundColor: color.primary.action }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
-                  }}
                 >
                   <Plus className="w-5 h-5 mr-1.5" />
                   Add Source
@@ -299,24 +284,22 @@ export default function OfferTrackingStep({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Type
                       </label>
-                      <select
+                      <HeadlessSelect
+                        options={TRACKING_TYPES.map((type) => ({
+                          value: type.value,
+                          label: type.label,
+                        }))}
                         value={selectedSourceData.type}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           updateTrackingSource(selectedSourceData.id, {
-                            type: e.target.value as
+                            type: value as
                               | "recharge"
                               | "usage_metric"
                               | "custom",
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                      >
-                        {TRACKING_TYPES.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Select tracking type"
+                      />
                     </div>
                   </div>
 
@@ -374,18 +357,8 @@ export default function OfferTrackingStep({
                         </p>
                         <button
                           onClick={() => addRule()}
-                          className="inline-flex items-center px-4 py-2 text-white rounded-md transition-colors"
+                          className="inline-flex items-center px-4 py-2 text-white rounded-md"
                           style={{ backgroundColor: color.primary.action }}
-                          onMouseEnter={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = color.primary.hover;
-                          }}
-                          onMouseLeave={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = color.primary.action;
-                          }}
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Add Rule
@@ -526,34 +499,36 @@ export default function OfferTrackingStep({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Parameter
                   </label>
-                  <select
+                  <HeadlessSelect
+                    options={PARAMETERS.map((param) => ({
+                      value: param,
+                      label: param,
+                    }))}
                     value={editingRule.parameter}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setEditingRule({
                         ...editingRule,
-                        parameter: e.target.value,
+                        parameter: value as string,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                  >
-                    {PARAMETERS.map((param) => (
-                      <option key={param} value={param}>
-                        {param}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select parameter"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Condition
                   </label>
-                  <select
+                  <HeadlessSelect
+                    options={CONDITIONS.map((condition) => ({
+                      value: condition.value,
+                      label: condition.label,
+                    }))}
                     value={editingRule.condition}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setEditingRule({
                         ...editingRule,
-                        condition: e.target.value as
+                        condition: value as
                           | "equals"
                           | "greater_than"
                           | "less_than"
@@ -561,14 +536,8 @@ export default function OfferTrackingStep({
                           | "is_any_of",
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                  >
-                    {CONDITIONS.map((condition) => (
-                      <option key={condition.value} value={condition.value}>
-                        {condition.label}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select condition"
+                  />
                 </div>
 
                 <div>
@@ -614,7 +583,7 @@ export default function OfferTrackingStep({
                     setShowRuleModal(false);
                     setEditingRule(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md"
                 >
                   Cancel
                 </button>
@@ -623,16 +592,8 @@ export default function OfferTrackingStep({
                     selectedSourceData &&
                     saveRule(selectedSourceData.id, editingRule)
                   }
-                  className="px-4 py-2 text-white rounded-md transition-colors"
+                  className="px-4 py-2 text-white rounded-md"
                   style={{ backgroundColor: color.primary.action }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
-                  }}
                 >
                   Save Rule
                 </button>

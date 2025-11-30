@@ -3,7 +3,8 @@ import {
   AlertTriangle,
   ArrowLeft,
   Briefcase,
-  Pencil,
+  Edit,
+  Eye,
   Plus,
   Search,
   Trash2,
@@ -302,6 +303,102 @@ function JobTypeModal({
   );
 }
 
+interface JobTypeViewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  jobType: JobType | null;
+  isLoading: boolean;
+}
+
+function JobTypeViewModal({
+  isOpen,
+  onClose,
+  jobType,
+  isLoading,
+}: JobTypeViewModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Job Type Details
+            </h2>
+           
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <LoadingSpinner />
+          </div>
+        ) : jobType ? (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                {jobType.name}
+              </h3>
+              <p className="text-sm font-mono text-gray-600">{jobType.code}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <p className="text-sm text-gray-900 leading-relaxed">
+                  {jobType.description || (
+                    <span className="text-gray-400 italic">
+                      No description provided
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ID
+                  </label>
+                  <p className="text-sm text-gray-900">{jobType.id}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Created At
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {new Date(jobType.created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="py-8 text-center text-sm text-gray-500">
+            No job type data available
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function JobTypesPage() {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
@@ -322,6 +419,11 @@ export default function JobTypesPage() {
     unusedCount: 0,
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingJobType, setViewingJobType] = useState<JobType | null>(null);
+  const [isLoadingView, setIsLoadingView] = useState(false);
 
   const fetchJobTypes = useCallback(async () => {
     setIsLoading(true);
@@ -341,6 +443,36 @@ export default function JobTypesPage() {
       setIsLoading(false);
     }
   }, [showError]);
+
+  const searchJobTypes = useCallback(
+    async (term: string) => {
+      if (!term.trim()) {
+        // If search is empty, fetch all job types
+        await fetchJobTypes();
+        return;
+      }
+
+      setIsSearching(true);
+      setLoadError(null);
+      try {
+        const response = await jobTypeService.searchJobTypes({
+          name: term,
+          limit: 100,
+          skipCache: true,
+        });
+        const results = response.data || [];
+        setJobTypes(results);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to search job types";
+        setLoadError(message);
+        showError("Unable to search job types", message);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [fetchJobTypes, showError]
+  );
 
   const fetchStats = useCallback(async () => {
     setIsLoadingStats(true);
@@ -382,21 +514,35 @@ export default function JobTypesPage() {
     }
   }, [jobTypes.length, fetchStats]);
 
-  const filteredJobTypes = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    let filtered = jobTypes;
-
-    if (term) {
-      filtered = jobTypes.filter(
-        (jobType) =>
-          jobType.name.toLowerCase().includes(term) ||
-          jobType.code.toLowerCase().includes(term) ||
-          (jobType.description || "").toLowerCase().includes(term)
-      );
+  // Debounced search using searchJobTypes endpoint
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
+    // If search term is empty, fetch all job types
+    if (!searchTerm.trim()) {
+      fetchJobTypes();
+      return;
+    }
+
+    // Debounce search API call
+    searchTimeoutRef.current = setTimeout(() => {
+      searchJobTypes(searchTerm);
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, fetchJobTypes, searchJobTypes]);
+
+  const filteredJobTypes = useMemo(() => {
+    // Since we're using server-side search, we can directly use jobTypes
     // Sort by created_at descending (newest first), then by ID descending as fallback
-    return [...filtered].sort((a, b) => {
+    return [...jobTypes].sort((a, b) => {
       if (a.created_at && b.created_at) {
         return (
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -404,16 +550,44 @@ export default function JobTypesPage() {
       }
       return b.id - a.id;
     });
-  }, [jobTypes, searchTerm]);
+  }, [jobTypes]);
 
   const handleCreate = () => {
     setEditingJobType(null);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (jobType: JobType) => {
+  const handleEdit = async (jobType: JobType) => {
+    // Set the job type immediately so modal can show data
     setEditingJobType(jobType);
     setIsModalOpen(true);
+
+    // Then fetch fresh data in the background
+    try {
+      const freshJobType = await jobTypeService.getJobTypeById(jobType.id);
+      setEditingJobType(freshJobType);
+    } catch (err) {
+      // If fetching fails, keep using the existing data
+      console.error("Failed to fetch job type details:", err);
+    }
+  };
+
+  const handleView = async (jobType: JobType) => {
+    // Set the job type immediately so modal can show data
+    setViewingJobType(jobType);
+    setIsViewModalOpen(true);
+    setIsLoadingView(true);
+
+    // Then fetch fresh data in the background
+    try {
+      const freshJobType = await jobTypeService.getJobTypeById(jobType.id);
+      setViewingJobType(freshJobType);
+    } catch (err) {
+      // If fetching fails, keep using the existing data
+      console.error("Failed to fetch job type details:", err);
+    } finally {
+      setIsLoadingView(false);
+    }
   };
 
   const handleDeleteClick = (jobType: JobType) => {
@@ -561,6 +735,11 @@ export default function JobTypesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
           />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#3b8169]"></div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -714,16 +893,26 @@ export default function JobTypesPage() {
                     >
                       <div className="flex items-center justify-end space-x-2">
                         <button
+                          onClick={() => handleView(jobType)}
+                          className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                          aria-label="View job type"
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleEdit(jobType)}
                           className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                           aria-label="Edit job type"
+                          title="Edit"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(jobType)}
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                           aria-label="Delete job type"
+                          title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -748,6 +937,16 @@ export default function JobTypesPage() {
           await handleModalSubmit(values);
         }}
         initialData={editingJobType}
+      />
+
+      <JobTypeViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setViewingJobType(null);
+        }}
+        jobType={viewingJobType}
+        isLoading={isLoadingView}
       />
 
       <DeleteConfirmModal

@@ -44,7 +44,7 @@ export default function ProductForm({
   onCancel,
 }: ProductFormProps) {
   const scopeOptions: { label: string; value: ProductScope }[] = [
-    { label: "Segment", value: "segment" },
+    { label: "Segmented", value: "segment" },
     { label: "Open Market", value: "open_market" },
   ];
 

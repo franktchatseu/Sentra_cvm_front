@@ -11,6 +11,11 @@ import {
   RotateCcw,
   RefreshCw,
   Heart,
+  MoreVertical,
+  Play,
+  Pause,
+  Power,
+  Archive,
 } from "lucide-react";
 import { scheduledJobService } from "../services/scheduledJobService";
 import { ScheduledJob } from "../types/scheduledJob";
@@ -112,6 +117,7 @@ export default function ScheduledJobDetailsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [newRecipient, setNewRecipient] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
@@ -149,6 +155,21 @@ export default function ScheduledJobDetailsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".relative")) {
+        setShowMoreMenu(false);
+      }
+    };
+    if (showMoreMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showMoreMenu]);
 
   const loadJob = async () => {
     if (!id) return;
@@ -263,42 +284,42 @@ export default function ScheduledJobDetailsPage() {
     }
   };
 
-  // const handleStatusAction = async (
-  //   action: "activate" | "deactivate" | "pause" | "archive"
-  // ) => {
-  //   if (!job) return;
-  //   setIsActionLoading(true);
-  //   try {
-  //     let updatedJob: ScheduledJob;
-  //     switch (action) {
-  //       case "activate":
-  //         updatedJob = await scheduledJobService.activateScheduledJob(job.id);
-  //         showToast("Job activated", "Scheduled job has been activated");
-  //         break;
-  //       case "deactivate":
-  //         updatedJob = await scheduledJobService.deactivateScheduledJob(job.id);
-  //         showToast("Job deactivated", "Scheduled job has been deactivated");
-  //         break;
-  //       case "pause":
-  //         updatedJob = await scheduledJobService.pauseScheduledJob(job.id);
-  //         showToast("Job paused", "Scheduled job has been paused");
-  //         break;
-  //       case "archive":
-  //         updatedJob = await scheduledJobService.archiveScheduledJob(job.id);
-  //         showToast("Job archived", "Scheduled job has been archived");
-  //         break;
-  //     }
-  //     setJob(updatedJob);
-  //   } catch (err) {
-  //     const message =
-  //       err instanceof Error
-  //         ? err.message
-  //         : `Failed to ${action} scheduled job`;
-  //     showError(`Unable to ${action} scheduled job`, message);
-  //   } finally {
-  //     setIsActionLoading(false);
-  //   }
-  // };
+  const handleStatusAction = async (
+    action: "activate" | "deactivate" | "pause" | "archive"
+  ) => {
+    if (!job) return;
+    setIsActionLoading(true);
+    try {
+      let updatedJob: ScheduledJob;
+      switch (action) {
+        case "activate":
+          updatedJob = await scheduledJobService.activateScheduledJob(job.id);
+          showToast("Job activated", `"${job.name}" has been activated`);
+          break;
+        case "deactivate":
+          updatedJob = await scheduledJobService.deactivateScheduledJob(job.id);
+          showToast("Job deactivated", `"${job.name}" has been deactivated`);
+          break;
+        case "pause":
+          updatedJob = await scheduledJobService.pauseScheduledJob(job.id);
+          showToast("Job paused", `"${job.name}" has been paused`);
+          break;
+        case "archive":
+          updatedJob = await scheduledJobService.archiveScheduledJob(job.id);
+          showToast("Job archived", `"${job.name}" has been archived`);
+          break;
+      }
+      setJob(updatedJob);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : `Failed to ${action} scheduled job`;
+      showError(`Unable to ${action} scheduled job`, message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   const handleAddTag = async () => {
     if (!job || !newTag.trim()) return;
@@ -493,7 +514,7 @@ export default function ScheduledJobDetailsPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/scheduled-jobs")}
-            className="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+            className="rounded-md p-2 text-gray-600 hover:text-gray-800 transition-colors"
             aria-label="Back"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -512,7 +533,71 @@ export default function ScheduledJobDetailsPage() {
             Edit
           </button>
 
-          {/* Action menu temporarily disabled due to backend errors */}
+          {/* More Actions Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              disabled={isActionLoading}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <MoreVertical className="h-4 w-4" />
+              More
+            </button>
+            {showMoreMenu && (
+              <div className="absolute right-0 mt-2 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-10">
+                <div className="py-1">
+                  {job?.status !== "active" && (
+                    <button
+                      onClick={() => {
+                        handleStatusAction("activate");
+                        setShowMoreMenu(false);
+                      }}
+                      disabled={isActionLoading}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Play className="h-4 w-4" />
+                      Activate
+                    </button>
+                  )}
+                  {job?.status === "active" && (
+                    <button
+                      onClick={() => {
+                        handleStatusAction("pause");
+                        setShowMoreMenu(false);
+                      }}
+                      disabled={isActionLoading}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Pause className="h-4 w-4" />
+                      Pause
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleStatusAction("deactivate");
+                      setShowMoreMenu(false);
+                    }}
+                    disabled={isActionLoading}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Power className="h-4 w-4" />
+                    Deactivate
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleStatusAction("archive");
+                      setShowMoreMenu(false);
+                    }}
+                    disabled={isActionLoading}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Archive className="h-4 w-4" />
+                    Archive
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setShowDeleteModal(true)}

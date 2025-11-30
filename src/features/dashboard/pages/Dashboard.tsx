@@ -70,6 +70,7 @@ import JobTypesPage from "../../jobs/pages/JobTypesPage";
 import ScheduledJobsPage from "../../jobs/pages/ScheduledJobsPage";
 import ScheduledJobDetailsPage from "../../jobs/pages/ScheduledJobDetailsPage";
 import CreateScheduledJobPage from "../../jobs/pages/CreateScheduledJobPage";
+import ScheduledJobsAnalyticsPage from "../../jobs/pages/ScheduledJobsAnalyticsPage";
 
 export default function Dashboard() {
   return (
@@ -242,6 +243,10 @@ export default function Dashboard() {
         <Route
           path="/scheduled-jobs/create"
           element={<CreateScheduledJobPage />}
+        />
+        <Route
+          path="/scheduled-jobs/analytics"
+          element={<ScheduledJobsAnalyticsPage />}
         />
         <Route path="/job-types" element={<JobTypesPage />} />
       </Routes>

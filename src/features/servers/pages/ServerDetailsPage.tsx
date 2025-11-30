@@ -11,6 +11,9 @@ import {
   HeartPulse,
   Power,
   Archive,
+  Zap,
+  RotateCcw,
+  Upload,
 } from "lucide-react";
 import { serverService } from "../services/serverService";
 import { ServerType } from "../types/server";
@@ -46,8 +49,19 @@ export default function ServerDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionState, setActionState] = useState<
-    "activate" | "deactivate" | "health" | "deprecate" | null
+    | "activate"
+    | "deactivate"
+    | "health"
+    | "deprecate"
+    | "circuit-breaker"
+    | "reset-health"
+    | null
   >(null);
+  const [showPushHealthModal, setShowPushHealthModal] = useState(false);
+  const [healthResultStatus, setHealthResultStatus] = useState<
+    "healthy" | "unhealthy"
+  >("healthy");
+  const [healthResultDetails, setHealthResultDetails] = useState("");
 
   const loadServer = useCallback(async () => {
     if (!id) {
@@ -198,10 +212,117 @@ export default function ServerDetailsPage() {
     }
   };
 
+  const handleCircuitBreakerToggle = async () => {
+    if (!server) return;
+    const action = server.circuit_breaker_enabled ? "disable" : "enable";
+
+    const confirmed = await confirm({
+      title: `${action === "enable" ? "Enable" : "Disable"} Circuit Breaker`,
+      message: `Are you sure you want to ${action} the circuit breaker for "${server.name}"?`,
+      type: action === "enable" ? "success" : "warning",
+      confirmText: action === "enable" ? "Enable" : "Disable",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    setActionState("circuit-breaker");
+    try {
+      if (action === "enable") {
+        await serverService.enableCircuitBreaker(server.id);
+      } else {
+        await serverService.disableCircuitBreaker(server.id);
+      }
+      success(
+        `Circuit breaker ${action === "enable" ? "enabled" : "disabled"}`,
+        `Circuit breaker for ${server.name} is now ${
+          action === "enable" ? "enabled" : "disabled"
+        }.`
+      );
+      await loadServer();
+    } catch (err) {
+      showError(
+        `Failed to ${action} circuit breaker`,
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setActionState(null);
+    }
+  };
+
+  const handleResetHealthCheck = async () => {
+    if (!server) return;
+
+    const confirmed = await confirm({
+      title: "Reset Health Check",
+      message: `Are you sure you want to reset the health check state for "${server.name}"?`,
+      type: "warning",
+      confirmText: "Reset",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    setActionState("reset-health");
+    try {
+      await serverService.resetHealthCheck(server.id);
+      success(
+        "Health check reset",
+        `Health check state for ${server.name} has been reset.`
+      );
+      await loadServer();
+    } catch (err) {
+      showError(
+        "Failed to reset health check",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setActionState(null);
+    }
+  };
+
+  const handlePushHealthCheckResult = async () => {
+    if (!server) return;
+
+    const confirmed = await confirm({
+      title: "Push Health Check Result",
+      message: `Push a ${healthResultStatus} health check result for "${server.name}"?`,
+      type: healthResultStatus === "healthy" ? "success" : "warning",
+      confirmText: "Push",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    setActionState("reset-health");
+    try {
+      await serverService.pushHealthCheckResult(server.id, {
+        status: healthResultStatus,
+        details: healthResultDetails || undefined,
+      });
+      success(
+        "Health check result pushed",
+        `${healthResultStatus} status has been recorded for ${server.name}.`
+      );
+      setShowPushHealthModal(false);
+      setHealthResultDetails("");
+      await loadServer();
+    } catch (err) {
+      showError(
+        "Failed to push health check result",
+        err instanceof Error ? err.message : "Please try again."
+      );
+    } finally {
+      setActionState(null);
+    }
+  };
+
   const isActivationLoading =
     actionState === "activate" || actionState === "deactivate";
   const isHealthLoading = actionState === "health";
   const isDeprecationLoading = actionState === "deprecate";
+  const isCircuitBreakerLoading = actionState === "circuit-breaker";
+  const isResetHealthLoading = actionState === "reset-health";
 
   const handleEdit = () => {
     if (!id) return;
@@ -331,6 +452,23 @@ export default function ServerDetailsPage() {
                 {server.is_deprecated ? "Restore" : "Deprecate"}
               </button>
               <button
+                onClick={handleCircuitBreakerToggle}
+                disabled={isCircuitBreakerLoading}
+                className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                  server.circuit_breaker_enabled
+                    ? "border-orange-200 text-orange-700 hover:bg-orange-50"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                } ${isCircuitBreakerLoading ? "opacity-60" : ""}`}
+                title={
+                  server.circuit_breaker_enabled
+                    ? "Disable circuit breaker"
+                    : "Enable circuit breaker"
+                }
+              >
+                <Zap size={16} />
+                {server.circuit_breaker_enabled ? "Circuit On" : "Circuit Off"}
+              </button>
+              <button
                 onClick={handleEdit}
                 className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 title="Edit server"
@@ -456,8 +594,94 @@ export default function ServerDetailsPage() {
               value={server.consecutive_health_failures?.toString()}
             />
           </div>
+          {server.health_check_enabled && (
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
+              <button
+                onClick={handleResetHealthCheck}
+                disabled={isResetHealthLoading}
+                className={`inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors ${
+                  isResetHealthLoading ? "opacity-60" : ""
+                }`}
+                title="Reset health check state"
+              >
+                <RotateCcw size={16} />
+                Reset Health Check
+              </button>
+              <button
+                onClick={() => setShowPushHealthModal(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                title="Manually push health check result"
+              >
+                <Upload size={16} />
+                Push Health Result
+              </button>
+            </div>
+          )}
         </section>
       </div>
+
+      {/* Push Health Check Result Modal */}
+      {showPushHealthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Push Health Check Result
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Manually record a health check result for {server.name}
+            </p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Status
+                </label>
+                <select
+                  value={healthResultStatus}
+                  onChange={(e) =>
+                    setHealthResultStatus(
+                      e.target.value as "healthy" | "unhealthy"
+                    )
+                  }
+                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                >
+                  <option value="healthy">Healthy</option>
+                  <option value="unhealthy">Unhealthy</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Details (optional)
+                </label>
+                <textarea
+                  value={healthResultDetails}
+                  onChange={(e) => setHealthResultDetails(e.target.value)}
+                  placeholder="Additional details about the health check..."
+                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowPushHealthModal(false);
+                  setHealthResultDetails("");
+                }}
+                className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePushHealthCheckResult}
+                disabled={isResetHealthLoading}
+                className="rounded-md bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/80 disabled:opacity-50"
+              >
+                {isResetHealthLoading ? "Pushing..." : "Push Result"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {server.metadata && Object.keys(server.metadata).length > 0 && (
         <section className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">

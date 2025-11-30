@@ -130,7 +130,7 @@ export default function ChampionChallengerOfferMapping({
                       style={{ color: color.primary.accent }}
                     />
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <div className="text-base font-medium text-gray-900">
                         {offer.name}
                       </div>
                       <div className="text-sm text-gray-500">
@@ -189,14 +189,14 @@ export default function ChampionChallengerOfferMapping({
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-gray-900 text-sm">
+                        <span className="font-semibold text-gray-900 text-base">
                           {challenger.name}
                         </span>
                         <span className="px-2 py-0.5 text-gray-700 text-xs font-medium rounded-full border border-gray-200">
                           Challenger
                         </span>
                       </div>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm text-gray-500">
                         {challenger.customer_count.toLocaleString()} customers
                       </span>
                     </div>
@@ -225,10 +225,10 @@ export default function ChampionChallengerOfferMapping({
                             style={{ color: color.primary.accent }}
                           />
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-gray-900 text-sm truncate">
+                            <div className="font-medium text-gray-900 text-base truncate">
                               {offer.name}
                             </div>
-                            <div className="text-xs text-gray-500 truncate">
+                            <div className="text-sm text-gray-500 truncate">
                               {offer.reward_type}
                             </div>
                           </div>
@@ -247,7 +247,7 @@ export default function ChampionChallengerOfferMapping({
                 ) : (
                   <div className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-6 text-center">
                     <Gift className="w-8 h-8 mx-auto mb-1 text-gray-400" />
-                    <p className="text-xs text-gray-500">No offers</p>
+                    <p className="text-sm text-gray-500">No offers</p>
                   </div>
                 )}
               </div>

@@ -122,13 +122,13 @@ export default function ABTestOfferMapping({
                         style={{ color: color.primary.accent }}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-gray-900">
+                        <div className="text-base font-medium text-gray-900">
                           {offer.name}
                         </div>
                         <div className="text-sm text-gray-500 mt-0.5">
                           {offer.reward_type} - {offer.reward_value}
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">
+                        <div className="text-sm text-gray-400 mt-1">
                           Valid for {offer.validity_period} days
                         </div>
                       </div>
@@ -150,7 +150,7 @@ export default function ABTestOfferMapping({
                 <p className="text-sm text-gray-700 font-medium">
                   No offers mapped
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   Click "Map Offers" to add
                 </p>
               </div>
@@ -205,13 +205,13 @@ export default function ABTestOfferMapping({
                         style={{ color: color.primary.accent }}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-gray-900">
+                        <div className="text-base font-medium text-gray-900">
                           {offer.name}
                         </div>
                         <div className="text-sm text-gray-500 mt-0.5">
                           {offer.reward_type} - {offer.reward_value}
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">
+                        <div className="text-sm text-gray-400 mt-1">
                           Valid for {offer.validity_period} days
                         </div>
                       </div>
@@ -233,7 +233,7 @@ export default function ABTestOfferMapping({
                 <p className="text-sm text-gray-700 font-medium">
                   No offers mapped
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   Click "Map Offers" to add
                 </p>
               </div>

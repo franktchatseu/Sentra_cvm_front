@@ -28,6 +28,7 @@ import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import SegmentModal from "../components/SegmentModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import DateFormatter from "../../../shared/components/DateFormatter";
 import {
   customerSubscriptions,
   searchCustomers as searchCustomersUtil,
@@ -37,36 +38,6 @@ import {
   formatMsisdn,
 } from "../../dashboard/utils/customerSubscriptionHelpers";
 import type { CustomerSubscriptionRecord } from "../../dashboard/types/customerSubscription";
-
-// Mock data for testing
-const MOCK_SEGMENT: Segment = {
-  id: 1,
-  segment_id: 1,
-  name: "High Value Customers",
-  description: "Customers with ARPU > $50 and active for 6+ months",
-  type: "dynamic",
-  tags: ["vip", "high-value", "premium"],
-  customer_count: 15420,
-  size_estimate: 15420,
-  created_at: "2025-01-15T10:30:00Z",
-  created_on: "2025-01-15T10:30:00Z",
-  updated_at: "2025-01-18T14:22:00Z",
-  updated_on: "2025-01-18T14:22:00Z",
-  created_by: 1,
-  is_active: true,
-  category: 1,
-  visibility: "private",
-  refresh_frequency: "daily",
-  criteria: {
-    conditions: [
-      { field: "ARPU", operator: ">", value: 50 },
-      { field: "tenure_months", operator: ">=", value: 6 },
-      { field: "status", operator: "=", value: "active" },
-    ],
-  },
-};
-
-const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
 
 export default function SegmentDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -158,15 +129,6 @@ export default function SegmentDetailsPage() {
     try {
       setIsLoading(true);
 
-      if (USE_MOCK_DATA) {
-        // Use mock data for testing
-        setTimeout(() => {
-          setSegment(MOCK_SEGMENT);
-          setIsLoading(false);
-        }, 500); // Simulate API delay
-        return;
-      }
-
       const response = await segmentService.getSegmentById(Number(id));
 
       // Extract data from response (backend wraps it in data object)
@@ -194,15 +156,6 @@ export default function SegmentDetailsPage() {
     try {
       setIsLoadingMembers(true);
 
-      if (USE_MOCK_DATA) {
-        // Use mock data for testing
-        setTimeout(() => {
-          setMembersCount(20); // Match the dummy members count
-          setIsLoadingMembers(false);
-        }, 300); // Simulate API delay
-        return;
-      }
-
       const response = await segmentService.getSegmentMembersCount(Number(id));
       const count = response.data?.count ?? 0;
       setMembersCount(count);
@@ -229,14 +182,6 @@ export default function SegmentDetailsPage() {
 
     setIsLoadingMembersList(true);
     try {
-      if (USE_MOCK_DATA) {
-        // no dummy members when using mock data
-        setMembers([]);
-        setMembersTotalPages(1);
-        setIsLoadingMembersList(false);
-        return;
-      }
-
       // Use search endpoint if there's a search term, otherwise use getSegmentMembers
       let response;
       if (debouncedMembersSearchTerm) {
@@ -699,20 +644,14 @@ export default function SegmentDetailsPage() {
                     Created
                   </label>
                   <p className={`text-sm ${tw.textPrimary} ml-6`}>
-                    {(() => {
-                      const createdDate =
-                        segment.created_on || segment.created_at;
-                      return new Date(createdDate!).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      );
-                    })()}
+                    <DateFormatter
+                      date={segment.created_on || segment.created_at}
+                      useLocale
+                      year="numeric"
+                      month="long"
+                      day="numeric"
+                      includeTime
+                    />
                   </p>
                 </div>
                 <div>
@@ -723,20 +662,14 @@ export default function SegmentDetailsPage() {
                     Last Updated
                   </label>
                   <p className={`text-sm ${tw.textPrimary} ml-6`}>
-                    {(() => {
-                      const updatedDate =
-                        segment.updated_on || segment.updated_at;
-                      return new Date(updatedDate!).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      );
-                    })()}
+                    <DateFormatter
+                      date={segment.updated_on || segment.updated_at}
+                      useLocale
+                      year="numeric"
+                      month="long"
+                      day="numeric"
+                      includeTime
+                    />
                   </p>
                 </div>
                 {segment.refresh_frequency && (
@@ -1159,8 +1092,11 @@ export default function SegmentDetailsPage() {
                             ) : null}
                             {member.total_spent ? (
                               <p className="text-xs text-green-600 font-medium">
-                                Total Spent: $
-                                {member.total_spent.toLocaleString()}
+                                Total Spent:{" "}
+                                <CurrencyFormatter
+                                  amount={member.total_spent}
+                                  className="inline"
+                                />
                               </p>
                             ) : null}
                           </div>

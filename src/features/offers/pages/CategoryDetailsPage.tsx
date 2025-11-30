@@ -19,6 +19,8 @@ import { OfferCategoryType } from "../types/offerCategory";
 import { Offer } from "../types/offer";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 export default function CategoryDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -449,13 +451,12 @@ export default function CategoryDetailsPage() {
                     className="flex justify-between items-center"
                   >
                     <span className="text-sm text-gray-600">
-                      {new Date(trend.year, trend.month - 1).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          year: "numeric",
-                        }
-                      )}
+                      <DateFormatter
+                        date={new Date(trend.year, trend.month - 1)}
+                        useLocale
+                        month="short"
+                        year="numeric"
+                      />
                     </span>
                     <span className="font-medium text-gray-900">
                       {trend.offers_created} offers
@@ -506,9 +507,14 @@ export default function CategoryDetailsPage() {
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>
                       Avg Discount:{" "}
-                      {item.avg_discount_percentage > 0
-                        ? `${item.avg_discount_percentage}%`
-                        : `$${item.avg_discount_amount}`}
+                      {item.avg_discount_percentage > 0 ? (
+                        `${item.avg_discount_percentage}%`
+                      ) : (
+                        <CurrencyFormatter
+                          amount={item.avg_discount_amount}
+                          className="inline"
+                        />
+                      )}
                     </span>
                   </div>
                 </div>

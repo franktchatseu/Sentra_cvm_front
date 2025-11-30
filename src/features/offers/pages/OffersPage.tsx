@@ -29,6 +29,7 @@ import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 export default function OffersPage() {
   const navigate = useNavigate();
@@ -1237,9 +1238,11 @@ export default function OffersPage() {
                       className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
-                      {offer.created_at
-                        ? new Date(offer.created_at).toLocaleDateString()
-                        : "N/A"}
+                      {offer.created_at ? (
+                        <DateFormatter date={offer.created_at} />
+                      ) : (
+                        "N/A"
+                      )}
                     </td>
                     <td
                       className="px-6 py-4 text-sm font-medium"

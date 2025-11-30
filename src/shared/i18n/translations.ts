@@ -110,6 +110,29 @@ export interface Translations {
     confirmDelete: string;
     areYouSure: string;
   };
+
+  // Page Titles
+  pages: {
+    dashboard: string;
+    campaigns: string;
+    offers: string;
+    products: string;
+    segments: string;
+    customers: string;
+    users: string;
+    settings: string;
+    reports: string;
+    jobs: string;
+    quicklists: string;
+    createCampaign: string;
+    editCampaign: string;
+    createOffer: string;
+    editOffer: string;
+    createProduct: string;
+    editProduct: string;
+    createSegment: string;
+    editSegment: string;
+  };
 }
 
 export const translations: Record<"en" | "fr" | "es" | "sw", Translations> = {
@@ -213,6 +236,27 @@ export const translations: Record<"en" | "fr" | "es" | "sw", Translations> = {
       confirmDelete: "Are you sure you want to delete this item?",
       areYouSure: "Are you sure?",
     },
+    pages: {
+      dashboard: "Dashboard",
+      campaigns: "Campaigns",
+      offers: "Offers",
+      products: "Products",
+      segments: "Segments",
+      customers: "Customers",
+      users: "Users",
+      settings: "Settings",
+      reports: "Reports",
+      jobs: "Jobs",
+      quicklists: "Quicklists",
+      createCampaign: "Create Campaign",
+      editCampaign: "Edit Campaign",
+      createOffer: "Create Offer",
+      editOffer: "Edit Offer",
+      createProduct: "Create Product",
+      editProduct: "Edit Product",
+      createSegment: "Create Segment",
+      editSegment: "Edit Segment",
+    },
   },
 
   fr: {
@@ -314,6 +358,27 @@ export const translations: Record<"en" | "fr" | "es" | "sw", Translations> = {
       success: "Succès",
       confirmDelete: "Êtes-vous sûr de vouloir supprimer cet élément?",
       areYouSure: "Êtes-vous sûr?",
+    },
+    pages: {
+      dashboard: "Tableau de bord",
+      campaigns: "Campagnes",
+      offers: "Offres",
+      products: "Produits",
+      segments: "Segments",
+      customers: "Clients",
+      users: "Utilisateurs",
+      settings: "Paramètres",
+      reports: "Rapports",
+      jobs: "Tâches",
+      quicklists: "Listes rapides",
+      createCampaign: "Créer une campagne",
+      editCampaign: "Modifier la campagne",
+      createOffer: "Créer une offres",
+      editOffer: "Modifier l'offre",
+      createProduct: "Créer un produit",
+      editProduct: "Modifier le produit",
+      createSegment: "Créer un segment",
+      editSegment: "Modifier le segment",
     },
   },
 
@@ -417,6 +482,27 @@ export const translations: Record<"en" | "fr" | "es" | "sw", Translations> = {
       confirmDelete: "¿Está seguro de que desea eliminar este elemento?",
       areYouSure: "¿Está seguro?",
     },
+    pages: {
+      dashboard: "Panel de control",
+      campaigns: "Campañas",
+      offers: "Ofertas",
+      products: "Productos",
+      segments: "Segmentos",
+      customers: "Clientes",
+      users: "Usuarios",
+      settings: "Configuración",
+      reports: "Informes",
+      jobs: "Trabajos",
+      quicklists: "Listas rápidas",
+      createCampaign: "Crear campaña",
+      editCampaign: "Editar campaña",
+      createOffer: "Crear oferta",
+      editOffer: "Editar oferta",
+      createProduct: "Crear producto",
+      editProduct: "Editar producto",
+      createSegment: "Crear segmento",
+      editSegment: "Editar segmento",
+    },
   },
 
   sw: {
@@ -518,6 +604,27 @@ export const translations: Record<"en" | "fr" | "es" | "sw", Translations> = {
       success: "Mafanikio",
       confirmDelete: "Je, una uhakika unataka kufuta kipengele hiki?",
       areYouSure: "Je, una uhakika?",
+    },
+    pages: {
+      dashboard: "Dashibodi",
+      campaigns: "Kampeni",
+      offers: "Matoleo",
+      products: "Bidhaa",
+      segments: "Sehemu",
+      customers: "Wateja",
+      users: "Watumiaji",
+      settings: "Mipangilio",
+      reports: "Ripoti",
+      jobs: "Kazi",
+      quicklists: "Orodha za haraka",
+      createCampaign: "Unda kampeni",
+      editCampaign: "Hariri kampeni",
+      createOffer: "Unda matoleo",
+      editOffer: "Hariri matoleo",
+      createProduct: "Unda bidhaa",
+      editProduct: "Hariri bidhaa",
+      createSegment: "Unda sehemu",
+      editSegment: "Hariri sehemu",
     },
   },
 };

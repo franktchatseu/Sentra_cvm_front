@@ -32,6 +32,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
@@ -1177,14 +1178,13 @@ export default function SegmentManagementPage() {
                         className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textPrimary}`}
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        {new Date(segment.created_at).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          }
-                        )}
+                        <DateFormatter
+                          date={segment.created_at}
+                          useLocale
+                          year="numeric"
+                          month="short"
+                          day="numeric"
+                        />
                       </td>
                       <td
                         className="px-6 py-4 text-sm font-medium"
@@ -1442,14 +1442,13 @@ export default function SegmentManagementPage() {
                     </div>
                     <div>
                       Created:{" "}
-                      {new Date(segment.created_at).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        }
-                      )}
+                      <DateFormatter
+                        date={segment.created_at}
+                        useLocale
+                        year="numeric"
+                        month="short"
+                        day="numeric"
+                      />
                     </div>
                   </div>
                 </div>

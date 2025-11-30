@@ -12,38 +12,6 @@ import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 
-// Mock data for testing
-const MOCK_SEGMENT: Segment = {
-  id: 1,
-  segment_id: 1,
-  name: "High Value Customers",
-  description: "Customers with ARPU > $50 and active for 6+ months",
-  type: "dynamic",
-  tags: ["vip", "high-value", "premium"],
-  customer_count: 15420,
-  size_estimate: 15420,
-  created_at: "2025-01-15T10:30:00Z",
-  created_on: "2025-01-15T10:30:00Z",
-  updated_at: "2025-01-18T14:22:00Z",
-  updated_on: "2025-01-18T14:22:00Z",
-  created_by: 1,
-  is_active: true,
-  category: 1,
-  visibility: "private",
-  refresh_frequency: "daily",
-  business_purpose:
-    "Target high-value customers for premium offers and retention campaigns",
-  criteria: {
-    conditions: [
-      { field: "ARPU", operator: ">", value: 50 },
-      { field: "tenure_months", operator: ">=", value: 6 },
-      { field: "status", operator: "=", value: "active" },
-    ],
-  },
-};
-
-const USE_MOCK_DATA = false; // Toggle this to switch between mock and real data
-
 export default function EditSegmentPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -66,25 +34,6 @@ export default function EditSegmentPage() {
   const loadSegment = useCallback(async () => {
     try {
       setIsLoading(true);
-
-      if (USE_MOCK_DATA) {
-        // Use mock data for testing
-        setTimeout(() => {
-          setSegment(MOCK_SEGMENT);
-
-          // Populate form with mock data
-          setName(MOCK_SEGMENT.name);
-          setDescription(MOCK_SEGMENT.description || "");
-          setType(MOCK_SEGMENT.type);
-          setVisibility(MOCK_SEGMENT.visibility || "private");
-          setTags(MOCK_SEGMENT.tags || []);
-          setRefreshFrequency(MOCK_SEGMENT.refresh_frequency || "");
-          setBusinessPurpose(MOCK_SEGMENT.business_purpose || "");
-
-          setIsLoading(false);
-        }, 500); // Simulate API delay
-        return;
-      }
 
       const data = await segmentService.getSegmentById(Number(id));
       setSegment(data);
@@ -131,19 +80,6 @@ export default function EditSegmentPage() {
 
     try {
       setIsSaving(true);
-
-      if (USE_MOCK_DATA) {
-        // Simulate save with mock data
-        setTimeout(() => {
-          setIsSaving(false);
-          success(
-            "Segment updated",
-            `Segment "${name}" has been updated successfully`
-          );
-          navigate(`/dashboard/segments/${id}`);
-        }, 1000); // Simulate API delay
-        return;
-      }
 
       const updateData: UpdateSegmentRequest = {
         name: name.trim(),

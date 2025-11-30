@@ -1,19 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   Briefcase,
   CheckCircle,
   Clock,
   Eye,
-  Pencil,
+  Edit,
   Plus,
   Search,
   Trash2,
-  // Play,
-  // Pause,
-  // Archive,
-  // Power,
-  // X,
+  Play,
+  Pause,
+  Archive,
+  Power,
+  X,
+  CheckSquare,
+  Square,
+  Filter,
+  BarChart3,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -22,11 +27,12 @@ import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { scheduledJobService } from "../services/scheduledJobService";
 import { jobTypeService } from "../services/jobTypeService";
+import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import type {
   ScheduledJob,
   ScheduledJobSearchParams,
 } from "../types/scheduledJob";
-// import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const STATUS_OPTIONS = [
   { label: "All statuses", value: "" },
@@ -66,7 +72,7 @@ const _getStatusColors = (status: string) => {
 export default function ScheduledJobsPage() {
   const navigate = useNavigate();
   const { error: showError, success: showToast } = useToast();
-  // const { user } = useAuth();
+  const { user } = useAuth();
 
   const [jobs, setJobs] = useState<ScheduledJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,9 +94,30 @@ export default function ScheduledJobsPage() {
   const [deletingJob, setDeletingJob] = useState<ScheduledJob | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [jobTypeMap, setJobTypeMap] = useState<Record<number, string>>({});
-  // Bulk selection and batch operations - commented out for now
-  // const [selectedJobs, setSelectedJobs] = useState<Set<number>>(new Set());
-  // const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  // Bulk selection and batch operations
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedJobs, setSelectedJobs] = useState<Set<number>>(new Set());
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  // Advanced filters
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [jobTypeFilter, setJobTypeFilter] = useState<number | "">("");
+  const [ownerFilter, setOwnerFilter] = useState<number | "">("");
+  const [tagFilter, setTagFilter] = useState<string>("");
+  const [scheduleTypeFilter, setScheduleTypeFilter] = useState<string>("");
+  const [connectionProfileFilter, setConnectionProfileFilter] = useState<
+    number | ""
+  >("");
+  const [jobCodeFilter, setJobCodeFilter] = useState<string>("");
+  const [activeJobsFilter, setActiveJobsFilter] = useState<boolean>(false);
+  const [jobTypes, setJobTypes] = useState<Array<{ id: number; name: string }>>(
+    []
+  );
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  // Use click outside hook for filter modal
+  useClickOutside(filterRef, () => setShowAdvancedFilters(false), {
+    enabled: showAdvancedFilters,
+  });
 
   const fetchJobs = useCallback(
     async (overrideParams?: Partial<ScheduledJobSearchParams>) => {
@@ -102,7 +129,47 @@ export default function ScheduledJobsPage() {
 
       try {
         let response;
-        if (hasSearchTerm) {
+
+        // Check for advanced filters first (lookup endpoints)
+        if (activeJobsFilter) {
+          response = await scheduledJobService.getActiveJobs(true);
+        } else if (jobCodeFilter.trim()) {
+          // getScheduledJobByCode returns a single job, convert to array format
+          try {
+            const job = await scheduledJobService.getScheduledJobByCode(
+              jobCodeFilter.trim()
+            );
+            response = { data: [job], pagination: { total: 1 } };
+          } catch (err) {
+            // If job not found, return empty
+            response = { data: [], pagination: { total: 0 } };
+          }
+        } else if (jobTypeFilter) {
+          response = await scheduledJobService.getScheduledJobsByJobType(
+            Number(jobTypeFilter)
+          );
+        } else if (ownerFilter) {
+          response = await scheduledJobService.getScheduledJobsByOwner(
+            Number(ownerFilter),
+            true
+          );
+        } else if (tagFilter.trim()) {
+          response = await scheduledJobService.getScheduledJobsByTag(
+            tagFilter.trim(),
+            true
+          );
+        } else if (scheduleTypeFilter) {
+          response = await scheduledJobService.getScheduledJobsByScheduleType(
+            scheduleTypeFilter,
+            true
+          );
+        } else if (connectionProfileFilter) {
+          response =
+            await scheduledJobService.getScheduledJobsByConnectionProfile(
+              Number(connectionProfileFilter),
+              true
+            );
+        } else if (hasSearchTerm) {
           // Use search endpoint when there's a search term
           const params: ScheduledJobSearchParams = {
             limit: 50,
@@ -151,7 +218,16 @@ export default function ScheduledJobsPage() {
         setIsLoading(false);
       }
     },
-    [searchTerm, statusFilter, showError]
+    [
+      searchTerm,
+      statusFilter,
+      jobTypeFilter,
+      ownerFilter,
+      tagFilter,
+      scheduleTypeFilter,
+      connectionProfileFilter,
+      showError,
+    ]
   );
 
   const fetchStats = useCallback(async () => {
@@ -269,10 +345,15 @@ export default function ScheduledJobsPage() {
         });
         // Create a map of job_type_id -> job_type_name
         const map: Record<number, string> = {};
+        const types = (response.data || []).map((jobType) => ({
+          id: jobType.id,
+          name: jobType.name,
+        }));
         (response.data || []).forEach((jobType) => {
           map[jobType.id] = jobType.name;
         });
         setJobTypeMap(map);
+        setJobTypes(types);
       } catch (err) {
         console.error("Failed to load job types:", err);
       }
@@ -282,90 +363,90 @@ export default function ScheduledJobsPage() {
 
   const filteredJobs = useMemo(() => jobs, [jobs]);
 
-  // Bulk selection and batch operations - commented out for now
-  // const handleSelectJob = (jobId: number) => {
-  //   setSelectedJobs((prev) => {
-  //     const newSet = new Set(prev);
-  //     if (newSet.has(jobId)) {
-  //       newSet.delete(jobId);
-  //     } else {
-  //       newSet.add(jobId);
-  //     }
-  //     return newSet;
-  //   });
-  // };
+  // Bulk selection and batch operations
+  const handleSelectJob = (jobId: number) => {
+    setSelectedJobs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
+  };
 
-  // const handleSelectAll = () => {
-  //   if (selectedJobs.size === filteredJobs.length) {
-  //     setSelectedJobs(new Set());
-  //   } else {
-  //     setSelectedJobs(new Set(filteredJobs.map((job) => job.id)));
-  //   }
-  // };
+  const handleSelectAll = () => {
+    if (selectedJobs.size === filteredJobs.length) {
+      setSelectedJobs(new Set());
+    } else {
+      setSelectedJobs(new Set(filteredJobs.map((job) => job.id)));
+    }
+  };
 
-  // const handleBatchAction = async (
-  //   action: "activate" | "deactivate" | "pause" | "archive" | "delete"
-  // ) => {
-  //   if (selectedJobs.size === 0) return;
+  const handleBatchAction = async (
+    action: "activate" | "deactivate" | "pause" | "archive" | "delete"
+  ) => {
+    if (selectedJobs.size === 0) return;
 
-  //   const jobIds = Array.from(selectedJobs);
-  //   setIsBatchProcessing(true);
+    const jobIds = Array.from(selectedJobs);
+    setIsBatchProcessing(true);
 
-  //   try {
-  //     let result;
-  //     switch (action) {
-  //       case "activate":
-  //         result = await scheduledJobService.batchActivate(
-  //           jobIds,
-  //           user?.user_id
-  //         );
-  //         break;
-  //       case "deactivate":
-  //         result = await scheduledJobService.batchDeactivate(
-  //           jobIds,
-  //           user?.user_id
-  //         );
-  //         break;
-  //       case "pause":
-  //         result = await scheduledJobService.batchPause(jobIds, user?.user_id);
-  //         break;
-  //       case "archive":
-  //         result = await scheduledJobService.batchArchive(
-  //           jobIds,
-  //           user?.user_id
-  //         );
-  //         break;
-  //       case "delete":
-  //         if (
-  //           !window.confirm(
-  //             `Are you sure you want to delete ${jobIds.length} job(s)? This action cannot be undone.`
-  //           )
-  //         ) {
-  //           setIsBatchProcessing(false);
-  //           return;
-  //         }
-  //         result = await scheduledJobService.batchDelete(jobIds, user?.user_id);
-  //         break;
-  //     }
+    try {
+      let result;
+      switch (action) {
+        case "activate":
+          result = await scheduledJobService.batchActivate(
+            jobIds,
+            user?.user_id
+          );
+          break;
+        case "deactivate":
+          result = await scheduledJobService.batchDeactivate(
+            jobIds,
+            user?.user_id
+          );
+          break;
+        case "pause":
+          result = await scheduledJobService.batchPause(jobIds, user?.user_id);
+          break;
+        case "archive":
+          result = await scheduledJobService.batchArchive(
+            jobIds,
+            user?.user_id
+          );
+          break;
+        case "delete":
+          if (
+            !window.confirm(
+              `Are you sure you want to delete ${jobIds.length} job(s)? This action cannot be undone.`
+            )
+          ) {
+            setIsBatchProcessing(false);
+            return;
+          }
+          result = await scheduledJobService.batchDelete(jobIds, user?.user_id);
+          break;
+      }
 
-  //     showToast(
-  //       `Batch ${action} completed`,
-  //       `${result.success} job(s) ${action}d successfully${
-  //         result.failed > 0 ? `, ${result.failed} failed` : ""
-  //       }`
-  //     );
+      showToast(
+        `Batch ${action} completed`,
+        `${result.success} job(s) ${action}d successfully${
+          result.failed > 0 ? `, ${result.failed} failed` : ""
+        }`
+      );
 
-  //     setSelectedJobs(new Set());
-  //     fetchJobs(); // Refresh the list
-  //   } catch (err) {
-  //     showError(
-  //       `Batch ${action} failed`,
-  //       err instanceof Error ? err.message : "Unknown error"
-  //     );
-  //   } finally {
-  //     setIsBatchProcessing(false);
-  //   }
-  // };
+      setSelectedJobs(new Set());
+      fetchJobs(); // Refresh the list
+    } catch (err) {
+      showError(
+        `Batch ${action} failed`,
+        err instanceof Error ? err.message : "Unknown error"
+      );
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -379,6 +460,41 @@ export default function ScheduledJobsPage() {
           </p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/dashboard/scheduled-jobs/analytics")}
+            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+            style={{
+              backgroundColor: "transparent",
+              color: color.primary.action,
+              border: `1px solid ${color.primary.action}`,
+            }}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </button>
+          <button
+            onClick={() => {
+              setIsSelectionMode(!isSelectionMode);
+              if (isSelectionMode) {
+                setSelectedJobs(new Set()); // Clear selection when exiting mode
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+            style={{
+              backgroundColor: isSelectionMode
+                ? color.primary.action
+                : "transparent",
+              color: isSelectionMode ? "white" : color.primary.action,
+              border: `1px solid ${color.primary.action}`,
+            }}
+          >
+            {isSelectionMode ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            {isSelectionMode ? "Exit Selection" : "Select Jobs"}
+          </button>
           <button
             onClick={() => navigate("/dashboard/scheduled-jobs/create")}
             className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white"
@@ -492,10 +608,38 @@ export default function ScheduledJobsPage() {
             </option>
           ))}
         </select>
+        <button
+          onClick={() => setShowAdvancedFilters(true)}
+          className={`flex items-center gap-2 px-4 py-3 rounded-md transition-colors text-sm font-medium ${
+            jobTypeFilter ||
+            ownerFilter ||
+            tagFilter ||
+            scheduleTypeFilter ||
+            connectionProfileFilter ||
+            jobCodeFilter ||
+            activeJobsFilter
+              ? "bg-[#3b8169] text-white"
+              : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Filter className="h-4 w-4" />
+          <span>Filters</span>
+          {(jobTypeFilter ||
+            ownerFilter ||
+            tagFilter ||
+            scheduleTypeFilter ||
+            connectionProfileFilter ||
+            jobCodeFilter ||
+            activeJobsFilter) && (
+            <span className="ml-1 inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">
+              Active
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Batch Actions Toolbar - Commented out for now */}
-      {/* {selectedJobs.size > 0 && (
+      {/* Batch Actions Toolbar */}
+      {isSelectionMode && selectedJobs.size > 0 && (
         <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">
@@ -512,7 +656,8 @@ export default function ScheduledJobsPage() {
             <button
               onClick={() => handleBatchAction("activate")}
               disabled={isBatchProcessing}
-              className="inline-flex items-center gap-2 rounded-md border border-green-200 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
             >
               <Play className="h-4 w-4" />
               Activate
@@ -520,7 +665,12 @@ export default function ScheduledJobsPage() {
             <button
               onClick={() => handleBatchAction("pause")}
               disabled={isBatchProcessing}
-              className="inline-flex items-center gap-2 rounded-md border border-amber-200 px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+              style={{
+                backgroundColor: "transparent",
+                color: color.primary.action,
+                border: `1px solid ${color.primary.action}`,
+              }}
             >
               <Pause className="h-4 w-4" />
               Pause
@@ -543,7 +693,7 @@ export default function ScheduledJobsPage() {
             </button>
           </div>
         </div>
-      )} */}
+      )}
 
       <div>
         {errorMessage && (
@@ -576,12 +726,34 @@ export default function ScheduledJobsPage() {
             >
               <thead>
                 <tr>
+                  {isSelectionMode && (
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      style={{
+                        color: color.surface.tableHeaderText,
+                        backgroundColor: color.surface.tableHeader,
+                        borderTopLeftRadius: "0.375rem",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredJobs.length > 0 &&
+                          selectedJobs.size === filteredJobs.length
+                        }
+                        onChange={handleSelectAll}
+                        className="rounded border-gray-300 text-[#3b8169] focus:ring-[#3b8169]"
+                      />
+                    </th>
+                  )}
                   <th
                     className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
-                      borderTopLeftRadius: "0.375rem",
+                      ...(!isSelectionMode && {
+                        borderTopLeftRadius: "0.375rem",
+                      }),
                     }}
                   >
                     Job Name
@@ -629,12 +801,31 @@ export default function ScheduledJobsPage() {
               <tbody>
                 {filteredJobs.map((job) => (
                   <tr key={job.id} className="transition-colors">
+                    {isSelectionMode && (
+                      <td
+                        className="px-6 py-4"
+                        style={{
+                          backgroundColor: color.surface.tablebodybg,
+                          borderTopLeftRadius: "0.375rem",
+                          borderBottomLeftRadius: "0.375rem",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedJobs.has(job.id)}
+                          onChange={() => handleSelectJob(job.id)}
+                          className="rounded border-gray-300 text-[#3b8169] focus:ring-[#3b8169]"
+                        />
+                      </td>
+                    )}
                     <td
                       className="px-6 py-4"
                       style={{
                         backgroundColor: color.surface.tablebodybg,
-                        borderTopLeftRadius: "0.375rem",
-                        borderBottomLeftRadius: "0.375rem",
+                        ...(!isSelectionMode && {
+                          borderTopLeftRadius: "0.375rem",
+                          borderBottomLeftRadius: "0.375rem",
+                        }),
                       }}
                     >
                       <div className="flex items-center">
@@ -703,7 +894,7 @@ export default function ScheduledJobsPage() {
                           className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                           aria-label="Edit job"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => {
@@ -763,6 +954,195 @@ export default function ScheduledJobsPage() {
           variant="delete"
         />
       )}
+
+      {/* Filters Side Modal */}
+      {showAdvancedFilters &&
+        createPortal(
+          <div
+            className="fixed inset-0 overflow-hidden"
+            style={{ zIndex: 999999, top: 0, left: 0, right: 0, bottom: 0 }}
+          >
+            <div
+              className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out"
+              onClick={() => setShowAdvancedFilters(false)}
+            ></div>
+            <div
+              ref={filterRef}
+              className="absolute right-0 top-0 h-full w-full sm:w-[28rem] lg:w-96 bg-white shadow-xl transform transition-transform duration-300 ease-out translate-x-0"
+              style={{ zIndex: 1000000 }}
+            >
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                  <h2 className="text-sm font-semibold text-gray-900">
+                    Filter Jobs
+                  </h2>
+                  <button
+                    onClick={() => setShowAdvancedFilters(false)}
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="space-y-4">
+                    {/* Job Type Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Job Type
+                      </label>
+                      <select
+                        value={jobTypeFilter}
+                        onChange={(e) =>
+                          setJobTypeFilter(
+                            e.target.value ? Number(e.target.value) : ""
+                          )
+                        }
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      >
+                        <option value="">All Job Types</option>
+                        {jobTypes.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Owner Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Owner ID
+                      </label>
+                      <input
+                        type="number"
+                        value={ownerFilter || ""}
+                        onChange={(e) =>
+                          setOwnerFilter(
+                            e.target.value ? Number(e.target.value) : ""
+                          )
+                        }
+                        placeholder="All Owners"
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Tag Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tag
+                      </label>
+                      <input
+                        type="text"
+                        value={tagFilter}
+                        onChange={(e) => setTagFilter(e.target.value)}
+                        placeholder="All Tags"
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Schedule Type Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Schedule Type
+                      </label>
+                      <select
+                        value={scheduleTypeFilter}
+                        onChange={(e) => setScheduleTypeFilter(e.target.value)}
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      >
+                        <option value="">All Schedule Types</option>
+                        <option value="cron">Cron</option>
+                        <option value="interval">Interval</option>
+                        <option value="event">Event</option>
+                        <option value="manual">Manual</option>
+                        <option value="dependency">Dependency</option>
+                        <option value="api_trigger">API Trigger</option>
+                      </select>
+                    </div>
+
+                    {/* Connection Profile Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Connection Profile ID
+                      </label>
+                      <input
+                        type="number"
+                        value={connectionProfileFilter || ""}
+                        onChange={(e) =>
+                          setConnectionProfileFilter(
+                            e.target.value ? Number(e.target.value) : ""
+                          )
+                        }
+                        placeholder="All Profiles"
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Job Code Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Job Code
+                      </label>
+                      <input
+                        type="text"
+                        value={jobCodeFilter}
+                        onChange={(e) => setJobCodeFilter(e.target.value)}
+                        placeholder="Enter job code"
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Active Jobs Filter */}
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={activeJobsFilter}
+                          onChange={(e) =>
+                            setActiveJobsFilter(e.target.checked)
+                          }
+                          className="w-4 h-4 text-[#3b8169] border-gray-300 rounded focus:ring-[#3b8169]"
+                        />
+                        <span>Show Only Active Jobs</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => {
+                        setJobTypeFilter("");
+                        setOwnerFilter("");
+                        setTagFilter("");
+                        setScheduleTypeFilter("");
+                        setConnectionProfileFilter("");
+                        setJobCodeFilter("");
+                        setActiveJobsFilter(false);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      onClick={() => setShowAdvancedFilters(false)}
+                      className="flex-1 px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors"
+                      style={{ backgroundColor: color.primary.action }}
+                    >
+                      Apply Filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { setLanguageSettings } from "../../../shared/services/languageService";
 import { color, tw } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import countries from "world-countries";
 import currencyCodes from "currency-codes";
 
@@ -29,32 +30,13 @@ const currenciesList = currencyCodes
   .filter((c) => c.code && c.name && c.name !== `${c.code} (${c.code})`)
   .sort((a, b) => a.code.localeCompare(b.code));
 
-// Common languages list - using ISO 639-1 codes
+// System-wide languages - using ISO 639-1 codes
 const languages = [
   { name: "English", code: "en" },
   { name: "French", code: "fr" },
-  { name: "German", code: "de" },
   { name: "Spanish", code: "es" },
-  { name: "Italian", code: "it" },
-  { name: "Portuguese", code: "pt" },
-  { name: "Dutch", code: "nl" },
-  { name: "Swedish", code: "sv" },
-  { name: "Norwegian", code: "no" },
-  { name: "Danish", code: "da" },
-  { name: "Finnish", code: "fi" },
-  { name: "Polish", code: "pl" },
-  { name: "Greek", code: "el" },
-  { name: "Japanese", code: "ja" },
-  { name: "Korean", code: "ko" },
-  { name: "Chinese (Simplified)", code: "zh-CN" },
-  { name: "Chinese (Traditional)", code: "zh-TW" },
-  { name: "Hindi", code: "hi" },
-  { name: "Arabic", code: "ar" },
-  { name: "Hebrew", code: "he" },
-  { name: "Turkish", code: "tr" },
-  { name: "Russian", code: "ru" },
   { name: "Swahili", code: "sw" },
-].sort((a, b) => a.name.localeCompare(b.name));
+];
 
 const timezones = [
   "UTC",
@@ -186,8 +168,20 @@ export default function SettingsPage() {
     });
   };
 
+  // Currency mapping based on language
+  const getCurrencyForLanguage = (language: string): string => {
+    const currencyMap: Record<string, string> = {
+      English: "USD", // Default to USD for English
+      French: "EUR", // Euro for French
+      Spanish: "EUR", // Euro for Spanish (or could be USD for Latin America)
+      Swahili: "KES", // Kenyan Shilling for Swahili
+    };
+    return currencyMap[language] || settings.currency;
+  };
+
   const handleLanguageChange = (language: string) => {
-    setSettings({ ...settings, language });
+    const newCurrency = getCurrencyForLanguage(language);
+    setSettings({ ...settings, language, currency: newCurrency });
     // Update language context immediately
     setLanguageSettings(language);
     setLanguage(language);
@@ -231,10 +225,36 @@ export default function SettingsPage() {
     setSettings({ ...originalSettings });
   };
 
-  const selectStyle = (isFocused: boolean = false) => ({
-    borderColor: isFocused ? color.primary.accent : "",
-    boxShadow: isFocused ? `0 0 0 2px ${color.primary.accent}33` : "",
-  });
+  // Prepare options for HeadlessSelect
+  const countryOptions = countriesList.map((country) => ({
+    value: country.name,
+    label: `${country.flag} ${country.name} (${country.code})`,
+  }));
+
+  const languageOptions = languages.map((lang) => ({
+    value: lang.name,
+    label: lang.name,
+  }));
+
+  const timezoneOptions = timezones.map((tz) => ({
+    value: tz,
+    label: tz,
+  }));
+
+  const dateFormatOptions = dateFormats.map((format) => ({
+    value: format,
+    label: format,
+  }));
+
+  const currencyOptions = currenciesList.map((curr) => ({
+    value: curr.code,
+    label: curr.name,
+  }));
+
+  const numberFormatOptions = numberFormats.map((format) => ({
+    value: format,
+    label: format,
+  }));
 
   return (
     <div className="space-y-6">
@@ -309,24 +329,13 @@ export default function SettingsPage() {
               >
                 {t.settings.country}
               </label>
-              <select
-                id="country"
+              <HeadlessSelect
                 value={settings.country}
-                onChange={(e) => handleCountryChange(e.target.value)}
-                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
-                onFocus={(e) => {
-                  Object.assign(e.target.style, selectStyle(true));
-                }}
-                onBlur={(e) => {
-                  Object.assign(e.target.style, selectStyle(false));
-                }}
-              >
-                {countriesList.map((country) => (
-                  <option key={country.code} value={country.name}>
-                    {country.flag} {country.name} ({country.code})
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleCountryChange(value as string)}
+                options={countryOptions}
+                placeholder="Select country"
+                searchable={true}
+              />
             </div>
 
             <div>
@@ -369,24 +378,12 @@ export default function SettingsPage() {
               >
                 {t.settings.language}
               </label>
-              <select
-                id="language"
+              <HeadlessSelect
                 value={settings.language}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
-                onFocus={(e) => {
-                  Object.assign(e.target.style, selectStyle(true));
-                }}
-                onBlur={(e) => {
-                  Object.assign(e.target.style, selectStyle(false));
-                }}
-              >
-                {languages.map((lang) => (
-                  <option key={lang.code} value={lang.name}>
-                    {lang.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleLanguageChange(value as string)}
+                options={languageOptions}
+                placeholder="Select language"
+              />
             </div>
 
             <div>
@@ -396,24 +393,13 @@ export default function SettingsPage() {
               >
                 {t.settings.timezone}
               </label>
-              <select
-                id="timezone"
+              <HeadlessSelect
                 value={settings.timezone}
-                onChange={(e) => handleTimezoneChange(e.target.value)}
-                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
-                onFocus={(e) => {
-                  Object.assign(e.target.style, selectStyle(true));
-                }}
-                onBlur={(e) => {
-                  Object.assign(e.target.style, selectStyle(false));
-                }}
-              >
-                {timezones.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleTimezoneChange(value as string)}
+                options={timezoneOptions}
+                placeholder="Select timezone"
+                searchable={true}
+              />
             </div>
           </div>
         </div>
@@ -436,24 +422,12 @@ export default function SettingsPage() {
             >
               Format
             </label>
-            <select
-              id="date-format"
+            <HeadlessSelect
               value={settings.date_format}
-              onChange={(e) => handleDateFormatChange(e.target.value)}
-              className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white hover:border-gray-400 cursor-pointer"
-              onFocus={(e) => {
-                Object.assign(e.target.style, selectStyle(true));
-              }}
-              onBlur={(e) => {
-                Object.assign(e.target.style, selectStyle(false));
-              }}
-            >
-              {dateFormats.map((format) => (
-                <option key={format} value={format}>
-                  {format}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => handleDateFormatChange(value as string)}
+              options={dateFormatOptions}
+              placeholder="Select date format"
+            />
             <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
               <p className="text-xs text-gray-500 mb-1">Preview:</p>
               <p className="text-sm font-semibold text-gray-900">
@@ -490,24 +464,13 @@ export default function SettingsPage() {
               >
                 {t.settings.currency}
               </label>
-              <select
-                id="currency"
+              <HeadlessSelect
                 value={settings.currency}
-                onChange={(e) => handleCurrencyChange(e.target.value)}
-                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
-                onFocus={(e) => {
-                  Object.assign(e.target.style, selectStyle(true));
-                }}
-                onBlur={(e) => {
-                  Object.assign(e.target.style, selectStyle(false));
-                }}
-              >
-                {currenciesList.map((curr) => (
-                  <option key={curr.code} value={curr.code}>
-                    {curr.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleCurrencyChange(value as string)}
+                options={currencyOptions}
+                placeholder="Select currency"
+                searchable={true}
+              />
             </div>
 
             <div>
@@ -517,24 +480,12 @@ export default function SettingsPage() {
               >
                 {t.settings.numberFormatting}
               </label>
-              <select
-                id="number-format"
+              <HeadlessSelect
                 value={settings.number_formatting}
-                onChange={(e) => handleNumberFormatChange(e.target.value)}
-                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-md focus:outline-none transition-all text-sm bg-white cursor-pointer"
-                onFocus={(e) => {
-                  Object.assign(e.target.style, selectStyle(true));
-                }}
-                onBlur={(e) => {
-                  Object.assign(e.target.style, selectStyle(false));
-                }}
-              >
-                {numberFormats.map((format) => (
-                  <option key={format} value={format}>
-                    {format}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleNumberFormatChange(value as string)}
+                options={numberFormatOptions}
+                placeholder="Select number format"
+              />
               <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
                 <p className="text-xs text-gray-500 mb-1">Preview:</p>
                 <p className="text-sm font-semibold text-gray-900">

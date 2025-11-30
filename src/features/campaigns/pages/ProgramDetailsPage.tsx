@@ -25,6 +25,7 @@ import { Program } from "../types/program";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import ProgramModal from "../components/ProgramModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 interface Campaign {
   id: number;
@@ -318,14 +319,7 @@ export default function ProgramDetailsPage() {
     }
   };
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  // Use DateFormatter component instead of local formatDate function
 
   // formatCurrency is now handled by CurrencyFormatter component
 
@@ -568,7 +562,17 @@ export default function ProgramDetailsPage() {
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-400" />
               <p className={`text-base ${tw.textPrimary}`}>
-                {formatDate(program.start_date)}
+                {program.start_date ? (
+                  <DateFormatter
+                    date={program.start_date}
+                    useLocale
+                    year="numeric"
+                    month="long"
+                    day="numeric"
+                  />
+                ) : (
+                  "N/A"
+                )}
               </p>
             </div>
           </div>
@@ -581,7 +585,17 @@ export default function ProgramDetailsPage() {
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-400" />
               <p className={`text-base ${tw.textPrimary}`}>
-                {formatDate(program.end_date)}
+                {program.end_date ? (
+                  <DateFormatter
+                    date={program.end_date}
+                    useLocale
+                    year="numeric"
+                    month="long"
+                    day="numeric"
+                  />
+                ) : (
+                  "N/A"
+                )}
               </p>
             </div>
           </div>
@@ -604,7 +618,17 @@ export default function ProgramDetailsPage() {
               Created At
             </label>
             <p className={`text-base ${tw.textPrimary}`}>
-              {formatDate(program.created_at)}
+              {program.created_at ? (
+                <DateFormatter
+                  date={program.created_at}
+                  useLocale
+                  year="numeric"
+                  month="long"
+                  day="numeric"
+                />
+              ) : (
+                "N/A"
+              )}
             </p>
           </div>
         </div>

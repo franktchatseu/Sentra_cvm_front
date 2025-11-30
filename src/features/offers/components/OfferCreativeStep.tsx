@@ -850,15 +850,9 @@ export default function OfferCreativeStep({
           </p>
           <button
             onClick={addCreative}
-            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors font-medium"
+            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md font-medium"
             style={{
               backgroundColor: color.primary.action,
-            }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.opacity = "0.9";
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.opacity = "1";
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -874,15 +868,9 @@ export default function OfferCreativeStep({
                 <h3 className="font-semibold text-gray-900">Creatives</h3>
                 <button
                   onClick={addCreative}
-                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors font-medium"
+                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md font-medium"
                   style={{
                     backgroundColor: color.primary.action,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.opacity = "0.9";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.opacity = "1";
                   }}
                 >
                   <Plus className="w-5 h-5 mr-1.5" />
@@ -925,7 +913,7 @@ export default function OfferCreativeStep({
                             e.stopPropagation();
                             removeCreative(creative.id);
                           }}
-                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                          className="p-1 text-red-600 rounded"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1001,7 +989,7 @@ export default function OfferCreativeStep({
                         {selectedTemplates[selectedCreativeData.id] && (
                           <button
                             onClick={handleClearTemplate}
-                            className="text-xs text-gray-500 hover:text-gray-700 underline"
+                            className="text-xs text-gray-500 underline"
                           >
                             Clear Template
                           </button>
@@ -1048,7 +1036,7 @@ export default function OfferCreativeStep({
                   {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title (160 characters max)
+                      Title
                     </label>
                     <input
                       type="text"
@@ -1062,9 +1050,6 @@ export default function OfferCreativeStep({
                       placeholder="Enter creative title..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                     />
-                    <div className="text-xs text-gray-500 mt-1">
-                      {(selectedCreativeData.title || "").length}/160 characters
-                    </div>
                   </div>
 
                   {/* Text Body */}

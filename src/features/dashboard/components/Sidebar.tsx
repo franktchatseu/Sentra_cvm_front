@@ -853,12 +853,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Desktop Sidebar - Minimized on md/lg, Full on xl */}
       <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-32 xl:w-80 md:flex-col">
         <div
-          className="flex flex-col h-screen md:px-3 xl:px-6 py-6"
+          className="flex flex-col h-screen md:px-3 xl:px-6 md:pt-2 xl:pt-4 pb-6"
           style={{
             background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`,
           }}
         >
-          <div className="md:h-0 xl:h-16 md:hidden xl:flex items-center flex-shrink-0 xl:justify-start">
+          <div className="md:h-0 xl:h-16 md:hidden xl:flex items-center flex-shrink-0 xl:justify-start xl:pt-0">
             <Link
               to="/landingpage"
               onClick={handleLinkClick}

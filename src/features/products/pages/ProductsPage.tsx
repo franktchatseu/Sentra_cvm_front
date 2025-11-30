@@ -27,6 +27,7 @@ import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 interface ProductFilters {
   search?: string;
@@ -629,7 +630,7 @@ export default function ProductsPage() {
                         className={`px-6 py-4 hidden md:table-cell text-sm ${tw.textMuted}`}
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        {new Date(product.created_at).toLocaleDateString()}
+                        <DateFormatter date={product.created_at} />
                       </td>
                       <td
                         className="px-6 py-4 text-sm font-medium"

@@ -28,6 +28,8 @@ import { color, tw, components } from "../../../shared/utils/utils";
 import { useAuth } from "../../../contexts/AuthContext";
 import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
+import DateFormatter from "../../../shared/components/DateFormatter";
+import { formatDate } from "../../../shared/services/dateService";
 import {
   PieChart,
   Pie,
@@ -1424,14 +1426,13 @@ export default function UserManagementPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            {new Date(user.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
+                            <DateFormatter
+                              date={user.created_at}
+                              useLocale
+                              year="numeric"
+                              month="short"
+                              day="numeric"
+                            />
                           </td>
                           <td
                             className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium"
@@ -1742,11 +1743,7 @@ export default function UserManagementPage() {
                       const requestDate =
                         request.created_at ?? request.created_on;
                       const formattedDate = requestDate
-                        ? new Date(requestDate).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })
+                        ? formatDate(requestDate)
                         : "N/A";
                       const requestRole = getPendingRequestRole(request);
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Trash2, Gift, Edit, X } from "lucide-react";
 import { color } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 interface RewardRule {
   id: string;
@@ -172,16 +173,8 @@ export default function OfferRewardStep({
           </p>
           <button
             onClick={addReward}
-            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors font-medium"
+            className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md font-medium"
             style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.hover;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor =
-                color.primary.action;
-            }}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Reward
@@ -196,16 +189,8 @@ export default function OfferRewardStep({
                 <h3 className="font-semibold text-gray-900">Rewards</h3>
                 <button
                   onClick={addReward}
-                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md transition-colors font-medium"
+                  className="inline-flex items-center px-4 py-2 text-sm text-white rounded-md font-medium"
                   style={{ backgroundColor: color.primary.action }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
-                  }}
                 >
                   <Plus className="w-5 h-5 mr-1.5" />
                   Add Reward
@@ -287,24 +272,19 @@ export default function OfferRewardStep({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Reward Type
                       </label>
-                      <select
+                      <HeadlessSelect
+                        options={REWARD_TYPES.map((type) => ({
+                          value: type.value,
+                          label: type.label,
+                        }))}
                         value={selectedRewardData.type}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           updateReward(selectedRewardData.id, {
-                            type: e.target.value as
-                              | "default"
-                              | "sms_night"
-                              | "custom",
+                            type: value as "default" | "sms_night" | "custom",
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                      >
-                        {REWARD_TYPES.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Select reward type"
+                      />
                     </div>
                   </div>
 
@@ -316,18 +296,8 @@ export default function OfferRewardStep({
                       </h4>
                       <button
                         onClick={() => addRule()}
-                        className="inline-flex items-center px-3 py-1 text-sm text-white rounded-md transition-colors"
+                        className="inline-flex items-center px-3 py-1 text-sm text-white rounded-md"
                         style={{ backgroundColor: color.primary.action }}
-                        onMouseEnter={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = color.primary.hover;
-                        }}
-                        onMouseLeave={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = color.primary.action;
-                        }}
                       >
                         <Plus className="w-4 h-4 mr-1" />
                         Add Rule
@@ -341,18 +311,8 @@ export default function OfferRewardStep({
                         </p>
                         <button
                           onClick={() => addRule()}
-                          className="inline-flex items-center px-4 py-2 text-white rounded-md transition-colors"
+                          className="inline-flex items-center px-4 py-2 text-white rounded-md"
                           style={{ backgroundColor: color.primary.action }}
-                          onMouseEnter={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = color.primary.hover;
-                          }}
-                          onMouseLeave={(e) => {
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = color.primary.action;
-                          }}
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Add Rule
@@ -498,22 +458,20 @@ export default function OfferRewardStep({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Bundle Subscription Track
                   </label>
-                  <select
+                  <HeadlessSelect
+                    options={BUNDLE_TRACKS.map((track) => ({
+                      value: track,
+                      label: track,
+                    }))}
                     value={editingRule.bundle_subscription_track}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setEditingRule({
                         ...editingRule,
-                        bundle_subscription_track: e.target.value,
+                        bundle_subscription_track: value as string,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                  >
-                    {BUNDLE_TRACKS.map((track) => (
-                      <option key={track} value={track}>
-                        {track}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select bundle track"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -521,26 +479,24 @@ export default function OfferRewardStep({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Reward Type
                     </label>
-                    <select
+                    <HeadlessSelect
+                      options={REWARD_RULE_TYPES.map((type) => ({
+                        value: type.value,
+                        label: type.label,
+                      }))}
                       value={editingRule.reward_type}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         setEditingRule({
                           ...editingRule,
-                          reward_type: e.target.value as
+                          reward_type: value as
                             | "bundle"
                             | "points"
                             | "discount"
                             | "cashback",
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                    >
-                      {REWARD_RULE_TYPES.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Select reward type"
+                    />
                   </div>
 
                   <div>
@@ -646,7 +602,7 @@ export default function OfferRewardStep({
                     setShowRuleModal(false);
                     setEditingRule(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md"
                 >
                   Cancel
                 </button>
@@ -655,16 +611,8 @@ export default function OfferRewardStep({
                     selectedRewardData &&
                     saveRule(selectedRewardData.id, editingRule)
                   }
-                  className="px-4 py-2 text-white rounded-md transition-colors"
+                  className="px-4 py-2 text-white rounded-md"
                   style={{ backgroundColor: color.primary.action }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      color.primary.action;
-                  }}
                 >
                   Save Rule
                 </button>

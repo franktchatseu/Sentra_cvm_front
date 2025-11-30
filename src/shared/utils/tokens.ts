@@ -89,6 +89,23 @@ export const colors = {
       color9: "#5B6870", // Neutral 600
       color10: "#66E8FA", // Brand 400
     },
+    scheduledJobs: {
+      // Primary green for scheduled jobs analytics charts
+      primary: "#3b8169", // Main green for bars and primary elements
+      secondary: "#10b981", // Lighter green for secondary bars
+      accent: "#8b5cf6", // Purple for accent elements (owner distribution)
+      execution: "#4FDFF3", // Cyan for execution counts
+      performance: "#C38BFB", // Purple for performance metrics
+      // Pie chart colors for status distribution
+      pieColors: [
+        "#3b8169", // Primary green
+        "#10b981", // Light green
+        "#f59e0b", // Amber/yellow
+        "#ef4444", // Red
+        "#6366f1", // Indigo
+        "#8b5cf6", // Purple
+      ],
+    },
   },
 
   // Standardized report chart colors - 4 color palette for all report graphs
@@ -445,7 +462,6 @@ export const buttons = {
     paddingX: "0.75rem", // px-3
     borderRadius: "0.5rem",
     fontSize: "0.875rem", // text-sm (14px)
-   
   },
 };
 

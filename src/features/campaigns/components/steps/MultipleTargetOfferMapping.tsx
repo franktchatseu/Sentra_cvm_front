@@ -124,10 +124,10 @@ export default function MultipleTargetOfferMapping({
                       style={{ color: color.primary.accent }}
                     />
                     <div>
-                      <h4 className={`text-sm font-medium ${tw.textPrimary}`}>
+                      <h4 className={`text-base font-medium ${tw.textPrimary}`}>
                         {segment.name}
                       </h4>
-                      <p className={`text-xs ${tw.textSecondary}`}>
+                      <p className={`text-sm ${tw.textSecondary}`}>
                         {segment.customer_count?.toLocaleString() || "0"}{" "}
                         customers
                       </p>
@@ -149,7 +149,7 @@ export default function MultipleTargetOfferMapping({
                 {/* Mapped Offers */}
                 <div>
                   <div
-                    className={`text-xs font-medium ${tw.textSecondary} mb-2`}
+                    className={`text-sm font-medium ${tw.textSecondary} mb-2`}
                   >
                     Mapped Offers:
                   </div>
@@ -158,7 +158,7 @@ export default function MultipleTargetOfferMapping({
                       className="text-center py-4 border-2 border-dashed rounded-md"
                       style={{ borderColor: color.border.default }}
                     >
-                      <p className={`text-xs ${tw.textSecondary}`}>
+                      <p className={`text-sm ${tw.textSecondary}`}>
                         No offers mapped to this segment
                       </p>
                     </div>
@@ -177,11 +177,11 @@ export default function MultipleTargetOfferMapping({
                             />
                             <div>
                               <div
-                                className={`text-sm font-medium ${tw.textPrimary}`}
+                                className={`text-base font-medium ${tw.textPrimary}`}
                               >
                                 {offer.name}
                               </div>
-                              <div className={`text-xs ${tw.textSecondary}`}>
+                              <div className={`text-sm ${tw.textSecondary}`}>
                                 {offer.reward_value} • {offer.validity_period}d
                                 validity
                               </div>

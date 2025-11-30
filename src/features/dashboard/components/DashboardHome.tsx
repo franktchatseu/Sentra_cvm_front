@@ -52,6 +52,7 @@ import type {
   CampaignStatsSummary,
   BackendCampaignType,
 } from "../../campaigns/types/campaign";
+import { formatDate } from "../../../shared/services/dateService";
 import {
   PieChart,
   Pie,
@@ -546,7 +547,7 @@ export default function DashboardHome() {
                   status: offer.status?.toLowerCase() || "draft",
                   type: offer.offer_type || "Unknown",
                   created: offer.created_at
-                    ? new Date(offer.created_at).toLocaleDateString()
+                    ? formatDate(offer.created_at)
                     : "Unknown",
                   created_at: offer.created_at,
                 };
@@ -585,7 +586,7 @@ export default function DashboardHome() {
                   type: segment.type || "Unknown",
                   members: segment.size_estimate ?? 0,
                   created: segment.created_at
-                    ? new Date(segment.created_at).toLocaleDateString()
+                    ? formatDate(segment.created_at)
                     : "Unknown",
                   created_at: segment.created_at,
                 };
@@ -624,7 +625,7 @@ export default function DashboardHome() {
                   code: product.product_code || "N/A",
                   status: product.is_active ? "active" : "inactive",
                   created: product.created_at
-                    ? new Date(product.created_at).toLocaleDateString()
+                    ? formatDate(product.created_at)
                     : "Unknown",
                   created_at: product.created_at,
                 };

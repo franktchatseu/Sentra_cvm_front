@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Target, Users, Gift, Calendar, Eye } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import ProgressStepper, {
@@ -111,6 +112,7 @@ export default function CreateCampaignPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -536,7 +538,7 @@ export default function CreateCampaignPage() {
         const updateData: Partial<CreateCampaignRequest> = {
           name: formData.name,
           objective: objectiveLabel, // Send label text, not value
-          updated_by: 1, // TODO: Get actual user ID from auth context
+          updated_by: user?.user_id || 1,
           ...(formData.description && { description: formData.description }),
           ...(formData.category_id && { category_id: formData.category_id }),
           ...(formData.program_id && { program_id: formData.program_id }),
@@ -583,7 +585,7 @@ export default function CreateCampaignPage() {
           code: campaignCode,
           objective: objectiveLabel, // Send label text, not value
           status: "draft", // New campaigns start as draft
-          created_by: 1, // TODO: Get actual user ID from auth context
+          created_by: user?.user_id || 1,
           ...(formData.description && { description: formData.description }),
           ...(formData.category_id && { category_id: formData.category_id }),
           ...(formData.program_id && { program_id: formData.program_id }),
@@ -616,7 +618,7 @@ export default function CreateCampaignPage() {
                 segment_id: parseInt(segment.id),
                 is_primary: segment.priority === 1,
                 include_exclude: segment.include_exclude || "include",
-                created_by: 1, // TODO: Get actual user ID from auth context
+                created_by: user?.user_id || 1,
               });
             }
           } catch (segmentError) {
@@ -636,7 +638,7 @@ export default function CreateCampaignPage() {
                 campaign_id: createdCampaignId,
                 segment_id: mapping.segment_id,
                 offer_id: mapping.offer_id,
-                created_by: 1, // TODO: Get actual user ID from auth context
+                created_by: user?.user_id || 1,
               }));
 
             await campaignSegmentOfferService.createBatchMappings(
@@ -720,7 +722,7 @@ export default function CreateCampaignPage() {
         code: campaignCode,
         objective: objectiveLabel,
         status: "draft", // Explicitly set as draft
-        created_by: 1, // TODO: Get actual user ID from auth context
+        created_by: user?.user_id || 1,
         ...(formData.description && { description: formData.description }),
         ...(formData.category_id && { category_id: formData.category_id }),
         ...(formData.program_id && { program_id: formData.program_id }),
@@ -767,7 +769,7 @@ export default function CreateCampaignPage() {
               segment_id: parseInt(segment.id),
               is_primary: segment.priority === 1,
               include_exclude: segment.include_exclude || "include",
-              created_by: 1, // TODO: Get actual user ID from auth context
+              created_by: user?.user_id || 1,
             });
           }
         } catch (segmentError) {
@@ -791,7 +793,7 @@ export default function CreateCampaignPage() {
               campaign_id: campaignId,
               segment_id: mapping.segment_id,
               offer_id: mapping.offer_id,
-              created_by: 1, // TODO: Get actual user ID from auth context
+              created_by: user?.user_id || 1,
             }));
 
           await campaignSegmentOfferService.createBatchMappings(

@@ -7,6 +7,7 @@ import { color } from "../../../../shared/utils/utils";
 import { segmentService } from "../../../segments/services/segmentService";
 import { Segment } from "../../../segments/types/segment";
 import LoadingSpinner from "../../../../shared/components/ui/LoadingSpinner";
+import DateFormatter from "../../../../shared/components/DateFormatter";
 
 interface SegmentSelectionModalProps {
   isOpen: boolean;
@@ -19,15 +20,15 @@ interface SegmentSelectionModalProps {
 
 // Helper function to convert Segment to CampaignSegment
 const convertToCampaignSegment = (segment: Segment): CampaignSegment => {
-  // Generate a random customer count between 1000-20000 for now (hardcoded as requested)
-  const randomCustomerCount =
-    Math.floor(Math.random() * (20000 - 1000 + 1)) + 1000;
+  // Use actual customer count from segment data (size_estimate or customer_count)
+  const customerCount =
+    (segment as any).customer_count ?? segment.size_estimate ?? 0;
 
   return {
     id: String(segment.segment_id || segment.id || ""),
     name: segment.name,
     description: segment.description || "",
-    customer_count: randomCustomerCount, // Hardcoded random count for now
+    customer_count: customerCount,
     created_at:
       segment.created_at || segment.created_on || new Date().toISOString(),
     criteria: segment.criteria || {}, // Use existing criteria or empty object
@@ -171,7 +172,11 @@ export default function SegmentSelectionModal({
           )}
         </div>
 
-        <div className="px-6 pt-6 space-y-4 flex-shrink-0">
+        <div
+          className={`px-6 pt-6 space-y-4 flex-shrink-0 ${
+            tempSelectedSegments.length === 0 ? "pb-6" : ""
+          }`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -318,7 +323,7 @@ export default function SegmentSelectionModal({
                           />
                         </td>
                         <td className="px-4 py-4">
-                          <div className="font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900">
                             {segment.name}
                           </div>
                         </td>
@@ -328,16 +333,13 @@ export default function SegmentSelectionModal({
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-900">
-                              {segment.customer_count.toLocaleString()}
-                            </span>
-                          </div>
+                          <span className="text-sm font-medium text-gray-900">
+                            {segment.customer_count.toLocaleString()}
+                          </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span className="text-sm text-gray-600">
-                            {new Date(segment.created_at).toLocaleDateString()}
+                            <DateFormatter date={segment.created_at} />
                           </span>
                         </td>
                       </tr>

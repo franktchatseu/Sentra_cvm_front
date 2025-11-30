@@ -161,7 +161,16 @@ class JobTypeService {
   }
 
   async getJobTypeById(id: number): Promise<JobType> {
-    return this.request<JobType>(`/${id}`);
+    const response = await this.request<
+      JobType | { success: boolean; data: JobType }
+    >(`/${id}`);
+
+    // Handle wrapped response
+    if (response && typeof response === "object" && "data" in response) {
+      return (response as { success: boolean; data: JobType }).data;
+    }
+
+    return response as JobType;
   }
 
   async createJobType(payload: CreateJobTypePayload): Promise<JobType> {

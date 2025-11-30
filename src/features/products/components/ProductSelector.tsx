@@ -435,7 +435,7 @@ export default function ProductSelector({
                                 {product.price ? (
                                   <CurrencyFormatter
                                     amount={product.price}
-                                    currencyCode={product.currency || "USD"}
+                                    currencyCode={product.currency}
                                     className="text-sm font-medium text-gray-900"
                                   />
                                 ) : (

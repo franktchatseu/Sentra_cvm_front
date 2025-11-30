@@ -43,24 +43,6 @@ export default function StepNavigation({
             backgroundColor: color.primary.action,
             color: "white",
           }}
-          onMouseEnter={(e) => {
-            const btn = e.currentTarget;
-            btn.style.setProperty(
-              "background-color",
-              color.primary.action,
-              "important"
-            );
-            btn.style.setProperty("color", "white", "important");
-          }}
-          onMouseLeave={(e) => {
-            const btn = e.currentTarget;
-            btn.style.setProperty(
-              "background-color",
-              color.primary.action,
-              "important"
-            );
-            btn.style.setProperty("color", "white", "important");
-          }}
         >
           {isLoading ? (
             <>

@@ -29,6 +29,7 @@ import { campaignSegmentOfferService } from "../services/campaignSegmentOfferSer
 import { offerService } from "../../offers/services/offerService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import DateFormatter from "../../../shared/components/DateFormatter";
 import { userService } from "../../users/services/userService";
 import {
   Campaign,
@@ -464,13 +465,7 @@ export default function CampaignDetailsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  // Use DateFormatter component instead of local formatDate function
 
   if (isLoading) {
     return (
@@ -942,7 +937,13 @@ export default function CampaignDetailsPage() {
                 </label>
                 <p className={`text-base ${tw.textPrimary} flex items-center`}>
                   <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                  {formatDate(campaign.created_at)}
+                  <DateFormatter
+                    date={campaign.created_at}
+                    useLocale
+                    year="numeric"
+                    month="long"
+                    day="numeric"
+                  />
                 </p>
               </div>
               <div>

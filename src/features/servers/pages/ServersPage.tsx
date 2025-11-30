@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   Archive,
+  CheckSquare,
   Eye,
   HeartPulse,
   Pencil,
@@ -11,6 +12,8 @@ import {
   Search,
   Server as ServerIcon,
   Shield,
+  Square,
+  X,
 } from "lucide-react";
 import { serverService } from "../services/serverService";
 import {
@@ -47,6 +50,7 @@ export default function ServersPage() {
   const [protocolFilter, setProtocolFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [serverTypeFilter, setServerTypeFilter] = useState("all");
 
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
@@ -55,16 +59,17 @@ export default function ServersPage() {
   const [visibleServers, setVisibleServers] = useState<ServerType[]>([]);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  // const [selectedServerIds, setSelectedServerIds] = useState<Set<number>>(
-  //   () => new Set()
-  // );
-  // const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedServerIds, setSelectedServerIds] = useState<Set<number>>(
+    () => new Set()
+  );
+  const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
   const [actionState, setActionState] = useState<{
     id: number;
     action: "activate" | "deactivate" | "health" | "deprecate";
   } | null>(null);
   const userId = user?.user_id;
-  // const headerCheckboxRef = useRef<HTMLInputElement | null>(null);
+  const headerCheckboxRef = useRef<HTMLInputElement | null>(null);
 
   const [healthStats, setHealthStats] = useState<ServerHealthStats | null>(
     null
@@ -156,6 +161,11 @@ export default function ServersPage() {
           regionFilter,
           listQuery
         );
+      } else if (serverTypeFilter !== "all") {
+        dataset = await serverService.getServersByType(
+          serverTypeFilter,
+          listQuery
+        );
       } else {
         const response = await serverService.listServers({
           ...listQuery,
@@ -182,6 +192,7 @@ export default function ServersPage() {
     protocolFilter,
     regionFilter,
     statusFilter,
+    serverTypeFilter,
   ]);
 
   useEffect(() => {
@@ -214,6 +225,7 @@ export default function ServersPage() {
     protocolFilter,
     regionFilter,
     statusFilter,
+    serverTypeFilter,
     debouncedSearchTerm,
     scope,
     sourceServers,
@@ -355,6 +367,16 @@ export default function ServersPage() {
     return ["all", ...Array.from(values)];
   }, [regionCounts, sourceServers]);
 
+  const serverTypeOptions = useMemo(() => {
+    const values = new Set<string>();
+    sourceServers.forEach((server) => {
+      if (server.server_type) {
+        values.add(server.server_type);
+      }
+    });
+    return ["all", ...Array.from(values)];
+  }, [sourceServers]);
+
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const handleRefresh = useCallback(() => {
@@ -370,9 +392,22 @@ export default function ServersPage() {
   const renderHealthBadge = (server: ServerType) => {
     if (!server.health_check_enabled) {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-black">
           <Shield size={14} />
           Disabled
+        </span>
+      );
+    }
+
+    // If health check is enabled but status is null, show null
+    if (
+      !server.last_health_check_status ||
+      server.last_health_check_status === null
+    ) {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-black">
+          <Shield size={14} />
+          null
         </span>
       );
     }
@@ -407,10 +442,11 @@ export default function ServersPage() {
       );
     }
 
+    // Fallback for any other status values
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-black">
         <Shield size={14} />
-        Unknown
+        {server.last_health_check_status || "Unknown"}
       </span>
     );
   };
@@ -632,6 +668,25 @@ export default function ServersPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => {
+              setIsSelectionMode(!isSelectionMode);
+              if (isSelectionMode) {
+                setSelectedServerIds(new Set()); // Clear selection when exiting mode
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+            style={{
+              backgroundColor: isSelectionMode
+                ? color.primary.action
+                : "transparent",
+              color: isSelectionMode ? "white" : color.primary.action,
+              border: `1px solid ${color.primary.action}`,
+            }}
+          >
+            {isSelectionMode ? <CheckSquare size={16} /> : <Square size={16} />}
+            {isSelectionMode ? "Exit Selection" : "Select Servers"}
+          </button>
+          <button
             onClick={() => navigate("/dashboard/servers/new")}
             className={`${tw.button} inline-flex items-center gap-2`}
           >
@@ -641,32 +696,39 @@ export default function ServersPage() {
         </div>
       </div>
 
-      {hasSelection && (
-        <div className="flex flex-wrap items-center gap-3 rounded-md border border-gray-200 bg-white/80 px-4 py-3 text-sm text-gray-700">
-          <span className="font-semibold">
-            {selectedServerIds.size} selected
-          </span>
-          <button
-            type="button"
-            onClick={() => handleBulkStatusChange("activate")}
-            disabled={isBulkActionLoading}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 font-medium text-green-600 hover:bg-green-50 disabled:opacity-60"
-          >
-            <Power size={14} />
-            Activate
-          </button>
-          <button
-            type="button"
-            onClick={() => handleBulkStatusChange("deactivate")}
-            disabled={isBulkActionLoading}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-          >
-            <Power size={14} className="rotate-180" />
-            Deactivate
-          </button>
-          {isBulkActionLoading && (
-            <span className="text-xs text-gray-500">Updating…</span>
-          )}
+      {/* Batch Actions Toolbar */}
+      {isSelectionMode && selectedServerIds.size > 0 && (
+        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">
+              {selectedServerIds.size} server(s) selected
+            </span>
+            <button
+              onClick={() => setSelectedServerIds(new Set())}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleBulkStatusChange("activate")}
+              disabled={isBulkActionLoading}
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              <Power size={14} />
+              Activate
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange("deactivate")}
+              disabled={isBulkActionLoading}
+              className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              <Power size={14} className="rotate-180" />
+              Deactivate
+            </button>
+          </div>
         </div>
       )}
 
@@ -739,18 +801,32 @@ export default function ServersPage() {
               style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
             >
               <thead style={{ background: color.surface.tableHeader }}>
-                <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                  <th className="px-3 py-3 text-sm font-medium">
-                    <input
-                      ref={headerCheckboxRef}
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                      checked={allVisibleSelected}
-                      onChange={toggleSelectAllVisible}
-                      aria-label="Select visible servers"
-                    />
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
+                <tr className="text-left text-xs uppercase tracking-wide text-black">
+                  {isSelectionMode && (
+                    <th
+                      className="px-3 py-3 text-sm font-medium"
+                      style={{
+                        borderTopLeftRadius: "0.375rem",
+                      }}
+                    >
+                      <input
+                        ref={headerCheckboxRef}
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        checked={allVisibleSelected}
+                        onChange={toggleSelectAllVisible}
+                        aria-label="Select visible servers"
+                      />
+                    </th>
+                  )}
+                  <th
+                    className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium"
+                    style={{
+                      ...(!isSelectionMode && {
+                        borderTopLeftRadius: "0.375rem",
+                      }),
+                    }}
+                  >
                     Server
                   </th>
                   <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
@@ -765,7 +841,12 @@ export default function ServersPage() {
                   <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">
                     Status
                   </th>
-                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-sm font-medium">
+                  <th
+                    className="px-4 sm:px-6 py-3 sm:py-4 text-right text-sm font-medium"
+                    style={{
+                      borderTopRightRadius: "0.375rem",
+                    }}
+                  >
                     Actions
                   </th>
                 </tr>
@@ -785,57 +866,69 @@ export default function ServersPage() {
 
                   return (
                     <tr key={server.id} className="transition-colors text-sm">
-                      <td
-                        className="px-3 py-3"
-                        style={{ backgroundColor: color.surface.tablebodybg }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedServerIds.has(server.id)}
-                          onChange={(event) => {
-                            event.stopPropagation();
-                            toggleServerSelection(server.id);
+                      {isSelectionMode && (
+                        <td
+                          className="px-3 py-3"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
                           }}
-                          aria-label={`Select ${server.name}`}
-                          className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                        />
-                      </td>
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedServerIds.has(server.id)}
+                            onChange={(event) => {
+                              event.stopPropagation();
+                              toggleServerSelection(server.id);
+                            }}
+                            aria-label={`Select ${server.name}`}
+                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                          />
+                        </td>
+                      )}
                       <td
                         className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
-                        style={{ backgroundColor: color.surface.tablebodybg }}
+                        style={{
+                          backgroundColor: color.surface.tablebodybg,
+                          ...(!isSelectionMode && {
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }),
+                        }}
                       >
                         <button
                           type="button"
                           onClick={() =>
                             navigate(`/dashboard/servers/${server.id}`)
                           }
-                          className="font-semibold text-gray-900"
+                          className="font-semibold text-black"
                         >
                           {server.name}
                         </button>
-                        <p className="text-xs text-gray-500">{server.code}</p>
+                        <p className="text-xs text-black">{server.code}</p>
                       </td>
                       <td
-                        className="px-4 sm:px-6 py-3 sm:py-4 text-gray-900 text-sm"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-black text-sm"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
                         <div className="uppercase">
                           {server.environment || "—"}
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-black">
                           {server.region || "—"}
                         </p>
                       </td>
                       <td
-                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm"
+                        className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-black"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <p className="font-mono text-xs text-gray-700">
+                        <p className="font-mono text-xs text-black">
                           {`${server.protocol}://${server.host}${
                             server.port ? `:${server.port}` : ""
                           }${server.base_path || ""}`.replace(/\/+$/, "")}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-black">
                           Timeout {server.timeout_seconds}s · Retries{" "}
                           {server.max_retries}
                         </p>
@@ -871,7 +964,11 @@ export default function ServersPage() {
                       </td>
                       <td
                         className="px-4 sm:px-6 py-3 sm:py-4 text-right"
-                        style={{ backgroundColor: color.surface.tablebodybg }}
+                        style={{
+                          backgroundColor: color.surface.tablebodybg,
+                          borderTopRightRadius: "0.375rem",
+                          borderBottomRightRadius: "0.375rem",
+                        }}
                       >
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -879,7 +976,7 @@ export default function ServersPage() {
                             onClick={() =>
                               navigate(`/dashboard/servers/${server.id}`)
                             }
-                            className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 transition-colors hover:bg-gray-100"
+                            className="inline-flex items-center justify-center rounded-md p-2 text-black transition-colors hover:bg-gray-100"
                             aria-label={`View ${server.name}`}
                             title="View details"
                           >
@@ -888,7 +985,7 @@ export default function ServersPage() {
                           <button
                             type="button"
                             onClick={(e) => handleEdit(server, e)}
-                            className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 transition-colors hover:bg-gray-100"
+                            className="inline-flex items-center justify-center rounded-md p-2 text-black transition-colors hover:bg-gray-100"
                             aria-label={`Edit ${server.name}`}
                             title="Edit server"
                           >
@@ -900,7 +997,7 @@ export default function ServersPage() {
                             className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
                               server.health_check_enabled
                                 ? "text-green-600 hover:bg-green-50"
-                                : "text-gray-600 hover:bg-gray-100"
+                                : "text-black hover:bg-gray-100"
                             } ${healthLoading ? "opacity-50" : ""}`}
                             aria-label={
                               server.health_check_enabled
@@ -922,7 +1019,7 @@ export default function ServersPage() {
                             className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
                               server.is_active
                                 ? "text-green-600 hover:bg-green-50"
-                                : "text-gray-600 hover:bg-gray-100"
+                                : "text-black hover:bg-gray-100"
                             } ${activationLoading ? "opacity-50" : ""}`}
                             aria-label={
                               server.is_active
@@ -940,7 +1037,7 @@ export default function ServersPage() {
                             className={`inline-flex items-center justify-center rounded-md p-2 transition-colors ${
                               server.is_deprecated
                                 ? "text-amber-600 hover:bg-amber-50"
-                                : "text-gray-600 hover:bg-gray-100"
+                                : "text-black hover:bg-gray-100"
                             } ${deprecateLoading ? "opacity-50" : ""}`}
                             aria-label={
                               server.is_deprecated
@@ -1092,6 +1189,23 @@ export default function ServersPage() {
                     searchable
                   />
                 </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Server Type
+                  </p>
+                  <HeadlessSelect
+                    options={serverTypeOptions.map((value) => ({
+                      value,
+                      label:
+                        value === "all" ? "All server types" : value.toString(),
+                    }))}
+                    value={serverTypeFilter}
+                    onChange={(value) => setServerTypeFilter(String(value))}
+                    placeholder="Server Type"
+                    searchable
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
@@ -1101,6 +1215,7 @@ export default function ServersPage() {
                     setEnvironmentFilter("all");
                     setProtocolFilter("all");
                     setRegionFilter("all");
+                    setServerTypeFilter("all");
                   }}
                   className="text-sm font-medium text-gray-600 hover:text-gray-900"
                 >

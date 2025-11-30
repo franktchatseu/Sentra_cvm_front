@@ -39,6 +39,7 @@ import { Product } from "../../products/types/product";
 import { Search, Check } from "lucide-react";
 import { productCategoryService } from "../../products/services/productCategoryService";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 const localeLabelMap: Record<string, string> = {
   en: "English",
@@ -1379,9 +1380,11 @@ export default function OfferDetailsPage() {
             </label>
             <p className={`text-base ${tw.textPrimary} flex items-center`}>
               <Clock className="w-4 h-4 mr-2 text-gray-400" />
-              {offer.created_at
-                ? new Date(offer.created_at).toLocaleDateString()
-                : "N/A"}
+              {offer.created_at ? (
+                <DateFormatter date={offer.created_at} />
+              ) : (
+                "N/A"
+              )}
             </p>
           </div>
           <div>
@@ -1389,9 +1392,11 @@ export default function OfferDetailsPage() {
               Last Updated
             </label>
             <p className={`text-base ${tw.textPrimary}`}>
-              {offer.updated_at
-                ? new Date(offer.updated_at).toLocaleDateString()
-                : "N/A"}
+              {offer.updated_at ? (
+                <DateFormatter date={offer.updated_at} />
+              ) : (
+                "N/A"
+              )}
             </p>
           </div>
         </div>
@@ -1815,11 +1820,19 @@ export default function OfferDetailsPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            {creative.updated_at
-                              ? new Date(creative.updated_at).toLocaleString()
-                              : creative.created_at
-                              ? new Date(creative.created_at).toLocaleString()
-                              : "—"}
+                            {creative.updated_at ? (
+                              <DateFormatter
+                                date={creative.updated_at}
+                                includeTime
+                              />
+                            ) : creative.created_at ? (
+                              <DateFormatter
+                                date={creative.created_at}
+                                includeTime
+                              />
+                            ) : (
+                              "—"
+                            )}
                           </td>
                           <td
                             className="px-6 py-4 text-sm font-medium"

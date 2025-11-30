@@ -62,32 +62,36 @@ export const getCurrencySymbol = (currencyCode?: string): string => {
 };
 
 // Format number based on number formatting preference
-const formatNumber = (value: number, format: string): string => {
+const formatNumber = (
+  value: number,
+  format: string,
+  decimals: number = 2
+): string => {
   if (format === "1,234.56") {
     return value.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
   } else if (format === "1 234,56") {
     return value.toLocaleString("fr-FR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
   } else if (format === "1.234,56") {
     return value.toLocaleString("de-DE", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
   } else if (format === "1'234.56") {
     return value.toLocaleString("de-CH", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
   }
   // Default to en-US format
   return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   });
 };
 
@@ -118,11 +122,12 @@ export const formatCurrency = (
   const decimals =
     options?.decimals !== undefined ? options.decimals : hasFraction ? 2 : 0;
 
-  // Format number with specified decimals
-  const formattedNumber = numAmount.toLocaleString("en-KE", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
+  // Format number using settings number_formatting preference with correct decimals
+  const formattedNumber = formatNumber(
+    numAmount,
+    settings.number_formatting,
+    decimals
+  );
 
   const symbol = getCurrencySymbol(currencyCode);
 

@@ -22,6 +22,7 @@ export const VALID_CHANNELS: CreativeChannel[] = [
 
 export type Locale = string;
 
+// System-wide locales - matches SettingsPage languages
 export const COMMON_LOCALES: Locale[] = [
   "en", // English
   "en-US", // English - United States
@@ -32,13 +33,6 @@ export const COMMON_LOCALES: Locale[] = [
   "es", // Spanish
   "es-ES", // Spanish - Spain
   "es-MX", // Spanish - Mexico
-  "de", // German
-  "de-DE", // German - Germany
-  "ar", // Arabic
-  "ar-SA", // Arabic - Saudi Arabia
-  "pt", // Portuguese
-  "pt-BR", // Portuguese - Brazil
-  "pt-PT", // Portuguese - Portugal
   "sw", // Swahili
   "sw-UG", // Swahili - Uganda
   "sw-KE", // Swahili - Kenya

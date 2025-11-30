@@ -904,9 +904,14 @@ export default function CampaignDefinitionStep({
                     }
                     className={`flex-1 px-3 py-2.5 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[42px] border ${
                       isSelected
-                        ? "border-black bg-white text-gray-900 shadow-sm"
+                        ? "border-transparent text-white shadow-sm"
                         : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
                     }`}
+                    style={
+                      isSelected
+                        ? { backgroundColor: color.primary.accent }
+                        : undefined
+                    }
                   >
                     <div className="flex items-end gap-0.5 h-4">
                       {[1, 2, 3, 4].map((barNum) => (
@@ -915,8 +920,10 @@ export default function CampaignDefinitionStep({
                           className={`transition-all ${
                             barNum <= priority.bars
                               ? isSelected
-                                ? priority.color
+                                ? "text-white"
                                 : priority.color
+                              : isSelected
+                              ? "opacity-40 text-white"
                               : "opacity-20 " + priority.color
                           }`}
                           style={{
@@ -1122,7 +1129,7 @@ export default function CampaignDefinitionStep({
                   clearValidationErrors();
                 }
               }}
-              className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-1 text-sm ${
+              className={`w-full pl-12 pr-3 py-2 border rounded-md focus:ring-1 text-sm ${
                 validationErrors.budget_allocated
                   ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                   : "border-gray-300 focus:ring-[#588157] focus:border-[#588157]"

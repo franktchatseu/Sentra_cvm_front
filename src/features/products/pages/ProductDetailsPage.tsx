@@ -21,6 +21,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import DateFormatter from "../../../shared/components/DateFormatter";
 
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -467,14 +468,13 @@ export default function ProductDetailsPage() {
                       Effective From
                     </label>
                     <p className={`text-base ${tw.textPrimary}`}>
-                      {new Date(product.effective_from).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
+                      <DateFormatter
+                        date={product.effective_from}
+                        useLocale
+                        year="numeric"
+                        month="long"
+                        day="numeric"
+                      />
                     </p>
                   </div>
                 )}
@@ -486,14 +486,13 @@ export default function ProductDetailsPage() {
                       Effective To
                     </label>
                     <p className={`text-base ${tw.textPrimary}`}>
-                      {new Date(product.effective_to).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
+                      <DateFormatter
+                        date={product.effective_to}
+                        useLocale
+                        year="numeric"
+                        month="long"
+                        day="numeric"
+                      />
                     </p>
                   </div>
                 )}
@@ -521,17 +520,16 @@ export default function ProductDetailsPage() {
                     Created
                   </p>
                   <p className={`text-sm ${tw.textPrimary} font-semibold`}>
-                    {new Date(product.created_at).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    <DateFormatter
+                      date={product.created_at}
+                      useLocale
+                      year="numeric"
+                      month="short"
+                      day="numeric"
+                    />
                   </p>
                   <p className={`text-xs ${tw.textMuted}`}>
-                    {new Date(product.created_at).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    <DateFormatter date={product.created_at} includeTime />
                   </p>
                 </div>
               </div>
@@ -548,23 +546,16 @@ export default function ProductDetailsPage() {
                       Last Updated
                     </p>
                     <p className={`text-sm ${tw.textPrimary} font-semibold`}>
-                      {new Date(product.updated_at).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        }
-                      )}
+                      <DateFormatter
+                        date={product.updated_at}
+                        useLocale
+                        year="numeric"
+                        month="short"
+                        day="numeric"
+                      />
                     </p>
                     <p className={`text-xs ${tw.textMuted}`}>
-                      {new Date(product.updated_at).toLocaleTimeString(
-                        "en-US",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
+                      <DateFormatter date={product.updated_at} includeTime />
                     </p>
                   </div>
                 </div>
