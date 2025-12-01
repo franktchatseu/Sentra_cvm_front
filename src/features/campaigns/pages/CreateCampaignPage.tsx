@@ -72,6 +72,7 @@ interface StepProps {
   onCancel?: () => void;
   validationErrors?: { [key: string]: string };
   clearValidationErrors?: () => void;
+  setValidationErrors?: (errors: { [key: string]: string }) => void;
 }
 
 const steps: Step[] = [
@@ -512,6 +513,13 @@ export default function CreateCampaignPage() {
         } else if (selectedOffers.length === 0) {
           errors.offers = "At least one offer must be selected";
         }
+
+        // Check for offer status validation errors (set by OfferMappingStep component)
+        // This prevents proceeding if any offers are not Active or Approved
+        if (validationErrors.offers) {
+          errors.offers = validationErrors.offers;
+        }
+
         return { isValid: Object.keys(errors).length === 0, errors };
 
       case 4: // Scheduling step
@@ -754,6 +762,19 @@ export default function CreateCampaignPage() {
           campaignData
         );
 
+        // Check if backend returned an error
+        if (
+          createResponse &&
+          typeof createResponse === "object" &&
+          "success" in createResponse &&
+          !createResponse.success
+        ) {
+          const errorMessage =
+            (createResponse as { error?: string }).error ||
+            "Failed to create campaign";
+          throw new Error(errorMessage);
+        }
+
         // Extract campaign ID from response
         const createdCampaignId = createResponse?.data?.id;
 
@@ -822,12 +843,44 @@ export default function CreateCampaignPage() {
       navigate("/dashboard/campaigns");
     } catch (error) {
       console.error("Failed to create/update campaign:", error);
-      showToast(
-        "error",
-        `Failed to ${
-          isEditMode ? "update" : "create"
-        } campaign. Please try again.`
-      );
+
+      // Extract error message from backend response
+      let errorMessage = `Failed to ${
+        isEditMode ? "update" : "create"
+      } campaign. Please try again.`;
+
+      if (error instanceof Error) {
+        // Check if the error message contains backend error details
+        errorMessage = error.message;
+
+        // If the error message looks like a backend error format, use it directly
+        if (
+          error.message &&
+          error.message !== "HTTP error! status: undefined"
+        ) {
+          errorMessage = error.message;
+        }
+      } else if (error && typeof error === "object") {
+        // Check for backend error response structure
+        const backendError = error as {
+          error?: string;
+          data?: { error?: string; success?: boolean };
+          response?: { error?: string };
+          message?: string;
+        };
+
+        if (backendError.error) {
+          errorMessage = backendError.error;
+        } else if (backendError.data?.error) {
+          errorMessage = backendError.data.error;
+        } else if (backendError.response?.error) {
+          errorMessage = backendError.response.error;
+        } else if (backendError.message) {
+          errorMessage = backendError.message;
+        }
+      }
+
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -1035,6 +1088,7 @@ export default function CreateCampaignPage() {
     onCancel: handleCancel,
     validationErrors,
     clearValidationErrors: () => setValidationErrors({}),
+    setValidationErrors,
   };
 
   const renderStep = () => {

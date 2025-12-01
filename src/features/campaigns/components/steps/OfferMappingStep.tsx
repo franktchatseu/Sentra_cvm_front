@@ -8,6 +8,8 @@ import {
   ControlGroup,
 } from "../../types/campaign";
 import OfferSelectionModal from "./OfferSelectionModal";
+import { offerService } from "../../../offers/services/offerService";
+import { OfferStatusEnum } from "../../../offers/types/offer";
 import OfferFlowChart from "./OfferFlowChart";
 import ChampionChallengerOfferMapping from "../displays/ChampionChallengerOfferMapping";
 import ABTestOfferMapping from "../displays/ABTestOfferMapping";
@@ -34,6 +36,7 @@ interface OfferMappingStepProps {
   onCancel?: () => void;
   validationErrors?: { [key: string]: string };
   clearValidationErrors?: () => void;
+  setValidationErrors?: (errors: { [key: string]: string }) => void;
 }
 
 export default function OfferMappingStep({
@@ -46,6 +49,7 @@ export default function OfferMappingStep({
   controlGroup,
   validationErrors = {},
   clearValidationErrors,
+  setValidationErrors,
 }: OfferMappingStepProps) {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const hasAutoOpenedRef = useRef(false);
@@ -56,87 +60,81 @@ export default function OfferMappingStep({
     SequentialOfferMapping[]
   >([]);
   const [editingSegmentId, setEditingSegmentId] = useState<string | null>(null);
+  const [invalidOffers, setInvalidOffers] = useState<string[]>([]);
+  const [isValidatingOffers, setIsValidatingOffers] = useState(false);
 
   const isRoundRobinOrMultiLevel =
     formData.campaign_type === "round_robin" ||
     formData.campaign_type === "multiple_level";
 
-  // Auto-open modal when returning from offer creation (only once)
+  // Auto-open modal when returning from offer creation
   useEffect(() => {
-    // Check if we've already tried to auto-open (using sessionStorage to persist across remounts)
-    const autoOpenedKey = "offerModalAutoOpened";
-    const hasAutoOpened = sessionStorage.getItem(autoOpenedKey) === "true";
+    // Only try to auto-open once
+    if (hasAutoOpenedRef.current) {
+      return;
+    }
 
-    // Check if we have newly created offers and haven't auto-opened the modal yet
-    if (
-      !hasAutoOpened &&
-      !hasAutoOpenedRef.current &&
-      selectedSegments.length > 0
-    ) {
-      const campaignFlowOffersStr = sessionStorage.getItem(
-        "campaignFlowCreatedOffers"
-      );
-      const campaignFlowOfferIds: number[] = campaignFlowOffersStr
-        ? JSON.parse(campaignFlowOffersStr)
-        : [];
+    // Wait for segments to be restored before opening modal
+    if (selectedSegments.length === 0) {
+      return;
+    }
 
-      // Check if there's a newly created offer that's not already selected
-      const hasNewOffer =
-        campaignFlowOfferIds.length > 0 &&
-        campaignFlowOfferIds.some(
-          (offerId) => !selectedOffers.some((o) => o.id === String(offerId))
-        );
+    // Check if we have newly created offers
+    const campaignFlowOffersStr = sessionStorage.getItem(
+      "campaignFlowCreatedOffers"
+    );
+    const campaignFlowOfferIds: number[] = campaignFlowOffersStr
+      ? JSON.parse(campaignFlowOffersStr)
+      : [];
 
-      // Only auto-open if there are newly created offers that aren't already selected
-      if (hasNewOffer) {
-        // Mark as attempted immediately to prevent loops
-        hasAutoOpenedRef.current = true;
-        sessionStorage.setItem(autoOpenedKey, "true");
+    // Check if we're returning from offer creation
+    const returnFromOfferCreate = new URLSearchParams(
+      window.location.search
+    ).get("returnFromOfferCreate");
 
-        // Determine which segment to map to
-        let segmentToMap: string | null = null;
+    // Auto-open modal if we have newly created offers or are returning from offer creation
+    if (campaignFlowOfferIds.length > 0 || returnFromOfferCreate === "true") {
+      // Mark as attempted immediately to prevent loops
+      hasAutoOpenedRef.current = true;
 
-        if (isRoundRobinOrMultiLevel && selectedSegments.length > 0) {
-          // For Round Robin/Multiple Level, use the first segment
-          segmentToMap = selectedSegments[0].id;
-        } else if (
-          formData.campaign_type === "multiple_target_group" &&
-          selectedSegments.length > 0
-        ) {
-          // For Multiple Target Group, use the first segment
-          segmentToMap = selectedSegments[0].id;
-        } else if (
-          formData.campaign_type === "champion_challenger" &&
-          selectedSegments.length > 0
-        ) {
-          // For Champion-Challenger, use the champion (priority 1) or first segment
-          const champion = selectedSegments.find((s) => s.priority === 1);
-          segmentToMap = champion?.id || selectedSegments[0].id;
-        } else if (
-          formData.campaign_type === "ab_test" &&
-          selectedSegments.length > 0
-        ) {
-          // For A/B Test, use the first segment
-          segmentToMap = selectedSegments[0].id;
-        }
+      // Determine which segment to map to
+      let segmentToMap: string | null = null;
 
-        if (segmentToMap) {
-          // Use a small delay to ensure the component is fully mounted
-          const timer = setTimeout(() => {
-            setEditingSegmentId(segmentToMap);
-            setShowOfferModal(true);
-          }, 300);
+      if (isRoundRobinOrMultiLevel && selectedSegments.length > 0) {
+        segmentToMap = selectedSegments[0].id;
+      } else if (
+        formData.campaign_type === "multiple_target_group" &&
+        selectedSegments.length > 0
+      ) {
+        segmentToMap = selectedSegments[0].id;
+      } else if (
+        formData.campaign_type === "champion_challenger" &&
+        selectedSegments.length > 0
+      ) {
+        const champion = selectedSegments.find((s) => s.priority === 1);
+        segmentToMap = champion?.id || selectedSegments[0].id;
+      } else if (
+        formData.campaign_type === "ab_test" &&
+        selectedSegments.length > 0
+      ) {
+        segmentToMap = selectedSegments[0].id;
+      }
 
-          return () => clearTimeout(timer);
-        }
+      if (segmentToMap) {
+        // Use a delay to ensure everything is fully mounted and data is restored
+        const timer = setTimeout(() => {
+          console.log(
+            "Auto-opening offer selection modal with segment:",
+            segmentToMap
+          );
+          setEditingSegmentId(segmentToMap);
+          setShowOfferModal(true);
+        }, 800); // Increased delay to ensure data restoration is complete
+
+        return () => clearTimeout(timer);
       }
     }
-  }, [
-    selectedSegments,
-    selectedOffers,
-    formData.campaign_type,
-    isRoundRobinOrMultiLevel,
-  ]);
+  }, [selectedSegments, formData.campaign_type, isRoundRobinOrMultiLevel]);
 
   const syncSelectedOffersFromMappings = (
     mappings: Record<string, CampaignOffer[]>
@@ -225,6 +223,84 @@ export default function OfferMappingStep({
     }
   };
 
+  // Validate offer statuses - ensure all offers are ACTIVE or APPROVED
+  const validateOfferStatuses = async (
+    offers: CampaignOffer[]
+  ): Promise<{ isValid: boolean; invalidOffers: string[] }> => {
+    if (offers.length === 0) {
+      return { isValid: true, invalidOffers: [] };
+    }
+
+    const invalidOffersList: string[] = [];
+
+    try {
+      // Fetch status for each offer
+      const statusPromises = offers.map(async (offer) => {
+        try {
+          const response = await offerService.getOfferById(
+            Number(offer.id),
+            true
+          );
+          const offerData =
+            (response as { data?: { status?: string } })?.data || response;
+          const status = offerData.status;
+
+          if (
+            status !== OfferStatusEnum.ACTIVE &&
+            status !== OfferStatusEnum.APPROVED
+          ) {
+            return offer.name || offer.id;
+          }
+          return null;
+        } catch {
+          // If we can't fetch the offer, assume it's invalid
+          return offer.name || offer.id;
+        }
+      });
+
+      const results = await Promise.all(statusPromises);
+      const invalid = results.filter((name): name is string => name !== null);
+
+      return { isValid: invalid.length === 0, invalidOffers: invalid };
+    } catch (error) {
+      console.error("Error validating offer statuses:", error);
+      // On error, allow proceeding (graceful degradation)
+      return { isValid: true, invalidOffers: [] };
+    }
+  };
+
+  // Validate offers when they change
+  useEffect(() => {
+    const checkOfferStatuses = async () => {
+      if (selectedOffers.length === 0) {
+        setInvalidOffers([]);
+        return;
+      }
+
+      setIsValidatingOffers(true);
+      const validation = await validateOfferStatuses(selectedOffers);
+      setInvalidOffers(validation.invalidOffers);
+      setIsValidatingOffers(false);
+
+      // Set validation error if there are invalid offers
+      if (!validation.isValid && validation.invalidOffers.length > 0) {
+        const errorMessage = `Cannot proceed: Campaigns can only be created with offers that are Active or Approved. Please remove or activate/approve the following offers: ${validation.invalidOffers.join(
+          ", "
+        )}`;
+        if (setValidationErrors) {
+          setValidationErrors({ offers: errorMessage });
+        }
+      } else if (validation.isValid) {
+        // Clear validation errors if all offers are valid
+        if (clearValidationErrors) {
+          clearValidationErrors();
+        }
+      }
+    };
+
+    checkOfferStatuses();
+  }, [selectedOffers, clearValidationErrors]);
+
   // Transform offerMappings for specialized components (extract offerIds only)
   const simplifiedOfferMappings: { [segmentId: string]: string[] } = {};
   Object.keys(offerMappings).forEach((segmentId) => {
@@ -235,6 +311,13 @@ export default function OfferMappingStep({
 
   return (
     <div className="space-y-8">
+      {/* Validation Error Message */}
+      {validationErrors.offers && (
+        <div className="mt-8 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{validationErrors.offers}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mt-8 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -328,13 +411,6 @@ export default function OfferMappingStep({
           </div>
         )}
 
-      {/* Validation Error Message */}
-      {validationErrors.offers && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{validationErrors.offers}</p>
-        </div>
-      )}
-
       {/* Offer Selection Modal */}
       {showOfferModal && (
         <OfferSelectionModal
@@ -372,6 +448,10 @@ export default function OfferMappingStep({
                 "campaignFormData",
                 JSON.stringify(campaignData)
               );
+              // Clear the auto-opened flag so modal can open when returning
+              sessionStorage.removeItem("offerModalAutoOpened");
+              // Reset the ref so modal can open when component remounts
+              hasAutoOpenedRef.current = false;
             } catch (error) {
               console.error("Error saving campaign data:", error);
             }
