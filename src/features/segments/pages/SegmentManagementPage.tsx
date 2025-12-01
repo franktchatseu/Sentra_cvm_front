@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,6 +22,8 @@ import {
   Layers,
   Play,
   Pause,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { Segment, SegmentFilters, SortDirection } from "../types/segment";
 import { segmentService } from "../services/segmentService";
@@ -79,6 +81,13 @@ export default function SegmentManagementPage() {
   } | null>(null);
   const actionMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const dropdownMenuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
+  // Bulk selection state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedSegmentIds, setSelectedSegmentIds] = useState<Set<number>>(
+    () => new Set()
+  );
+  const headerCheckboxRef = useRef<HTMLInputElement | null>(null);
 
   // Analytics state
   const [analyticsData, setAnalyticsData] = useState<{
@@ -595,29 +604,55 @@ export default function SegmentManagementPage() {
   };
 
   const handleSaveSegment = async (segment: Segment) => {
-    await loadSegments();
-    success(
-      selectedSegment ? "Segment updated" : "Segment created",
-      `Segment "${segment.name}" has been ${
-        selectedSegment ? "updated" : "created"
-      } successfully`
-    );
+    const isNewSegment = !selectedSegment;
+
+    // For new segments, perform full recompute (first-time computation)
+    if (isNewSegment) {
+      try {
+        // Show a message that computation is starting
+        success(
+          "Segment created",
+          `Segment "${segment.name}" has been created. Computing members...`
+        );
+
+        // Perform full recompute for new segment
+        await segmentService.recomputeSegmentMembers({
+          segment_id: segment.id,
+          force: true,
+        });
+
+        // Reload segments to get updated data
+        await loadSegments();
+
+        success(
+          "Segment computed",
+          `Segment "${segment.name}" has been created and computed successfully`
+        );
+      } catch (err: unknown) {
+        // Segment was created but recompute failed - still show success for creation
+        await loadSegments();
+        showError(
+          "Computation failed",
+          `Segment "${segment.name}" was created but computation failed. You can manually recompute it later.`
+        );
+      }
+    } else {
+      // For existing segments, just reload (no automatic recompute on update)
+      await loadSegments();
+      success(
+        "Segment updated",
+        `Segment "${segment.name}" has been updated successfully`
+      );
+    }
   };
 
   const handleComputeSegment = async (segment: Segment) => {
     setShowActionMenu(null);
-    showInfo(
-      "Compute unavailable",
-      "Cannot access this functionality right now."
-    );
-    return;
-    /* eslint-disable-next-line no-unreachable */
-    setShowActionMenu(null);
     const confirmed = await confirm({
-      title: "Compute Segment",
-      message: `Do you want to compute the segment "${segment.name}"? This will refresh the member list.`,
+      title: "Refresh Segment",
+      message: `Do you want to refresh the segment "${segment.name}"? This will update the member list.`,
       type: "info",
-      confirmText: "Compute",
+      confirmText: "Refresh",
       cancelText: "Cancel",
     });
 
@@ -625,15 +660,92 @@ export default function SegmentManagementPage() {
 
     try {
       const segmentId = segment.id;
-      await segmentService.computeSegment(segmentId);
+      await segmentService.refreshSegment(segmentId);
+      // Reload segments to get updated data
+      await loadSegments();
       success(
-        "Segment computed",
-        `Segment "${segment.name}" has been computed successfully`
+        "Segment refreshed",
+        `Segment "${segment.name}" has been refreshed successfully`
       );
     } catch (err: unknown) {
       showError(
-        "Compute failed",
-        (err as Error).message || "Failed to compute segment"
+        "Refresh failed",
+        (err as Error).message || "Failed to refresh segment"
+      );
+    }
+  };
+
+  // Bulk selection handlers
+  const toggleSegmentSelection = (segmentId: number) => {
+    setSelectedSegmentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(segmentId)) {
+        next.delete(segmentId);
+      } else {
+        next.add(segmentId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    const visibleIds = filteredSegments.map((s) => s.id);
+    if (visibleIds.length === 0) return;
+
+    setSelectedSegmentIds((prev) => {
+      const next = new Set(prev);
+      const everyVisibleSelected = visibleIds.every((id) => next.has(id));
+      if (everyVisibleSelected) {
+        visibleIds.forEach((id) => next.delete(id));
+      } else {
+        visibleIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkRefresh = async () => {
+    if (selectedSegmentIds.size === 0) return;
+
+    const segmentIdsArray = Array.from(selectedSegmentIds);
+
+    // Validate: bulk refresh supports 1-50 segments
+    if (segmentIdsArray.length > 50) {
+      showError(
+        "Too many segments",
+        "Bulk refresh supports a maximum of 50 segments. Please select fewer segments."
+      );
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: "Bulk Refresh Segments",
+      message: `Do you want to refresh ${segmentIdsArray.length} segment(s)? This will update the member lists for all selected segments.`,
+      type: "info",
+      confirmText: "Refresh All",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await segmentService.batchRefreshSegments({
+        segmentIds: segmentIdsArray,
+      });
+
+      success(
+        "Segments refreshed",
+        `${segmentIdsArray.length} segment(s) have been refreshed successfully`
+      );
+
+      // Clear selection and reload segments
+      setSelectedSegmentIds(new Set());
+      setIsSelectionMode(false);
+      await loadSegments();
+    } catch (err: unknown) {
+      showError(
+        "Bulk refresh failed",
+        (err as Error).message || "Failed to refresh segments"
       );
     }
   };
@@ -717,6 +829,28 @@ export default function SegmentManagementPage() {
     return matchesSearch && matchesTags && matchesType;
   });
 
+  const visibleIds = useMemo(
+    () => filteredSegments.map((segment) => segment.id),
+    [filteredSegments]
+  );
+
+  const allVisibleSelected =
+    visibleIds.length > 0 &&
+    visibleIds.every((id) => selectedSegmentIds.has(id));
+
+  const someVisibleSelected = visibleIds.some((id) =>
+    selectedSegmentIds.has(id)
+  );
+
+  const hasSelection = selectedSegmentIds.size > 0;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate =
+        someVisibleSelected && !allVisibleSelected;
+    }
+  }, [someVisibleSelected, allVisibleSelected]);
+
   // Calculate statistics - use analytics data if available, otherwise fallback to client-side calculation
   const stats = {
     totalSegments:
@@ -772,13 +906,43 @@ export default function SegmentManagementPage() {
               {t.pages.segmentsDescription}
             </p>
           </div>
-          <button
-            onClick={handleCreateSegment}
-            className={`${tw.button} flex items-center gap-2`}
-          >
-            <Plus className="h-5 w-5" />
-            {t.pages.createSegment}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (!isSelectionMode) {
+                  // Entering selection mode - select all visible segments
+                  setIsSelectionMode(true);
+                  setSelectedSegmentIds(new Set(visibleIds));
+                } else {
+                  // Exiting selection mode - clear selection
+                  setIsSelectionMode(false);
+                  setSelectedSegmentIds(new Set());
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+              style={{
+                backgroundColor: isSelectionMode
+                  ? color.primary.action
+                  : "transparent",
+                color: isSelectionMode ? "white" : color.primary.action,
+                border: `1px solid ${color.primary.action}`,
+              }}
+            >
+              {isSelectionMode ? (
+                <CheckSquare size={16} />
+              ) : (
+                <Square size={16} />
+              )}
+              {isSelectionMode ? "Exit Selection" : "Select Segments"}
+            </button>
+            <button
+              onClick={handleCreateSegment}
+              className={`${tw.button} flex items-center gap-2`}
+            >
+              <Plus className="h-5 w-5" />
+              {t.pages.createSegment}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -963,6 +1127,33 @@ export default function SegmentManagementPage() {
         )}
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {isSelectionMode && selectedSegmentIds.size > 0 && (
+        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">
+              {selectedSegmentIds.size} segment(s) selected
+            </span>
+            <button
+              onClick={() => setSelectedSegmentIds(new Set())}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkRefresh}
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: color.primary.action }}
+            >
+              <RefreshCw size={14} />
+              Refresh All
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div
         className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
@@ -1021,6 +1212,21 @@ export default function SegmentManagementPage() {
               >
                 <thead style={{ background: color.surface.tableHeader }}>
                   <tr>
+                    {isSelectionMode && (
+                      <th
+                        className="px-3 py-4 text-sm font-medium"
+                        style={{ color: color.surface.tableHeaderText }}
+                      >
+                        <input
+                          ref={headerCheckboxRef}
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                          checked={allVisibleSelected}
+                          onChange={toggleSelectAllVisible}
+                          aria-label="Select all visible segments"
+                        />
+                      </th>
+                    )}
                     <th
                       className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{ color: color.surface.tableHeaderText }}
@@ -1068,6 +1274,23 @@ export default function SegmentManagementPage() {
                 <tbody>
                   {filteredSegments.map((segment) => (
                     <tr key={segment.id} className="transition-colors">
+                      {isSelectionMode && (
+                        <td
+                          className="px-3 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedSegmentIds.has(segment.id)}
+                            onChange={(event) => {
+                              event.stopPropagation();
+                              toggleSegmentSelection(segment.id);
+                            }}
+                            aria-label={`Select ${segment.name}`}
+                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                          />
+                        </td>
+                      )}
                       <td
                         className="px-6 py-4"
                         style={{ backgroundColor: color.surface.tablebodybg }}
@@ -1347,6 +1570,20 @@ export default function SegmentManagementPage() {
                   className={`bg-white border ${tw.borderDefault} rounded-md p-4 shadow-sm hover:shadow-md transition-shadow`}
                 >
                   <div className="flex items-start justify-between mb-3">
+                    {isSelectionMode && (
+                      <div className="mr-3 pt-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedSegmentIds.has(segment.id)}
+                          onChange={(event) => {
+                            event.stopPropagation();
+                            toggleSegmentSelection(segment.id);
+                          }}
+                          aria-label={`Select ${segment.name}`}
+                          className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="text-base font-semibold text-gray-900 mb-1">
                         {segment.name}

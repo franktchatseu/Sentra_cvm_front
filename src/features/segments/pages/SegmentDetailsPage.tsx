@@ -43,7 +43,7 @@ export default function SegmentDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { success, error: showError } = useToast();
+  const { success, error: showError, info: showInfo } = useToast();
   const confirm = useConfirm();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -276,6 +276,13 @@ export default function SegmentDetailsPage() {
   const handleCustomExport = async () => {
     if (!segment) return;
 
+    showInfo(
+      "Export unavailable",
+      "Cannot access this functionality right now."
+    );
+    setShowExportModal(false);
+    return;
+    /* eslint-disable-next-line no-unreachable */
     setIsExporting(true);
     try {
       const blob = await segmentService.exportSegment(Number(id), {
@@ -1085,9 +1092,7 @@ export default function SegmentDetailsPage() {
                             {member.joined_at ? (
                               <p className="text-xs text-gray-400">
                                 Joined:{" "}
-                                {new Date(
-                                  String(member.joined_at)
-                                ).toLocaleDateString()}
+                                <DateFormatter date={member.joined_at} />
                               </p>
                             ) : null}
                             {member.total_spent ? (

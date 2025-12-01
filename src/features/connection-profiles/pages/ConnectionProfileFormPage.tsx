@@ -10,6 +10,7 @@ import {
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { color, tw } from "../../../shared/utils/utils";
 
 interface ConnectionProfileFormPageProps {
@@ -22,6 +23,7 @@ export default function ConnectionProfileFormPage({
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(mode === "edit");
   const [saving, setSaving] = useState(false);
@@ -32,7 +34,7 @@ export default function ConnectionProfileFormPage({
     profile_code: "",
     connection_type: "database",
     load_strategy: "full",
-    environment: "development",
+    environment: "dev",
     batch_size: 1000,
     parallel_threads: 4,
     min_pool_size: 2,
@@ -60,45 +62,9 @@ export default function ConnectionProfileFormPage({
   };
 
   const ensureUniqueIdentifiers = async () => {
-    const normalizedName = formData.profile_name.trim();
-    const normalizedCode = formData.profile_code.trim();
-    const currentId = id ? Number(id) : null;
-
-    if (normalizedName) {
-      try {
-        const existingByName = await connectionProfileService.getProfileByName(
-          normalizedName
-        );
-        if (
-          existingByName &&
-          (mode === "create" || existingByName.id !== currentId)
-        ) {
-          throw new Error("A profile with this name already exists.");
-        }
-      } catch (err) {
-        if (!isLookupNotFoundError(err)) {
-          throw err;
-        }
-      }
-    }
-
-    if (normalizedCode) {
-      try {
-        const existingByCode = await connectionProfileService.getProfileByCode(
-          normalizedCode
-        );
-        if (
-          existingByCode &&
-          (mode === "create" || existingByCode.id !== currentId)
-        ) {
-          throw new Error("A profile with this code already exists.");
-        }
-      } catch (err) {
-        if (!isLookupNotFoundError(err)) {
-          throw err;
-        }
-      }
-    }
+    // Note: Backend doesn't have /name/{name} or /code/{code} endpoints
+    // Validation will be handled by backend on create/update
+    // This function is kept for potential future use but doesn't make API calls
   };
 
   const loadProfile = async () => {
@@ -156,10 +122,29 @@ export default function ConnectionProfileFormPage({
     try {
       await ensureUniqueIdentifiers();
       if (mode === "create") {
-        const payload: CreateConnectionProfilePayload = {
+        // Clean payload - remove undefined values (but keep null)
+        const cleanedPayload: Record<string, unknown> = {
           ...formData,
           valid_from: new Date(formData.valid_from).toISOString(),
         };
+
+        if (formData.valid_to) {
+          cleanedPayload.valid_to = new Date(formData.valid_to).toISOString();
+        }
+
+        // Add created_by if user is available
+        if (user?.user_id) {
+          cleanedPayload.created_by = user.user_id;
+        }
+
+        // Remove only undefined values (null is valid and should be sent)
+        Object.keys(cleanedPayload).forEach((key) => {
+          if (cleanedPayload[key] === undefined) {
+            delete cleanedPayload[key];
+          }
+        });
+
+        const payload = cleanedPayload as CreateConnectionProfilePayload;
         await connectionProfileService.createProfile(payload);
         success("Connection profile created successfully");
       } else if (id) {
@@ -176,11 +161,18 @@ export default function ConnectionProfileFormPage({
 
       navigate("/dashboard/connection-profiles");
     } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+          ? String(err.message)
+          : "Please try again later.";
+      console.error("Connection profile error:", err);
       showError(
         `Failed to ${
           mode === "create" ? "create" : "update"
         } connection profile`,
-        err instanceof Error ? err.message : "Please try again later."
+        errorMessage
       );
     } finally {
       setSaving(false);
@@ -287,16 +279,15 @@ export default function ConnectionProfileFormPage({
               </label>
               <HeadlessSelect
                 options={[
-                  { value: "development", label: "Development" },
+                  { value: "dev", label: "Dev" },
                   { value: "staging", label: "Staging" },
                   { value: "production", label: "Production" },
-                  { value: "uat", label: "UAT" },
                 ]}
                 value={formData.environment}
                 onChange={(value) =>
                   setFormData({
                     ...formData,
-                    environment: (value || "development") as any,
+                    environment: (value || "dev") as any,
                   })
                 }
               />
@@ -531,8 +522,9 @@ export default function ConnectionProfileFormPage({
                 onChange={(e) =>
                   setFormData({ ...formData, valid_from: e.target.value })
                 }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 cursor-pointer"
                 required
+                onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
               />
             </div>
             <div>
@@ -548,7 +540,8 @@ export default function ConnectionProfileFormPage({
                     valid_to: e.target.value || null,
                   })
                 }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 cursor-pointer"
+                onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
               />
             </div>
           </div>

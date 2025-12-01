@@ -171,6 +171,8 @@ export const en: Translations = {
     products: "Products",
     productsDescription: "Manage your product catalog",
     segments: "Segments",
+    segmentsDescription:
+      "Create and manage customer segments for targeted campaigns",
     customers: "Customers",
     users: "Users",
     settings: "Settings",

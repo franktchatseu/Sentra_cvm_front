@@ -966,14 +966,13 @@ function ReviewStep({
                               </span>
                             </div>
                           </div>
-                          {!isEditing ? (
-                            <button
-                              onClick={() => handleEditCreative(creative)}
-                              className="text-sm px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-                            >
-                              Edit
-                            </button>
-                          ) : (
+                          {!isEditing ? // <button
+                          //   onClick={() => handleEditCreative(creative)}
+                          //   className="text-sm px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                          // >
+                          //   Edit
+                          // </button>
+                          null : (
                             <div className="flex gap-2">
                               <button
                                 onClick={handleSaveCreative}
@@ -1572,7 +1571,7 @@ export default function CreateOfferPage() {
       case 3: // Creative step
         return true; // Creatives are optional; allow proceeding
       case 4: // Tracking step
-        return trackingSources.length > 0;
+        return true; // Tracking is optional; allow proceeding
       case 5: // Rewards step
         return true; // Rewards are optional; allow proceeding
       case 6: // Review step
@@ -1581,8 +1580,7 @@ export default function CreateOfferPage() {
           formData.name.trim() !== "" &&
           formData.code.trim() !== "" &&
           formData.offer_type &&
-          formData.category_id !== undefined &&
-          trackingSources.length > 0
+          formData.category_id !== undefined
         );
       default:
         return false;

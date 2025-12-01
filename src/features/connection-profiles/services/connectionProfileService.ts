@@ -125,6 +125,9 @@ class ConnectionProfileService {
   ): Promise<ConnectionProfileType> {
     const response = await this.request<unknown>("/", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
     });
     return this.unwrapData<ConnectionProfileType>(response);
@@ -413,20 +416,6 @@ class ConnectionProfileService {
     );
     const response = await this.request<unknown>(endpoint);
     return this.unwrapData<ConnectionProfileType[]>(response);
-  }
-
-  async getProfileByName(name: string): Promise<ConnectionProfileType> {
-    const response = await this.request<unknown>(
-      `/name/${encodeURIComponent(name)}`
-    );
-    return this.unwrapData<ConnectionProfileType>(response);
-  }
-
-  async getProfileByCode(code: string): Promise<ConnectionProfileType> {
-    const response = await this.request<unknown>(
-      `/code/${encodeURIComponent(code)}`
-    );
-    return this.unwrapData<ConnectionProfileType>(response);
   }
 
   async checkProfileValidity(

@@ -490,59 +490,31 @@ class ServerService {
 
   // ==================== Status Operations ====================
 
-  async activateServer(id: number, userId: number): Promise<ServerType> {
-    if (!userId) {
-      throw new Error("user_id is required for activate operation");
-    }
-    const queryString = this.buildQueryParams({ user_id: userId });
-    const response = await this.request<unknown>(
-      `/${id}/activate${queryString}`,
-      {
-        method: "PATCH",
-      }
-    );
+  async activateServer(id: number): Promise<ServerType> {
+    const response = await this.request<unknown>(`/${id}/activate`, {
+      method: "PATCH",
+    });
     return this.unwrapServer(response);
   }
 
-  async deactivateServer(id: number, userId: number): Promise<ServerType> {
-    if (!userId) {
-      throw new Error("user_id is required for deactivate operation");
-    }
-    const queryString = this.buildQueryParams({ user_id: userId });
-    const response = await this.request<unknown>(
-      `/${id}/deactivate${queryString}`,
-      {
-        method: "PATCH",
-      }
-    );
+  async deactivateServer(id: number): Promise<ServerType> {
+    const response = await this.request<unknown>(`/${id}/deactivate`, {
+      method: "PATCH",
+    });
     return this.unwrapServer(response);
   }
 
-  async deprecateServer(id: number, userId: number): Promise<ServerType> {
-    if (!userId) {
-      throw new Error("user_id is required for deprecate operation");
-    }
-    const queryString = this.buildQueryParams({ user_id: userId });
-    const response = await this.request<unknown>(
-      `/${id}/deprecate${queryString}`,
-      {
-        method: "PATCH",
-      }
-    );
+  async deprecateServer(id: number): Promise<ServerType> {
+    const response = await this.request<unknown>(`/${id}/deprecate`, {
+      method: "PATCH",
+    });
     return this.unwrapServer(response);
   }
 
-  async undeprecateServer(id: number, userId: number): Promise<ServerType> {
-    if (!userId) {
-      throw new Error("user_id is required for undeprecate operation");
-    }
-    const queryString = this.buildQueryParams({ user_id: userId });
-    const response = await this.request<unknown>(
-      `/${id}/undeprecate${queryString}`,
-      {
-        method: "PATCH",
-      }
-    );
+  async undeprecateServer(id: number): Promise<ServerType> {
+    const response = await this.request<unknown>(`/${id}/undeprecate`, {
+      method: "PATCH",
+    });
     return this.unwrapServer(response);
   }
 }

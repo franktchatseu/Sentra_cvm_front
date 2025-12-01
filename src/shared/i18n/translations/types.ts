@@ -183,6 +183,7 @@ export interface Translations {
     products: string;
     productsDescription: string;
     segments: string;
+    segmentsDescription: string;
     customers: string;
     users: string;
     settings: string;

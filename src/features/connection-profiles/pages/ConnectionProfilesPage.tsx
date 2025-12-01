@@ -6,20 +6,21 @@ import {
   AlertTriangle,
   BarChart3,
   CheckCircle,
+  CheckSquare,
   Database,
   Edit,
   Eye,
   Filter,
   Globe,
-  Grid,
-  List,
   Loader2,
   Plus,
   RefreshCw,
   Search,
   Server,
   Shield,
+  Square,
   Star,
+  X,
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -46,7 +47,9 @@ const CLASSIFICATION_OPTIONS = [
   "restricted",
 ];
 
-const ENVIRONMENT_FALLBACKS = ["development", "staging", "uat", "production"];
+const ENVIRONMENT_FALLBACKS = ["dev", "staging", "production"];
+
+const VALID_ENVIRONMENTS = ["dev", "staging", "production"];
 
 const DEFAULT_FILTERS = {
   connectionType: "all",
@@ -86,10 +89,10 @@ export default function ConnectionProfilesPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [serverFilter, setServerFilter] = useState("");
   const [debouncedServerFilter, setDebouncedServerFilter] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedProfileIds, setSelectedProfileIds] = useState<Set<number>>(
     new Set()
   );
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [bulkActionType, setBulkActionType] = useState<
     "activate" | "auto" | null
@@ -151,7 +154,10 @@ export default function ConnectionProfilesPage() {
             filters.connectionType,
             { limit: DEFAULT_FETCH_LIMIT, skipCache: true }
           )) || [];
-      } else if (filters.environment !== "all") {
+      } else if (
+        filters.environment !== "all" &&
+        VALID_ENVIRONMENTS.includes(filters.environment)
+      ) {
         data =
           (await connectionProfileService.getProfilesByEnvironment(
             filters.environment,
@@ -183,7 +189,10 @@ export default function ConnectionProfilesPage() {
         if (filters.connectionType !== "all") {
           searchPayload.connection_type = filters.connectionType;
         }
-        if (filters.environment !== "all") {
+        if (
+          filters.environment !== "all" &&
+          VALID_ENVIRONMENTS.includes(filters.environment)
+        ) {
           searchPayload.environment = filters.environment;
         }
         if (filters.classification !== "all") {
@@ -478,7 +487,11 @@ export default function ConnectionProfilesPage() {
       new Set(profiles.map((profile) => profile.environment))
     );
     const combined = Array.from(new Set([...fromStats, ...fromProfiles]));
-    return combined.length ? combined : ENVIRONMENT_FALLBACKS;
+    // Filter to only include valid environments
+    const validCombined = combined.filter((env) =>
+      VALID_ENVIRONMENTS.includes(env)
+    );
+    return validCombined.length ? validCombined : ENVIRONMENT_FALLBACKS;
   }, [environmentStats, profiles]);
 
   const getConnectionTypeIcon = (type: string) => {
@@ -558,163 +571,6 @@ export default function ConnectionProfilesPage() {
     },
   ];
 
-  const renderGridCard = (profile: ConnectionProfileType) => {
-    const Icon = getConnectionTypeIcon(profile.connection_type);
-    const isSelected = selectedProfileIds.has(profile.id);
-    return (
-      <div
-        key={profile.id}
-        className="border border-gray-200 rounded-md p-6 hover:shadow-md transition-all"
-        style={{ backgroundColor: color.surface.cards }}
-      >
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="p-2 rounded-md"
-              style={{ backgroundColor: `${color.primary.accent}20` }}
-            >
-              <Icon
-                className="w-5 h-5"
-                style={{ color: color.primary.accent }}
-              />
-            </div>
-            <div>
-              <h3 className={`${tw.cardHeading} text-gray-900 truncate`}>
-                {profile.profile_name}
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                {profile.profile_code}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => toggleProfileSelection(profile.id)}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            {getStatusBadge(profile)}
-          </div>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Type</span>
-            <span className="font-medium text-gray-900">
-              {profile.connection_type}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Environment</span>
-            <span className="font-medium text-gray-900">
-              {profile.environment}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Classification</span>
-            <span className="font-medium text-gray-900">
-              {profile.data_classification}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Load Strategy</span>
-            <span className="font-medium text-gray-900">
-              {profile.load_strategy}
-            </span>
-          </div>
-          {profile.contains_pii && (
-            <div className="flex items-center gap-1 text-xs text-orange-600">
-              <Shield className="w-3 h-3" />
-              Contains PII
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
-          <button
-            onClick={() => handleView(profile.id)}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-            title="View Details"
-          >
-            <Eye className="w-4 h-4 text-gray-600" />
-          </button>
-          <button
-            onClick={() => handleEdit(profile.id)}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-            title="Edit"
-          >
-            <Edit className="w-4 h-4 text-gray-600" />
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderListRow = (profile: ConnectionProfileType) => {
-    const isSelected = selectedProfileIds.has(profile.id);
-    return (
-      <div
-        key={profile.id}
-        className="border border-gray-200 rounded-md p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:shadow-md transition-all"
-        style={{ backgroundColor: color.surface.cards }}
-      >
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => toggleProfileSelection(profile.id)}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <h3 className={`${tw.cardHeading} text-gray-900`}>
-              {profile.profile_name}
-            </h3>
-            {getStatusBadge(profile)}
-          </div>
-          <p className="text-sm text-gray-500">{profile.profile_code}</p>
-        </div>
-        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-          <div>
-            <p className="text-xs uppercase text-gray-400">Type</p>
-            <p className="font-medium text-gray-900">
-              {profile.connection_type}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase text-gray-400">Environment</p>
-            <p className="font-medium text-gray-900">{profile.environment}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase text-gray-400">Classification</p>
-            <p className="font-medium text-gray-900">
-              {profile.data_classification}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase text-gray-400">Batch Size</p>
-            <p className="font-medium text-gray-900">{profile.batch_size}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleView(profile.id)}
-            className="px-3 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-          >
-            View
-          </button>
-          <button
-            onClick={() => handleEdit(profile.id)}
-            className="px-3 py-2 text-sm text-white rounded-md transition-colors"
-            style={{ backgroundColor: color.primary.action }}
-          >
-            Edit
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   const renderEmptyState = () => (
     <div
       className="rounded-md shadow-sm border border-gray-200 text-center py-16 px-4"
@@ -757,6 +613,36 @@ export default function ConnectionProfilesPage() {
           </div>
           <div className="flex gap-3">
             <button
+              onClick={() => {
+                if (!isSelectionMode) {
+                  // Entering selection mode - select all visible profiles
+                  setIsSelectionMode(true);
+                  setSelectedProfileIds(
+                    new Set(filteredProfiles.map((p) => p.id))
+                  );
+                } else {
+                  // Exiting selection mode - clear selection
+                  setIsSelectionMode(false);
+                  setSelectedProfileIds(new Set());
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+              style={{
+                backgroundColor: isSelectionMode
+                  ? color.primary.action
+                  : "transparent",
+                color: isSelectionMode ? "white" : color.primary.action,
+                border: `1px solid ${color.primary.action}`,
+              }}
+            >
+              {isSelectionMode ? (
+                <CheckSquare size={16} />
+              ) : (
+                <Square size={16} />
+              )}
+              {isSelectionMode ? "Cancel Selection" : "Select Profiles"}
+            </button>
+            <button
               onClick={() =>
                 navigate("/dashboard/connection-profiles/analytics")
               }
@@ -783,53 +669,28 @@ export default function ConnectionProfilesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {(loadingStats ? Array(4).fill(null) : statsCards).map(
-            (card, index) => {
-              if (loadingStats) {
-                return (
-                  <div
-                    key={`stats-skeleton-${index}`}
-                    className="rounded-md border border-gray-200 bg-white p-6 shadow-sm animate-pulse"
-                  >
-                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
-                    <div className="h-8 bg-gray-200 rounded w-2/3" />
-                  </div>
-                );
-              }
-
-              const Icon = card.icon;
-              return (
-                <div
-                  key={card.name}
-                  className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-5 w-5" style={{ color: card.color }} />
-                    <p className="text-sm font-medium text-gray-600">
-                      {card.name}
-                    </p>
-                  </div>
-                  <p className="mt-2 text-3xl font-bold text-gray-900">
-                    {card.value}
-                  </p>
+          {statsCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.name}
+                className="rounded-md border border-gray-200 bg-white p-6 shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className="h-5 w-5" style={{ color: card.color }} />
+                  <p className="text-sm font-medium text-black">{card.name}</p>
                 </div>
-              );
-            }
-          )}
+                <p className="mt-2 text-3xl font-bold text-black">
+                  {loadingStats ? "..." : card.value}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
-        {filteredProfiles.length > 0 && (
+        {isSelectionMode && selectedProfileIds.size > 0 && (
           <div className="rounded-md border border-gray-200 bg-white px-4 py-3 shadow-sm flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <button
-                type="button"
-                onClick={selectAllVisible}
-                className="px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {selectedProfileIds.size === filteredProfiles.length
-                  ? "Clear Selection"
-                  : "Select All"}
-              </button>
+            <div className="flex items-center gap-3 text-sm text-black">
               <span>
                 {selectedCount} selected / {filteredProfiles.length} visible
               </span>
@@ -845,7 +706,7 @@ export default function ConnectionProfilesPage() {
                 {bulkActionLoading && bulkActionType === "activate" && (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 )}
-                Activate Selected
+                Activate
               </button>
               <button
                 type="button"
@@ -902,28 +763,6 @@ export default function ConnectionProfilesPage() {
                 <Filter className="w-4 h-4" />
                 Filters
               </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-gray-200 text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-                title="Grid View"
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === "list"
-                    ? "bg-gray-200 text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-                title="List View"
-              >
-                <List className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
@@ -943,12 +782,155 @@ export default function ConnectionProfilesPage() {
           </div>
         ) : filteredProfiles.length === 0 ? (
           renderEmptyState()
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProfiles.map(renderGridCard)}
-          </div>
         ) : (
-          <div className="space-y-3">{filteredProfiles.map(renderListRow)}</div>
+          <div className="overflow-x-auto">
+            <table
+              className="w-full min-w-[1000px] text-sm"
+              style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+            >
+              <thead style={{ background: color.surface.tableHeader }}>
+                <tr className="text-left text-xs uppercase tracking-wide text-black">
+                  {isSelectionMode && (
+                    <th
+                      className="px-3 py-3 text-sm font-medium whitespace-nowrap"
+                      style={{ borderTopLeftRadius: "0.375rem" }}
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        checked={
+                          selectedProfileIds.size > 0 &&
+                          selectedProfileIds.size === filteredProfiles.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedProfileIds(
+                              new Set(filteredProfiles.map((p) => p.id))
+                            );
+                          } else {
+                            setSelectedProfileIds(new Set());
+                          }
+                        }}
+                        aria-label="Select all profiles"
+                      />
+                    </th>
+                  )}
+                  <th
+                    className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap"
+                    style={{
+                      ...(!isSelectionMode && {
+                        borderTopLeftRadius: "0.375rem",
+                      }),
+                    }}
+                  >
+                    Profile Name
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap">
+                    Code
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap">
+                    Type
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap">
+                    Environment
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap">
+                    Classification
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap">
+                    Status
+                  </th>
+                  <th
+                    className="px-4 sm:px-6 py-3 sm:py-4 text-right text-sm font-medium whitespace-nowrap"
+                    style={{ borderTopRightRadius: "0.375rem" }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProfiles.map((profile) => {
+                  const isSelected = selectedProfileIds.has(profile.id);
+                  return (
+                    <tr
+                      key={profile.id}
+                      className="transition-colors text-sm"
+                      style={{ backgroundColor: color.surface.tablebodybg }}
+                    >
+                      {isSelectionMode && (
+                        <td
+                          className="px-3 py-3 whitespace-nowrap"
+                          style={{
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleProfileSelection(profile.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                          />
+                        </td>
+                      )}
+                      <td
+                        className="px-4 sm:px-6 py-4 whitespace-nowrap"
+                        style={{
+                          ...(!isSelectionMode && {
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }),
+                        }}
+                      >
+                        <span className="font-medium text-black">
+                          {profile.profile_name}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-black">
+                        {profile.profile_code}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-black">
+                        {profile.connection_type}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-black">
+                        {profile.environment}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-black">
+                        {profile.data_classification}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(profile)}
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-4 whitespace-nowrap text-right"
+                        style={{
+                          borderTopRightRadius: "0.375rem",
+                          borderBottomRightRadius: "0.375rem",
+                        }}
+                      >
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleView(profile.id)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4 text-black" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(profile.id)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4 text-black" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -971,9 +953,9 @@ export default function ConnectionProfilesPage() {
                 <button
                   type="button"
                   onClick={closeFiltersPanel}
-                  className="text-gray-500 hover:text-gray-800"
+                  className="text-gray-500 hover:text-gray-800 transition-colors"
                 >
-                  ×
+                  <X size={24} />
                 </button>
               </div>
               <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-120px)]">

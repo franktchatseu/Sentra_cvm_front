@@ -137,14 +137,10 @@ export default function ServerDetailsPage() {
 
     setActionState(action);
     try {
-      if (!user?.user_id) {
-        showError("Error", "User ID is required");
-        return;
-      }
       if (action === "activate") {
-        await serverService.activateServer(server.id, user.user_id);
+        await serverService.activateServer(server.id);
       } else {
-        await serverService.deactivateServer(server.id, user.user_id);
+        await serverService.deactivateServer(server.id);
       }
       success(
         `Server ${action === "activate" ? "activated" : "deactivated"}`,
@@ -179,14 +175,10 @@ export default function ServerDetailsPage() {
 
     setActionState("deprecate");
     try {
-      if (!user?.user_id) {
-        showError("Error", "User ID is required");
-        return;
-      }
       if (nextAction === "deprecate") {
-        await serverService.deprecateServer(server.id, user.user_id);
+        await serverService.deprecateServer(server.id);
       } else {
-        await serverService.undeprecateServer(server.id, user.user_id);
+        await serverService.undeprecateServer(server.id);
       }
       success(
         `Server ${nextAction === "deprecate" ? "deprecated" : "restored"}`,

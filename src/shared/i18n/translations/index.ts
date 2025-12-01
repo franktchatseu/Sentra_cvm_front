@@ -13,3 +13,4 @@ export const translations: Record<"en" | "fr" | "es" | "sw", Translations> = {
   es,
   sw,
 };
+

@@ -174,6 +174,8 @@ export const sw: Translations = {
     products: "Bidhaa",
     productsDescription: "Simamia katalogi yako ya bidhaa",
     segments: "Sehemu",
+    segmentsDescription:
+      "Unda na usimamie sehemu za wateja kwa kampeni zilizolengwa",
     customers: "Wateja",
     users: "Watumiaji",
     settings: "Mipangilio",

@@ -29,6 +29,7 @@ import {
 import { colors } from "../../../shared/utils/tokens";
 import { color, tw } from "../../../shared/utils/utils";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
+import DateFormatter from "../../../shared/components/DateFormatter";
 import type {
   CustomerRow,
   CustomerSearchResultsResponse,
@@ -289,17 +290,6 @@ const generateCustomerRelatedData = (customer: CustomerRow) => {
   });
 
   return { segments, offers, events, lists };
-};
-
-const formatDisplayDate = (value?: string | null) => {
-  if (!value) return "—";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 };
 
 type TabType =
@@ -1215,7 +1205,17 @@ export default function CustomerSearchResultsPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            {formatDisplayDate(segment.addedDate)}
+                            {segment.addedDate ? (
+                              <DateFormatter
+                                date={segment.addedDate}
+                                useLocale
+                                year="numeric"
+                                month="short"
+                                day="numeric"
+                              />
+                            ) : (
+                              "—"
+                            )}
                           </td>
                         </tr>
                       ))
@@ -1308,7 +1308,17 @@ export default function CustomerSearchResultsPage() {
                               backgroundColor: color.surface.tablebodybg,
                             }}
                           >
-                            {formatDisplayDate(offer.redeemedDate)}
+                            {offer.redeemedDate ? (
+                              <DateFormatter
+                                date={offer.redeemedDate}
+                                useLocale
+                                year="numeric"
+                                month="short"
+                                day="numeric"
+                              />
+                            ) : (
+                              "—"
+                            )}
                           </td>
                         </tr>
                       ))
@@ -1384,7 +1394,17 @@ export default function CustomerSearchResultsPage() {
                             backgroundColor: color.surface.tablebodybg,
                           }}
                         >
-                          {formatDisplayDate(list.subscribedDate)}
+                          {list.subscribedDate ? (
+                            <DateFormatter
+                              date={list.subscribedDate}
+                              useLocale
+                              year="numeric"
+                              month="short"
+                              day="numeric"
+                            />
+                          ) : (
+                            "—"
+                          )}
                         </td>
                         <td
                           className="px-6 py-4 text-sm text-gray-900"

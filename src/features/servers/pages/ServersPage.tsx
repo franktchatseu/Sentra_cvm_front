@@ -8,8 +8,10 @@ import {
   Eye,
   HeartPulse,
   Loader2,
+  Play,
   Plus,
-  Power,
+  PowerOff,
+  RotateCcw,
   Search,
   Server as ServerIcon,
   Shield,
@@ -555,22 +557,22 @@ export default function ServersPage() {
 
     setActionState({ id: server.id, action });
     try {
-      if (!userId) {
-        showError("Error", "User ID is required");
-        return;
-      }
-      if (action === "activate") {
-        await serverService.activateServer(server.id, userId);
-      } else {
-        await serverService.deactivateServer(server.id, userId);
-      }
+      const updatedServer =
+        action === "activate"
+          ? await serverService.activateServer(server.id)
+          : await serverService.deactivateServer(server.id);
+
+      // Update the server in place to maintain position
+      setSourceServers((prev) =>
+        prev.map((s) => (s.id === server.id ? updatedServer : s))
+      );
+
       success(
         `Server ${action === "activate" ? "activated" : "deactivated"}`,
         `${server.name} is now ${
           action === "activate" ? "active" : "inactive"
         }.`
       );
-      await loadServers();
     } catch (err) {
       showError(
         `Failed to ${action} server`,
@@ -598,19 +600,16 @@ export default function ServersPage() {
 
     setActionState({ id: server.id, action: "deprecate" });
     try {
-      if (!userId || userId === undefined || userId === null) {
-        showError(
-          "Error",
-          "User ID is required. Please ensure you are logged in."
-        );
-        setActionState(null);
-        return;
-      }
-      if (nextAction === "deprecate") {
-        await serverService.deprecateServer(server.id, userId);
-      } else {
-        await serverService.undeprecateServer(server.id, userId);
-      }
+      const updatedServer =
+        nextAction === "deprecate"
+          ? await serverService.deprecateServer(server.id)
+          : await serverService.undeprecateServer(server.id);
+
+      // Update the server in place to maintain position
+      setSourceServers((prev) =>
+        prev.map((s) => (s.id === server.id ? updatedServer : s))
+      );
+
       success(
         `Server ${nextAction === "deprecate" ? "deprecated" : "restored"}`,
         `${server.name} ${
@@ -619,7 +618,6 @@ export default function ServersPage() {
             : "is available again"
         }.`
       );
-      await loadServers();
     } catch (err) {
       showError(
         `Failed to ${nextAction} server`,
@@ -792,7 +790,7 @@ export default function ServersPage() {
               className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: color.primary.action }}
             >
-              <Power size={14} />
+              <Play size={14} />
               Activate
             </button>
             <button
@@ -800,7 +798,7 @@ export default function ServersPage() {
               disabled={isBulkActionLoading}
               className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
             >
-              <Power size={14} className="rotate-180" />
+              <PowerOff size={14} />
               Deactivate
             </button>
           </div>
@@ -1080,8 +1078,10 @@ export default function ServersPage() {
                           >
                             {activationLoading ? (
                               <Loader2 size={16} className="animate-spin" />
+                            ) : server.is_active ? (
+                              <PowerOff size={16} />
                             ) : (
-                              <Power size={16} />
+                              <Play size={16} />
                             )}
                           </button>
                           <button
@@ -1104,6 +1104,8 @@ export default function ServersPage() {
                           >
                             {deprecateLoading ? (
                               <Loader2 size={16} className="animate-spin" />
+                            ) : server.is_deprecated ? (
+                              <RotateCcw size={16} />
                             ) : (
                               <Archive size={16} />
                             )}

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Gift } from "lucide-react";
 import {
   CreateCampaignRequest,
@@ -43,10 +44,13 @@ export default function OfferMappingStep({
   setSelectedOffers,
   segmentOfferMappings = [],
   setSegmentOfferMappings,
+  controlGroup,
   validationErrors = {},
   clearValidationErrors,
 }: OfferMappingStepProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showOfferModal, setShowOfferModal] = useState(false);
+  const [hasAutoOpenedModal, setHasAutoOpenedModal] = useState(false);
   const [offerMappings, setOfferMappings] = useState<{
     [segmentId: string]: CampaignOffer[];
   }>({});
@@ -58,6 +62,73 @@ export default function OfferMappingStep({
   const isRoundRobinOrMultiLevel =
     formData.campaign_type === "round_robin" ||
     formData.campaign_type === "multiple_level";
+
+  // Auto-open modal when returning from offer creation (only once)
+  useEffect(() => {
+    // Check if we have newly created offers and haven't auto-opened the modal yet
+    if (!hasAutoOpenedModal && selectedSegments.length > 0) {
+      const campaignFlowOffersStr = sessionStorage.getItem(
+        "campaignFlowCreatedOffers"
+      );
+      const campaignFlowOfferIds: number[] = campaignFlowOffersStr
+        ? JSON.parse(campaignFlowOffersStr)
+        : [];
+
+      // Check if there's a newly created offer that's not already selected
+      const hasNewOffer =
+        campaignFlowOfferIds.length > 0 &&
+        campaignFlowOfferIds.some(
+          (offerId) => !selectedOffers.some((o) => o.id === String(offerId))
+        );
+
+      // Only auto-open if there are newly created offers that aren't already selected
+      if (hasNewOffer) {
+        // Determine which segment to map to
+        let segmentToMap: string | null = null;
+
+        if (isRoundRobinOrMultiLevel && selectedSegments.length > 0) {
+          // For Round Robin/Multiple Level, use the first segment
+          segmentToMap = selectedSegments[0].id;
+        } else if (
+          formData.campaign_type === "multiple_target_group" &&
+          selectedSegments.length > 0
+        ) {
+          // For Multiple Target Group, use the first segment
+          segmentToMap = selectedSegments[0].id;
+        } else if (
+          formData.campaign_type === "champion_challenger" &&
+          selectedSegments.length > 0
+        ) {
+          // For Champion-Challenger, use the champion (priority 1) or first segment
+          const champion = selectedSegments.find((s) => s.priority === 1);
+          segmentToMap = champion?.id || selectedSegments[0].id;
+        } else if (
+          formData.campaign_type === "ab_test" &&
+          selectedSegments.length > 0
+        ) {
+          // For A/B Test, use the first segment
+          segmentToMap = selectedSegments[0].id;
+        }
+
+        if (segmentToMap) {
+          // Use a small delay to ensure the component is fully mounted
+          const timer = setTimeout(() => {
+            setEditingSegmentId(segmentToMap);
+            setShowOfferModal(true);
+            setHasAutoOpenedModal(true);
+          }, 100);
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [
+    hasAutoOpenedModal,
+    selectedSegments,
+    selectedOffers,
+    formData.campaign_type,
+    isRoundRobinOrMultiLevel,
+  ]);
 
   const syncSelectedOffersFromMappings = (
     mappings: Record<string, CampaignOffer[]>
@@ -263,6 +334,8 @@ export default function OfferMappingStep({
           onClose={() => {
             setShowOfferModal(false);
             setEditingSegmentId(null);
+            // Reset auto-open flag when modal is manually closed so it can be opened again if needed
+            // But don't reset hasAutoOpenedModal as we only want to auto-open once per return
           }}
           onSelect={handleOfferSelect}
           selectedOffers={
@@ -271,6 +344,31 @@ export default function OfferMappingStep({
           onCreateNew={() => {
             // Navigation is handled inside OfferSelectionModal
             setShowOfferModal(false);
+          }}
+          onSaveCampaignData={() => {
+            // Save campaign form data to sessionStorage before navigating
+            try {
+              const campaignData = {
+                formData: JSON.parse(JSON.stringify(formData)),
+                selectedSegments: JSON.parse(JSON.stringify(selectedSegments)),
+                selectedOffers: JSON.parse(JSON.stringify(selectedOffers)),
+                segmentOfferMappings: JSON.parse(
+                  JSON.stringify(segmentOfferMappings)
+                ),
+                controlGroup: JSON.parse(JSON.stringify(controlGroup)),
+                currentStep: 3,
+              };
+              console.log(
+                "Saving campaign data before navigating:",
+                campaignData
+              );
+              sessionStorage.setItem(
+                "campaignFormData",
+                JSON.stringify(campaignData)
+              );
+            } catch (error) {
+              console.error("Error saving campaign data:", error);
+            }
           }}
         />
       )}

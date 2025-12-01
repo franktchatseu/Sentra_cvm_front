@@ -12,6 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import DateFormatter from "../../../shared/components/DateFormatter";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
@@ -377,13 +378,14 @@ function JobTypeViewModal({
                     Created At
                   </label>
                   <p className="text-sm text-gray-900">
-                    {new Date(jobType.created_at).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    <DateFormatter
+                      date={jobType.created_at}
+                      includeTime
+                      useLocale
+                      year="numeric"
+                      month="short"
+                      day="numeric"
+                    />
                   </p>
                 </div>
               </div>
@@ -881,7 +883,7 @@ export default function JobTypesPage() {
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className="text-sm text-gray-600">
-                        {new Date(jobType.created_at).toLocaleDateString()}
+                        <DateFormatter date={jobType.created_at} />
                       </span>
                     </td>
                     <td

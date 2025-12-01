@@ -394,16 +394,17 @@ class SegmentService {
 
   /**
    * POST /segments/:id/duplicate - Duplicate segment
+   * NOTE: Endpoint not implemented on backend - removed to avoid confusion
    */
-  async duplicateSegment(
-    id: number,
-    request: DuplicateSegmentRequest
-  ): Promise<ApiSuccessResponse<SegmentType>> {
-    return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/duplicate`, {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
-  }
+  // async duplicateSegment(
+  //   id: number,
+  //   request: DuplicateSegmentRequest
+  // ): Promise<ApiSuccessResponse<SegmentType>> {
+  //   return this.request<ApiSuccessResponse<SegmentType>>(`/${id}/duplicate`, {
+  //     method: "POST",
+  //     body: JSON.stringify(request),
+  //   });
+  // }
 
   /**
    * GET /segments/search - Search segments
@@ -542,14 +543,30 @@ class SegmentService {
 
   /**
    * POST /segments/recompute-segment-members - Recompute segment members
+   * Note: Only accepts a single segment_id, not bulk
    */
   async recomputeSegmentMembers(request: {
-    segment_ids?: number[];
+    segment_id: number;
     force?: boolean;
   }): Promise<ApiSuccessResponse<{ recomputed: number; message: string }>> {
     return this.request<
       ApiSuccessResponse<{ recomputed: number; message: string }>
     >("/recompute-segment-members", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  }
+
+  /**
+   * POST /segments/batch/refresh - Bulk refresh segments (lighter operation)
+   * Supports 1-50 segments
+   */
+  async batchRefreshSegments(request: {
+    segmentIds: number[];
+  }): Promise<ApiSuccessResponse<{ refreshed: number; message: string }>> {
+    return this.request<
+      ApiSuccessResponse<{ refreshed: number; message: string }>
+    >("/batch/refresh", {
       method: "POST",
       body: JSON.stringify(request),
     });
@@ -1129,19 +1146,20 @@ class SegmentService {
 
   /**
    * POST /segments/:id/compute - Compute segment
+   * NOTE: Endpoint not implemented on backend - removed to avoid confusion
    */
-  async computeSegment(
-    id: number,
-    request?: ComputeSegmentRequest
-  ): Promise<ApiSuccessResponse<ComputationStatusResponse>> {
-    return this.request<ApiSuccessResponse<ComputationStatusResponse>>(
-      `/${id}/compute`,
-      {
-        method: "POST",
-        body: JSON.stringify(request || {}),
-      }
-    );
-  }
+  // async computeSegment(
+  //   id: number,
+  //   request?: ComputeSegmentRequest
+  // ): Promise<ApiSuccessResponse<ComputationStatusResponse>> {
+  //   return this.request<ApiSuccessResponse<ComputationStatusResponse>>(
+  //     `/${id}/compute`,
+  //     {
+  //       method: "POST",
+  //       body: JSON.stringify(request || {}),
+  //     }
+  //   );
+  // }
 
   /**
    * GET /segments/:id/computation-status/:jobid - Get computation status
@@ -1405,24 +1423,25 @@ class SegmentService {
 
   /**
    * GET /segments/:id/export - Export segment
+   * NOTE: Endpoint not implemented on backend - removed to avoid confusion
    */
-  async exportSegment(id: number, query?: ExportSegmentQuery): Promise<Blob> {
-    const queryString = this.buildQueryParams({ format: query?.format });
-    const url = `${BASE_URL}/${id}/export${queryString}`;
+  // async exportSegment(id: number, query?: ExportSegmentQuery): Promise<Blob> {
+  //   const queryString = this.buildQueryParams({ format: query?.format });
+  //   const url = `${BASE_URL}/${id}/export${queryString}`;
 
-    const response = await fetch(url, {
-      headers: getAuthHeaders(),
-    });
+  //   const response = await fetch(url, {
+  //     headers: getAuthHeaders(),
+  //   });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`
-      );
-    }
+  //   if (!response.ok) {
+  //     const errorData = await response.json().catch(() => ({}));
+  //     throw new Error(
+  //       errorData.error || `HTTP error! status: ${response.status}`
+  //     );
+  //   }
 
-    return response.blob();
-  }
+  //   return response.blob();
+  // }
 
   /**
    * POST /segments/:id/export/custom - Custom export

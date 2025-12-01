@@ -1,4 +1,4 @@
-import { Save } from "lucide-react";
+import { Save, HelpCircle } from "lucide-react";
 import {
   CreateProductRequest,
   UpdateProductRequest,
@@ -7,6 +7,7 @@ import {
 } from "../types/product";
 import MultiCategorySelector from "../../../shared/components/MultiCategorySelector";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { tw, color } from "../../../shared/utils/utils";
 
 interface ProductFormProps {
@@ -238,8 +239,6 @@ export default function ProductForm({
                 onChange={onCategoryIdsChange}
                 placeholder="Select catalog(s)"
                 entityType="product"
-                allowCreate={true}
-                onCreateCategory={() => onShowCreateModal(true)}
                 refreshTrigger={refreshTrigger}
                 className="w-full"
               />
@@ -249,46 +248,50 @@ export default function ProductForm({
             <div className="grid gap-5 md:grid-cols-2">
               <div>
                 <label
-                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2 flex items-center gap-2 group`}
                 >
                   Scope
+                  <HelpCircle
+                    className="w-4 h-4 text-gray-400 cursor-help opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Scope determines product availability: Segmented = available only to specific customer segments, Open Market = available to all customers"
+                  />
                 </label>
-                <select
+                <HeadlessSelect
+                  options={scopeOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
                   value={formData.scope || "segment"}
-                  onChange={(e) =>
-                    onInputChange("scope", e.target.value as ProductScope)
+                  onChange={(value) =>
+                    onInputChange("scope", value as ProductScope)
                   }
-                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all bg-white"
-                  style={{ borderColor: color.border.default }}
-                >
-                  {scopeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select scope"
+                  className="w-full"
+                />
               </div>
 
               <div>
                 <label
-                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2 flex items-center gap-2 group`}
                 >
                   Unit
+                  <HelpCircle
+                    className="w-4 h-4 text-gray-400 cursor-help opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Unit defines the measurement type for this product (e.g., Data in MB, SMS count, Airtime, Minutes, etc.)"
+                  />
                 </label>
-                <select
+                <HeadlessSelect
+                  options={unitOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
                   value={formData.unit || "data_mb"}
-                  onChange={(e) =>
-                    onInputChange("unit", e.target.value as ProductUnit)
+                  onChange={(value) =>
+                    onInputChange("unit", value as ProductUnit)
                   }
-                  className="w-full px-4 py-2.5 border rounded-md text-sm transition-all bg-white"
-                  style={{ borderColor: color.border.default }}
-                >
-                  {unitOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select unit"
+                  className="w-full"
+                />
               </div>
             </div>
 
@@ -316,9 +319,13 @@ export default function ProductForm({
 
               <div>
                 <label
-                  className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+                  className={`block text-sm font-medium ${tw.textPrimary} mb-2 flex items-center gap-2 group`}
                 >
                   Validity (Hours)
+                  <HelpCircle
+                    className="w-4 h-4 text-gray-400 cursor-help opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Validity period specifies how long the product remains active after purchase (e.g., 24 hours = product expires 24 hours after activation). This should be set together with the Value field."
+                  />
                 </label>
                 <input
                   type="number"
@@ -334,6 +341,14 @@ export default function ProductForm({
                   className="w-full px-4 py-2.5 border rounded-md text-sm transition-all"
                   style={{ borderColor: color.border.default }}
                   placeholder="e.g., 72"
+                  onFocus={(e) => {
+                    e.target.style.borderColor = color.primary.accent;
+                    e.target.style.boxShadow = `0 0 0 3px ${color.primary.accent}20`;
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = color.border.default;
+                    e.target.style.boxShadow = "none";
+                  }}
                 />
               </div>
             </div>

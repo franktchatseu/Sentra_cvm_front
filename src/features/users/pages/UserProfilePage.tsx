@@ -14,6 +14,7 @@ import { UserType, UpdateUserRequest } from "../types/user";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import DateFormatter from "../../../shared/components/DateFormatter";
 import { color, tw, button } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useLanguage } from "../../../contexts/LanguageContext";
@@ -174,24 +175,6 @@ export default function UserProfilePage() {
       });
     }
     setIsEditing(false);
-  };
-
-  const formatDate = (dateString?: string | null, includeTime = false) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return includeTime
-      ? date.toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
   };
 
   const getStatusColor = (status?: string) => {
@@ -624,7 +607,11 @@ export default function UserProfilePage() {
                 Last Login
               </label>
               <p className={`text-sm ${tw.textPrimary}`}>
-                {formatDate(lastLoginValue, true)}
+                {lastLoginValue ? (
+                  <DateFormatter date={lastLoginValue} includeTime useLocale />
+                ) : (
+                  "N/A"
+                )}
               </p>
             </div>
             <div>
@@ -634,7 +621,11 @@ export default function UserProfilePage() {
                 Account Created
               </label>
               <p className={`text-sm ${tw.textPrimary}`}>
-                {formatDate(user.created_at)}
+                {user.created_at ? (
+                  <DateFormatter date={user.created_at} useLocale />
+                ) : (
+                  "N/A"
+                )}
               </p>
             </div>
             <div>
@@ -644,7 +635,11 @@ export default function UserProfilePage() {
                 Last Updated
               </label>
               <p className={`text-sm ${tw.textPrimary}`}>
-                {formatDate(user.updated_at)}
+                {user.updated_at ? (
+                  <DateFormatter date={user.updated_at} useLocale />
+                ) : (
+                  "N/A"
+                )}
               </p>
             </div>
           </div>

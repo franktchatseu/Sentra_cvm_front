@@ -273,37 +273,17 @@ function AssignItemsModal({
               }
               case "products": {
                 const catalogTag = buildCatalogTag(catalogId);
-                // Fetch all products and filter client-side (same approach as campaigns/offers/segments)
-                // This avoids using getProductsByTag which doesn't support skipCache
-                const [productsResponse] = await Promise.all([
+                const [productsResponse, taggedResponse] = await Promise.all([
                   productService.getProductsByCategory(Number(catalogId), {
                     limit: 100,
                     skipCache: true,
                   }),
+                  productService.getProductsByTag({
+                    tag: catalogTag,
+                    limit: 100,
+                    skipCache: true,
+                  }),
                 ]);
-
-                // Fetch all products with pagination to filter by tags client-side
-                const limit = 100;
-                let offset = 0;
-                const allProductsList: Product[] = [];
-                let hasMore = true;
-
-                while (hasMore) {
-                  const allProductsResponse =
-                    await productService.getAllProducts({
-                      limit: limit,
-                      offset: offset,
-                      skipCache: true,
-                    });
-
-                  const products = allProductsResponse.data || [];
-                  allProductsList.push(...products);
-
-                  const total = allProductsResponse.pagination?.total || 0;
-                  hasMore =
-                    allProductsList.length < total && products.length === limit;
-                  offset += limit;
-                }
 
                 const assignedSet = new Set<number | string>();
                 // Add products from primary category
@@ -312,13 +292,9 @@ function AssignItemsModal({
                     assignedSet.add(product.id);
                   }
                 });
-                // Add products with catalog tag (filtered client-side)
-                allProductsList.forEach((product: Product) => {
-                  if (
-                    product?.id !== undefined &&
-                    Array.isArray(product.tags) &&
-                    product.tags.includes(catalogTag)
-                  ) {
+                // Add products with catalog tag from endpoint
+                (taggedResponse.data || []).forEach((product: Product) => {
+                  if (product?.id !== undefined) {
                     assignedSet.add(product.id);
                   }
                 });
@@ -1338,9 +1314,7 @@ function AssignItemsModal({
                           </td>
                           <td
                             className={`px-6 py-4 ${
-                              !isAssigned
-                                ? "cursor-pointer hover:bg-gray-100"
-                                : ""
+                              !isAssigned ? "cursor-pointer" : ""
                             }`}
                             onClick={() => {
                               if (!isAssigned) {
@@ -1349,13 +1323,7 @@ function AssignItemsModal({
                             }}
                           >
                             <div>
-                              <div
-                                className={`font-semibold ${
-                                  !isAssigned
-                                    ? "text-gray-900 hover:text-blue-600"
-                                    : "text-gray-900"
-                                } transition-colors`}
-                              >
+                              <div className="font-semibold text-gray-900">
                                 {item.name}
                               </div>
                               {isAssigned && (

@@ -267,6 +267,7 @@ function AssignItemsPage({ itemType }: AssignItemsPageProps) {
                   productService.getProductsByTag({
                     tag: catalogTag,
                     limit: 500,
+                    skipCache: true,
                   }),
                 ]);
 

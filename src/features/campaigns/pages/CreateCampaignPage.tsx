@@ -314,7 +314,91 @@ export default function CreateCampaignPage() {
     [showToast, navigate]
   );
 
+  // Restore campaign data when returning from offer creation
   useEffect(() => {
+    // First check if returning from offer creation - restore saved campaign data
+    // This should run regardless of edit/duplicate mode
+    const returnFromOfferCreate = searchParams.get("returnFromOfferCreate");
+    const stepParam = searchParams.get("step");
+
+    if (
+      (returnFromOfferCreate === "true" || stepParam === "3") &&
+      !id &&
+      !duplicateIdParam
+    ) {
+      const savedData = sessionStorage.getItem("campaignFormData");
+      console.log("Checking for saved campaign data. Found:", !!savedData);
+
+      if (savedData) {
+        try {
+          const campaignData = JSON.parse(savedData);
+          console.log("Restoring campaign data:", {
+            formData: campaignData.formData,
+            segmentsCount: campaignData.selectedSegments?.length || 0,
+            segments: campaignData.selectedSegments,
+            offersCount: campaignData.selectedOffers?.length || 0,
+            mappingsCount: campaignData.segmentOfferMappings?.length || 0,
+          });
+
+          // Restore all data
+          if (campaignData.formData) {
+            setFormData(campaignData.formData);
+          }
+          if (
+            campaignData.selectedSegments &&
+            Array.isArray(campaignData.selectedSegments)
+          ) {
+            console.log("Restoring segments:", campaignData.selectedSegments);
+            setSelectedSegments(campaignData.selectedSegments);
+          }
+          if (
+            campaignData.selectedOffers &&
+            Array.isArray(campaignData.selectedOffers)
+          ) {
+            setSelectedOffers(campaignData.selectedOffers);
+          }
+          if (
+            campaignData.segmentOfferMappings &&
+            Array.isArray(campaignData.segmentOfferMappings)
+          ) {
+            setSegmentOfferMappings(campaignData.segmentOfferMappings);
+          }
+          if (campaignData.controlGroup) {
+            setControlGroup(campaignData.controlGroup);
+          }
+
+          setCurrentStep(3);
+
+          // Clean up URL parameters
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("returnFromOfferCreate");
+          newParams.delete("step");
+          setSearchParams(newParams, { replace: true });
+          return; // Exit early to prevent loading campaign data
+        } catch (error) {
+          console.error("Failed to restore campaign data:", error);
+          setCurrentStep(3);
+
+          // Clean up URL parameters even on error
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("returnFromOfferCreate");
+          newParams.delete("step");
+          setSearchParams(newParams, { replace: true });
+          return;
+        }
+      } else {
+        console.log("No saved campaign data found in sessionStorage");
+        setCurrentStep(3);
+        // Clean up URL parameters
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("returnFromOfferCreate");
+        newParams.delete("step");
+        setSearchParams(newParams, { replace: true });
+        return;
+      }
+    }
+
+    // Then handle edit/duplicate mode (only if not returning from offer creation)
     if (id) {
       // Edit mode - modifying existing campaign
       setIsEditMode(true);
@@ -326,19 +410,14 @@ export default function CreateCampaignPage() {
       setIsDuplicateMode(true);
       loadCampaignData(duplicateIdParam, true);
     }
-
-    // Check if returning from offer creation - navigate to step 3
-    const returnFromOfferCreate = searchParams.get("returnFromOfferCreate");
-    const stepParam = searchParams.get("step");
-    if (returnFromOfferCreate === "true" || stepParam === "3") {
-      setCurrentStep(3);
-      // Clean up URL parameters
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete("returnFromOfferCreate");
-      newParams.delete("step");
-      setSearchParams(newParams, { replace: true });
-    }
-  }, [id, duplicateIdParam, loadCampaignData, searchParams, setSearchParams]);
+  }, [
+    id,
+    duplicateIdParam,
+    loadCampaignData,
+    searchParams,
+    setSearchParams,
+    formData,
+  ]);
 
   // Validation function for each step - returns validation errors
   const validateCurrentStep = (): {
@@ -452,11 +531,67 @@ export default function CreateCampaignPage() {
     setValidationErrors(validation.errors);
 
     if (validation.isValid && currentStep < steps.length) {
+      // Save campaign data before moving to next step
+      saveCampaignDataToSession();
+
       setCurrentStep(currentStep + 1);
       // Clear errors when moving to next step
       setValidationErrors({});
     }
   };
+
+  // Function to save campaign data to sessionStorage
+  const saveCampaignDataToSession = useCallback(() => {
+    // Don't save if we're in edit or duplicate mode
+    if (id || duplicateIdParam) {
+      return;
+    }
+
+    try {
+      const campaignData = {
+        formData: JSON.parse(JSON.stringify(formData)),
+        selectedSegments: JSON.parse(JSON.stringify(selectedSegments)),
+        selectedOffers: JSON.parse(JSON.stringify(selectedOffers)),
+        segmentOfferMappings: JSON.parse(JSON.stringify(segmentOfferMappings)),
+        controlGroup: JSON.parse(JSON.stringify(controlGroup)),
+        currentStep: currentStep,
+      };
+      sessionStorage.setItem("campaignFormData", JSON.stringify(campaignData));
+    } catch (error) {
+      console.error("Error saving campaign data to session:", error);
+    }
+  }, [
+    formData,
+    selectedSegments,
+    selectedOffers,
+    segmentOfferMappings,
+    controlGroup,
+    currentStep,
+    id,
+    duplicateIdParam,
+  ]);
+
+  // Continuously save campaign data to sessionStorage whenever it changes
+  useEffect(() => {
+    // Only save if we're not in edit/duplicate mode and we have some data
+    if (
+      !id &&
+      !duplicateIdParam &&
+      (formData.name || selectedSegments.length > 0)
+    ) {
+      saveCampaignDataToSession();
+    }
+  }, [
+    formData,
+    selectedSegments,
+    selectedOffers,
+    segmentOfferMappings,
+    controlGroup,
+    currentStep,
+    id,
+    duplicateIdParam,
+    saveCampaignDataToSession,
+  ]);
 
   const handlePrev = () => {
     if (currentStep > 1) {
@@ -661,8 +796,9 @@ export default function CreateCampaignPage() {
         }
       }
 
-      // Clear campaign flow tracking when campaign is created/updated
+      // Clear campaign flow tracking and saved data when campaign is created/updated
       sessionStorage.removeItem("campaignFlowCreatedOffers");
+      sessionStorage.removeItem("campaignFormData");
 
       navigate("/dashboard/campaigns");
     } catch (error) {
@@ -816,8 +952,9 @@ export default function CreateCampaignPage() {
   };
 
   const handleCancel = () => {
-    // Clear campaign flow tracking when cancelling
+    // Clear campaign flow tracking and saved data when cancelling
     sessionStorage.removeItem("campaignFlowCreatedOffers");
+    sessionStorage.removeItem("campaignFormData");
     navigate("/dashboard/campaigns");
   };
 

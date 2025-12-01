@@ -5,6 +5,7 @@ import {
   CampaignOffer,
 } from "../../types/campaign";
 import { color, tw, components } from "../../../../shared/utils/utils";
+import DateFormatter from "../../../../shared/components/DateFormatter";
 
 interface CampaignPreviewStepProps {
   formData: CreateCampaignRequest;
@@ -37,15 +38,6 @@ export default function CampaignPreviewStep({
       reactivation: "Dormant Customer Reactivation",
     };
     return labels[objective as keyof typeof labels] || objective;
-  };
-
-  const formatDate = (value?: string) => {
-    if (!value) return "Not scheduled";
-    try {
-      return new Date(value).toLocaleDateString();
-    } catch {
-      return value;
-    }
   };
 
   const readinessChecks = [
@@ -162,7 +154,11 @@ export default function CampaignPreviewStep({
                   Start Date
                 </div>
                 <div className={`font-medium ${tw.textPrimary}`}>
-                  {formatDate(formData.start_date)}
+                  {formData.start_date ? (
+                    <DateFormatter date={formData.start_date} />
+                  ) : (
+                    "Not scheduled"
+                  )}
                 </div>
               </div>
               <div>
@@ -170,7 +166,11 @@ export default function CampaignPreviewStep({
                   End Date
                 </div>
                 <div className={`font-medium ${tw.textPrimary}`}>
-                  {formatDate(formData.end_date)}
+                  {formData.end_date ? (
+                    <DateFormatter date={formData.end_date} />
+                  ) : (
+                    "Not scheduled"
+                  )}
                 </div>
               </div>
               <div>
@@ -259,11 +259,14 @@ export default function CampaignPreviewStep({
                         {offer.offer_type || "N/A"}
                       </div>
                       <div className="text-gray-500">
-                        {offer.start_date
-                          ? `${formatDate(offer.start_date)} - ${formatDate(
-                              offer.end_date
-                            )}`
-                          : "No schedule"}
+                        {offer.start_date ? (
+                          <>
+                            <DateFormatter date={offer.start_date} /> -{" "}
+                            <DateFormatter date={offer.end_date} />
+                          </>
+                        ) : (
+                          "No schedule"
+                        )}
                       </div>
                       <div className="text-gray-400">ID: {offer.id}</div>
                     </div>
@@ -287,13 +290,21 @@ export default function CampaignPreviewStep({
             <div className="flex items-center justify-between">
               <span className="text-gray-500">Start</span>
               <span className="font-medium text-gray-900">
-                {formatDate(formData.start_date)}
+                {formData.start_date ? (
+                  <DateFormatter date={formData.start_date} />
+                ) : (
+                  "Not scheduled"
+                )}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-500">End</span>
               <span className="font-medium text-gray-900">
-                {formatDate(formData.end_date)}
+                {formData.end_date ? (
+                  <DateFormatter date={formData.end_date} />
+                ) : (
+                  "Not scheduled"
+                )}
               </span>
             </div>
             <div className="flex items-center justify-between">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { CreateProductRequest } from "../types/product";
 import { productService } from "../services/productService";
 import ProductForm from "../components/ProductForm";
@@ -10,9 +10,8 @@ import { useToast } from "../../../contexts/ToastContext";
 export default function CreateProductPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { success } = useToast();
+  const { success, error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [formData, setFormData] = useState<CreateProductRequest>({
@@ -73,18 +72,39 @@ export default function CreateProductPage() {
       formData.price <= 0 ||
       !formData.da_id.trim()
     ) {
-      setError("Product Code, Name, Price, and DA ID are required");
+      showError(
+        "Validation Error",
+        "Product Code, Name, Price, and DA ID are required"
+      );
       return;
     }
 
     try {
       setIsLoading(true);
-      setError(null);
 
-      // Remove scope, unit, unit_value from submission as backend doesn't support them
+      // Map unit to unit_of_measure
       const { scope, unit, unit_value, validity_hours, ...submitData } =
         formData;
-      await productService.createProduct(submitData);
+
+      // Prepare submission data with unit_of_measure
+      const finalSubmitData: typeof submitData & {
+        unit_of_measure?: string;
+        validity_hours?: number;
+      } = {
+        ...submitData,
+      };
+
+      // Map unit to unit_of_measure if unit is provided
+      if (unit) {
+        finalSubmitData.unit_of_measure = unit;
+      }
+
+      // Include validity_hours if provided (backend doesn't accept unit_value)
+      if (validity_hours && validity_hours > 0) {
+        finalSubmitData.validity_hours = validity_hours;
+      }
+
+      await productService.createProduct(finalSubmitData);
       success(
         "Product Created",
         `"${formData.name}" has been created successfully.`
@@ -111,7 +131,7 @@ export default function CreateProductPage() {
       }
 
       console.error("Product creation error:", err);
-      setError(errorMessage);
+      showError("Failed to Create Product", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -153,24 +173,6 @@ export default function CreateProductPage() {
           </div>
         </div>
       </div>
-
-      {/* Error Message */}
-      {error && (
-        <div
-          className="rounded-md p-4 flex items-center gap-3"
-          style={{
-            backgroundColor: `${color.status.danger}20`,
-            borderColor: color.status.danger,
-            borderWidth: "1px",
-          }}
-        >
-          <AlertCircle
-            className="w-5 h-5 flex-shrink-0"
-            style={{ color: color.status.danger }}
-          />
-          <p style={{ color: color.status.danger }}>{error}</p>
-        </div>
-      )}
 
       {/* Form */}
       <ProductForm

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ArrowLeft, Package, AlertCircle } from "lucide-react";
-import { Product, UpdateProductRequest } from "../types/product";
+import { ArrowLeft, Package } from "lucide-react";
+import { Product, UpdateProductRequest, ProductUnit } from "../types/product";
 import { productService } from "../services/productService";
 import ProductForm from "../components/ProductForm";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -12,7 +12,7 @@ export default function EditProductPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
-  const { success } = useToast();
+  const { success, error: showError } = useToast();
 
   // Check if we came from a returnTo state (e.g., from offer details)
   const returnTo = (
@@ -35,7 +35,6 @@ export default function EditProductPage() {
   };
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -87,7 +86,6 @@ export default function EditProductPage() {
   const loadProduct = async () => {
     try {
       setIsLoadingProduct(true);
-      setError(null);
       const response = await productService.getProductById(Number(id), true);
 
       if (!response.data) {
@@ -98,6 +96,13 @@ export default function EditProductPage() {
       setProduct(productData);
 
       // Populate form with existing data based on API response structure
+      // Map unit_of_measure back to unit if backend returns it
+      const unitFromBackend =
+        (productData as unknown as { unit_of_measure?: string })
+          .unit_of_measure ||
+        productData.unit ||
+        "data_mb";
+
       setFormData({
         product_code: productData.product_code || "",
         name: productData.name || "",
@@ -107,7 +112,7 @@ export default function EditProductPage() {
         price: productData.price || 0,
         currency: productData.currency || "KES",
         scope: productData.scope || "segment",
-        unit: productData.unit || "data_mb",
+        unit: unitFromBackend as ProductUnit,
         unit_value: productData.unit_value ?? 0,
         validity_hours: productData.validity_hours,
       });
@@ -117,7 +122,10 @@ export default function EditProductPage() {
         setSelectedCategoryIds([productData.category_id]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load product");
+      showError(
+        "Failed to Load Product",
+        err instanceof Error ? err.message : "Failed to load product"
+      );
     } finally {
       setIsLoadingProduct(false);
     }
@@ -132,16 +140,17 @@ export default function EditProductPage() {
       !formData.product_code?.trim() ||
       !formData.da_id?.trim()
     ) {
-      setError("Product code, name, and DA ID are required");
+      showError(
+        "Validation Error",
+        "Product code, name, and DA ID are required"
+      );
       return;
     }
 
     try {
       setIsLoading(true);
-      setError(null);
 
-      // Remove is_active, scope, unit, unit_value, validity_hours from update payload
-      // Backend doesn't accept these fields
+      // Map unit to unit_of_measure
       const {
         is_active,
         scope,
@@ -151,8 +160,26 @@ export default function EditProductPage() {
         ...updateData
       } = formData;
 
+      // Prepare update data with unit_of_measure
+      const finalUpdateData: typeof updateData & {
+        unit_of_measure?: string;
+        validity_hours?: number;
+      } = {
+        ...updateData,
+      };
+
+      // Map unit to unit_of_measure if unit is provided
+      if (unit) {
+        finalUpdateData.unit_of_measure = unit;
+      }
+
+      // Include validity_hours if provided (backend doesn't accept unit_value)
+      if (validity_hours && validity_hours > 0) {
+        finalUpdateData.validity_hours = validity_hours;
+      }
+
       // Update product data
-      await productService.updateProduct(Number(id), updateData);
+      await productService.updateProduct(Number(id), finalUpdateData);
       success(
         "Product Updated",
         `"${formData.name}" has been updated successfully.`
@@ -179,7 +206,7 @@ export default function EditProductPage() {
       }
 
       console.error("Product update error:", err);
-      setError(errorMessage);
+      showError("Failed to Update Product", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -259,24 +286,6 @@ export default function EditProductPage() {
           </div>
         </div>
       </div>
-
-      {/* Error Message */}
-      {error && (
-        <div
-          className="rounded-md p-4 flex items-center gap-3"
-          style={{
-            backgroundColor: `${color.status.danger}20`,
-            borderColor: color.status.danger,
-            borderWidth: "1px",
-          }}
-        >
-          <AlertCircle
-            className="w-5 h-5 flex-shrink-0"
-            style={{ color: color.status.danger }}
-          />
-          <p style={{ color: color.status.danger }}>{error}</p>
-        </div>
-      )}
 
       {/* Form */}
       <ProductForm

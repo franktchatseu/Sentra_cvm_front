@@ -1497,7 +1497,7 @@ export default function CampaignsPage() {
                           Archive Campaign
                         </button>
 
-                        <button
+                        {/* <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setShowActionMenu(null);
@@ -1513,9 +1513,9 @@ export default function CampaignsPage() {
                             style={{ color: color.primary.action }}
                           />
                           Lifecycle History
-                        </button>
+                        </button> */}
 
-                        <button
+                        {/* <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setShowActionMenu(null);
@@ -1531,9 +1531,9 @@ export default function CampaignsPage() {
                             style={{ color: color.primary.action }}
                           />
                           Clone Campaign
-                        </button>
+                        </button> */}
 
-                        <button
+                        {/* <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setShowActionMenu(null);
@@ -1549,7 +1549,7 @@ export default function CampaignsPage() {
                             style={{ color: color.primary.action }}
                           />
                           Duplicate Campaign
-                        </button>
+                        </button> */}
 
                         <button
                           onClick={(e) => {

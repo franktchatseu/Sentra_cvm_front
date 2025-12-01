@@ -3,8 +3,10 @@ import { Save } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { setLanguageSettings } from "../../../shared/services/languageService";
+import { formatDate } from "../../../shared/services/dateService";
 import { color, tw } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import DateFormatter from "../../../shared/components/DateFormatter";
 import countries from "world-countries";
 import currencyCodes from "currency-codes";
 
@@ -433,15 +435,7 @@ export default function SettingsPage() {
             <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
               <p className="text-xs text-gray-500 mb-1">Preview:</p>
               <p className="text-sm font-semibold text-gray-900">
-                {new Date().toLocaleDateString("en-US", {
-                  year: settings.date_format.includes("YYYY")
-                    ? "numeric"
-                    : "2-digit",
-                  month: settings.date_format.includes("MM")
-                    ? "2-digit"
-                    : "short",
-                  day: "2-digit",
-                })}
+                {formatDate(new Date(), { customFormat: settings.date_format })}
               </p>
             </div>
           </div>
@@ -491,7 +485,34 @@ export default function SettingsPage() {
               <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
                 <p className="text-xs text-gray-500 mb-1">Preview:</p>
                 <p className="text-sm font-semibold text-gray-900">
-                  1234.56 → {settings.number_formatting}
+                  {(() => {
+                    const testValue = 1234.56;
+                    if (settings.number_formatting === "1,234.56") {
+                      return testValue.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
+                    } else if (settings.number_formatting === "1 234,56") {
+                      return testValue.toLocaleString("fr-FR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
+                    } else if (settings.number_formatting === "1.234,56") {
+                      return testValue.toLocaleString("de-DE", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
+                    } else if (settings.number_formatting === "1'234.56") {
+                      return testValue.toLocaleString("de-CH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
+                    }
+                    return testValue.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    });
+                  })()}
                 </p>
               </div>
             </div>

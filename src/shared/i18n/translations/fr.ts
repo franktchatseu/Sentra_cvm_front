@@ -174,6 +174,8 @@ export const fr: Translations = {
     products: "Produits",
     productsDescription: "Gérez votre catalogue de produits",
     segments: "Segments",
+    segmentsDescription:
+      "Créez et gérez des segments de clients pour des campagnes ciblées",
     customers: "Clients",
     users: "Utilisateurs",
     settings: "Paramètres",

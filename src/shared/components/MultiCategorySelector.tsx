@@ -293,6 +293,7 @@ export default function MultiCategorySelector({
                   return (
                     <button
                       key={category.id}
+                      type="button"
                       onClick={() => handleToggle(category.id)}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center justify-between ${
                         isSelected
@@ -313,9 +314,7 @@ export default function MultiCategorySelector({
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {category.name}
-                          </div>
+                          <div className="truncate">{category.name}</div>
                           {category.description && (
                             <div className="text-xs text-gray-500 mt-0.5 truncate">
                               {category.description}
@@ -331,6 +330,7 @@ export default function MultiCategorySelector({
                 {allowCreate && (
                   <div className="border-t border-gray-200">
                     <button
+                      type="button"
                       onClick={
                         onCreateCategory ? onCreateCategory : handleCreateNew
                       }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import {
@@ -49,18 +49,16 @@ export default function SegmentModal({
     description?: string;
     conditions?: string;
   }>({});
-
-  // Initialize selectedCategoryIds from formData.category
-  useEffect(() => {
-    if (formData.category && !selectedCategoryIds.includes(formData.category)) {
-      setSelectedCategoryIds([formData.category]);
-    } else if (!formData.category && selectedCategoryIds.length > 0) {
-      setSelectedCategoryIds([]);
-    }
-  }, [formData.category, selectedCategoryIds]);
+  const isUserInteractionRef = useRef(false);
 
   // Update formData.category when selectedCategoryIds changes (use first one)
+  // This only runs when user manually changes the selection
   useEffect(() => {
+    if (!isOpen) return;
+
+    // Skip if this is from initialization, not user interaction
+    if (!isUserInteractionRef.current) return;
+
     const firstCategoryId =
       selectedCategoryIds.length > 0 ? selectedCategoryIds[0] : undefined;
     if (formData.category !== firstCategoryId) {
@@ -69,23 +67,29 @@ export default function SegmentModal({
         category: firstCategoryId, // Send only first to backend
       }));
     }
-  }, [selectedCategoryIds, formData.category]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategoryIds, isOpen]);
 
   useEffect(() => {
     const loadSegmentData = async () => {
       if (isOpen) {
+        isUserInteractionRef.current = false; // Mark as initialization
+
         if (segment) {
           // NOTE: With the new implementation, segments are created with SQL queries directly
           // We cannot reconstruct UI conditions from the SQL query
           // When editing, user will need to rebuild conditions from scratch
+          const category = segment.category ?? undefined;
           setFormData({
             name: segment.name,
             description: segment.description || "",
             tags: segment.tags || [],
             conditions: [], // Cannot reconstruct from query - user must rebuild
             type: "dynamic",
-            category: segment.category ?? undefined,
+            category,
           });
+          // Initialize selectedCategoryIds from segment category
+          setSelectedCategoryIds(category ? [category] : []);
         } else {
           setFormData({
             name: "",
@@ -95,6 +99,8 @@ export default function SegmentModal({
             conditions: [],
             category: undefined,
           });
+          // Reset selectedCategoryIds for new segment
+          setSelectedCategoryIds([]);
         }
         setFieldErrors({});
         // Reset modal states
@@ -102,6 +108,11 @@ export default function SegmentModal({
         setShowConfirmModal(false);
         setPendingQueries(null);
         setPreviewQuery(null);
+
+        // Allow user interactions after initialization
+        setTimeout(() => {
+          isUserInteractionRef.current = true;
+        }, 0);
       }
     };
 
@@ -581,7 +592,10 @@ export default function SegmentModal({
                       </label>
                       <MultiCategorySelector
                         value={selectedCategoryIds}
-                        onChange={setSelectedCategoryIds}
+                        onChange={(ids) => {
+                          isUserInteractionRef.current = true;
+                          setSelectedCategoryIds(ids);
+                        }}
                         placeholder="Select catalog(s)"
                         entityType="segment"
                         className="w-full"
@@ -981,7 +995,9 @@ export default function SegmentModal({
                 >
                   {/* Header */}
                   <div className="p-6 pb-8">
-                    <h3 className={`text-xl font-semibold ${tw.textPrimary} mb-2`}>
+                    <h3
+                      className={`text-xl font-semibold ${tw.textPrimary} mb-2`}
+                    >
                       Confirm Segment Creation
                     </h3>
                     <p className={`text-sm ${tw.textSecondary}`}>

@@ -214,21 +214,25 @@ function ProductsModal({
       const categoryId = Number(category.id);
       const catalogTag = buildCatalogTag(category.id);
 
-      // Filter products by primary category OR tags (same approach as campaigns/offers/segments)
-      // This avoids using getProductsByTag which doesn't support skipCache
-      const productsForCategory = snapshot.filter(
-        (product: Product) => Number(product.category_id) === categoryId
-      );
-
-      // Filter products by catalog tag from the same snapshot
-      const taggedProducts = snapshot.filter(
-        (product: Product) =>
-          Array.isArray(product.tags) && product.tags.includes(catalogTag)
-      );
+      // Fetch products by primary category and by tag using endpoints
+      const [productsResponse, taggedResponse] = await Promise.all([
+        productService.getProductsByCategory(categoryId, {
+          limit: 100,
+          skipCache: true,
+        }),
+        productService.getProductsByTag({
+          tag: catalogTag,
+          limit: 100,
+          skipCache: true,
+        }),
+      ]);
 
       // Merge both lists (primary category + tagged products)
       const mergedProducts = new Map<number, Product>();
-      [...productsForCategory, ...taggedProducts].forEach((product) => {
+      [
+        ...(productsResponse.data || []),
+        ...(taggedResponse.data || []),
+      ].forEach((product) => {
         if (product && typeof product.id === "number") {
           mergedProducts.set(product.id, product);
         }

@@ -25,6 +25,7 @@ interface OfferSelectionModalProps {
   selectedOffers: CampaignOffer[];
   editingOffer?: CampaignOffer | null;
   onCreateNew?: () => void;
+  onSaveCampaignData?: () => void;
 }
 
 const rewardTypeColors = {
@@ -41,6 +42,7 @@ export default function OfferSelectionModal({
   onSelect,
   selectedOffers,
   editingOffer,
+  onSaveCampaignData,
 }: OfferSelectionModalProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -181,6 +183,25 @@ export default function OfferSelectionModal({
     return matchesSearch;
   });
 
+  // Check if there are any campaign flow offers that need actions
+  const campaignFlowOffersStr = sessionStorage.getItem(
+    "campaignFlowCreatedOffers"
+  );
+  const campaignFlowOfferIds: number[] = campaignFlowOffersStr
+    ? JSON.parse(campaignFlowOffersStr)
+    : [];
+
+  const hasActionableOffers = filteredOffers.some((offer) => {
+    const isCampaignFlowOffer = campaignFlowOfferIds.includes(Number(offer.id));
+    if (!isCampaignFlowOffer) return false;
+    const fullOffer = offersWithStatus.get(Number(offer.id));
+    const offerStatus = fullOffer?.status;
+    return (
+      offerStatus === OfferStatusEnum.DRAFT ||
+      offerStatus === OfferStatusEnum.PENDING_APPROVAL
+    );
+  });
+
   const handleOfferToggle = (offer: CampaignOffer) => {
     const isSelected = tempSelectedOffers.some((o) => o.id === offer.id);
     if (isSelected) {
@@ -197,6 +218,11 @@ export default function OfferSelectionModal({
   };
 
   const handleCreateNew = () => {
+    // Save campaign form data before navigating
+    if (onSaveCampaignData) {
+      onSaveCampaignData();
+    }
+
     // Navigate to offer creation page with return URL pointing to step 3
     const currentUrl = window.location.href;
     // Extract base URL and ensure we return to step 3
@@ -417,9 +443,11 @@ export default function OfferSelectionModal({
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
-                      Actions
-                    </th>
+                    {hasActionableOffers && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody
@@ -505,90 +533,80 @@ export default function OfferSelectionModal({
                             {offerStatus || "Unknown"}
                           </span>
                         </td>
-                        <td
-                          className="px-4 py-3"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {(() => {
-                            // Only show action buttons for offers created during this campaign flow
-                            const campaignFlowOffersStr =
-                              sessionStorage.getItem(
-                                "campaignFlowCreatedOffers"
-                              );
-                            const campaignFlowOfferIds: number[] =
-                              campaignFlowOffersStr
-                                ? JSON.parse(campaignFlowOffersStr)
-                                : [];
-                            const isCampaignFlowOffer =
-                              campaignFlowOfferIds.includes(Number(offer.id));
+                        {hasActionableOffers && (
+                          <td
+                            className="px-4 py-3"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {(() => {
+                              // Only show action buttons for offers created during this campaign flow
+                              const isCampaignFlowOffer =
+                                campaignFlowOfferIds.includes(Number(offer.id));
 
-                            if (!isCampaignFlowOffer) {
-                              return (
-                                <span className="text-xs text-gray-400">-</span>
-                              );
-                            }
+                              if (!isCampaignFlowOffer) {
+                                return null;
+                              }
 
-                            if (isDraft) {
-                              return (
-                                <button
-                                  onClick={() =>
-                                    handleSubmitForApproval(Number(offer.id))
-                                  }
-                                  disabled={isUpdating}
-                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  style={{
-                                    backgroundColor: color.primary.action,
-                                  }}
-                                >
-                                  {isUpdating ? (
-                                    <>
-                                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
-                                      Submitting...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="w-3 h-3 mr-1" />
-                                      Submit for Approval
-                                    </>
-                                  )}
-                                </button>
-                              );
-                            }
-
-                            if (isPending) {
-                              return (
-                                <div className="flex items-center gap-1">
+                              if (isDraft) {
+                                return (
                                   <button
                                     onClick={() =>
-                                      handleActivate(Number(offer.id))
+                                      handleSubmitForApproval(Number(offer.id))
                                     }
                                     disabled={isUpdating}
-                                    className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                     style={{
-                                      backgroundColor: color.status.success,
+                                      backgroundColor: color.primary.action,
                                     }}
                                   >
                                     {isUpdating ? (
                                       <>
                                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
-                                        Activating...
+                                        Submitting...
                                       </>
                                     ) : (
                                       <>
-                                        <Play className="w-3 h-3 mr-1" />
-                                        Activate
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Submit for Approval
                                       </>
                                     )}
                                   </button>
-                                </div>
-                              );
-                            }
+                                );
+                              }
 
-                            return (
-                              <span className="text-xs text-gray-400">-</span>
-                            );
-                          })()}
-                        </td>
+                              if (isPending) {
+                                return (
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() =>
+                                        handleActivate(Number(offer.id))
+                                      }
+                                      disabled={isUpdating}
+                                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                      style={{
+                                        backgroundColor: color.primary.action,
+                                      }}
+                                    >
+                                      {isUpdating ? (
+                                        <>
+                                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                                          Activating...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Play className="w-3 h-3 mr-1" />
+                                          Activate
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                );
+                              }
+
+                              return null;
+                            })()}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

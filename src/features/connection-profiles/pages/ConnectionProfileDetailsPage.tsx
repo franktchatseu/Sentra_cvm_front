@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -14,11 +14,15 @@ import {
   Calendar,
   Loader2,
   RefreshCw,
+  MoreVertical,
+  PowerOff,
+  Play,
 } from "lucide-react";
 import { connectionProfileService } from "../services/connectionProfileService";
 import { ConnectionProfileType } from "../types/connectionProfile";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import DateFormatter from "../../../shared/components/DateFormatter";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -47,6 +51,8 @@ export default function ConnectionProfileDetailsPage() {
   });
   const [validitySaving, setValiditySaving] = useState(false);
   const [validityStatus, setValidityStatus] = useState<boolean | null>(null);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const fetchValidityStatus = async (profileId: number) => {
     try {
@@ -65,6 +71,26 @@ export default function ConnectionProfileDetailsPage() {
       loadProfile();
     }
   }, [id]);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowMoreMenu(false);
+      }
+    };
+
+    if (showMoreMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMoreMenu]);
 
   const loadProfile = async () => {
     if (!id) return;
@@ -281,79 +307,104 @@ export default function ConnectionProfileDetailsPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-                  {profile.profile_name}
-                </h1>
-                {validityStatus !== null && (
-                  <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                      validityStatus
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {validityStatus ? "Currently Valid" : "Invalid"}
-                  </span>
-                )}
-              </div>
-              <p className={`${tw.textSecondary} mt-1 text-sm`}>
-                {profile.profile_code}
-              </p>
+              <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+                {profile.profile_name}
+              </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 justify-end">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleToggleActive}
               disabled={togglingStatus}
-              className="px-4 py-2 rounded-md text-sm text-white disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-              style={{ backgroundColor: color.primary.action }}
+              className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                profile.is_active
+                  ? "border-red-200 text-red-600 hover:bg-red-50"
+                  : "border-green-200 text-green-600 hover:bg-green-50"
+              } ${togglingStatus ? "opacity-60" : ""}`}
+              title={
+                profile.is_active ? "Deactivate profile" : "Activate profile"
+              }
             >
               {togglingStatus ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : null}
+                <Loader2 size={16} className="animate-spin" />
+              ) : profile.is_active ? (
+                <PowerOff size={16} />
+              ) : (
+                <Play size={16} />
+              )}
               {profile.is_active ? "Deactivate" : "Activate"}
             </button>
             <button
-              onClick={handleMarkUsed}
-              disabled={markUsedLoading}
-              className="px-4 py-2 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {markUsedLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              Mark Used
-            </button>
-            <button
-              onClick={handleOpenHealthModal}
-              className="px-4 py-2 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-            >
-              <Shield className="w-4 h-4" />
-              Update Health
-            </button>
-            <button
-              onClick={handleOpenValidityModal}
-              className="px-4 py-2 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-            >
-              <Calendar className="w-4 h-4" />
-              Adjust Validity
-            </button>
-            <button
               onClick={handleEdit}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors flex items-center gap-2"
+              className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white transition-colors"
+              style={{ backgroundColor: color.primary.action }}
+              title="Edit profile"
             >
-              <Edit className="w-4 h-4" />
+              <Edit size={16} />
               Edit
             </button>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="px-4 py-2 text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
+            {/* More Menu */}
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className="inline-flex items-center gap-2 justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-black hover:bg-gray-50 transition-colors"
+                title="More actions"
+              >
+                <MoreVertical size={16} />
+                <span>More</span>
+              </button>
+              {showMoreMenu && (
+                <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
+                  <button
+                    onClick={() => {
+                      handleMarkUsed();
+                      setShowMoreMenu(false);
+                    }}
+                    disabled={markUsedLoading}
+                    className={`w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2 ${
+                      markUsedLoading ? "opacity-60" : ""
+                    }`}
+                  >
+                    {markUsedLoading ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <RefreshCw size={16} />
+                    )}
+                    Mark Used
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleOpenHealthModal();
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Shield size={16} />
+                    Update Health
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleOpenValidityModal();
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Calendar size={16} />
+                    Adjust Validity
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(true);
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -370,6 +421,26 @@ export default function ConnectionProfileDetailsPage() {
               Basic Information
             </h2>
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-gray-600">Profile Code</label>
+                <p className="font-medium text-gray-900 mt-1">
+                  {profile.profile_code}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Status</label>
+                <div className="mt-1">
+                  {profile.is_active ? (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Active
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Inactive
+                    </span>
+                  )}
+                </div>
+              </div>
               <div>
                 <label className="text-sm text-gray-600">Connection Type</label>
                 <div className="flex items-center gap-2 mt-1">
@@ -390,20 +461,6 @@ export default function ConnectionProfileDetailsPage() {
                 <p className="font-medium text-gray-900 mt-1">
                   {profile.load_strategy}
                 </p>
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">Status</label>
-                <div className="mt-1">
-                  {profile.is_active ? (
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      Inactive
-                    </span>
-                  )}
-                </div>
               </div>
               {profile.server_id && (
                 <div>
@@ -589,14 +646,14 @@ export default function ConnectionProfileDetailsPage() {
               <div>
                 <label className="text-sm text-gray-600">Valid From</label>
                 <p className="text-sm text-gray-900 mt-1">
-                  {new Date(profile.valid_from).toLocaleDateString()}
+                  <DateFormatter date={profile.valid_from} />
                 </p>
               </div>
               {profile.valid_to && (
                 <div>
                   <label className="text-sm text-gray-600">Valid To</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {new Date(profile.valid_to).toLocaleDateString()}
+                    <DateFormatter date={profile.valid_to} />
                   </p>
                 </div>
               )}
