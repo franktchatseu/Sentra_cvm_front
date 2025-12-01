@@ -679,6 +679,21 @@ class OfferService {
     );
   }
 
+  // 10. Set primary product for an offer
+  async setPrimaryProduct(
+    offerId: number,
+    productId: number | null
+  ): Promise<BaseResponse<Offer>> {
+    return await this.request<BaseResponse<Offer>>(
+      `/${offerId}/set-primary-product`,
+      {
+        method: "POST",
+        body: JSON.stringify({ product_id: productId }),
+      },
+      BASE_URL
+    );
+  }
+
   // 10. Get all offer-product links
   async getAllOfferProductLinks(params?: {
     limit?: number;

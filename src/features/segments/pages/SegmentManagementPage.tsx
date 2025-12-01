@@ -604,56 +604,81 @@ export default function SegmentManagementPage() {
   };
 
   const handleSaveSegment = async (segment: Segment) => {
-    const isNewSegment = !selectedSegment;
+    // COMMENTED OUT: Automatic recompute disabled due to backend issues
+    // const isNewSegment = !selectedSegment;
 
-    // For new segments, perform full recompute (first-time computation)
-    if (isNewSegment) {
-      try {
-        // Show a message that computation is starting
-        success(
-          "Segment created",
-          `Segment "${segment.name}" has been created. Computing members...`
-        );
+    // // For new segments, perform full recompute (first-time computation)
+    // if (isNewSegment) {
+    //   try {
+    //     // Show a message that computation is starting
+    //     success(
+    //       "Segment created",
+    //       `Segment "${segment.name}" has been created. Computing members...`
+    //     );
 
-        // Small delay to ensure segment is fully created in backend
-        await new Promise((resolve) => setTimeout(resolve, 500));
+    //     // Small delay to ensure segment is fully created in backend
+    //     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Perform full recompute for new segment
-        await segmentService.recomputeSegmentMembers({
-          segment_id: segment.id,
-          force: true,
-        });
+    //     // Try full recompute first, fallback to refresh if recompute fails
+    //     try {
+    //       await segmentService.recomputeSegmentMembers({
+    //         segment_id: segment.id,
+    //         force: true,
+    //       });
+    //     } catch (recomputeErr) {
+    //       // If recompute fails, try refresh as fallback (lighter operation)
+    //       console.warn(
+    //         "Recompute failed, trying refresh instead:",
+    //         recomputeErr
+    //       );
+    //       try {
+    //         await segmentService.refreshSegment(segment.id, { force: true });
+    //       } catch (refreshErr) {
+    //         // If both fail, throw the original recompute error
+    //         throw recomputeErr;
+    //       }
+    //     }
 
-        // Reload segments to get updated data
-        await loadSegments();
+    //     // Reload segments to get updated data
+    //     await loadSegments();
 
-        success(
-          "Segment computed",
-          `Segment "${segment.name}" has been created and computed successfully`
-        );
-      } catch (err: unknown) {
-        // Segment was created but recompute failed - show actual error
-        await loadSegments();
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Unknown error occurred during computation";
+    //     success(
+    //       "Segment computed",
+    //       `Segment "${segment.name}" has been created and computed successfully`
+    //     );
+    //   } catch (err: unknown) {
+    //     // Segment was created but computation failed - show actual error
+    //     await loadSegments();
+    //     const errorMessage =
+    //       err instanceof Error
+    //         ? err.message
+    //         : "Unknown error occurred during computation";
 
-        console.error("Recompute error:", err);
+    //     console.error("Computation error:", err);
 
-        showError(
-          "Computation failed",
-          `Segment "${segment.name}" was created but computation failed: ${errorMessage}. You can manually recompute it later.`
-        );
-      }
-    } else {
-      // For existing segments, just reload (no automatic recompute on update)
-      await loadSegments();
-      success(
-        "Segment updated",
-        `Segment "${segment.name}" has been updated successfully`
-      );
-    }
+    //     // Show warning but don't treat as critical error since segment was created
+    //     showError(
+    //       "Computation failed",
+    //       `Segment "${segment.name}" was created successfully, but automatic computation failed: ${errorMessage}. You can manually refresh it from the action menu.`
+    //     );
+    //   }
+    // } else {
+    //   // For existing segments, just reload (no automatic recompute on update)
+    //   await loadSegments();
+    //   success(
+    //     "Segment updated",
+    //     `Segment "${segment.name}" has been updated successfully`
+    //   );
+    // }
+
+    // Simplified: Just reload segments and show success message
+    await loadSegments();
+    success(
+      selectedSegment ? "Segment updated" : "Segment created",
+      `Segment "${segment.name}" has been ${
+        selectedSegment ? "updated" : "created"
+      } successfully`
+    );
   };
 
   const handleComputeSegment = async (segment: Segment) => {

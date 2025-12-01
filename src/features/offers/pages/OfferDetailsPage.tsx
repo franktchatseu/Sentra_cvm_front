@@ -33,6 +33,7 @@ import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { useToast } from "../../../contexts/ToastContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import RegularModal from "../../../shared/components/ui/RegularModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -82,6 +83,7 @@ export default function OfferDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { success, error: showError, info } = useToast();
+  const { confirm } = useConfirm();
   const { t } = useLanguage();
   const { user } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -97,6 +99,7 @@ export default function OfferDetailsPage() {
   const [showUnlinkModal, setShowUnlinkModal] = useState(false);
   const [productToUnlink, setProductToUnlink] = useState<{
     linkId: number;
+    productId?: number;
     name: string;
   } | null>(null);
   const [showDeleteProductModal, setShowDeleteProductModal] = useState(false);
@@ -145,6 +148,7 @@ export default function OfferDetailsPage() {
   const [unlinkingProductId, setUnlinkingProductId] = useState<number | null>(
     null
   );
+  const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
   const [offerCreatives, setOfferCreatives] = useState<OfferCreative[]>([]);
   const [creativesLoading, setCreativesLoading] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -868,11 +872,28 @@ export default function OfferDetailsPage() {
 
     try {
       setUnlinkingProductId(productToUnlink.linkId);
-      await offerService.unlinkProductById(productToUnlink.linkId);
-      success(
-        "Product Unlinked",
-        `"${productToUnlink.name}" has been unlinked from this offer.`
-      );
+
+      // Check if this is the primary product
+      const isPrimary = productToUnlink.productId === primaryProductId;
+
+      if (isPrimary) {
+        // If it's the primary product, just set primary_product_id to null
+        // This removes it as primary but keeps it linked to the offer
+        await offerService.setPrimaryProduct(Number(id), null);
+        success(
+          "Primary Product Removed",
+          `"${productToUnlink.name}" is no longer the primary product, but remains linked to this offer.`
+        );
+        setPrimaryProductId(null);
+      } else {
+        // If it's not primary, unlink it completely
+        await offerService.unlinkProductById(productToUnlink.linkId);
+        success(
+          "Product Unlinked",
+          `"${productToUnlink.name}" has been unlinked from this offer.`
+        );
+      }
+
       setShowUnlinkModal(false);
       setProductToUnlink(null);
       loadProducts(true); // Skip cache to get fresh data after unlinking
@@ -911,16 +932,10 @@ export default function OfferDetailsPage() {
     }
   };
 
-  // TODO: Backend needs to provide an endpoint to update is_primary without unlinking products
-  // Currently commented out because it unlinks the old primary product entirely,
-  // when we only want to unset it as primary while keeping it linked to the offer
-  const handleSetPrimaryProduct = async () => {
-    // Handler commented out - waiting for backend endpoint to update is_primary flag
-    // without unlinking products
-    info("Feature Unavailable", "Can't access this feature right now.");
-    return;
-
-    /* COMMENTED OUT - Waiting for backend endpoint
+  const handleSetPrimaryProduct = async (
+    productId: number,
+    productName: string
+  ) => {
     if (!user?.user_id) {
       showError("Error", "User ID not available. Please log in again.");
       return;
@@ -952,7 +967,7 @@ export default function OfferDetailsPage() {
 
       confirmed = await confirm({
         title: "Set Primary Product",
-        message: `Setting "${productName}" as the primary product will replace the current primary product (${currentPrimaryName}). Do you want to continue?`,
+        message: `Setting "${productName}" as the primary product will replace the current primary product (${currentPrimaryName}). The previous primary product will remain linked but will no longer be primary. Do you want to continue?`,
         confirmText: "Set as Primary",
         cancelText: "Cancel",
         type: "info",
@@ -964,19 +979,9 @@ export default function OfferDetailsPage() {
     try {
       setSettingPrimaryId(productId);
 
-      // Step 1: Unlink the old primary product if it exists
-      if (existingPrimaryLink && existingPrimaryLink.id) {
-        await offerService.unlinkProductById(existingPrimaryLink.id);
-      }
-
-      // Step 2: Link the new product as primary
-      await offerService.linkProductToOffer({
-        offer_id: Number(id),
-        product_id: productId,
-        is_primary: true,
-        quantity: 1,
-        created_by: user.user_id,
-      });
+      // Use the new endpoint to set primary product
+      // This will automatically handle setting the old primary to null
+      await offerService.setPrimaryProduct(Number(id), productId);
 
       success(
         "Primary Product Set",
@@ -991,7 +996,6 @@ export default function OfferDetailsPage() {
     } finally {
       setSettingPrimaryId(null);
     }
-    */
   };
 
   const offerDetailsPath = id ? `/dashboard/offers/${id}` : "/dashboard/offers";
@@ -1489,7 +1493,7 @@ export default function OfferDetailsPage() {
                         product.product_id === primaryProductId);
                     const isUnlinking =
                       product.link_id && unlinkingProductId === product.link_id;
-                    const isSettingPrimary = false; // Feature disabled for now
+                    const isSettingPrimary = settingPrimaryId === productId;
 
                     return (
                       <tr
@@ -1598,13 +1602,20 @@ export default function OfferDetailsPage() {
                               (product.link_id || hasValidProductId) && (
                                 <button
                                   type="button"
-                                  onClick={handleSetPrimaryProduct}
+                                  onClick={() =>
+                                    handleSetPrimaryProduct(
+                                      productId as number,
+                                      productName
+                                    )
+                                  }
                                   disabled={isSettingPrimary || isUnlinking}
                                   className="text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:underline"
                                   style={{ color: color.primary.accent }}
                                   title="Set this product as the primary product"
                                 >
-                                  Set Primary
+                                  {isSettingPrimary
+                                    ? "Setting..."
+                                    : "Set Primary"}
                                 </button>
                               )}
                             {(product.link_id || hasValidProductId) && (
@@ -1619,6 +1630,7 @@ export default function OfferDetailsPage() {
                                   }
                                   setProductToUnlink({
                                     linkId: product.link_id,
+                                    productId: productId as number,
                                     name: productName,
                                   });
                                   setShowUnlinkModal(true);
