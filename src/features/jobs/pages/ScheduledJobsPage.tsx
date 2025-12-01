@@ -24,6 +24,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { scheduledJobService } from "../services/scheduledJobService";
 import { jobTypeService } from "../services/jobTypeService";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
@@ -72,6 +73,7 @@ export default function ScheduledJobsPage() {
   const navigate = useNavigate();
   const { error: showError, success: showToast } = useToast();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [jobs, setJobs] = useState<ScheduledJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -454,10 +456,10 @@ export default function ScheduledJobsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
-            Scheduled Jobs
+            {t.jobs.scheduledJobs}
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
-            View and manage all scheduled jobs configured in the system.
+            {t.jobs.scheduledJobsDescription}
           </p>
         </div>
         <div className="flex gap-3">
@@ -471,7 +473,7 @@ export default function ScheduledJobsPage() {
             }}
           >
             <BarChart3 className="h-4 w-4" />
-            Analytics
+            {t.jobs.analytics}
           </button>
           <button
             onClick={() => {
@@ -521,7 +523,7 @@ export default function ScheduledJobsPage() {
               style={{ color: color.primary.accent }}
             />
             <p className="text-sm font-medium text-gray-600">
-              Total Scheduled Jobs
+              {t.jobs.totalScheduledJobs}
             </p>
           </div>
           <p className="mt-2 text-3xl font-bold text-gray-900">
@@ -717,7 +719,7 @@ export default function ScheduledJobsPage() {
           <div className="py-16 text-center">
             <Briefcase className="mx-auto mb-4 h-12 w-12 text-gray-300" />
             <p className={`text-lg font-semibold ${tw.textPrimary}`}>
-              No scheduled jobs found
+              {t.jobs.noScheduledJobsFound}
             </p>
             <p className="mt-2 text-sm text-gray-500">
               Try updating your search filters or create a new job
@@ -1008,7 +1010,7 @@ export default function ScheduledJobsPage() {
                         }
                         className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
                       >
-                        <option value="">All Job Types</option>
+                        <option value="">{t.jobs.allJobTypes}</option>
                         {jobTypes.map((type) => (
                           <option key={type.id} value={type.id}>
                             {type.name}

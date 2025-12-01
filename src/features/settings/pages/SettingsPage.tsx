@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Save } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
@@ -159,6 +159,30 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [originalSettings] = useState<SettingsType>(loadSettings());
 
+  // Cross-tab synchronization: Listen for localStorage changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "appSettings" && e.newValue) {
+        try {
+          const newSettings = JSON.parse(e.newValue);
+          setSettings(newSettings);
+          // Update language context if language changed
+          if (newSettings.language) {
+            setLanguageSettings(newSettings.language);
+            setLanguage(newSettings.language);
+          }
+        } catch (error) {
+          console.error("Error parsing settings from storage event:", error);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [setLanguage]);
+
   const handleCountryChange = (countryName: string) => {
     const selectedCountry = getCountryByName(countryName);
     setSettings({
@@ -168,20 +192,9 @@ export default function SettingsPage() {
     });
   };
 
-  // Currency mapping based on language
-  const getCurrencyForLanguage = (language: string): string => {
-    const currencyMap: Record<string, string> = {
-      English: "USD", // Default to USD for English
-      French: "EUR", // Euro for French
-      Spanish: "EUR", // Euro for Spanish (or could be USD for Latin America)
-      Swahili: "KES", // Kenyan Shilling for Swahili
-    };
-    return currencyMap[language] || settings.currency;
-  };
-
   const handleLanguageChange = (language: string) => {
-    const newCurrency = getCurrencyForLanguage(language);
-    setSettings({ ...settings, language, currency: newCurrency });
+    // Language and currency are independent - only update language
+    setSettings({ ...settings, language });
     // Update language context immediately
     setLanguageSettings(language);
     setLanguage(language);
@@ -280,18 +293,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-5 py-2.5 text-sm font-medium rounded-md text-white flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
-            style={{ backgroundColor: color.primary.action }}
-            onMouseEnter={(e) => {
-              if (!isSaving) {
-                e.currentTarget.style.backgroundColor = color.primary.accent;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isSaving) {
-                e.currentTarget.style.backgroundColor = color.primary.action;
-              }
-            }}
+            className="px-5 py-2.5 text-sm font-medium rounded-md text-white flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap bg-[#252829]"
           >
             {isSaving ? (
               <>

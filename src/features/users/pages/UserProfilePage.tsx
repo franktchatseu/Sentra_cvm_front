@@ -16,6 +16,7 @@ import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw, button } from "../../../shared/utils/utils";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 const languageOptions = [
   { value: "en", label: "English" },
@@ -29,6 +30,7 @@ const languageOptions = [
 export default function UserProfilePage() {
   const { user: authUser } = useAuth();
   const { success, error: showError } = useToast();
+  const { t } = useLanguage();
 
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,10 +146,7 @@ export default function UserProfilePage() {
       if (response.success) {
         setUser(response.data);
         setIsEditing(false);
-        success(
-          "Profile Updated",
-          "Your profile has been updated successfully."
-        );
+        success(t.profile.profileUpdated, t.profile.profileUpdatedSuccess);
         // Reload profile to get latest data
         await loadUserProfile();
       }
@@ -243,9 +242,11 @@ export default function UserProfilePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>My Profile</h1>
+          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+            {t.profile.title}
+          </h1>
           <p className={`text-sm ${tw.textSecondary} mt-1`}>
-            Manage your personal information and preferences
+            {t.profile.description}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -256,7 +257,7 @@ export default function UserProfilePage() {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 <X className="w-4 h-4 inline mr-2" />
-                Cancel
+                {t.profile.cancel}
               </button>
               <button
                 onClick={handleSave}
@@ -272,12 +273,12 @@ export default function UserProfilePage() {
                 {isSaving ? (
                   <>
                     <LoadingSpinner variant="modern" size="sm" color="white" />
-                    <span className="ml-2">Saving...</span>
+                    <span className="ml-2">{t.profile.saving}</span>
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4 inline mr-2" />
-                    Save Changes
+                    {t.profile.saveChanges}
                   </>
                 )}
               </button>
@@ -294,7 +295,7 @@ export default function UserProfilePage() {
               }}
             >
               <User className="w-4 h-4 mr-2" />
-              Edit Profile
+              {t.profile.editProfile}
             </button>
           )}
         </div>

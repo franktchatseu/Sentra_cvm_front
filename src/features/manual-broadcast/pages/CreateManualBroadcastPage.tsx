@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, MessageSquare, Send, Calendar } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import ProgressStepper, {
   Step,
 } from "../../../shared/components/ui/ProgressStepper";
@@ -36,36 +37,37 @@ export interface ManualBroadcastData {
   scheduleTime?: string;
 }
 
-const STEPS: Step[] = [
-  {
-    id: 1,
-    name: "Target Audience",
-    description: "Define your audience",
-    icon: Users,
-  },
-  {
-    id: 2,
-    name: "Define Communication",
-    description: "Create your message",
-    icon: MessageSquare,
-  },
-  {
-    id: 3,
-    name: "Test Broadcast",
-    description: "Test before sending",
-    icon: Send,
-  },
-  {
-    id: 4,
-    name: "Schedule",
-    description: "Launch your broadcast",
-    icon: Calendar,
-  },
-];
-
 export default function CreateManualBroadcastPage() {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
+  const { t } = useLanguage();
+
+  const STEPS: Step[] = [
+    {
+      id: 1,
+      name: t.manualBroadcast.targetAudience,
+      description: t.manualBroadcast.targetAudienceDesc,
+      icon: Users,
+    },
+    {
+      id: 2,
+      name: t.manualBroadcast.defineCommunication,
+      description: t.manualBroadcast.defineCommunicationDesc,
+      icon: MessageSquare,
+    },
+    {
+      id: 3,
+      name: t.manualBroadcast.testBroadcast,
+      description: t.manualBroadcast.testBroadcastDesc,
+      icon: Send,
+    },
+    {
+      id: 4,
+      name: t.manualBroadcast.schedule,
+      description: t.manualBroadcast.scheduleDesc,
+      icon: Calendar,
+    },
+  ];
   const [currentStep, setCurrentStep] = useState(1);
   const [broadcastData, setBroadcastData] = useState<ManualBroadcastData>({});
 
@@ -99,11 +101,11 @@ export default function CreateManualBroadcastPage() {
   const handleSubmit = async () => {
     try {
       // TODO: Save manual broadcast to database
-      showToast("Manual Broadcast created successfully!");
+      showToast(t.manualBroadcast.createdSuccess);
       navigate("/dashboard/quicklists");
     } catch (err) {
       console.error("Failed to create manual broadcast:", err);
-      showError("Failed to create manual broadcast");
+      showError(t.manualBroadcast.createFailed);
     }
   };
 
@@ -166,7 +168,7 @@ export default function CreateManualBroadcastPage() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <h1 className={`text-lg font-semibold ${tw.textPrimary}`}>
-                Create Manual Broadcast
+                {t.manualBroadcast.title}
               </h1>
             </div>
           </div>

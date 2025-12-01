@@ -30,6 +30,7 @@ import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
 import DateFormatter from "../../../shared/components/DateFormatter";
 import { formatDate } from "../../../shared/services/dateService";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import {
   PieChart,
   Pie,
@@ -58,6 +59,7 @@ type AccountRequestListItem = {
 
 export default function UserManagementPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   type UserWithResolvedRole = UserType & { resolvedRoleName?: string };
 
   const [users, setUsers] = useState<UserWithResolvedRole[]>([]);
@@ -944,20 +946,20 @@ export default function UserManagementPage() {
 
   const userStatsCards = [
     {
-      name: "Total Users",
+      name: t.userManagement.totalUsers,
       value: statsLoadingIndicator ? "..." : totalUsersValue.toLocaleString(),
       icon: Users,
       color: color.tertiary.tag1,
-      badge: userSummary.cached ? "Cached" : undefined,
+      badge: userSummary.cached ? t.userManagement.cached : undefined,
     },
     {
-      name: "Active Users",
+      name: t.userManagement.activeUsers,
       value: statsLoadingIndicator ? "..." : activeUsersValue.toLocaleString(),
       icon: UserCheck,
       color: color.tertiary.tag4,
     },
     {
-      name: "Pending Activation",
+      name: t.userManagement.pendingActivation,
       value: statsLoadingIndicator
         ? "..."
         : pendingActivationValue.toLocaleString(),
@@ -965,7 +967,7 @@ export default function UserManagementPage() {
       color: color.tertiary.tag2,
     },
     {
-      name: "Locked Users",
+      name: t.userManagement.lockedUsers,
       value: statsLoadingIndicator
         ? "..."
         : highRiskUsersValue.toLocaleString(),
@@ -1036,10 +1038,10 @@ export default function UserManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="min-w-0">
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-            User Management
+            {t.userManagement.title}
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
-            Manage users and account requests
+            {t.userManagement.description}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
@@ -1051,7 +1053,7 @@ export default function UserManagementPage() {
             className={`${tw.button} flex items-center gap-2`}
           >
             <Plus className="w-4 h-4" />
-            Add User
+            {t.userManagement.addUser}
           </button>
         </div>
       </div>
@@ -1110,7 +1112,7 @@ export default function UserManagementPage() {
           }`}
         >
           <Users className="w-4 h-4 flex-shrink-0" />
-          <span className="whitespace-nowrap">Users</span>
+          <span className="whitespace-nowrap">{t.userManagement.users}</span>
           <span
             className="px-2 py-0.5 rounded-full text-xs text-white flex-shrink-0"
             style={{
@@ -1135,7 +1137,9 @@ export default function UserManagementPage() {
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          <span className="whitespace-nowrap">Pending Requests</span>
+          <span className="whitespace-nowrap">
+            {t.userManagement.pendingRequests}
+          </span>
           <span
             className="px-2 py-0.5 rounded-full text-xs text-white flex-shrink-0"
             style={{
@@ -1163,7 +1167,9 @@ export default function UserManagementPage() {
           }`}
         >
           <BarChart3 className="w-4 h-4 flex-shrink-0" />
-          <span className="whitespace-nowrap">Analytics</span>
+          <span className="whitespace-nowrap">
+            {t.userManagement.analytics}
+          </span>
           {activeTab === "analytics" && (
             <div
               className="absolute bottom-0 left-0 right-0 h-0.5"
@@ -1182,7 +1188,7 @@ export default function UserManagementPage() {
             />
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder={t.userManagement.searchUsers}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {

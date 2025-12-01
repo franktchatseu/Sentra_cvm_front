@@ -14,6 +14,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { jobTypeService } from "../services/jobTypeService";
 import { CreateJobTypePayload, JobType } from "../types/job";
 
@@ -191,12 +192,12 @@ function JobTypeModal({
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              {initialData ? "Edit Job Type" : "Create Job Type"}
+              {initialData ? t.jobs.editJobType : t.jobs.createJobType}
             </h2>
             <p className="mt-1 text-sm text-gray-500">
               {initialData
-                ? "Update the job type details"
-                : "Define a new job type that can be referenced by scheduled jobs"}
+                ? t.jobs.updateJobTypeDesc
+                : t.jobs.createJobTypeDesc}
             </p>
           </div>
           <button
@@ -282,7 +283,7 @@ function JobTypeModal({
               onClick={onClose}
               className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              Cancel
+              {t.genericConfig.cancel}
             </button>
             <button
               type="submit"
@@ -291,10 +292,10 @@ function JobTypeModal({
               style={{ backgroundColor: color.primary.action }}
             >
               {isSaving
-                ? "Saving..."
+                ? t.profile.saving
                 : initialData
-                ? "Update Job Type"
-                : "Create Job Type"}
+                ? t.jobs.updateJobType
+                : t.jobs.createJobType}
             </button>
           </div>
         </form>
@@ -324,9 +325,8 @@ function JobTypeViewModal({
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Job Type Details
+              {t.jobs.jobTypeDetails}
             </h2>
-           
           </div>
           <button
             type="button"
@@ -402,6 +402,7 @@ function JobTypeViewModal({
 export default function JobTypesPage() {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
+  const { t } = useLanguage();
 
   const [jobTypes, setJobTypes] = useState<JobType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -662,7 +663,7 @@ export default function JobTypesPage() {
           </button>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
-              Job Types
+              {t.jobs.jobTypes}
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
               Manage the classification codes used when creating scheduled jobs.

@@ -38,6 +38,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import { tw, color } from "../../../shared/utils/utils";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
@@ -53,6 +54,7 @@ import type {
   BackendCampaignType,
 } from "../../campaigns/types/campaign";
 import { formatDate } from "../../../shared/services/dateService";
+import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import {
   PieChart,
   Pie,
@@ -64,6 +66,7 @@ import {
 
 export default function DashboardHome() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const extractCampaignTotal = useCallback((response?: unknown): number => {
@@ -1168,47 +1171,47 @@ export default function DashboardHome() {
 
     return [
       {
-        label: "Active campaigns",
+        label: t.dashboard.activeCampaigns,
         value: activeCampaignsCount.toLocaleString(),
         description:
           activeCampaignsCount > 0
-            ? "Currently running customer engagement campaigns"
-            : "No campaigns are running right now",
+            ? t.dashboard.currentlyRunning
+            : t.dashboard.noCampaignsRunning,
         icon: Target,
         valueColor: color.primary.accent,
       },
       {
-        label: "Pending approvals",
+        label: t.dashboard.pendingApprovals,
         value: pendingApprovalCampaigns.toLocaleString(),
         description:
           pendingApprovalCampaigns > 0
-            ? "Campaigns awaiting approval decisions"
-            : "No campaigns are pending approval",
+            ? t.dashboard.awaitingApproval
+            : t.dashboard.noPendingApproval,
         icon: AlertCircle,
         valueColor: color.primary.accent,
       },
       {
-        label: "Completed campaigns",
+        label: t.dashboard.completedCampaigns,
         value: completedCampaignsCount.toLocaleString(),
         description:
           completedCampaignsCount > 0
-            ? "Successfully finished campaigns"
-            : "No completed campaigns yet",
+            ? t.dashboard.successfullyFinished
+            : t.dashboard.noCompletedCampaigns,
         icon: CheckCircle,
         valueColor: color.primary.accent,
       },
       {
-        label: "Paused campaigns",
+        label: t.dashboard.pausedCampaigns,
         value: pausedCampaigns.toLocaleString(),
         description:
           pausedCampaigns > 0
-            ? "Campaigns temporarily stopped, may need attention"
-            : "No paused campaigns",
+            ? t.dashboard.temporarilyStopped
+            : t.dashboard.noPausedCampaigns,
         icon: Pause,
         valueColor: color.primary.accent,
       },
     ];
-  }, [campaignsStats, campaignStatusDistribution, formatStatusLabel]);
+  }, [campaignsStats, campaignStatusDistribution, formatStatusLabel, t]);
 
   // Fetch Top Performing Campaigns data from stats endpoint (only once on mount)
   useEffect(() => {
@@ -1343,52 +1346,64 @@ export default function DashboardHome() {
   const requiresAttention = [
     {
       id: 1,
-      title: "Campaign Expiring Soon",
+      title: t.dashboard.campaignExpiringSoon,
       description: "Q2 Customer Acquisition ends in 3 days",
       type: "campaign",
-      action: "Review & Extend",
+      action: t.dashboard.reviewAndExtend,
       priority: "high",
     },
     {
       id: 2,
-      title: "Offer Expiring",
+      title: t.dashboard.offerExpiring,
       description: "Spring Sale - 20% Off expires tomorrow",
       type: "offer",
-      action: "Review",
+      action: t.dashboard.review,
       priority: "high",
     },
     {
       id: 3,
-      title: "Pending Approval",
+      title: t.dashboard.pendingApproval,
       description: "Premium Member Campaign awaiting approval",
       type: "approval",
-      action: "Approve",
+      action: t.dashboard.approve,
       priority: "medium",
     },
     {
       id: 4,
-      title: "Segment Update Needed",
+      title: t.dashboard.segmentUpdateNeeded,
       description: "High Value Customers segment requires refresh",
       type: "segment",
-      action: "Update",
+      action: t.dashboard.update,
       priority: "medium",
     },
   ];
 
   const quickActions = [
     {
-      name: "Create Campaign",
+      name: t.dashboard.createCampaign,
       href: "/dashboard/campaigns/create",
       icon: Target,
     },
-    { name: "New Offer", href: "/dashboard/offers/create", icon: Package },
-    { name: "Build Segment", href: "/dashboard/segments", icon: Users },
     {
-      name: "Create Product",
+      name: t.dashboard.newOffer,
+      href: "/dashboard/offers/create",
+      icon: Package,
+    },
+    {
+      name: t.dashboard.buildSegment,
+      href: "/dashboard/segments",
+      icon: Users,
+    },
+    {
+      name: t.dashboard.createProduct,
       href: "/dashboard/products/create",
       icon: ShoppingBag,
     },
-    { name: "Configuration", href: "/dashboard/configuration", icon: Folder },
+    {
+      name: t.dashboard.configuration,
+      href: "/dashboard/configuration",
+      icon: Folder,
+    },
   ];
 
   const getFirstName = () => {
@@ -1438,7 +1453,7 @@ export default function DashboardHome() {
         <h1
           className={`${tw.mainHeading} ${tw.textPrimary} flex items-center gap-3`}
         >
-          Welcome back, {getFirstName()}
+          {t.dashboard.welcome}, {getFirstName()}!
         </h1>
         {/* <p className={`${tw.textSecondary} ${tw.body}`}> */}
         <p className="text-gray-900 text-sm md:text-base">
@@ -1486,10 +1501,12 @@ export default function DashboardHome() {
       {/* Quick insights */}
       <div className="space-y-2">
         {/* <h2 className={`${tw.mainHeading} ${tw.textPrimary}`}> */}
-        <h2 className="text-2xl font-semibold text-black">Quick Insights</h2>
+        <h2 className="text-2xl font-semibold text-black">
+          {t.dashboard.quickInsights}
+        </h2>
         {/* <p className={`${tw.textSecondary} ${tw.body}`}> */}
         <p className="text-gray-900 text-base ">
-          Instant highlights from campaigns.
+          {t.dashboard.instantHighlights}
         </p>
       </div>
 
@@ -1530,9 +1547,11 @@ export default function DashboardHome() {
             <div className="px-6 py-4 border-b border-gray-100">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className={tw.cardHeading}>Recently Added</h2>
+                  <h2 className={tw.cardHeading}>
+                    {t.dashboard.recentlyAdded}
+                  </h2>
                   <p className={`${tw.cardSubHeading} text-black mt-1`}>
-                    Newly created campaigns, offers, segments, and products
+                    {t.dashboard.newlyCreated}
                   </p>
                 </div>
 
@@ -1549,12 +1568,12 @@ export default function DashboardHome() {
                   >
                     <span>
                       {[
-                        { key: "campaigns", label: "Campaigns" },
-                        { key: "offers", label: "Offers" },
-                        { key: "segments", label: "Segments" },
-                        { key: "products", label: "Products" },
+                        { key: "campaigns", label: t.pages.campaigns },
+                        { key: "offers", label: t.pages.offers },
+                        { key: "segments", label: t.pages.segments },
+                        { key: "products", label: t.pages.products },
                       ].find((tab) => tab.key === latestItemsFilter)?.label ||
-                        "Campaigns"}
+                        t.pages.campaigns}
                     </span>
                     <ChevronDown
                       className={`h-4 w-4 transition-transform ${
@@ -1566,10 +1585,10 @@ export default function DashboardHome() {
                   {isFilterDropdownOpen && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10">
                       {[
-                        { key: "campaigns", label: "Campaigns" },
-                        { key: "offers", label: "Offers" },
-                        { key: "segments", label: "Segments" },
-                        { key: "products", label: "Products" },
+                        { key: "campaigns", label: t.pages.campaigns },
+                        { key: "offers", label: t.pages.offers },
+                        { key: "segments", label: t.pages.segments },
+                        { key: "products", label: t.pages.products },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -1773,7 +1792,8 @@ export default function DashboardHome() {
                         </div>
                         <div className="flex flex-wrap gap-3 text-sm text-black">
                           <span className="text-black/80">
-                            {segment.members.toLocaleString()} members
+                            {segment.members.toLocaleString()}{" "}
+                            {t.dashboard.members}
                           </span>
                           <span className="text-black/80">
                             {segment.created}
@@ -1822,7 +1842,7 @@ export default function DashboardHome() {
                         </div>
                         <div className="flex flex-wrap gap-3 text-sm text-black">
                           <span className="text-black/80">
-                            Code: {product.code}
+                            {t.dashboard.code}: {product.code}
                           </span>
                           <span className="text-black/80">
                             {product.created}
@@ -1876,7 +1896,7 @@ export default function DashboardHome() {
         <div>
           <div className="bg-white rounded-md border border-gray-200 overflow-hidden h-full">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className={tw.cardHeading}>Quick Actions</h2>
+              <h2 className={tw.cardHeading}>{t.dashboard.quickActions}</h2>
               <p className={`${tw.cardSubHeading} text-black mt-1`}>
                 Common tasks and shortcuts
               </p>
@@ -2050,16 +2070,16 @@ export default function DashboardHome() {
         {/* Campaign Status */}
         <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className={tw.cardHeading}>Campaign Status</h2>
+            <h2 className={tw.cardHeading}>{t.dashboard.campaignStatus}</h2>
             <p className={`${tw.cardSubHeading} text-black mt-1`}>
-              Campaign status distribution
+              {t.dashboard.campaignStatusDistribution}
             </p>
           </div>
           <div className="p-6">
             {campaignStatusDistribution.length === 0 ? (
               <div className="h-64 w-full min-h-[256px] flex items-center justify-center">
                 <p className={`${tw.textSecondary} text-sm`}>
-                  No campaign status data available yet.
+                  {t.dashboard.noCampaignStatusData}
                 </p>
               </div>
             ) : (
@@ -2118,7 +2138,9 @@ export default function DashboardHome() {
         <div className="bg-white rounded-md border border-gray-200 overflow-hidden self-start">
           <div className="px-6 py-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-1">
-              <h2 className={tw.cardHeading}>Top Performing Campaigns</h2>
+              <h2 className={tw.cardHeading}>
+                {t.dashboard.topPerformingCampaigns}
+              </h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => setTopPerformersFilter("participants")}
@@ -2128,7 +2150,7 @@ export default function DashboardHome() {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  Participants
+                  {t.dashboard.participants}
                 </button>
                 <button
                   onClick={() => setTopPerformersFilter("spend")}
@@ -2138,14 +2160,14 @@ export default function DashboardHome() {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  Spend
+                  {t.dashboard.spend}
                 </button>
               </div>
             </div>
             <p className={`${tw.cardSubHeading} text-black`}>
               {topPerformersFilter === "participants"
-                ? "Campaigns by participants"
-                : "Campaigns by spend"}
+                ? t.dashboard.campaignsByParticipants
+                : t.dashboard.campaignsBySpend}
             </p>
           </div>
           <div className="p-6">
@@ -2153,14 +2175,14 @@ export default function DashboardHome() {
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
                 <span className="ml-3 text-sm text-gray-500">
-                  Loading top campaigns...
+                  {t.dashboard.loadingTopCampaigns}
                 </span>
               </div>
             ) : topCampaigns.length === 0 ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-2">
-                    No campaign performance data available yet.
+                    {t.dashboard.noCampaignPerformanceData}
                   </p>
                 </div>
               </div>
@@ -2191,19 +2213,23 @@ export default function DashboardHome() {
                         </p>
                         <div className="flex flex-wrap gap-2 text-sm text-black">
                           {campaign.conversionRate && (
-                            <span>Conversion: {campaign.conversionRate}</span>
+                            <span>
+                              {t.dashboard.conversion}:{" "}
+                              {campaign.conversionRate}
+                            </span>
                           )}
                           {topPerformersFilter === "participants" &&
                             campaign.participants !== undefined && (
                               <span>
-                                Participants:{" "}
+                                {t.dashboard.participants}:{" "}
                                 {campaign.participants.toLocaleString()}
                               </span>
                             )}
                           {topPerformersFilter === "spend" &&
                             campaign.budget !== undefined && (
                               <span>
-                                Budget: ${campaign.budget.toLocaleString()}
+                                {t.dashboard.budget}:{" "}
+                                <CurrencyFormatter amount={campaign.budget} />
                               </span>
                             )}
                         </div>
@@ -2233,9 +2259,11 @@ export default function DashboardHome() {
         {/* Top Performing Offers */}
         <div className="bg-white rounded-md border border-gray-200 overflow-hidden self-start">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className={tw.cardHeading}>Top Performing Offers</h2>
+            <h2 className={tw.cardHeading}>
+              {t.dashboard.topPerformingOffers}
+            </h2>
             <p className={`${tw.cardSubHeading} text-black mt-1`}>
-              Offers by acceptance rate
+              {t.dashboard.offersByAcceptanceRate}
             </p>
           </div>
           <div className="p-6">
@@ -2262,7 +2290,7 @@ export default function DashboardHome() {
                         {offer.name}
                       </p>
                       <p className="text-sm text-black">
-                        Acceptance: {offer.acceptanceRate}
+                        {t.dashboard.acceptance}: {offer.acceptanceRate}
                       </p>
                     </div>
                   </div>
@@ -2272,7 +2300,8 @@ export default function DashboardHome() {
                         className="font-bold text-sm"
                         style={{ color: "#2563eb" }}
                       >
-                        {offer.engagement.toLocaleString()} engaged
+                        {offer.engagement.toLocaleString()}{" "}
+                        {t.dashboard.engaged}
                       </p>
                       <span
                         className={`px-3 py-1 rounded-full text-sm flex-shrink-0 ${
@@ -2294,9 +2323,9 @@ export default function DashboardHome() {
         {/* Requires Attention */}
         <div className="bg-white rounded-md border border-gray-200 overflow-hidden self-start">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className={tw.cardHeading}>Requires Attention</h2>
+            <h2 className={tw.cardHeading}>{t.dashboard.requiresAttention}</h2>
             <p className={`${tw.cardSubHeading} text-black mt-1`}>
-              Action items that need your review
+              {t.dashboard.actionItemsNeedReview}
             </p>
           </div>
           <div className="p-6 space-y-4">

@@ -744,10 +744,22 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
                       cursor={{ fill: "transparent" }}
                     />
                     <Bar
-                      dataKey="count"
-                      fill={chartSecondary}
+                      dataKey="reach"
+                      fill={color.tertiary.tag4}
                       radius={[4, 4, 0, 0]}
-                      name="Campaigns"
+                      name="With Target Reach"
+                    />
+                    <Bar
+                      dataKey="conversion"
+                      fill="#3b8169"
+                      radius={[4, 4, 0, 0]}
+                      name="With Target Conversion"
+                    />
+                    <Bar
+                      dataKey="revenue"
+                      fill="#10b981"
+                      radius={[4, 4, 0, 0]}
+                      name="With Target Revenue"
                     />
                   </BarChart>
                 </ResponsiveContainer>

@@ -33,10 +33,12 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import DateFormatter from "../../../shared/components/DateFormatter";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 export default function SegmentManagementPage() {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
+  const { t } = useLanguage();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [allSegments, setAllSegments] = useState<Segment[]>([]); // Store all segments for tag calculation
   const [isLoading, setIsLoading] = useState(true);
@@ -764,10 +766,10 @@ export default function SegmentManagementPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
             <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-              Segment Management
+              {t.pages.segments}
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
-              Create and manage customer segments
+              {t.pages.segmentsDescription}
             </p>
           </div>
           <button
@@ -775,7 +777,7 @@ export default function SegmentManagementPage() {
             className={`${tw.button} flex items-center gap-2`}
           >
             <Plus className="h-5 w-5" />
-            Create Segment
+            {t.pages.createSegment}
           </button>
         </div>
       </div>

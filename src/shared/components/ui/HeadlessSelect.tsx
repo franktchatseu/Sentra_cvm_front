@@ -83,7 +83,7 @@ export default function HeadlessSelect({
               style={{ minWidth: "100%" }}
             >
               {searchable && (
-                <div className="px-3 py-2 border-b border-gray-200">
+                <div className="sticky top-0 bg-white z-10 px-3 py-2 border-b border-gray-200">
                   <input
                     type="text"
                     value={searchTerm}

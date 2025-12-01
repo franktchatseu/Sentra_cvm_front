@@ -21,6 +21,7 @@ import {
   Package,
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { color, tw } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
@@ -43,6 +44,7 @@ export default function CampaignDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   // Check if we came from a catalog modal
   const returnTo = (
@@ -512,7 +514,7 @@ export default function CampaignDetailsPage() {
           </button>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
-              Campaign Details
+              {t.pages.campaignDetails}
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
               View and manage campaign information

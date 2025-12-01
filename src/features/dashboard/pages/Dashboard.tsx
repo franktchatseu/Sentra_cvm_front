@@ -8,6 +8,7 @@ import CreateCampaignPage from "../../campaigns/pages/CreateCampaignPage";
 import CampaignCategoriesPage from "../../campaigns/pages/CampaignCategoriesPage";
 import CampaignTypesPage from "../../campaigns/pages/CampaignTypesPage";
 import CampaignObjectivesPage from "../../campaigns/pages/CampaignObjectivesPage";
+import TeamRolesPage from "../../campaigns/pages/TeamRolesPage";
 import ProgramsPage from "../../campaigns/pages/ProgramsPage";
 import ProgramDetailsPage from "../../campaigns/pages/ProgramDetailsPage";
 import CommunicationPolicyPage from "../../campaigns/pages/CommunicationPolicyPage";
@@ -108,6 +109,7 @@ export default function Dashboard() {
           path="/campaign-objectives"
           element={<CampaignObjectivesPage />}
         />
+        <Route path="/team-roles" element={<TeamRolesPage />} />
         <Route path="/departments" element={<DepartmentPage />} />
         <Route path="/line-of-business" element={<LineOfBusinessPage />} />
         <Route path="/programs" element={<ProgramsPage />} />

@@ -31,6 +31,7 @@ import {
 import { color, tw } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import RegularModal from "../../../shared/components/ui/RegularModal";
@@ -81,6 +82,7 @@ export default function OfferDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { success, error: showError, info } = useToast();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1106,7 +1108,7 @@ export default function OfferDetailsPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={tw.mainHeading}>Offer Details</h1>
+            <h1 className={tw.mainHeading}>{t.pages.offerDetails}</h1>
             <p className={`${tw.textSecondary} mt-1`}>
               View and manage offer information
             </p>

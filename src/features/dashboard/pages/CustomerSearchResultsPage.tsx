@@ -33,10 +33,7 @@ import type {
   CustomerRow,
   CustomerSearchResultsResponse,
 } from "../types/ReportsAPI";
-import {
-  CustomerWithContact,
-  generateMockCustomers,
-} from "../utils/mockCustomers";
+import type { CustomerWithContact } from "../types/ReportsAPI";
 import type { CustomerSubscriptionRecord } from "../types/customerSubscription";
 import {
   convertSubscriptionToCustomerRow,
@@ -317,8 +314,6 @@ export default function CustomerSearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const mockCustomers = useMemo(() => generateMockCustomers(), []);
-
   const stateSource = location.state?.source as OriginSource | undefined;
   const sourceParam = searchParams.get("source");
   const urlSource =
@@ -352,11 +347,10 @@ export default function CustomerSearchResultsPage() {
 
   const customerFromUrl = useMemo(() => {
     if (!customerIdFromUrl) return undefined;
-    return (
-      mockCustomers.find((customer) => customer.id === customerIdFromUrl) ||
-      excelCustomerRows.find((customer) => customer.id === customerIdFromUrl)
+    return excelCustomerRows.find(
+      (customer) => customer.id === customerIdFromUrl
     );
-  }, [customerIdFromUrl, mockCustomers]);
+  }, [customerIdFromUrl]);
 
   const subscriptionFromDataset = useMemo(() => {
     if (subscriptionFromState) {

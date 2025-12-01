@@ -20,6 +20,7 @@ import {
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { useRemoveFromCatalog } from "../../../shared/hooks/useRemoveFromCatalog";
 import { campaignService } from "../services/campaignService";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -195,6 +196,7 @@ function CategoryModal({
 export default function CampaignCategoriesPage() {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
+  const { user } = useAuth();
   const { removeFromCatalog, removingId } = useRemoveFromCatalog();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] =
@@ -526,7 +528,10 @@ export default function CampaignCategoriesPage() {
           showToast("Category updated successfully");
         } else {
           // Create new category
-          await campaignService.createCampaignCategory(categoryData);
+          await campaignService.createCampaignCategory({
+            ...categoryData,
+            created_by: user?.user_id,
+          });
           await loadCategories(true);
           showToast("Category created successfully");
         }

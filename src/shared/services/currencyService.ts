@@ -13,25 +13,14 @@ const DEFAULT_SETTINGS: CurrencySettings = {
   number_formatting: "1,234.56",
 };
 
-// Currency symbol mapping
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: "$",
-  KES: "KSh",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  CNY: "¥",
-  INR: "₹",
-  AUD: "A$",
-  CAD: "C$",
-  CHF: "CHF",
-  ZAR: "R",
-  NGN: "₦",
-  GHS: "₵",
-  UGX: "USh",
-  TZS: "TSh",
-  ETB: "Br",
-  RWF: "RF",
+// Special currency symbols that need custom handling
+// (currencies where Intl API might not return the preferred symbol format)
+const SPECIAL_CURRENCY_SYMBOLS: Record<string, string> = {
+  KES: "KSh", // Kenyan Shilling
+  UGX: "USh", // Ugandan Shilling
+  TZS: "TSh", // Tanzanian Shilling
+  ETB: "Br", // Ethiopian Birr
+  RWF: "RF", // Rwandan Franc
 };
 
 // Get currency settings from localStorage or return defaults
@@ -54,11 +43,41 @@ export const getCurrencySettings = (): CurrencySettings => {
   return DEFAULT_SETTINGS;
 };
 
-// Get currency symbol for a given currency code
+// Get currency symbol for a given currency code using Intl API
+// This supports ALL currencies dynamically, not just a hardcoded list
 export const getCurrencySymbol = (currencyCode?: string): string => {
   const settings = getCurrencySettings();
   const code = currencyCode || settings.currency;
-  return CURRENCY_SYMBOLS[code] || code;
+
+  // Check for special cases first (currencies with custom symbol formats)
+  if (SPECIAL_CURRENCY_SYMBOLS[code]) {
+    return SPECIAL_CURRENCY_SYMBOLS[code];
+  }
+
+  // Use Intl API to get currency symbol dynamically
+  try {
+    // Try to get symbol from Intl.NumberFormat
+    const formatter = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+
+    // Format a sample amount and extract the currency symbol
+    const parts = formatter.formatToParts(0);
+    const currencyPart = parts.find((part) => part.type === "currency");
+
+    if (currencyPart && currencyPart.value) {
+      return currencyPart.value.trim();
+    }
+  } catch (error) {
+    // If Intl API fails (invalid currency code), fall back to code
+    console.warn(`Could not get symbol for currency ${code}:`, error);
+  }
+
+  // Fallback: return the currency code itself
+  return code;
 };
 
 // Format number based on number formatting preference
@@ -136,12 +155,12 @@ export const formatCurrency = (
   }
 
   if (showSymbol) {
-    // For KES, show "KSh" before the amount
-    if (currencyCode === "KES") {
-      return `KSh ${formattedNumber}`;
-    }
-    // For other currencies, use their symbols
-    return `${symbol}${formattedNumber}`;
+    // Add space for multi-character symbols (KSh, USh, TSh, etc.)
+    // Single-character symbols ($, €, £) typically don't need space
+    const needsSpace = symbol.length > 1;
+    return needsSpace
+      ? `${symbol} ${formattedNumber}`
+      : `${symbol}${formattedNumber}`;
   }
 
   return formattedNumber;

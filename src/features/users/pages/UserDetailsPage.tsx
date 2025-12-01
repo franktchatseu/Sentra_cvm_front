@@ -24,12 +24,14 @@ import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { roleService } from "../../roles/services/roleService";
 import { Role } from "../../roles/types/role";
 import DateFormatter from "../../../shared/components/DateFormatter";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { error: showError } = useToast();
+  const { t } = useLanguage();
 
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,12 +173,12 @@ export default function UserDetailsPage() {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-6 text-center">
-          <p className="text-red-600">User not found</p>
+          <p className="text-red-600">{t.userManagement.userNotFound}</p>
           <button
             onClick={navigateBack}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
           >
-            Back to User Management
+            {t.userManagement.backToUserManagement}
           </button>
         </div>
       </div>

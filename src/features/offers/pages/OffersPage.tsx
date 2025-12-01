@@ -28,12 +28,14 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import DateFormatter from "../../../shared/components/DateFormatter";
 
 export default function OffersPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [categories, setCategories] = useState<OfferCategoryType[]>([]);
@@ -991,11 +993,10 @@ export default function OffersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-            Offers Management
+            {t.pages.offers}
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
-            Create and manage customer offers with dynamic pricing and
-            eligibility
+            {t.pages.offersDescription}
           </p>
         </div>
         <button
@@ -1004,7 +1005,7 @@ export default function OffersPage() {
           style={{ backgroundColor: color.primary.action }}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Create Offer
+          {t.pages.createOffer}
         </button>
       </div>
 

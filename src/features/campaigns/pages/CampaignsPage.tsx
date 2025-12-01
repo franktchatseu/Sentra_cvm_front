@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { campaignService } from "../services/campaignService";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
@@ -73,6 +74,7 @@ interface CampaignDisplay {
 export default function CampaignsPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -956,9 +958,11 @@ export default function CampaignsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>Campaigns</h1>
+          <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+            {t.pages.campaigns}
+          </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
-            Manage and monitor your customer engagement campaigns
+            {t.pages.campaignsDescription}
           </p>
         </div>
         <div className="flex gap-3">
@@ -980,7 +984,7 @@ export default function CampaignsPage() {
             style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="h-5 w-5 mr-2" />
-            Create Campaign
+            {t.pages.createCampaign}
           </button>
         </div>
       </div>

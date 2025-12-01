@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import React from "react";
 import {
   Home,
@@ -100,7 +100,7 @@ interface NavigationItem {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const previousPathnameRef = useRef<string>(location.pathname);
+  const previousPathnameRef = useRef<string>("");
   const { user, logout } = useAuth();
   const [currentUserRole, setCurrentUserRole] = useState<string>("User");
 
@@ -166,300 +166,319 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const userDisplayName = user?.email || "User";
 
-  const navigation: NavigationItem[] = [
-    {
-      name: "Dashboard",
-      href: "/dashboard",
-      icon: Home,
-      type: "single",
-      entity: "campaigns",
-    },
-    {
-      name: "Campaign Management",
-      href: "/dashboard/campaigns",
-      icon: BarChart3,
-      type: "parent",
-      entity: "campaigns",
-      children: [
-        {
-          name: "All Campaigns",
-          href: "/dashboard/campaigns",
-          icon: Target,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
-          name: "Campaign Objective",
-          href: "/dashboard/campaign-objectives",
-          icon: Flag,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
-          name: "Programs",
-          href: "/dashboard/programs",
-          icon: Briefcase,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
-          name: "Campaign Catalogs",
-          href: "/dashboard/campaign-catalogs",
-          icon: Folder,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
-          name: "Campaign Types",
-          href: "/dashboard/campaign-types",
-          icon: Layers,
-          type: "single",
-          entity: "campaigns",
-        },
-      ],
-    },
-    {
-      name: "Offer Management",
-      href: "/dashboard/offers",
-      icon: Calendar,
-      type: "parent",
-      entity: "offers",
-      children: [
-        {
-          name: "All Offers",
-          href: "/dashboard/offers",
-          icon: MessageSquare,
-          type: "single",
-          entity: "offers",
-        },
-        {
-          name: "Offer Types",
-          href: "/dashboard/offer-types",
-          icon: Tag,
-          type: "single",
-          entity: "offers",
-        },
-        {
-          name: "Offer Catalogs",
-          href: "/dashboard/offer-catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "offers",
-        },
-      ],
-    },
-    {
-      name: "Product Management",
-      href: "/dashboard/products",
-      icon: Zap,
-      type: "parent",
-      entity: "products",
-      children: [
-        {
-          name: "All Products",
-          href: "/dashboard/products",
-          icon: Package,
-          type: "single",
-          entity: "products",
-        },
-        {
-          name: "Product Types",
-          href: "/dashboard/product-types",
-          icon: Layers,
-          type: "single",
-          entity: "products",
-        },
-        {
-          name: "Product Catalogs",
-          href: "/dashboard/products/catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "products",
-        },
-      ],
-    },
-    {
-      name: "Segment Management",
-      href: "/dashboard/segments",
-      icon: Users,
-      type: "parent",
-      entity: "segments",
-      children: [
-        {
-          name: "All Segments",
-          href: "/dashboard/segments",
-          icon: Users,
-          type: "single",
-          entity: "segments",
-        },
-        {
-          name: "Segment Types",
-          href: "/dashboard/segment-types",
-          icon: Layers,
-          type: "single",
-          entity: "segments",
-        },
-        {
-          name: "Segment Catalogs",
-          href: "/dashboard/segment-catalogs",
-          icon: FolderOpen,
-          type: "single",
-          entity: "segments",
-        },
-        {
-          name: "Segment Lists",
-          href: "/dashboard/segment-list",
-          icon: List,
-          type: "single",
-          entity: "segments",
-        },
-      ],
-    },
+  const navigation: NavigationItem[] = useMemo(
+    () => [
+      {
+        name: "Dashboard",
+        href: "/dashboard",
+        icon: Home,
+        type: "single",
+        entity: "campaigns",
+      },
+      {
+        name: "Campaign Management",
+        href: "/dashboard/campaigns",
+        icon: BarChart3,
+        type: "parent",
+        entity: "campaigns",
+        children: [
+          {
+            name: "All Campaigns",
+            href: "/dashboard/campaigns",
+            icon: Target,
+            type: "single",
+            entity: "campaigns",
+          },
+          {
+            name: "Campaign Objective",
+            href: "/dashboard/campaign-objectives",
+            icon: Flag,
+            type: "single",
+            entity: "campaigns",
+          },
+          {
+            name: "Programs",
+            href: "/dashboard/programs",
+            icon: Briefcase,
+            type: "single",
+            entity: "campaigns",
+          },
+          {
+            name: "Campaign Catalogs",
+            href: "/dashboard/campaign-catalogs",
+            icon: Folder,
+            type: "single",
+            entity: "campaigns",
+          },
+          {
+            name: "Campaign Types",
+            href: "/dashboard/campaign-types",
+            icon: Layers,
+            type: "single",
+            entity: "campaigns",
+          },
+        ],
+      },
+      {
+        name: "Offer Management",
+        href: "/dashboard/offers",
+        icon: Calendar,
+        type: "parent",
+        entity: "offers",
+        children: [
+          {
+            name: "All Offers",
+            href: "/dashboard/offers",
+            icon: MessageSquare,
+            type: "single",
+            entity: "offers",
+          },
+          {
+            name: "Offer Types",
+            href: "/dashboard/offer-types",
+            icon: Tag,
+            type: "single",
+            entity: "offers",
+          },
+          {
+            name: "Offer Catalogs",
+            href: "/dashboard/offer-catalogs",
+            icon: FolderOpen,
+            type: "single",
+            entity: "offers",
+          },
+        ],
+      },
+      {
+        name: "Product Management",
+        href: "/dashboard/products",
+        icon: Zap,
+        type: "parent",
+        entity: "products",
+        children: [
+          {
+            name: "All Products",
+            href: "/dashboard/products",
+            icon: Package,
+            type: "single",
+            entity: "products",
+          },
+          {
+            name: "Product Types",
+            href: "/dashboard/product-types",
+            icon: Layers,
+            type: "single",
+            entity: "products",
+          },
+          {
+            name: "Product Catalogs",
+            href: "/dashboard/products/catalogs",
+            icon: FolderOpen,
+            type: "single",
+            entity: "products",
+          },
+        ],
+      },
+      {
+        name: "Segment Management",
+        href: "/dashboard/segments",
+        icon: Users,
+        type: "parent",
+        entity: "segments",
+        children: [
+          {
+            name: "All Segments",
+            href: "/dashboard/segments",
+            icon: Users,
+            type: "single",
+            entity: "segments",
+          },
+          {
+            name: "Segment Types",
+            href: "/dashboard/segment-types",
+            icon: Layers,
+            type: "single",
+            entity: "segments",
+          },
+          {
+            name: "Segment Catalogs",
+            href: "/dashboard/segment-catalogs",
+            icon: FolderOpen,
+            type: "single",
+            entity: "segments",
+          },
+          {
+            name: "Segment Lists",
+            href: "/dashboard/segment-list",
+            icon: List,
+            type: "single",
+            entity: "segments",
+          },
+        ],
+      },
 
-    {
-      name: "Infrastructure",
-      href: "/dashboard/servers",
-      icon: Server,
-      type: "parent",
-      entity: "servers",
-      children: [
-        {
-          name: "Servers",
-          href: "/dashboard/servers",
-          icon: Server,
-          type: "single",
-          entity: "servers",
-        },
-        {
-          name: "Connection Profiles",
-          href: "/dashboard/connection-profiles",
-          icon: Database,
-          type: "single",
-          entity: "servers",
-        },
-      ],
-    },
+      {
+        name: "Infrastructure",
+        href: "/dashboard/servers",
+        icon: Server,
+        type: "parent",
+        entity: "servers",
+        children: [
+          {
+            name: "Servers",
+            href: "/dashboard/servers",
+            icon: Server,
+            type: "single",
+            entity: "servers",
+          },
+          {
+            name: "Connection Profiles",
+            href: "/dashboard/connection-profiles",
+            icon: Database,
+            type: "single",
+            entity: "servers",
+          },
+        ],
+      },
 
-    {
-      name: "Reports & Analytics",
-      href: "/dashboard/reports",
-      icon: LineChart,
-      type: "parent",
-      entity: "analytics",
-      children: [
-        {
-          name: "Overall Dashboard Performance",
-          href: "/dashboard/reports/overview",
-          icon: Activity,
-          type: "single",
-          entity: "analytics",
-        },
-        {
-          name: "Customer Profile Reports",
-          href: "/dashboard/reports/customer-profiles",
-          icon: Users,
-          type: "single",
-          entity: "analytics",
-        },
-        {
-          name: "Campaign Reports",
-          href: "/dashboard/reports/campaigns",
-          icon: Target,
-          type: "single",
-          entity: "analytics",
-        },
-        {
-          name: "Offer Reports",
-          href: "/dashboard/reports/offers",
-          icon: Gift,
-          type: "single",
-          entity: "analytics",
-        },
-        {
-          name: "Delivery & SMS Reports",
-          href: "/dashboard/reports/delivery",
-          icon: MessageSquare,
-          type: "single",
-          entity: "analytics",
-        },
-        {
-          name: "Delivery & Email Reports",
-          href: "/dashboard/reports/email-delivery",
-          icon: Mail,
-          type: "single",
-          entity: "analytics",
-        },
-      ],
-    },
+      {
+        name: "Reports & Analytics",
+        href: "/dashboard/reports",
+        icon: LineChart,
+        type: "parent",
+        entity: "analytics",
+        children: [
+          {
+            name: "Overall Dashboard Performance",
+            href: "/dashboard/reports/overview",
+            icon: Activity,
+            type: "single",
+            entity: "analytics",
+          },
+          {
+            name: "Customer Profile Reports",
+            href: "/dashboard/reports/customer-profiles",
+            icon: Users,
+            type: "single",
+            entity: "analytics",
+          },
+          {
+            name: "Campaign Reports",
+            href: "/dashboard/reports/campaigns",
+            icon: Target,
+            type: "single",
+            entity: "analytics",
+          },
+          {
+            name: "Offer Reports",
+            href: "/dashboard/reports/offers",
+            icon: Gift,
+            type: "single",
+            entity: "analytics",
+          },
+          {
+            name: "Delivery & SMS Reports",
+            href: "/dashboard/reports/delivery",
+            icon: MessageSquare,
+            type: "single",
+            entity: "analytics",
+          },
+          {
+            name: "Delivery & Email Reports",
+            href: "/dashboard/reports/email-delivery",
+            icon: Mail,
+            type: "single",
+            entity: "analytics",
+          },
+        ],
+      },
 
-    {
-      name: "Customer Management",
-      href: "/dashboard/customers",
-      icon: Users,
-      type: "parent",
-      entity: "customers",
-      children: [
-        {
-          name: "Customers",
-          href: "/dashboard/customers",
-          icon: Users,
-          type: "single",
-          entity: "customers",
-        },
-        {
-          name: "Customer Identity",
-          href: "/dashboard/customer-identity",
-          icon: Fingerprint,
-          type: "single",
-          entity: "customers",
-        },
-      ],
-    },
-    {
-      name: "Job Management",
-      href: "/dashboard/jobs",
-      icon: Briefcase,
-      type: "parent",
-      entity: "campaigns",
-      children: [
-        {
-          name: "Scheduled Jobs",
-          href: "/dashboard/jobs",
-          icon: Briefcase,
-          type: "single",
-          entity: "campaigns",
-        },
-        {
-          name: "Job Types",
-          href: "/dashboard/job-types",
-          icon: Layers,
-          type: "single",
-          entity: "campaigns",
-        },
-      ],
-    },
-    {
-      name: "Manual Broadcast",
-      href: "/dashboard/quicklists",
-      icon: Upload,
-      type: "single",
-      entity: "segments",
-    },
-    {
-      name: "User Management",
-      href: "/dashboard/user-management",
-      icon: UserCheck,
-      type: "single",
-      entity: "users",
-    },
-    {
-      name: "Configuration",
-      href: "/dashboard/configuration",
-      icon: Cog,
-      type: "single",
-      entity: "configuration",
-    },
-  ];
+      {
+        name: "Customer Management",
+        href: "/dashboard/customers",
+        icon: Users,
+        type: "parent",
+        entity: "customers",
+        children: [
+          {
+            name: "Customers",
+            href: "/dashboard/customers",
+            icon: Users,
+            type: "single",
+            entity: "customers",
+          },
+          {
+            name: "Customer Identity",
+            href: "/dashboard/customer-identity",
+            icon: Fingerprint,
+            type: "single",
+            entity: "customers",
+          },
+        ],
+      },
+      {
+        name: "Job Management",
+        href: "/dashboard/jobs",
+        icon: Briefcase,
+        type: "parent",
+        entity: "campaigns",
+        children: [
+          {
+            name: "Scheduled Jobs",
+            href: "/dashboard/jobs",
+            icon: Briefcase,
+            type: "single",
+            entity: "campaigns",
+          },
+          {
+            name: "Job Types",
+            href: "/dashboard/job-types",
+            icon: Layers,
+            type: "single",
+            entity: "campaigns",
+          },
+        ],
+      },
+      {
+        name: "Manual Broadcast",
+        href: "/dashboard/quicklists",
+        icon: Upload,
+        type: "single",
+        entity: "segments",
+      },
+      {
+        name: "User Management",
+        href: "/dashboard/user-management",
+        icon: UserCheck,
+        type: "parent",
+        entity: "users",
+        children: [
+          {
+            name: "All Users",
+            href: "/dashboard/user-management",
+            icon: Users,
+            type: "single",
+            entity: "users",
+          },
+          {
+            name: "Team Roles",
+            href: "/dashboard/team-roles",
+            icon: UserCheck,
+            type: "single",
+            entity: "users",
+          },
+        ],
+      },
+      {
+        name: "Configuration",
+        href: "/dashboard/configuration",
+        icon: Cog,
+        type: "single",
+        entity: "configuration",
+      },
+    ],
+    []
+  );
 
   const secondaryNavigation = [
     {
@@ -520,9 +539,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     return location.pathname === item.href;
   };
 
-  // Auto-expand parent items when a child is active (only on pathname change)
+  // Helper function to check if a pathname matches or is a sub-route of a href
+  const isPathActive = useCallback(
+    (pathname: string, href: string): boolean => {
+      if (pathname === href) return true;
+      if (pathname.startsWith(href + "/")) return true;
+      return false;
+    },
+    []
+  );
+
+  // Auto-expand parent items when a child is active
   useEffect(() => {
-    // Only auto-expand when pathname actually changes, not on every render
+    // Only run if pathname actually changed
     if (previousPathnameRef.current === location.pathname) {
       return;
     }
@@ -533,40 +562,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     navigation.forEach((item) => {
       if (item.type === "parent" && item.children) {
-        // Check if the parent's own href matches (exact match)
-        const isParentActive = location.pathname === item.href;
+        // Check if the parent's own href matches (exact match or sub-route)
+        const isParentActive = isPathActive(location.pathname, item.href);
 
-        // Check if any direct child is active
-        const hasActiveChild = item.children.some(
-          (child) => location.pathname === child.href
+        // Check if any direct child is active (exact match or sub-route)
+        const hasActiveChild = item.children.some((child) =>
+          isPathActive(location.pathname, child.href)
         );
 
         // Also check nested children (grandchildren)
         const hasActiveNestedChild = item.children.some((child) => {
           if (child.type === "parent" && child.children) {
-            return child.children.some(
-              (grandchild) => location.pathname === grandchild.href
+            return child.children.some((grandchild) =>
+              isPathActive(location.pathname, grandchild.href)
             );
           }
           return false;
         });
 
-        // Check if pathname starts with the parent href (for sub-routes)
-        const isSubRoute = location.pathname.startsWith(item.href + "/");
-
-        if (
-          isParentActive ||
-          hasActiveChild ||
-          hasActiveNestedChild ||
-          isSubRoute
-        ) {
+        if (isParentActive || hasActiveChild || hasActiveNestedChild) {
           activeParentNames.push(item.name.toLowerCase());
 
           // If a nested child is active, also expand the intermediate parent
           item.children.forEach((child) => {
             if (child.type === "parent" && child.children) {
-              const hasActiveGrandchild = child.children.some(
-                (grandchild) => location.pathname === grandchild.href
+              const hasActiveGrandchild = child.children.some((grandchild) =>
+                isPathActive(location.pathname, grandchild.href)
               );
               if (hasActiveGrandchild) {
                 activeParentNames.push(child.name.toLowerCase());
@@ -577,19 +598,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       }
     });
 
-    // Update expanded items to include active parents (only add, don't force)
-    if (activeParentNames.length > 0) {
-      setExpandedItems((prev) => {
-        const newExpanded = [...prev];
-        activeParentNames.forEach((name) => {
-          if (!newExpanded.includes(name)) {
-            newExpanded.push(name);
-          }
-        });
+    // Only update if the expanded items actually changed
+    setExpandedItems((prev) => {
+      const newExpanded = [...new Set(activeParentNames)];
+      const prevSorted = [...prev].sort().join(",");
+      const newSorted = [...newExpanded].sort().join(",");
+
+      // Only update if the arrays are different
+      if (prevSorted !== newSorted) {
         return newExpanded;
-      });
-    }
-  }, [location.pathname]);
+      }
+      return prev;
+    });
+  }, [location.pathname, isPathActive, navigation]);
 
   const handleLinkClick = () => {
     // Close sidebar on mobile when navigating

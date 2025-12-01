@@ -733,6 +733,7 @@ class CampaignService {
   async createCampaignCategory(request: {
     name: string;
     description?: string;
+    created_by?: number;
   }): Promise<Record<string, unknown>> {
     const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories`;
 

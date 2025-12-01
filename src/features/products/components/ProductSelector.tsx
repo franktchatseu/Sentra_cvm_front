@@ -185,6 +185,11 @@ export default function ProductSelector({
                       >
                         {getCategoryName(product.category_id)}
                       </span>
+                      {product.price && (
+                        <span className="text-sm font-medium text-gray-700">
+                          <CurrencyFormatter amount={product.price} />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -435,7 +440,6 @@ export default function ProductSelector({
                                 {product.price ? (
                                   <CurrencyFormatter
                                     amount={product.price}
-                                    currencyCode={product.currency}
                                     className="text-sm font-medium text-gray-900"
                                   />
                                 ) : (

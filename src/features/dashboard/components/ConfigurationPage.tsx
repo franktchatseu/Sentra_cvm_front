@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Grid3X3, List, Eye, Settings } from "lucide-react";
 import { color, tw, components } from "../../../shared/utils/utils";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface ConfigurationItem {
   id: string;
@@ -16,6 +17,7 @@ interface ConfigurationItem {
 
 export default function ConfigurationPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -69,6 +71,15 @@ export default function ConfigurationPage() {
         category: "Campaign Configuration",
         status: "active",
         navigationPath: "/dashboard/departments",
+      },
+      {
+        id: "team-roles",
+        name: "Team Roles",
+        description: "Define and manage team roles and responsibilities",
+        type: "user",
+        category: "User Configuration",
+        status: "active",
+        navigationPath: "/dashboard/team-roles",
       },
       {
         id: "programs",
@@ -221,35 +232,39 @@ export default function ConfigurationPage() {
   }, []);
 
   const categories = [
-    { id: "all", name: "All Configurations", count: configurations.length },
+    {
+      id: "all",
+      name: t.configuration.allConfigurations,
+      count: configurations.length,
+    },
     {
       id: "campaign",
-      name: "Campaign",
+      name: t.configuration.campaign,
       count: configurations.filter((c) => c.type === "campaign").length,
     },
     {
       id: "offer",
-      name: "Offer",
+      name: t.configuration.offer,
       count: configurations.filter((c) => c.type === "offer").length,
     },
     {
       id: "product",
-      name: "Product",
+      name: t.configuration.product,
       count: configurations.filter((c) => c.type === "product").length,
     },
     {
       id: "segment",
-      name: "Segment",
+      name: t.configuration.segment,
       count: configurations.filter((c) => c.type === "segment").length,
     },
     {
       id: "user",
-      name: "User",
+      name: t.configuration.user,
       count: configurations.filter((c) => c.type === "user").length,
     },
     {
       id: "control-group",
-      name: "Control Group",
+      name: t.configuration.controlGroup,
       count: configurations.filter((c) => c.type === "control-group").length,
     },
   ];
@@ -281,10 +296,10 @@ export default function ConfigurationPage() {
           ></div>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
-              Configuration Management
+              {t.configuration.title}
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
-              Manage and configure all system settings and parameters
+              {t.configuration.description}
             </p>
           </div>
         </div>
@@ -300,7 +315,7 @@ export default function ConfigurationPage() {
             />
             <input
               type="text"
-              placeholder="Search configurations..."
+              placeholder={t.configuration.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full pl-10 pr-4 py-4 ${components.input.default} rounded-md focus:outline-none transition-all duration-200 text-sm`}
@@ -353,8 +368,10 @@ export default function ConfigurationPage() {
       {/* Results Count */}
       <div className="mb-6">
         <p className={`${tw.textSecondary} text-sm`}>
-          Showing {filteredConfigurations.length} of {configurations.length}{" "}
-          configuration{configurations.length !== 1 ? "s" : ""}
+          {t.configuration.showing} {filteredConfigurations.length}{" "}
+          {t.configuration.of} {configurations.length}{" "}
+          {t.configuration.configurations}
+          {configurations.length !== 1 ? "s" : ""}
         </p>
       </div>
 

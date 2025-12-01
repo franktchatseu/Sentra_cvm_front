@@ -25,6 +25,7 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import DateFormatter from "../../../shared/components/DateFormatter";
@@ -41,6 +42,7 @@ interface ProductFilters {
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -250,10 +252,10 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-            Products Management
+            {t.pages.products}
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
-            Manage your product catalog
+            {t.pages.productsDescription}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -271,7 +273,7 @@ export default function ProductsPage() {
             }}
           >
             <Plus className="w-4 h-4" />
-            Create Product
+            {t.pages.createProduct}
           </button>
         </div>
       </div>
@@ -505,7 +507,7 @@ export default function ProductsPage() {
               }}
             >
               <Plus className="w-5 h-5" />
-              Create Product
+              {t.pages.createProduct}
             </button>
           </div>
         ) : (

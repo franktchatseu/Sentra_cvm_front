@@ -18,6 +18,7 @@ import { productCategoryService } from "../services/productCategoryService";
 import { color, tw, button } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import { useToast } from "../../../contexts/ToastContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
@@ -28,6 +29,7 @@ export default function ProductDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { success, error: showError } = useToast();
+  const { t } = useLanguage();
 
   const returnTo = (
     location.state as { returnTo?: { pathname: string; section?: string } }
@@ -214,7 +216,7 @@ export default function ProductDetailsPage() {
           </button>
           <div>
             <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
-              Product Details
+              {t.pages.productDetails}
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
               View and manage product information
@@ -396,10 +398,7 @@ export default function ProductDetailsPage() {
                   Price
                 </label>
                 <p className={`text-2xl font-bold ${tw.textPrimary}`}>
-                  <CurrencyFormatter
-                    amount={product.price}
-                    currencyCode={product.currency}
-                  />
+                  <CurrencyFormatter amount={product.price} />
                 </p>
               </div>
               {product.cost && (
@@ -410,12 +409,7 @@ export default function ProductDetailsPage() {
                     Cost
                   </label>
                   <p className={`text-xl font-semibold ${tw.textPrimary}`}>
-                    {typeof product.cost === "number"
-                      ? product.cost.toFixed(2)
-                      : parseFloat(String(product.cost || 0)).toFixed(2)}{" "}
-                    <span className="text-base font-normal text-gray-500">
-                      {product.currency || "KES"}
-                    </span>
+                    <CurrencyFormatter amount={product.cost} />
                   </p>
                 </div>
               )}

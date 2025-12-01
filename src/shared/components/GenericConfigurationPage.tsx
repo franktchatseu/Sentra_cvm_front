@@ -13,6 +13,7 @@ import {
 import { color, tw } from "../utils/utils";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useToast } from "../../contexts/ToastContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 import {
   configurationDataService,
   type ConfigurationType,
@@ -89,6 +90,7 @@ export function ConfigurationModal({
   isSaving = false,
   config,
 }: ConfigurationModalProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -216,7 +218,7 @@ export function ConfigurationModal({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
             >
-              Cancel
+              {t.genericConfig.cancel}
             </button>
             <button
               type="submit"
@@ -248,6 +250,7 @@ export default function GenericConfigurationPage({
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
+  const { t } = useLanguage();
 
   const [items, setItems] = useState<ConfigurationItem[]>(config.initialData);
   const [loading] = useState(false);
@@ -288,8 +291,8 @@ export default function GenericConfigurationPage({
       title: config.deleteConfirmTitle,
       message: config.deleteConfirmMessage(item.name),
       type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
+      confirmText: t.genericConfig.delete,
+      cancelText: t.genericConfig.cancel,
     });
 
     if (!confirmed) return;
@@ -431,7 +434,7 @@ export default function GenericConfigurationPage({
               className="mr-3"
             />
             <span className={`${tw.textSecondary}`}>
-              Loading {config.entityNamePlural}...
+              {t.genericConfig.loading} {config.entityNamePlural}...
             </span>
           </div>
         ) : filteredItems.length === 0 ? (
@@ -439,13 +442,13 @@ export default function GenericConfigurationPage({
             <IconComponent className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
               {searchTerm
-                ? `No ${config.entityNamePlural} Found`
-                : `No ${config.entityNamePlural}`}
+                ? `${t.genericConfig.noItemsFound}`
+                : `${t.genericConfig.noItems}`}
             </h3>
             <p className={`${tw.textMuted} mb-6`}>
               {searchTerm
-                ? "Try adjusting your search terms."
-                : `Create your first ${config.entityName} to get started.`}
+                ? t.genericConfig.tryAdjustingSearch
+                : `${t.genericConfig.createFirstItem}`}
             </p>
             {!searchTerm && (
               <button

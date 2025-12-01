@@ -32,6 +32,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { color, tw } from "../../../shared/utils/utils";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 const PAGE_SIZE = 15;
 const BASE_FETCH_LIMIT = 100;
@@ -43,6 +44,7 @@ export default function ServersPage() {
   const { confirm } = useConfirm();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [scope, setScope] = useState<ScopeFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -682,10 +684,10 @@ export default function ServersPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
-            Servers Registry
+            {t.servers.title}
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
-            Track infrastructure endpoints, health posture, and status changes.
+            {t.servers.description}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -711,7 +713,9 @@ export default function ServersPage() {
             }}
           >
             {isSelectionMode ? <CheckSquare size={16} /> : <Square size={16} />}
-            {isSelectionMode ? "Exit Selection" : "Select Servers"}
+            {isSelectionMode
+              ? t.servers.exitSelection
+              : t.servers.selectServers}
           </button>
           <button
             onClick={() => navigate("/dashboard/servers/new")}
@@ -807,7 +811,9 @@ export default function ServersPage() {
         {isLoadingServers ? (
           <div className="flex flex-col items-center justify-center py-20">
             <LoadingSpinner variant="modern" size="lg" color="primary" />
-            <p className="mt-4 text-sm text-gray-500">Loading servers…</p>
+            <p className="mt-4 text-sm text-gray-500">
+              {t.servers.loadingServers}
+            </p>
           </div>
         ) : isEmptyState ? (
           <div className="py-16 text-center bg-white">

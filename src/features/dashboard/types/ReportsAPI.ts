@@ -96,6 +96,12 @@ export interface CustomerRow {
   location: string; // Customer location/city
 }
 
+export type CustomerWithContact = CustomerRow & {
+  email: string;
+  phone: string;
+  msisdn: string;
+};
+
 // ============================================================================
 // CUSTOMER SEARCH RESULTS
 // ============================================================================
